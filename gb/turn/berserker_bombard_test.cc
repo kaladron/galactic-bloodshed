@@ -274,7 +274,7 @@ int main() {
         .short_message = "Direct kinetic impact on surface.\n",
         .long_message = "",
     };
-    result.nuked_players[player_t{2}] = true;
+    result.nuked_players.insert(player_t{2});
 
     dispatch_bombardment_alerts(ctx.em, *alert_ship, star, Coordinates{5, 5},
                                 player_t{2}, 3, result);

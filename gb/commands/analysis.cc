@@ -120,7 +120,7 @@ struct SectorStats {
   int total_res = 0;
   std::array<int, SectorType::SEC_WASTED + 1> sect{};
   PlayerSectorStats unowned{};
-  PlayerVector<PlayerSectorStats, MAXPLAYERS> players{};
+  std::flat_map<player_t, PlayerSectorStats> players{};
 };
 
 SectorStats accumulate_statistics(GameObj& g, const SectorMap& smap) {
@@ -308,7 +308,7 @@ void do_analysis(GameObj& g, const PlayerFilter& filter, Mode mode,
               tabulate::Table::Row_t(table_header.begin(), table_header.end()));
           table[0].format().font_style({tabulate::FontStyle::bold});
 
-          auto format_row = [&](int p, const PlayerSectorStats& ps) {
+          auto format_row = [&](player_t p, const PlayerSectorStats& ps) {
             std::vector<std::string> row = {
                 std::format("{}", p),
                 std::format("{}", ps.t_sect),
@@ -331,10 +331,9 @@ void do_analysis(GameObj& g, const PlayerFilter& filter, Mode mode,
           }
 
           // Add player rows
-          for (const Race& race : RaceList::readonly(g.entity_manager)) {
-            player_t p = race.Playernum;
-            if (stats.players[p].t_sect != 0) {
-              auto row = format_row(p.value, stats.players[p]);
+          for (const auto& [p, ps] : stats.players) {
+            if (ps.t_sect != 0) {
+              auto row = format_row(p, ps);
               table.add_row(tabulate::Table::Row_t(row.begin(), row.end()));
             }
           }

@@ -81,16 +81,16 @@ void test_first_race_requires_god() {
   std::println(std::cout, "  ✓ First race God requirement check passed");
 }
 
-void test_max_players_rejected() {
-  std::println(std::cout, "Test: Max players limit rejection");
+void test_unbounded_players_allowed() {
+  std::println(std::cout, "Test: Unbounded players beyond 64 allowed");
 
   Database db(":memory:");
   setup_test_universe(db);
   JsonStore store(db);
   RaceRepository races(store);
 
-  // Fill up races to MAXPLAYERS - 1
-  for (int i = 1; i < MAXPLAYERS; ++i) {
+  // Create 64 existing races
+  for (int i = 1; i <= 64; ++i) {
     Race r{};
     r.Playernum = player_t{i};
     r.name = std::format("Empire{}", i);
@@ -101,17 +101,17 @@ void test_max_players_rejected() {
   GB::creator::EnrollmentService service(em);
 
   GB::creator::RaceEnrollmentSpec spec{
-      .name = "OverflowEmpire",
+      .name = "Empire65",
       .password = "pass",
       .home_planet_type = PlanetType::EARTH,
       .is_god = true,
   };
 
   auto result = service.enroll_player(spec);
-  test::expect_false(result.success);
-  test::expect_contains(result.message, "No more allowed.");
+  test::expect_true(result.success);
+  test::expect_eq(result.player_num, player_t{65});
 
-  std::println(std::cout, "  ✓ Max players rejection passed");
+  std::println(std::cout, "  ✓ Unbounded players enrollment passed");
 }
 
 void test_no_free_planet_rejected() {
@@ -599,7 +599,7 @@ void test_quickstart_archetype_json_roundtrip_and_enroll() {
 
 int main() {
   test_first_race_requires_god();
-  test_max_players_rejected();
+  test_unbounded_players_allowed();
   test_no_free_planet_rejected();
   test_enroll_first_race_god_success();
   test_enroll_second_race_mortal_success();

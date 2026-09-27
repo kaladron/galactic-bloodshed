@@ -47,11 +47,11 @@ Planet createTestPlanet(starnum_t star_id = 1, planetnum_t pnum = 1) {
   planet.toxic() = 0;
   planet.rtemp() = 50;
   planet.temp() = 50;
-  for (int i = 1; i <= MAXPLAYERS; i++) {
-    planet.info(player_t{i}).tax = 10;
-    planet.info(player_t{i}).mob_set = 0;
-    planet.info(player_t{i}).resource = 0;
-    planet.info(player_t{i}).autorep = 0;
+  for (player_t p : all_players()) {
+    planet.info(p).tax = 10;
+    planet.info(p).mob_set = 0;
+    planet.info(p).resource = 0;
+    planet.info(p).autorep = 0;
   }
   return planet;
 }
@@ -774,7 +774,7 @@ void test_handle_victory_single_winner() {
   auto result = handle_victory(ctx.em, true);
   test::expect_true(result.game_over);
   test::expect_eq(result.big_winners.size(), 1U);
-  test::expect_eq(result.big_winners[0], player_t{1});
+  test::expect_true(result.big_winners.contains(player_t{1}));
   test::expect_true(result.lesser_winners.empty());
 
   // Both players receive victory broadcast telegrams
@@ -825,10 +825,10 @@ void test_handle_victory_multiple_winners_and_lesser_winners() {
   auto result = handle_victory(ctx.em, true);
   test::expect_true(result.game_over);
   test::expect_eq(result.big_winners.size(), 2U);
-  test::expect_eq(result.big_winners[0], player_t{1});
-  test::expect_eq(result.big_winners[1], player_t{2});
+  test::expect_true(result.big_winners.contains(player_t{1}));
+  test::expect_true(result.big_winners.contains(player_t{2}));
   test::expect_eq(result.lesser_winners.size(), 1U);
-  test::expect_eq(result.lesser_winners[0], player_t{3});
+  test::expect_true(result.lesser_winners.contains(player_t{3}));
 
   auto tele3 = ctx.em.get_telegrams(player_t{3}, Race::leader_id);
   bool found_plural_winners = false;
@@ -1025,8 +1025,8 @@ void test_advance_race_technology() {
   ctx.with_standard_universe();
 
   TurnStats stats{};
-  stats.Power[player_t{1}].popn = 10'000;
-  stats.Power[player_t{1}].planets_owned = 2;
+  stats.mutable_power_stats(player_t{1}).popn = 10'000;
+  stats.mutable_power_stats(player_t{1}).planets_owned = 2;
 
   ctx.em.mutate_race(player_t{1}, [](Race& r) {
     r.IQ = 100;
@@ -1124,15 +1124,15 @@ void test_sync_power_ratings() {
   power_repo.save(p1);
 
   TurnStats stats{};
-  stats.Power[player_t{1}].popn = 5000;
-  stats.Power[player_t{1}].planets_owned = 1;
+  stats.mutable_power_stats(player_t{1}).popn = 5000;
+  stats.mutable_power_stats(player_t{1}).planets_owned = 1;
 
   ctx.em.mutate_race(player_t{1}, [](Race& r) { r.leader().money = 12'345; });
 
   sync_power_ratings(ctx.em, stats);
 
   // Verified aggregated money in stats
-  test::expect_eq(stats.Power[player_t{1}].money, 12'345);
+  test::expect_eq(stats.power_stats(player_t{1}).money, 12'345);
 
   // Verified persisted power record
   const auto* power = ctx.em.peek_power(powernum_t{1});
@@ -1152,8 +1152,8 @@ void test_finalize_turn_update_integration() {
   power_repo.save(p1);
 
   TurnStats stats{};
-  stats.Power[player_t{1}].popn = 1000;
-  stats.Power[player_t{1}].planets_owned = 1;
+  stats.mutable_power_stats(player_t{1}).popn = 1000;
+  stats.mutable_power_stats(player_t{1}).planets_owned = 1;
 
   ctx.em.mutate_race(player_t{1}, [](Race& r) {
     r.IQ = 100;

@@ -74,10 +74,7 @@ void resolve_planetary_retaliation(GameObj& g, Ship& from, Planet& p,
   const governor_t governor = g.governor();
   const auto* star = g.entity_manager.peek_star(from.storbits());
 
-  for (const Race& race : RaceList::readonly(g.entity_manager)) {
-    const player_t i = race.Playernum;
-    if (!result.nuked_players[i]) continue;
-
+  for (player_t i : result.nuked_players) {
     g.entity_manager.mutate_race(i, [&](Race& alien) {
       const auto retal_strength =
           std::min(static_cast<weapon_power_t>(p.info(i).destruct),
@@ -227,12 +224,9 @@ bool bombard_from_ship(const command_t& argv, GameObj& g, Ship& from) {
         notify_star(g.session_registry, g.entity_manager, g.player(),
                     g.governor(), from.storbits(), result.short_message);
         const auto* star = g.entity_manager.peek_star(from.storbits());
-        for (const Race& race : RaceList::readonly(g.entity_manager)) {
-          const player_t i = race.Playernum;
-          if (result.nuked_players[i]) {
-            warn_player(g.session_registry, g.entity_manager, i,
-                        star->governor(i), result.long_message);
-          }
+        for (player_t i : result.nuked_players) {
+          warn_player(g.session_registry, g.entity_manager, i,
+                      star->governor(i), result.long_message);
         }
         g.out << result.long_message;
 

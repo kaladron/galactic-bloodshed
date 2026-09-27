@@ -18,18 +18,17 @@ notify_player(governor, player, msg);  // swapped args — should not compile
 
 ```cpp
 // Strong IDs (ID<"brand", T>):
-export using player_t    = ID<"player">;                // 1-based (1..MAXPLAYERS)
+export using player_t    = ID<"player">;                // 1-based (>= 1)
 export using governor_t  = ID<"governor">;              // 1-based (>= 1, 1 = Leader)
 export using starnum_t   = ID<"star", std::uint32_t>;   // 1-based (1..numstars)
 export using planetnum_t = ID<"planet", std::uint32_t>; // 1-based (1..numplanets)
 export using shipnum_t   = ID<"ship", std::uint64_t>;   // 1-based (>= 1)
 export using commodnum_t = ID<"commod", std::int64_t>;  // 1-based (>= 1)
-export using blocknum_t  = ID<"block", int>;            // 1-based (1..MAXPLAYERS)
-export using powernum_t  = ID<"power", int>;            // 1-based (1..MAXPLAYERS)
+export using blocknum_t  = ID<"block", int>;            // 1-based (>= 1)
+export using powernum_t  = ID<"power", int>;            // 1-based (>= 1)
 
 // Semantic Metric Aliases:
 export using turn_t         = std::uint32_t;  ///< Full update turn counter
-export using ship_count_t   = std::uint32_t;  ///< Cardinality / tally of ships (distinct from shipnum_t)
 export using planet_count_t = std::uint32_t;  ///< Cardinality / tally of planets or star systems
 export using armor_t        = std::uint32_t;  ///< Armor rating absorbing combat damage
 export using damage_t       = std::uint32_t;  ///< Hull damage percentage (0..100)
@@ -86,36 +85,26 @@ When parsing user input, parse to `int`/`unsigned`, validate, then construct the
 
 `ID<...>` serializes transparently as a plain integer through Glaze, so existing JSON in the database stays compatible. No special meta is needed.
 
-## Iteration & Range Patterns
+## Iteration & Sparse Player Containers
 
-**Never write raw numeric loops** like `for (int i = 0; i < MAXPLAYERS; ++i)` or `for (player_t i = 1; i < MAXPLAYERS; ++i)` (which introduces off-by-one errors). Use the provided domain iterators and range helpers:
+There is no fixed upper player cap (`MAXPLAYERS`). Per-player sets and maps use sparse `std::flat_set<player_t>` and `std::flat_map<player_t, V>` containers (or `std::flat_map<governor_t, V>` for governors):
 
-1. **Iterating over managed entities**:
+1. **Iterating over enrolled races**:
    ```cpp
-   // ✅ Iterate over enrolled races and index PlayerVector directly with race
+   // ✅ Iterate over enrolled races via EntityManager
    for (const Race& race : RaceList::readonly(em)) {
-     vec[race] = 100;
+     scores[race.Playernum] = 100;
    }
    ```
 
-
-2. **Iterating over all player slots**:
+2. **Iterating over sparse per-player sets or maps on entities**:
    ```cpp
-   // ✅ Iterate over all valid player IDs (1..MAXPLAYERS)
-   for (player_t p : all_players()) {
-     if (planet.info(p).explored) { ... }
-   }
+   // ✅ Iterate over players who have explored a star or planet
+   for (player_t p : star.explored()) { ... }
+   for (const auto& [player_id, pinfo] : planet.info_map()) { ... }
    ```
 
-3. **Iterating directly over `PlayerVector`**:
-   ```cpp
-   // ✅ Standard range-for over player elements
-   for (const auto& entry : player_vec) {
-     total += entry.value;
-   }
-   ```
-
-4. **Iterating over active governors**:
+3. **Iterating over active governors**:
    ```cpp
    // ✅ Yields typed entries with governor_t
    for (auto [gov_id, gov_data] : race.active_governors()) {
@@ -136,7 +125,7 @@ If you find a function still typed `int player, int gov`, fix the signature; tha
 
 ## Anti-Patterns
 
-- ❌ Writing raw numeric player loops (`for (int i = 0; i < MAXPLAYERS; ++i)`).
+- ❌ Using fixed-size player arrays instead of `std::flat_map<player_t, V>` / `std::flat_set<player_t>` or `RaceList::readonly(em)`.
 - ❌ Using `int` / `unsigned` to hold IDs.
 - ❌ `static_cast<int>(gov)` or `gov.value` just to compile a comparison.
 - ❌ Implicit construction (`player_t p = 1;`).

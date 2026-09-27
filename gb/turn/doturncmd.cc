@@ -308,15 +308,14 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
       for (const Race& race : RaceList::readonly(state.entity_manager)) {
         const player_t player = race.Playernum;
 
-        if (state.stats.starpopns[star][player]) {
+        const auto& star_stats = state.stats.star_player_stats(star, player);
+        if (star_stats.popn) {
           star_handle->mark_inhabited_by(player);
 
-          ap_t APs =
-              star_handle->AP(player) +
-              compute_star_action_points(
-                  static_cast<int>(state.stats.starnumships[star][player]),
-                  state.stats.starpopns[star][player], race,
-                  state.entity_manager);
+          ap_t APs = star_handle->AP(player) +
+                     compute_star_action_points(
+                         static_cast<int>(star_stats.num_ships),
+                         star_stats.popn, race, state.entity_manager);
           star_handle->AP(player) = std::min(APs, LIMIT_APs);
         }
         // Compute victory points for the block
@@ -357,7 +356,7 @@ void calculate_victory_scores(EntityManager& entity_manager) {
     money_t money{0};
   };
 
-  PlayerVector<victstruct, MAXPLAYERS> victory{};
+  std::flat_map<player_t, victstruct> victory{};
 
   for (const Race& race : RaceList::readonly(entity_manager)) {
     const player_t player = race.Playernum;
@@ -400,20 +399,19 @@ void calculate_victory_scores(EntityManager& entity_manager) {
 
   for (auto race_handle : RaceList(entity_manager)) {
     const player_t player = race_handle->Playernum;
+    const auto& v = victory[player];
     const std::int64_t raw_score =
-        (static_cast<std::int64_t>(VICT_SECT) * victory[player].numsects) +
+        (static_cast<std::int64_t>(VICT_SECT) * v.numsects) +
         (static_cast<std::int64_t>(VICT_SHIP) *
-         (victory[player].shipcost +
-          static_cast<std::int64_t>(VICT_TECH * victory[player].shiptech))) +
+         (v.shipcost + static_cast<std::int64_t>(VICT_TECH * v.shiptech))) +
         (static_cast<std::int64_t>(VICT_RES) *
-         (static_cast<std::int64_t>(victory[player].res) +
-          victory[player].des)) +
-        (static_cast<std::int64_t>(VICT_FUEL) * victory[player].fuel) +
+         (static_cast<std::int64_t>(v.res) + v.des)) +
+        (static_cast<std::int64_t>(VICT_FUEL) * v.fuel) +
         (static_cast<std::int64_t>(VICT_MONEY) *
-         static_cast<std::int64_t>(victory[player].money));
+         static_cast<std::int64_t>(v.money));
     const std::int64_t scaled_score = raw_score / VICT_DIVISOR;
     race_handle->victory_score = static_cast<victory_score_t>(
-        std::lround(morale_factor(static_cast<double>(victory[player].morale)) *
+        std::lround(morale_factor(static_cast<double>(v.morale)) *
                     static_cast<double>(scaled_score)));
   }
 }
@@ -422,9 +420,9 @@ void advance_race_technology(Race& race, const TurnStats& stats,
                              EntityManager& entity_manager) {
   const player_t player = race.Playernum;
 
-  race.update_collective_intelligence(stats.Power[player].popn);
+  race.update_collective_intelligence(stats.power_stats(player).popn);
   race.tech += static_cast<double>(race.IQ) / 100.0;
-  race.morale += stats.Power[player].planets_owned;
+  race.morale += stats.power_stats(player).planets_owned;
   race.turn += 1;
   check_technological_discoveries(entity_manager, race);
   if (MARKET) {
@@ -469,9 +467,10 @@ void sync_power_ratings(EntityManager& entity_manager, TurnStats& stats) {
   compute_power_blocks(entity_manager);
   for (auto race_handle : RaceList(entity_manager)) {
     const player_t player = race_handle->Playernum;
-    stats.Power[player].money = 0;
+    auto& pwr = stats.mutable_power_stats(player);
+    pwr.money = 0;
     for (auto [id, governor] : race_handle->active_governors()) {
-      stats.Power[player].money += governor.money;
+      pwr.money += governor.money;
     }
   }
   // Save power data via EntityManager
@@ -479,7 +478,7 @@ void sync_power_ratings(EntityManager& entity_manager, TurnStats& stats) {
     const player_t i = race.Playernum;
     try {
       entity_manager.mutate_power(powernum_t{i.value}, [&](struct power& p) {
-        p = stats.Power[i];
+        p = stats.power_stats(i);
         p.id = i.value;
       });
     } catch (const EntityNotFoundError&) {
@@ -624,11 +623,6 @@ void update_von_neumann_target(EntityManager& em, TurnStats& stats) {
     }
   }
 }
-enum class WinCategory {
-  NONE,
-  BIG_WINNER,
-  LITTLE_WINNER
-};
 
 VictoryResult handle_victory(EntityManager& em, bool victory_enabled) {
   if (!victory_enabled) {
@@ -637,29 +631,23 @@ VictoryResult handle_victory(EntityManager& em, bool victory_enabled) {
 
   const int planet_count = em.count_non_asteroid_planets();
   VictoryResult result{};
-  PlayerVector<WinCategory, MAXPLAYERS> win_category{};
+  std::flat_set<player_t> big_winners;
+  std::flat_set<player_t> lesser_winners;
 
   for (const Race& race : RaceList::readonly(em)) {
     const player_t player = race.Playernum;
     const int threshold = std::max(1, planet_count * VICTORY_PERCENT / 100);
-    if (planet_count > 0 && race.controlled_planets >= threshold) {
-      win_category[player] = WinCategory::LITTLE_WINNER;
-    }
     if (race.victory_turns >= VICTORY_UPDATES) {
       result.game_over = true;
-      win_category[player] = WinCategory::BIG_WINNER;
+      big_winners.insert(player);
+    } else if (planet_count > 0 && race.controlled_planets >= threshold) {
+      lesser_winners.insert(player);
     }
   }
 
   if (result.game_over) {
-    for (const Race& winner : RaceList::readonly(em)) {
-      const player_t j = winner.Playernum;
-      if (win_category[j] == WinCategory::BIG_WINNER) {
-        result.big_winners.push_back(j);
-      } else if (win_category[j] == WinCategory::LITTLE_WINNER) {
-        result.lesser_winners.push_back(j);
-      }
-    }
+    result.big_winners = std::move(big_winners);
+    result.lesser_winners = std::move(lesser_winners);
 
     for (const Race& race : RaceList::readonly(em)) {
       const player_t i = race.Playernum;

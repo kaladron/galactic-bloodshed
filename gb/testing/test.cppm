@@ -765,3 +765,10 @@ private:
   std::vector<player_t> registered_races_;
   std::vector<starnum_t> registered_stars_;
 };
+
+/// \brief Sample set of player IDs for unit tests, including discontiguous and
+/// high player numbers to verify sparse per-player container behavior.
+export constexpr std::array<player_t, 9> all_players() noexcept {
+  return {player_t{1}, player_t{2},  player_t{3},  player_t{4},  player_t{5},
+          player_t{6}, player_t{10}, player_t{42}, player_t{100}};
+}

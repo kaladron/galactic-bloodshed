@@ -248,7 +248,7 @@ strip_mine_quarry(Ship& ship, Planet& planet, SectorMap& smap,
   const auto& race = *entity_manager.peek_race(ship.owner());
 
   const int prod = round_rand(race.metabolism * ship.crew_ratio());
-  stats.prod_res[ship.owner()] += prod;
+  stats.record_production(ship.owner(), {.resources = prod});
   const int tox = int_rand(0, int_rand(0, prod));
   planet.toxic() += tox;
   if (s.get_fert() >= prod) {
@@ -297,7 +297,8 @@ void process_weapon_plant_turn(EntityManager& entity_manager, Ship& ship,
     return;
   }
 
-  stats.prod_destruct[ship.owner()] += do_weapon_plant(ship, entity_manager);
+  stats.record_production(ship.owner(),
+                          {.destruct = do_weapon_plant(ship, entity_manager)});
 }
 
 bool execute_berserker_bombardment(EntityManager& entity_manager, Ship& ship,
@@ -602,9 +603,7 @@ void divert_slave_tribute(EntityManager& entity_manager, Planet& planet,
   for (const Race& race : RaceList::readonly(entity_manager)) {
     const player_t p = race.Playernum;
     if (planet.sectors_owned_by(p) > 0) {
-      master_info.resource += std::exchange(stats.prod_res[p], 0);
-      master_info.fuel += std::exchange(stats.prod_fuel[p], 0);
-      master_info.destruct += std::exchange(stats.prod_destruct[p], 0);
+      master_info.deposit_production(stats.extract_slave_tribute(p));
     }
   }
 }
@@ -719,12 +718,12 @@ void recalculate_census(EntityManager& entity_manager, const Star& star,
     planet.troops() += s.get_troops();
 
     const auto& owner_race = *entity_manager.peek_race(owner);
-    planet.maxpopn() += maxsupport(owner_race, s, stats.Compat[owner], toxic);
+    planet.maxpopn() += maxsupport(owner_race, s, stats.compat(owner), toxic);
 
-    auto& power = stats.Power[owner];
+    auto& power = stats.mutable_power_stats(owner);
     power.troops += s.get_troops();
     power.popn += s.get_popn();
-    stats.starpopns[star_id][owner] += s.get_popn();
+    stats.add_star_popn(star_id, owner, s.get_popn());
   }
 }
 
@@ -738,9 +737,7 @@ void process_planet_economy(EntityManager& entity_manager, const Star& star,
     }
     auto& info = planet.info(race);
 
-    info.deposit_production(stats.prod_fuel[player], stats.prod_res[player],
-                            stats.prod_destruct[player],
-                            stats.prod_crystals[player]);
+    info.deposit_production(stats.production(player));
 
     auto& gov = race.governor(star.governor(player));
 
@@ -758,22 +755,23 @@ void process_planet_economy(EntityManager& entity_manager, const Star& star,
 
   for (const Race& race : RaceList::readonly(entity_manager)) {
     const player_t p = race.Playernum;
-    if (!planet.has_info(p) && stats.total_mob_points[p] == 0) {
+    const std::uint32_t mob = stats.mob_points(p);
+    if (!planet.has_info(p) && mob == 0) {
       continue;
     }
     auto& info = planet.info(race);
-    stats.Power[p].resource += info.resource;
-    stats.Power[p].destruct += info.destruct;
-    stats.Power[p].fuel += info.fuel;
-    stats.Power[p].planets_owned += !!info.numsectsowned;
-    info.update_combat_readiness(stats.total_mob_points[p]);
+    auto& pwr = stats.mutable_power_stats(p);
+    pwr.resource += info.resource;
+    pwr.destruct += info.destruct;
+    pwr.fuel += info.fuel;
+    pwr.planets_owned += !!info.numsectsowned;
+    info.update_combat_readiness(mob);
   }
 }
 
 void reset_planet_turn_state(EntityManager& entity_manager, Planet& planet,
                              TurnStats& stats) {
-  stats.Claims = false;
-  stats.tot_captured = 0;
+  stats.reset_planet_accumulators();
   planet.maxpopn() = 0;
   planet.popn() = 0;
   planet.troops() = 0;
@@ -788,12 +786,7 @@ void reset_planet_turn_state(EntityManager& entity_manager, Planet& planet,
 
   for (const Race& race : RaceList::readonly(entity_manager)) {
     const player_t p = race.Playernum;
-    stats.Compat[p] = planet.compatibility(race);
-    stats.prod_crystals[p] = 0;
-    stats.prod_fuel[p] = 0;
-    stats.prod_destruct[p] = 0;
-    stats.prod_res[p] = 0;
-    stats.total_mob_points[p] = 0;
+    stats.set_compat(p, planet.compatibility(race));
   }
 }
 
@@ -825,16 +818,15 @@ void send_planet_turn_telegrams(EntityManager& entity_manager, const Star& star,
 
   for (const Race& race : RaceList::readonly(entity_manager)) {
     const player_t p = race.Playernum;
-    if (!planet.has_info(p) && stats.prod_crystals[p] == 0 &&
-        stats.prod_res[p] == 0 && stats.prod_fuel[p] == 0 &&
-        stats.prod_destruct[p] == 0) {
+    const auto& prod = stats.production(p);
+    if (!planet.has_info(p) && prod.empty()) {
       continue;
     }
     auto& info = planet.info(race);
-    info.prod_crystals = stats.prod_crystals[p];
-    info.prod_res = stats.prod_res[p];
-    info.prod_fuel = stats.prod_fuel[p];
-    info.prod_dest = stats.prod_destruct[p];
+    info.prod_crystals = prod.crystals;
+    info.prod_res = prod.resources;
+    info.prod_fuel = prod.fuel;
+    info.prod_dest = prod.destruct;
     if (info.autorep) {
       info.autorep--;
       std::stringstream telegram_buf;
@@ -846,11 +838,9 @@ void send_planet_turn_telegrams(EntityManager& entity_manager, const Star& star,
                                     planet.temp());
       }
       telegram_buf << std::format("Total      Prod: {}r {}f {}d\n",
-                                  stats.prod_res[p], stats.prod_fuel[p],
-                                  stats.prod_destruct[p]);
-      if (stats.prod_crystals[p]) {
-        telegram_buf << std::format("    {} crystals found\n",
-                                    stats.prod_crystals[p]);
+                                  prod.resources, prod.fuel, prod.destruct);
+      if (prod.crystals) {
+        telegram_buf << std::format("    {} crystals found\n", prod.crystals);
       }
       if (stats.tot_captured) {
         telegram_buf << std::format("{} sectors captured\n",

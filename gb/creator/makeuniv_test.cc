@@ -84,11 +84,9 @@ void test_universe_generator_in_memory() {
   // race enrollment
   BlockRepository block_repo(store);
   PowerRepository power_repo(store);
-  for (int i : std::views::iota(1, MAXPLAYERS + 1)) {
-    test::expect_false(
-        block_repo.find_by_id(static_cast<blocknum_t>(i)).has_value());
-    test::expect_false(
-        power_repo.find_by_id(static_cast<powernum_t>(i)).has_value());
+  for (player_t p : all_players()) {
+    test::expect_false(block_repo.find_by_id(p.value).has_value());
+    test::expect_false(power_repo.find_by_id(p.value).has_value());
   }
 
   std::println(

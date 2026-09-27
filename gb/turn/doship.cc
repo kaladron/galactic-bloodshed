@@ -405,17 +405,18 @@ void update_ship_inhabited_and_exploration(const Ship& ship,
 void accumulate_ship_power_stats(const Ship& ship, TurnStats& stats,
                                  bool update) {
   if (update) {
-    stats.Power[ship.owner()].ships_owned++;
-    stats.Power[ship.owner()].resource += ship.resource();
-    stats.Power[ship.owner()].fuel += ship.fuel();
-    stats.Power[ship.owner()].destruct += ship.destruct();
-    stats.Power[ship.owner()].popn += ship.popn();
-    stats.Power[ship.owner()].troops += ship.troops();
+    auto& pwr = stats.mutable_power_stats(ship.owner());
+    pwr.ships_owned++;
+    pwr.resource += ship.resource();
+    pwr.fuel += ship.fuel();
+    pwr.destruct += ship.destruct();
+    pwr.popn += ship.popn();
+    pwr.troops += ship.troops();
   }
 
   if (ship.whatorbits() != ScopeLevel::LEVEL_UNIV) {
-    stats.starnumships[ship.storbits()][ship.owner()]++;
-    stats.starpopns[ship.storbits()][ship.owner()] += ship.popn();
+    stats.add_star_ships(ship.storbits(), ship.owner(), 1);
+    stats.add_star_popn(ship.storbits(), ship.owner(), ship.popn());
   }
 }
 

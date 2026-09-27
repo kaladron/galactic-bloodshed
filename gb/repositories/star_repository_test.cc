@@ -32,12 +32,12 @@ int main() {
   test_star_data.inhabited = {player_t{1}, player_t{2}, player_t{5},
                               player_t{6}};
 
-  // Initialize governor array
+  // Initialize governor map
   for (player_t p : all_players()) {
     test_star_data.governor[p] = static_cast<governor_t>(p.value);
   }
 
-  // Initialize AP array
+  // Initialize AP map
   for (player_t p : all_players()) {
     test_star_data.AP[p] = (p.value - 1) * 100;
   }
@@ -92,12 +92,12 @@ int main() {
   test::expect_true(retrieved->explored() == test_star_data.explored);
   test::expect_true(retrieved->inhabited() == test_star_data.inhabited);
 
-  // Verify governor array using accessor (player_t is 1-indexed)
+  // Verify governor map using accessor (player_t is 1-indexed)
   for (player_t p : all_players()) {
     test::expect_eq(retrieved->governor(p), static_cast<governor_t>(p.value));
   }
 
-  // Verify AP array using accessor
+  // Verify AP map using accessor
   for (player_t p : all_players()) {
     test::expect_eq(retrieved->AP(p), (p.value - 1) * 100);
   }

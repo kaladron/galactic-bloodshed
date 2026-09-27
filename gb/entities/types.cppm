@@ -21,8 +21,6 @@ export using powernum_t = ID<"power", int>;
 export using segments_t = std::uint32_t;
 export using turn_t = std::uint32_t;  ///< Full update turn counter
 export using ap_t = std::uint32_t;
-export using ship_count_t =
-    std::uint32_t;  ///< Cardinality / tally of ships (distinct from shipnum_t)
 export using planet_count_t =
     std::uint32_t;  ///< Cardinality / tally of planets or star systems
 export using resource_t = std::int64_t;

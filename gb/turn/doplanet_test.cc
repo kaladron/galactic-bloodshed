@@ -35,11 +35,11 @@ Planet createTestPlanet(Coordinates dimensions = Coordinates{10, 10}) {
   planet.toxic() = 0;
   planet.rtemp() = 50;
   planet.temp() = 50;
-  for (int i = 1; i <= MAXPLAYERS; i++) {
-    planet.info(player_t{i}).tax = 10;
-    planet.info(player_t{i}).mob_set = 0;
-    planet.info(player_t{i}).resource = 0;
-    planet.info(player_t{i}).autorep = 0;
+  for (player_t p : all_players()) {
+    planet.info(p).tax = 10;
+    planet.info(p).mob_set = 0;
+    planet.info(p).resource = 0;
+    planet.info(p).autorep = 0;
   }
   return planet;
 }
@@ -763,7 +763,7 @@ void test_strip_mine_quarry() {
   test::expect_gt(*res_success, 0);
   test::expect_eq(smap.get(Coordinates{3, 3}).get_condition(),
                   SectorType::SEC_WASTED);
-  test::expect_gt(stats.prod_res[player_t{1}], 0);
+  test::expect_gt(stats.production(player_t{1}).resources, 0);
   test::expect_eq(ship.fuel(), 50.0 - FUEL_COST_QUARRY);
 
   // 2. Insufficient fuel
@@ -845,7 +845,7 @@ void test_process_quarry_turn() {
   process_quarry_turn(em, ship, planet, smap, stats);
   test::expect_eq(smap.get(Coordinates{3, 3}).get_condition(),
                   SectorType::SEC_WASTED);
-  test::expect_gt(stats.prod_res[player_t{1}], 0);
+  test::expect_gt(stats.production(player_t{1}).resources, 0);
   test::expect_eq(ship.fuel(), 50.0 - FUEL_COST_QUARRY);
 
   // 2. Not switched on telegram
@@ -911,7 +911,7 @@ void test_process_weapon_plant_turn() {
 
   // 1. Successful weapon plant turn
   process_weapon_plant_turn(em, ship, stats);
-  test::expect_gt(stats.prod_destruct[player_t{1}], 0);
+  test::expect_gt(stats.production(player_t{1}).destruct, 0);
 
   // 2. Not landed telegram
   ship.launch_to_orbit();
@@ -1234,7 +1234,7 @@ void test_doplanet_full_cycle() {
   sectors.save_map(initial_smap);
 
   TurnStats stats{};
-  stats.Compat[player_t{1}] = 1.0;
+  stats.set_compat(player_t{1}, 1.0);
 
   doplanet(em, star, planet, stats);
 
@@ -1292,7 +1292,7 @@ void test_exploration_island_discovery() {
   sectors.save_map(initial_smap);
 
   TurnStats stats{};
-  stats.Compat[player_t{1}] = 1.0;
+  stats.set_compat(player_t{1}, 1.0);
 
   doplanet(em, star, planet, stats);
 
@@ -1352,7 +1352,7 @@ void test_64bit_production_and_stockpiles() {
   sectors.save_map(smap);
 
   TurnStats stats{};
-  stats.Compat[player_t{1}] = 1.0;
+  stats.set_compat(player_t{1}, 1.0);
 
   doplanet(em, star, planet, stats);
 
@@ -1371,34 +1371,34 @@ void test_64bit_production_and_stockpiles() {
 void test_turnstats_playervector_accumulation() {
   TurnStats stats{};
 
-  // Verify initial zero-initialization across PlayerVector members
-  test::expect_eq(stats.prod_res[player_t{1}], 0);
-  test::expect_eq(stats.prod_fuel[player_t{1}], 0);
-  test::expect_eq(stats.prod_destruct[player_t{1}], 0);
-  test::expect_eq(stats.prod_crystals[player_t{1}], 0);
-  test::expect_eq(stats.Power[player_t{1}].popn, 0U);
-  test::expect_eq(stats.starpopns[1][player_t{1}], 0);
-  test::expect_eq(stats.starnumships[1][player_t{1}], 0U);
-  test::expect_eq(stats.total_mob_points[player_t{1}], 0U);
+  // Verify initial zero-initialization across TurnStats accumulators
+  test::expect_eq(stats.production(player_t{1}).resources, 0);
+  test::expect_eq(stats.production(player_t{1}).fuel, 0);
+  test::expect_eq(stats.production(player_t{1}).destruct, 0);
+  test::expect_eq(stats.production(player_t{1}).crystals, 0);
+  test::expect_eq(stats.power_stats(player_t{1}).popn, 0U);
+  test::expect_eq(stats.star_player_stats(1, player_t{1}).popn, 0);
+  test::expect_eq(stats.star_player_stats(1, player_t{1}).num_ships, 0U);
+  test::expect_eq(stats.mob_points(player_t{1}), 0U);
 
   // Mutate player stats using strongly-typed player_t keys
-  stats.prod_res[player_t{1}] += 5000;
-  stats.prod_fuel[player_t{1}] += 2500;
-  stats.Power[player_t{1}].popn = 10000;
-  stats.starpopns[1][player_t{1}] = 8000;
-  stats.starnumships[1][player_t{1}] = 12;
+  stats.record_production(player_t{1},
+                          Stockpile{.resources = 5000, .fuel = 2500});
+  stats.mutable_power_stats(player_t{1}).popn = 10000;
+  stats.add_star_popn(1, player_t{1}, 8000);
+  stats.add_star_ships(1, player_t{1}, 12);
 
-  test::expect_eq(stats.prod_res[player_t{1}], 5000);
-  test::expect_eq(stats.prod_fuel[player_t{1}], 2500);
-  test::expect_eq(stats.Power[player_t{1}].popn, 10000U);
-  test::expect_eq(stats.starpopns[1][player_t{1}], 8000);
-  test::expect_eq(stats.starnumships[1][player_t{1}], 12U);
+  test::expect_eq(stats.production(player_t{1}).resources, 5000);
+  test::expect_eq(stats.production(player_t{1}).fuel, 2500);
+  test::expect_eq(stats.power_stats(player_t{1}).popn, 10000U);
+  test::expect_eq(stats.star_player_stats(1, player_t{1}).popn, 8000);
+  test::expect_eq(stats.star_player_stats(1, player_t{1}).num_ships, 12U);
 
-  // Verify bounds safety on 0 and > MAXPLAYERS
+  // Verify bounds safety on 0
   test::expect_throws<std::out_of_range>(
-      [&]() { (void)stats.prod_res[player_t{0}]; });
+      [&]() { (void)stats.production(player_t{0}); });
   test::expect_throws<std::out_of_range>(
-      [&]() { (void)stats.Power[player_t{MAXPLAYERS + 1}]; });
+      [&]() { (void)stats.power_stats(player_t{0}); });
 }
 
 void test_process_planet_climate() {
@@ -2134,9 +2134,8 @@ void test_process_enslavement_and_revolts() {
   planet.info(player_t{1}).destruct = 2;
 
   TurnStats stats2{};
-  stats2.prod_res[player_t{2}] = 50;
-  stats2.prod_fuel[player_t{2}] = 25;
-  stats2.prod_destruct[player_t{2}] = 8;
+  stats2.record_production(
+      player_t{2}, Stockpile{.resources = 50, .destruct = 8, .fuel = 25});
 
   auto res2 = process_enslavement_and_revolts(em, star, planet, smap, stats2);
   test::expect_eq(res2.outcome, EnslavementOutcome::ProductionDiverted);
@@ -2144,9 +2143,9 @@ void test_process_enslavement_and_revolts() {
   test::expect_eq(planet.info(player_t{1}).resource, 60);
   test::expect_eq(planet.info(player_t{1}).fuel, 30);
   test::expect_eq(planet.info(player_t{1}).destruct, 10);
-  test::expect_eq(stats2.prod_res[player_t{2}], 0);
-  test::expect_eq(stats2.prod_fuel[player_t{2}], 0);
-  test::expect_eq(stats2.prod_destruct[player_t{2}], 0);
+  test::expect_eq(stats2.production(player_t{2}).resources, 0);
+  test::expect_eq(stats2.production(player_t{2}).fuel, 0);
+  test::expect_eq(stats2.production(player_t{2}).destruct, 0);
   test::expect_true(planet.is_enslaved());
 
   // 3. Slave revolt:
@@ -2198,18 +2197,17 @@ void test_divert_slave_tribute() {
   planet.info(player_t{2}).numsectsowned = 3;
 
   TurnStats stats{};
-  stats.prod_res[player_t{2}] = 30;
-  stats.prod_fuel[player_t{2}] = 15;
-  stats.prod_destruct[player_t{2}] = 5;
+  stats.record_production(
+      player_t{2}, Stockpile{.resources = 30, .destruct = 5, .fuel = 15});
 
   divert_slave_tribute(em, planet, stats, player_t{1});
 
   test::expect_eq(planet.info(player_t{1}).resource, 130);
   test::expect_eq(planet.info(player_t{1}).fuel, 65);
   test::expect_eq(planet.info(player_t{1}).destruct, 15);
-  test::expect_eq(stats.prod_res[player_t{2}], 0);
-  test::expect_eq(stats.prod_fuel[player_t{2}], 0);
-  test::expect_eq(stats.prod_destruct[player_t{2}], 0);
+  test::expect_eq(stats.production(player_t{2}).resources, 0);
+  test::expect_eq(stats.production(player_t{2}).fuel, 0);
+  test::expect_eq(stats.production(player_t{2}).destruct, 0);
 }
 
 void test_notify_slave_revolt() {
@@ -2385,8 +2383,8 @@ void test_recalculate_census() {
   s11.set_condition(SectorType::SEC_LAND);
 
   TurnStats stats{};
-  stats.Compat[player_t{1}] = 100.0;
-  stats.Compat[player_t{2}] = 80.0;
+  stats.set_compat(player_t{1}, 100.0);
+  stats.set_compat(player_t{2}, 80.0);
 
   recalculate_census(em, star, planet, smap, stats);
 
@@ -2402,14 +2400,16 @@ void test_recalculate_census() {
   test::expect_eq(planet.info(player_t{2}).popn, 300);
   test::expect_eq(planet.info(player_t{2}).troops, 40);
 
-  test::expect_eq(stats.Power[player_t{1}].popn, 300);
-  test::expect_eq(stats.Power[player_t{1}].troops, 50);
+  test::expect_eq(stats.power_stats(player_t{1}).popn, 300);
+  test::expect_eq(stats.power_stats(player_t{1}).troops, 50);
 
-  test::expect_eq(stats.Power[player_t{2}].popn, 300);
-  test::expect_eq(stats.Power[player_t{2}].troops, 40);
+  test::expect_eq(stats.power_stats(player_t{2}).popn, 300);
+  test::expect_eq(stats.power_stats(player_t{2}).troops, 40);
 
-  test::expect_eq(stats.starpopns[star.star_id().value][player_t{1}], 300);
-  test::expect_eq(stats.starpopns[star.star_id().value][player_t{2}], 300);
+  test::expect_eq(stats.star_player_stats(star.star_id(), player_t{1}).popn,
+                  300);
+  test::expect_eq(stats.star_player_stats(star.star_id(), player_t{2}).popn,
+                  300);
   test::expect_true(planet.maxpopn() > 0);
 }
 
@@ -2476,11 +2476,10 @@ void test_process_planet_economy() {
   SectorMap smap(planet);
 
   TurnStats stats{};
-  stats.prod_fuel[player_t{1}] = 25;
-  stats.prod_res[player_t{1}] = 15;
-  stats.prod_destruct[player_t{1}] = 10;
-  stats.prod_crystals[player_t{1}] = 2;
-  stats.total_mob_points[player_t{1}] = 50;
+  stats.record_production(
+      player_t{1},
+      Stockpile{.resources = 15, .destruct = 10, .fuel = 25, .crystals = 2});
+  stats.add_mob_points(player_t{1}, 50);
 
   process_planet_economy(em, star, planet, smap, stats);
 
@@ -2494,13 +2493,13 @@ void test_process_planet_economy() {
   test::expect_eq(planet.toxic(), 7);
 
   // Power metrics accumulated
-  test::expect_eq(stats.Power[player_t{1}].resource, 115);
-  test::expect_eq(stats.Power[player_t{1}].fuel, 75);
-  test::expect_eq(stats.Power[player_t{1}].destruct, 30);
-  test::expect_eq(stats.Power[player_t{1}].planets_owned, 1);
+  test::expect_eq(stats.power_stats(player_t{1}).resource, 115);
+  test::expect_eq(stats.power_stats(player_t{1}).fuel, 75);
+  test::expect_eq(stats.power_stats(player_t{1}).destruct, 30);
+  test::expect_eq(stats.power_stats(player_t{1}).planets_owned, 1);
 
   // Player 2 with 0 sectors owned has 0 power accumulation
-  test::expect_eq(stats.Power[player_t{2}].planets_owned, 0);
+  test::expect_eq(stats.power_stats(player_t{2}).planets_owned, 0);
 }
 
 void test_process_planet_economy_automated_waste_can() {
@@ -2575,8 +2574,7 @@ void test_reset_planet_turn_state() {
   TurnStats stats{};
   stats.Claims = true;
   stats.tot_captured = 4;
-  stats.prod_fuel[player_t{1}] = 10;
-  stats.prod_res[player_t{1}] = 20;
+  stats.record_production(player_t{1}, Stockpile{.resources = 20, .fuel = 10});
 
   reset_planet_turn_state(em, planet, stats);
 
@@ -2591,9 +2589,9 @@ void test_reset_planet_turn_state() {
   test::expect_eq(planet.info(player_t{1}).popn, 0);
   test::expect_eq(planet.info(player_t{1}).troops, 0);
   test::expect_eq(planet.info(player_t{1}).est_production, 0.0);
-  test::expect_eq(stats.prod_fuel[player_t{1}], 0);
-  test::expect_eq(stats.prod_res[player_t{1}], 0);
-  test::expect_true(stats.Compat[player_t{1}] > 0.0);
+  test::expect_eq(stats.production(player_t{1}).fuel, 0);
+  test::expect_eq(stats.production(player_t{1}).resources, 0);
+  test::expect_true(stats.compat(player_t{1}) > 0.0);
 }
 
 void test_process_planet_production() {
@@ -2628,10 +2626,10 @@ void test_process_planet_production() {
   s00.set_fert(20);
 
   TurnStats stats{};
-  stats.Compat[player_t{1}] = 100.0;
+  stats.set_compat(player_t{1}, 100.0);
 
   process_planet_production(em, star, planet, smap, stats);
-  test::expect_gt(stats.prod_res[player_t{1}], 0);
+  test::expect_gt(stats.production(player_t{1}).resources, 0);
 }
 
 void test_send_planet_turn_telegrams() {
@@ -2657,10 +2655,9 @@ void test_send_planet_turn_telegrams() {
   planet.info(player_t{1}).autorep = 2;
 
   TurnStats stats{};
-  stats.prod_res[player_t{1}] = 40;
-  stats.prod_fuel[player_t{1}] = 20;
-  stats.prod_destruct[player_t{1}] = 10;
-  stats.prod_crystals[player_t{1}] = 3;
+  stats.record_production(
+      player_t{1},
+      Stockpile{.resources = 40, .destruct = 10, .fuel = 20, .crystals = 3});
   stats.set_temp_add(star.star_id(), planet.planet_order(), 50);
   stats.tot_captured = 3;
 
@@ -2953,7 +2950,7 @@ int main() {
   test_64bit_production_and_stockpiles();
   std::println(std::cout, "PASS");
 
-  std::println(std::cout, "  Testing TurnStats PlayerVector accumulation... ");
+  std::println(std::cout, "  Testing TurnStats accumulation... ");
   test_turnstats_playervector_accumulation();
   std::println(std::cout, "PASS");
 

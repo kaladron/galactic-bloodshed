@@ -120,16 +120,16 @@ void test_enslave_maxplayers_boundary() {
   TestContext ctx;
   TestWorldBuilder(ctx)
       .add_race("Enslavers", 100.0, false, player_t{1})
-      .add_race("VictimMax", 100.0, false, player_t{MAXPLAYERS})
+      .add_race("VictimMax", 100.0, false, player_t{100})
       .add_star("Test Star", 100, starnum_t{1})
       .add_planet(1, PlanetType::EARTH);
 
   ctx.em.mutate_planet(1, 1, [](Planet& planet) {
     planet.info(player_t{1}).numsectsowned = 5;
-    planet.info(player_t{MAXPLAYERS}).popn = 1000;
-    planet.info(player_t{MAXPLAYERS}).numsectsowned = 5;
+    planet.info(player_t{100}).popn = 1000;
+    planet.info(player_t{100}).numsectsowned = 5;
     planet.info(player_t{1}).destruct = 1000;
-    planet.info(player_t{MAXPLAYERS}).destruct = 100;
+    planet.info(player_t{100}).destruct = 100;
     planet.free_slaves();
   });
 

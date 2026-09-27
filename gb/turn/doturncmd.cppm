@@ -13,8 +13,8 @@ import std;
 /// \brief Result structure from victory condition evaluation.
 export struct VictoryResult {
   bool game_over{false};
-  std::vector<player_t> big_winners;
-  std::vector<player_t> lesser_winners;
+  std::flat_set<player_t> big_winners;
+  std::flat_set<player_t> lesser_winners;
 };
 
 /// \brief Executes a turn simulation pass (movement segment or full turn

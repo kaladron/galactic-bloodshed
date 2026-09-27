@@ -177,7 +177,7 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
   if (!pl.is_valid(target_sector)) return std::nullopt;
 
   sector_count_t numdest{0};
-  PlayerVector<bool, MAXPLAYERS> nuked{};
+  std::flat_set<player_t> nuked{};
 
   double r = .4 * strength;
   if (caliber == guntype_t::NONE) {
@@ -193,7 +193,7 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
   auto& target = smap.get(target_sector);
   player_t oldowner = target.get_owner();
 
-  PlayerVector<int, MAXPLAYERS> sum_mob{};
+  std::flat_map<player_t, int> sum_mob{};
 
   for (auto y2 = 0; y2 < pl.dimensions().y; y2++) {
     for (auto x2 = 0; x2 < pl.dimensions().x; x2++) {
@@ -242,7 +242,7 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
         }
 
         if (round_rand(fac) > s.defense_bonus() * int_rand(0, 10)) {
-          if (s.get_owner() != 0) nuked[s.get_owner()] = true;
+          if (s.get_owner() != 0) nuked.insert(s.get_owner());
           s.clear_popn();
           s.set_troops(int_rand(0, (int)s.get_troops()));
           s.clear_owner_if_empty(); /* troops may survive this */
@@ -266,12 +266,14 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
   auto num_sectors = pl.num_sectors();
   for (const Race& race : RaceList::readonly(em)) {
     player_t i = race.Playernum;
-    if (!pl.has_info(i) && sum_mob[i] == 0) {
+    auto it = sum_mob.find(i);
+    int mob = (it != sum_mob.end()) ? it->second : 0;
+    if (!pl.has_info(i) && mob == 0) {
       continue;
     }
-    pl.info(i).mob_points = sum_mob[i];
-    pl.info(i).comread = sum_mob[i] / num_sectors;
-    pl.info(i).guns = planet_guns(sum_mob[i]);
+    pl.info(i).mob_points = mob;
+    pl.info(i).comread = mob / num_sectors;
+    pl.info(i).guns = planet_guns(mob);
   }
 
   /* planet toxicity goes up a bit */
@@ -284,7 +286,7 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
       short_msg + std::format("\t{} sectors destroyed\n", numdest);
   return BombardResult{
       .sectors_destroyed = numdest,
-      .nuked_players = nuked,
+      .nuked_players = std::move(nuked),
       .short_message = std::move(short_msg),
       .long_message = std::move(long_msg),
   };
@@ -719,12 +721,9 @@ void detonate_mine_against_planet(Ship& mine, const std::string& postmsg,
                 telegram << "\n";
 
                 const auto& star = *entity_manager.peek_star(mine.storbits());
-                for (const Race& race : RaceList::readonly(entity_manager)) {
-                  if (result_opt->nuked_players[race.Playernum]) {
-                    push_telegram(entity_manager, race.Playernum,
-                                  star.governor(race.Playernum),
-                                  telegram.str());
-                  }
+                for (player_t i : result_opt->nuked_players) {
+                  push_telegram(entity_manager, i, star.governor(i),
+                                telegram.str());
                 }
                 push_telegram(entity_manager, mine.owner(), mine.governor(),
                               telegram.str());

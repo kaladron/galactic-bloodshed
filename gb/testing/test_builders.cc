@@ -400,10 +400,8 @@ TestWorldBuilder::add_star(std::string_view name, ap_t initial_ap,
   starnum_t snum = explicit_snum.value_or(
       starnum_t{static_cast<starnum_t::value_type>(next_star_id_++)});
   Star star{snum, name};
-  for (player_t p : all_players()) {
-    star.AP(p) = initial_ap;
-  }
   for (player_t pid : registered_races_) {
+    star.AP(pid) = initial_ap;
     star.mark_explored_by(pid);
     star.mark_inhabited_by(pid);
   }

@@ -132,11 +132,75 @@ void test_turnstats_record_production() {
   stats.record_production(1, batch1);
   stats.record_production(1, batch2);
 
-  test::expect_eq(stats.prod_res[1], 40);
-  test::expect_eq(stats.prod_destruct[1], 15);
-  test::expect_eq(stats.prod_fuel[1], 80);
-  test::expect_eq(stats.prod_crystals[1], 3);
-  test::expect_eq(stats.prod_res[2], 0);
+  const auto& p1_prod = stats.production(1);
+  test::expect_eq(p1_prod.resources, 40);
+  test::expect_eq(p1_prod.destruct, 15);
+  test::expect_eq(p1_prod.fuel, 80);
+  test::expect_eq(p1_prod.crystals, 3);
+  test::expect_eq(stats.production(2).resources, 0);
+}
+
+void test_turnstats_player_and_star_accumulators() {
+  TurnStats stats{};
+
+  // Default read-only access returns zero without inserting
+  test::expect_eq(stats.star_player_stats(1, 1).popn, 0);
+  test::expect_eq(stats.star_player_stats(1, 1).num_ships, 0U);
+  test::expect_eq(stats.power_stats(1).popn, 0);
+  test::expect_eq(stats.mob_points(1), 0U);
+  test::expect_eq(stats.compat(1), 0.0);
+
+  // Mutate and verify arbitrary high IDs
+  stats.add_star_popn(500, 100, 8000);
+  stats.add_star_ships(500, 100, 12U);
+  stats.mutable_power_stats(100).popn = 10000;
+  stats.add_mob_points(100, 45U);
+  stats.set_compat(100, 85.5);
+
+  test::expect_eq(stats.star_player_stats(500, 100).popn, 8000);
+  test::expect_eq(stats.star_player_stats(500, 100).num_ships, 12U);
+  test::expect_eq(stats.power_stats(100).popn, 10000);
+  test::expect_eq(stats.mob_points(100), 45U);
+  test::expect_eq(stats.compat(100), 85.5);
+
+  // reset_planet_accumulators clears planetary production, mob_points, and
+  // compat while preserving star_player_stats and power_stats
+  stats.record_production(100, Stockpile{.resources = 50});
+  stats.reset_planet_accumulators();
+  test::expect_eq(stats.production(100).resources, 0);
+  test::expect_eq(stats.mob_points(100), 0U);
+  test::expect_eq(stats.compat(100), 0.0);
+  test::expect_eq(stats.star_player_stats(500, 100).popn, 8000);
+  test::expect_eq(stats.power_stats(100).popn, 10000);
+
+  // Bounds checking on 0 IDs
+  test::expect_throws<std::out_of_range>(
+      [&]() { (void)stats.star_player_stats(0, 1); });
+  test::expect_throws<std::out_of_range>(
+      [&]() { (void)stats.star_player_stats(1, 0); });
+  test::expect_throws<std::out_of_range>(
+      [&]() { stats.add_star_popn(0, 1, 10); });
+  test::expect_throws<std::out_of_range>(
+      [&]() { stats.add_star_popn(1, 0, 10); });
+  test::expect_throws<std::out_of_range>(
+      [&]() { stats.add_star_ships(0, 1, 1); });
+  test::expect_throws<std::out_of_range>(
+      [&]() { stats.add_star_ships(1, 0, 1); });
+  test::expect_throws<std::out_of_range>([&]() { (void)stats.power_stats(0); });
+  test::expect_throws<std::out_of_range>(
+      [&]() { (void)stats.mutable_power_stats(0); });
+  test::expect_throws<std::out_of_range>([&]() { (void)stats.production(0); });
+  test::expect_throws<std::out_of_range>(
+      [&]() { stats.record_production(0, Stockpile{}); });
+  test::expect_throws<std::out_of_range>(
+      [&]() { stats.spend_produced_resources(0, 1); });
+  test::expect_throws<std::out_of_range>(
+      [&]() { (void)stats.extract_slave_tribute(0); });
+  test::expect_throws<std::out_of_range>([&]() { (void)stats.mob_points(0); });
+  test::expect_throws<std::out_of_range>(
+      [&]() { stats.add_mob_points(0, 10); });
+  test::expect_throws<std::out_of_range>([&]() { (void)stats.compat(0); });
+  test::expect_throws<std::out_of_range>([&]() { stats.set_compat(0, 1.0); });
 }
 
 }  // namespace
@@ -162,6 +226,11 @@ int main() {
 
   std::println(std::cout, "  Testing TurnStats record_production... ");
   test_turnstats_record_production();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout,
+               "  Testing TurnStats player and star accumulators... ");
+  test_turnstats_player_and_star_accumulators();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "\nAll TurnStats unit tests passed!");

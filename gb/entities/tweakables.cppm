@@ -149,21 +149,6 @@ export constexpr ap_t FOREST_POINTS_HIGH = 3;
 export constexpr ap_t DESERT_POINTS_LOW = 2;
 export constexpr ap_t DESERT_POINTS_HIGH = 3;
 
-export constexpr int MAXPLAYERS = 64;
-
-/// \brief Returns whether the player ID represents a valid registered mortal
-/// player (1..MAXPLAYERS).
-export constexpr bool is_valid_player(player_t p) noexcept {
-  return p.value >= 1 && p.value <= MAXPLAYERS;
-}
-
-/// \brief Range view over all valid player IDs (1..MAXPLAYERS).
-export constexpr auto all_players() {
-  return std::views::iota(1, MAXPLAYERS + 1) | std::views::transform([](int i) {
-           return player_t{static_cast<player_t::value_type>(i)};
-         });
-}
-
 export constexpr int NAMESIZE = 18;
 
 export constexpr double TECH_INVEST = 0.01;  // invest factor

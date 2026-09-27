@@ -2,8 +2,7 @@
 
 /// \file glaze_schemas.cppm
 /// \brief Internal module partition providing shared Glaze JSON serialization
-/// traits for strong IDs, bounded/modular values, coordinates, and
-/// PlayerVector.
+/// traits for strong IDs, bounded/modular values, and coordinates.
 
 export module gb.repositories.glaze;
 
@@ -112,14 +111,6 @@ struct to<JSON, Modular<Tag, T, Modulus>> {
                  auto&& buf, auto&& ix) noexcept {
     serialize<JSON>::op<Opts>(m.value, ctx, buf, ix);
   }
-};
-
-template <typename T, std::size_t N>
-struct meta<PlayerVector<T, N>> {
-  using Type = PlayerVector<T, N>;
-  static constexpr auto value = [](auto&& self) -> auto& {
-    return self.raw_array();
-  };
 };
 
 template <>

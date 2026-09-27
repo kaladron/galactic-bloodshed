@@ -86,25 +86,9 @@ Race EnrollmentService::build_race(player_t playernum,
   race.turn = 0;
   race.init_leader(home_star, home_planet, spec.governor_password);
 
-  // Conditions copied from home planet if present in EntityManager
-  try {
-    entity_manager_.with_planet(home_star, home_planet, [&](const Planet& p) {
-      race.temp = p.rtemp();
-      for (AtmosphereConditions c : all_atmosphere_conditions) {
-        race.conditions[c] = p.conditions(c);
-      }
-    });
-  } catch (const EntityNotFoundError&) {
-  }
-
-  // Translation matrix
-  for (player_t p : all_players()) {
-    if (p == playernum || race.God) {
-      race.translate[p] = 100;
-    } else {
-      race.translate[p] = 1;
-    }
-  }
+  // Self-translation starts at 100%; foreign translation entries are populated
+  // sparsely upon contact or language discovery.
+  race.translate[playernum] = 100;
 
   // Racial characteristics
   race.mass = spec.mass;
@@ -138,15 +122,8 @@ Race EnrollmentService::build_race(player_t playernum,
 
 EnrollmentResult
 EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
-  // 1. Check player count limit
+  // 1. Assign next player ID
   player_t playernum{entity_manager_.num_races().value + 1};
-  if (playernum >= MAXPLAYERS) {
-    return EnrollmentResult{
-        .success = false,
-        .message = std::format("There are already {} players; No more allowed.",
-                               MAXPLAYERS - 1),
-    };
-  }
 
   // 2. Check God requirement for player 1
   if (playernum == 1 && !spec.is_god) {
@@ -227,6 +204,12 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
   // 5. Build and persist race first (with Gov_ship = std::nullopt) so parent
   // tbl_race(id) exists before child ship and sector foreign keys are inserted.
   Race race = build_race(playernum, spec, star, pnum);
+  entity_manager_.with_planet(star, pnum, [&](const Planet& p) {
+    race.temp = p.rtemp();
+    for (AtmosphereConditions c : all_atmosphere_conditions) {
+      race.conditions[c] = p.conditions(c);
+    }
+  });
   entity_manager_.create_race(race);
 
   // 7. Build and dock capital government ship, then link Race::Gov_ship

@@ -93,8 +93,8 @@ void show_planet_aliens(GameObj& g, const Planet& p, player_t playernum,
     return;
   }
   bool found_alien = false;
-  for (player_t i : all_players()) {
-    if (p.info(i).numsectsowned != 0 && i != playernum) {
+  for (const auto& [i, info] : p.info_map()) {
+    if (info.numsectsowned != 0 && i != playernum) {
       found_alien = true;
       g.out << std::format("{}{}", race.is_at_war_with(i) ? '*' : ' ', i);
     }

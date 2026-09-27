@@ -34,7 +34,7 @@ population_t attempt_colonist_migration(EntityManager& entity_manager,
   return entity_manager.with_race(
       source.get_owner(), [&](const Race& race) -> population_t {
         const population_t move = calculate_migrating_colonists(
-            race, stats.Compat[source.get_owner()], target_sector,
+            race, stats.compat(source.get_owner()), target_sector,
             available_migrants);
         if (move <= 0) {
           return 0;
@@ -52,15 +52,15 @@ void update_mobilization(Sector& s, const plinfo& pinf, TurnStats& stats) {
   player_t owner = s.get_owner();
 
   if (s.get_mobilization() < pinf.mob_set) {
-    if (pinf.resource + stats.prod_res[owner] > 0) {
+    if (pinf.resource + stats.production(owner).resources > 0) {
       s.adjust_mobilization(1);
-      stats.prod_res[owner] -= round_rand(MOB_COST);
+      stats.spend_produced_resources(owner, round_rand(MOB_COST));
     }
   } else if (s.get_mobilization() > pinf.mob_set) {
     s.adjust_mobilization(-1);
   }
 
-  stats.total_mob_points[owner] += s.get_mobilization();
+  stats.add_mob_points(owner, s.get_mobilization());
 }
 
 namespace {
@@ -71,7 +71,7 @@ void update_population_and_owner(EntityManager& entity_manager, Sector& s,
                                  const Race& race, const Star& star,
                                  const Planet& planet, TurnStats& stats) {
   auto maxsup =
-      maxsupport(race, s, stats.Compat[s.get_owner()], planet.toxic());
+      maxsupport(race, s, stats.compat(s.get_owner()), planet.toxic());
   s.add_popn(calculate_population_change(race, s, maxsup));
 
   // Handle troops maintenance costs - mutate race for governor update

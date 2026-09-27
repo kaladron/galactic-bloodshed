@@ -19,7 +19,10 @@ int main() {
   // Initialize database tables - this will create the tbl_power table
   initialize_schema(db);
 
-  PlayerVector<power, MAXPLAYERS> test_power;
+  std::flat_map<player_t, power> test_power;
+  for (player_t p : all_players()) {
+    test_power[p] = power{.id = p.value};
+  }
 
   // Initialize some test data for a few players
   test_power[1].id = 1;  // CRITICAL: Set power id
@@ -42,17 +45,12 @@ int main() {
   test_power[2].planets_owned = 2;
   test_power[2].money = 80000;
 
-  // Initialize remaining power entries to zero (but with id set)
-  for (player_t p = 3; p <= MAXPLAYERS; ++p) {
-    test_power[p] = power{.id = p.value};
-  }
-
   // Test EntityManager - stores and retrieves power data
   // First save using repository
   JsonStore store(db);
   RaceRepository race_repo(store);
   PowerRepository power_repo(store);
-  for (player_t p = 1; p <= MAXPLAYERS; ++p) {
+  for (player_t p : all_players()) {
     Race r{};
     r.Playernum = p;
     race_repo.save(r);
@@ -61,10 +59,10 @@ int main() {
 
   // Now use EntityManager to retrieve
   EntityManager em(db);
-  PlayerVector<power, MAXPLAYERS> loaded_power;
+  std::flat_map<player_t, power> loaded_power;
 
   // Retrieve from EntityManager
-  for (player_t p = 1; p <= MAXPLAYERS; ++p) {
+  for (player_t p : all_players()) {
     const auto* power_ptr = em.peek_power(powernum_t{p.value});
     test::expect_ne(power_ptr, nullptr);  // Should exist now
     loaded_power[p] = *power_ptr;

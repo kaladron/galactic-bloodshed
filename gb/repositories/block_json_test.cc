@@ -19,7 +19,10 @@ int main() {
   // Initialize database tables - this will create the tbl_block table
   initialize_schema(db);
 
-  PlayerVector<block, MAXPLAYERS> test_blocks;
+  std::flat_map<player_t, block> test_blocks;
+  for (player_t p : all_players()) {
+    test_blocks[p] = block{.Playernum = p};
+  }
 
   // Initialize some test data for a few players
   test_blocks[1].Playernum = 1;
@@ -40,17 +43,12 @@ int main() {
   test_blocks[2].VPs = 800;
   test_blocks[2].money = 30000;
 
-  // Initialize remaining blocks to empty (but with Playernum set)
-  for (player_t p = 3; p <= MAXPLAYERS; ++p) {
-    test_blocks[p] = block{.Playernum = p};
-  }
-
   // Test EntityManager - stores and retrieves block data
   // First save using repository
   JsonStore store(db);
   RaceRepository race_repo(store);
   BlockRepository block_repo(store);
-  for (player_t p = 1; p <= MAXPLAYERS; ++p) {
+  for (player_t p : all_players()) {
     Race r{};
     r.Playernum = p;
     race_repo.save(r);
@@ -59,8 +57,8 @@ int main() {
 
   // Now use EntityManager to retrieve and verify
   EntityManager em(db);
-  PlayerVector<block, MAXPLAYERS> retrieved_blocks;
-  for (player_t p = 1; p <= MAXPLAYERS; ++p) {
+  std::flat_map<player_t, block> retrieved_blocks;
+  for (player_t p : all_players()) {
     const auto* block_ptr = em.peek_block(blocknum_t{p.value});
     test::expect_ne(block_ptr, nullptr);  // Should exist now
     retrieved_blocks[p] = *block_ptr;

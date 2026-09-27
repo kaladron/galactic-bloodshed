@@ -109,6 +109,9 @@ public:
 
   /// Returns this race's translation knowledge [0, 100] toward `other`.
   [[nodiscard]] Percentage translation_for(player_t other) const noexcept {
+    if (God || other == Playernum) {
+      return Percentage{100};
+    }
     const auto it = translate.find(other);
     return (it != translate.end()) ? it->second : Percentage{0};
   }
@@ -441,13 +444,13 @@ public:
 };
 
 export struct power {
-  int id{0};                   // Power entry ID for database persistence
-  population_t troops{0};      /* total troops */
-  population_t popn{0};        /* total population */
-  resource_t resource{0};      /* total resource in stock */
-  resource_t fuel{0};          /* total fuel in stock */
-  resource_t destruct{0};      /* total dest in stock */
-  ship_count_t ships_owned{0}; /* # of ships owned */
+  int id{0};                    // Power entry ID for database persistence
+  population_t troops{0};       /* total troops */
+  population_t popn{0};         /* total population */
+  resource_t resource{0};       /* total resource in stock */
+  resource_t fuel{0};           /* total fuel in stock */
+  resource_t destruct{0};       /* total dest in stock */
+  std::uint32_t ships_owned{0}; /* # of ships owned */
   planet_count_t planets_owned{0};
   money_t money{0};
 };
@@ -459,11 +462,11 @@ export struct block {
   std::flat_set<player_t> invited{};
   std::flat_set<player_t> pledged{};
   std::uint32_t members{0};
-  population_t popn{0};        /* total population */
-  resource_t resource{0};      /* total resource in stock */
-  resource_t fuel{0};          /* total fuel in stock */
-  resource_t destruct{0};      /* total dest in stock */
-  ship_count_t ships_owned{0}; /* # of ships owned */
+  population_t popn{0};         /* total population */
+  resource_t resource{0};       /* total resource in stock */
+  resource_t fuel{0};           /* total fuel in stock */
+  resource_t destruct{0};       /* total dest in stock */
+  std::uint32_t ships_owned{0}; /* # of ships owned */
   planet_count_t systems_owned{0};
   victory_score_t VPs{0};
   money_t money{0};

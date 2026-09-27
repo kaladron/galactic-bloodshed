@@ -67,10 +67,10 @@ Planet createTestPlanet(unsigned char maxx = 10, unsigned char maxy = 10) {
   planet.toxic() = 0;
 
   // Initialize player info
-  for (int i = 1; i <= MAXPLAYERS; i++) {
-    planet.info(player_t{i}).tax = 0;
-    planet.info(player_t{i}).mob_set = 0;
-    planet.info(player_t{i}).resource = 0;
+  for (player_t p : all_players()) {
+    planet.info(p).tax = 0;
+    planet.info(p).mob_set = 0;
+    planet.info(p).resource = 0;
   }
 
   return planet;
@@ -233,10 +233,10 @@ void test_planet_creation() {
   test::expect_eq(asteroid.type(), PlanetType::ASTEROID);
 
   // Test player info initialization
-  for (int i = 1; i <= MAXPLAYERS; i++) {
-    test::expect_eq(planet.info(player_t{i}).tax, 0);
-    test::expect_eq(planet.info(player_t{i}).mob_set, 0);
-    test::expect_eq(planet.info(player_t{i}).resource, 0);
+  for (player_t p : all_players()) {
+    test::expect_eq(planet.info(p).tax, 0);
+    test::expect_eq(planet.info(p).mob_set, 0);
+    test::expect_eq(planet.info(p).resource, 0);
   }
 }
 
@@ -345,18 +345,18 @@ void test_edge_cases() {
 
   // Test sectors with maximum values
   auto max_sector = createTestSector(255, 255, 100, 100, 100, 255, 65535,
-                                     1000000, 1000000, MAXPLAYERS - 1);
+                                     1000000, 1000000, 100);
   test::expect_eq(max_sector.coords(), Coordinates{255, 255});
   test::expect_eq(max_sector.get_eff(), 100);
   test::expect_eq(max_sector.get_fert(), 100);
 
   // Test race with extreme values
-  auto extreme_race = createTestRace(MAXPLAYERS - 1);
+  auto extreme_race = createTestRace(100);
   extreme_race.metabolism = 10.0;
   extreme_race.birthrate = 1.0;
   extreme_race.adventurism = 2.0;
 
-  test::expect_eq(extreme_race.Playernum, MAXPLAYERS - 1);
+  test::expect_eq(extreme_race.Playernum, 100);
   test::expect_eq(extreme_race.metabolism, 10.0);
   test::expect_eq(extreme_race.birthrate, 1.0);
   test::expect_eq(extreme_race.adventurism, 2.0);
@@ -433,7 +433,7 @@ void test_produce_and_troop_maintenance() {
 
   Sector s = createTestSector(0, 0, 50, 50, 0, 0, 100, 1000, 50, player_t{1});
   TurnStats stats{};
-  stats.Compat[player_t{1}] = 1.0;
+  stats.set_compat(player_t{1}, 1.0);
 
   produce(em, star, planet, s, stats);
 
@@ -453,21 +453,23 @@ void test_update_mobilization() {
       createTestSector(0, 0, 50, 50, 10, 0, 100, 1000, 0, player_t{1});
   update_mobilization(low_mob, pinf, stats);
   test::expect_eq(low_mob.get_mobilization(), 11);
-  test::expect_eq(stats.total_mob_points[player_t{1}], 11U);
+  test::expect_eq(stats.mob_points(player_t{1}), 11U);
 
   // 2. Sector mobilization above target: decreases by 1, tracks stats
   Sector high_mob =
       createTestSector(0, 0, 50, 50, 25, 0, 100, 1000, 0, player_t{1});
   update_mobilization(high_mob, pinf, stats);
   test::expect_eq(high_mob.get_mobilization(), 24);
-  test::expect_eq(stats.total_mob_points[player_t{1}], 35U);  // 11 + 24 = 35
+  test::expect_eq(stats.mob_points(player_t{1}),
+                  35U);  // 11 + 24 = 35
 
   // 3. Sector mobilization at target: remains unchanged
   Sector equal_mob =
       createTestSector(0, 0, 50, 50, 20, 0, 100, 1000, 0, player_t{1});
   update_mobilization(equal_mob, pinf, stats);
   test::expect_eq(equal_mob.get_mobilization(), 20);
-  test::expect_eq(stats.total_mob_points[player_t{1}], 55U);  // 35 + 20 = 55
+  test::expect_eq(stats.mob_points(player_t{1}),
+                  55U);  // 35 + 20 = 55
 
   // 4. Insufficient resources: mobilization cannot increase
   plinfo poor_pinf{};
@@ -478,7 +480,7 @@ void test_update_mobilization() {
       createTestSector(0, 0, 50, 50, 10, 0, 100, 1000, 0, player_t{1});
   update_mobilization(poor_mob, poor_pinf, zero_res_stats);
   test::expect_eq(poor_mob.get_mobilization(), 10);
-  test::expect_eq(zero_res_stats.total_mob_points[player_t{1}], 10U);
+  test::expect_eq(zero_res_stats.mob_points(player_t{1}), 10U);
 }
 
 void test_produce_sector_lifecycle() {
@@ -503,21 +505,21 @@ void test_produce_sector_lifecycle() {
   Sector s = createTestSector(0, 0, 100, 50, 0, 2, 500, 1000, 0, player_t{1},
                               SectorType::SEC_LAND, SectorType::SEC_LAND);
   TurnStats stats{};
-  stats.Compat[player_t{1}] = 1.0;
+  stats.set_compat(player_t{1}, 1.0);
 
   produce(em, star, planet, s, stats);
 
   // Verifies production was routed to TurnStats
-  test::expect_true(stats.prod_res[player_t{1}] > 0);
-  test::expect_true(stats.prod_fuel[player_t{1}] > 0);
+  test::expect_true(stats.production(player_t{1}).resources > 0);
+  test::expect_true(stats.production(player_t{1}).fuel > 0);
 
   // Verifies crystal was mined
   test::expect_eq(s.get_crystals(), 1);
-  test::expect_eq(stats.prod_crystals[player_t{1}], 1);
+  test::expect_eq(stats.production(player_t{1}).crystals, 1);
 
   // Verifies mobilization was incremented towards target
   test::expect_eq(s.get_mobilization(), 1);
-  test::expect_eq(stats.total_mob_points[player_t{1}], 1U);
+  test::expect_eq(stats.mob_points(player_t{1}), 1U);
 
   // Verifies sector at 100% efficiency was plated
   test::expect_eq(s.get_condition(), SectorType::SEC_PLATED);
@@ -554,7 +556,7 @@ void test_spread_population() {
   center.set_fert(0);
 
   TurnStats stats{};
-  stats.Compat[player_t{1}] = 1.0;
+  stats.set_compat(player_t{1}, 1.0);
 
   spread(em, planet, center, smap, stats);
 
@@ -663,7 +665,7 @@ void test_attempt_colonist_migration() {
   source.set_popn_exact(1000);
 
   TurnStats stats{};
-  stats.Compat[player_t{1}] = 1.0;
+  stats.set_compat(player_t{1}, 1.0);
 
   // 1. Zero or negative available migrants rejected
   test::expect_eq(attempt_colonist_migration(em, planet, source,
@@ -758,7 +760,7 @@ void test_spread_toroidal_wrapping() {
   west_edge.set_fert(0);
 
   TurnStats stats{};
-  stats.Compat[player_t{1}] = 1.0;
+  stats.set_compat(player_t{1}, 1.0);
 
   // Attempt direct migration across western meridian to x=4
   population_t moved = attempt_colonist_migration(
@@ -897,7 +899,7 @@ void test_spread_edge_cases() {
   slave_sector.set_fert(0);
 
   TurnStats stats{};
-  stats.Compat[player_t{1}] = 1.0;
+  stats.set_compat(player_t{1}, 1.0);
   spread(em, planet, slave_sector, smap, stats);
 
   test::expect_eq(slave_sector.get_popn(), 5000);

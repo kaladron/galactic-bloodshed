@@ -28,7 +28,7 @@ shoot_planet_to_ship(EntityManager& em, Race& race, Ship& target,
 
 export struct BombardResult {
   sector_count_t sectors_destroyed{0};
-  PlayerVector<bool, MAXPLAYERS> nuked_players{};
+  std::flat_set<player_t> nuked_players{};
   std::string short_message;
   std::string long_message;
 };

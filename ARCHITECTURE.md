@@ -90,7 +90,7 @@ Galactic Bloodshed uses **C++26 modules** to enforce architectural boundaries. S
     - Geoengineering: `TerraformerShip` $\to$ `GroundPlowShip` (surface order queues and plowing)
     - Cargo Transfer: `TransporterShip` (target recipient vessels)
     - Ecological Containment: `ToxicWasteShip` (planetary toxin harvesting and storage)
-  - Type-safe IDs (`player_t`, `shipnum_t`, `starnum_t`, `planetnum_t`, `commodnum_t`, `blocknum_t`, `powernum_t` — all top-level entity primary keys are uniformly 1-based `>= 1`, while sub-entity array/grid indices like `governor_t` and sector `(x, y)` coordinates remain 0-based), semantic metric aliases (`armor_t`, `damage_t`, `speed_t`, `radiation_t`, `fuel_t`, `gun_count_t`, `bearing_t`, `hangar_t`, `ship_size_t`, `weapon_power_t`), `PlayerVector<T, N>`, `Coordinates`
+  - Type-safe IDs (`player_t`, `governor_t`, `shipnum_t`, `starnum_t`, `planetnum_t`, `commodnum_t`, `blocknum_t`, `powernum_t` — all entity and governor primary keys are uniformly 1-based `>= 1`, while sector `(x, y)` coordinates remain 0-based), semantic metric aliases (`armor_t`, `damage_t`, `speed_t`, `radiation_t`, `fuel_t`, `gun_count_t`, `bearing_t`, `hangar_t`, `ship_size_t`, `weapon_power_t`), sparse `std::flat_map` / `std::flat_set` per-player and per-governor containers, `Coordinates`
   - First-class domain methods and computed predicates (`Ship::is_docked()`, `Ship::refuel_from_gas_giant()`, `Ship::process_radiation()`, `Ship::prepare_for_flight()`, `Planet::update_toxicity()`, `Planet::process_toxic_environmental_damage()`, `Planet::select_victim_to_steal_from()`, `SectorMap::process_supernova_devastation()`, `AutonomousShip::mine_sector()`, `AutonomousShip::roam_to_adjacent_sector()`)
   - Configuration constants (`Tweakables`), random utilities (`rand.cppm`), ship templates (`ship_templates.cppm`), and ship filters (`shipfilter.cppm`)
 
@@ -1061,7 +1061,7 @@ gb/
 │
 ├── entities/                    # Tier-1 Domain Entities & Types (gb.entities)
 │   ├── entities.cppm           # Domain entities module interface
-│   ├── types.cppm              # Strong ID types & PlayerVector<T, N>
+│   ├── types.cppm              # Strong ID types & semantic metric aliases
 │   ├── domain_types.cppm       # Coordinates, Stockpile, ServerState
 │   ├── race.cppm / .cc         # Race & alliance block domain models
 │   ├── star.cppm / .cc         # Star system domain model
@@ -1073,7 +1073,7 @@ gb/
 │   │   ├── ship_templates.cppm # Static ship hull specifications
 │   │   ├── ship_base.cppm / .cc        # Base Ship class
 │   │   └── ship_subclasses.cppm / .cc  # Specialized Ship subclasses & ShipFactory
-│   ├── universe.cppm           # Universe & VN index structures
+│   ├── universe.cppm           # Universe & VnTargetRecord structures
 │   └── *_test.cc               # Entity unit tests
 │
 ├── repositories/                # Tier-2 Repository DAL Adapters (gb.repositories)
@@ -1103,7 +1103,7 @@ gb/
 │
 ├── turn/                        # Tier-5 Turn Simulation Engine (gb.turn)
 │   ├── turn.cppm               # Turn engine module interface
-│   ├── turnstats.cppm          # TurnStats per-turn accumulator
+│   ├── turnstats.cppm          # TurnStats sparse per-turn accumulator (StarPlayerStats, Stockpile)
 │   ├── bombard.cppm / .cc      # Autonomous orbital bombardment pass
 │   ├── doplanet.cppm / .cc     # Planetary lifecycle & ground vehicle pass
 │   ├── dosector.cppm / .cc     # Sector production, migration & spread pass

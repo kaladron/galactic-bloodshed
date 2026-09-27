@@ -205,7 +205,7 @@ void test_universe_repository() {
 
   // Test data - universe_struct is typically a singleton
   universe_struct sd{};
-  for (player_t p = 1; p <= MAXPLAYERS; ++p) {
+  for (player_t p : all_players()) {
     sd.set_AP(p, static_cast<ap_t>((p.value - 1) * 10));
   }
   sd.vn_target(1) = VnTargetRecord{
@@ -229,7 +229,7 @@ void test_universe_repository() {
   test::expect_eq(retrieved->vn_hits(1), 9U);
 
   // Map preservation
-  for (player_t p = 1; p <= MAXPLAYERS; ++p) {
+  for (player_t p : all_players()) {
     test::expect_eq(retrieved->get_AP(p),
                     static_cast<ap_t>((p.value - 1) * 10));
   }

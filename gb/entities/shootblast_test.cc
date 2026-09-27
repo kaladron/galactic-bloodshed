@@ -185,7 +185,7 @@ void test_shoot_ship_to_planet_valid_attack() {
   test::expect_ge(res->sectors_destroyed, 0);
   test::expect_false(res->short_message.empty());
   test::expect_false(res->long_message.empty());
-  test::expect_true(res->nuked_players[player_t{2}]);
+  test::expect_true(res->nuked_players.contains(player_t{2}));
 
   std::println(std::cout,
                "  ✓ shoot_ship_to_planet valid attack passed (numdest={})",

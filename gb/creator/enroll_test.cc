@@ -37,15 +37,19 @@ void test_enroll_first_race_god_requirement() {
   std::println(std::cout, "  ✓ God race requirement check passed");
 }
 
-void test_enroll_max_players() {
-  std::println(std::cout, "Test: Max player limit enforcement");
+void test_enroll_unbounded_players() {
+  std::println(std::cout, "Test: Unbounded player enrollment beyond 64");
 
   Database db(":memory:");
   initialize_schema(db);
   JsonStore store(db);
-  RaceRepository races(store);
 
-  for (int i = 1; i < MAXPLAYERS; ++i) {
+  universe_struct us{};
+  UniverseRepository univ_repo(store);
+  univ_repo.save(us);
+
+  RaceRepository races(store);
+  for (int i = 1; i <= 64; ++i) {
     Race r{};
     r.Playernum = i;
     r.name = std::format("Race{}", i);
@@ -53,19 +57,30 @@ void test_enroll_max_players() {
   }
 
   EntityManager em(db);
+  TestStarBuilder(em, db, "Sol", 1).build();
+  TestPlanetBuilder(em, db, 1, PlanetType::MARS, Coordinates{5, 5}, 1)
+      .named("Ares")
+      .build();
+  TestPlanetBuilder(em, db, 1, PlanetType::EARTH, Coordinates{5, 5}, 2)
+      .named("Terra")
+      .with_temperature(20)
+      .with_all_sectors(SectorType::SEC_LAND)
+      .build();
+
   GB::creator::EnrollmentService service(em);
 
   GB::creator::RaceEnrollmentSpec spec{
-      .name = "Overflow",
+      .name = "Empire65",
       .password = "secret",
+      .home_planet_type = PlanetType::EARTH,
       .is_god = true,
   };
 
   auto result = service.enroll_player(spec);
-  test::expect_false(result.success);
-  test::expect_contains(result.message, "No more allowed.");
+  test::expect_true(result.success);
+  test::expect_eq(result.player_num, player_t{65});
 
-  std::println(std::cout, "  ✓ Max player limit enforcement passed");
+  std::println(std::cout, "  ✓ Unbounded player enrollment passed");
 }
 
 void test_enroll_no_free_planet_type() {
@@ -297,7 +312,7 @@ void test_enroll_valid_race_success() {
 
 int main() {
   test_enroll_first_race_god_requirement();
-  test_enroll_max_players();
+  test_enroll_unbounded_players();
   test_enroll_no_free_planet_type();
   test_find_suitable_planet_deterministic_search();
   test_enroll_valid_race_success();

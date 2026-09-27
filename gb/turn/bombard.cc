@@ -81,9 +81,8 @@ void dispatch_bombardment_alerts(EntityManager& entity_manager,
       ship.type_letter(), ship.number(), ship.name(), target,
       sectors_destroyed);
 
-  for (const Race& race : RaceList::readonly(entity_manager)) {
-    player_t i = race.Playernum;
-    if (result.nuked_players[i] && i != ship.owner()) {
+  for (player_t i : result.nuked_players) {
+    if (i != ship.owner()) {
       push_telegram(entity_manager, i, star.governor(i), telegram_alert.str());
     }
   }

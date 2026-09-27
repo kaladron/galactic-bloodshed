@@ -30,12 +30,12 @@ int main() {
   test_star.gravity = 1.0;
   test_star.star_id = 1;
 
-  // Initialize governor array
+  // Initialize governor map
   for (player_t p : all_players()) {
     test_star.governor[p] = static_cast<governor_t>(p.value);
   }
 
-  // Initialize AP array
+  // Initialize AP map
   for (player_t p : all_players()) {
     test_star.AP[p] = (p.value - 1) * 100;
   }
@@ -74,12 +74,12 @@ int main() {
   test::expect_eq(retrieved.temperature, test_star.temperature);
   test::expect_eq(retrieved.gravity, test_star.gravity);
 
-  // Verify governor array
+  // Verify governor map
   for (player_t p : all_players()) {
     test::expect_eq(retrieved.governor[p], test_star.governor[p]);
   }
 
-  // Verify AP array
+  // Verify AP map
   for (player_t p : all_players()) {
     test::expect_eq(retrieved.AP[p], test_star.AP[p]);
   }

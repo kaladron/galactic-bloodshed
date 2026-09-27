@@ -71,8 +71,8 @@ void verify_universe_invariants(EntityManager& em, std::source_location loc) {
     }
   }
 
-  // 3. Ships have valid numbers, valid owner (if alive), owner <= MAXPLAYERS,
-  // and governor >= 1
+  // 3. Ships have valid numbers, valid owner (if alive), owner exists in
+  // RaceList, and governor >= 1
   for (const Ship& ship :
        ShipList::readonly(em, ShipList::IterationType::All)) {
     if (ship.alive()) {
@@ -80,8 +80,8 @@ void verify_universe_invariants(EntityManager& em, std::source_location loc) {
           ship.owner().value, 1,
           std::format("Alive ship #{} has invalid owner 0", ship.number()),
           loc);
-      expect_le(ship.owner().value, MAXPLAYERS,
-                std::format("Alive ship #{} has owner {} > MAXPLAYERS",
+      expect_ne(em.peek_race(ship.owner()), nullptr,
+                std::format("Alive ship #{} has non-existent owner {}",
                             ship.number(), ship.owner().value),
                 loc);
       expect_ge(ship.governor().value, 1,
@@ -91,11 +91,11 @@ void verify_universe_invariants(EntityManager& em, std::source_location loc) {
     }
   }
 
-  // 4. Commodities have valid owner <= MAXPLAYERS and governor >= 1
+  // 4. Commodities have valid owner existing in RaceList and governor >= 1
   for (const Commod& commod : CommodList::readonly(em)) {
     if (commod.owner.value > 0) {
-      expect_le(commod.owner.value, MAXPLAYERS,
-                std::format("Commodity #{} has owner {} > MAXPLAYERS",
+      expect_ne(em.peek_race(commod.owner), nullptr,
+                std::format("Commodity #{} has non-existent owner {}",
                             commod.id, commod.owner.value),
                 loc);
       expect_ge(commod.governor.value, 1,

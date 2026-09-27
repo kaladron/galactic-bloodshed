@@ -11,32 +11,23 @@ module gb.services;
 
 bool GameObj::deduct_ap(starnum_t snum, ap_t amount) {
   if (amount == 0 || god_) return true;
-  try {
-    const auto* star = entity_manager.peek_star(snum);
-    if (!star || star->AP(player_) < amount) {
-      return false;
-    }
-    entity_manager.mutate_star(snum, [&](Star& s) { s.AP(player_) -= amount; });
-    return true;
-  } catch (const EntityNotFoundError&) {
+  const auto* star = entity_manager.peek_star(snum);
+  if (star->AP(player_) < amount) {
     return false;
   }
+  entity_manager.mutate_star(snum, [&](Star& s) { s.AP(player_) -= amount; });
+  return true;
 }
 
 bool GameObj::deduct_univ_ap(ap_t amount) {
   if (amount == 0 || god_) return true;
-  if (player_ == 0 || player_ > MAXPLAYERS) return false;
-  try {
-    const auto* univ = entity_manager.peek_universe();
-    if (!univ || univ->get_AP(player_) < amount) {
-      return false;
-    }
-    entity_manager.mutate_universe(
-        [&](universe_struct& u) { u.deduct_AP(player_, amount); });
-    return true;
-  } catch (const EntityNotFoundError&) {
+  const auto* univ = entity_manager.peek_universe();
+  if (univ->get_AP(player_) < amount) {
     return false;
   }
+  entity_manager.mutate_universe(
+      [&](universe_struct& u) { u.deduct_AP(player_, amount); });
+  return true;
 }
 
 bool GameObj::check_commandable(const Ship& ship) {

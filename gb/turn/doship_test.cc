@@ -1713,14 +1713,14 @@ void test_accumulate_ship_power_stats() {
   Ship star_ship{star_ship_data};
 
   accumulate_ship_power_stats(star_ship, stats, true);
-  test::expect_eq(stats.Power[player_t{1}].ships_owned, 1);
-  test::expect_eq(stats.Power[player_t{1}].fuel, 25.0);
-  test::expect_eq(stats.Power[player_t{1}].destruct, 5);
-  test::expect_eq(stats.Power[player_t{1}].resource, 50);
-  test::expect_eq(stats.Power[player_t{1}].popn, 10);
-  test::expect_eq(stats.Power[player_t{1}].troops, 4);
-  test::expect_eq(stats.starnumships[1][player_t{1}], 1);
-  test::expect_eq(stats.starpopns[1][player_t{1}], 10);
+  test::expect_eq(stats.power_stats(player_t{1}).ships_owned, 1U);
+  test::expect_eq(stats.power_stats(player_t{1}).fuel, 25.0);
+  test::expect_eq(stats.power_stats(player_t{1}).destruct, 5);
+  test::expect_eq(stats.power_stats(player_t{1}).resource, 50);
+  test::expect_eq(stats.power_stats(player_t{1}).popn, 10);
+  test::expect_eq(stats.power_stats(player_t{1}).troops, 4);
+  test::expect_eq(stats.star_player_stats(1, player_t{1}).num_ships, 1U);
+  test::expect_eq(stats.star_player_stats(1, player_t{1}).popn, 10);
 
   // 2. Deep space ship in LEVEL_UNIV does not increment star-level census
   ship_struct univ_ship_data{
@@ -1733,10 +1733,8 @@ void test_accumulate_ship_power_stats() {
   Ship univ_ship{univ_ship_data};
 
   accumulate_ship_power_stats(univ_ship, stats, false);
-  test::expect_eq(stats.starnumships[1][player_t{1}], 1);
-  test::expect_eq(stats.starpopns[1][player_t{1}], 10);
-  test::expect_eq(stats.starnumships[0][player_t{1}], 0);
-  test::expect_eq(stats.starpopns[0][player_t{1}], 0);
+  test::expect_eq(stats.star_player_stats(1, player_t{1}).num_ships, 1U);
+  test::expect_eq(stats.star_player_stats(1, player_t{1}).popn, 10);
 }
 
 void test_special_subsystems_extended() {

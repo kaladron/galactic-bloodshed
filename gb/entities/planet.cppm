@@ -298,7 +298,7 @@ export struct planet_struct {
   SystemCoordinates system_coordinates{0.0, 0.0};
   Coordinates dimensions{0, 0};
 
-  PlayerVector<plinfo, MAXPLAYERS> info;
+  std::flat_map<player_t, plinfo> info{};
   temperature_t rtemp{0};
   temperature_t temp{0};
   Percentage toxic{0};
@@ -507,28 +507,60 @@ public:
     return data_.planet_order;
   }
 
-  // Array accessors with bounds checking
+  // Per-player colony information accessors (1-based player ID)
+  [[nodiscard]] bool has_info(player_t player) const noexcept {
+    return data_.info.contains(player);
+  }
+  [[nodiscard]] const std::flat_map<player_t, plinfo>&
+  info_map() const noexcept {
+    return data_.info;
+  }
+  [[nodiscard]] std::flat_map<player_t, plinfo>& info_map() noexcept {
+    return data_.info;
+  }
   [[nodiscard]] const plinfo& info(player_t player) const {
-    return data_.info[player];
+    if (player < 1) {
+      throw std::out_of_range(std::format(
+          "Player ID {} out of range (must be >= 1)", player.value));
+    }
+    static const plinfo default_info{};
+    const auto it = data_.info.find(player);
+    return (it != data_.info.end()) ? it->second : default_info;
   }
   plinfo& info(player_t player) {
+    if (player < 1) {
+      throw std::out_of_range(std::format(
+          "Player ID {} out of range (must be >= 1)", player.value));
+    }
     return data_.info[player];
   }
   [[nodiscard]] const plinfo& info(const Race& race) const {
-    return data_.info[race.Playernum];
+    return info(race.Playernum);
   }
   plinfo& info(const Race& race) {
-    return data_.info[race.Playernum];
+    return info(race.Playernum);
   }
 
   /// \brief Returns whether this planet has been explored by the given player.
-  [[nodiscard]] constexpr bool is_explored_by(player_t player) const noexcept {
-    return data_.info[player].explored;
+  [[nodiscard]] bool is_explored_by(player_t player) const {
+    return info(player).explored;
   }
 
   /// \brief Marks this planet as explored by the given player.
-  constexpr void mark_explored_by(player_t player) noexcept {
-    data_.info[player].explored = true;
+  void mark_explored_by(player_t player) {
+    info(player).explored = true;
+  }
+
+  /// \brief Returns the number of sectors owned by the given player on this
+  /// planet without inserting into the colony map.
+  [[nodiscard]] sector_count_t sectors_owned_by(player_t player) const {
+    return info(player).numsectsowned;
+  }
+
+  /// \brief Returns the number of sectors owned by the given race on this
+  /// planet without inserting into the colony map.
+  [[nodiscard]] sector_count_t sectors_owned_by(const Race& race) const {
+    return sectors_owned_by(race.Playernum);
   }
 
   [[nodiscard]] constexpr temperature_t rtemp() const noexcept {
@@ -625,7 +657,7 @@ public:
   /// revolt.
   [[nodiscard]] bool is_slave_revolt_triggered() const noexcept {
     if (!data_.slaved_to) return false;
-    return data_.info[*data_.slaved_to].popn <= (data_.popn / 1000);
+    return info(*data_.slaved_to).popn <= (data_.popn / 1000);
   }
 
   /// \brief Calculates the number of random sectors devastated during a slave

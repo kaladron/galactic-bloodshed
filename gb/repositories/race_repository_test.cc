@@ -53,7 +53,6 @@ int main() {
   test_race.planet_points = 100;
   test_race.translate[player_t{1}] = 100;
   test_race.translate[player_t{2}] = 75;
-  test_race.points[player_t{2}] = 350;
   test_race.declare_alliance_with(player_t{2});
   test_race.declare_alliance_with(player_t{4});
   test_race.declare_war_on(player_t{3});
@@ -141,8 +140,6 @@ int main() {
                   test_race.translate[player_t{1}]);
   test::expect_eq(retrieved->translate[player_t{2}],
                   test_race.translate[player_t{2}]);
-  test::expect_eq(retrieved->points[player_t{2}],
-                  test_race.points[player_t{2}]);
   test::expect_eq(retrieved->leader().name, test_race.leader().name);
   test::expect_eq(retrieved->leader().money, test_race.leader().money);
   test::expect_true(retrieved->leader().newspos == test_race.leader().newspos);

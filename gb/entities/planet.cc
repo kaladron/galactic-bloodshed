@@ -194,7 +194,7 @@ void Planet::move_sector_population(Sector& from, Sector& to, player_t player,
 void Planet::sync_demographics(const SectorMap& smap) noexcept {
   data_.popn = 0;
   data_.troops = 0;
-  for (plinfo& pinfo : data_.info) {
+  for (auto [_, pinfo] : data_.info) {
     pinfo.popn = 0;
     pinfo.troops = 0;
     pinfo.numsectsowned = 0;

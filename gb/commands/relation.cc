@@ -39,13 +39,14 @@ bool relation(const command_t& argv, GameObj& g) {
           << " -       ----             ---------       -----        ------\n";
       for (const Race& r : RaceList::readonly(g.entity_manager)) {
         if (r.Playernum == race.Playernum) continue;
-        g.out << std::format(
-            "{:2} {:5} ({:3d}%) {:>20.20} : {:>10}   {:>10}\n", r.Playernum,
-            ((race.God || (race.translate[r] > 30)) && r.Metamorph &&
-             (Playernum == q))
-                ? "Morph"
-                : "     ",
-            race.translate[r], r.name, allied(race, r.Playernum), allied(r, q));
+        g.out << std::format("{:2} {:5} ({:3d}%) {:>20.20} : {:>10}   {:>10}\n",
+                             r.Playernum,
+                             ((race.God || (race.translation_for(r) > 30)) &&
+                              r.Metamorph && (Playernum == q))
+                                 ? "Morph"
+                                 : "     ",
+                             race.translation_for(r), r.name,
+                             allied(race, r.Playernum), allied(r, q));
       }
     });
   } catch (const EntityNotFoundError&) {

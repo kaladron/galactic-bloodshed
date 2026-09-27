@@ -104,12 +104,24 @@ public:
   bool Guest{false};     /* Player is a guest race. */
   bool Metamorph{false}; /* Player is a morph; (for printing). */
 
-  PlayerVector<int, MAXPLAYERS> translate; /* translation mod for each player */
+  std::flat_map<player_t, Percentage>
+      translate{}; /* translation mod for each player */
+
+  /// Returns this race's translation knowledge [0, 100] toward `other`.
+  [[nodiscard]] Percentage translation_for(player_t other) const noexcept {
+    const auto it = translate.find(other);
+    return (it != translate.end()) ? it->second : Percentage{0};
+  }
+
+  /// Returns this race's translation knowledge [0, 100] toward `other`.
+  [[nodiscard]] Percentage translation_for(const Race& other) const noexcept {
+    return translation_for(other.Playernum);
+  }
 
   /// Increases this race's translation knowledge of `other` by `amount`,
   /// clamped to [0, 100].
   void increase_translation(player_t other, int amount = 5) noexcept {
-    translate[other] = std::clamp(translate[other] + amount, 0, 100);
+    translate[other].adjust(amount);
   }
 
   std::flat_set<player_t> atwar{};
@@ -139,16 +151,11 @@ public:
     return Gov_ship.has_value();
   }
   long morale{0}; /* race's morale level */
-  PlayerVector<std::uint32_t, MAXPLAYERS>
-      points; /* keep track of war status against another player - for short
-                 reports */
 
-  /// Adjusts morale and combat victory points following a combat victory over
-  /// loser.
+  /// Adjusts morale following a combat victory over loser.
   void adjust_morale(Race& loser, int amount) noexcept {
     morale += amount;
     loser.morale -= amount;
-    points[loser] += amount;
   }
   planet_count_t controlled_planets{0}; /* Number of planets under control. */
   turn_t victory_turns{0};
@@ -409,8 +416,9 @@ public:
     requires(std::is_arithmetic_v<T> || std::convertible_to<T, int>)
   [[nodiscard]] std::string estimate(const T data,
                                      const player_t target) const {
-    if (translate[target] > 10) {
-      int k = 101 - std::min(translate[target], 100);
+    const int trans = translation_for(target);
+    if (trans > 10) {
+      int k = 101 - std::min(trans, 100);
       int est = (std::abs(static_cast<int>(data)) / k) * k;
       if (est < 1000) return std::format("{}", est);
       if (est < 10000) {

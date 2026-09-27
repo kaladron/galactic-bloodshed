@@ -31,8 +31,8 @@ EnrollmentService::find_suitable_planet(PlanetType ppref,
          PlanetList::readonly(entity_manager_, star, star_data)) {
       if (planet.type() == ppref) {
         bool vacant = true;
-        for (player_t p : all_players()) {
-          if (planet.info(p).numsectsowned > 0) {
+        for (const auto& [_, info] : planet.info_map()) {
+          if (info.numsectsowned > 0) {
             vacant = false;
             break;
           }
@@ -132,7 +132,6 @@ Race EnrollmentService::build_race(player_t playernum,
   race.morale = 0;
   race.allied.clear();
   race.atwar.clear();
-  race.points.fill(0);
   race.Gov_ship = std::nullopt;
   return race;
 }

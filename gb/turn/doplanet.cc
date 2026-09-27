@@ -353,10 +353,12 @@ recover_conquered_stockpiles(EntityManager& entity_manager, const Star& star,
   Stockpile total_stolen;
 
   for (const Race& race : RaceList::readonly(entity_manager)) {
-    if (planet.info(race).numsectsowned > 0) {
+    if (!planet.has_info(race.Playernum)) continue;
+    const auto& cinfo = planet.info(race);
+    if (cinfo.numsectsowned > 0) {
       owners.push_back(race.Playernum);
     } else if (!race.God) { /* Can't steal from God */
-      total_stolen += planet.info(race).stockpile();
+      total_stolen += cinfo.stockpile();
     }
   }
 
@@ -376,8 +378,10 @@ recover_conquered_stockpiles(EntityManager& entity_manager, const Star& star,
 
   // 2. Drain stockpiles from defeated non-god races
   for (const Race& race : RaceList::readonly(entity_manager)) {
-    if (planet.info(race).numsectsowned == 0 && !race.God) {
-      planet.info(race).drain_stockpile();
+    if (!planet.has_info(race.Playernum)) continue;
+    auto& cinfo = planet.info(race);
+    if (cinfo.numsectsowned == 0 && !race.God && !cinfo.stockpile().empty()) {
+      cinfo.drain_stockpile();
     }
   }
 
@@ -565,7 +569,7 @@ process_island_exploration(EntityManager& entity_manager, const Star& star,
     if (stats.Claims || allexp) {
       break;
     }
-    if (planet.info(p).numsectsowned == 0) {
+    if (planet.sectors_owned_by(p) == 0) {
       continue;
     }
 
@@ -601,7 +605,7 @@ void divert_slave_tribute(EntityManager& entity_manager, Planet& planet,
   auto& master_info = planet.info(master);
   for (const Race& race : RaceList::readonly(entity_manager)) {
     const player_t p = race.Playernum;
-    if (planet.info(p).numsectsowned > 0) {
+    if (planet.sectors_owned_by(p) > 0) {
       master_info.resource += std::exchange(stats.prod_res[p], 0);
       master_info.fuel += std::exchange(stats.prod_fuel[p], 0);
       master_info.destruct += std::exchange(stats.prod_destruct[p], 0);
@@ -695,8 +699,7 @@ void recalculate_census(EntityManager& entity_manager, const Star& star,
   planet.maxpopn() = 0;
   planet.total_resources() = 0;
 
-  for (const Race& race : RaceList::readonly(entity_manager)) {
-    auto& info = planet.info(race);
+  for (auto&& [_, info] : planet.info_map()) {
     info.numsectsowned = 0;
     info.popn = 0;
     info.troops = 0;
@@ -734,10 +737,10 @@ void process_planet_economy(EntityManager& entity_manager, const Star& star,
   for (auto race_handle : RaceList(entity_manager)) {
     auto& race = *race_handle;
     const player_t player = race.Playernum;
-    auto& info = planet.info(race);
-    if (info.numsectsowned == 0) {
+    if (planet.sectors_owned_by(race) == 0) {
       continue;
     }
+    auto& info = planet.info(race);
 
     info.deposit_production(stats.prod_fuel[player], stats.prod_res[player],
                             stats.prod_destruct[player],
@@ -759,6 +762,9 @@ void process_planet_economy(EntityManager& entity_manager, const Star& star,
 
   for (const Race& race : RaceList::readonly(entity_manager)) {
     const player_t p = race.Playernum;
+    if (!planet.has_info(p) && stats.total_mob_points[p] == 0) {
+      continue;
+    }
     auto& info = planet.info(race);
     stats.Power[p].resource += info.resource;
     stats.Power[p].destruct += info.destruct;
@@ -777,14 +783,16 @@ void reset_planet_turn_state(EntityManager& entity_manager, Planet& planet,
   planet.troops() = 0;
   planet.total_resources() = 0;
 
-  for (const Race& race : RaceList::readonly(entity_manager)) {
-    const player_t p = race.Playernum;
-    stats.Compat[p] = planet.compatibility(race);
-    auto& info = planet.info(race);
+  for (auto&& [_, info] : planet.info_map()) {
     info.numsectsowned = 0;
     info.troops = 0;
     info.popn = 0;
     info.est_production = 0.0;
+  }
+
+  for (const Race& race : RaceList::readonly(entity_manager)) {
+    const player_t p = race.Playernum;
+    stats.Compat[p] = planet.compatibility(race);
     stats.prod_crystals[p] = 0;
     stats.prod_fuel[p] = 0;
     stats.prod_destruct[p] = 0;
@@ -821,6 +829,11 @@ void send_planet_turn_telegrams(EntityManager& entity_manager, const Star& star,
 
   for (const Race& race : RaceList::readonly(entity_manager)) {
     const player_t p = race.Playernum;
+    if (!planet.has_info(p) && stats.prod_crystals[p] == 0 &&
+        stats.prod_res[p] == 0 && stats.prod_fuel[p] == 0 &&
+        stats.prod_destruct[p] == 0) {
+      continue;
+    }
     auto& info = planet.info(race);
     info.prod_crystals = stats.prod_crystals[p];
     info.prod_res = stats.prod_res[p];
@@ -881,7 +894,7 @@ void send_planet_turn_telegrams(EntityManager& entity_manager, const Star& star,
                  << TELEG_DELIM;
     for (const Race& race : RaceList::readonly(entity_manager)) {
       const player_t p = race.Playernum;
-      if (planet.info(p).numsectsowned) {
+      if (planet.sectors_owned_by(p)) {
         push_telegram(entity_manager, p, star.governor(p), telegram_buf.str());
       }
     }

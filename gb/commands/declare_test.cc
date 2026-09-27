@@ -32,13 +32,13 @@ void test_declare_dispatch() {
   test::expect_ne(saved_race2, nullptr);
   test::expect_true(saved_race1->is_allied_with(player_t{2}));
   test::expect_false(saved_race1->is_at_war_with(player_t{2}));
-  test::expect_ge(saved_race2->translate[player_t{1}], 30);
+  test::expect_ge(saved_race2->translation_for(player_t{1}), 30);
   std::println(std::cout, "    ✓ Alliance declared and translation updated");
 
   // 2. Declare alliance with explicit modifier (50)
   ctx.assert_dispatch_success(g, {"declare", "2", "alliance", "50"});
   saved_race2 = ctx.em.peek_race(2);
-  test::expect_ge(saved_race2->translate[player_t{1}], 50);
+  test::expect_ge(saved_race2->translation_for(player_t{1}), 50);
   std::println(std::cout,
                "    ✓ Alliance declared with explicit translation modifier");
 

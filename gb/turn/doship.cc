@@ -583,7 +583,7 @@ void execute_missile_planet_strike(Ship& missile,
                 const auto& star =
                     *entity_manager.peek_star(missile.storbits());
                 for (const Race& race : RaceList::readonly(entity_manager)) {
-                  if (p.info(race.Playernum).numsectsowned &&
+                  if (p.sectors_owned_by(race.Playernum) &&
                       race.Playernum != missile.owner()) {
                     push_telegram(entity_manager, race.Playernum,
                                   star.governor(race.Playernum),

@@ -83,7 +83,7 @@ void test_tax_role_and_scope_rejections() {
 
   // 2. Star control rejection (Governor 2 on star assigned to Governor 1)
   ctx.em.mutate_star(1, [](Star& s) {
-    s.governor(1) = 1;  // Star assigned to Governor 1
+    s.set_governor(1, 1);  // Star assigned to Governor 1
   });
   g.out.str("");
   ctx.setup_game_obj(g, 1, 2);  // Player 1, Governor 2

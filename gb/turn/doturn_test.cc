@@ -1093,21 +1093,24 @@ void test_check_language_translation_unlock() {
   bool unlocked0 = check_language_translation_unlock(
       player_t{1}, /*controlled_planets=*/0, /*planet_count=*/20, ctx.em);
   test::expect_false(unlocked0);
-  test::expect_eq(ctx.em.peek_race(player_t{2})->translate[player_t{1}], 0);
+  test::expect_eq(ctx.em.peek_race(player_t{2})->translation_for(player_t{1}),
+                  0);
 
   // 2. Below threshold (20 planets * 10% / 2 = 1 planet threshold, player
   // controls 0)
   bool unlocked_below = check_language_translation_unlock(
       player_t{1}, /*controlled_planets=*/0, /*planet_count=*/20, ctx.em);
   test::expect_false(unlocked_below);
-  test::expect_eq(ctx.em.peek_race(player_t{2})->translate[player_t{1}], 0);
+  test::expect_eq(ctx.em.peek_race(player_t{2})->translation_for(player_t{1}),
+                  0);
 
   // 3. At or above threshold (20 planets * 10% / 2 = 1 planet, player controls
   // 1)
   bool unlocked = check_language_translation_unlock(
       player_t{1}, /*controlled_planets=*/1, /*planet_count=*/20, ctx.em);
   test::expect_true(unlocked);
-  test::expect_eq(ctx.em.peek_race(player_t{2})->translate[player_t{1}], 100);
+  test::expect_eq(ctx.em.peek_race(player_t{2})->translation_for(player_t{1}),
+                  100);
 }
 
 void test_sync_power_ratings() {
@@ -1167,7 +1170,7 @@ void test_finalize_turn_update_integration() {
 
   // Other race translation unlocked at 50% threshold
   const auto* r2 = ctx.em.peek_race(player_t{2});
-  test::expect_eq(r2->translate[player_t{1}], 100);
+  test::expect_eq(r2->translation_for(player_t{1}), 100);
 }
 
 }  // namespace

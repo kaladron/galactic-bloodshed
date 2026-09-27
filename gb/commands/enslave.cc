@@ -54,17 +54,17 @@ bool enslave(const command_t& argv, GameObj& g) {
 
       g.entity_manager.mutate_planet(
           s.storbits(), s.pnumorbits(), [&](Planet& p) {
-            if (p.info(Playernum).numsectsowned == 0) {
+            if (p.sectors_owned_by(Playernum) == 0) {
               g.out << "You don't have a garrison on the planet.\n";
               return;
             }
 
             /* add up forces attacking, defending */
             attack = aliens = def = 0;
-            for (player_t i : all_players()) {
-              if (p.info(i).numsectsowned && i != Playernum) {
+            for (const auto& [i, info] : p.info_map()) {
+              if (info.numsectsowned && i != Playernum) {
                 aliens = 1;
-                def += p.info(i).destruct;
+                def += info.destruct;
               }
             }
 
@@ -76,7 +76,7 @@ bool enslave(const command_t& argv, GameObj& g) {
             for (const Ship& s2 : ShipList::readonly_on_planet(
                      g.entity_manager, s.storbits(), s.pnumorbits())) {
               if (s2.alive() && s2.active()) {
-                if (p.info(s2.owner()).numsectsowned && s2.owner() != Playernum)
+                if (p.sectors_owned_by(s2.owner()) && s2.owner() != Playernum)
                   def += s2.destruct();
                 else if (s2.owner() == Playernum)
                   attack += s2.destruct();
@@ -126,8 +126,8 @@ bool enslave(const command_t& argv, GameObj& g) {
             }
 
             g.entity_manager.with_star(s.storbits(), [&](const Star& star) {
-              for (player_t i : all_players())
-                if (p.info(i).numsectsowned && i != Playernum)
+              for (const auto& [i, info] : p.info_map())
+                if (info.numsectsowned && i != Playernum)
                   warn_player(g.session_registry, g.entity_manager, i,
                               star.governor(i), telegram.str());
             });

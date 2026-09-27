@@ -156,8 +156,8 @@ bool profile(const command_t& argv, GameObj& g) {
         g.out << "*** Deity Status ***\n";
       }
       g.out << std::format("Personal: {}\n", r.info);
-      g.out << std::format("%%Know:  {}%\n", race.translate[p]);
-      if (race.translate[p] > 50) {
+      g.out << std::format("%%Know:  {}%\n", race.translation_for(p));
+      if (race.translation_for(p) > 50) {
         g.out << std::format("{}\t  Planet Conditions\n",
                              r.Metamorph ? "Metamorphic Race"
                                          : "Normal Race\t");
@@ -206,7 +206,7 @@ bool profile(const command_t& argv, GameObj& g) {
       g.out << std::format("\t\tMorale:   {}\n", race.estimate(r.morale, p));
       g.out << std::format(
           "Sector type preference : {}\n",
-          race.translate[p] > 80 ? sector_type_name(r.likesbest) : " ? ");
+          race.translation_for(p) > 80 ? sector_type_name(r.likesbest) : " ? ");
     });
   } catch (const EntityNotFoundError&) {
     g.out << "Race not found.\n";

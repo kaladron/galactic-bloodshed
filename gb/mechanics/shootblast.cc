@@ -266,6 +266,9 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
   auto num_sectors = pl.num_sectors();
   for (const Race& race : RaceList::readonly(em)) {
     player_t i = race.Playernum;
+    if (!pl.has_info(i) && sum_mob[i] == 0) {
+      continue;
+    }
     pl.info(i).mob_points = sum_mob[i];
     pl.info(i).comread = sum_mob[i] / num_sectors;
     pl.info(i).guns = planet_guns(sum_mob[i]);

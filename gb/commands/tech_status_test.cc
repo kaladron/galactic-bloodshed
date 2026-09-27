@@ -40,7 +40,7 @@ void setup_test_world(TestContext& ctx) {
   Star star0{1, "Sol", {0.0, 0.0}};
   star0.mark_explored_by(1);
   star0.mark_inhabited_by(1);
-  star0.governor(1) = 1;
+  star0.set_governor(1, 1);
   star0.set_planet_name(1, "Earth");
 
   StarRepository stars(store);

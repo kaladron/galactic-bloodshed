@@ -121,7 +121,7 @@ bool block(const command_t& argv, GameObj& g) {
                              race->estimate(p_info.resource, r),
                              race->estimate(p_info.fuel, r),
                              race->estimate(p_info.destruct, r),
-                             std::format("{}%", race->translate[r])});
+                             std::format("{}%", race->translation_for(r))});
             });
       } catch (const EntityNotFoundError&) {
         continue;
@@ -170,7 +170,7 @@ bool block(const command_t& argv, GameObj& g) {
            race->estimate(block_i.systems_owned, i),
            race->estimate(block_i.resource, i), race->estimate(block_i.fuel, i),
            race->estimate(block_i.destruct, i), race->estimate(block_i.VPs, i),
-           std::format("{}%", race->translate[i])});
+           std::format("{}%", race->translation_for(i))});
     }
 
     g.out << table << "\n";

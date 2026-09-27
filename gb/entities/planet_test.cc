@@ -309,19 +309,33 @@ int main() {
     test::expect_eq(sum, 500);
   }
 
-  // Test 10: Planet::info bounds checking
+  // Test 10: Planet::info sparse map and bounds checking
   {
     Planet planet{1, 1, PlanetType::EARTH, Coordinates{0, 0}};
-    planet.info(player_t{1}).popn = 5000;
-    planet.info(player_t{MAXPLAYERS}).popn = 9999;
+    const Planet& cplanet = planet;
+    Race r1{};
+    r1.Playernum = player_t{1};
+    test::expect_true(cplanet.get_struct().info.empty());
+    test::expect_eq(cplanet.info(player_t{42}).popn, 0);
+    test::expect_eq(planet.sectors_owned_by(player_t{1}), 0u);
+    test::expect_eq(planet.sectors_owned_by(r1), 0u);
+    test::expect_true(cplanet.get_struct().info.empty());
 
-    test::expect_eq(planet.info(player_t{1}).popn, 5000);
-    test::expect_eq(planet.info(player_t{MAXPLAYERS}).popn, 9999);
+    planet.info(player_t{1}).popn = 5000;
+    planet.info(player_t{1}).numsectsowned = 7;
+    planet.info(player_t{2}).popn = 9999;
+
+    test::expect_eq(cplanet.info(player_t{1}).popn, 5000);
+    test::expect_eq(planet.sectors_owned_by(player_t{1}), 7u);
+    test::expect_eq(planet.sectors_owned_by(r1), 7u);
+    test::expect_eq(planet.sectors_owned_by(player_t{2}), 0u);
+    test::expect_eq(cplanet.info(player_t{2}).popn, 9999);
+    test::expect_eq(cplanet.get_struct().info.size(), 2zu);
 
     test::expect_throws<std::out_of_range>(
         [&]() { (void)planet.info(player_t{0}); });
     test::expect_throws<std::out_of_range>(
-        [&]() { (void)planet.info(player_t{MAXPLAYERS + 1}); });
+        [&]() { (void)cplanet.info(player_t{0}); });
   }
 
   // Test 11: Planet::update_climate

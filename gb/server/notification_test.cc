@@ -381,8 +381,8 @@ void test_warn_star() {
   Star star{create_star(7)};
   star.mark_inhabited_by(player_t{1});
   star.mark_inhabited_by(player_t{2});
-  star.governor(player_t{1}) = 1;  // Player 1 default governor
-  star.governor(player_t{2}) = 1;  // Player 2 default governor
+  star.set_governor(player_t{1}, 1);  // Player 1 default governor
+  star.set_governor(player_t{2}, 1);  // Player 2 default governor
 
   StarRepository stars(store);
   stars.save(star);

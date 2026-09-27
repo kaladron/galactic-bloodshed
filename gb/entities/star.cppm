@@ -12,9 +12,10 @@ import std;
 
 export struct star_struct {
   std::string name; /* name of star */
-  PlayerVector<governor_t, MAXPLAYERS> governor{
-      Race::leader_id}; /* which subordinate maintains the system */
-  PlayerVector<ap_t, MAXPLAYERS> AP;   /* action pts alotted */
+  std::flat_map<player_t, governor_t>
+      governor{}; /* governor managing the system for each empire (defaults to
+                     Race::leader_id) */
+  std::flat_map<player_t, ap_t> AP{};  /* action pts alotted */
   std::flat_set<player_t> explored{};  /* who's been here */
   std::flat_set<player_t> inhabited{}; /* who lives here now */
   UniverseCoordinates coordinates{};
@@ -28,7 +29,7 @@ export struct star_struct {
   double gravity{0.0}; /* attraction of star in "Standards". */
 
   starnum_t star_id{};
-  PlayerVector<PlayerVector<std::uint32_t, MAXPLAYERS>, MAXPLAYERS>
+  std::flat_map<player_t, std::flat_map<player_t, std::uint32_t>>
       ground_assaults{}; /* per-turn ground assault tallies [attacker][defender]
                           */
 };
@@ -56,6 +57,11 @@ public:
   /// system during the current turn.
   void record_ground_assault(player_t attacker, player_t defender,
                              std::uint32_t count = 1) {
+    if (attacker < 1 || defender < 1) {
+      throw std::out_of_range(
+          std::format("Ground assault player IDs must be >= 1 (got {}, {})",
+                      attacker.value, defender.value));
+    }
     data_.ground_assaults[attacker][defender] += count;
   }
 
@@ -70,7 +76,15 @@ public:
   /// this star system during the current turn.
   [[nodiscard]] std::uint32_t ground_assault_count(player_t attacker,
                                                    player_t defender) const {
-    return data_.ground_assaults[attacker][defender];
+    if (attacker < 1 || defender < 1) {
+      throw std::out_of_range(
+          std::format("Ground assault player IDs must be >= 1 (got {}, {})",
+                      attacker.value, defender.value));
+    }
+    const auto att_it = data_.ground_assaults.find(attacker);
+    if (att_it == data_.ground_assaults.end()) return 0;
+    const auto def_it = att_it->second.find(defender);
+    return (def_it != att_it->second.end()) ? def_it->second : 0;
   }
 
   /// Returns the number of ground assaults by `attacker` against `defender` in
@@ -83,7 +97,15 @@ public:
   /// Clears ground assault tallies between `attacker` and `defender` in this
   /// star system.
   void clear_ground_assaults(player_t attacker, player_t defender) {
-    data_.ground_assaults[attacker][defender] = 0;
+    if (attacker < 1 || defender < 1) {
+      throw std::out_of_range(
+          std::format("Ground assault player IDs must be >= 1 (got {}, {})",
+                      attacker.value, defender.value));
+    }
+    if (const auto att_it = data_.ground_assaults.find(attacker);
+        att_it != data_.ground_assaults.end()) {
+      att_it->second.erase(defender);
+    }
   }
 
   /// Clears ground assault tallies between `attacker` and `defender` in this
@@ -94,7 +116,7 @@ public:
 
   /// Resets all ground assault tallies in this star system to zero.
   void clear_all_ground_assaults() noexcept {
-    data_.ground_assaults = {};
+    data_.ground_assaults.clear();
   }
 
   [[nodiscard]] std::string get_name() const {
@@ -200,20 +222,43 @@ public:
     data_.coordinates = coords;
   }
 
-  // Action points (1-indexed via PlayerVector)
+  // Action points (1-based player ID)
   ap_t& AP(player_t playernum) {
+    if (playernum < 1) {
+      throw std::out_of_range(std::format(
+          "Player ID {} out of range (must be >= 1)", playernum.value));
+    }
     return data_.AP[playernum];
   }
   [[nodiscard]] ap_t AP(player_t playernum) const {
-    return data_.AP[playernum];
+    if (playernum < 1) {
+      throw std::out_of_range(std::format(
+          "Player ID {} out of range (must be >= 1)", playernum.value));
+    }
+    const auto it = data_.AP.find(playernum);
+    return (it != data_.AP.end()) ? it->second : 0;
   }
 
-  // which subordinate maintains the system (1-indexed via PlayerVector)
-  governor_t& governor(player_t playernum) {
-    return data_.governor[playernum];
-  }
+  // Governor managing the system for each empire (1-based player ID, defaults
+  // to Race::leader_id)
   [[nodiscard]] governor_t governor(player_t playernum) const {
-    return data_.governor[playernum];
+    if (playernum < 1) {
+      throw std::out_of_range(std::format(
+          "Player ID {} out of range (must be >= 1)", playernum.value));
+    }
+    const auto it = data_.governor.find(playernum);
+    return (it != data_.governor.end()) ? it->second : Race::leader_id;
+  }
+  void set_governor(player_t playernum, governor_t gov) {
+    if (playernum < 1) {
+      throw std::out_of_range(std::format(
+          "Player ID {} out of range (must be >= 1)", playernum.value));
+    }
+    if (gov == Race::leader_id) {
+      data_.governor.erase(playernum);
+    } else {
+      data_.governor[playernum] = gov;
+    }
   }
 
   // how close to nova it is

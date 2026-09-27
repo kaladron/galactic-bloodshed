@@ -64,12 +64,12 @@ void test_send_message_and_translation_cap() {
 
   const auto* updated_receiver = ctx.em.peek_race(2);
   test::expect_true(updated_receiver != nullptr);
-  test::expect_eq(updated_receiver->translate[player_t{1}], 52);
+  test::expect_eq(updated_receiver->translation_for(player_t{1}), 52);
 
   // Verify translation modifier caps at 100
   ctx.em.mutate_race(2, [](Race& r) { r.translate[player_t{1}] = 99; });
   ctx.assert_dispatch_success(g, {"send", "2", "Cap", "Check"}, 1);
-  test::expect_eq(ctx.em.peek_race(2)->translate[player_t{1}], 100);
+  test::expect_eq(ctx.em.peek_race(2)->translation_for(player_t{1}), 100);
 
   ctx.verify_universe_invariants();
 }

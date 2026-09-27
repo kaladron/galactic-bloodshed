@@ -189,7 +189,7 @@ void test_enroll_first_race_god_success() {
     test::expect_eq(race->leader().homesystem, starnum_t{1});
     test::expect_eq(race->leader().homeplanetnum, planetnum_t{1});
     test::expect_true(race->has_governor(Race::leader_id));
-    test::expect_eq(race->translate[player_t{1}], 100);
+    test::expect_eq(race->translation_for(player_t{1}), 100);
   }
 
   // Verify Block and Power entities created on race enrollment

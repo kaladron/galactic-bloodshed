@@ -6,7 +6,7 @@
 module gb.entities;
 
 bool Star::control(player_t Playernum, governor_t Governor) const {
-  return Race::is_leader(Governor) || data_.governor[Playernum] == Governor;
+  return Race::is_leader(Governor) || governor(Playernum) == Governor;
 }
 
 bool Star::is_explored_by(player_t p) const noexcept {

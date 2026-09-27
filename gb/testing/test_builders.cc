@@ -519,7 +519,7 @@ TestStarBuilder& TestStarBuilder::with_ap(player_t player, ap_t ap) {
 
 TestStarBuilder& TestStarBuilder::with_governor(player_t player,
                                                 governor_t gov) {
-  star_.governor(player) = gov;
+  star_.set_governor(player, gov);
   return *this;
 }
 

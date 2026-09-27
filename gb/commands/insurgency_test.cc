@@ -142,7 +142,7 @@ void test_insurgency_role_and_scope_rejections() {
   // 2. Star control rejection (Star governed by Gov 1, tested by Gov 2)
   ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
   ctx.em.mutate_star(1, [](Star& s) {
-    s.governor(player_t{1}) = 1;  // Star governed by Gov 1
+    s.set_governor(player_t{1}, 1);  // Star governed by Gov 1
   });
   g.out.str("");
   ctx.setup_game_obj(g, 1, 2);  // Player 1, Gov 2

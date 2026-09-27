@@ -127,14 +127,8 @@ void test_ground_assault_matrix() {
   // Bounds rejection tests
   test::expect_throws<std::out_of_range>(
       [&] { (void)star.ground_assault_count(player_t{0}, defender); });
-  test::expect_throws<std::out_of_range>([&] {
-    (void)star.ground_assault_count(player_t{MAXPLAYERS + 1}, defender);
-  });
   test::expect_throws<std::out_of_range>(
       [&] { (void)star.ground_assault_count(attacker, player_t{0}); });
-  test::expect_throws<std::out_of_range>([&] {
-    (void)star.ground_assault_count(attacker, player_t{MAXPLAYERS + 1});
-  });
 
   // Clear specific pair and all tallies
   star.clear_ground_assaults(attacker, defender);

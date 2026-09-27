@@ -283,18 +283,16 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
          PlanetList(state.entity_manager, star, *star_handle)) {
       for (auto race_handle : RaceList(state.entity_manager)) {
         const player_t player = race_handle->Playernum;
+        const auto owned_sectors = planet_handle->sectors_owned_by(player);
 
-        if (planet_handle->info(player).numsectsowned) {
+        if (owned_sectors) {
           star_inhabited.insert(player);
-        }
 
-        if (planet_handle->type() != PlanetType::ASTEROID &&
-            (planet_handle->info(player).numsectsowned >
-             planet_handle->num_sectors() / 2)) {
-          race_handle->controlled_planets++;
-        }
+          if (planet_handle->type() != PlanetType::ASTEROID &&
+              (owned_sectors > planet_handle->num_sectors() / 2)) {
+            race_handle->controlled_planets++;
+          }
 
-        if (planet_handle->info(player).numsectsowned) {
           race_handle->planet_points += planet_handle->get_points();
         }
       }

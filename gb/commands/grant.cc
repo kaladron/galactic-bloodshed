@@ -42,7 +42,7 @@ bool grant(const command_t& argv, GameObj& g) {
     starnum_t snum = g.snum();
     std::string star_name;
     g.entity_manager.mutate_star(snum, [&](Star& star) {
-      star.governor(Playernum) = gov;
+      star.set_governor(Playernum, gov);
       star_name = star.get_name();
     });
     warn_player(

@@ -94,41 +94,33 @@ int main() {
                             "methods work as expected");
   }
 
-  // Race translate and points PlayerVector tests
-  std::println(std::cout,
-               "Race translate and points PlayerVector accessors...");
+  // Race translate sparse map tests
+  std::println(std::cout, "Race translate sparse map accessors...");
   {
     Race race{};
     race.Playernum = 1;
+    test::expect_eq(race.translation_for(player_t{3}), 0);
+    test::expect_true(race.translate.empty());
+
     race.translate[player_t{1}] = 100;
     race.translate[player_t{2}] = 75;
-    race.points[player_t{2}] = 500;
 
-    test::expect_eq(race.translate[player_t{1}], 100);
-    test::expect_eq(race.translate[player_t{2}], 75);
-    test::expect_eq(race.points[player_t{2}], 500u);
+    test::expect_eq(race.translation_for(player_t{1}), 100);
+    test::expect_eq(race.translation_for(player_t{2}), 75);
 
-    // PlayerVector indexing directly by Race object
+    // Lookup directly by Race object
     Race race2{};
     race2.Playernum = 2;
-    test::expect_eq(race.translate[race2], 75);
-    test::expect_eq(race.points[race2], 500u);
+    test::expect_eq(race.translation_for(race2), 75);
 
-    // Out-of-bounds throws std::out_of_range
-    test::expect_throws<std::out_of_range>(
-        [&]() { (void)race.translate[player_t{0}]; });
-    test::expect_throws<std::out_of_range>(
-        [&]() { (void)race.translate[player_t{MAXPLAYERS + 1}]; });
-    test::expect_throws<std::out_of_range>(
-        [&]() { (void)race.points[player_t{0}]; });
-    test::expect_throws<std::out_of_range>(
-        [&]() { (void)race.points[player_t{MAXPLAYERS + 1}]; });
     // increase_translation increments and clamps to [0, 100]
     race.increase_translation(player_t{2}, 15);
-    test::expect_eq(race.translate[player_t{2}], 90);
+    test::expect_eq(race.translation_for(player_t{2}), 90);
     race.increase_translation(player_t{2}, 25);
-    test::expect_eq(race.translate[player_t{2}], 100);
-    std::println(std::cout, "  ✓ Race PlayerVector accessors verified");
+    test::expect_eq(race.translation_for(player_t{2}), 100);
+    race.increase_translation(player_t{3}, 5);
+    test::expect_eq(race.translation_for(player_t{3}), 5);
+    std::println(std::cout, "  ✓ Race translate accessors verified");
   }
 
   // Race adjust_morale domain method tests
@@ -145,7 +137,6 @@ int main() {
     winner.adjust_morale(loser, 25);
     test::expect_eq(winner.morale, 125);
     test::expect_eq(loser.morale, 25);
-    test::expect_eq(winner.points[loser], 25u);
     std::println(std::cout, "  ✓ Race::adjust_morale works as expected");
   }
 

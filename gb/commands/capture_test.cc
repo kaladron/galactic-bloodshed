@@ -121,7 +121,7 @@ void test_capture_role_and_scope_rejections() {
 
   // 2. Star control rejection (Star governed by Gov 1, tested by Gov 2)
   ctx.em.mutate_star(1, [](Star& s) {
-    s.governor(1) = 1;  // Star governed by Gov 1
+    s.set_governor(1, 1);  // Star governed by Gov 1
   });
   ctx.setup_game_obj(g, 1, 2);  // Player 1, Gov 2
   g.set_level(ScopeLevel::LEVEL_PLAN);

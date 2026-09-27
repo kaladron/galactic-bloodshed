@@ -179,13 +179,13 @@ int main() {
     test::expect_false(star.control(1, 3));
 
     // Assign specific governor for player 1
-    star.governor(1) = 3;
+    star.set_governor(1, 3);
     test::expect_true(star.control(1, 1));   // Primary leader still controls
     test::expect_true(star.control(1, 3));   // Assigned governor has control
     test::expect_false(star.control(1, 2));  // Other governors do not
 
     // Player 2's assignment is isolated
-    star.governor(2) = 4;
+    star.set_governor(2, 4);
     test::expect_true(star.control(2, 4));
     test::expect_false(star.control(2, 3));
     test::expect_false(star.control(1, 4));
@@ -257,29 +257,57 @@ int main() {
     std::println(std::cout, "  ✓ Star inhabitation methods work as expected");
   }
 
-  // AP and governor PlayerVector tests
-  std::println(std::cout, "Star AP and governor PlayerVector accessors...");
+  // AP, governor, and ground_assaults sparse map tests
+  std::println(
+      std::cout,
+      "Star AP, governor, and ground_assaults sparse map accessors...");
   {
     Star star{1, "Gamma"};
+    const Star& cstar = star;
+
+    // Read-only access on unpopulated star returns defaults without mutating
+    test::expect_eq(cstar.AP(player_t{1}), 0);
+    test::expect_eq(star.governor(player_t{1}), Race::leader_id);
+    test::expect_eq(cstar.governor(player_t{1}), Race::leader_id);
+    test::expect_eq(cstar.ground_assault_count(player_t{1}, player_t{2}), 0u);
+    test::expect_true(cstar.get_struct().AP.empty());
+    test::expect_true(cstar.get_struct().governor.empty());
+    test::expect_true(cstar.get_struct().ground_assaults.empty());
 
     star.AP(player_t{1}) = 42;
     star.AP(player_t{2}) = 99;
-    test::expect_eq(star.AP(player_t{1}), 42);
-    test::expect_eq(star.AP(player_t{2}), 99);
+    test::expect_eq(cstar.AP(player_t{1}), 42);
+    test::expect_eq(cstar.AP(player_t{2}), 99);
 
-    star.governor(player_t{1}) = 3;
-    test::expect_eq(star.governor(player_t{1}), 3);
+    star.set_governor(player_t{1}, 3);
+    test::expect_eq(cstar.governor(player_t{1}), 3);
+    test::expect_eq(cstar.get_struct().governor.size(), 1zu);
 
-    // Bounds checking throws std::out_of_range
+    // Resetting governor to Race::leader_id erases the sparse entry
+    star.set_governor(player_t{1}, Race::leader_id);
+    test::expect_eq(cstar.governor(player_t{1}), Race::leader_id);
+    test::expect_true(cstar.get_struct().governor.empty());
+
+    star.record_ground_assault(player_t{1}, player_t{2}, 2);
+    test::expect_eq(cstar.ground_assault_count(player_t{1}, player_t{2}), 2u);
+    star.clear_ground_assaults(player_t{1}, player_t{2});
+    test::expect_eq(cstar.ground_assault_count(player_t{1}, player_t{2}), 0u);
+
+    // Bounds checking throws std::out_of_range on player_t < 1
     test::expect_throws<std::out_of_range>(
         [&]() { (void)star.AP(player_t{0}); });
     test::expect_throws<std::out_of_range>(
-        [&]() { (void)star.AP(player_t{MAXPLAYERS + 1}); });
+        [&]() { (void)cstar.AP(player_t{0}); });
     test::expect_throws<std::out_of_range>(
         [&]() { (void)star.governor(player_t{0}); });
     test::expect_throws<std::out_of_range>(
-        [&]() { (void)star.governor(player_t{MAXPLAYERS + 1}); });
-    std::println(std::cout, "  ✓ Star AP and governor PlayerVector verified");
+        [&]() { star.set_governor(player_t{0}, 2); });
+    test::expect_throws<std::out_of_range>(
+        [&]() { star.record_ground_assault(player_t{0}, player_t{1}); });
+    test::expect_throws<std::out_of_range>(
+        [&]() { (void)cstar.ground_assault_count(player_t{1}, player_t{0}); });
+    std::println(std::cout,
+                 "  ✓ Star AP, governor, and ground_assaults verified");
   }
 
   // get_random_planet_index tests

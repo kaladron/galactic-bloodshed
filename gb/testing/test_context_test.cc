@@ -612,7 +612,7 @@ void test_standard_universe_fixture() {
     test::expect_false(r->Guest);
     test::expect_true(r->has_governor(Race::leader_id));
     test::expect_eq(r->leader().money, 10'000);
-    test::expect_eq(r->translate[pid], 100);
+    test::expect_eq(r->translation_for(pid), 100);
 
     const auto* blk = ctx.em.peek_block(blocknum_t{pid.value});
     test::expect_true(blk != nullptr, "Auto-seeded block must exist");

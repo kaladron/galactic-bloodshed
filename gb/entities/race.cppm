@@ -112,8 +112,8 @@ public:
     translate[other] = std::clamp(translate[other] + amount, 0, 100);
   }
 
-  PlayerBitset<MAXPLAYERS> atwar;
-  PlayerBitset<MAXPLAYERS> allied;
+  std::flat_set<player_t> atwar{};
+  std::flat_set<player_t> allied{};
 
   /// Returns whether this race is allied with the given player.
   [[nodiscard]] bool is_allied_with(player_t p) const noexcept;
@@ -448,8 +448,8 @@ export struct block {
   player_t Playernum{0};
   std::string name;
   std::string motto;
-  PlayerBitset<MAXPLAYERS> invited;
-  PlayerBitset<MAXPLAYERS> pledged;
+  std::flat_set<player_t> invited{};
+  std::flat_set<player_t> pledged{};
   std::uint32_t members{0};
   population_t popn{0};        /* total population */
   resource_t resource{0};      /* total resource in stock */
@@ -492,10 +492,13 @@ export struct block {
   /// and pledged).
   [[nodiscard]] bool is_member(player_t p) const noexcept;
 
-  /// Returns the bitset of all members (players that are both invited and
+  /// Returns the set of all members (players that are both invited and
   /// pledged).
-  [[nodiscard]] PlayerBitset<MAXPLAYERS> member_mask() const noexcept {
-    return invited & pledged;
+  [[nodiscard]] std::flat_set<player_t> active_members() const {
+    std::flat_set<player_t> result;
+    std::ranges::set_intersection(invited, pledged,
+                                  std::inserter(result, result.end()));
+    return result;
   }
 
   /// Returns whether the given player is invited to this bloc.

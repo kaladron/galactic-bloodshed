@@ -34,7 +34,7 @@ void setup_test_world(TestContext& ctx) {
   ss.star_id = 1;
   ss.name = "TestStar";
   ss.coordinates = {100.0, 200.0};
-  ss.explored.set(player_t{1});
+  ss.explored.insert(player_t{1});
   ss.pnames.push_back("TestPlanet");
   Star star(ss);
 

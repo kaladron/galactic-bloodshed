@@ -114,27 +114,6 @@ struct to<JSON, Modular<Tag, T, Modulus>> {
   }
 };
 
-template <std::size_t N>
-struct from<JSON, PlayerBitset<N>> {
-  template <auto Opts>
-  static void op(PlayerBitset<N>& bitset, is_context auto&& ctx, auto&& it,
-                 auto&& end) {
-    unsigned long long val{};
-    parse<JSON>::op<Opts>(val, ctx, it, end);
-    bitset = PlayerBitset<N>{val};
-  }
-};
-
-template <std::size_t N>
-struct to<JSON, PlayerBitset<N>> {
-  template <auto Opts>
-  static void op(const PlayerBitset<N>& bitset, is_context auto&& ctx,
-                 auto&& buf, auto&& ix) noexcept {
-    auto val = bitset.to_ullong();
-    serialize<JSON>::op<Opts>(val, ctx, buf, ix);
-  }
-};
-
 template <typename T, std::size_t N>
 struct meta<PlayerVector<T, N>> {
   using Type = PlayerVector<T, N>;

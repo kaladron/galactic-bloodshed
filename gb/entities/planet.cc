@@ -289,30 +289,30 @@ bool PlanetExplorationContext::in_bounds(Coordinates c) const noexcept {
 
 bool PlanetExplorationContext::is_explored(Coordinates c,
                                            player_t player) const {
-  return explored_[index(c)].test(player.value);
+  return explored_[index(c)].contains(player);
 }
 
 bool PlanetExplorationContext::is_explored(Coordinates c) const {
-  return explored_[index(c)].any();
+  return !explored_[index(c)].empty();
 }
 
 void PlanetExplorationContext::set_explored(Coordinates c, player_t player) {
-  explored_[index(c)].set(player.value);
+  explored_[index(c)].insert(player);
 }
 
 void PlanetExplorationContext::clear_explored(Coordinates c, player_t player) {
-  explored_[index(c)].reset(player.value);
+  explored_[index(c)].erase(player);
 }
 
 bool PlanetExplorationContext::all_explored(player_t player) const {
-  return std::ranges::all_of(explored_, [player](const auto& bitset) {
-    return bitset.test(player.value);
+  return std::ranges::all_of(explored_, [player](const auto& players) {
+    return players.contains(player);
   });
 }
 
 bool PlanetExplorationContext::all_explored() const {
-  return std::ranges::all_of(explored_,
-                             [](const auto& bitset) { return bitset.any(); });
+  return std::ranges::all_of(
+      explored_, [](const auto& players) { return !players.empty(); });
 }
 
 void PlanetExplorationContext::explore_sector(const Planet& planet,

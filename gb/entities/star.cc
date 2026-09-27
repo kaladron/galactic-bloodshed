@@ -10,35 +10,43 @@ bool Star::control(player_t Playernum, governor_t Governor) const {
 }
 
 bool Star::is_explored_by(player_t p) const noexcept {
-  return data_.explored.test(p);
+  return data_.explored.contains(p);
 }
 
 void Star::mark_explored_by(player_t p) noexcept {
-  data_.explored.set(p);
+  data_.explored.insert(p);
+}
+
+void Star::clear_explored_by(player_t p) noexcept {
+  data_.explored.erase(p);
 }
 
 bool Star::is_explored() const noexcept {
-  return data_.explored.any();
+  return !data_.explored.empty();
+}
+
+void Star::clear_all_explored() noexcept {
+  data_.explored.clear();
 }
 
 bool Star::is_inhabited_by(player_t p) const noexcept {
-  return data_.inhabited.test(p);
+  return data_.inhabited.contains(p);
 }
 
 void Star::mark_inhabited_by(player_t p) noexcept {
-  data_.inhabited.set(p);
+  data_.inhabited.insert(p);
 }
 
 void Star::clear_inhabited_by(player_t p) noexcept {
-  data_.inhabited.reset(p);
+  data_.inhabited.erase(p);
 }
 
 bool Star::is_inhabited() const noexcept {
-  return data_.inhabited.any();
+  return !data_.inhabited.empty();
 }
 
 void Star::clear_all_inhabitants() noexcept {
-  data_.inhabited.reset();
+  data_.inhabited.clear();
 }
 
 planetnum_t Star::get_random_planet_index() const {

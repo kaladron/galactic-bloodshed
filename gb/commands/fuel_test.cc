@@ -131,7 +131,7 @@ void test_fuel_matrix() {
   test::expect_contains(g.out.str(),
                         "That ship is within 10.0 units of the destination.");
 
-  ctx.em.mutate_star(2, [](Star& s) { s.explored().reset(); });
+  ctx.em.mutate_star(2, [](Star& s) { s.clear_all_explored(); });
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"fuel", std::format("#{}", ship_num.value), "/Vega/Vega Prime"});

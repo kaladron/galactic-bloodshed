@@ -77,19 +77,19 @@ int main() {
     test::expect_true(b.is_invited(player_t{2}));
     test::expect_true(b.is_pledged(player_t{2}));
     test::expect_true(b.is_member(player_t{2}));
-    test::expect_true(b.member_mask().test(player_t{2}));
-    test::expect_eq(b.member_mask().count(), 1zu);
+    test::expect_true(b.active_members().contains(player_t{2}));
+    test::expect_eq(b.active_members().size(), 1zu);
 
     b.uninvite(player_t{2});
     test::expect_false(b.is_invited(player_t{2}));
     test::expect_true(b.is_pledged(player_t{2}));
     test::expect_false(b.is_member(player_t{2}));
-    test::expect_true(b.member_mask().none());
+    test::expect_true(b.active_members().empty());
 
     b.unpledge(player_t{2});
     test::expect_false(b.is_pledged(player_t{2}));
     test::expect_false(b.is_member(player_t{2}));
-    test::expect_true(b.member_mask().none());
+    test::expect_true(b.active_members().empty());
     std::println(std::cout, "  ✓ block invitation, pledge, and membership "
                             "methods work as expected");
   }

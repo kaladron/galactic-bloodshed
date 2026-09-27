@@ -6,27 +6,27 @@
 module gb.entities;
 
 bool Race::is_allied_with(player_t p) const noexcept {
-  return allied.test(p);
+  return allied.contains(p);
 }
 
 void Race::declare_alliance_with(player_t p) noexcept {
-  allied.set(p);
+  allied.insert(p);
 }
 
 void Race::rescind_alliance_with(player_t p) noexcept {
-  allied.reset(p);
+  allied.erase(p);
 }
 
 bool Race::is_at_war_with(player_t p) const noexcept {
-  return atwar.test(p);
+  return atwar.contains(p);
 }
 
 void Race::declare_war_on(player_t p) noexcept {
-  atwar.set(p);
+  atwar.insert(p);
 }
 
 void Race::make_peace_with(player_t p) noexcept {
-  atwar.reset(p);
+  atwar.erase(p);
 }
 
 bool block::is_member(player_t p) const noexcept {
@@ -34,25 +34,25 @@ bool block::is_member(player_t p) const noexcept {
 }
 
 bool block::is_invited(player_t p) const noexcept {
-  return invited.test(p);
+  return invited.contains(p);
 }
 
 void block::invite(player_t p) noexcept {
-  invited.set(p);
+  invited.insert(p);
 }
 
 void block::uninvite(player_t p) noexcept {
-  invited.reset(p);
+  invited.erase(p);
 }
 
 bool block::is_pledged(player_t p) const noexcept {
-  return pledged.test(p);
+  return pledged.contains(p);
 }
 
 void block::pledge(player_t p) noexcept {
-  pledged.set(p);
+  pledged.insert(p);
 }
 
 void block::unpledge(player_t p) noexcept {
-  pledged.reset(p);
+  pledged.erase(p);
 }

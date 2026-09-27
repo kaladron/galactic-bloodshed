@@ -274,8 +274,10 @@ int main() {
     const Sector& target_sect = smap->get(Coordinates{3, 3});
 
     // 1. Allied AFVs do not fire on allied troops
-    ctx.em.mutate_race(1, [](Race& r) { r.allied.set(player_t{2}); });
-    ctx.em.mutate_race(2, [](Race& r) { r.allied.set(player_t{1}); });
+    ctx.em.mutate_race(1,
+                       [](Race& r) { r.declare_alliance_with(player_t{2}); });
+    ctx.em.mutate_race(2,
+                       [](Race& r) { r.declare_alliance_with(player_t{1}); });
     ctx.setup_game_obj(g, 1, 1);
     population_t entering_troops = 1000;
     mech_defend(g, &entering_troops, PopulationType::MIL, *p_earth,
@@ -284,8 +286,10 @@ int main() {
 
     // 2. Hostile AFV engages entering troops and takes counter-attack damage
     // even when its destruct drops to 0 after firing its last shell
-    ctx.em.mutate_race(1, [](Race& r) { r.allied.reset(player_t{2}); });
-    ctx.em.mutate_race(2, [](Race& r) { r.allied.reset(player_t{1}); });
+    ctx.em.mutate_race(1,
+                       [](Race& r) { r.rescind_alliance_with(player_t{2}); });
+    ctx.em.mutate_race(2,
+                       [](Race& r) { r.rescind_alliance_with(player_t{1}); });
     ctx.setup_game_obj(g, 1, 1);
     seed_rand(42);
     mech_defend(g, &entering_troops, PopulationType::MIL, *p_earth,

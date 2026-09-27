@@ -783,7 +783,7 @@ private:
   }
 
   Coordinates dimensions_{0, 0};
-  std::vector<std::bitset<MAXPLAYERS + 1>> explored_;
+  std::vector<std::flat_set<player_t>> explored_;
 };
 
 /// \brief Calculates destination coordinates on a planet grid for a single

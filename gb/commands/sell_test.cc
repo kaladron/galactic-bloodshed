@@ -34,7 +34,7 @@ void setup_test_world(TestContext& ctx) {
   ss.star_id = 1;
   ss.name = "TradeHub";
   ss.coordinates = {100.0, 200.0};
-  ss.explored.set(player_t{1});
+  ss.explored.insert(player_t{1});
   ss.AP[player_t{1}] = 100;
   ss.governor[player_t{1}] = 1;  // Star controlled by Governor 1 for Player 1
   ss.pnames.push_back("TradePlanet");

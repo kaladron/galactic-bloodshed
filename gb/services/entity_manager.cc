@@ -200,8 +200,8 @@ EntityHandle<Race> EntityManager::create_race(const Race& race_data) {
     b.Playernum = player;
     b.name = new_race.name;
     storage_->blocks.save(b);
-  } else if (existing_block->motto.empty() && existing_block->invited.none() &&
-             existing_block->pledged.none()) {
+  } else if (existing_block->motto.empty() && existing_block->invited.empty() &&
+             existing_block->pledged.empty()) {
     existing_block->name = new_race.name;
     storage_->blocks.save(*existing_block);
   }

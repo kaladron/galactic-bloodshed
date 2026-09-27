@@ -94,8 +94,8 @@ void test_block_repository() {
   b1.Playernum = 1;
   b1.name = "Alliance Alpha";
   b1.motto = "United we stand";
-  b1.invited = PlayerBitset<MAXPLAYERS>(1);
-  b1.pledged = PlayerBitset<MAXPLAYERS>(1);
+  b1.invited = {player_t{1}};
+  b1.pledged = {player_t{1}};
   b1.systems_owned = 10;
   b1.VPs = 1000;
   b1.money = 5000;

@@ -20,10 +20,10 @@ void test_dump_happy_paths() {
   // transfer
   ctx.em.mutate_planet(1, 1,
                        [](Planet& p) { p.info(player_t{2}).explored = 0; });
-  ctx.em.mutate_star(1, [](Star& s) { s.explored().reset(player_t{2}); });
+  ctx.em.mutate_star(1, [](Star& s) { s.clear_explored_by(player_t{2}); });
 
   // Mark Star 3 as unexplored by Federation to test skipping unexplored stars
-  ctx.em.mutate_star(3, [](Star& s) { s.explored().reset(player_t{1}); });
+  ctx.em.mutate_star(3, [](Star& s) { s.clear_explored_by(player_t{1}); });
   // Mark Planet (2, 1) as unexplored by Federation to test skipping unexplored
   // planets
   ctx.em.mutate_planet(2, 1,
@@ -136,7 +136,7 @@ void test_dump_specific_places() {
   // Reset explored status on recipient for further tests
   ctx.em.mutate_planet(1, 1,
                        [](Planet& p) { p.info(player_t{2}).explored = 0; });
-  ctx.em.mutate_star(1, [](Star& s) { s.explored().reset(player_t{2}); });
+  ctx.em.mutate_star(1, [](Star& s) { s.clear_explored_by(player_t{2}); });
 
   // 1. Dump specific star (/Sol)
   ctx.assert_dispatch_success(g, {"dump", "Klingons", "/Sol"}, 10);
@@ -147,7 +147,7 @@ void test_dump_specific_places() {
   // Reset explored status on recipient for further tests
   ctx.em.mutate_planet(1, 1,
                        [](Planet& p) { p.info(player_t{2}).explored = 0; });
-  ctx.em.mutate_star(1, [](Star& s) { s.explored().reset(player_t{2}); });
+  ctx.em.mutate_star(1, [](Star& s) { s.clear_explored_by(player_t{2}); });
 
   // 2. Dump specific planet (/Sol/Earth)
   g.out.str("");

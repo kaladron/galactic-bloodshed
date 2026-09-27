@@ -130,8 +130,8 @@ Race EnrollmentService::build_race(player_t playernum,
   race.discoveries = {};
   race.tech = 0.0;
   race.morale = 0;
-  race.allied.reset();
-  race.atwar.reset();
+  race.allied.clear();
+  race.atwar.clear();
   race.points.fill(0);
   race.Gov_ship = std::nullopt;
   return race;

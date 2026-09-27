@@ -40,9 +40,9 @@ int main() {
     test_star.AP[p] = (p.value - 1) * 100;
   }
 
-  // Initialize explored and inhabited bitmasks
-  test_star.explored = PlayerBitset<MAXPLAYERS>{0b101010};
-  test_star.inhabited = PlayerBitset<MAXPLAYERS>{0b110011};
+  // Initialize explored and inhabited sets
+  test_star.explored = {player_t{2}, player_t{4}, player_t{6}};
+  test_star.inhabited = {player_t{1}, player_t{2}, player_t{5}, player_t{6}};
 
   // Initialize planet names - now using vector
   for (int i = 0; i < 5; i++) {
@@ -84,9 +84,9 @@ int main() {
     test::expect_eq(retrieved.AP[p], test_star.AP[p]);
   }
 
-  // Verify bitmasks
-  test::expect_eq(retrieved.explored, test_star.explored);
-  test::expect_eq(retrieved.inhabited, test_star.inhabited);
+  // Verify explored and inhabited sets
+  test::expect_true(retrieved.explored == test_star.explored);
+  test::expect_true(retrieved.inhabited == test_star.inhabited);
 
   // Verify planet names
   for (std::size_t i = 0; i < test_star.pnames.size(); i++) {

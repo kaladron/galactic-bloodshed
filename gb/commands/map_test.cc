@@ -190,8 +190,8 @@ void test_sector_char_and_desshow_branches() {
   // 2. desshow() troop symbols (own, allied, war, neutral)
   Race r{};
   r.Playernum = 1;
-  r.allied.set(player_t{2});
-  r.atwar.set(player_t{3});
+  r.declare_alliance_with(player_t{2});
+  r.declare_war_on(player_t{3});
 
   Sector s{};
   s.set_type(SectorType::SEC_MOUNT);
@@ -251,7 +251,7 @@ void test_show_map_rendering_options() {
 
   ctx.em.mutate_race(1, [](Race& r) {
     r.Metamorph = true;
-    r.atwar.set(player_t{2});
+    r.declare_war_on(player_t{2});
   });
   ctx.em.mutate_planet(1, 1, [](Planet& p) {
     p.toxic() = 75;

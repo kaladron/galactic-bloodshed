@@ -29,8 +29,8 @@ void setup_test_world(TestContext& ctx) {
 
   ctx.em.mutate_star(1, [](Star& s) {
     s.AP(1) = 10;
-    s.inhabited().set(player_t{1});
-    s.inhabited().set(player_t{2});
+    s.mark_inhabited_by(player_t{1});
+    s.mark_inhabited_by(player_t{2});
   });
 
   block b{};

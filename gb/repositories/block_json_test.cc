@@ -25,8 +25,8 @@ int main() {
   test_blocks[1].Playernum = 1;
   test_blocks[1].name = "TestPlayer1";
   test_blocks[1].motto = "TestMotto1";
-  test_blocks[1].invited = PlayerBitset<MAXPLAYERS>(0x123);
-  test_blocks[1].pledged = PlayerBitset<MAXPLAYERS>(0x456);
+  test_blocks[1].invited = {player_t{1}, player_t{2}, player_t{6}};
+  test_blocks[1].pledged = {player_t{2}, player_t{3}, player_t{7}};
   test_blocks[1].systems_owned = 5;
   test_blocks[1].VPs = 1000;
   test_blocks[1].money = 50000;
@@ -34,8 +34,8 @@ int main() {
   test_blocks[2].Playernum = 2;
   test_blocks[2].name = "TestPlayer2";
   test_blocks[2].motto = "TestMotto2";
-  test_blocks[2].invited = PlayerBitset<MAXPLAYERS>(0xDEF);
-  test_blocks[2].pledged = PlayerBitset<MAXPLAYERS>(0x321);
+  test_blocks[2].invited = {player_t{1}, player_t{3}, player_t{4}};
+  test_blocks[2].pledged = {player_t{1}, player_t{6}, player_t{9}};
   test_blocks[2].systems_owned = 3;
   test_blocks[2].VPs = 800;
   test_blocks[2].money = 30000;

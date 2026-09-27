@@ -210,6 +210,15 @@ int main() {
     test::expect_true(star.is_explored());
     test::expect_true(star.is_explored_by(player_t{1}));
     test::expect_true(star.is_explored_by(player_t{2}));
+
+    star.clear_explored_by(player_t{1});
+    test::expect_false(star.is_explored_by(player_t{1}));
+    test::expect_true(star.is_explored_by(player_t{2}));
+    test::expect_true(star.is_explored());
+
+    star.clear_all_explored();
+    test::expect_false(star.is_explored());
+    test::expect_false(star.is_explored_by(player_t{2}));
     std::println(std::cout, "  ✓ Star exploration methods work as expected");
   }
 
@@ -239,11 +248,11 @@ int main() {
     test::expect_false(star.is_inhabited());
     test::expect_false(star.is_inhabited_by(player_t{2}));
 
-    // Verify PlayerBitset direct accessor and bitwise manipulation
-    star.inhabited().set(player_t{3});
+    // Verify std::flat_set<player_t> direct accessor
+    star.inhabited().insert(player_t{3});
     test::expect_true(star.is_inhabited_by(player_t{3}));
-    test::expect_true(star.inhabited().test(player_t{3}));
-    test::expect_eq(star.inhabited().count(), 1);
+    test::expect_true(star.inhabited().contains(player_t{3}));
+    test::expect_eq(star.inhabited().size(), 1zu);
 
     std::println(std::cout, "  ✓ Star inhabitation methods work as expected");
   }

@@ -54,6 +54,9 @@ int main() {
   test_race.translate[player_t{1}] = 100;
   test_race.translate[player_t{2}] = 75;
   test_race.points[player_t{2}] = 350;
+  test_race.declare_alliance_with(player_t{2});
+  test_race.declare_alliance_with(player_t{4});
+  test_race.declare_war_on(player_t{3});
   test_race.discoveries.hyperdrive = true;
   test_race.discoveries.laser = true;
   test_race.discoveries.crystal = true;
@@ -103,6 +106,10 @@ int main() {
                       "\"declaration\":30,\"transfer\":40}") !=
           std::string::npos,
       "Race::gov::newspos must serialize as a named NewsValues JSON object");
+  test::expect_true(
+      race_json->find("\"atwar\":[3],\"allied\":[2,4]") != std::string::npos,
+      "Race::atwar and Race::allied must serialize as sorted JSON player ID "
+      "arrays");
   std::println(std::cout, "  ✓ Race saved successfully");
 
   // Retrieve by player number
@@ -128,6 +135,8 @@ int main() {
   test::expect_eq(retrieved->discoveries, test_race.discoveries);
   test::expect_true(retrieved->conditions == test_race.conditions);
   test::expect_true(retrieved->likes == test_race.likes);
+  test::expect_true(retrieved->atwar == test_race.atwar);
+  test::expect_true(retrieved->allied == test_race.allied);
   test::expect_eq(retrieved->translate[player_t{1}],
                   test_race.translate[player_t{1}]);
   test::expect_eq(retrieved->translate[player_t{2}],

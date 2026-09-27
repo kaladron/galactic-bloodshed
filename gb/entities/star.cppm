@@ -14,9 +14,9 @@ export struct star_struct {
   std::string name; /* name of star */
   PlayerVector<governor_t, MAXPLAYERS> governor{
       Race::leader_id}; /* which subordinate maintains the system */
-  PlayerVector<ap_t, MAXPLAYERS> AP;  /* action pts alotted */
-  PlayerBitset<MAXPLAYERS> explored;  /* who's been here */
-  PlayerBitset<MAXPLAYERS> inhabited; /* who lives here now */
+  PlayerVector<ap_t, MAXPLAYERS> AP;   /* action pts alotted */
+  std::flat_set<player_t> explored{};  /* who's been here */
+  std::flat_set<player_t> inhabited{}; /* who lives here now */
   UniverseCoordinates coordinates{};
 
   std::vector<std::string>
@@ -139,10 +139,10 @@ public:
     return data_.pnames;
   }
 
-  PlayerBitset<MAXPLAYERS>& explored() noexcept {
+  std::flat_set<player_t>& explored() noexcept {
     return data_.explored;
   }
-  [[nodiscard]] const PlayerBitset<MAXPLAYERS>& explored() const noexcept {
+  [[nodiscard]] const std::flat_set<player_t>& explored() const noexcept {
     return data_.explored;
   }
 
@@ -152,13 +152,19 @@ public:
   /// Marks the star system as explored by the given player.
   void mark_explored_by(player_t p) noexcept;
 
+  /// Clears exploration status for the given player.
+  void clear_explored_by(player_t p) noexcept;
+
   /// Returns whether any player has explored this star system.
   [[nodiscard]] bool is_explored() const noexcept;
 
-  PlayerBitset<MAXPLAYERS>& inhabited() noexcept {
+  /// Clears exploration status across all players from this star system.
+  void clear_all_explored() noexcept;
+
+  std::flat_set<player_t>& inhabited() noexcept {
     return data_.inhabited;
   }
-  [[nodiscard]] const PlayerBitset<MAXPLAYERS>& inhabited() const noexcept {
+  [[nodiscard]] const std::flat_set<player_t>& inhabited() const noexcept {
     return data_.inhabited;
   }
 

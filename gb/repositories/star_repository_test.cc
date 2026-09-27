@@ -28,8 +28,9 @@ int main() {
   test_star_data.temperature = 15;
   test_star_data.gravity = 1.0;
   test_star_data.star_id = 1;
-  test_star_data.explored = PlayerBitset<MAXPLAYERS>{0b101010};
-  test_star_data.inhabited = PlayerBitset<MAXPLAYERS>{0b110011};
+  test_star_data.explored = {player_t{2}, player_t{4}, player_t{6}};
+  test_star_data.inhabited = {player_t{1}, player_t{2}, player_t{5},
+                              player_t{6}};
 
   // Initialize governor array
   for (player_t p : all_players()) {
@@ -65,6 +66,12 @@ int main() {
           std::string::npos,
       "star_struct::coordinates must serialize as a UniverseCoordinates "
       "object");
+  test::expect_true(
+      star_json->find("\"explored\":[2,4,6]") != std::string::npos,
+      "star_struct::explored must serialize as a sorted JSON player ID array");
+  test::expect_true(
+      star_json->find("\"inhabited\":[1,2,5,6]") != std::string::npos,
+      "star_struct::inhabited must serialize as a sorted JSON player ID array");
   std::println(std::cout, "  ✓ Star saved successfully");
 
   // Retrieve by star number
@@ -82,8 +89,8 @@ int main() {
   test::expect_eq(retrieved->nova_stage(), 0);
   test::expect_eq(retrieved->temperature(), 15);
   test::expect_eq(retrieved->gravity(), 1.0);
-  test::expect_eq(retrieved->explored(), PlayerBitset<MAXPLAYERS>{0b101010});
-  test::expect_eq(retrieved->inhabited(), PlayerBitset<MAXPLAYERS>{0b110011});
+  test::expect_true(retrieved->explored() == test_star_data.explored);
+  test::expect_true(retrieved->inhabited() == test_star_data.inhabited);
 
   // Verify governor array using accessor (player_t is 1-indexed)
   for (player_t p : all_players()) {

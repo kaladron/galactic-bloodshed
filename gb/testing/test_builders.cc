@@ -528,7 +528,7 @@ TestStarBuilder& TestStarBuilder::with_explored(player_t player,
   if (explored) {
     star_.mark_explored_by(player);
   } else {
-    star_.explored().reset(player);
+    star_.clear_explored_by(player);
   }
   return *this;
 }

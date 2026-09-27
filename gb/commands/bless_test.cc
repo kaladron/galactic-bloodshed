@@ -187,7 +187,7 @@ void test_bless_planet_and_star() {
   // explorebit / noexplorebit
   ctx.assert_dispatch_success(g, {"bless", "2", "explorebit", "0"});
   test::expect_eq(ctx.em.peek_planet(1, 1)->info(2).explored, 1);
-  test::expect_true(ctx.em.peek_star(1)->explored()[2]);
+  test::expect_true(ctx.em.peek_star(1)->is_explored_by(2));
 
   ctx.assert_dispatch_success(g, {"bless", "2", "noexplorebit", "0"});
   test::expect_eq(ctx.em.peek_planet(1, 1)->info(2).explored, 0);
@@ -199,7 +199,7 @@ void test_bless_planet_and_star() {
   // inhabited bit - verify latent bug fix (marks target race 2, not deity race
   // 1)
   ctx.assert_dispatch_success(g, {"bless", "2", "inhabited", "0"});
-  test::expect_true(ctx.em.peek_star(1)->inhabited()[2]);
+  test::expect_true(ctx.em.peek_star(1)->is_inhabited_by(2));
 
   // numsectsowned
   ctx.assert_dispatch_success(g, {"bless", "2", "numsectsowned", "42"});

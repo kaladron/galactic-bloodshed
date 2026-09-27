@@ -464,7 +464,7 @@ int main() {
 
     // 5. Descending into unexplored vs explored stars & planets, and
     // non-null-terminated substr formatting on compound paths
-    ctx.em.mutate_star(1, [](Star& s) { s.explored().reset(player_t{1}); });
+    ctx.em.mutate_star(1, [](Star& s) { s.clear_explored_by(player_t{1}); });
     g.set_level(ScopeLevel::LEVEL_UNIV);
     g.out.str("");
     Place p_unexplored_star(g, "/Sol");
@@ -475,7 +475,7 @@ int main() {
     test::expect_false(p_ignore_explore_star.err);
     test::expect_eq(p_ignore_explore_star.level, ScopeLevel::LEVEL_STAR);
     test::expect_eq(p_ignore_explore_star.snum, 1);
-    ctx.em.mutate_star(1, [](Star& s) { s.explored().set(player_t{1}); });
+    ctx.em.mutate_star(1, [](Star& s) { s.mark_explored_by(player_t{1}); });
 
     g.out.str("");
     Place p_bad_compound_star(g, "/BadStar/SomePlanet");

@@ -277,7 +277,7 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
 
   for (auto star_handle : StarList(state.entity_manager)) {
     const starnum_t star = star_handle->get_struct().star_id;
-    PlayerBitset<MAXPLAYERS> star_inhabited{};
+    std::flat_set<player_t> star_inhabited{};
 
     for (auto planet_handle :
          PlanetList(state.entity_manager, star, *star_handle)) {
@@ -285,7 +285,7 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
         const player_t player = race_handle->Playernum;
 
         if (planet_handle->info(player).numsectsowned) {
-          star_inhabited.set(player);
+          star_inhabited.insert(player);
         }
 
         if (planet_handle->type() != PlanetType::ASTEROID &&
@@ -322,13 +322,13 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
           star_handle->AP(player) = std::min(APs, LIMIT_APs);
         }
         // Compute victory points for the block
-        if (star_inhabited.any()) {
+        if (!star_inhabited.empty()) {
           try {
             const auto* block_player =
                 state.entity_manager.peek_block(player.value);
-            const PlayerBitset<MAXPLAYERS> allied_members =
-                block_player->member_mask();
-            if ((star_inhabited | allied_members) == allied_members) {
+            if (std::ranges::all_of(star_inhabited, [&](player_t occupant) {
+                  return block_player->is_member(occupant);
+                })) {
               state.entity_manager.mutate_block(
                   player.value, [](struct block& b) { b.systems_owned++; });
             }

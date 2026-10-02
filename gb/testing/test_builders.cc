@@ -196,6 +196,11 @@ TestShipBuilder& TestShipBuilder::with_build_type(ShipType build_type) {
   return *this;
 }
 
+TestShipBuilder& TestShipBuilder::with_build_cost(resource_t cost) {
+  ship_.build_cost = cost;
+  return *this;
+}
+
 TestShipBuilder& TestShipBuilder::with_guns(guntype_t primtype,
                                             gun_count_t count,
                                             ActiveBattery active_battery) {

@@ -47,51 +47,34 @@ void setup_test_world(TestContext& ctx) {
   PlanetRepository planets(store);
   planets.save(planet0);
 
-  // Ships
-  ShipRepository ships(store);
-
   // Ship 1: Shuttle in orbit of Sol
-  ship_struct s1{};
-  s1.number = 1;
-  s1.owner = 1;
-  s1.type = ShipType::STYPE_SHUTTLE;
-  s1.name = "Hermes";
-  s1.alive = 1;
-  s1.active = 1;
-  s1.whatorbits = ScopeLevel::LEVEL_STAR;
-  s1.storbits = 1;
-  s1.popn = 10;
-  s1.fuel = 50.0;
-  s1.max_fuel = 100;
-  s1.resource = 20;
-  s1.max_resource = 100;
-  s1.armor = 5;
-  s1.guns = ActiveBattery::PRIMARY;
-  s1.primary_battery = GunBattery::create(5, guntype_t::HEAVY);
-  s1.destruct = 10;
-  s1.max_destruct = 50;
-  Ship ship1(s1);
-  ships.save(ship1);
+  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 1)
+      .owned_by(1)
+      .named("Hermes")
+      .in_star_orbit(1)
+      .with_crew(10, 0)
+      .with_fuel(50.0)
+      .with_max_fuel(100)
+      .with_resource(20)
+      .with_max_resource(100)
+      .with_armor(5)
+      .with_guns(guntype_t::HEAVY, 5)
+      .with_destruct(10)
+      .with_max_destruct(50)
+      .build();
 
   // Ship 2: Factory ship on Earth
-  ship_struct s2{};
-  s2.number = 2;
-  s2.owner = 1;
-  s2.type = ShipType::OTYPE_FACTORY;
-  s2.name = "Forge";
-  s2.alive = 1;
-  s2.active = 1;
-  s2.whatorbits = ScopeLevel::LEVEL_PLAN;
-  s2.storbits = 1;
-  s2.pnumorbits = 1;
-  s2.popn = 50;
-  s2.fuel = 200.0;
-  s2.max_fuel = 500;
-  s2.build_type = ShipType::STYPE_FIGHTER;
-  s2.build_cost = 100;
-  s2.on = 1;
-  Ship ship2(s2);
-  ships.save(ship2);
+  TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY, 2)
+      .owned_by(1)
+      .named("Forge")
+      .in_planet_orbit(1, 1)
+      .with_build_type(ShipType::STYPE_FIGHTER)
+      .with_build_cost(100)
+      .with_crew(50, 0)
+      .with_fuel(200.0)
+      .with_max_fuel(500)
+      .with_on(true)
+      .build();
 }
 
 void test_rst_dispatch() {

@@ -583,6 +583,7 @@ public:
                              Coordinates coords);
   TestShipBuilder& docked_to(shipnum_t dest_ship, starnum_t snum);
   TestShipBuilder& with_build_type(ShipType build_type);
+  TestShipBuilder& with_build_cost(resource_t cost);
   TestShipBuilder&
   with_guns(guntype_t primtype, gun_count_t count,
             ActiveBattery active_battery = ActiveBattery::PRIMARY);

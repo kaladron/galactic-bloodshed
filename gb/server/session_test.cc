@@ -366,8 +366,10 @@ int main() {
     test::expect_eq(session->write_queue_size(), 0u);
     test::expect_true(&session->entity_manager() == &em);
     test::expect_true(&session->registry() == &registry);
+    test::expect_true(&session->game_obj().entity_manager == &em);
+    test::expect_true(&session->game_obj().session_registry == &registry);
 
-    // State mutations
+    // State mutations via Session accessors are reflected in GameObj
     session->set_connected(true);
     session->set_player(2);
     session->set_governor(3);
@@ -387,6 +389,22 @@ int main() {
     test::expect_eq(session->shipno(), 6);
     test::expect_true(session->level() == ScopeLevel::LEVEL_PLAN);
     test::expect_true(session->last_time() > 0);
+
+    const Session& const_session = *session;
+    test::expect_eq(const_session.game_obj().player().value, 2);
+    test::expect_eq(const_session.game_obj().governor().value, 3);
+    test::expect_true(const_session.game_obj().god());
+    test::expect_eq(const_session.game_obj().snum(), 4);
+    test::expect_eq(const_session.game_obj().pnum(), 5);
+    test::expect_eq(const_session.game_obj().shipno(), 6);
+    test::expect_true(const_session.game_obj().level() ==
+                      ScopeLevel::LEVEL_PLAN);
+
+    // State mutations directly on GameObj are immediately visible via Session
+    session->game_obj().set_level(ScopeLevel::LEVEL_STAR);
+    session->game_obj().set_snum(9);
+    test::expect_true(session->level() == ScopeLevel::LEVEL_STAR);
+    test::expect_eq(session->snum(), 9);
 
     // Rate limiting quota mechanics
     session->use_quota();

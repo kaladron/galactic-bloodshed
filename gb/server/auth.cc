@@ -140,12 +140,13 @@ void check_connect(Session& session, std::string_view message) {
   if (!authenticated) return;
 
   // Display time and treasury via centralized command dispatch pipeline
-  GameObj temp_g(session.entity_manager(), session.registry());
-  temp_g.set_player(Playernum);
-  temp_g.set_governor(Governor);
-  GB::commands::dispatch_command(temp_g, {"time"});
-  session.out() << temp_g.out.str();
-  temp_g.out.str("");
+  auto& g = session.game_obj();
+  g.out.str("");
+  g.out.clear();
+  GB::commands::dispatch_command(g, {"time"});
+  session.out() << g.out.str();
+  g.out.str("");
+  g.out.clear();
 
   session.entity_manager().with_race(Playernum, [&](const Race& race) {
     session.out() << std::format("\nLast login      : {}",
@@ -162,8 +163,11 @@ void check_connect(Session& session, std::string_view message) {
     session.out() << std::format("     Morale: {}\n", race.morale);
   });
 
-  GB::commands::dispatch_command(temp_g, {"treasury"});
-  session.out() << temp_g.out.str();
+  GB::commands::dispatch_command(g, {"treasury"});
+  session.out() << g.out.str();
+  g.out.str("");
+  g.out.clear();
+  g.race = nullptr;
 
   // Update login time
   session.entity_manager().mutate_race(Playernum, [&](Race& race_mut) {

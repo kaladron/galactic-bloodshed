@@ -250,63 +250,37 @@ void Server::remove_session(std::shared_ptr<Session> session) {
   sessions_.erase(session);
 }
 
-namespace {
-
-void sync_game_obj_from_session(GameObj& g, Session& session) {
-  g.set_player(session.player());
-  g.set_governor(session.governor());
-  g.set_god(session.god());
-  g.set_snum(session.snum());
-  g.set_pnum(session.pnum());
-  g.set_shipno(session.shipno());
-  g.set_level(session.level());
-  g.race = session.entity_manager().peek_race(g.player());
-}
-
-void sync_session_from_game_obj(Session& session, const GameObj& g) {
-  session.set_player(g.player());
-  session.set_governor(g.governor());
-  session.set_god(g.god());
-  session.set_snum(g.snum());
-  session.set_pnum(g.pnum());
-  session.set_shipno(g.shipno());
-  session.set_level(g.level());
-}
-
-}  // namespace
-
 bool Server::do_command(Session& session, std::string_view comm) {
+  auto& g = session.game_obj();
   if (!session.connected()) {
     check_connect(session, comm);
     if (!session.connected()) {
       session.out() << "Goodbye!\n";
       return false;
     }
-    GameObj g(session.entity_manager(), session.registry());
-    sync_game_obj_from_session(g, session);
+    g.out.str("");
+    g.out.clear();
     check_for_telegrams(g);
     process_command(g, {"cs"});
-    sync_session_from_game_obj(session, g);
     session.out() << g.out.str();
+    g.out.str("");
+    g.out.clear();
     return true;
   }
 
-  GameObj g(session.entity_manager(), session.registry());
-  sync_game_obj_from_session(g, session);
+  g.out.str("");
+  g.out.clear();
   process_command(g, make_command_t(comm));
 
   if (g.shutdown_requested()) {
     shutdown_flag_ = true;
   }
 
-  if (g.disconnect_requested()) {
-    session.out() << g.out.str();
-    return false;
-  }
-
-  sync_session_from_game_obj(session, g);
   session.out() << g.out.str();
-  return true;
+  g.out.str("");
+  g.out.clear();
+
+  return !g.disconnect_requested();
 }
 
 void Server::process_command(GameObj& g, const command_t& argv) {

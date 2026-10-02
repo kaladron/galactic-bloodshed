@@ -65,16 +65,11 @@ void setup_test_universe(TestContext& ctx) {
   RaceRepository races(store);
   races.save(race);
 
-  StarRepository star_repo(store);
-  star_struct sdata{};
-  sdata.star_id = 1;
-  sdata.name = "Sol";
-  Star star{sdata};
-  star_repo.save(star);
-
   UniverseRepository univ_repo(store);
   universe_struct u{};
   univ_repo.save(u);
+
+  ctx.create_star("Sol", 1).with_position({300.0, 400.0}).build();
 
   ServerStateRepository state_repo(store);
   ServerState state{};
@@ -190,6 +185,24 @@ void test_server_network_lifecycle_and_session_handling() {
   std::string cmd_reply = drain_socket(client_socket);
   test::expect_contains(cmd_reply, "'unknown_xyz':illegal command error.");
   test::expect_contains(cmd_reply, "/Sol");
+
+  // Verify GameObj viewport state (center and zoom) persists across commands
+  std::string viewport_set_cmds = "cs /\ncenter /Sol\nzoom 2.5\n";
+  client_socket.write_some(asio::buffer(viewport_set_cmds));
+  io.poll();
+  server.process_commands();
+  io.poll();
+  (void)drain_socket(client_socket);
+
+  std::string viewport_query_cmd = "zoom\n";
+  client_socket.write_some(asio::buffer(viewport_query_cmd));
+  io.poll();
+  server.process_commands();
+  io.poll();
+
+  std::string viewport_reply = drain_socket(client_socket);
+  test::expect_contains(viewport_reply,
+                        "Zoom value 2.5, lastx = 300, lasty = 400.");
 
   // Disconnect via `quit` command
   std::string quit_cmd = "quit\n";

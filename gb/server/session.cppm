@@ -73,57 +73,65 @@ public:
   }
 
   player_t player() const {
-    return player_;
+    return game_obj_.player();
   }
   governor_t governor() const {
-    return governor_;
+    return game_obj_.governor();
   }
   bool god() const {
-    return god_;
+    return game_obj_.god();
   }
   starnum_t snum() const {
-    return snum_;
+    return game_obj_.snum();
   }
   planetnum_t pnum() const {
-    return pnum_;
+    return game_obj_.pnum();
   }
   shipnum_t shipno() const {
-    return shipno_;
+    return game_obj_.shipno();
   }
   ScopeLevel level() const {
-    return level_;
+    return game_obj_.level();
   }
 
   void set_player(player_t p) {
-    player_ = p;
+    game_obj_.set_player(p);
   }
   void set_governor(governor_t g) {
-    governor_ = g;
+    game_obj_.set_governor(g);
   }
   void set_god(bool g) {
-    god_ = g;
+    game_obj_.set_god(g);
   }
   void set_snum(starnum_t s) {
-    snum_ = s;
+    game_obj_.set_snum(s);
   }
   void set_pnum(planetnum_t p) {
-    pnum_ = p;
+    game_obj_.set_pnum(p);
   }
   void set_shipno(shipnum_t s) {
-    shipno_ = s;
+    game_obj_.set_shipno(s);
   }
   void set_level(ScopeLevel l) {
-    level_ = l;
+    game_obj_.set_level(l);
+  }
+
+  /// Access the persistent command execution context owned by this session
+  [[nodiscard]] GameObj& game_obj() noexcept {
+    return game_obj_;
+  }
+  [[nodiscard]] const GameObj& game_obj() const noexcept {
+    return game_obj_;
   }
 
   // Access EntityManager for commands
   EntityManager& entity_manager() {
-    return entity_manager_;
+    return game_obj_.entity_manager;
   }
 
   // Access SessionRegistry for cross-player notifications
   SessionRegistry& registry() {
-    return registry_;
+    return game_obj_.session_registry;
   }
 
   // Rate limiting
@@ -162,21 +170,11 @@ private:
   std::deque<std::string> write_queue_;  // Pending async writes (internal)
   std::deque<std::string> input_queue_;
 
-  EntityManager& entity_manager_;  // For creating GameObj on demand if needed
-  SessionRegistry& registry_;      // For cross-player notifications
+  GameObj game_obj_;  // Single source of truth for player, scope, and viewport
   bool connected_ = false;
   bool writing_ = false;
   int quota_ = COMMAND_BURST_SIZE;
   std::time_t last_time_ = 0;
 
-  // Player state (was in GameObj, now directly in Session)
-  player_t player_ = 0;
-  governor_t governor_ = Race::leader_id;
-  bool god_ = false;
-  starnum_t snum_{};
-  planetnum_t pnum_{};
-  shipnum_t shipno_{};
-  ScopeLevel level_ = ScopeLevel::LEVEL_UNIV;
-
-  std::function<void(std::shared_ptr<Session>)> on_disconnect_;
+  DisconnectHandler on_disconnect_;
 };

@@ -20,8 +20,9 @@ std::shared_ptr<Session> Session::create(asio::ip::tcp::socket socket,
 
 Session::Session(PrivateToken, asio::ip::tcp::socket socket, EntityManager& em,
                  SessionRegistry& registry, DisconnectHandler on_disconnect)
-    : socket_(std::move(socket)), entity_manager_(em), registry_(registry),
+    : socket_(std::move(socket)), game_obj_(em, registry),
       on_disconnect_(std::move(on_disconnect)) {
+  game_obj_.set_level(ScopeLevel::LEVEL_UNIV);
   // Log connection (get peer address)
   asio::error_code ec;
   auto endpoint = socket_.remote_endpoint(ec);

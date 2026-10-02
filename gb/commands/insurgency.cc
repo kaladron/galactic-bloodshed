@@ -2,10 +2,8 @@
 
 module;
 
-import session;
 import gb.entities;
 import gb.services;
-import notification;
 import scnlib;
 import std;
 #undef stdout

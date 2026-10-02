@@ -7,8 +7,6 @@ module;
 
 import gb.entities;
 import gb.services;
-import notification;
-import session;
 import std;
 import tabulate;
 

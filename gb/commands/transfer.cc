@@ -9,8 +9,6 @@ import gb.entities;
 import gb.services;
 import scnlib;
 import std;
-import notification;
-import session;
 #undef stdout
 
 module commands;

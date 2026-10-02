@@ -367,7 +367,7 @@ target_sources(
           commands/who.cc
           commands/whois.cc
           commands/zoom.cc)
-target_link_libraries(commands PRIVATE gb_turn gb_mechanics gb_entities gb_services session notification glaze::glaze
+target_link_libraries(commands PRIVATE gb_turn gb_mechanics gb_entities gb_services glaze::glaze
                                        scnlib_module tabulate_module)
 
 # Create test utilities module

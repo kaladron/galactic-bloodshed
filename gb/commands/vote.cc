@@ -8,7 +8,6 @@ module;
 import gb.entities;
 import gb.services;
 import std;
-import notification;
 
 module commands;
 

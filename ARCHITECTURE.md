@@ -139,7 +139,7 @@ Every game function must reside in the lowest tier capable of expressing its inp
 
 ```
 gb.server       --> commands, gb.turn, gb.mechanics, gb.services, gb.entities, dallib, asio
-commands        --> gb.turn, gb.mechanics, gb.services, gb.entities, session, notification
+commands        --> gb.turn, gb.mechanics, gb.services, gb.entities, scnlib, tabulate
 gb.creator      --> gb.services, gb.repositories, gb.entities, dallib, tabulate
 gb.turn         --> gb.mechanics, gb.services, gb.entities, dallib, tabulate
 gb.mechanics    --> gb.services, gb.entities, scnlib

@@ -24,14 +24,12 @@ export class Session final : public std::enable_shared_from_this<Session> {
   };
 
 public:
-  using DisconnectHandler = std::function<void(std::shared_ptr<Session>)>;
-
   [[nodiscard]] static std::shared_ptr<Session>
   create(asio::ip::tcp::socket socket, EntityManager& em,
-         SessionRegistry& registry, DisconnectHandler on_disconnect = nullptr);
+         SessionRegistry& registry);
 
   Session(PrivateToken, asio::ip::tcp::socket socket, EntityManager& em,
-          SessionRegistry& registry, DisconnectHandler on_disconnect);
+          SessionRegistry& registry);
   ~Session() = default;
 
   // Non-copyable, non-movable (prevent socket duplication)
@@ -63,6 +61,11 @@ public:
 
   /// Graceful disconnect
   void disconnect();
+
+  /// Check if this session has been disconnected and awaits reaping by Server
+  [[nodiscard]] bool is_disconnected() const noexcept {
+    return disconnected_;
+  }
 
   // Connection state
   bool connected() const {
@@ -172,9 +175,8 @@ private:
 
   GameObj game_obj_;  // Single source of truth for player, scope, and viewport
   bool connected_ = false;
+  bool disconnected_ = false;
   bool writing_ = false;
   int quota_ = COMMAND_BURST_SIZE;
   std::time_t last_time_ = 0;
-
-  DisconnectHandler on_disconnect_;
 };

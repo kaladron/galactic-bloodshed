@@ -55,33 +55,29 @@ void Server::shutdown() {
   signals_.cancel();
   timer_.cancel();
   acceptor_.close();
-  // Copy sessions to avoid iterator invalidation during disconnect
-  std::vector<std::shared_ptr<Session>> all_sessions(sessions_.begin(),
-                                                     sessions_.end());
-  for (auto& session : all_sessions) {
+  for (auto& session : sessions_) {
     session->disconnect();
   }
+  reap_disconnected_sessions();
 }
 
 void Server::do_accept() {
-  acceptor_.async_accept(
-      [this](asio::error_code ec, asio::ip::tcp::socket socket) {
-        if (ec) {
-          if (!shutdown_flag_) {
-            std::println(std::cerr, "Accept error: {}", ec.message());
-          }
-          return;
-        }
+  acceptor_.async_accept([this](asio::error_code ec,
+                                asio::ip::tcp::socket socket) {
+    if (ec) {
+      if (!shutdown_flag_) {
+        std::println(std::cerr, "Accept error: {}", ec.message());
+      }
+      return;
+    }
 
-        auto session = Session::create(
-            std::move(socket), entity_manager_, *this,
-            [this](std::shared_ptr<Session> s) { remove_session(s); });
-        sessions_.insert(session);
-        welcome_user(*session, entity_manager_);
-        session->start();
+    auto session = Session::create(std::move(socket), entity_manager_, *this);
+    sessions_.insert(session);
+    welcome_user(*session, entity_manager_);
+    session->start();
 
-        do_accept();  // Accept next connection
-      });
+    do_accept();  // Accept next connection
+  });
 }
 
 void Server::schedule_next_event() {
@@ -114,21 +110,15 @@ void Server::update_quotas(std::chrono::steady_clock::time_point now) {
 }
 
 void Server::check_idle_sessions(std::time_t now) {
-  std::vector<std::shared_ptr<Session>> to_disconnect;
-
   for (auto& session : sessions_) {
-    if (session->connected() &&
+    if (!session->is_disconnected() && session->connected() &&
         (now - session->last_time()) > IDLE_TIMEOUT_SECONDS) {
       std::println(std::cerr, "Disconnecting idle session (timeout)");
       session->out() << "Connection timed out due to inactivity.\n";
-      to_disconnect.push_back(session);
+      session->disconnect();
     }
   }
-
-  // Disconnect after iteration to avoid iterator invalidation
-  for (auto& session : to_disconnect) {
-    session->disconnect();
-  }
+  reap_disconnected_sessions();
 }
 
 void Server::check_turn_events(std::time_t current_time) {
@@ -151,27 +141,24 @@ void Server::check_turn_events(std::time_t current_time) {
 }
 
 void Server::process_commands() {
-  std::vector<std::shared_ptr<Session>> to_disconnect;
+  reap_disconnected_sessions();
 
   // Execute pending commands for all sessions
   for (auto& session : sessions_) {
-    while (session->quota() > 0 && session->has_pending_input()) {
+    while (!session->is_disconnected() && session->quota() > 0 &&
+           session->has_pending_input()) {
       std::string command = session->pop_input();
       session->use_quota();
       session->touch();
 
       if (!do_command(*session, command)) {
-        to_disconnect.push_back(session);
+        session->disconnect();
         break;
       }
     }
   }
 
-  // Disconnect sessions that returned false (quit command, etc.)
-  // Do this before flushing to avoid sending output to disconnected sessions
-  for (auto& session : to_disconnect) {
-    session->disconnect();
-  }
+  reap_disconnected_sessions();
 
   // Check if shutdown was requested during command processing
   if (shutdown_flag_) {
@@ -181,15 +168,14 @@ void Server::process_commands() {
 
   // Flush all dirty output buffers to network
   // This handles both direct command output AND cross-player notifications
-  for (auto& session : sessions_) {
-    session->flush_to_network();
-  }
+  flush_all();
 }
 
 void Server::notify_race(player_t race, const std::string& message) {
   if (update_in_progress()) return;
   for (auto& session : sessions_) {
-    if (session->connected() && session->player() == race) {
+    if (!session->is_disconnected() && session->connected() &&
+        session->player() == race) {
       session->out() << message;
     }
   }
@@ -200,8 +186,8 @@ bool Server::notify_player(player_t race, governor_t gov,
   if (update_in_progress()) return false;
   bool delivered = false;
   for (auto& session : sessions_) {
-    if (session->connected() && session->player() == race &&
-        session->governor() == gov) {
+    if (!session->is_disconnected() && session->connected() &&
+        session->player() == race && session->governor() == gov) {
       session->out() << message;
       delivered = true;
     }
@@ -211,14 +197,17 @@ bool Server::notify_player(player_t race, governor_t gov,
 
 void Server::flush_all() {
   for (auto& session : sessions_) {
-    session->flush_to_network();
+    if (!session->is_disconnected()) {
+      session->flush_to_network();
+    }
   }
+  reap_disconnected_sessions();
 }
 
 bool Server::is_connected(player_t race, governor_t gov) const {
   for (const auto& session : sessions_) {
-    if (session->connected() && session->player() == race &&
-        session->governor() == gov) {
+    if (!session->is_disconnected() && session->connected() &&
+        session->player() == race && session->governor() == gov) {
       return true;
     }
   }
@@ -228,7 +217,7 @@ bool Server::is_connected(player_t race, governor_t gov) const {
 std::vector<SessionInfo> Server::get_connected_sessions() const {
   std::vector<SessionInfo> result;
   for (const auto& session : sessions_) {
-    if (session->connected()) {
+    if (!session->is_disconnected() && session->connected()) {
       result.push_back({.player = session->player(),
                         .governor = session->governor(),
                         .snum = session->snum(),
@@ -240,14 +229,17 @@ std::vector<SessionInfo> Server::get_connected_sessions() const {
   return result;
 }
 
-void Server::remove_session(std::shared_ptr<Session> session) {
-  if (session->connected()) {
-    std::println(std::cerr, "DISCONNECT Race={} Governor={}", session->player(),
-                 session->governor());
-  } else {
-    std::println(std::cerr, "DISCONNECT never connected");
-  }
-  sessions_.erase(session);
+void Server::reap_disconnected_sessions() {
+  std::erase_if(sessions_, [](const auto& session) {
+    if (!session->is_disconnected()) return false;
+    if (session->connected()) {
+      std::println(std::cerr, "DISCONNECT Race={} Governor={}",
+                   session->player(), session->governor());
+    } else {
+      std::println(std::cerr, "DISCONNECT never connected");
+    }
+    return true;
+  });
 }
 
 bool Server::do_command(Session& session, std::string_view comm) {

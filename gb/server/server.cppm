@@ -73,7 +73,7 @@ public:
 private:
   void do_accept();
   void schedule_next_event();
-  void remove_session(std::shared_ptr<Session> session);
+  void reap_disconnected_sessions();
   bool do_command(Session& session, std::string_view comm);
   void process_command(GameObj& g, const command_t& argv);
 

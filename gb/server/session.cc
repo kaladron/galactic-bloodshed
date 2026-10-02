@@ -12,16 +12,14 @@ module session;
 
 std::shared_ptr<Session> Session::create(asio::ip::tcp::socket socket,
                                          EntityManager& em,
-                                         SessionRegistry& registry,
-                                         DisconnectHandler on_disconnect) {
+                                         SessionRegistry& registry) {
   return std::make_shared<Session>(PrivateToken{}, std::move(socket), em,
-                                   registry, std::move(on_disconnect));
+                                   registry);
 }
 
 Session::Session(PrivateToken, asio::ip::tcp::socket socket, EntityManager& em,
-                 SessionRegistry& registry, DisconnectHandler on_disconnect)
-    : socket_(std::move(socket)), game_obj_(em, registry),
-      on_disconnect_(std::move(on_disconnect)) {
+                 SessionRegistry& registry)
+    : socket_(std::move(socket)), game_obj_(em, registry) {
   game_obj_.set_level(ScopeLevel::LEVEL_UNIV);
   // Log connection (get peer address)
   asio::error_code ec;
@@ -131,6 +129,8 @@ void Session::do_write() {
 }
 
 void Session::disconnect() {
+  if (disconnected_) return;
+  disconnected_ = true;
   if (socket_.is_open()) {
     asio::error_code ec;
     if (has_pending_output()) {
@@ -147,9 +147,6 @@ void Session::disconnect() {
     // Errors during disconnect are ignored - socket may already be closed
     (void)socket_.shutdown(asio::ip::tcp::socket::shutdown_both, ec);
     (void)socket_.close(ec);
-  }
-  if (on_disconnect_) {
-    on_disconnect_(shared_from_this());
   }
 }
 

@@ -60,6 +60,7 @@ void setup_test_universe(TestContext& ctx) {
   race.leader().deflevel = ScopeLevel::LEVEL_UNIV;
   race.leader().defsystem = 1;
   race.leader().defplanetnum = 1;
+  race.appoint_governor({.name = "Gov2", .password = "govword2"});
 
   JsonStore store(ctx.db);
   RaceRepository races(store);
@@ -277,12 +278,68 @@ void test_server_quotas_idle_timeout_and_turn_events() {
   server.shutdown();
 }
 
+void test_server_slow_client_flush_reaping() {
+  TestContext ctx;
+  setup_test_universe(ctx);
+
+  asio::io_context io;
+  Server server(io, 0, ctx.em);
+  server.start();
+
+  // Connect two active sessions (Gov 1 and Gov 2 of Race 1)
+  asio::ip::tcp::socket client1(io);
+  client1.connect(
+      asio::ip::tcp::endpoint(asio::ip::address_v6::loopback(), server.port()));
+  asio::ip::tcp::socket client2(io);
+  client2.connect(
+      asio::ip::tcp::endpoint(asio::ip::address_v6::loopback(), server.port()));
+  io.poll();
+  (void)drain_socket(client1);
+  (void)drain_socket(client2);
+
+  std::string creds1 = "raceword govword\n";
+  client1.write_some(asio::buffer(creds1));
+  std::string creds2 = "raceword govword2\n";
+  client2.write_some(asio::buffer(creds2));
+  io.poll();
+  server.process_commands();
+  io.poll();
+  (void)drain_socket(client1);
+  (void)drain_socket(client2);
+
+  test::expect_eq(server.session_count(), 2u);
+  test::expect_true(server.is_connected(1, 1));
+  test::expect_true(server.is_connected(1, 2));
+
+  // Queue a large payload on client1 exceeding MAX_WRITE_QUEUE_SIZE without
+  // draining io
+  server.notify_player(1, 1, std::string(MAX_WRITE_QUEUE_SIZE + 1, 'Z'));
+  server.flush_all();
+  test::expect_eq(server.session_count(), 2u);
+
+  // Broadcast to both governors and flush_all(); client1 overflows and
+  // disconnects mid-iteration while client2 receives the broadcast cleanly
+  server.notify_race(1, "Broadcast after slow client overflow\n");
+  server.flush_all();
+
+  test::expect_eq(server.session_count(), 1u);
+  test::expect_false(server.is_connected(1, 1));
+  test::expect_true(server.is_connected(1, 2));
+
+  io.poll();
+  std::string reply2 = drain_socket(client2);
+  test::expect_contains(reply2, "Broadcast after slow client overflow\n");
+
+  server.shutdown();
+}
+
 }  // namespace
 
 int main() {
   test_server_initialization_and_registry_primitives();
   test_server_network_lifecycle_and_session_handling();
   test_server_quotas_idle_timeout_and_turn_events();
+  test_server_slow_client_flush_reaping();
 
   std::println(std::cout, "✓ server_test passed!");
   return 0;

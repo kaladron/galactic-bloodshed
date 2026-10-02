@@ -15,10 +15,9 @@ import std;
 
 static_assert(std::is_final_v<Session>,
               "Session must be final to enforce shared_from_this invariants");
-static_assert(
-    !std::is_constructible_v<Session, asio::ip::tcp::socket, EntityManager&,
-                             SessionRegistry&, Session::DisconnectHandler>,
-    "Session must not be directly constructible without Passkey");
+static_assert(!std::is_constructible_v<Session, asio::ip::tcp::socket,
+                                       EntityManager&, SessionRegistry&>,
+              "Session must not be directly constructible without Passkey");
 
 // Mock SessionRegistry for testing with mock session data
 class MockSessionRegistry : public SessionRegistry {
@@ -344,13 +343,11 @@ int main() {
     asio::ip::tcp::socket server_socket = acceptor.accept();
 
     MockSessionRegistry registry;
-    bool disconnected = false;
-    auto session = Session::create(
-        std::move(server_socket), em, registry,
-        [&disconnected](std::shared_ptr<Session>) { disconnected = true; });
+    auto session = Session::create(std::move(server_socket), em, registry);
 
     // Initial state
     test::expect_false(session->connected());
+    test::expect_false(session->is_disconnected());
     test::expect_eq(session->player().value, 0);
     test::expect_eq(session->governor().value, 1);
     test::expect_false(session->god());
@@ -441,9 +438,11 @@ int main() {
     std::size_t bytes = client_socket.read_some(asio::buffer(read_buf));
     test::expect_eq(std::string(read_buf.data(), bytes), "Server reply line\n");
 
-    // Graceful disconnect
+    // Graceful disconnect (idempotent)
     session->disconnect();
-    test::expect_true(disconnected);
+    test::expect_true(session->is_disconnected());
+    session->disconnect();
+    test::expect_true(session->is_disconnected());
 
     std::println(
         std::cout,
@@ -460,12 +459,7 @@ int main() {
     asio::ip::tcp::socket server_socket = acceptor.accept();
 
     MockSessionRegistry registry;
-    bool flood_disconnected = false;
-    auto session =
-        Session::create(std::move(server_socket), em, registry,
-                        [&flood_disconnected](std::shared_ptr<Session>) {
-                          flood_disconnected = true;
-                        });
+    auto session = Session::create(std::move(server_socket), em, registry);
 
     session->start();
     std::string flood_payload;
@@ -475,7 +469,7 @@ int main() {
     client_socket.write_some(asio::buffer(flood_payload));
     io.poll();
 
-    test::expect_true(flood_disconnected);
+    test::expect_true(session->is_disconnected());
     std::println(std::cout,
                  "✓ Input queue overflow disconnects flooding client");
   }
@@ -490,12 +484,7 @@ int main() {
     asio::ip::tcp::socket server_socket = acceptor.accept();
 
     MockSessionRegistry registry;
-    bool oversized_disconnected = false;
-    auto session =
-        Session::create(std::move(server_socket), em, registry,
-                        [&oversized_disconnected](std::shared_ptr<Session>) {
-                          oversized_disconnected = true;
-                        });
+    auto session = Session::create(std::move(server_socket), em, registry);
 
     session->start();
     std::string oversized_line(MAX_COMMAND_LEN + 10, 'A');
@@ -503,10 +492,40 @@ int main() {
     client_socket.write_some(asio::buffer(oversized_line));
     io.poll();
 
-    test::expect_true(oversized_disconnected);
+    test::expect_true(session->is_disconnected());
     test::expect_false(session->has_pending_input());
     std::println(std::cout,
                  "✓ Oversized command (> MAX_COMMAND_LEN) disconnects client");
+  }
+
+  // Slow client write queue overflow (> MAX_WRITE_QUEUE_SIZE) disconnects
+  // session
+  {
+    asio::io_context io;
+    asio::ip::tcp::acceptor acceptor(
+        io, asio::ip::tcp::endpoint(asio::ip::address_v6::loopback(), 0));
+    asio::ip::tcp::socket client_socket(io);
+    client_socket.connect(acceptor.local_endpoint());
+    asio::ip::tcp::socket server_socket = acceptor.accept();
+
+    MockSessionRegistry registry;
+    auto session = Session::create(std::move(server_socket), em, registry);
+
+    // Queue an initial write exceeding MAX_WRITE_QUEUE_SIZE without draining io
+    session->out() << std::string(MAX_WRITE_QUEUE_SIZE + 1, 'B');
+    session->flush_to_network();
+    test::expect_false(session->is_disconnected());
+    test::expect_gt(session->write_queue_size(), MAX_WRITE_QUEUE_SIZE);
+
+    // Subsequent flush while write queue exceeds MAX_WRITE_QUEUE_SIZE
+    // disconnects the slow client
+    session->out() << "overflow\n";
+    session->flush_to_network();
+    test::expect_true(session->is_disconnected());
+
+    std::println(std::cout,
+                 "✓ Write queue overflow (> MAX_WRITE_QUEUE_SIZE) disconnects "
+                 "slow client");
   }
 
   std::println(std::cout, "\n✅ All session module tests passed!");

@@ -60,8 +60,7 @@ void test_welcome_user() {
   asio::ip::tcp::socket server_sock = acceptor.accept();
 
   auto& registry = get_test_session_registry();
-  auto session = std::make_shared<Session>(std::move(server_sock), ctx.em,
-                                           registry, [](const auto&) {});
+  auto session = Session::create(std::move(server_sock), ctx.em, registry);
 
   welcome_user(*session, ctx.em);
   io.poll();
@@ -79,8 +78,7 @@ void test_check_connect_failure() {
   asio::io_context io;
   asio::ip::tcp::socket socket1(io);
   auto& registry = get_test_session_registry();
-  auto session1 = std::make_shared<Session>(std::move(socket1), ctx.em,
-                                            registry, [](const auto&) {});
+  auto session1 = Session::create(std::move(socket1), ctx.em, registry);
 
   // 1. Invalid argument count
   check_connect(*session1, "only_one");
@@ -88,8 +86,7 @@ void test_check_connect_failure() {
 
   // 2. Non-existent credentials
   asio::ip::tcp::socket socket2(io);
-  auto session2 = std::make_shared<Session>(std::move(socket2), ctx.em,
-                                            registry, [](const auto&) {});
+  auto session2 = Session::create(std::move(socket2), ctx.em, registry);
   check_connect(*session2, "wrong password");
   test::expect_false(session2->connected());
   auto& out_stream = static_cast<std::ostringstream&>(session2->out());
@@ -119,8 +116,7 @@ void test_check_connect_duplicate_session_rejection() {
 
   asio::io_context io;
   asio::ip::tcp::socket socket(io);
-  auto session = std::make_shared<Session>(std::move(socket), ctx.em,
-                                           busy_registry, [](const auto&) {});
+  auto session = Session::create(std::move(socket), ctx.em, busy_registry);
 
   check_connect(*session, "raceword govword");
   test::expect_false(session->connected());
@@ -179,8 +175,7 @@ void test_check_connect_success_and_clamping() {
   asio::io_context io;
   asio::ip::tcp::socket socket(io);
   auto& registry = get_test_session_registry();
-  auto session = std::make_shared<Session>(std::move(socket), ctx.em, registry,
-                                           [](const auto&) {});
+  auto session = Session::create(std::move(socket), ctx.em, registry);
 
   check_connect(*session, "raceword govword");
 

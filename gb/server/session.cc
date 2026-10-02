@@ -10,9 +10,16 @@ import std;
 
 module session;
 
-Session::Session(asio::ip::tcp::socket socket, EntityManager& em,
-                 SessionRegistry& registry,
-                 std::function<void(std::shared_ptr<Session>)> on_disconnect)
+std::shared_ptr<Session> Session::create(asio::ip::tcp::socket socket,
+                                         EntityManager& em,
+                                         SessionRegistry& registry,
+                                         DisconnectHandler on_disconnect) {
+  return std::make_shared<Session>(PrivateToken{}, std::move(socket), em,
+                                   registry, std::move(on_disconnect));
+}
+
+Session::Session(PrivateToken, asio::ip::tcp::socket socket, EntityManager& em,
+                 SessionRegistry& registry, DisconnectHandler on_disconnect)
     : socket_(std::move(socket)), entity_manager_(em), registry_(registry),
       on_disconnect_(std::move(on_disconnect)) {
   // Log connection (get peer address)

@@ -18,11 +18,20 @@ import std;
 // Commands should import gblib to access them
 
 /// Represents a single client connection
-export class Session : public std::enable_shared_from_this<Session> {
+export class Session final : public std::enable_shared_from_this<Session> {
+  struct PrivateToken {
+    explicit PrivateToken() = default;
+  };
+
 public:
-  Session(asio::ip::tcp::socket socket, EntityManager& em,
-          SessionRegistry& registry,
-          std::function<void(std::shared_ptr<Session>)> on_disconnect);
+  using DisconnectHandler = std::function<void(std::shared_ptr<Session>)>;
+
+  [[nodiscard]] static std::shared_ptr<Session>
+  create(asio::ip::tcp::socket socket, EntityManager& em,
+         SessionRegistry& registry, DisconnectHandler on_disconnect = nullptr);
+
+  Session(PrivateToken, asio::ip::tcp::socket socket, EntityManager& em,
+          SessionRegistry& registry, DisconnectHandler on_disconnect);
   ~Session() = default;
 
   // Non-copyable, non-movable (prevent socket duplication)

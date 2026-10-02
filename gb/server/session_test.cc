@@ -13,13 +13,12 @@ import session;
 import test;
 import std;
 
-// Mock Session for testing without real sockets
-// This allows us to test SessionRegistry logic without async I/O
-class MockSession : public Session {
-public:
-  // We can't construct a real Session without a connected socket,
-  // so we'll test SessionRegistry methods with a different approach
-};
+static_assert(std::is_final_v<Session>,
+              "Session must be final to enforce shared_from_this invariants");
+static_assert(
+    !std::is_constructible_v<Session, asio::ip::tcp::socket, EntityManager&,
+                             SessionRegistry&, Session::DisconnectHandler>,
+    "Session must not be directly constructible without Passkey");
 
 // Mock SessionRegistry for testing with mock session data
 class MockSessionRegistry : public SessionRegistry {
@@ -346,7 +345,7 @@ int main() {
 
     MockSessionRegistry registry;
     bool disconnected = false;
-    auto session = std::make_shared<Session>(
+    auto session = Session::create(
         std::move(server_socket), em, registry,
         [&disconnected](std::shared_ptr<Session>) { disconnected = true; });
 
@@ -444,11 +443,11 @@ int main() {
 
     MockSessionRegistry registry;
     bool flood_disconnected = false;
-    auto session = std::make_shared<Session>(
-        std::move(server_socket), em, registry,
-        [&flood_disconnected](std::shared_ptr<Session>) {
-          flood_disconnected = true;
-        });
+    auto session =
+        Session::create(std::move(server_socket), em, registry,
+                        [&flood_disconnected](std::shared_ptr<Session>) {
+                          flood_disconnected = true;
+                        });
 
     session->start();
     std::string flood_payload;
@@ -474,11 +473,11 @@ int main() {
 
     MockSessionRegistry registry;
     bool oversized_disconnected = false;
-    auto session = std::make_shared<Session>(
-        std::move(server_socket), em, registry,
-        [&oversized_disconnected](std::shared_ptr<Session>) {
-          oversized_disconnected = true;
-        });
+    auto session =
+        Session::create(std::move(server_socket), em, registry,
+                        [&oversized_disconnected](std::shared_ptr<Session>) {
+                          oversized_disconnected = true;
+                        });
 
     session->start();
     std::string oversized_line(MAX_COMMAND_LEN + 10, 'A');

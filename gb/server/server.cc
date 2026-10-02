@@ -73,7 +73,7 @@ void Server::do_accept() {
           return;
         }
 
-        auto session = std::make_shared<Session>(
+        auto session = Session::create(
             std::move(socket), entity_manager_, *this,
             [this](std::shared_ptr<Session> s) { remove_session(s); });
         sessions_.insert(session);

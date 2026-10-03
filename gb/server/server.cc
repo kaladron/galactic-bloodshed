@@ -114,7 +114,7 @@ void Server::check_idle_sessions(std::time_t now) {
     if (!session->is_disconnected() && session->connected() &&
         (now - session->last_time()) > IDLE_TIMEOUT_SECONDS) {
       std::println(std::cerr, "Disconnecting idle session (timeout)");
-      session->out() << "Connection timed out due to inactivity.\n";
+      session->send("Connection timed out due to inactivity.\n");
       session->disconnect();
     }
   }
@@ -176,7 +176,7 @@ void Server::notify_race(player_t race, const std::string& message) {
   for (auto& session : sessions_) {
     if (!session->is_disconnected() && session->connected() &&
         session->player() == race) {
-      session->out() << message;
+      session->send(message);
     }
   }
 }
@@ -188,7 +188,7 @@ bool Server::notify_player(player_t race, governor_t gov,
   for (auto& session : sessions_) {
     if (!session->is_disconnected() && session->connected() &&
         session->player() == race && session->governor() == gov) {
-      session->out() << message;
+      session->send(message);
       delivered = true;
     }
   }
@@ -247,14 +247,14 @@ bool Server::do_command(Session& session, std::string_view comm) {
   if (!session.connected()) {
     check_connect(session, comm);
     if (!session.connected()) {
-      session.out() << "Goodbye!\n";
+      session.send("Goodbye!\n");
       return false;
     }
     g.out.str("");
     g.out.clear();
     check_for_telegrams(g);
     process_command(g, {"cs"});
-    session.out() << g.out.str();
+    session.send(g.out.view());
     g.out.str("");
     g.out.clear();
     return true;
@@ -268,7 +268,7 @@ bool Server::do_command(Session& session, std::string_view comm) {
     shutdown_flag_ = true;
   }
 
-  session.out() << g.out.str();
+  session.send(g.out.view());
   g.out.str("");
   g.out.clear();
 

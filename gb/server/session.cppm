@@ -41,10 +41,15 @@ public:
   /// Start async read loop
   void start();
 
-  /// The ONLY output interface - buffered output stream
+  /// The ONLY output interface - buffered string output
   /// Commands write here; cross-player notifications write here.
   /// Buffer is flushed to network after each command batch.
-  std::ostream& out() {
+  void send(std::string_view message) {
+    out_buffer_.append(message);
+  }
+
+  /// Read-only view of buffered output awaiting flush to network
+  [[nodiscard]] std::string_view pending_output() const noexcept {
     return out_buffer_;
   }
 
@@ -169,7 +174,7 @@ private:
 
   asio::ip::tcp::socket socket_;
   asio::streambuf input_buffer_{MAX_COMMAND_LEN * 16};
-  std::ostringstream out_buffer_;        // Where out() writes go
+  std::string out_buffer_;               // Where send() writes go
   std::deque<std::string> write_queue_;  // Pending async writes (internal)
   std::deque<std::string> input_queue_;
 

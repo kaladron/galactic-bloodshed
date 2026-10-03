@@ -75,8 +75,7 @@ void Session::do_read() {
 }
 
 bool Session::has_pending_output() const {
-  // Check if ostringstream has content by checking if str() is empty
-  return !out_buffer_.str().empty();
+  return !out_buffer_.empty();
 }
 
 std::size_t Session::write_queue_size() const {
@@ -96,10 +95,7 @@ void Session::flush_to_network() {
     return;
   }
 
-  std::string content = out_buffer_.str();
-  out_buffer_.str("");
-  out_buffer_.clear();
-  queue_for_write(std::move(content));
+  queue_for_write(std::exchange(out_buffer_, {}));
 }
 
 void Session::queue_for_write(std::string content) {
@@ -134,9 +130,7 @@ void Session::disconnect() {
   if (socket_.is_open()) {
     asio::error_code ec;
     if (has_pending_output()) {
-      std::string remaining = out_buffer_.str();
-      out_buffer_.str("");
-      out_buffer_.clear();
+      std::string remaining = std::exchange(out_buffer_, {});
       std::size_t offset = 0;
       while (offset < remaining.size() && !ec) {
         offset += socket_.write_some(

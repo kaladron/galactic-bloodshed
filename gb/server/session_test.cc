@@ -427,20 +427,37 @@ int main() {
     test::expect_eq(session->pop_input(), "second_cmd");
     test::expect_false(session->has_pending_input());
 
-    // Output buffering and network flush
-    session->out() << "Server reply line\n";
+    // Output buffering and network flush (including multi-flush queueing before
+    // poll)
+    session->send("Server reply line\n");
     test::expect_true(session->has_pending_output());
+    test::expect_eq(session->pending_output(), "Server reply line\n");
     session->flush_to_network();
     test::expect_false(session->has_pending_output());
+    test::expect_eq(session->pending_output(), "");
+
+    // Second flush before io.poll() queues behind the active async_write
+    session->send("Second reply line\n");
+    session->flush_to_network();
     io.poll();
 
     std::array<char, 128> read_buf{};
     std::size_t bytes = client_socket.read_some(asio::buffer(read_buf));
-    test::expect_eq(std::string(read_buf.data(), bytes), "Server reply line\n");
+    test::expect_eq(std::string(read_buf.data(), bytes),
+                    "Server reply line\nSecond reply line\n");
+
+    // Buffered output at disconnect is drained synchronously before socket
+    // close
+    session->send("Final goodbye\n");
+    test::expect_true(session->has_pending_output());
 
     // Graceful disconnect (idempotent)
     session->disconnect();
     test::expect_true(session->is_disconnected());
+    test::expect_false(session->has_pending_output());
+    bytes = client_socket.read_some(asio::buffer(read_buf));
+    test::expect_eq(std::string(read_buf.data(), bytes), "Final goodbye\n");
+
     session->disconnect();
     test::expect_true(session->is_disconnected());
 
@@ -512,14 +529,14 @@ int main() {
     auto session = Session::create(std::move(server_socket), em, registry);
 
     // Queue an initial write exceeding MAX_WRITE_QUEUE_SIZE without draining io
-    session->out() << std::string(MAX_WRITE_QUEUE_SIZE + 1, 'B');
+    session->send(std::string(MAX_WRITE_QUEUE_SIZE + 1, 'B'));
     session->flush_to_network();
     test::expect_false(session->is_disconnected());
     test::expect_gt(session->write_queue_size(), MAX_WRITE_QUEUE_SIZE);
 
     // Subsequent flush while write queue exceeds MAX_WRITE_QUEUE_SIZE
     // disconnects the slow client
-    session->out() << "overflow\n";
+    session->send("overflow\n");
     session->flush_to_network();
     test::expect_true(session->is_disconnected());
 

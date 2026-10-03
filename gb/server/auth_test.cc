@@ -89,8 +89,7 @@ void test_check_connect_failure() {
   auto session2 = Session::create(std::move(socket2), ctx.em, registry);
   check_connect(*session2, "wrong password");
   test::expect_false(session2->connected());
-  auto& out_stream = static_cast<std::ostringstream&>(session2->out());
-  test::expect_contains(out_stream.str(), "Connection refused.");
+  test::expect_contains(session2->pending_output(), "Connection refused.");
 }
 
 void test_check_connect_duplicate_session_rejection() {
@@ -120,8 +119,7 @@ void test_check_connect_duplicate_session_rejection() {
 
   check_connect(*session, "raceword govword");
   test::expect_false(session->connected());
-  auto& out_stream = static_cast<std::ostringstream&>(session->out());
-  test::expect_contains(out_stream.str(), "Connection refused.");
+  test::expect_contains(session->pending_output(), "Connection refused.");
 }
 
 void test_check_connect_success_and_clamping() {
@@ -191,8 +189,7 @@ void test_check_connect_success_and_clamping() {
   test::expect_gt(updated_race->leader().login, 0);
 
   // Verify login output
-  auto& out_stream = static_cast<std::ostringstream&>(session->out());
-  std::string output = out_stream.str();
+  std::string_view output = session->pending_output();
   test::expect_contains(output, "TestRace \"Gov1\" [1,1] logged on.");
   test::expect_contains(output, "Government Center #42 is active.");
   test::expect_contains(output, "Morale: 100");

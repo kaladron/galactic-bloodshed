@@ -166,7 +166,8 @@ bool launch_from_planet(GameObj& g, Ship& s) {
           for (const Race& race : RaceList::readonly(g.entity_manager)) {
             const player_t i = race.Playernum;
             if (p.info(i).numsectsowned && i != playernum) {
-              g.session_registry.notify_player(i, star.governor(i), observed);
+              warn_player(g.session_registry, g.entity_manager, i,
+                          star.governor(i), observed);
             }
           }
 

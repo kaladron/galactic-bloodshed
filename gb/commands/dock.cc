@@ -355,10 +355,8 @@ void report_boarding_outcome(const Ship& s, const Ship& s2, PopulationType what,
     g.out << std::format("Their boobytrap gave you {}% damage!)\n",
                          outcome.booby_damage);
   }
-  g.session_registry.notify_player(
-      Playernum, Governor,
-      std::format("Damage taken:  You: {}% (now {}%)\n",
-                  outcome.attacker_damage, s.damage()));
+  g.out << std::format("Damage taken:  You: {}% (now {}%)\n",
+                       outcome.attacker_damage, s.damage());
   if (!s.alive()) {
     g.out << "              YOUR SHIP WAS DESTROYED!!!\n";
     telegram += "              Their ship DESTROYED!!!\n";

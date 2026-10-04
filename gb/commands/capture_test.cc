@@ -221,6 +221,11 @@ void test_capture_civilian_victory() {
       g, {"capture", std::format("#{}", target_ship.value), "20", "civilians"});
   test::expect_contains(g.out.str(), "VICTORY! The ship is yours!");
 
+  const auto victim_teles = ctx.em.get_telegrams(2, 1);
+  test::expect_false(victim_teles.empty());
+  test::expect_contains(victim_teles.front().message, "BULLETIN from");
+  test::expect_contains(victim_teles.front().message, "CAPTURED!");
+
   ctx.em.clear_cache();
   const auto* ship = ctx.em.peek_ship(target_ship);
   test::expect_true(ship != nullptr);
@@ -257,6 +262,7 @@ void test_capture_default_boarders_and_allied_ship() {
   // Capture without specifying count or type (defaults to all available civs)
   ctx.assert_dispatch_success(
       g, {"capture", std::format("#{}", target_ship.value)});
+  test::expect_contains(g.out.str(), "Boarding the ship of your ally");
   test::expect_contains(g.out.str(), "VICTORY! The ship is yours!");
 
   ctx.em.clear_cache();
@@ -287,6 +293,9 @@ void test_capture_booby_trap_robot_ship() {
 
   ctx.assert_dispatch_success(
       g, {"capture", std::format("#{}", target_ship.value), "10", "military"});
+  test::expect_true(g.out.str().contains("Booby trap triggered") ||
+                    g.out.str().contains("VICTORY") ||
+                    g.out.str().contains("DESTROYED"));
 
   ctx.verify_universe_invariants();
 }
@@ -319,7 +328,13 @@ void test_capture_boarders_wiped_and_ship_destroyed() {
   // Send 1 civilian against dreadnought -> wiped out
   ctx.assert_dispatch_success(
       g, {"capture", std::format("#{}", dreadnought.value), "1", "civilians"});
+  test::expect_contains(g.out.str(), "Attack strength:");
   test::expect_contains(g.out.str(), "killed your party to the last man");
+
+  const auto defender_teles = ctx.em.get_telegrams(2, 1);
+  test::expect_false(defender_teles.empty());
+  test::expect_contains(defender_teles.back().message, "BULLETIN from");
+  test::expect_contains(defender_teles.back().message, "You fought them off!");
 
   ctx.verify_universe_invariants();
 }

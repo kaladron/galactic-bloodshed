@@ -90,8 +90,8 @@ bool dissolve(const command_t& argv, GameObj& g) {
     g.out << "Only the leader may dissolve the race. The "
              "leader has been notified of your "
              "attempt!!!\n";
-    g.session_registry.notify_player(
-        playernum, Race::leader_id,
+    warn_player(
+        g.session_registry, g.entity_manager, playernum, Race::leader_id,
         std::format("Governor #{} has attempted to dissolve this race.\n",
                     governor));
     return false;

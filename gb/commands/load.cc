@@ -179,18 +179,16 @@ void resolve_alien_sector_combat(GameObj& g, Race& race, Race& alien,
   sect.set_popn_exact(outcome.surviving_defender_civ);
   sect.set_troops(outcome.surviving_defender_mil);
 
-  g.session_registry.notify_player(
-      attacker_player, attacker_gov,
-      std::format("Attack: {:.2f}   Defense: {:.2f}.\n",
-                  outcome.attack_strength, outcome.defense_strength));
+  g.out << std::format("Attack: {:.2f}   Defense: {:.2f}.\n",
+                       outcome.attack_strength, outcome.defense_strength);
 
   if (sect.is_empty()) {
     int absorbed = 0;
     if (race.absorb) {
       absorbed = int_rand(0, initial_defender_civ + initial_defender_mil);
       g.out << std::format("{} alien bodies absorbed.\n", absorbed);
-      g.session_registry.notify_player(
-          defender_owner, defender_gov,
+      warn_player(
+          g.session_registry, g.entity_manager, defender_owner, defender_gov,
           std::format("Metamorphs have absorbed {} bodies!!!\n", absorbed));
     }
     if (what == PopulationType::CIV) {
@@ -204,9 +202,9 @@ void resolve_alien_sector_combat(GameObj& g, Race& race, Race& alien,
   } else {
     if (alien.absorb) {
       int absorbed = int_rand(0, initial_attacker_popn - people);
-      g.session_registry.notify_player(
-          defender_owner, defender_gov,
-          std::format("{} alien bodies absorbed.\n", absorbed));
+      warn_player(g.session_registry, g.entity_manager, defender_owner,
+                  defender_gov,
+                  std::format("{} alien bodies absorbed.\n", absorbed));
       g.out << std::format("Metamorphs have absorbed {} bodies!!!\n", absorbed);
       sect.add_popn(absorbed);
     }
@@ -279,13 +277,8 @@ struct DockingContext {
 };
 
 std::optional<DockingContext> validate_ship_docking(Ship& s, GameObj& g) {
-  player_t Playernum = g.player();
-  governor_t Governor = g.governor();
-
   if (!s.active()) {
-    g.session_registry.notify_player(
-        Playernum, Governor,
-        std::format("{} is irradiated and inactive.\n", s));
+    g.out << std::format("{} is irradiated and inactive.\n", s);
     return std::nullopt;
   }
   if (!s.docked()) {
@@ -324,7 +317,7 @@ std::optional<DockingContext> validate_ship_docking(Ship& s, GameObj& g) {
         return;
       }
       g.out << std::format("{} docked with {}\n", s, s2);
-      bool diff = (s2.owner() != Playernum);
+      bool diff = (s2.owner() != g.player());
       if (diff) {
         g.out << std::format("Player {} owns that ship.\n", s2.owner());
       }

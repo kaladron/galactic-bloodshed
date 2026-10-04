@@ -158,6 +158,10 @@ int main() {
     const auto* c_after = ctx.em.peek_commod(1);
     test::expect_eq(c_after->bid, new_bid);
     test::expect_eq(c_after->bidder, player_t{1});
+    const auto outbid_teles = ctx.em.get_telegrams(1, 1);
+    test::expect_false(outbid_teles.empty());
+    test::expect_contains(outbid_teles.back().message,
+                          "The bid on lot #1 (100 resources) has been upped");
     std::println(std::cout, "✓ Bid raised successfully");
   }
 

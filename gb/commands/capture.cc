@@ -171,9 +171,7 @@ bool capture(const command_t& argv, GameObj& g) {
   }
 
   if (race.is_allied_with(ship_peek->owner())) {
-    g.session_registry.notify_player(
-        Playernum, Governor,
-        std::format("Boarding the ship of your ally, {}\n", alien->name));
+    g.out << std::format("Boarding the ship of your ally, {}\n", alien->name);
   }
 
   g.entity_manager.mutate_ship(*target_shipno, [&](Ship& ship) {
@@ -200,11 +198,9 @@ bool capture(const command_t& argv, GameObj& g) {
             astrength = calculate_boarding_attack_strength(boarders, what, race,
                                                            *alien, sect);
             dstrength = calculate_boarding_defense_strength(ship, *alien, race);
-            g.session_registry.notify_player(
-                Playernum, Governor,
-                std::format(
-                    "Attack strength: {:.2f}     Defense strength: {:.2f}\n",
-                    astrength, dstrength));
+            g.out << std::format(
+                "Attack strength: {:.2f}     Defense strength: {:.2f}\n",
+                astrength, dstrength);
             casualty_scale = std::min(boarders, ship.popn() + ship.troops());
             if (astrength > 0.0)
               casualties = int_rand(
@@ -302,9 +298,7 @@ bool capture(const command_t& argv, GameObj& g) {
     if (booby) {
       telegram +=
           std::format("Booby trap triggered causing {}% damage.\n", booby);
-      g.session_registry.notify_player(
-          Playernum, Governor,
-          std::format("Booby trap triggered causing {}% damage.\n", booby));
+      g.out << std::format("Booby trap triggered causing {}% damage.\n", booby);
     }
 
     if (shipdam) {
@@ -323,8 +317,7 @@ bool capture(const command_t& argv, GameObj& g) {
     }
 
     if (ship.owner() == Playernum) {
-      g.session_registry.notify_player(oldowner, oldgov,
-                                       std::format("{} CAPTURED!\n", ship));
+      telegram += std::format("{} CAPTURED!\n", ship);
       g.out << "VICTORY! The ship is yours!\n";
       if (what == PopulationType::CIV)
         g.out << std::format("{} boarders move in.\n",
@@ -337,8 +330,7 @@ bool capture(const command_t& argv, GameObj& g) {
                                    dispshiploc(g.entity_manager, ship),
                                    race.name, Playernum, ship);
     } else if (ship.popn() + ship.troops()) {
-      g.session_registry.notify_player(oldowner, oldgov,
-                                       "You fought them off!\n");
+      telegram += "You fought them off!\n";
       g.out << "The boarding was repulsed; try again.\n";
       auto short_buf = std::format("{}: {} [{}] assaults {}\n",
                                    dispshiploc(g.entity_manager, ship),

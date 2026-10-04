@@ -210,7 +210,8 @@ bool place_bid(const command_t& argv, GameObj& g) {
       std::string bid_message = std::format(
           "The bid on lot #{} ({} {}) has been upped to {} by {} [{}].\n", lot,
           c.amount, c.type, bid0, g.race->name, g.player());
-      g.session_registry.notify_player(*c.bidder, c.bidder_gov, bid_message);
+      warn_player(g.session_registry, g.entity_manager, *c.bidder, c.bidder_gov,
+                  bid_message);
     }
     c.place_bid(g.player(), g.governor(), bid0, snum, pnum);
     auto [ship_cost, dist] =

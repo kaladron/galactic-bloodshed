@@ -25,9 +25,7 @@ bool validate_surface_combat_geometry(GameObj& g, const Ship& from,
       return false;
     }
     if (!to.is_landed()) {
-      g.session_registry.notify_player(
-          g.player(), g.governor(),
-          std::format("{} isn't landed on a planet!\n", to));
+      g.out << std::format("{} isn't landed on a planet!\n", to);
       return false;
     }
   }

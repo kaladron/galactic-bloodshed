@@ -82,6 +82,7 @@ void test_dock_happy_paths() {
   // Undock first for assault test
   ctx.em.mutate_ship(1, [](Ship& s) { s.undock_from_ship(); });
   ctx.assert_dispatch_success(g, {"assault", "#1", "#3"}, 1);
+  test::expect_contains(g.out.str(), "Damage taken:  You:");
   test::expect_true(g.out.str().contains("VICTORY") ||
                     g.out.str().contains("CAPTURED"));
 

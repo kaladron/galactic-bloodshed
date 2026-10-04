@@ -298,6 +298,7 @@ void test_fire_cew_and_surface_geometry_edge_cases() {
   });
   ctx.assert_dispatch_rejected(
       g, {"fire", std::format("#{}", afv_id.value), "#2"});
+  test::expect_contains(g.out.str(), "isn't landed on a planet!");
 
   // Land target #2 on non-adjacent sector (5, 5) -> rejected
   ctx.em.mutate_ship(2, [](Ship& s) {

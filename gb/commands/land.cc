@@ -170,7 +170,7 @@ void resolve_planetary_defense_fire(GameObj& g, Ship& s, const Star& star,
                     p_short);
         warn_player(g.session_registry, g.entity_manager, i, star.governor(i),
                     p_long);
-        g.session_registry.notify_player(s.owner(), s.governor(), p_long);
+        g.out << p_long;
       }
       p.info(i).destruct -= strength;
     });
@@ -249,7 +249,8 @@ void report_landing_sector_status(GameObj& g, const Ship& s, const Star& star,
   for (const Race& race : RaceList::readonly(g.entity_manager)) {
     const player_t i = race.Playernum;
     if (p.info(i).numsectsowned && i != playernum) {
-      g.session_registry.notify_player(i, star.governor(i), landing_msg);
+      warn_player(g.session_registry, g.entity_manager, i, star.governor(i),
+                  landing_msg);
     }
   }
   g.out << std::format("{} landed on planet.\n", s);

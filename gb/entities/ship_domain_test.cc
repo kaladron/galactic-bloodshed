@@ -1154,21 +1154,20 @@ void test_ship_moor_together_and_commandability() {
   ctx.setup_game_obj(g, 1, 2);
   test::expect_true(g.check_commandable(*s1_peek));
 
-  // Unauthorized governor (3) fails check_commandable and receives telegram via
-  // notify_dont_own_ship
+  // Unauthorized governor (3) fails check_commandable and receives diagnostic in
+  // g.out (not a rolled-back telegram)
   ctx.setup_game_obj(g, 1, 3);
+  g.out.str("");
   test::expect_false(g.check_commandable(*s1_peek));
-  auto t_p1g3 = ctx.em.get_telegrams(1, 3);
-  test::expect_eq(t_p1g3.size(), 1u);
-  test::expect_true(t_p1g3[0].message.find("don't own") != std::string::npos);
+  test::expect_contains(g.out.str(), "You don't own ship #");
+  test::expect_true(ctx.em.get_telegrams(1, 3).empty());
 
-  // Wrong player fails check_commandable and receives telegram via
-  // notify_dont_own_ship
+  // Wrong player fails check_commandable and receives diagnostic in g.out
   ctx.setup_game_obj(g, 2, 1);
+  g.out.str("");
   test::expect_false(g.check_commandable(*s1_peek));
-  auto t_p2g0 = ctx.em.get_telegrams(2, 1);
-  test::expect_eq(t_p2g0.size(), 1u);
-  test::expect_true(t_p2g0[0].message.find("don't own") != std::string::npos);
+  test::expect_contains(g.out.str(), "You don't own ship #");
+  test::expect_true(ctx.em.get_telegrams(2, 1).empty());
 
   // Irradiated inactive ship fails check_commandable
   ctx.em.mutate_ship(s1_id, [](Ship& s1) {

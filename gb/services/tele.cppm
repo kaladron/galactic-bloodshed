@@ -10,9 +10,6 @@ import std;
 import gb.entities;
 import :gameobj;
 
-export void notify_dont_own_ship(EntityManager&, player_t, governor_t,
-                                 shipnum_t);
-export void notify_dont_own_ship(const GameObj&, shipnum_t);
 export void check_for_telegrams(GameObj&);
 export void purge(EntityManager&);
 export void post(EntityManager&, std::string, NewsType);

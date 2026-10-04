@@ -31,16 +31,6 @@ void print_timestamped_message(GameObj& g, std::int64_t raw_timestamp,
 
 }  // namespace
 
-void notify_dont_own_ship(EntityManager& em, player_t playernum,
-                          governor_t governor, shipnum_t shipno) {
-  std::string error_msg = std::format("You don't own ship #{}.\n", shipno);
-  push_telegram(em, playernum, governor, error_msg);
-}
-
-void notify_dont_own_ship(const GameObj& g, shipnum_t shipno) {
-  notify_dont_own_ship(g.entity_manager, g.player(), g.governor(), shipno);
-}
-
 /**
  * \brief Sends a message to everyone from person to person
  *

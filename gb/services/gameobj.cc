@@ -37,7 +37,7 @@ bool GameObj::check_commandable(const Ship& ship) {
   }
 
   if (ship.owner() != player_ || !ship.is_authorized_for(governor_)) {
-    notify_dont_own_ship(*this, ship.number());
+    out << std::format("You don't own ship #{}.\n", ship.number());
     return false;
   }
 

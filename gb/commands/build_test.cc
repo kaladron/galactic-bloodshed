@@ -103,7 +103,15 @@ void test_build_domain_errors() {
   ctx.assert_dispatch_rejected(g, {"build", ":"});
   test::expect_contains(g.out.str(), "Build where?");
 
-  // 3. Test: Build with insufficient resources
+  // 3. Test: Build on enslaved planet rejected with diagnostic in g.out
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.enslave_to(2); });
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"build", ":", "5,5", "1"});
+  test::expect_contains(g.out.str(), "This planet is enslaved by player 2.");
+  test::expect_true(ctx.em.get_telegrams(1, 1).empty());
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.free_slaves(); });
+
+  // 4. Test: Build with insufficient resources
   // Drain resources completely
   ctx.em.mutate_planet(1, 1,
                        [](Planet& p) { p.info(player_t{1}).resource = 0; });

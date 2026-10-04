@@ -10,7 +10,6 @@ import gb.entities;
 import :entitylists;
 import :gameobj;
 import :services;
-import :tele;
 
 export class Place { /* used in function return for finding place */
 public:
@@ -194,7 +193,7 @@ void Place::resolve_ship_place(GameObj& g, std::string_view string,
                                const bool ignore_explore) {
   const auto shipnum = string_to_shipnum(string);
   if (!shipnum) {
-    notify_dont_own_ship(g, shipno);
+    g.out << std::format("You don't own ship #{}.\n", shipno);
     err = true;
     return;
   }
@@ -202,7 +201,7 @@ void Place::resolve_ship_place(GameObj& g, std::string_view string,
   try {
     ship = g.entity_manager.peek_ship(*shipnum);
   } catch (const EntityNotFoundError&) {
-    notify_dont_own_ship(g, *shipnum);
+    g.out << std::format("You don't own ship #{}.\n", *shipnum);
     err = true;
     return;
   }
@@ -214,7 +213,7 @@ void Place::resolve_ship_place(GameObj& g, std::string_view string,
     pnum = ship->pnumorbits();
     return;
   }
-  notify_dont_own_ship(g, *shipnum);
+  g.out << std::format("You don't own ship #{}.\n", *shipnum);
   err = true;
 }
 

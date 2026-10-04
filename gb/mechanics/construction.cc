@@ -69,9 +69,8 @@ bool can_build_at_planet(GameObj& g, const Star& star, const Planet& planet) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
   if (planet.is_enslaved_to_foreign(Playernum)) {
-    std::string message = std::format("This planet is enslaved by player {}.\n",
-                                      *planet.slaved_to());
-    push_telegram(g.entity_manager, Playernum, Governor, message);
+    g.out << std::format("This planet is enslaved by player {}.\n",
+                         *planet.slaved_to());
     return false;
   }
   if (!star.control(Playernum, Governor)) {

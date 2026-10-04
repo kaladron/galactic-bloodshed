@@ -406,8 +406,11 @@ int main() {
 
     // can_build_at_planet: enslaved planet
     ctx.em.mutate_planet(1, 1, [](Planet& p) { p.enslave_to(2); });
+    g.out.str("");
     test::expect_false(can_build_at_planet(g, *ctx.em.peek_star(1),
                                            *ctx.em.peek_planet(1, 1)));
+    test::expect_contains(g.out.str(), "This planet is enslaved by player 2.");
+    test::expect_true(ctx.em.get_telegrams(1, 1).empty());
     ctx.em.mutate_planet(1, 1, [](Planet& p) { p.free_slaves(); });
 
     // can_build_at_planet: unauthorized governor

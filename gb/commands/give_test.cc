@@ -142,6 +142,9 @@ void test_give_dispatch() {
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"give", "Klingons", std::format("#{}", ship_p2.value)});
+  test::expect_contains(g.out.str(),
+                        std::format("You don't own ship #{}.", ship_p2));
+  test::expect_true(ctx.em.get_telegrams(1, 1).empty());
 
   // 12. Spore pod rejection
   const shipnum_t pod_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)

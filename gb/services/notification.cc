@@ -32,14 +32,13 @@ void d_broadcast(SessionRegistry& registry, EntityManager& em, player_t sender,
 void d_announce(SessionRegistry& registry, EntityManager& em, player_t sender,
                 governor_t sender_gov, starnum_t star,
                 const std::string& message) {
-  const auto* star_ptr = em.peek_star(star);
-  if (!star_ptr) return;
+  const auto& star_ref = *em.peek_star(star);
 
   // Send to players who inhabit this star system, respecting gag
   for (const Race& race : RaceList::readonly(em)) {
     const player_t p = race.Playernum;
     // Must inhabit the star (or be God)
-    if (!star_ptr->is_inhabited_by(p) && !race.God) continue;
+    if (!star_ref.is_inhabited_by(p) && !race.God) continue;
 
     for (auto [g, gov] : race.active_governors()) {
       if (p == sender && g == sender_gov) continue;
@@ -52,11 +51,10 @@ void d_announce(SessionRegistry& registry, EntityManager& em, player_t sender,
 
 void d_think(SessionRegistry& registry, EntityManager& em, player_t race_num,
              governor_t sender_gov, const std::string& message) {
-  const auto* race = em.peek_race(race_num);
-  if (!race) return;
+  const auto& race = *em.peek_race(race_num);
 
   // Send to other governors of the same race, respecting gag
-  for (auto [g, gov] : race->active_governors()) {
+  for (auto [g, gov] : race.active_governors()) {
     if (g == sender_gov) continue;
     if (gov.toggle.gag) continue;
 
@@ -99,10 +97,9 @@ void warn_player(SessionRegistry& registry, EntityManager& em, player_t who,
 
 void warn_race(SessionRegistry& registry, EntityManager& em, player_t who,
                const std::string& message) {
-  const auto* race = em.peek_race(who);
-  if (!race) return;
+  const auto& race = *em.peek_race(who);
 
-  for (auto [g, gov] : race->active_governors()) {
+  for (auto [g, gov] : race.active_governors()) {
     warn_player(registry, em, who, g, message);
   }
 }
@@ -110,14 +107,12 @@ void warn_race(SessionRegistry& registry, EntityManager& em, player_t who,
 void notify_star(SessionRegistry& registry, EntityManager& em, player_t sender,
                  governor_t sender_gov, starnum_t star,
                  const std::string& message) {
-  const auto* star_ptr = em.peek_star(star);
-  if (!star_ptr) return;
+  const auto& star_ref = *em.peek_star(star);
 
   const bool in_update = registry.update_in_progress();
   for (const Race& race : RaceList::readonly(em)) {
     const player_t p = race.Playernum;
-    if (p == sender && Race::is_leader(sender_gov)) continue;
-    if (!star_ptr->is_inhabited_by(p)) continue;
+    if (!star_ref.is_inhabited_by(p)) continue;
 
     for (auto [g, gov] : race.active_governors()) {
       if (p == sender && g == sender_gov) continue;
@@ -131,14 +126,13 @@ void notify_star(SessionRegistry& registry, EntityManager& em, player_t sender,
 
 void warn_star(SessionRegistry& registry, EntityManager& em, player_t sender,
                starnum_t star, const std::string& message) {
-  const auto* star_ptr = em.peek_star(star);
-  if (!star_ptr) return;
+  const auto& star_ref = *em.peek_star(star);
 
   // Send to all players who inhabit the star system (except sender)
   for (const Race& race : RaceList::readonly(em)) {
     const player_t p = race.Playernum;
     if (p == sender) continue;
-    if (!star_ptr->is_inhabited_by(p)) continue;
+    if (!star_ref.is_inhabited_by(p)) continue;
 
     warn_race(registry, em, p, message);
   }

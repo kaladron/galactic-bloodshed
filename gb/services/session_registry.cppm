@@ -27,6 +27,15 @@ export struct SessionInfo {
   std::time_t last_time;
 };
 
+/// Notification staged in the transactional socket outbox awaiting SQLite
+/// commit.
+export struct StagedNotification {
+  player_t player;
+  governor_t governor;
+  std::string message;
+  bool is_broadcast{false};
+};
+
 /// Abstract interface for session management (cross-cutting concern)
 /// Provides notification primitives that don't require game state knowledge.
 /// Implementations are in the application layer (Server class).
@@ -50,6 +59,48 @@ public:
   /// Returns true if message was delivered to at least one session
   virtual bool notify_player(player_t race, governor_t gov,
                              const std::string& message) = 0;
+
+  // --- Transactional Socket Outbox ---
+
+  /// Begin staging live socket notifications in the transactional outbox.
+  virtual void begin_outbox() {
+    outbox_.clear();
+    outbox_active_ = true;
+  }
+
+  /// Flush all staged notifications through notify_race/notify_player and
+  /// return any player-targeted notifications that failed delivery during
+  /// flush.
+  virtual std::vector<StagedNotification> commit_outbox() {
+    outbox_active_ = false;
+    auto staged = std::exchange(outbox_, {});
+    std::vector<StagedNotification> undelivered;
+    for (auto& item : staged) {
+      if (item.is_broadcast) {
+        notify_race(item.player, item.message);
+      } else if (!notify_player(item.player, item.governor, item.message)) {
+        undelivered.push_back(std::move(item));
+      }
+    }
+    return undelivered;
+  }
+
+  /// Discard all staged notifications without delivering them.
+  virtual void rollback_outbox() {
+    outbox_.clear();
+    outbox_active_ = false;
+  }
+
+  /// Check whether the transactional socket outbox is currently active.
+  [[nodiscard]] bool outbox_active() const noexcept {
+    return outbox_active_;
+  }
+
+  /// Check if a player/governor can receive a real-time notification.
+  [[nodiscard]] virtual bool is_player_connected(player_t race,
+                                                 governor_t gov) const {
+    return is_connected(race, gov);
+  }
 
   // --- Update state ---
 
@@ -97,6 +148,34 @@ public:
   virtual void clear_pending_turn() {
     // Default implementation does nothing
   }
+
+protected:
+  bool stage_race_notification(player_t race, const std::string& message) {
+    if (!outbox_active_) return false;
+    outbox_.push_back({
+        .player = race,
+        .governor = 0,
+        .message = message,
+        .is_broadcast = true,
+    });
+    return true;
+  }
+
+  bool stage_player_notification(player_t race, governor_t gov,
+                                 const std::string& message) {
+    if (!outbox_active_) return false;
+    outbox_.push_back({
+        .player = race,
+        .governor = gov,
+        .message = message,
+        .is_broadcast = false,
+    });
+    return true;
+  }
+
+private:
+  bool outbox_active_{false};
+  std::vector<StagedNotification> outbox_;
 };
 
 /// Null implementation of SessionRegistry for tests (does nothing)

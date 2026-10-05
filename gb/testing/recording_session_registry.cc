@@ -31,8 +31,15 @@ bool RecordingSessionRegistry::is_connected(player_t player,
   });
 }
 
+bool RecordingSessionRegistry::is_player_connected(player_t player,
+                                                   governor_t gov) const {
+  return sessions.empty() || is_connected(player, gov);
+}
+
 void RecordingSessionRegistry::notify_race(player_t race,
                                            const std::string& message) {
+  if (update_in_progress()) return;
+  if (stage_race_notification(race, message)) return;
   notifications.push_back({
       .player = race,
       .governor = 1,
@@ -43,6 +50,9 @@ void RecordingSessionRegistry::notify_race(player_t race,
 
 bool RecordingSessionRegistry::notify_player(player_t race, governor_t gov,
                                              const std::string& message) {
+  if (update_in_progress()) return false;
+  if (!is_player_connected(race, gov)) return false;
+  if (stage_player_notification(race, gov, message)) return true;
   notifications.push_back({
       .player = race,
       .governor = gov,

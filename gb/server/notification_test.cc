@@ -37,14 +37,13 @@ public:
     return gag_;
   }
 
-  std::ostream& out() {
+  void send(std::string_view message) {
+    out_.append(message);
+  }
+  std::string get_output() const {
     return out_;
   }
-  std::string get_output() {
-    return out_.str();
-  }
   void clear_output() {
-    out_.str("");
     out_.clear();
   }
 
@@ -54,7 +53,7 @@ private:
   starnum_t snum_;
   bool connected_;
   bool gag_;
-  std::ostringstream out_;
+  std::string out_;
 };
 
 // Mock SessionRegistry for testing
@@ -75,21 +74,33 @@ public:
     update_in_progress_ = val;
   }
 
+  [[nodiscard]] bool is_connected(player_t race,
+                                  governor_t gov) const override {
+    return std::ranges::any_of(sessions_, [&](const auto& s) {
+      return s->connected() && s->player() == race && s->governor() == gov;
+    });
+  }
+
   // Override notification methods for testing
   void notify_race(player_t race, const std::string& message) override {
+    if (update_in_progress_) return;
+    if (stage_race_notification(race, message)) return;
     for (auto& session : sessions_) {
       if (session->connected() && session->player() == race) {
-        session->out() << message;
+        session->send(message);
       }
     }
   }
 
   bool notify_player(player_t race, governor_t gov,
                      const std::string& message) override {
+    if (update_in_progress_) return false;
+    if (!is_player_connected(race, gov)) return false;
+    if (stage_player_notification(race, gov, message)) return true;
     for (auto& session : sessions_) {
       if (session->connected() && session->player() == race &&
           session->governor() == gov) {
-        session->out() << message;
+        session->send(message);
         return true;
       }
     }
@@ -218,69 +229,103 @@ void test_disconnected_sessions() {
   std::println(std::cout, "  ✓ Disconnected session tests passed");
 }
 
-void test_d_broadcast_gag_filtering() {
-  std::println(std::cout, "Testing d_broadcast with gag filtering...");
-
+void test_d_broadcast_announce_think_and_shout() {
   Database db(":memory:");
   initialize_schema(db);
   EntityManager em(db);
 
-  // Create races with different gag settings
   auto race1 = create_race(1);
-  race1.leader().toggle.gag = false;    // Not gagged
-  race1.governor(2).toggle.gag = true;  // Gagged
-
+  race1.leader().toggle.gag = false;
+  race1.governor(2).toggle.gag = true;
+  race1.governor(3).toggle.gag = false;
   auto race2 = create_race(2);
-  race2.leader().toggle.gag = false;
+  auto race3 = create_race(3);
+  auto race4 = create_race(4, /*god=*/true);
 
   JsonStore store(db);
   RaceRepository races(store);
-  races.save(race1);
-  races.save(race2);
+  for (const auto& r : {race1, race2, race3, race4}) races.save(r);
+
+  Star star{create_star(5)};
+  star.mark_inhabited_by(player_t{1});
+  star.mark_inhabited_by(player_t{2});
+  StarRepository(store).save(star);
 
   MockRegistry registry;
-  auto sender = std::make_shared<MockSession>(1, 1, 1, true, false);
-  auto gagged = std::make_shared<MockSession>(1, 2, 1, true, true);
-  auto receiver = std::make_shared<MockSession>(2, 1, 1, true, false);
+  auto s1_1 = std::make_shared<MockSession>(1, 1, 5, true, false);
+  auto s1_2 = std::make_shared<MockSession>(1, 2, 5, true, true);
+  auto s1_3 = std::make_shared<MockSession>(1, 3, 5, true, false);
+  auto s2_1 = std::make_shared<MockSession>(2, 1, 5, true, false);
+  auto s3_1 = std::make_shared<MockSession>(3, 1, 5, true, false);
+  auto s4_1 = std::make_shared<MockSession>(4, 1, 5, true, false);
+  for (const auto& s : {s1_1, s1_2, s1_3, s2_1, s3_1, s4_1})
+    registry.add_session(s);
 
-  registry.add_session(sender);
-  registry.add_session(gagged);
-  registry.add_session(receiver);
+  auto clear_all = [&]() {
+    for (auto& s : registry.sessions()) s->clear_output();
+  };
 
-  std::println(std::cout,
-               "  ✓ d_broadcast gag filtering tests passed (placeholder)");
+  d_broadcast(registry, em, 1, 1, "Broadcast!\n");
+  test::expect_true(s1_1->get_output().empty());
+  test::expect_true(s1_2->get_output().empty());
+  test::expect_eq(s1_3->get_output(), "Broadcast!\n");
+  test::expect_eq(s2_1->get_output(), "Broadcast!\n");
+  test::expect_eq(s3_1->get_output(), "Broadcast!\n");
+  test::expect_eq(s4_1->get_output(), "Broadcast!\n");
+  clear_all();
+
+  d_announce(registry, em, 1, 1, 5, "Announce!\n");
+  test::expect_true(s1_1->get_output().empty());
+  test::expect_true(s1_2->get_output().empty());
+  test::expect_eq(s1_3->get_output(), "Announce!\n");
+  test::expect_eq(s2_1->get_output(), "Announce!\n");
+  test::expect_true(s3_1->get_output().empty());
+  test::expect_eq(s4_1->get_output(), "Announce!\n");
+  clear_all();
+
+  d_think(registry, em, 1, 1, "Think!\n");
+  test::expect_true(s1_1->get_output().empty());
+  test::expect_true(s1_2->get_output().empty());
+  test::expect_eq(s1_3->get_output(), "Think!\n");
+  test::expect_true(s2_1->get_output().empty());
+  clear_all();
+
+  d_shout(registry, em, 1, 1, "Shout!\n");
+  test::expect_true(s1_1->get_output().empty());
+  test::expect_eq(s1_2->get_output(), "Shout!\n");
+  test::expect_eq(s1_3->get_output(), "Shout!\n");
+  test::expect_eq(s2_1->get_output(), "Shout!\n");
 }
 
-void test_warn_player_update_suppression() {
-  std::println(std::cout, "Testing warn_player with update suppression...");
-
+void test_warn_player_and_leader_fallback() {
   Database db(":memory:");
   initialize_schema(db);
   EntityManager em(db);
-
-  // Create a race
-  auto race1 = create_race(1);
   JsonStore store(db);
-  RaceRepository races(store);
-  races.save(race1);
+  RaceRepository(store).save(create_race(1));
 
   MockRegistry registry;
-
-  // When update is in progress, should push telegram
   registry.set_update_in_progress(true);
+  warn_player(registry, em, 1, 1, "Update message\n");
+  test::expect_eq(em.get_telegrams(1, 1).size(), 1u);
 
-  // Track telegrams (we need to mock push_telegram, but it's a free function)
-  // For now, we'll verify the function doesn't crash and moves on
-  warn_player(registry, em, 1, 1, "Update in progress message\n");
-
-  // When update is NOT in progress, should try real-time
   registry.set_update_in_progress(false);
+  warn_player(registry, em, 1, 1, "Offline leader\n");
+  test::expect_eq(em.get_telegrams(1, 1).size(), 2u);
 
-  auto session1 = std::make_shared<MockSession>(1, 1, 1, true, false);
-  registry.add_session(session1);
+  warn_player(registry, em, 1, 2, "Offline subordinate\n");
+  test::expect_eq(em.get_telegrams(1, 2).size(), 1u);
 
-  std::println(std::cout,
-               "  ✓ warn_player update suppression tests passed (partial)");
+  auto s1_1 = std::make_shared<MockSession>(1, 1, 1, true, false);
+  registry.add_session(s1_1);
+
+  warn_player(registry, em, 1, 1, "Online leader\n");
+  test::expect_eq(s1_1->get_output(), "Online leader\n");
+  s1_1->clear_output();
+
+  warn_player(registry, em, 1, 2, "Fallback to leader\n");
+  test::expect_eq(s1_1->get_output(), "Fallback to leader\n");
+  test::expect_eq(em.get_telegrams(1, 2).size(), 1u);
 }
 
 void test_warn_race_all_governors() {
@@ -292,7 +337,6 @@ void test_warn_race_all_governors() {
   initialize_schema(db);
   EntityManager em(db);
 
-  // Create race with 2 active governors (1 and 2)
   Race race1{};
   race1.Playernum = 1;
   race1.Guest = false;
@@ -302,19 +346,18 @@ void test_warn_race_all_governors() {
   RaceRepository races(store);
   races.save(race1);
 
-  MockRegistry registry(false);  // Not in update mode
-
-  // Add sessions for both active governors
+  MockRegistry registry(false);
   auto session1 = std::make_shared<MockSession>(1, 1, 1, true, false);
   auto session2 = std::make_shared<MockSession>(1, 2, 1, true, false);
 
   registry.add_session(session1);
   registry.add_session(session2);
 
-  // Call warn_race - should send to all active governors
   warn_race(registry, em, 1, "Warning to all governors\n");
+  test::expect_eq(session1->get_output(), "Warning to all governors\n");
+  test::expect_eq(session2->get_output(), "Warning to all governors\n");
 
-  std::println(std::cout, "  ✓ warn_race all governors tests passed (partial)");
+  std::println(std::cout, "  ✓ warn_race all governors tests passed");
 }
 
 void test_notify_star() {
@@ -325,7 +368,6 @@ void test_notify_star() {
   EntityManager em(db);
   JsonStore store(db);
 
-  // Create races
   Race race1 = create_race(1);
   Race race2 = create_race(2);
   Race race3 = create_race(3);
@@ -335,7 +377,6 @@ void test_notify_star() {
   races.save(race2);
   races.save(race3);
 
-  // Create star with inhabitants 1 and 2
   Star star{create_star(5)};
   star.mark_inhabited_by(player_t{1});
   star.mark_inhabited_by(player_t{2});
@@ -343,7 +384,7 @@ void test_notify_star() {
   StarRepository stars(store);
   stars.save(star);
 
-  MockRegistry registry(false);  // Not in update mode
+  MockRegistry registry(false);
   auto session1_1 = std::make_shared<MockSession>(1, 1, 5, true, false);
   auto session1_2 = std::make_shared<MockSession>(1, 2, 5, true, false);
   auto session2_1 = std::make_shared<MockSession>(2, 1, 5, true, false);
@@ -354,88 +395,125 @@ void test_notify_star() {
   registry.add_session(session2_1);
   registry.add_session(session3_1);
 
-  // Notify star from player 1, governor 1
-  // Just verify it doesn't crash - telegram verification not yet implemented
-  notify_star(registry, em, 1, 1, 5, "Test message\n");
+  // Notify star from race 1 leader (1, 1):
+  // - (1, 1) is skipped (sender)
+  // - (1, 2) receives live message (subordinate governor of sender race!)
+  // - (1, 3) is offline and receives telegram
+  // - (2, 1) receives live message
+  // - (3, 1) is skipped (uninhabited)
+  notify_star(registry, em, 1, 1, 5, "Star event\n");
+  test::expect_true(session1_1->get_output().empty());
+  test::expect_eq(session1_2->get_output(), "Star event\n");
+  test::expect_eq(session2_1->get_output(), "Star event\n");
+  test::expect_true(session3_1->get_output().empty());
+  test::expect_eq(em.get_telegrams(1, 3).size(), 1u);
 
-  std::println(std::cout, "  ✓ notify_star executes without crashing");
+  // During update_in_progress, even online governors receive telegrams
+  session1_2->clear_output();
+  registry.set_update_in_progress(true);
+  notify_star(registry, em, 1, 1, 5, "Update star event\n");
+  test::expect_true(session1_2->get_output().empty());
+  test::expect_eq(em.get_telegrams(1, 2).size(), 1u);
+
+  std::println(std::cout, "  ✓ notify_star tests passed");
 }
 
-void test_warn_star() {
-  std::println(std::cout, "Testing warn_star functionality...");
+void test_warn_star_and_telegram_star() {
+  std::println(std::cout, "Testing warn_star and telegram_star...");
 
   Database db(":memory:");
   initialize_schema(db);
   EntityManager em(db);
   JsonStore store(db);
 
-  // Create races
   Race race1 = create_race(1);
   Race race2 = create_race(2);
+  Race race3 = create_race(3);
 
   RaceRepository races(store);
   races.save(race1);
   races.save(race2);
+  races.save(race3);
 
-  // Create star with inhabitants 1 and 2
   Star star{create_star(7)};
   star.mark_inhabited_by(player_t{1});
   star.mark_inhabited_by(player_t{2});
-  star.set_governor(player_t{1}, 1);  // Player 1 default governor
-  star.set_governor(player_t{2}, 1);  // Player 2 default governor
 
   StarRepository stars(store);
   stars.save(star);
 
   MockRegistry registry(false);
+  auto session1_1 = std::make_shared<MockSession>(1, 1, 7, true, false);
+  auto session2_1 = std::make_shared<MockSession>(2, 1, 7, true, false);
+  registry.add_session(session1_1);
+  registry.add_session(session2_1);
 
-  // warn_star should notify all race governors at the star
-  // Just verify it doesn't crash
   warn_star(registry, em, 1, 7, "Warning message\n");
+  test::expect_true(session1_1->get_output().empty());
+  test::expect_false(session2_1->get_output().empty());
 
-  std::println(std::cout, "  ✓ warn_star executes without crashing");
+  telegram_star(em, 7, 1, 1, "Telegram from P1G1\n");
+  test::expect_eq(em.get_telegrams(1, 1).size(), 0u);
+  test::expect_eq(em.get_telegrams(1, 2).size(), 1u);
+  test::expect_eq(em.get_telegrams(2, 1).size(), 1u);
+
+  std::println(std::cout, "  ✓ warn_star and telegram_star tests passed");
 }
 
-void test_telegram_star() {
-  std::println(std::cout, "Testing telegram_star helper function...");
+void test_transactional_socket_outbox() {
+  std::println(std::cout, "Testing SessionRegistry transactional outbox...");
 
   Database db(":memory:");
   initialize_schema(db);
   EntityManager em(db);
   JsonStore store(db);
 
-  // Create races with multiple governors
-  Race race1{};
-  race1.Playernum = 1;
-  race1.Guest = false;
-  race1.appoint_governor(2);
-
-  Race race2{};
-  race2.Playernum = 2;
-  race2.Guest = false;
-  race2.appoint_governor(2);
-
+  Race race1 = create_race(1);
+  Race race2 = create_race(2);
   RaceRepository races(store);
   races.save(race1);
   races.save(race2);
 
-  // Create star with both races
-  Star star{create_star(10)};
-  star.mark_inhabited_by(player_t{1});
-  star.mark_inhabited_by(player_t{2});
+  RecordingSessionRegistry registry;
+  registry.sessions = {
+      SessionInfo{.player = 1, .governor = 1, .connected = true},
+      SessionInfo{.player = 1, .governor = 2, .connected = true},
+      SessionInfo{.player = 2, .governor = 1, .connected = false},
+  };
 
-  StarRepository stars(store);
-  stars.save(star);
+  // 1. Rollback discards staged socket notifications while offline telegrams
+  // were written to SQLite inside the caller's transaction
+  registry.begin_outbox();
+  test::expect_true(registry.outbox_active());
+  warn_player(registry, em, 1, 1, "Staged online warning\n");
+  warn_player(registry, em, 2, 1, "Offline telegram warning\n");
+  registry.notify_race(1, "Staged broadcast\n");
 
-  // Send telegram from player 1, governor 1
-  // Just verify it doesn't crash - telegram files written to disk, not testable
-  // yet
-  telegram_star(em, 10, 1, 1, "Telegram from P1G1\n");
+  test::expect_true(registry.notifications.empty());
+  test::expect_eq(em.get_telegrams(2, 1).size(), 1u);
 
-  std::println(std::cout, "  ✓ telegram_star executes without crashing");
-  std::println(
-      std::cout,
-      "  (Note: Telegram delivery verification pending SQLite migration)");
+  registry.rollback_outbox();
+  test::expect_false(registry.outbox_active());
+  test::expect_true(registry.notifications.empty());
+
+  // 2. Commit flushes staged notifications and returns any that disconnected
+  registry.begin_outbox();
+  warn_player(registry, em, 1, 1, "Committed warning\n");
+  warn_player(registry, em, 1, 2, "Disconnected before commit\n");
+  registry.notify_race(1, "Committed broadcast\n");
+
+  // Simulate (1, 2) disconnecting before commit_outbox()
+  registry.sessions[1].connected = false;
+  auto undelivered = registry.commit_outbox();
+  test::expect_false(registry.outbox_active());
+  test::expect_eq(registry.notifications.size(), 2u);
+  test::expect_true(registry.has_received(1, "Committed warning"));
+  test::expect_true(registry.has_broadcast("Committed broadcast"));
+  test::expect_eq(undelivered.size(), 1u);
+  test::expect_eq(undelivered[0].player, 1);
+  test::expect_eq(undelivered[0].governor, 2);
+
+  std::println(std::cout, "  ✓ SessionRegistry transactional outbox passed");
 }
 
 int main() {
@@ -445,12 +523,12 @@ int main() {
   test_notify_player_basic();
   test_notify_race_basic();
   test_disconnected_sessions();
-  test_d_broadcast_gag_filtering();
-  test_warn_player_update_suppression();
+  test_d_broadcast_announce_think_and_shout();
+  test_warn_player_and_leader_fallback();
   test_warn_race_all_governors();
   test_notify_star();
-  test_warn_star();
-  test_telegram_star();
+  test_warn_star_and_telegram_star();
+  test_transactional_socket_outbox();
 
   std::println(std::cout, "\n✅ All notification service tests passed!");
   return 0;

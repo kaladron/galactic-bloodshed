@@ -390,6 +390,9 @@ public:
   [[nodiscard]] bool is_connected(player_t player,
                                   governor_t gov) const override;
 
+  [[nodiscard]] bool is_player_connected(player_t player,
+                                         governor_t gov) const override;
+
   void notify_race(player_t race, const std::string& message) override;
 
   bool notify_player(player_t race, governor_t gov,

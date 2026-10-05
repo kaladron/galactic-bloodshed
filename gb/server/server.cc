@@ -173,6 +173,7 @@ void Server::process_commands() {
 
 void Server::notify_race(player_t race, const std::string& message) {
   if (update_in_progress()) return;
+  if (stage_race_notification(race, message)) return;
   for (auto& session : sessions_) {
     if (!session->is_disconnected() && session->connected() &&
         session->player() == race) {
@@ -184,6 +185,8 @@ void Server::notify_race(player_t race, const std::string& message) {
 bool Server::notify_player(player_t race, governor_t gov,
                            const std::string& message) {
   if (update_in_progress()) return false;
+  if (!is_player_connected(race, gov)) return false;
+  if (stage_player_notification(race, gov, message)) return true;
   bool delivered = false;
   for (auto& session : sessions_) {
     if (!session->is_disconnected() && session->connected() &&

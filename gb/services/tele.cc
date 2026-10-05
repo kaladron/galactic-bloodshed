@@ -79,27 +79,23 @@ void post(EntityManager& em, std::string msg, NewsType type) {
  */
 void push_telegram_race(EntityManager& em, const player_t recipient,
                         std::string_view msg) {
-  const auto* race = em.peek_race(recipient);
-  if (!race) return;
+  const auto& race = *em.peek_race(recipient);
 
-  for (auto [j, gov] : race->active_governors())
+  for (auto [j, gov] : race.active_governors())
     push_telegram(em, recipient, j, msg);
 }
 
 void telegram_star(EntityManager& em, starnum_t star, player_t sender,
                    governor_t sender_gov, const std::string& message) {
-  const auto* star_ptr = em.peek_star(star);
-  if (!star_ptr) return;
+  const auto& star_ref = *em.peek_star(star);
 
   for (const Race& race : RaceList::readonly(em)) {
     const player_t p = race.Playernum;
-    if ((p != sender || !Race::is_leader(sender_gov)) &&
-        star_ptr->is_inhabited_by(p)) {
-      for (auto [i, gov] : race.active_governors()) {
-        if (!(p == sender && i == sender_gov)) {
-          push_telegram(em, p, i, message);
-        }
-      }
+    if (!star_ref.is_inhabited_by(p)) continue;
+
+    for (auto [i, gov] : race.active_governors()) {
+      if (p == sender && i == sender_gov) continue;
+      push_telegram(em, p, i, message);
     }
   }
 }

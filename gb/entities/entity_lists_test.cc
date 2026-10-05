@@ -247,6 +247,12 @@ void test_planet_list_shuffle(EntityManager& em) {
 
 void test_commod_list_readonly(EntityManager& em) {
   std::println(std::cout, "Testing CommodList...");
+  test::expect_false(EntityListTraits<Commod>::is_valid(nullptr));
+  Commod unowned_commod{};
+  unowned_commod.owner = 0;
+  unowned_commod.amount = 250;
+  test::expect_false(EntityListTraits<Commod>::is_valid(&unowned_commod));
+
   int count = 0;
   std::uint64_t total_amount = 0;
   std::vector<int> seen_ids;
@@ -267,7 +273,58 @@ void test_commod_list_readonly(EntityManager& em) {
   test::expect_eq(seen_ids.size(), 2);
   test::expect_eq(seen_ids[0], 1);
   test::expect_eq(seen_ids[1], 4);
+
+  // Also exercise mutable CommodList and PlanetList iteration
+  int mutable_commod_count = 0;
+  for (auto commod_handle : CommodList(em)) {
+    test::expect_ne(commod_handle->amount, 0);
+    mutable_commod_count++;
+  }
+  test::expect_eq(mutable_commod_count, 2);
+
+  int mutable_planet_count = 0;
+  for (auto planet_handle : PlanetList(em, starnum_t{2})) {
+    test::expect_eq(planet_handle->star_id(), starnum_t{2});
+    mutable_planet_count++;
+  }
+  test::expect_eq(mutable_planet_count, 2);
+
   std::println(std::cout, "  CommodList: iterated {} valid commodities", count);
+}
+
+void test_getracenum_and_get_player(EntityManager& em) {
+  std::println(std::cout, "Testing getracenum and get_player...");
+
+  em.mutate_race(1, [](Race& r) {
+    r.password = "rpass1";
+    r.leader().password.clear();  // active leader (gov 1) with empty password
+    r.appoint_governor({.name = "SubGov", .password = "gpass2"});
+  });
+
+  // 1. Wrong race password
+  {
+    auto [p, g] = getracenum(em, "wrong_race", "gpass2");
+    test::expect_eq(p, player_t{0});
+    test::expect_eq(g, governor_t{0});
+  }
+  // 2. Right race password, wrong governor password (skips empty gov 1 and
+  // mismatches gov 2)
+  {
+    auto [p, g] = getracenum(em, "rpass1", "wrong_gov");
+    test::expect_eq(p, player_t{0});
+    test::expect_eq(g, governor_t{0});
+  }
+  // 3. Right race password and right governor password
+  {
+    auto [p, g] = getracenum(em, "rpass1", "gpass2");
+    test::expect_eq(p, player_t{1});
+    test::expect_eq(g, governor_t{2});
+  }
+
+  // get_player found and not found
+  test::expect_eq(get_player(em, "TestRace2"), player_t{2});
+  test::expect_eq(get_player(em, "NoSuchRace"), player_t{0});
+  std::println(std::cout, "  ✓ getracenum and get_player passed");
 }
 
 void test_playernum_indexing(EntityManager& em) {
@@ -542,6 +599,7 @@ int main() {
   test_planet_list_readonly(em);
   test_planet_list_shuffle(em);
   test_commod_list_readonly(em);
+  test_getracenum_and_get_player(em);
   test_playernum_indexing(em);
   test_block_list(em, store);
   test_power_list(em, store);

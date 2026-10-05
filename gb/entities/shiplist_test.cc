@@ -729,6 +729,294 @@ int main() {
         "✓ Test 10 passed: Mid-loop hard-deletion safely skipped killed ships");
   }
 
+  // Test 11: Dead ship in ShipRepository exercises `!alive_only_ ||
+  // ship.alive()` for both MutableIterator and ConstIterator, plus LEVEL_SHIP
+  // scope and post-increment / cbegin / cend / operator->.
+  {
+    std::println(std::cout,
+                 "\nTest 11: Dead ship alive_only MC/DC and LEVEL_SHIP scope");
+    TestContext dead_ctx;
+    dead_ctx.with_standard_universe();
+    JsonStore dead_store(dead_ctx.db);
+    ShipRepository dead_repo(dead_store);
+
+    Ship alive_ship{};
+    alive_ship.number() = 1;
+    alive_ship.owner() = 1;
+    alive_ship.governor() = Race::leader_id;
+    alive_ship.alive() = true;
+    alive_ship.active() = true;
+    alive_ship.enter_star_orbit(1);
+    alive_ship.type() = ShipType::STYPE_FIGHTER;
+    dead_repo.save(alive_ship);
+
+    Ship dead_ship{};
+    dead_ship.number() = 2;
+    dead_ship.owner() = 1;
+    dead_ship.governor() = Race::leader_id;
+    dead_ship.alive() = true;
+    dead_ship.active() = true;
+    dead_ship.enter_star_orbit(1);
+    dead_ship.type() = ShipType::STYPE_FIGHTER;
+    dead_repo.save(dead_ship);
+
+    auto dws = dead_ctx.em.create_deferred_write_scope();
+    dead_ctx.em.mutate_ship(2, [](Ship& s) { s.alive() = false; });
+
+    ScopeContext ship_scope{
+        .player = 1,
+        .governor = Race::leader_id,
+        .god = false,
+        .level = ScopeLevel::LEVEL_SHIP,
+        .snum = 1,
+        .pnum = 0,
+        .shipno = 1,
+    };
+
+    // ShipList with ScopeContext: All vs AllAlive vs Scope(LEVEL_SHIP)
+    ShipList all_mut(dead_ctx.em, ship_scope, ShipList::IterationType::All);
+    std::vector<shipnum_t> all_mut_ids;
+    for (auto it = all_mut.begin(); it != all_mut.end(); it++) {
+      all_mut_ids.push_back((*it)->number());
+    }
+    test::expect_eq(all_mut_ids, (std::vector<shipnum_t>{1, 2}));
+
+    const ShipList all_const(dead_ctx.em, ship_scope,
+                             ShipList::IterationType::All);
+    std::vector<shipnum_t> all_const_ids;
+    for (auto it = all_const.cbegin(); it != all_const.cend(); it++) {
+      all_const_ids.push_back(it->number());
+    }
+    test::expect_eq(all_const_ids, (std::vector<shipnum_t>{1, 2}));
+
+    // Explicit vector constructor with alive_only = true skips dead ship #2
+    ShipList alive_filtered_mut(dead_ctx.em, std::vector<shipnum_t>{1, 2},
+                                /*alive_only=*/true);
+    std::vector<shipnum_t> alive_filtered_mut_ids;
+    for (auto h : alive_filtered_mut) {
+      alive_filtered_mut_ids.push_back(h->number());
+    }
+    test::expect_eq(alive_filtered_mut_ids, (std::vector<shipnum_t>{1}));
+
+    const ShipList alive_filtered_const(
+        dead_ctx.em, std::vector<shipnum_t>{1, 2}, /*alive_only=*/true);
+    std::vector<shipnum_t> alive_filtered_const_ids;
+    for (const Ship& s : alive_filtered_const) {
+      alive_filtered_const_ids.push_back(s.number());
+    }
+    test::expect_eq(alive_filtered_const_ids, (std::vector<shipnum_t>{1}));
+
+    // ScopeContext at LEVEL_SHIP and AllAlive
+    ShipList scope_ship_list(dead_ctx.em, ship_scope,
+                             ShipList::IterationType::Scope);
+    test::expect_eq(scope_ship_list.size(), 1U);
+    ShipList all_alive_ctx_list(dead_ctx.em, ship_scope,
+                                ShipList::IterationType::AllAlive);
+    test::expect_eq(all_alive_ctx_list.size(), 1U);
+
+    dws.rollback();
+    std::println(std::cout, "✓ Test 11 passed");
+  }
+
+  // Test 12: resolve_explicit_ship and ScopedCommandableShips
+  {
+    std::println(std::cout,
+                 "\nTest 12: resolve_explicit_ship and ScopedCommandableShips");
+    TestContext cmd_ctx;
+    cmd_ctx.with_standard_universe();
+    JsonStore cmd_store(cmd_ctx.db);
+    ShipRepository cmd_repo(cmd_store);
+
+    // Ship 1: owned by player 1, governor 1, active fighter at star 1, planet 1
+    Ship s1{};
+    s1.number() = 1;
+    s1.owner() = 1;
+    s1.governor() = Race::leader_id;
+    s1.alive() = true;
+    s1.active() = true;
+    s1.enter_planet_orbit(1, 1);
+    s1.type() = ShipType::STYPE_FIGHTER;
+    cmd_repo.save(s1);
+
+    // Ship 2: owned by player 2 (foreign!), governor 1, active fighter at star
+    // 1, planet 1
+    Ship s2{};
+    s2.number() = 2;
+    s2.owner() = 2;
+    s2.governor() = Race::leader_id;
+    s2.alive() = true;
+    s2.active() = true;
+    s2.enter_planet_orbit(1, 1);
+    s2.type() = ShipType::STYPE_FIGHTER;
+    cmd_repo.save(s2);
+
+    // Ship 3: owned by player 1, governor 1, irradiated/inactive cargo ship at
+    // star 1, planet 1
+    Ship s3{};
+    s3.number() = 3;
+    s3.owner() = 1;
+    s3.governor() = Race::leader_id;
+    s3.alive() = true;
+    s3.active() = false;
+    s3.enter_planet_orbit(1, 1);
+    s3.type() = ShipType::STYPE_CARGO;
+    cmd_repo.save(s3);
+
+    // Ship 4: owned by player 1, governor 1, marked dead in memory at star 1,
+    // planet 1
+    Ship s4{};
+    s4.number() = 4;
+    s4.owner() = 1;
+    s4.governor() = Race::leader_id;
+    s4.alive() = true;
+    s4.active() = true;
+    s4.enter_planet_orbit(1, 1);
+    s4.type() = ShipType::STYPE_FIGHTER;
+    cmd_repo.save(s4);
+
+    // Ship 5: owned by player 1, governor 1, active fighter at star 1, planet 1
+    Ship s5{};
+    s5.number() = 5;
+    s5.owner() = 1;
+    s5.governor() = Race::leader_id;
+    s5.alive() = true;
+    s5.active() = true;
+    s5.enter_planet_orbit(1, 1);
+    s5.type() = ShipType::STYPE_FIGHTER;
+    cmd_repo.save(s5);
+
+    auto dws = cmd_ctx.em.create_deferred_write_scope();
+    cmd_ctx.em.mutate_ship(4, [](Ship& s) { s.alive() = false; });
+
+    ScopeContext p1_leader_star{
+        .player = 1,
+        .governor = Race::leader_id,
+        .god = false,
+        .level = ScopeLevel::LEVEL_STAR,
+        .snum = 1,
+        .pnum = 1,
+        .shipno = 0,
+    };
+    ScopeContext p1_subgov_star = p1_leader_star;
+    p1_subgov_star.governor = 2;
+
+    // resolve_explicit_ship checks:
+    test::expect_eq(
+        resolve_explicit_ship(cmd_ctx.em, p1_leader_star, "*").error(),
+        CommandableError::NotOwner);
+    test::expect_eq(
+        resolve_explicit_ship(cmd_ctx.em, p1_leader_star, "#abc").error(),
+        CommandableError::NotOwner);
+    test::expect_eq(
+        resolve_explicit_ship(cmd_ctx.em, p1_leader_star, "#0").error(),
+        CommandableError::NotOwner);
+    test::expect_eq(
+        resolve_explicit_ship(cmd_ctx.em, p1_leader_star, "#999").error(),
+        CommandableError::NotOwner);
+    // Foreign ship #2 -> NotOwner
+    test::expect_eq(
+        resolve_explicit_ship(cmd_ctx.em, p1_leader_star, "#2").error(),
+        CommandableError::NotOwner);
+    // Subordinate governor 2 on governor 0's ship #1 -> NotAuthorizedGovernor
+    test::expect_eq(
+        resolve_explicit_ship(cmd_ctx.em, p1_subgov_star, "#1").error(),
+        CommandableError::NotAuthorizedGovernor);
+    // Dead ship #4 -> ShipDead
+    test::expect_eq(
+        resolve_explicit_ship(cmd_ctx.em, p1_leader_star, "#4").error(),
+        CommandableError::ShipDead);
+    // Irradiated ship #3 with require_active=true -> ShipIrradiated
+    test::expect_eq(resolve_explicit_ship(cmd_ctx.em, p1_leader_star, "#3",
+                                          /*require_active=*/true)
+                        .error(),
+                    CommandableError::ShipIrradiated);
+    // Irradiated ship #3 with require_active=false -> succeeds!
+    {
+      auto h3 = resolve_explicit_ship(cmd_ctx.em, p1_leader_star, "#3",
+                                      /*require_active=*/false);
+      test::expect_true(h3.has_value());
+      test::expect_eq((*h3)->number(), shipnum_t{3});
+    }
+    // Active owned ship #1 -> succeeds!
+    {
+      auto h1 = resolve_explicit_ship(cmd_ctx.em, p1_leader_star, "#1");
+      test::expect_true(h1.has_value());
+      test::expect_eq((*h1)->number(), shipnum_t{1});
+    }
+
+    // ScopedCommandableShips:
+    // 1. Wildcard "*" with require_active=false yields #1, #3, #5 (silently
+    //    skipping foreign #2 and dead #4).
+    {
+      std::vector<shipnum_t> ids;
+      for (auto h : ScopedCommandableShips(cmd_ctx.em, p1_leader_star, "*",
+                                           /*require_active=*/false)) {
+        ids.push_back(h->number());
+      }
+      test::expect_eq(ids, (std::vector<shipnum_t>{1, 3, 5}));
+    }
+    // 2. Wildcard "*" with require_active=true skips irradiated #3 as well.
+    {
+      std::vector<shipnum_t> ids;
+      for (auto h : ScopedCommandableShips(cmd_ctx.em, p1_leader_star, "*",
+                                           /*require_active=*/true)) {
+        ids.push_back(h->number());
+      }
+      test::expect_eq(ids, (std::vector<shipnum_t>{1, 5}));
+    }
+    // 3. Explicit "#2" (foreign ship at same star) yields 0 ships.
+    {
+      std::vector<shipnum_t> ids;
+      for (auto h : ScopedCommandableShips(cmd_ctx.em, p1_leader_star, "#2")) {
+        ids.push_back(h->number());
+      }
+      test::expect_true(ids.empty());
+    }
+    // 4. Explicit "#1" yields #1 and early-exits on operator++ without scanning
+    //    the rest of the list.
+    {
+      std::vector<shipnum_t> ids;
+      ScopedCommandableShips scoped(cmd_ctx.em, p1_leader_star, "#1");
+      for (auto it = scoped.begin(); it != scoped.end(); it++) {
+        ids.push_back((*it)->number());
+      }
+      test::expect_eq(ids, (std::vector<shipnum_t>{1}));
+    }
+    dws.rollback();
+    cmd_ctx.em.mutate_ship(
+        4, [&](Ship& target) { cmd_ctx.em.kill_ship(1, target); });
+
+    // 5. Exercise LEVEL_UNIV, LEVEL_PLAN, and LEVEL_SHIP scopes + mid-loop
+    //    hard-deletion on ScopedCommandableShips.
+    for (ScopeLevel lvl : {ScopeLevel::LEVEL_UNIV, ScopeLevel::LEVEL_PLAN,
+                           ScopeLevel::LEVEL_SHIP}) {
+      ScopeContext sc = p1_leader_star;
+      sc.level = lvl;
+      sc.shipno = 1;
+      std::vector<shipnum_t> ids;
+      for (auto h : ScopedCommandableShips(cmd_ctx.em, sc, "f",
+                                           /*require_active=*/true)) {
+        ids.push_back(h->number());
+      }
+      test::expect_eq(ids, (std::vector<shipnum_t>{1, 5}));
+    }
+    {
+      // Kill ship #5 while visiting ship #1 in ScopedCommandableShips
+      std::vector<shipnum_t> ids;
+      for (auto h :
+           ScopedCommandableShips(cmd_ctx.em, p1_leader_star, "f", true)) {
+        ids.push_back(h->number());
+        if (h->number() == 1) {
+          cmd_ctx.em.mutate_ship(
+              5, [&](Ship& target) { cmd_ctx.em.kill_ship(1, target); });
+        }
+      }
+      test::expect_eq(ids, (std::vector<shipnum_t>{1}));
+    }
+
+    std::println(std::cout, "✓ Test 12 passed");
+  }
+
   std::println(std::cout, "\nAll ShipList tests passed!");
   return 0;
 }

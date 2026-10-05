@@ -55,12 +55,8 @@ bool grant(const command_t& argv, GameObj& g) {
       g.out << "Syntax: grant <governor> ship <shiplist>\n";
       return false;
     }
-    ShipList ships(g);
-    for (auto ship_handle : ships) {
+    for (auto ship_handle : ScopedCommandableShips(g, argv[3])) {
       Ship& ship = *ship_handle;
-
-      if (!ship_matches_filter(argv[3], ship)) continue;
-      if (!ship.is_authorized_for(Governor)) continue;
 
       ship.governor() = gov;
       warn_player(g.session_registry, g.entity_manager, Playernum, gov,

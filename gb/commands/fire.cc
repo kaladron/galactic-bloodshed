@@ -47,13 +47,19 @@ bool validate_surface_combat_geometry(GameObj& g, const Ship& from,
   return true;
 }
 
+enum class FireMode {
+  Normal,
+  Cew,
+  DefensiveFromDock,
+};
+
 /**
  * @brief Validate weapon equipment, fuel, and requested attack strength.
  */
 std::optional<weapon_power_t>
 compute_fire_strength(const command_t& argv, GameObj& g, const Ship& from,
-                      const Ship& to, int cew_mode) {
-  if (cew_mode) {
+                      const Ship& to, FireMode mode) {
+  if (mode == FireMode::Cew) {
     if (!from.cew()) {
       g.out << "That ship is not equipped to fire CEWs.\n";
       return std::nullopt;
@@ -99,8 +105,8 @@ compute_fire_strength(const command_t& argv, GameObj& g, const Ship& from,
  * @brief Verify that the player has sufficient Universe or Star AP to fire
  * from a ship (unless invoked internally via `fire-from-dock`).
  */
-bool has_fire_ap(const command_t& argv, GameObj& g, const Ship& from) {
-  if (argv[0] == "fire-from-dock") {
+bool has_fire_ap(FireMode mode, GameObj& g, const Ship& from) {
+  if (mode == FireMode::DefensiveFromDock) {
     return true;
   }
   if (from.whatorbits() == ScopeLevel::LEVEL_UNIV) {
@@ -121,8 +127,8 @@ bool has_fire_ap(const command_t& argv, GameObj& g, const Ship& from) {
  * @brief Deduct 1 Universe or Star AP after firing from a ship (unless invoked
  * internally via `fire-from-dock`).
  */
-void deduct_fire_ap(const command_t& argv, GameObj& g, const Ship& from) {
-  if (argv[0] == "fire-from-dock") {
+void deduct_fire_ap(FireMode mode, GameObj& g, const Ship& from) {
+  if (mode == FireMode::DefensiveFromDock) {
     return;
   }
   if (from.whatorbits() == ScopeLevel::LEVEL_UNIV) {
@@ -223,7 +229,7 @@ void resolve_escort_retaliation(GameObj& g, Ship& from, const Ship& to,
  * @brief Execute ship-to-ship fire from a single attacking ship.
  */
 bool fire_from_ship(const command_t& argv, GameObj& g, Ship& from,
-                    shipnum_t toship, int cew_mode) {
+                    shipnum_t toship, FireMode mode) {
   if (toship == from.number()) {
     g.out << "Get real.\n";
     return false;
@@ -240,13 +246,13 @@ bool fire_from_ship(const command_t& argv, GameObj& g, Ship& from,
     return false;
   }
 
-  auto strength_opt = compute_fire_strength(argv, g, from, *to, cew_mode);
+  auto strength_opt = compute_fire_strength(argv, g, from, *to, mode);
   if (!strength_opt) {
     return false;
   }
   auto strength = *strength_opt;
 
-  if (!has_fire_ap(argv, g, from)) {
+  if (!has_fire_ap(mode, g, from)) {
     return false;
   }
 
@@ -255,11 +261,14 @@ bool fire_from_ship(const command_t& argv, GameObj& g, Ship& from,
     return false;
   }
 
-  if (from.is_laser_on() || cew_mode) {
-    check_overload(g.entity_manager, from, cew_mode, &strength);
+  const bool is_cew = (mode == FireMode::Cew);
+  const int cew_range_flag = is_cew ? 1 : 0;
+
+  if (from.is_laser_on() || is_cew) {
+    check_overload(g.entity_manager, from, cew_range_flag, &strength);
     if (strength <= 0) {
       g.out << "No attack.\n";
-      deduct_fire_ap(argv, g, from);
+      deduct_fire_ap(mode, g, from);
       return true;
     }
   }
@@ -269,8 +278,8 @@ bool fire_from_ship(const command_t& argv, GameObj& g, Ship& from,
   bool fired = false;
 
   g.entity_manager.mutate_ship(toship, [&](Ship& to_ship) {
-    auto s2sresult =
-        shoot_ship_to_ship(g.entity_manager, from, to_ship, strength, cew_mode);
+    auto s2sresult = shoot_ship_to_ship(g.entity_manager, from, to_ship,
+                                        strength, cew_range_flag);
     if (!s2sresult) {
       g.out << "Illegal attack.\n";
       return;
@@ -280,7 +289,7 @@ bool fire_from_ship(const command_t& argv, GameObj& g, Ship& from,
     damage = dmg;
     fired = true;
 
-    if (from.is_laser_on() || cew_mode) {
+    if (from.is_laser_on() || is_cew) {
       from.consume_fuel(ENERGY_WEAPON_FUEL_PER_STRENGTH *
                         static_cast<double>(strength));
     } else {
@@ -300,7 +309,7 @@ bool fire_from_ship(const command_t& argv, GameObj& g, Ship& from,
   });
 
   if (fired) {
-    deduct_fire_ap(argv, g, from);
+    deduct_fire_ap(mode, g, from);
   }
 
   if (damage > 0) {
@@ -315,11 +324,11 @@ namespace GB::commands {
 
 /*! Ship vs ship */
 bool fire(const command_t& argv, GameObj& g) {
-  int cew_mode = 0;
+  FireMode mode = FireMode::Normal;
   if (argv[0] == "fire-from-dock") {
-    cew_mode = 3;
+    mode = FireMode::DefensiveFromDock;
   } else if (argv[0] == "cew") {
-    cew_mode = 1;
+    mode = FireMode::Cew;
   }
 
   if (argv.size() < 3) {
@@ -334,21 +343,34 @@ bool fire(const command_t& argv, GameObj& g) {
     return false;
   }
   const shipnum_t toship = *toshiptmp;
-  const governor_t governor = g.governor();
   bool any_fired = false;
 
-  ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
-  for (auto ship_handle : ships) {
+  if (mode == FireMode::DefensiveFromDock) {
+    const auto from_no = parse_ship_selection(argv[1]);
+    if (!from_no || *from_no <= 0) {
+      return false;
+    }
+    try {
+      g.entity_manager.mutate_ship(*from_no, [&](Ship& from) {
+        if (from.alive() && from.active()) {
+          any_fired = fire_from_ship(argv, g, from, toship, mode);
+        }
+      });
+    } catch (const EntityNotFoundError&) {
+      return false;
+    }
+    return any_fired;
+  }
+
+  for (auto ship_handle : ScopedCommandableShips(g, argv[1])) {
     Ship& from = *ship_handle;
 
-    if (!ship_matches_filter(argv[1], from)) continue;
-    if (!from.is_authorized_for(governor)) continue;
     if (!from.active()) {
       g.out << std::format("{} is irradiated and inactive.\n", from);
       continue;
     }
 
-    if (fire_from_ship(argv, g, from, toship, cew_mode)) {
+    if (fire_from_ship(argv, g, from, toship, mode)) {
       any_fired = true;
     }
   }

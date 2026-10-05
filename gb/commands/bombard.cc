@@ -248,15 +248,11 @@ namespace GB::commands {
 
 /*! Ship vs planet */
 bool bombard(const command_t& argv, GameObj& g) {
-  const governor_t governor = g.governor();
   bool any_fired = false;
 
-  ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
-  for (auto ship_handle : ships) {
+  for (auto ship_handle : ScopedCommandableShips(g, argv[1])) {
     Ship& from = *ship_handle;
 
-    if (!ship_matches_filter(argv[1], from)) continue;
-    if (!from.is_authorized_for(governor)) continue;
     if (!from.active()) {
       g.out << std::format("{} is irradiated and inactive.\n", from);
       continue;

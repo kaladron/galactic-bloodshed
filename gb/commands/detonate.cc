@@ -14,15 +14,10 @@ module commands;
 namespace GB::commands {
 
 bool detonate(const command_t& argv, GameObj& g) {
-  const governor_t Governor = g.governor();
   bool any_detonated = false;
 
-  ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
-  for (auto ship_handle : ships) {
+  for (auto ship_handle : ScopedCommandableShips(g, argv[1])) {
     Ship& s = *ship_handle;
-
-    if (!ship_matches_filter(argv[1], s)) continue;
-    if (!s.is_authorized_for(Governor)) continue;
 
     if (s.type() != ShipType::STYPE_MINE) {
       g.out << "That is not a mine.\n";

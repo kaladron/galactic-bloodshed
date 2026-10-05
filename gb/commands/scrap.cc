@@ -16,12 +16,8 @@ namespace GB::commands {
 bool scrap(const command_t& argv, GameObj& g) {
   bool any_scrapped = false;
 
-  ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
-  for (auto ship_handle : ships) {
+  for (auto ship_handle : ScopedCommandableShips(g, argv[1])) {
     Ship& s = *ship_handle;
-
-    if (!ship_matches_filter(argv[1], s)) continue;
-    if (!s.is_authorized_for(g.governor())) continue;
 
     if (s.max_crew_capacity() && !s.popn()) {
       g.out << "Can't scrap that ship - no crew.\n";

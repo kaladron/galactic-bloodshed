@@ -29,21 +29,14 @@ bool order(const command_t& argv, GameObj& g) {
     return true;
   } else if (argv.size() >= 2) {
     display_orders_header(g);
-    ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
-    for (auto ship_handle : ships) {
+    for (auto ship_handle : ScopedCommandableShips(g, argv[1])) {
       Ship& ship = *ship_handle;
-
-      if (!ship_matches_filter(argv[1], ship)) continue;
-      if (!ship.is_authorized_for(governor)) continue;
 
       if (argv.size() > 2) {
         give_orders(g, argv, ap_count, ship);
       }
 
       display_orders(g, ship);
-
-      // Early exit for specific ship number filters
-      if (is_ship_number_filter(argv[1])) break;
     }
     return true;
   } else {

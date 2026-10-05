@@ -408,9 +408,7 @@ public:
 
     Iterator(EntityManager* em, primary_key_type primary_key,
              index_type current, index_type end)
-        : em_(em), primary_key_(primary_key), current_(current), end_(end) {
-      advance_to_valid();
-    }
+        : em_(em), primary_key_(primary_key), current_(current), end_(end) {}
 
     value_type operator*() {
       return traits_type::get(*em_, primary_key_, current_);
@@ -418,7 +416,6 @@ public:
 
     Iterator& operator++() {
       current_ = traits_type::next(current_);
-      advance_to_valid();
       return *this;
     }
 
@@ -431,13 +428,6 @@ public:
     }
 
   private:
-    void advance_to_valid() {
-      while (current_ != end_ && !traits_type::is_valid(traits_type::peek(
-                                     *em_, primary_key_, current_))) {
-        current_ = traits_type::next(current_);
-      }
-    }
-
     EntityManager* em_;
     primary_key_type primary_key_;
     index_type current_;
@@ -454,9 +444,7 @@ public:
 
     ConstIterator(EntityManager* em, primary_key_type primary_key,
                   index_type current, index_type end)
-        : em_(em), primary_key_(primary_key), current_(current), end_(end) {
-      advance_to_valid();
-    }
+        : em_(em), primary_key_(primary_key), current_(current), end_(end) {}
 
     const Entity& operator*() const {
       return *traits_type::peek(*em_, primary_key_, current_);
@@ -468,7 +456,6 @@ public:
 
     ConstIterator& operator++() {
       current_ = traits_type::next(current_);
-      advance_to_valid();
       return *this;
     }
 
@@ -481,13 +468,6 @@ public:
     }
 
   private:
-    void advance_to_valid() {
-      while (current_ != end_ && !traits_type::is_valid(traits_type::peek(
-                                     *em_, primary_key_, current_))) {
-        current_ = traits_type::next(current_);
-      }
-    }
-
     EntityManager* em_;
     primary_key_type primary_key_;
     index_type current_;
@@ -792,6 +772,8 @@ public:
   };
 
   // Constructors
+  ShipList(EntityManager& em, const ScopeContext& ctx,
+           IterationType type = IterationType::Scope);
   ShipList(EntityManager& em, const GameObj& g,
            IterationType type = IterationType::Scope);
   explicit ShipList(const GameObj& g,
@@ -845,6 +827,13 @@ public:
   }
 
 private:
+  friend class ScopedCommandableShips;
+  friend std::expected<ShipHandle, CommandableError>
+  resolve_explicit_ship(EntityManager& em, const ScopeContext& ctx,
+                        std::string_view filter, bool require_active);
+
+  static ShipHandle acquire_handle(EntityManager& em, shipnum_t num);
+
   EntityManager* em_{nullptr};
   std::vector<shipnum_t> ship_ids_;
   bool alive_only_{true};
@@ -915,4 +904,74 @@ private:
   std::vector<shipnum_t>::const_iterator it_;
   std::vector<shipnum_t>::const_iterator end_;
   bool alive_only_{true};
+};
+
+/// Resolves an explicit `#shipno` selection string into a commandable
+/// `ShipHandle`.
+///
+/// If `require_active` is true (default), irradiated/inactive ships return
+/// `CommandableError::ShipIrradiated`. If `require_active` is false, irradiated
+/// ships are permitted as long as ownership, governor authorization, and
+/// liveness checks pass.
+export [[nodiscard]] std::expected<ShipHandle, CommandableError>
+resolve_explicit_ship(EntityManager& em, const ScopeContext& ctx,
+                      std::string_view filter, bool require_active = true);
+
+/**
+ * Lazy range over ships in the caller's scope that match a ship filter
+ * (`*`, type letters, or `#shipno`) and are commandable by the caller's
+ * `(player, governor)` (or `god`).
+ *
+ * Uses `peek_ship()` during filtering so non-matching, foreign, or dead ships
+ * are silently skipped without marking their handles dirty, and early-exits
+ * after yielding the matching ship when `filter` is an explicit `#shipno`.
+ */
+export class ScopedCommandableShips {
+public:
+  ScopedCommandableShips(EntityManager& em, const ScopeContext& ctx,
+                         std::string_view filter, bool require_active = false);
+  ScopedCommandableShips(const GameObj& g, std::string_view filter,
+                         bool require_active = false);
+
+  class Iterator {
+  public:
+    using iterator_concept = std::input_iterator_tag;
+    using iterator_category = std::input_iterator_tag;
+    using value_type = ShipHandle;
+    using difference_type = std::ptrdiff_t;
+    using pointer = ShipHandle*;
+    using reference = ShipHandle;
+
+    Iterator() = default;
+    Iterator(EntityManager& em, const ScopeContext& ctx,
+             std::string_view filter, bool require_active,
+             std::vector<shipnum_t>::const_iterator it,
+             std::vector<shipnum_t>::const_iterator end);
+
+    Iterator& operator++();
+    Iterator operator++(int);
+    [[nodiscard]] ShipHandle operator*() const;
+    [[nodiscard]] bool operator==(const Iterator& other) const;
+    [[nodiscard]] bool operator!=(const Iterator& other) const;
+
+  private:
+    void advance_to_valid();
+
+    EntityManager* em_{nullptr};
+    ScopeContext ctx_{};
+    std::string_view filter_{};
+    bool require_active_{false};
+    std::vector<shipnum_t>::const_iterator it_{};
+    std::vector<shipnum_t>::const_iterator end_{};
+  };
+
+  [[nodiscard]] Iterator begin() const;
+  [[nodiscard]] Iterator end() const;
+
+private:
+  EntityManager* em_{nullptr};
+  ScopeContext ctx_{};
+  std::string filter_{};
+  bool require_active_{false};
+  std::vector<shipnum_t> ship_ids_{};
 };

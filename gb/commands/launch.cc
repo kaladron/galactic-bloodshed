@@ -193,16 +193,10 @@ bool launch_from_planet(GameObj& g, Ship& s) {
 namespace GB::commands {
 
 bool launch(const command_t& argv, GameObj& g) {
-  const governor_t governor = g.governor();
   bool any_launched = false;
 
-  ShipList ships(g);
-
-  for (auto ship_handle : ships) {
+  for (auto ship_handle : ScopedCommandableShips(g, argv[1])) {
     Ship& s = *ship_handle;
-
-    if (!ship_matches_filter(argv[1], s)) continue;
-    if (!s.is_authorized_for(governor)) continue;
 
     if (!s.max_speed_capacity() && s.is_landed()) {
       g.out << "That ship is not designed to be launched.\n";

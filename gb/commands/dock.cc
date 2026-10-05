@@ -509,8 +509,7 @@ bool do_dock(const command_t& argv, GameObj& g, bool is_assault) {
   }
 
   bool any_docked = false;
-  ShipList ships(g);
-  for (auto ship_handle : ships) {
+  for (auto ship_handle : ScopedCommandableShips(g, argv[1])) {
     bool should_abort_loop = false;
     if (process_single_ship_dock(argv, *ship_handle, is_assault, *pop_type_opt,
                                  g, should_abort_loop)) {

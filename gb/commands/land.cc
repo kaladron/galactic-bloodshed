@@ -343,16 +343,10 @@ bool land_planet(const command_t& argv, GameObj& g, Ship& s) {
 namespace GB::commands {
 
 bool land(const command_t& argv, GameObj& g) {
-  const governor_t governor = g.governor();
   bool any_landed = false;
 
-  ShipList ships(g);
-
-  for (auto ship_handle : ships) {
+  for (auto ship_handle : ScopedCommandableShips(g, argv[1])) {
     Ship& s = *ship_handle;
-
-    if (!GB::ship_matches_filter(argv[1], s)) continue;
-    if (!s.is_authorized_for(governor)) continue;
 
     if (s.is_overloaded()) {
       g.out << std::format("{} is too overloaded to land.\n", s);

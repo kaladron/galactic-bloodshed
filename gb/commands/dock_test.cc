@@ -37,6 +37,7 @@ void setup_test_world(TestContext& ctx) {
       .owned_by(2, 1)
       .named("Target")
       .in_star_orbit(1, 100.0, 200.0)
+      .with_destruct(0)
       .with_fuel(100.0)
       .build();
 
@@ -400,6 +401,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
                              .owned_by(2, 1)
                              .named("CivTarget")
                              .in_star_orbit(1, 100.0, 200.0)
+                             .with_destruct(0)
                              .with_crew(2, 0)
                              .build();
   ctx.em.mutate_race(1, [](Race& r) { r.fighters = 15; });
@@ -420,6 +422,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
                               .owned_by(2, 1)
                               .named("ZeroTarget")
                               .in_star_orbit(1, 100.0, 200.0)
+                              .with_destruct(0)
                               .with_crew(5, 5)
                               .build();
   g.out.str("");
@@ -470,18 +473,17 @@ void test_assault_defensive_fire_commits_ship_destruction() {
 
   ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 5; });
 
-  // 1. Defensive CEW fire from target destroys the attacking ship (!s.alive()).
+  // 1. Defensive gun fire from target destroys the attacking ship (!s.alive()).
   // Transaction must commit so AP is deducted and attacker stays dead.
-  shipnum_t cew_defender = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+  shipnum_t gun_defender = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
                                .owned_by(2, 1)
-                               .named("CEWDefender")
+                               .named("GunDefender")
                                .in_star_orbit(1, 100.0, 200.0)
-                               .with_cew(200, 0)
                                .with_guns(guntype_t::HEAVY, 10)
                                .with_crew(20, 20)
                                .with_fuel(500.0)
                                .build();
-  ctx.em.mutate_ship(cew_defender, [](Ship& s) { s.tech() = 1000.0; });
+  ctx.em.mutate_ship(gun_defender, [](Ship& s) { s.tech() = 1000.0; });
 
   shipnum_t fragile_attacker = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
                                    .owned_by(1, 1)
@@ -497,20 +499,19 @@ void test_assault_defensive_fire_commits_ship_destruction() {
   ctx.assert_dispatch_success(g,
                               {"assault",
                                std::format("#{}", fragile_attacker.value),
-                               std::format("#{}", cew_defender.value)},
+                               std::format("#{}", gun_defender.value)},
                               1);
   test::expect_throws<EntityNotFoundError>(
       [&]() { ctx.em.peek_ship(fragile_attacker); });
-  test::expect_true(ctx.em.peek_ship(cew_defender)->alive());
+  test::expect_true(ctx.em.peek_ship(gun_defender)->alive());
   test::expect_eq(ctx.em.peek_star(1)->AP(1), 4);
 
-  // 2. Target fires defensive CEW, and attacker's self-defense retaliation
+  // 2. Target fires defensive guns, and attacker's self-defense retaliation
   // destroys the target ship (!s2_alive). Transaction must commit.
   shipnum_t glass_defender = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
                                  .owned_by(2, 1)
                                  .named("GlassDefender")
                                  .in_star_orbit(1, 100.0, 200.0)
-                                 .with_cew(160, 0)
                                  .with_guns(guntype_t::LIGHT, 1)
                                  .with_armor(0)
                                  .with_size(1)

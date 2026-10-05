@@ -727,8 +727,7 @@ bool load(const command_t& argv, GameObj& g) {
 
   char commod = argv[2][0];
 
-  ShipList ships(g);
-  for (auto ship_handle : ships) {
+  for (auto ship_handle : ScopedCommandableShips(g, argv[1])) {
     bool should_return_early = false;
     if (process_ship_load(*ship_handle, argv[1], commod, requested_amt,
                           is_unload, g, should_return_early)) {

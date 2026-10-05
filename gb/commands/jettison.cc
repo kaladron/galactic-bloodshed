@@ -26,8 +26,6 @@ int jettison_check(GameObj& g, int amt, int max) {
 
 namespace GB::commands {
 bool jettison(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player();
-  governor_t Governor = g.governor();
   int amt;
   char commod;
   bool success = false;
@@ -37,16 +35,8 @@ bool jettison(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
-  for (auto ship_handle : ships) {
+  for (auto ship_handle : ScopedCommandableShips(g, argv[1])) {
     const Ship& s = ship_handle.peek();
-
-    if (!ship_matches_filter(argv[1], s)) continue;
-    if (!s.is_authorized_for(Governor)) continue;
-
-    if (s.owner() != Playernum || !s.alive()) {
-      continue;
-    }
     if (s.is_landed()) {
       g.out << "Ship is landed, cannot jettison.\n";
       continue;

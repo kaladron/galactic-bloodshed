@@ -12,6 +12,21 @@ import std;
 // Forward declaration to avoid coupling gblib:gameobj to :services
 export class EntityManager;
 
+/// Failure reasons when checking whether a ship can be commanded.
+export enum class CommandableError {
+  NotOwner,
+  NotAuthorizedGovernor,
+  ShipDead,
+  ShipIrradiated,
+};
+
+/// Pure validation of whether a ship can be commanded by (player, governor).
+/// Checks ownership and governor authorization first (unless god is true), then
+/// liveness, and finally activity (radiation).
+export [[nodiscard]] std::expected<void, CommandableError>
+validate_commandable(const Ship& ship, player_t player, governor_t governor,
+                     bool god = false) noexcept;
+
 export class GameObj {
 public:
   EntityManager& entity_manager;  ///< Entity lifecycle manager
@@ -129,9 +144,10 @@ public:
   /// insufficient AP or universe not found.
   bool deduct_univ_ap(ap_t amount);
 
-  /// Validates that a ship is alive, owned by player(), authorized for
-  /// governor(), and active (not irradiated). Emits diagnostic error messages
-  /// to out and returns false if any precondition fails.
+  /// Validates that a ship is owned by player(), authorized for governor()
+  /// (unless god() is true), alive, and active (not irradiated). Emits
+  /// diagnostic error messages to out and returns false if any precondition
+  /// fails.
   [[nodiscard]] bool check_commandable(const Ship& ship);
 
 private:

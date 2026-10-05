@@ -458,6 +458,133 @@ void test_assault_combat_boobytrap_and_unmooring() {
   ctx.verify_universe_invariants();
 }
 
+void test_assault_defensive_fire_commits_ship_destruction() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 1);
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(1);
+
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 5; });
+
+  // 1. Defensive CEW fire from target destroys the attacking ship (!s.alive()).
+  // Transaction must commit so AP is deducted and attacker stays dead.
+  shipnum_t cew_defender = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+                               .owned_by(2, 1)
+                               .named("CEWDefender")
+                               .in_star_orbit(1, 100.0, 200.0)
+                               .with_cew(200, 0)
+                               .with_guns(guntype_t::HEAVY, 10)
+                               .with_crew(20, 20)
+                               .with_fuel(500.0)
+                               .build();
+  ctx.em.mutate_ship(cew_defender, [](Ship& s) { s.tech() = 1000.0; });
+
+  shipnum_t fragile_attacker = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+                                   .owned_by(1, 1)
+                                   .named("FragileAttacker")
+                                   .in_star_orbit(1, 100.0, 200.0)
+                                   .with_armor(0)
+                                   .with_damage(50)
+                                   .with_crew(0, 10)
+                                   .with_fuel(100.0)
+                                   .build();
+
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g,
+      {"assault", std::format("#{}", fragile_attacker.value),
+       std::format("#{}", cew_defender.value)},
+      1);
+  test::expect_throws<EntityNotFoundError>(
+      [&]() { ctx.em.peek_ship(fragile_attacker); });
+  test::expect_true(ctx.em.peek_ship(cew_defender)->alive());
+  test::expect_eq(ctx.em.peek_star(1)->AP(1), 4);
+
+  // 2. Target fires defensive CEW, and attacker's self-defense retaliation
+  // destroys the target ship (!s2_alive). Transaction must commit.
+  shipnum_t glass_defender = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+                                 .owned_by(2, 1)
+                                 .named("GlassDefender")
+                                 .in_star_orbit(1, 100.0, 200.0)
+                                 .with_cew(160, 0)
+                                 .with_guns(guntype_t::LIGHT, 1)
+                                 .with_armor(0)
+                                 .with_size(1)
+                                 .with_damage(99)
+                                 .with_crew(5, 5)
+                                 .with_fuel(500.0)
+                                 .build();
+  ctx.em.mutate_ship(glass_defender, [](Ship& s) { s.tech() = 100000.0; });
+
+  shipnum_t heavy_attacker = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
+                                 .owned_by(1, 1)
+                                 .named("HeavyAttacker")
+                                 .in_star_orbit(1, 100.0, 200.0)
+                                 .with_guns(guntype_t::HEAVY, 100)
+                                 .with_destruct(500)
+                                 .with_armor(0)
+                                 .with_size(10000)
+                                 .with_max_hanger(0)
+                                 .with_crew(200, 20)
+                                 .with_fuel(500.0)
+                                 .build();
+  ctx.em.mutate_ship(heavy_attacker, [](Ship& s) {
+    s.tech() = 1000.0;
+    s.protect().retaliate = true;
+  });
+
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g,
+      {"assault", std::format("#{}", heavy_attacker.value),
+       std::format("#{}", glass_defender.value)},
+      1);
+  test::expect_true(ctx.em.peek_ship(heavy_attacker)->alive());
+  test::expect_throws<EntityNotFoundError>(
+      [&]() { ctx.em.peek_ship(glass_defender); });
+  test::expect_eq(ctx.em.peek_star(1)->AP(1), 3);
+
+  // 3. Direct handler arg checks and remaining MC/DC branches (pod peaceful
+  // dock, governor authorization mismatch, docking with an already-docked
+  // target).
+  g.out.str("");
+  test::expect_false(GB::commands::dock({"dock"}, g));
+  test::expect_contains(g.out.str(), "Dock with what?");
+
+  g.out.str("");
+  test::expect_false(GB::commands::assault({"assault"}, g));
+  test::expect_contains(g.out.str(), "Assault what?");
+
+  // Subordinate governor (gov 2) cannot dock a ship assigned to governor 1
+  g.set_governor(2);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"dock", "#1", "#2"});
+  g.set_governor(1);
+
+  // Peaceful dock using a Pod succeeds, and subsequent dock attempt by another
+  // undocked ship against the now-docked target #2 is rejected at target check.
+  shipnum_t pod_docker = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
+                             .owned_by(1, 1)
+                             .named("PodDocker")
+                             .in_star_orbit(1, 100.0, 200.0)
+                             .with_fuel(100.0)
+                             .build();
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"dock", std::format("#{}", pod_docker.value), "#2"}, 0);
+  test::expect_contains(g.out.str(), "docked with");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"dock", "#1", "#2"});
+  test::expect_contains(g.out.str(), "is already docked.");
+
+  ctx.verify_universe_invariants();
+}
+
 }  // namespace
 
 int main() {
@@ -467,6 +594,7 @@ int main() {
   test_dock_domain_errors();
   test_assault_validation_and_ap_invariants();
   test_assault_combat_boobytrap_and_unmooring();
+  test_assault_defensive_fire_commits_ship_destruction();
 
   std::println(std::cout, "✓ dock_test passed!");
   return 0;

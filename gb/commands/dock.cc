@@ -41,7 +41,7 @@ bool validate_boarding_ship(const Ship& s, bool is_assault, PopulationType what,
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
 
-  if (s.owner() != Playernum || !s.is_authorized_for(Governor) || !s.alive()) {
+  if (s.owner() != Playernum || !s.is_authorized_for(Governor)) {
     return false;
   }
   if (!s.active()) {
@@ -53,7 +53,7 @@ bool validate_boarding_ship(const Ship& s, bool is_assault, PopulationType what,
     return false;
   }
   if (!is_assault) {
-    if (s.docked() || s.whatorbits() == ScopeLevel::LEVEL_SHIP) {
+    if (s.docked()) {
       g.out << std::format("{} is already docked.\n", s);
       return false;
     }
@@ -78,6 +78,16 @@ bool validate_boarding_ship(const Ship& s, bool is_assault, PopulationType what,
   return true;
 }
 
+population_t compute_boarders(const Ship& s, const Ship& s2,
+                              PopulationType what,
+                              std::optional<population_t> requested_boarders) {
+  population_t boarders = (what == PopulationType::CIV) ? s.popn() : s.troops();
+  if (requested_boarders) {
+    boarders = std::min(boarders, *requested_boarders);
+  }
+  return std::min(boarders, s2.max_crew());
+}
+
 struct DockTargetValidation {
   bool can_proceed{false};
   bool abort_loop{false};
@@ -85,10 +95,9 @@ struct DockTargetValidation {
   double fuel{0.0};
 };
 
-DockTargetValidation validate_target_ship_for_dock(const Ship& s,
-                                                   shipnum_t ship2no,
-                                                   bool is_assault,
-                                                   GameObj& g) {
+DockTargetValidation validate_target_ship_for_dock(
+    const Ship& s, shipnum_t ship2no, bool is_assault, PopulationType what,
+    std::optional<population_t> requested_boarders, GameObj& g) {
   DockTargetValidation val{};
   try {
     g.entity_manager.with_ship(ship2no, [&](const Ship& s2) {
@@ -106,9 +115,7 @@ DockTargetValidation validate_target_ship_for_dock(const Ship& s,
         return;
       }
       bool invalid_dock_state =
-          is_assault
-              ? (s2.is_landed() || s2.whatorbits() == ScopeLevel::LEVEL_SHIP)
-              : (s2.docked() || s2.whatorbits() == ScopeLevel::LEVEL_SHIP);
+          is_assault ? s2.is_landed() : static_cast<bool>(s2.docked());
       if (invalid_dock_state) {
         g.out << std::format("{} is already docked.\n", s2);
         if (!is_assault) {
@@ -133,6 +140,14 @@ DockTargetValidation validate_target_ship_for_dock(const Ship& s,
       g.out << std::format(
           "This maneuver will take {:.2f} fuel (of {:.2f}.)\n\n", val.fuel,
           s.fuel());
+      if (is_assault) {
+        population_t boarders =
+            compute_boarders(s, s2, what, requested_boarders);
+        if (s2.max_crew() && boarders <= 0) {
+          g.out << std::format("Illegal number of boarders ({}).\n", boarders);
+          return;
+        }
+      }
       val.can_proceed = true;
     });
   } catch (const EntityNotFoundError&) {
@@ -275,29 +290,16 @@ void finalize_boarding_ownership_and_morale(Ship& s, Ship& s2, Race& race,
   }
 }
 
-BoardingCombatOutcome resolve_boarding_combat(const command_t& argv, Ship& s,
-                                              Ship& s2, PopulationType what,
-                                              double fuel, GameObj& g) {
+BoardingCombatOutcome
+resolve_boarding_combat(Ship& s, Ship& s2, PopulationType what,
+                        std::optional<population_t> requested_boarders,
+                        double fuel, GameObj& g) {
   BoardingCombatOutcome outcome{};
   player_t Playernum = g.player();
 
   g.entity_manager.mutate_race(Playernum, [&](Race& race) {
     g.entity_manager.mutate_race(s2.owner(), [&](Race& alien) {
-      outcome.boarders = (what == PopulationType::CIV) ? s.popn() : s.troops();
-      if (argv.size() >= 4) {
-        if (auto scan_res = scn::scan<population_t>(argv[3], "{}")) {
-          outcome.boarders = std::min(outcome.boarders, scan_res->value());
-        }
-      }
-      if (outcome.boarders > s2.max_crew()) {
-        outcome.boarders = s2.max_crew();
-      }
-      if (s2.max_crew() && outcome.boarders <= 0) {
-        g.out << std::format("Illegal number of boarders ({}).\n",
-                             outcome.boarders);
-        outcome.aborted = true;
-        return;
-      }
+      outcome.boarders = compute_boarders(s, s2, what, requested_boarders);
 
       outcome.old_defender_owner = s2.owner();
       outcome.old_defender_gov = s2.governor();
@@ -321,8 +323,7 @@ BoardingCombatOutcome resolve_boarding_combat(const command_t& argv, Ship& s,
 
       maneuver_ship_to_target(s, s2, fuel, g);
 
-      if (s2.docked() && s2.whatorbits() != ScopeLevel::LEVEL_SHIP &&
-          s2.whatdest() == ScopeLevel::LEVEL_SHIP) {
+      if (s2.docked()) {
         if (auto res = g.entity_manager.unmoor_ships(s2.number()); !res) {
           g.out << "Failed to unmoor assaulted ship.\n";
           outcome.aborted = true;
@@ -441,7 +442,15 @@ bool process_single_ship_dock(const command_t& argv, Ship& s, bool is_assault,
     return false;
   }
 
-  auto target_val = validate_target_ship_for_dock(s, ship2no, is_assault, g);
+  std::optional<population_t> requested_boarders;
+  if (argv.size() >= 4) {
+    if (auto scan_res = scn::scan<population_t>(argv[3], "{}")) {
+      requested_boarders = scan_res->value();
+    }
+  }
+
+  auto target_val = validate_target_ship_for_dock(
+      s, ship2no, is_assault, what, requested_boarders, g);
   if (target_val.abort_loop) {
     should_abort_loop = true;
     return false;
@@ -455,26 +464,31 @@ bool process_single_ship_dock(const command_t& argv, Ship& s, bool is_assault,
   }
 
   if (is_assault) {
-    command_t fire_argv{"fire-from-dock", std::format("{}", ship2no),
-                        std::format("{}", s.number())};
+    command_t fire_argv{"fire-from-dock", std::format("#{}", ship2no),
+                        std::format("#{}", s.number())};
     GB::commands::fire(fire_argv, g);
-    if (!s.alive()) {
-      return false;
+    if (!s.alive() ||
+        (what == PopulationType::CIV ? !s.popn() : !s.troops())) {
+      return true;
     }
-    bool s2_alive = true;
-    g.entity_manager.with_ship(ship2no,
-                               [&](const Ship& s2) { s2_alive = s2.alive(); });
+    bool s2_alive = false;
+    try {
+      g.entity_manager.with_ship(
+          ship2no, [&](const Ship& s2) { s2_alive = s2.alive(); });
+    } catch (const EntityNotFoundError&) {
+      s2_alive = false;
+    }
     if (!s2_alive) {
       should_abort_loop = true;
-      return false;
+      return true;
     }
   }
 
   bool completed = false;
   g.entity_manager.mutate_ship(ship2no, [&](Ship& s2) {
     if (is_assault) {
-      auto outcome =
-          resolve_boarding_combat(argv, s, s2, what, target_val.fuel, g);
+      auto outcome = resolve_boarding_combat(
+          s, s2, what, requested_boarders, target_val.fuel, g);
       if (outcome.aborted) {
         return;
       }

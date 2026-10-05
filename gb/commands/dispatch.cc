@@ -34,8 +34,8 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
   }
   if (desc.roles.star_control) {
     try {
-      const auto* star = g.entity_manager.peek_star(g.snum());
-      if (!star || !star->control(g.player(), g.governor())) {
+      const auto& star = *g.entity_manager.peek_star(g.snum());
+      if (!star.control(g.player(), g.governor())) {
         g.out << "You are not authorized to do that in this system.\n";
         return false;
       }
@@ -60,8 +60,8 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
   // 4. Fixed-Cost AP Pre-check
   if (desc.ap.model == APModel::FixedStar) {
     try {
-      const auto* star = g.entity_manager.peek_star(g.snum());
-      if (!star || star->AP(g.player()) < desc.ap.amount) {
+      const auto& star = *g.entity_manager.peek_star(g.snum());
+      if (star.AP(g.player()) < desc.ap.amount) {
         g.out << std::format("You don't have {} action points there.\n",
                              desc.ap.amount);
         return false;
@@ -72,8 +72,8 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
       return false;
     }
   } else if (desc.ap.model == APModel::FixedUniv) {
-    const auto* univ = g.entity_manager.peek_universe();
-    if (!univ || univ->get_AP(g.player()) < desc.ap.amount) {
+    const auto& univ = *g.entity_manager.peek_universe();
+    if (univ.get_AP(g.player()) < desc.ap.amount) {
       g.out << std::format("You need {} universe action points.\n",
                            desc.ap.amount);
       return false;
@@ -88,6 +88,7 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
   std::optional<EntityManager::Transaction> txn;
   if (desc.transactional) {
     txn.emplace(g.entity_manager.begin_transaction());
+    g.session_registry.begin_outbox();
   }
 
   bool success = false;
@@ -95,6 +96,7 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
     success = desc.handler(argv, g);
   } catch (...) {
     if (txn) {
+      g.session_registry.rollback_outbox();
       txn->rollback();
     }
     throw;
@@ -114,7 +116,12 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
   if (txn) {
     if (success) {
       txn->commit();
+      for (const auto& item : g.session_registry.commit_outbox()) {
+        push_telegram(g.entity_manager, item.player, item.governor,
+                      item.message);
+      }
     } else {
+      g.session_registry.rollback_outbox();
       txn->rollback();
     }
   }

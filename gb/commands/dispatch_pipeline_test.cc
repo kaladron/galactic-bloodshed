@@ -338,6 +338,135 @@ void test_dispatch_by_command_name() {
   ctx.verify_universe_invariants();
 }
 
+void test_edge_cases_and_socket_outbox() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  RecordingSessionRegistry registry;
+  registry.sessions = {
+      SessionInfo{.player = 1, .governor = 1, .connected = true},
+      SessionInfo{.player = 2, .governor = 1, .connected = true},
+      SessionInfo{.player = 2, .governor = 2, .connected = false},
+  };
+  ctx.em.mutate_race(2, [](Race& r) { r.appoint_governor(2); });
+
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 1);
+
+  // 1. player() == 0 sets g.race = nullptr and passes no_guests check
+  g.set_player(0);
+  GB::commands::CommandDescriptor no_guest_desc{
+      .name = "mock_player0",
+      .roles = {.no_guests = true},
+      .scopes = GB::commands::AllowedScopes::any(),
+      .handler = &mock_success_handler,
+  };
+  test::expect_true(
+      GB::commands::dispatch_command(g, no_guest_desc, {"mock_player0"}));
+  test::expect_true(g.race == nullptr);
+  g.set_player(1);
+
+  // 2. Missing star in star_control and FixedStar catches EntityNotFoundError
+  g.set_snum(999);
+  GB::commands::CommandDescriptor star_ctrl_desc{
+      .name = "mock_star_ctrl_missing",
+      .roles = {.star_control = true},
+      .scopes = GB::commands::AllowedScopes::any(),
+      .handler = &mock_success_handler,
+  };
+  test::expect_false(GB::commands::dispatch_command(
+      g, star_ctrl_desc, {"mock_star_ctrl_missing"}));
+
+  GB::commands::CommandDescriptor fixed_star_desc{
+      .name = "mock_fixed_star_missing",
+      .scopes = GB::commands::AllowedScopes::any(),
+      .ap = GB::commands::APCost::fixed_star(1),
+      .handler = &mock_success_handler,
+  };
+  test::expect_false(GB::commands::dispatch_command(
+      g, fixed_star_desc, {"mock_fixed_star_missing"}));
+  g.set_snum(1);
+
+  // 3. Null handler returns false
+  GB::commands::CommandDescriptor null_handler_desc{
+      .name = "mock_null",
+      .scopes = GB::commands::AllowedScopes::any(),
+      .handler = nullptr,
+  };
+  test::expect_false(
+      GB::commands::dispatch_command(g, null_handler_desc, {"mock_null"}));
+
+  // 4. Failed command rolls back both SQLite telegrams and staged SocketOutbox
+  GB::commands::CommandDescriptor fail_outbox_desc{
+      .name = "mock_fail_outbox",
+      .scopes = GB::commands::AllowedScopes::any(),
+      .handler = [](const command_t&, GameObj& game) -> bool {
+        d_broadcast(game.session_registry, game.entity_manager, 1, 1,
+                    "Leaked broadcast!\n");
+        warn_player(game.session_registry, game.entity_manager, 2, 1,
+                    "Leaked online warning!\n");
+        // Disconnect (2, 1) temporarily to force an offline telegram for (2, 2)
+        push_telegram(game.entity_manager, 2, 2, "Leaked offline telegram!\n");
+        return false;
+      },
+  };
+  registry.clear_notifications();
+  test::expect_false(GB::commands::dispatch_command(g, fail_outbox_desc,
+                                                    {"mock_fail_outbox"}));
+  test::expect_true(registry.notifications.empty());
+  test::expect_eq(ctx.em.get_telegrams(2, 2).size(), 0u);
+
+  // 5. Throwing command (transactional and non-transactional) rolls back outbox
+  GB::commands::CommandDescriptor throw_txn_desc{
+      .name = "mock_throw_txn",
+      .scopes = GB::commands::AllowedScopes::any(),
+      .handler = [](const command_t&, GameObj& game) -> bool {
+        warn_player(game.session_registry, game.entity_manager, 2, 1,
+                    "Leaked on exception!\n");
+        throw std::runtime_error("boom");
+      },
+  };
+  test::expect_throws<std::runtime_error>([&]() {
+    GB::commands::dispatch_command(g, throw_txn_desc, {"mock_throw_txn"});
+  });
+  test::expect_true(registry.notifications.empty());
+
+  GB::commands::CommandDescriptor throw_nontxn_desc{
+      .name = "mock_throw_nontxn",
+      .scopes = GB::commands::AllowedScopes::any(),
+      .handler = [](const command_t&, GameObj&) -> bool {
+        throw std::runtime_error("nontxn boom");
+      },
+      .transactional = false,
+  };
+  test::expect_throws<std::runtime_error>([&]() {
+    GB::commands::dispatch_command(g, throw_nontxn_desc, {"mock_throw_nontxn"});
+  });
+
+  // 6. Successful command flushes outbox after commit and falls back to
+  // push_telegram if a recipient disconnected before commit_outbox()
+  GB::commands::CommandDescriptor commit_outbox_desc{
+      .name = "mock_commit_outbox",
+      .scopes = GB::commands::AllowedScopes::any(),
+      .handler = [](const command_t&, GameObj& game) -> bool {
+        warn_player(game.session_registry, game.entity_manager, 1, 1,
+                    "Delivered live!\n");
+        warn_player(game.session_registry, game.entity_manager, 2, 1,
+                    "Fallback after disconnect!\n");
+        static_cast<RecordingSessionRegistry&>(game.session_registry)
+            .sessions[1]
+            .connected = false;
+        return true;
+      },
+  };
+  test::expect_true(GB::commands::dispatch_command(g, commit_outbox_desc,
+                                                   {"mock_commit_outbox"}));
+  test::expect_true(registry.has_received(1, "Delivered live!"));
+  test::expect_eq(ctx.em.get_telegrams(2, 1).size(), 1u);
+
+  ctx.verify_universe_invariants();
+}
+
 }  // namespace
 
 int main() {
@@ -350,6 +479,7 @@ int main() {
   test_fixed_star_ap_transactions();
   test_fixed_univ_ap_transactions();
   test_dispatch_by_command_name();
+  test_edge_cases_and_socket_outbox();
 
   std::println(std::cout, "✓ dispatch_pipeline_test passed!");
   return 0;

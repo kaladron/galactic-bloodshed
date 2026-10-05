@@ -23,8 +23,7 @@ bool has_planet_defense(EntityManager& entity_manager, const starnum_t star_id,
                         const player_t Playernum) {
   for (const Ship& s :
        ShipList::readonly_on_planet(entity_manager, star_id, planet_order)) {
-    if (s.alive() && s.type() == ShipType::OTYPE_PLANDEF &&
-        s.owner() != Playernum) {
+    if (s.type() == ShipType::OTYPE_PLANDEF && s.owner() != Playernum) {
       return true;
     }
   }

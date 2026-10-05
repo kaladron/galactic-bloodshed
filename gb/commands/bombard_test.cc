@@ -217,7 +217,7 @@ void test_bombard_preconditions_afv_and_retaliation() {
   // protector ship retaliation + random sector selection
   ctx.em.mutate_ship(1, [](Ship& s) {
     s.laser() = true;
-    s.fire_laser() = 25;
+    s.fire_laser() = 5;
     s.mounted() = true;
   });
   ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
@@ -259,6 +259,90 @@ void test_bombard_preconditions_afv_and_retaliation() {
   ctx.assert_dispatch_success(g, {"bombard", "#1"}, 1);
 }
 
+void test_bombard_crystal_overload_burnout_and_explosion() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 1);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(1);
+
+  // 1. Friendly OTYPE_PLANDEF on the planet does NOT block bombardment
+  const auto friendly_pdef = TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF)
+                                 .owned_by(1, 1)
+                                 .landed_on(1, 1, {2, 2})
+                                 .with_guns(guntype_t::MEDIUM, 5)
+                                 .with_destruct(20)
+                                 .with_crew(5, 5)
+                                 .build();
+  ctx.assert_dispatch_success(g, {"bombard", "#1", "5,5", "1"}, 1);
+  ctx.em.mutate_ship(friendly_pdef, [&](Ship& s) { ctx.em.kill_ship(1, s); });
+
+  // 2. Non-lethal crystal burnout during laser bombardment commits and deducts
+  // 1 Star AP
+  shipnum_t burnout_bomber = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
+                                 .owned_by(1, 1)
+                                 .named("BurnoutBomber")
+                                 .in_planet_orbit(1, 1)
+                                 .with_crew(10, 10)
+                                 .with_fuel(1000.0)
+                                 .build();
+  ctx.em.mutate_ship(burnout_bomber, [](Ship& s) {
+    s.tech() = 2.0;
+    s.laser() = true;
+    s.fire_laser() = 1;
+    s.mounted() = true;
+  });
+
+  bool burned_out = false;
+  for (int attempt = 0; attempt < 40 && !burned_out; ++attempt) {
+    ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 10; });
+    g.out.str("");
+    ctx.assert_dispatch_success(
+        g, {"bombard", std::format("#{}", burnout_bomber.value), "5,5", "1"},
+        1);
+    const auto* s = ctx.em.peek_ship(burnout_bomber);
+    test::expect_true(s != nullptr && s->alive());
+    if (!s->mounted()) {
+      burned_out = true;
+      test::expect_eq(s->fire_laser(), 0u);
+      test::expect_contains(g.out.str(), "No attack.");
+      test::expect_eq(ctx.em.peek_star(1)->AP(1), 9);
+    }
+  }
+  test::expect_true(burned_out);
+
+  // 3. Lethal crystal explosion during laser bombardment commits ship
+  // destruction and deducts 1 Star AP
+  shipnum_t explode_bomber = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
+                                 .owned_by(1, 1)
+                                 .named("ExplodeBomber")
+                                 .in_planet_orbit(1, 1)
+                                 .with_crew(10, 10)
+                                 .with_fuel(30000.0)
+                                 .build();
+  ctx.em.mutate_ship(explode_bomber, [](Ship& s) {
+    s.tech() = 0.0;
+    s.laser() = true;
+    s.fire_laser() = 10000;
+    s.mounted() = true;
+  });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 5; });
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g,
+      {"bombard", std::format("#{}", explode_bomber.value), "5,5", "10000"}, 1);
+  test::expect_contains(g.out.str(), "No attack.");
+  test::expect_eq(ctx.em.peek_star(1)->AP(1), 4);
+  test::expect_throws<EntityNotFoundError>(
+      [&]() { ctx.em.peek_ship(explode_bomber); });
+
+  ctx.verify_universe_invariants();
+}
+
 }  // namespace
 
 int main() {
@@ -267,6 +351,7 @@ int main() {
   test_bombard_role_and_scope_rejections();
   test_bombard_domain_errors();
   test_bombard_preconditions_afv_and_retaliation();
+  test_bombard_crystal_overload_burnout_and_explosion();
 
   std::println(std::cout, "✓ bombard_test passed!");
   return 0;

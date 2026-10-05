@@ -184,6 +184,11 @@ bool bombard_from_ship(const command_t& argv, GameObj& g, Ship& from) {
         }
         const Coordinates target_coords = *coords_opt;
 
+        if (strength <= 0) {
+          g.out << "No attack.\n";
+          return;
+        }
+
         if (!g.deduct_ap(from.storbits(), 1)) {
           g.out << "You don't have 1 action points there.\n";
           return;
@@ -191,10 +196,11 @@ bool bombard_from_ship(const command_t& argv, GameObj& g, Ship& from) {
 
         if (from.is_laser_on()) {
           check_overload(g.entity_manager, from, 0, &strength);
-        }
-        if (strength <= 0) {
-          g.out << "No attack.\n";
-          return;
+          if (strength <= 0) {
+            g.out << "No attack.\n";
+            fired = true;
+            return;
+          }
         }
 
         std::optional<BombardResult> opt_result;

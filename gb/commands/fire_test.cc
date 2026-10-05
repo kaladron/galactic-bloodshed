@@ -5,6 +5,7 @@
 
 import commands;
 import gb.entities;
+import gb.mechanics;
 import gb.services;
 import test;
 import std;
@@ -328,6 +329,121 @@ void test_fire_cew_and_surface_geometry_edge_cases() {
   test::expect_lt(ctx.em.peek_ship(2)->destruct(), 50);
 }
 
+void test_fire_crystal_overload_burnout_and_explosion() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 1);
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(1);
+
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 20; });
+
+  // 1. Direct check_overload early-return MC/DC branches:
+  // (a) laser == false, cew == 0 -> early return
+  // (b) laser == true, fire_laser == 0, cew == 0 -> early return
+  ctx.em.mutate_ship(1, [&](Ship& s) {
+    s.laser() = false;
+    s.fire_laser() = 0;
+    weapon_power_t str = 10;
+    check_overload(ctx.em, s, 0, &str);
+    test::expect_eq(str, 10u);
+
+    s.laser() = true;
+    s.fire_laser() = 0;
+    check_overload(ctx.em, s, 0, &str);
+    test::expect_eq(str, 10u);
+  });
+
+  // 2. Non-lethal crystal burnout during laser fire:
+  // With damage = 0, tech = 2.0, strength = 1:
+  //   explode threshold = (int)(1.0 * 2.0 / 2.0) = 1 (int_rand(0, 1) > 1 is
+  //   impossible, so ship can never explode).
+  //   burnout threshold = (int)(1.0 * 2.0 / 4.0) = 0 (int_rand(0, 1) > 0 is
+  //   50% per shot).
+  shipnum_t burnout_ship = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
+                               .owned_by(1, 1)
+                               .named("BurnoutLaser")
+                               .in_star_orbit(1, SystemCoordinates{100.0, 200.0})
+                               .with_crew(10, 10)
+                               .with_fuel(1000.0)
+                               .build();
+  ctx.em.mutate_ship(burnout_ship, [](Ship& s) {
+    s.tech() = 2.0;
+    s.laser() = true;
+    s.fire_laser() = 1;
+    s.mounted() = true;
+  });
+
+  bool burned_out = false;
+  for (int attempt = 0; attempt < 40 && !burned_out; ++attempt) {
+    ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 10; });
+    g.out.str("");
+    ctx.assert_dispatch_success(
+        g, {"fire", std::format("#{}", burnout_ship.value), "#2", "1"}, 1);
+    const auto* s = ctx.em.peek_ship(burnout_ship);
+    test::expect_true(s != nullptr && s->alive());
+    if (!s->mounted()) {
+      burned_out = true;
+      test::expect_eq(s->fire_laser(), 0u);
+      test::expect_contains(g.out.str(), "No attack.");
+      test::expect_eq(ctx.em.peek_star(1)->AP(1), 9);
+    }
+  }
+  test::expect_true(burned_out);
+
+  // 3. Lethal crystal explosion during laser fire at LEVEL_STAR:
+  // With tech = 0.0 and strength = 10000, explode threshold = 0.
+  shipnum_t star_explode_ship =
+      TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
+          .owned_by(1, 1)
+          .named("StarExplodeLaser")
+          .in_star_orbit(1, SystemCoordinates{100.0, 200.0})
+          .with_crew(10, 10)
+          .with_fuel(30000.0)
+          .build();
+  ctx.em.mutate_ship(star_explode_ship, [](Ship& s) {
+    s.tech() = 0.0;
+    s.laser() = true;
+    s.fire_laser() = 10000;
+    s.mounted() = true;
+  });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 5; });
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"fire", std::format("#{}", star_explode_ship.value), "#2", "10000"},
+      1);
+  test::expect_contains(g.out.str(), "No attack.");
+  test::expect_eq(ctx.em.peek_star(1)->AP(1), 4);
+  test::expect_throws<EntityNotFoundError>(
+      [&]() { ctx.em.peek_ship(star_explode_ship); });
+
+  // 4. Lethal crystal explosion during CEW fire in deep space (LEVEL_UNIV):
+  shipnum_t univ_explode_ship =
+      TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
+          .owned_by(1, 1)
+          .named("UnivExplodeCEW")
+          .in_deep_space({0.0, 0.0})
+          .with_cew(20000, 100)
+          .with_crew(10, 10)
+          .with_fuel(30000.0)
+          .build();
+  ctx.em.mutate_ship(univ_explode_ship, [](Ship& s) { s.tech() = 0.0; });
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  ctx.em.mutate_universe([](universe_struct& u) { u.set_AP(1, 5); });
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"cew", std::format("#{}", univ_explode_ship.value), "#2"}, 0);
+  test::expect_contains(g.out.str(), "No attack.");
+  test::expect_eq(ctx.em.peek_universe()->get_AP(1), 4);
+  test::expect_throws<EntityNotFoundError>(
+      [&]() { ctx.em.peek_ship(univ_explode_ship); });
+
+  ctx.verify_universe_invariants();
+}
+
 }  // namespace
 
 int main() {
@@ -338,6 +454,7 @@ int main() {
   test_fire_domain_errors();
   test_protecting_ship_retaliation();
   test_fire_cew_and_surface_geometry_edge_cases();
+  test_fire_crystal_overload_burnout_and_explosion();
 
   std::println(std::cout, "✓ fire_test passed!");
   return 0;

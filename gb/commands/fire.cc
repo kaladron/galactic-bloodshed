@@ -250,12 +250,18 @@ bool fire_from_ship(const command_t& argv, GameObj& g, Ship& from,
     return false;
   }
 
-  if (from.is_laser_on() || cew_mode) {
-    check_overload(g.entity_manager, from, cew_mode, &strength);
-  }
   if (strength <= 0) {
     g.out << "No attack.\n";
     return false;
+  }
+
+  if (from.is_laser_on() || cew_mode) {
+    check_overload(g.entity_manager, from, cew_mode, &strength);
+    if (strength <= 0) {
+      g.out << "No attack.\n";
+      deduct_fire_ap(argv, g, from);
+      return true;
+    }
   }
 
   const auto retal = to->check_retal_strength();

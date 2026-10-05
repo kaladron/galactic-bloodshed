@@ -203,11 +203,15 @@ std::optional<Place> parse_survey_location(const command_t& argv, GameObj& g,
   }
 
   // Survey a named location
-  Place where(g, argv[1]);
-  if (where.err || where.level == ScopeLevel::LEVEL_SHIP) {
+  auto where = Place::resolve(g.entity_manager, g.scope_context(), argv[1]);
+  if (!where) {
+    g.out << format_place_error(where.error());
     return std::nullopt;
   }
-  return where;
+  if (where->level == ScopeLevel::LEVEL_SHIP) {
+    return std::nullopt;
+  }
+  return *where;
 }
 
 // Helper: Survey planet sectors (detailed sector-by-sector view)

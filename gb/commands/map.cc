@@ -14,15 +14,12 @@ module commands;
 
 namespace GB::commands {
 bool map(const command_t& argv, GameObj& g) {
-  std::unique_ptr<Place> where;
-
-  if (argv.size() > 1) {
-    where = std::make_unique<Place>(g, argv[1]);
-  } else {
-    where = std::make_unique<Place>(g, "");
+  auto where = Place::resolve(g.entity_manager, g.scope_context(),
+                              argv.size() > 1 ? argv[1] : std::string_view{});
+  if (!where) {
+    g.out << format_place_error(where.error());
+    return false;
   }
-
-  if (where->err) return false;
 
   switch (where->level) {
     case ScopeLevel::LEVEL_SHIP:
@@ -35,14 +32,13 @@ bool map(const command_t& argv, GameObj& g) {
         return false;
       }
       show_map(g, where->snum, where->pnum, *p);
-      const auto* star = g.entity_manager.peek_star(where->snum);
-      if (star && star->stability() > 50)
+      const auto& star = *g.entity_manager.peek_star(where->snum);
+      if (star.stability() > 50)
         g.out << "WARNING! This planet's primary is unstable.\n";
       return true;
     }
     default:
-      orbit(argv, g); /* make orbit map instead */
-      return true;
+      return orbit(argv, g); /* make orbit map instead */
   }
 }
 

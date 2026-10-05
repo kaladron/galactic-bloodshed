@@ -171,7 +171,31 @@ void test_cs_viewport_coordinates() {
   ctx.assert_dispatch_success(g, {"cs", "/Sol"});
   test::expect_eq(g.system_center(), SystemCoordinates(0.0, 0.0));
 
-  // 5. TestCommandMatrix runner
+  // 5. Navigating away from a destroyed/deleted ship scope does not crash
+  // (regression test for uncaught EntityNotFoundError in
+  // update_viewport_from_ship)
+  g.set_level(ScopeLevel::LEVEL_SHIP);
+  g.set_shipno(9999);
+  g.set_system_center({99.0, 99.0});
+  ctx.assert_dispatch_success(g, {"cs", "/Sol"});
+  test::expect_eq(g.level(), ScopeLevel::LEVEL_STAR);
+  test::expect_eq(g.system_center(), SystemCoordinates(0.0, 0.0));
+
+  // 6. Navigating from planet to a different star or from star to planet resets
+  // system_center to 0
+  ctx.assert_dispatch_success(g, {"cs", "/Sol/Earth"});
+  g.set_system_center({50.0, 50.0});
+  ctx.assert_dispatch_success(g, {"cs", "/Vega"});
+  test::expect_eq(g.system_center(), SystemCoordinates(0.0, 0.0));
+
+  // 7. Navigating from ship orbiting star 1 to a different star (/Vega) resets
+  // system_center to 0
+  ctx.assert_dispatch_success(g, {"cs", std::format("#{}", ship_star.value)});
+  g.set_system_center({50.0, 50.0});
+  ctx.assert_dispatch_success(g, {"cs", "/Vega"});
+  test::expect_eq(g.system_center(), SystemCoordinates(0.0, 0.0));
+
+  // 8. TestCommandMatrix runner
   TestCommandMatrix(ctx, "cs")
       .with_valid_argv({"cs", "/"})
       .with_invalid_argv({"cs", "NonExistentStar"})

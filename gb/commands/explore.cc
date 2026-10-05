@@ -19,17 +19,18 @@ bool explore(const command_t& argv, GameObj& g) {
   int starq = -1;
 
   if (argv.size() == 2) {
-    Place where{g, argv[1]};
-    if (where.err) {
+    auto where = Place::resolve(g.entity_manager, g.scope_context(), argv[1]);
+    if (!where) {
+      g.out << format_place_error(where.error());
       g.out << "explore: bad scope.\n";
       return false;
     }
-    if (where.level == ScopeLevel::LEVEL_SHIP ||
-        where.level == ScopeLevel::LEVEL_UNIV) {
+    if (where->level == ScopeLevel::LEVEL_SHIP ||
+        where->level == ScopeLevel::LEVEL_UNIV) {
       g.out << std::format("Bad scope '{}'\n", argv[1]);
       return false;
     }
-    starq = static_cast<int>(where.snum.value);
+    starq = static_cast<int>(where->snum.value);
   }
 
   const auto& sdata = *g.entity_manager.peek_universe();

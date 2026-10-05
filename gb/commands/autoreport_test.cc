@@ -82,7 +82,23 @@ void test_autoreport_dispatch() {
   test::expect_contains(g.out.str(), "Invalid number of arguments.");
   std::println(std::cout, "    ✓ Extra arguments rejected");
 
-  // 7. Command matrix validation (roles, guests, governor, scopes)
+  // 7. Regression test: unexplored planet or invalid sub-path from planet scope
+  // must be rejected (place.err check when place.level == LEVEL_PLAN)
+  ctx.em.mutate_planet(1, 1, [](Planet& p) {
+    p.info(player_t{1}).explored = 0;
+    p.info(player_t{1}).autorep = 0;
+  });
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(1);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"autoreport", "Earth"});
+  test::expect_contains(g.out.str(), "You have not explored Earth yet.");
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(player_t{1}).autorep, 0);
+  ctx.em.mutate_planet(1, 1,
+                       [](Planet& p) { p.info(player_t{1}).explored = 1; });
+  std::println(std::cout, "    ✓ Unexplored planet rejected in autoreport");
+
+  // 8. Command matrix validation (roles, guests, governor, scopes)
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);

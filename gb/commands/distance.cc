@@ -52,16 +52,22 @@ bool distance(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  Place from{g, argv[1], true};
-  if (from.err) {
+  auto from_res =
+      Place::resolve(g.entity_manager, g.scope_context(), argv[1], true);
+  if (!from_res) {
+    g.out << format_place_error(from_res.error());
     g.out << std::format("Bad scope '{}'\n", argv[1]);
     return false;
   }
-  Place to{g, argv[2], true};
-  if (to.err) {
+  auto to_res =
+      Place::resolve(g.entity_manager, g.scope_context(), argv[2], true);
+  if (!to_res) {
+    g.out << format_place_error(to_res.error());
     g.out << std::format("Bad scope '{}'\n", argv[2]);
     return false;
   }
+  const Place& from = *from_res;
+  const Place& to = *to_res;
 
   const auto from_coords =
       resolve_scope_coords(from, g.player(), g.entity_manager, g);

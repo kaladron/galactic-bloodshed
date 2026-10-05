@@ -27,6 +27,17 @@ export [[nodiscard]] std::expected<void, CommandableError>
 validate_commandable(const Ship& ship, player_t player, governor_t governor,
                      bool god = false) noexcept;
 
+/// Pure snapshot of a session's player, governor, god flag, and scope location.
+export struct ScopeContext {
+  player_t player{0};
+  governor_t governor{Race::leader_id};
+  bool god{false};
+  ScopeLevel level{ScopeLevel::LEVEL_UNIV};
+  starnum_t snum{0};
+  planetnum_t pnum{0};
+  shipnum_t shipno{0};
+};
+
 export class GameObj {
 public:
   EntityManager& entity_manager;  ///< Entity lifecycle manager
@@ -80,6 +91,18 @@ public:
   }
   ScopeLevel level() const {
     return level_;
+  }
+  /// Returns a pure value snapshot of the session's current scope and identity.
+  [[nodiscard]] ScopeContext scope_context() const noexcept {
+    return ScopeContext{
+        .player = player_,
+        .governor = governor_,
+        .god = god_,
+        .level = level_,
+        .snum = snum_,
+        .pnum = pnum_,
+        .shipno = (level_ == ScopeLevel::LEVEL_SHIP) ? shipno_ : shipnum_t{0},
+    };
   }
 
   // Setters - update local storage

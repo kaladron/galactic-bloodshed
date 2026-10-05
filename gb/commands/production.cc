@@ -91,13 +91,16 @@ bool production(const command_t& argv, GameObj& g) {
     }
   else
     for (int i = 1; i < argv.size(); i++) {
-      Place where{g, argv[i]};
-      if (where.err || (where.level == ScopeLevel::LEVEL_UNIV) ||
-          (where.level == ScopeLevel::LEVEL_SHIP)) {
+      auto where = Place::resolve(g.entity_manager, g.scope_context(), argv[i]);
+      if (!where) {
+        g.out << format_place_error(where.error());
+      }
+      if (!where || (where->level == ScopeLevel::LEVEL_UNIV) ||
+          (where->level == ScopeLevel::LEVEL_SHIP)) {
         g.out << std::format("Bad location `{}`.\n", argv[i]);
         continue;
       } /* ok, a proper location */
-      production_at_star(g, where.snum, table);
+      production_at_star(g, where->snum, table);
     }
 
   g.out << table << "\n";

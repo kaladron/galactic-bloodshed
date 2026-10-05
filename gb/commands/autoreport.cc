@@ -37,13 +37,18 @@ bool autoreport(const command_t& argv, GameObj& g) {
       pnum = g.pnum();
       break;
     case 2: {
-      Place place{g, argv[1]};
-      if (place.level != ScopeLevel::LEVEL_PLAN) {
+      auto place = Place::resolve(g.entity_manager, g.scope_context(), argv[1]);
+      if (!place) {
+        g.out << format_place_error(place.error());
         g.out << "Scope must be a planet.\n";
         return false;
       }
-      snum = place.snum;
-      pnum = place.pnum;
+      if (place->level != ScopeLevel::LEVEL_PLAN) {
+        g.out << "Scope must be a planet.\n";
+        return false;
+      }
+      snum = place->snum;
+      pnum = place->pnum;
     } break;
     default:
       g.out << "Invalid number of arguments.\n";

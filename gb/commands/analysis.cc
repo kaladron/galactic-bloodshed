@@ -432,9 +432,9 @@ bool analysis(const command_t& argv, GameObj& g) {
     }
 
     // Scope
-    Place maybe_where{g, arg};
-    if (!maybe_where.err) {
-      where = maybe_where;
+    auto maybe_where = Place::resolve(g.entity_manager, g.scope_context(), arg);
+    if (maybe_where) {
+      where = *maybe_where;
       continue;
     }
 

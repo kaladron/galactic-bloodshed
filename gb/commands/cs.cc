@@ -64,8 +64,13 @@ void update_viewport_from_planet(GameObj& g, const Place& where) {
  * scope.
  */
 void update_viewport_from_ship(GameObj& g, const Place& where) {
-  const auto* s = g.entity_manager.peek_ship(g.shipno());
-  if (!s || s->docked()) {
+  const Ship* s = nullptr;
+  try {
+    s = g.entity_manager.peek_ship(g.shipno());
+  } catch (const EntityNotFoundError&) {
+    s = nullptr;
+  }
+  if (!s || !s->alive() || s->docked()) {
     g.set_system_center({0.0, 0.0});
     return;
   }
@@ -124,8 +129,13 @@ void update_viewport_center(GameObj& g, const Place& where) {
  * @brief Update the governor's persistent default home scope (`cs -d <scope>`).
  */
 bool change_default_home_scope(GameObj& g, std::string_view target_arg) {
-  Place where{g, target_arg};
-  if (where.err || where.level == ScopeLevel::LEVEL_SHIP) {
+  auto where = Place::resolve(g.entity_manager, g.scope_context(), target_arg);
+  if (!where) {
+    g.out << format_place_error(where.error());
+    g.out << "cs: bad home system.\n";
+    return false;
+  }
+  if (where->level == ScopeLevel::LEVEL_SHIP) {
     g.out << "cs: bad home system.\n";
     return false;
   }
@@ -134,12 +144,13 @@ bool change_default_home_scope(GameObj& g, std::string_view target_arg) {
   const governor_t governor = g.governor();
   g.entity_manager.mutate_race(playernum, [&](Race& race) {
     auto& gov = race.governor(governor);
-    gov.deflevel = where.level;
-    gov.defsystem = where.snum;
-    gov.defplanetnum = where.pnum;
+    gov.deflevel = where->level;
+    gov.defsystem = where->snum;
+    gov.defplanetnum = where->pnum;
   });
 
-  g.out << std::format("New home system is {}\n", where.to_string());
+  g.out << std::format("New home system is {}\n",
+                       where->to_string(g.entity_manager));
   return true;
 }
 
@@ -153,18 +164,19 @@ bool cs(const command_t& argv, GameObj& g) {
   }
 
   if (argv.size() == 2) {
-    Place where{g, argv[1]};
-    if (where.err) {
+    auto where = Place::resolve(g.entity_manager, g.scope_context(), argv[1]);
+    if (!where) {
+      g.out << format_place_error(where.error());
       g.out << "cs: bad scope.\n";
       g.set_system_center({0.0, 0.0});
       return false;
     }
 
-    update_viewport_center(g, where);
-    g.set_level(where.level);
-    g.set_snum(where.snum);
-    g.set_pnum(where.pnum);
-    g.set_shipno(where.shipno);
+    update_viewport_center(g, *where);
+    g.set_level(where->level);
+    g.set_snum(where->snum);
+    g.set_pnum(where->pnum);
+    g.set_shipno(where->shipno);
     return true;
   }
 

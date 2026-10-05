@@ -114,18 +114,20 @@ bool configure_route_target(GameObj& g, int route_num,
     return true;
   }
 
-  Place where{g, target_arg, true};
-  if (where.err) {
+  auto where =
+      Place::resolve(g.entity_manager, g.scope_context(), target_arg, true);
+  if (!where) {
+    g.out << format_place_error(where.error());
     g.out << "Illegal destination.\n";
     return false;
   }
-  if (where.level != ScopeLevel::LEVEL_PLAN) {
+  if (where->level != ScopeLevel::LEVEL_PLAN) {
     g.out << "You have to designate a planet.\n";
     return false;
   }
   g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {
-    p.info(playernum).route_at(route_num).set_destination(where.snum,
-                                                          where.pnum);
+    p.info(playernum).route_at(route_num).set_destination(where->snum,
+                                                          where->pnum);
   });
   g.out << "Set.\n";
   return true;

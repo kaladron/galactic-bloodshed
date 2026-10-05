@@ -262,14 +262,16 @@ void order_destination(GameObj& g, const command_t& argv, Ship& ship) {
   if (argv.size() <= 3) {
     return;
   }
-  Place where{g, argv[3], true};
-  if (where.err) {
+  auto where =
+      Place::resolve(g.entity_manager, g.scope_context(), argv[3], true);
+  if (!where) {
+    g.out << format_place_error(where.error());
     return;
   }
-  if (where.level == ScopeLevel::LEVEL_SHIP) {
-    set_ship_follow_destination(g, ship, where.shipno);
+  if (where->level == ScopeLevel::LEVEL_SHIP) {
+    set_ship_follow_destination(g, ship, where->shipno);
   } else {
-    set_celestial_destination(g, ship, where);
+    set_celestial_destination(g, ship, *where);
   }
 }
 
@@ -555,24 +557,25 @@ void order_aim(GameObj& g, const command_t& argv, Ship& ship) {
     g.out << "Error in destination.\n";
     return;
   }
-  Place pl{g, argv[3], true};
-  if (pl.err) {
+  auto pl = Place::resolve(g.entity_manager, g.scope_context(), argv[3], true);
+  if (!pl) {
+    g.out << format_place_error(pl.error());
     g.out << "Error in destination.\n";
     return;
   }
   if (auto* mirror = ship.as<SpaceMirrorShip>()) {
-    switch (pl.level) {
+    switch (pl->level) {
       case ScopeLevel::LEVEL_UNIV:
         mirror->clear_aim();
         break;
       case ScopeLevel::LEVEL_STAR:
-        mirror->aim_at_star(pl.snum);
+        mirror->aim_at_star(pl->snum);
         break;
       case ScopeLevel::LEVEL_PLAN:
-        mirror->aim_at_planet(pl.snum, pl.pnum);
+        mirror->aim_at_planet(pl->snum, pl->pnum);
         break;
       case ScopeLevel::LEVEL_SHIP:
-        mirror->aim_at_ship(pl.shipno);
+        mirror->aim_at_ship(pl->shipno);
         break;
     }
   }

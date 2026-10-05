@@ -11,29 +11,6 @@ import :entitylists;
 import :gameobj;
 import :services;
 
-export struct ScopeContext {
-  player_t player{0};
-  governor_t governor{Race::leader_id};
-  bool god{false};
-  ScopeLevel level{ScopeLevel::LEVEL_UNIV};
-  starnum_t snum{0};
-  planetnum_t pnum{0};
-  shipnum_t shipno{0};
-
-  [[nodiscard]] static ScopeContext from(const GameObj& g) noexcept {
-    return ScopeContext{
-        .player = g.player(),
-        .governor = g.governor(),
-        .god = g.god(),
-        .level = g.level(),
-        .snum = g.snum(),
-        .pnum = g.pnum(),
-        .shipno =
-            (g.level() == ScopeLevel::LEVEL_SHIP) ? g.shipno() : shipnum_t{0},
-    };
-  }
-};
-
 export enum class PlaceErrorKind {
   CantGoHigher,
   ShipNotFound,
@@ -83,12 +60,9 @@ export class Place { /* used in function return for finding place */
 public:
   Place(ScopeLevel level_, starnum_t snum_, planetnum_t pnum_,
         shipnum_t shipno_)
-      : level(level_), snum(snum_), pnum(pnum_), shipno(shipno_),
-        entity_manager(nullptr) {}
+      : level(level_), snum(snum_), pnum(pnum_), shipno(shipno_) {}
 
   Place(ScopeLevel level_, starnum_t snum_, planetnum_t pnum_);
-
-  Place(GameObj&, std::string_view, bool ignore_explore = false);
 
   [[nodiscard]] static std::expected<Place, PlaceError>
   resolve(EntityManager& em, const ScopeContext& ctx, std::string_view string,
@@ -99,11 +73,9 @@ public:
   planetnum_t pnum{0};
   shipnum_t shipno{0};
   bool err = false;
-  std::string to_string();
+  [[nodiscard]] std::string to_string(EntityManager& em) const;
 
 private:
-  EntityManager* entity_manager =
-      nullptr;  // For accessing star/planet names in to_string()
   std::expected<void, PlaceError> resolve_ship_place(EntityManager& em,
                                                      const ScopeContext& ctx,
                                                      std::string_view string,
@@ -237,28 +209,28 @@ Place::Place(ScopeLevel level_, starnum_t snum_, planetnum_t pnum_)
   if (level_ == ScopeLevel::LEVEL_SHIP) err = true;
 }
 
-std::string Place::to_string() {
-  std::ostringstream out;
+std::string Place::to_string(EntityManager& em) const {
+  std::string result;
   switch (level) {
-    case ScopeLevel::LEVEL_STAR:
-      if (entity_manager) {
-        const auto& star = *entity_manager->peek_star(snum);
-        out << "/" << star.get_name();
-      }
-      return out.str();
-    case ScopeLevel::LEVEL_PLAN:
-      if (entity_manager) {
-        const auto& star = *entity_manager->peek_star(snum);
-        out << "/" << star.get_name() << "/" << star.get_planet_name(pnum);
-      }
-      return out.str();
+    case ScopeLevel::LEVEL_STAR: {
+      const auto& star = *em.peek_star(snum);
+      result = std::format("/{}", star.get_name());
+      break;
+    }
+    case ScopeLevel::LEVEL_PLAN: {
+      const auto& star = *em.peek_star(snum);
+      result =
+          std::format("/{}/{}", star.get_name(), star.get_planet_name(pnum));
+      break;
+    }
     case ScopeLevel::LEVEL_SHIP:
-      out << "#" << shipno;
-      return out.str();
+      result = std::format("#{}", shipno);
+      break;
     case ScopeLevel::LEVEL_UNIV:
-      out << "/";
-      return out.str();
+      result = "/";
+      break;
   }
+  return result;
 }
 
 std::expected<void, PlaceError>
@@ -302,7 +274,6 @@ std::expected<Place, PlaceError> Place::resolve(EntityManager& em,
   Place place(ctx.level, ctx.snum, ctx.pnum,
               (ctx.level == ScopeLevel::LEVEL_SHIP) ? ctx.shipno
                                                     : shipnum_t{0});
-  place.entity_manager = &em;
 
   if (string.empty()) {
     return place;
@@ -338,18 +309,4 @@ std::expected<Place, PlaceError> Place::resolve(EntityManager& em,
     return std::unexpected(step.error());
   }
   return place;
-}
-
-Place::Place(GameObj& g, std::string_view string, const bool ignoreexpl)
-    : level(g.level()), snum(g.snum()), pnum(g.pnum()),
-      entity_manager(&g.entity_manager) {
-  if (level == ScopeLevel::LEVEL_SHIP) shipno = g.shipno();
-  auto resolved = Place::resolve(g.entity_manager, ScopeContext::from(g),
-                                 string, ignoreexpl);
-  if (!resolved) {
-    g.out << format_place_error(resolved.error());
-    err = true;
-    return;
-  }
-  *this = *resolved;
 }

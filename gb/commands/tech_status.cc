@@ -89,13 +89,16 @@ bool tech_status(const command_t& argv, GameObj& g) {
     }
   } else { /* Several arguments */
     for (int k = 1; k < argv.size(); k++) {
-      Place where{g, argv[k]};
-      if (where.err || where.level == ScopeLevel::LEVEL_UNIV ||
-          where.level == ScopeLevel::LEVEL_SHIP) {
+      auto where = Place::resolve(g.entity_manager, g.scope_context(), argv[k]);
+      if (!where) {
+        g.out << format_place_error(where.error());
+      }
+      if (!where || where->level == ScopeLevel::LEVEL_UNIV ||
+          where->level == ScopeLevel::LEVEL_SHIP) {
         g.out << std::format("Bad location `{}`.\n", argv[k]);
         continue;
       } /* ok, a proper location */
-      starnum_t star = where.snum;
+      starnum_t star = where->snum;
       try {
         const auto& star_ref = *g.entity_manager.peek_star(star);
         tech_report_star(g, star_ref, star, table, totals);

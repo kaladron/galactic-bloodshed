@@ -58,6 +58,7 @@ void setup_test_world(TestContext& ctx) {
   // Create planet on star 1
   Planet planet0{1, 1, PlanetType::EARTH, Coordinates{5, 5}};
   planet0.explored() = true;
+  planet0.info(player_t{1}).explored = 1;
   planet0.info(player_t{1}).numsectsowned = 3;
   planet0.info(player_t{1}).guns = 10;
   planet0.info(player_t{1}).mob_points = 100;
@@ -165,6 +166,16 @@ void test_map_dispatch() {
   ctx.assert_dispatch_rejected(g, {"map"});
   test::expect_contains(g.out.str(), "Bad scope");
   std::println(std::cout, "    ✓ Map rejected at ship scope");
+
+  // 5. Explicit planet path argument and invalid path error reporting
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"map", "/TestStar/TestPlanet"});
+  test::expect_contains(g.out.str(), "TestPlanet");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"map", "/NoSuchStar"});
+  test::expect_contains(g.out.str(), "No such star NoSuchStar.");
 }
 
 void test_sector_char_and_desshow_branches() {

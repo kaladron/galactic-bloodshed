@@ -45,10 +45,13 @@ bool dump(const command_t& argv, GameObj& g) {
     }
   } else { /* list of places given */
     for (const auto& place_arg : argv | std::views::drop(2)) {
-      Place where{g, place_arg, true};
-      if (!where.err && where.level != ScopeLevel::LEVEL_UNIV &&
-          where.level != ScopeLevel::LEVEL_SHIP) {
-        g.entity_manager.mutate_star(where.snum, [&](Star& current_star) {
+      auto where =
+          Place::resolve(g.entity_manager, g.scope_context(), place_arg, true);
+      if (!where) {
+        g.out << format_place_error(where.error());
+      } else if (where->level != ScopeLevel::LEVEL_UNIV &&
+                 where->level != ScopeLevel::LEVEL_SHIP) {
+        g.entity_manager.mutate_star(where->snum, [&](Star& current_star) {
           transfer_star_data(g.entity_manager, donor_id, recipient_id,
                              current_star);
         });

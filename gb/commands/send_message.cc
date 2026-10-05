@@ -138,8 +138,14 @@ bool send_to_star_system(const command_t& argv, GameObj& g) {
     return false;
   }
   g.out << "Sending message to star system.\n";
-  Place where{g, argv[2], true};
-  if (where.err || where.level != ScopeLevel::LEVEL_STAR) {
+  auto where =
+      Place::resolve(g.entity_manager, g.scope_context(), argv[2], true);
+  if (!where) {
+    g.out << format_place_error(where.error());
+    g.out << "No such star.\n";
+    return false;
+  }
+  if (where->level != ScopeLevel::LEVEL_STAR) {
     g.out << "No such star.\n";
     return false;
   }
@@ -150,7 +156,7 @@ bool send_to_star_system(const command_t& argv, GameObj& g) {
   }
 
   const player_t playernum = g.player();
-  const auto& star_ref = *g.entity_manager.peek_star(where.snum);
+  const auto& star_ref = *g.entity_manager.peek_star(where->snum);
   const std::string sender_tag =
       format_sender_tag(*g.race, playernum, g.governor());
   const std::string msg =

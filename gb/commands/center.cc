@@ -17,21 +17,23 @@ bool center(const command_t& argv, GameObj& g) {
     g.out << "center: which star?\n";
     return false;
   }
-  Place where{g, argv[1], true};
+  auto where =
+      Place::resolve(g.entity_manager, g.scope_context(), argv[1], true);
 
-  if (where.err) {
+  if (!where) {
+    g.out << format_place_error(where.error());
     g.out << "center: bad scope.\n";
     return false;
   }
-  if (where.level == ScopeLevel::LEVEL_SHIP) {
+  if (where->level == ScopeLevel::LEVEL_SHIP) {
     g.out << "CHEATER!!!\n";
     return false;
   }
-  if (where.level == ScopeLevel::LEVEL_UNIV) {
+  if (where->level == ScopeLevel::LEVEL_UNIV) {
     g.out << "center: bad scope.\n";
     return false;
   }
-  const auto& star = *g.entity_manager.peek_star(where.snum);
+  const auto& star = *g.entity_manager.peek_star(where->snum);
   g.set_universe_center(star.coordinates());
   return true;
 }

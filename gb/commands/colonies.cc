@@ -62,14 +62,17 @@ bool colonies(const command_t& argv, GameObj& g) {
     }
   } else {
     for (int i = 1; i < argv.size(); i++) {
-      Place where{g, argv[i]};
-      if (where.err || (where.level == ScopeLevel::LEVEL_UNIV) ||
-          (where.level == ScopeLevel::LEVEL_SHIP)) {
+      auto where = Place::resolve(g.entity_manager, g.scope_context(), argv[i]);
+      if (!where) {
+        g.out << format_place_error(where.error());
+      }
+      if (!where || (where->level == ScopeLevel::LEVEL_UNIV) ||
+          (where->level == ScopeLevel::LEVEL_SHIP)) {
         auto error_msg = std::format("Bad location `{}'.\n", argv[i]);
         g.out << error_msg;
         continue;
       } /* ok, a proper location */
-      colonies_at_star(g, *g.race, where.snum);
+      colonies_at_star(g, *g.race, where->snum);
     }
   }
   g.out << "\n";

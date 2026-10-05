@@ -71,9 +71,10 @@ bool orbit(const command_t& argv, GameObj& g) {
         }
     }
 
-  std::unique_ptr<Place> where;
+  auto resolved =
+      Place::resolve(g.entity_manager, g.scope_context(),
+                     argv.size() == 1 ? ":" : argv[argv.size() - 1]);
   if (argv.size() == 1) {
-    where = std::make_unique<Place>(g, ":");
     if (g.level() == ScopeLevel::LEVEL_UNIV) {
       Lastx = g.universe_center().x;
       Lasty = g.universe_center().y;
@@ -84,15 +85,16 @@ bool orbit(const command_t& argv, GameObj& g) {
       Zoom = g.zoom[0];
     }
   } else {
-    where = std::make_unique<Place>(g, argv[argv.size() - 1]);
     Lastx = Lasty = 0.0;
     Zoom = 1.1;
   }
 
-  if (where->err) {
+  if (!resolved) {
+    g.out << format_place_error(resolved.error());
     g.out << "orbit: error in args.\n";
     return false;
   }
+  const Place& where = *resolved;
 
   /* orbit type of map */
   system_map_text = "#";
@@ -104,7 +106,7 @@ bool orbit(const command_t& argv, GameObj& g) {
   }
   const Race& Race = *race_ptr;
 
-  switch (where->level) {
+  switch (where.level) {
     case ScopeLevel::LEVEL_UNIV: {
       const auto* universe = g.entity_manager.peek_universe();
       if (!universe) {
@@ -122,14 +124,14 @@ bool orbit(const command_t& argv, GameObj& g) {
         for (const Ship& s :
              ShipList::readonly(g.entity_manager, ScopeLevel::LEVEL_UNIV)) {
           if (DontDispNum != s.number()) {
-            system_map_text += DispShip(g, g.entity_manager, *where, s, Race);
+            system_map_text += DispShip(g, g.entity_manager, where, s, Race);
           }
         }
       }
       break;
     }
     case ScopeLevel::LEVEL_STAR: {
-      const auto* star_ptr = g.entity_manager.peek_star(where->snum);
+      const auto* star_ptr = g.entity_manager.peek_star(where.snum);
       if (!star_ptr) {
         g.out << "Star not found.\n";
         return false;
@@ -138,7 +140,7 @@ bool orbit(const command_t& argv, GameObj& g) {
           DispStar(g, ScopeLevel::LEVEL_STAR, *star_ptr, DontDispStars);
       system_map_text += star;
 
-      for (const auto& p : PlanetList::readonly(g.entity_manager, where->snum,
+      for (const auto& p : PlanetList::readonly(g.entity_manager, where.snum,
                                                 star_ptr->numplanets())) {
         if (DontDispNum != p.planet_order()) {
           std::string planet =
@@ -154,8 +156,7 @@ bool orbit(const command_t& argv, GameObj& g) {
       if (g.god())
         iq = true;
       else {
-        for (const Ship& s :
-             ShipList::readonly(g.entity_manager, where->snum)) {
+        for (const Ship& s : ShipList::readonly(g.entity_manager, where.snum)) {
           if (s.owner() == g.player() && s.has_sight()) {
             iq = true; /* you are there to sight, need a crew */
             break;
@@ -163,30 +164,29 @@ bool orbit(const command_t& argv, GameObj& g) {
         }
       }
       if (!DontDispShips) {
-        for (const Ship& s :
-             ShipList::readonly(g.entity_manager, where->snum)) {
+        for (const Ship& s : ShipList::readonly(g.entity_manager, where.snum)) {
           if (DontDispNum != s.number() &&
               !(s.owner() != g.player() && s.type() == ShipType::STYPE_MINE)) {
             if ((s.owner() == g.player()) || iq) {
-              system_map_text += DispShip(g, g.entity_manager, *where, s, Race);
+              system_map_text += DispShip(g, g.entity_manager, where, s, Race);
             }
           }
         }
       }
     } break;
     case ScopeLevel::LEVEL_PLAN: {
-      const auto* plan_star = g.entity_manager.peek_star(where->snum);
+      const auto* plan_star = g.entity_manager.peek_star(where.snum);
       if (!plan_star) {
         g.out << "Star not found.\n";
         return false;
       }
-      const auto* p = g.entity_manager.peek_planet(where->snum, where->pnum);
+      const auto* p = g.entity_manager.peek_planet(where.snum, where.pnum);
       if (!p) {
         g.out << "Planet not found.\n";
         return false;
       }
       std::string planet = DispPlanet(g, ScopeLevel::LEVEL_PLAN, *p,
-                                      plan_star->get_planet_name(where->pnum),
+                                      plan_star->get_planet_name(where.pnum),
                                       DontDispPlanets, Race);
       system_map_text += planet;
 
@@ -194,7 +194,7 @@ bool orbit(const command_t& argv, GameObj& g) {
          orbiting the planet, if so you can see orbiting enemy ships */
       bool iq = false;
       for (const Ship& s :
-           ShipList::readonly(g.entity_manager, where->snum, where->pnum)) {
+           ShipList::readonly(g.entity_manager, where.snum, where.pnum)) {
         if (s.owner() == g.player() && s.has_sight()) {
           iq = true; /* you are there to sight, need a crew */
           break;
@@ -203,12 +203,12 @@ bool orbit(const command_t& argv, GameObj& g) {
       /* end check */
       if (!DontDispShips) {
         for (const Ship& s :
-             ShipList::readonly(g.entity_manager, where->snum, where->pnum)) {
+             ShipList::readonly(g.entity_manager, where.snum, where.pnum)) {
           if (DontDispNum != s.number()) {
             if (!s.is_landed()) {
               if ((s.owner() == g.player()) || iq) {
                 system_map_text +=
-                    DispShip(g, g.entity_manager, *where, s, Race, p);
+                    DispShip(g, g.entity_manager, where, s, Race, p);
               }
             }
           }

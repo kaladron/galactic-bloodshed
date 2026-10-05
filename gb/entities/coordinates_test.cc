@@ -382,47 +382,50 @@ int main() {
     GameObj g(ctx.em, registry);
     ctx.setup_game_obj(g, 1, 1);
 
-    // 1. Direct constructors and to_string()
+    // 1. Direct constructors and to_string(EntityManager&)
     Place p_3arg(ScopeLevel::LEVEL_SHIP, 1, 1);
     test::expect_true(p_3arg.err);
     Place p_star_3arg(ScopeLevel::LEVEL_STAR, 1, 1);
     test::expect_false(p_star_3arg.err);
-    test::expect_eq(p_star_3arg.to_string(), "");  // no EntityManager attached
+    test::expect_eq(p_star_3arg.to_string(ctx.em), "/Sol");
+    Place p_plan_3arg(ScopeLevel::LEVEL_PLAN, 1, 1);
+    test::expect_false(p_plan_3arg.err);
+    test::expect_eq(p_plan_3arg.to_string(ctx.em), "/Sol/Earth");
 
     // 2. Empty and ':' keep current scope; '-' resets to LEVEL_UNIV
     g.set_level(ScopeLevel::LEVEL_PLAN);
     g.set_snum(1);
     g.set_pnum(1);
-    Place p_empty(g, "");
-    test::expect_false(p_empty.err);
-    test::expect_eq(p_empty.level, ScopeLevel::LEVEL_PLAN);
-    test::expect_eq(p_empty.to_string(), "/Sol/Earth");
+    auto p_empty = Place::resolve(ctx.em, g.scope_context(), "");
+    test::expect_true(p_empty.has_value());
+    test::expect_eq(p_empty->level, ScopeLevel::LEVEL_PLAN);
+    test::expect_eq(p_empty->to_string(ctx.em), "/Sol/Earth");
 
-    Place p_colon(g, ":");
-    test::expect_false(p_colon.err);
-    test::expect_eq(p_colon.level, ScopeLevel::LEVEL_PLAN);
+    auto p_colon = Place::resolve(ctx.em, g.scope_context(), ":");
+    test::expect_true(p_colon.has_value());
+    test::expect_eq(p_colon->level, ScopeLevel::LEVEL_PLAN);
 
-    Place p_dash(g, "-");
-    test::expect_false(p_dash.err);
-    test::expect_eq(p_dash.level, ScopeLevel::LEVEL_UNIV);
-    test::expect_eq(p_dash.to_string(), "/");
+    auto p_dash = Place::resolve(ctx.em, g.scope_context(), "-");
+    test::expect_true(p_dash.has_value());
+    test::expect_eq(p_dash->level, ScopeLevel::LEVEL_UNIV);
+    test::expect_eq(p_dash->to_string(ctx.em), "/");
 
     // 3. Ascending parent scopes with '.' / '..'
-    Place p_up_to_star(g, ".");
-    test::expect_false(p_up_to_star.err);
-    test::expect_eq(p_up_to_star.level, ScopeLevel::LEVEL_STAR);
-    test::expect_eq(p_up_to_star.to_string(), "/Sol");
+    auto p_up_to_star = Place::resolve(ctx.em, g.scope_context(), ".");
+    test::expect_true(p_up_to_star.has_value());
+    test::expect_eq(p_up_to_star->level, ScopeLevel::LEVEL_STAR);
+    test::expect_eq(p_up_to_star->to_string(ctx.em), "/Sol");
 
     g.set_level(ScopeLevel::LEVEL_STAR);
-    Place p_up_to_univ(g, "..");
-    test::expect_false(p_up_to_univ.err);
-    test::expect_eq(p_up_to_univ.level, ScopeLevel::LEVEL_UNIV);
+    auto p_up_to_univ = Place::resolve(ctx.em, g.scope_context(), "..");
+    test::expect_true(p_up_to_univ.has_value());
+    test::expect_eq(p_up_to_univ->level, ScopeLevel::LEVEL_UNIV);
 
     g.set_level(ScopeLevel::LEVEL_UNIV);
-    g.out.str("");
-    Place p_cant_go_higher(g, ".");
-    test::expect_true(p_cant_go_higher.err);
-    test::expect_contains(g.out.str(), "Can't go higher");
+    auto p_cant_go_higher = Place::resolve(ctx.em, g.scope_context(), ".");
+    test::expect_false(p_cant_go_higher.has_value());
+    test::expect_contains(format_place_error(p_cant_go_higher.error()),
+                          "Can't go higher");
 
     // 4. Ascending from LEVEL_SHIP (docked inside carrier & orbiting planet)
     const shipnum_t carrier_id =
@@ -440,90 +443,99 @@ int main() {
 
     g.set_level(ScopeLevel::LEVEL_SHIP);
     g.set_shipno(fighter_id);
-    Place p_from_fighter(g, ".");
-    test::expect_false(p_from_fighter.err);
-    test::expect_eq(p_from_fighter.level, ScopeLevel::LEVEL_SHIP);
-    test::expect_eq(p_from_fighter.shipno, carrier_id);
-    test::expect_eq(p_from_fighter.snum, 1);
-    test::expect_eq(p_from_fighter.pnum, 1);
-    test::expect_eq(p_from_fighter.to_string(), std::format("#{}", carrier_id));
+    auto p_from_fighter = Place::resolve(ctx.em, g.scope_context(), ".");
+    test::expect_true(p_from_fighter.has_value());
+    test::expect_eq(p_from_fighter->level, ScopeLevel::LEVEL_SHIP);
+    test::expect_eq(p_from_fighter->shipno, carrier_id);
+    test::expect_eq(p_from_fighter->snum, 1);
+    test::expect_eq(p_from_fighter->pnum, 1);
+    test::expect_eq(p_from_fighter->to_string(ctx.em),
+                    std::format("#{}", carrier_id));
 
     g.set_shipno(carrier_id);
-    Place p_from_carrier(g, ".");
-    test::expect_false(p_from_carrier.err);
-    test::expect_eq(p_from_carrier.level, ScopeLevel::LEVEL_PLAN);
-    test::expect_eq(p_from_carrier.snum, 1);
-    test::expect_eq(p_from_carrier.pnum, 1);
-    test::expect_eq(p_from_carrier.shipno, 0);
+    auto p_from_carrier = Place::resolve(ctx.em, g.scope_context(), ".");
+    test::expect_true(p_from_carrier.has_value());
+    test::expect_eq(p_from_carrier->level, ScopeLevel::LEVEL_PLAN);
+    test::expect_eq(p_from_carrier->snum, 1);
+    test::expect_eq(p_from_carrier->pnum, 1);
+    test::expect_eq(p_from_carrier->shipno, 0);
 
     g.set_shipno(9999);
-    g.out.str("");
-    Place p_missing_ship_parent(g, ".");
-    test::expect_true(p_missing_ship_parent.err);
-    test::expect_contains(g.out.str(), "Ship not found");
+    auto p_missing_ship_parent = Place::resolve(ctx.em, g.scope_context(), ".");
+    test::expect_false(p_missing_ship_parent.has_value());
+    test::expect_contains(format_place_error(p_missing_ship_parent.error()),
+                          "Ship not found");
 
     // 5. Descending into unexplored vs explored stars & planets, and
     // non-null-terminated substr formatting on compound paths
     ctx.em.mutate_star(1, [](Star& s) { s.clear_explored_by(player_t{1}); });
     g.set_level(ScopeLevel::LEVEL_UNIV);
-    g.out.str("");
-    Place p_unexplored_star(g, "/Sol");
-    test::expect_true(p_unexplored_star.err);
-    test::expect_contains(g.out.str(), "You have not explored Sol yet.");
+    auto p_unexplored_star = Place::resolve(ctx.em, g.scope_context(), "/Sol");
+    test::expect_false(p_unexplored_star.has_value());
+    test::expect_contains(format_place_error(p_unexplored_star.error()),
+                          "You have not explored Sol yet.");
 
-    Place p_ignore_explore_star(g, "/Sol", true);
-    test::expect_false(p_ignore_explore_star.err);
-    test::expect_eq(p_ignore_explore_star.level, ScopeLevel::LEVEL_STAR);
-    test::expect_eq(p_ignore_explore_star.snum, 1);
+    auto p_ignore_explore_star =
+        Place::resolve(ctx.em, g.scope_context(), "/Sol", true);
+    test::expect_true(p_ignore_explore_star.has_value());
+    test::expect_eq(p_ignore_explore_star->level, ScopeLevel::LEVEL_STAR);
+    test::expect_eq(p_ignore_explore_star->snum, 1);
     ctx.em.mutate_star(1, [](Star& s) { s.mark_explored_by(player_t{1}); });
 
-    g.out.str("");
-    Place p_bad_compound_star(g, "/BadStar/SomePlanet");
-    test::expect_true(p_bad_compound_star.err);
-    test::expect_contains(g.out.str(), "No such star BadStar.");
+    auto p_bad_compound_star =
+        Place::resolve(ctx.em, g.scope_context(), "/BadStar/SomePlanet");
+    test::expect_false(p_bad_compound_star.has_value());
+    test::expect_contains(format_place_error(p_bad_compound_star.error()),
+                          "No such star BadStar.");
 
     ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(1).explored = 0; });
-    g.out.str("");
-    Place p_unexplored_planet(g, "/Sol/Earth");
-    test::expect_true(p_unexplored_planet.err);
-    test::expect_contains(g.out.str(), "You have not explored Earth yet.");
+    auto p_unexplored_planet =
+        Place::resolve(ctx.em, g.scope_context(), "/Sol/Earth");
+    test::expect_false(p_unexplored_planet.has_value());
+    test::expect_contains(format_place_error(p_unexplored_planet.error()),
+                          "You have not explored Earth yet.");
     ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(1).explored = 1; });
 
-    g.out.str("");
-    Place p_bad_planet(g, "/Sol/Pluto");
-    test::expect_true(p_bad_planet.err);
-    test::expect_contains(g.out.str(), "No such planet Pluto.");
+    auto p_bad_planet = Place::resolve(ctx.em, g.scope_context(), "/Sol/Pluto");
+    test::expect_false(p_bad_planet.has_value());
+    test::expect_contains(format_place_error(p_bad_planet.error()),
+                          "No such planet Pluto.");
 
-    g.out.str("");
-    Place p_too_deep(g, "/Sol/Earth/Extra");
-    test::expect_true(p_too_deep.err);
-    test::expect_contains(g.out.str(), "Can't descend to Extra.");
+    auto p_too_deep =
+        Place::resolve(ctx.em, g.scope_context(), "/Sol/Earth/Extra");
+    test::expect_false(p_too_deep.has_value());
+    test::expect_contains(format_place_error(p_too_deep.error()),
+                          "Can't descend to Extra.");
 
     // 6. Ship reference resolution (#shipnum)
-    Place p_valid_ship(g, std::format("#{}", carrier_id));
-    test::expect_false(p_valid_ship.err);
-    test::expect_eq(p_valid_ship.level, ScopeLevel::LEVEL_SHIP);
-    test::expect_eq(p_valid_ship.shipno, carrier_id);
+    auto p_valid_ship = Place::resolve(ctx.em, g.scope_context(),
+                                       std::format("#{}", carrier_id));
+    test::expect_true(p_valid_ship.has_value());
+    test::expect_eq(p_valid_ship->level, ScopeLevel::LEVEL_SHIP);
+    test::expect_eq(p_valid_ship->shipno, carrier_id);
 
-    g.out.str("");
-    Place p_bad_ship_syntax(g, "#abc");
-    test::expect_true(p_bad_ship_syntax.err);
-    test::expect_contains(g.out.str(), "You don't own ship #abc.");
+    auto p_bad_ship_syntax = Place::resolve(ctx.em, g.scope_context(), "#abc");
+    test::expect_false(p_bad_ship_syntax.has_value());
+    test::expect_contains(format_place_error(p_bad_ship_syntax.error()),
+                          "You don't own ship #abc.");
 
-    Place p_nonexistent_ship(g, "#8888");
-    test::expect_true(p_nonexistent_ship.err);
+    auto p_nonexistent_ship =
+        Place::resolve(ctx.em, g.scope_context(), "#8888");
+    test::expect_false(p_nonexistent_ship.has_value());
 
     const shipnum_t alien_ship_id =
         TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
             .owned_by(2, 1)
             .in_star_orbit(1, UniverseCoordinates{0.0, 0.0})
             .build();
-    Place p_alien_ship(g, std::format("#{}", alien_ship_id));
-    test::expect_true(p_alien_ship.err);
+    auto p_alien_ship = Place::resolve(ctx.em, g.scope_context(),
+                                       std::format("#{}", alien_ship_id));
+    test::expect_false(p_alien_ship.has_value());
 
-    Place p_alien_ship_ignore_exp(g, std::format("#{}", alien_ship_id), true);
-    test::expect_false(p_alien_ship_ignore_exp.err);
-    test::expect_eq(p_alien_ship_ignore_exp.shipno, alien_ship_id);
+    auto p_alien_ship_ignore_exp = Place::resolve(
+        ctx.em, g.scope_context(), std::format("#{}", alien_ship_id), true);
+    test::expect_true(p_alien_ship_ignore_exp.has_value());
+    test::expect_eq(p_alien_ship_ignore_exp->shipno, alien_ship_id);
 
     // 7. Pure Place::resolve() covering all PlaceErrorKind & MC/DC conditions
     auto dead_handle = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)

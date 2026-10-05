@@ -11,6 +11,74 @@ import :entitylists;
 import :gameobj;
 import :services;
 
+export struct ScopeContext {
+  player_t player{0};
+  governor_t governor{Race::leader_id};
+  bool god{false};
+  ScopeLevel level{ScopeLevel::LEVEL_UNIV};
+  starnum_t snum{0};
+  planetnum_t pnum{0};
+  shipnum_t shipno{0};
+
+  [[nodiscard]] static ScopeContext from(const GameObj& g) noexcept {
+    return ScopeContext{
+        .player = g.player(),
+        .governor = g.governor(),
+        .god = g.god(),
+        .level = g.level(),
+        .snum = g.snum(),
+        .pnum = g.pnum(),
+        .shipno =
+            (g.level() == ScopeLevel::LEVEL_SHIP) ? g.shipno() : shipnum_t{0},
+    };
+  }
+};
+
+export enum class PlaceErrorKind {
+  CantGoHigher,
+  ShipNotFound,
+  StarUnexplored,
+  NoSuchStar,
+  PlanetUnexplored,
+  NoSuchPlanet,
+  CantDescend,
+  DontOwnShip,
+};
+
+export struct PlaceError {
+  PlaceErrorKind kind;
+  std::string target{};
+};
+
+export [[nodiscard]] std::string format_place_error(const PlaceError& error) {
+  std::string result;
+  switch (error.kind) {
+    case PlaceErrorKind::CantGoHigher:
+      result = "Can't go higher.\n";
+      break;
+    case PlaceErrorKind::ShipNotFound:
+      result = "Ship not found.\n";
+      break;
+    case PlaceErrorKind::StarUnexplored:
+    case PlaceErrorKind::PlanetUnexplored:
+      result = std::format("You have not explored {} yet.\n", error.target);
+      break;
+    case PlaceErrorKind::NoSuchStar:
+      result = std::format("No such star {}.\n", error.target);
+      break;
+    case PlaceErrorKind::NoSuchPlanet:
+      result = std::format("No such planet {}.\n", error.target);
+      break;
+    case PlaceErrorKind::CantDescend:
+      result = std::format("Can't descend to {}.\n", error.target);
+      break;
+    case PlaceErrorKind::DontOwnShip:
+      result = std::format("You don't own ship #{}.\n", error.target);
+      break;
+  }
+  return result;
+}
+
 export class Place { /* used in function return for finding place */
 public:
   Place(ScopeLevel level_, starnum_t snum_, planetnum_t pnum_,
@@ -21,6 +89,11 @@ public:
   Place(ScopeLevel level_, starnum_t snum_, planetnum_t pnum_);
 
   Place(GameObj&, std::string_view, bool ignore_explore = false);
+
+  [[nodiscard]] static std::expected<Place, PlaceError>
+  resolve(EntityManager& em, const ScopeContext& ctx, std::string_view string,
+          bool ignore_explore = false);
+
   ScopeLevel level{ScopeLevel::LEVEL_UNIV};
   starnum_t snum{0};
   planetnum_t pnum{0};
@@ -31,43 +104,50 @@ public:
 private:
   EntityManager* entity_manager =
       nullptr;  // For accessing star/planet names in to_string()
-  void resolve_ship_place(GameObj& g, std::string_view string,
-                          bool ignore_explore);
-  void ascend_parent_scope(GameObj& g, std::string_view string,
-                           bool ignore_explore);
-  void descend_from_universe(GameObj& g, std::string_view star_name,
-                             std::string_view remaining, bool ignore_explore);
-  void descend_from_star(GameObj& g, std::string_view planet_name,
-                         std::string_view remaining, bool ignore_explore);
-  void getplace2(GameObj& g, std::string_view string, bool ignoreexpl);
+  std::expected<void, PlaceError> resolve_ship_place(EntityManager& em,
+                                                     const ScopeContext& ctx,
+                                                     std::string_view string,
+                                                     bool ignore_explore);
+  std::expected<void, PlaceError> ascend_parent_scope(EntityManager& em,
+                                                      const ScopeContext& ctx,
+                                                      std::string_view string,
+                                                      bool ignore_explore);
+  std::expected<void, PlaceError>
+  descend_from_universe(EntityManager& em, const ScopeContext& ctx,
+                        std::string_view star_name, std::string_view remaining,
+                        bool ignore_explore);
+  std::expected<void, PlaceError>
+  descend_from_star(EntityManager& em, const ScopeContext& ctx,
+                    std::string_view planet_name, std::string_view remaining,
+                    bool ignore_explore);
+  std::expected<void, PlaceError> getplace2(EntityManager& em,
+                                            const ScopeContext& ctx,
+                                            std::string_view string,
+                                            bool ignoreexpl);
 };
 
-void Place::ascend_parent_scope(GameObj& g, std::string_view string,
-                                const bool ignore_explore) {
+std::expected<void, PlaceError>
+Place::ascend_parent_scope(EntityManager& em, const ScopeContext& ctx,
+                           std::string_view string, const bool ignore_explore) {
   switch (level) {
     case ScopeLevel::LEVEL_UNIV:
-      g.out << "Can't go higher.\n";
-      err = true;
-      return;
+      return std::unexpected(PlaceError{PlaceErrorKind::CantGoHigher, {}});
     case ScopeLevel::LEVEL_SHIP: {
-      const Ship* ship = nullptr;
       try {
-        ship = g.entity_manager.peek_ship(shipno);
+        const Ship* ship = em.peek_ship(shipno);
+        level = ship->whatorbits();
+        if (level == ScopeLevel::LEVEL_SHIP) {
+          shipno = ship->destshipno().value_or(0);
+          const auto* parent = em.peek_ship(shipno);
+          snum = parent->storbits();
+          pnum = parent->pnumorbits();
+        } else {
+          snum = ship->storbits();
+          pnum = ship->pnumorbits();
+          shipno = 0;
+        }
       } catch (const EntityNotFoundError&) {
-        g.out << "Ship not found.\n";
-        err = true;
-        return;
-      }
-      level = ship->whatorbits();
-      if (level == ScopeLevel::LEVEL_SHIP) {
-        shipno = ship->destshipno().value_or(0);
-        const auto* parent = g.entity_manager.peek_ship(shipno);
-        snum = parent->storbits();
-        pnum = parent->pnumorbits();
-      } else {
-        snum = ship->storbits();
-        pnum = ship->pnumorbits();
-        shipno = 0;
+        return std::unexpected(PlaceError{PlaceErrorKind::ShipNotFound, {}});
       }
       break;
     }
@@ -84,60 +164,55 @@ void Place::ascend_parent_scope(GameObj& g, std::string_view string,
   while (string.starts_with('/')) {
     string.remove_prefix(1);
   }
-  getplace2(g, string, ignore_explore);
+  return getplace2(em, ctx, string, ignore_explore);
 }
 
-void Place::descend_from_universe(GameObj& g, std::string_view star_name,
-                                  std::string_view remaining,
-                                  const bool ignore_explore) {
-  for (const Star& star : StarList::readonly(g.entity_manager)) {
+std::expected<void, PlaceError> Place::descend_from_universe(
+    EntityManager& em, const ScopeContext& ctx, std::string_view star_name,
+    std::string_view remaining, const bool ignore_explore) {
+  for (const Star& star : StarList::readonly(em)) {
     if (star_name != star.get_name()) continue;
     level = ScopeLevel::LEVEL_STAR;
     snum = star.star_id();
-    if (ignore_explore || star.is_explored_by(g.player()) || g.god()) {
+    if (ignore_explore || star.is_explored_by(ctx.player) || ctx.god) {
       if (remaining.starts_with('/')) remaining.remove_prefix(1);
-      getplace2(g, remaining, ignore_explore);
-      return;
+      return getplace2(em, ctx, remaining, ignore_explore);
     }
-    g.out << std::format("You have not explored {} yet.\n", star.get_name());
-    err = true;
-    return;
+    return std::unexpected(
+        PlaceError{PlaceErrorKind::StarUnexplored, star.get_name()});
   }
-  g.out << std::format("No such star {}.\n", star_name);
-  err = true;
+  return std::unexpected(
+      PlaceError{PlaceErrorKind::NoSuchStar, std::string(star_name)});
 }
 
-void Place::descend_from_star(GameObj& g, std::string_view planet_name,
-                              std::string_view remaining,
-                              const bool ignore_explore) {
-  const auto& star = *g.entity_manager.peek_star(snum);
-  for (const Planet& planet :
-       PlanetList::readonly(g.entity_manager, snum, star)) {
+std::expected<void, PlaceError> Place::descend_from_star(
+    EntityManager& em, const ScopeContext& ctx, std::string_view planet_name,
+    std::string_view remaining, const bool ignore_explore) {
+  const auto& star = *em.peek_star(snum);
+  for (const Planet& planet : PlanetList::readonly(em, snum, star)) {
     const planetnum_t i = planet.planet_order();
     if (planet_name != star.get_planet_name(i)) continue;
     level = ScopeLevel::LEVEL_PLAN;
     pnum = i;
-    if (ignore_explore || planet.info(g.player()).explored || g.god()) {
+    if (ignore_explore || planet.info(ctx.player).explored || ctx.god) {
       if (remaining.starts_with('/')) remaining.remove_prefix(1);
-      getplace2(g, remaining, ignore_explore);
-      return;
+      return getplace2(em, ctx, remaining, ignore_explore);
     }
-    g.out << std::format("You have not explored {} yet.\n",
-                         star.get_planet_name(i));
-    err = true;
-    return;
+    return std::unexpected(
+        PlaceError{PlaceErrorKind::PlanetUnexplored, star.get_planet_name(i)});
   }
-  g.out << std::format("No such planet {}.\n", planet_name);
-  err = true;
+  return std::unexpected(
+      PlaceError{PlaceErrorKind::NoSuchPlanet, std::string(planet_name)});
 }
 
-void Place::getplace2(GameObj& g, std::string_view string,
-                      const bool ignoreexpl) {
-  if (err || string.empty()) return;
+std::expected<void, PlaceError> Place::getplace2(EntityManager& em,
+                                                 const ScopeContext& ctx,
+                                                 std::string_view string,
+                                                 const bool ignoreexpl) {
+  if (string.empty()) return {};
 
   if (string.front() == '.') {
-    ascend_parent_scope(g, string, ignoreexpl);
-    return;
+    return ascend_parent_scope(em, ctx, string, ignoreexpl);
   }
 
   // Extract path component up to the next '/'
@@ -148,15 +223,12 @@ void Place::getplace2(GameObj& g, std::string_view string,
 
   switch (level) {
     case ScopeLevel::LEVEL_UNIV:
-      descend_from_universe(g, substr, remaining, ignoreexpl);
-      return;
+      return descend_from_universe(em, ctx, substr, remaining, ignoreexpl);
     case ScopeLevel::LEVEL_STAR:
-      descend_from_star(g, substr, remaining, ignoreexpl);
-      return;
+      return descend_from_star(em, ctx, substr, remaining, ignoreexpl);
     default:
-      g.out << std::format("Can't descend to {}.\n", substr);
-      err = true;
-      return;
+      return std::unexpected(
+          PlaceError{PlaceErrorKind::CantDescend, std::string(substr)});
   }
 }
 
@@ -189,66 +261,95 @@ std::string Place::to_string() {
   }
 }
 
-void Place::resolve_ship_place(GameObj& g, std::string_view string,
-                               const bool ignore_explore) {
+std::expected<void, PlaceError>
+Place::resolve_ship_place(EntityManager& em, const ScopeContext& ctx,
+                          std::string_view string, const bool ignore_explore) {
   const auto shipnum = string_to_shipnum(string);
   if (!shipnum) {
-    g.out << std::format("You don't own ship #{}.\n", shipno);
-    err = true;
-    return;
+    const std::string_view raw_target =
+        string.starts_with('#') ? string.substr(1) : string;
+    return std::unexpected(
+        PlaceError{PlaceErrorKind::DontOwnShip, std::string(raw_target)});
   }
   const Ship* ship = nullptr;
   try {
-    ship = g.entity_manager.peek_ship(*shipnum);
+    ship = em.peek_ship(*shipnum);
   } catch (const EntityNotFoundError&) {
-    g.out << std::format("You don't own ship #{}.\n", *shipnum);
-    err = true;
-    return;
+    return std::unexpected(
+        PlaceError{PlaceErrorKind::DontOwnShip, std::format("{}", *shipnum)});
   }
-  if ((ship->owner() == g.player() || ignore_explore || g.god()) &&
-      (ship->alive() || g.god())) {
-    level = ScopeLevel::LEVEL_SHIP;
-    shipno = ship->number();
-    snum = ship->storbits();
-    pnum = ship->pnumorbits();
-    return;
+  if (!ctx.god) {
+    if (!ship->alive()) {
+      return std::unexpected(
+          PlaceError{PlaceErrorKind::DontOwnShip, std::format("{}", *shipnum)});
+    }
+    if (!ignore_explore && ship->owner() != ctx.player) {
+      return std::unexpected(
+          PlaceError{PlaceErrorKind::DontOwnShip, std::format("{}", *shipnum)});
+    }
   }
-  g.out << std::format("You don't own ship #{}.\n", *shipnum);
-  err = true;
+  level = ScopeLevel::LEVEL_SHIP;
+  shipno = ship->number();
+  snum = ship->storbits();
+  pnum = ship->pnumorbits();
+  return {};
+}
+
+std::expected<Place, PlaceError> Place::resolve(EntityManager& em,
+                                                const ScopeContext& ctx,
+                                                std::string_view string,
+                                                const bool ignore_explore) {
+  Place place(ctx.level, ctx.snum, ctx.pnum,
+              (ctx.level == ScopeLevel::LEVEL_SHIP) ? ctx.shipno
+                                                    : shipnum_t{0});
+  place.entity_manager = &em;
+
+  if (string.empty()) {
+    return place;
+  }
+
+  std::expected<void, PlaceError> step;
+  switch (string.front()) {
+    case ':':
+      break;
+    case '/':
+      place.level = ScopeLevel::LEVEL_UNIV;
+      place.snum = 0;
+      place.pnum = 0;
+      place.shipno = 0;
+      string.remove_prefix(1);
+      step = place.getplace2(em, ctx, string, ignore_explore);
+      break;
+    case '#':
+      step = place.resolve_ship_place(em, ctx, string, ignore_explore);
+      break;
+    case '-':
+      place.level = ScopeLevel::LEVEL_UNIV;
+      place.snum = 0;
+      place.pnum = 0;
+      place.shipno = 0;
+      break;
+    default:
+      step = place.getplace2(em, ctx, string, ignore_explore);
+      break;
+  }
+
+  if (!step) {
+    return std::unexpected(step.error());
+  }
+  return place;
 }
 
 Place::Place(GameObj& g, std::string_view string, const bool ignoreexpl)
     : level(g.level()), snum(g.snum()), pnum(g.pnum()),
       entity_manager(&g.entity_manager) {
   if (level == ScopeLevel::LEVEL_SHIP) shipno = g.shipno();
-
-  if (string.empty()) {
+  auto resolved = Place::resolve(g.entity_manager, ScopeContext::from(g),
+                                 string, ignoreexpl);
+  if (!resolved) {
+    g.out << format_place_error(resolved.error());
+    err = true;
     return;
   }
-
-  switch (string.front()) {
-    case ':':
-      return;
-    case '/':
-      level = ScopeLevel::LEVEL_UNIV; /* scope = root (universe) */
-      snum = 0;
-      pnum = 0;
-      shipno = 0;
-      string.remove_prefix(1);
-      getplace2(g, string, ignoreexpl);
-      return;
-    case '#':
-      resolve_ship_place(g, string, ignoreexpl);
-      return;
-    case '-':
-      /* no destination */
-      level = ScopeLevel::LEVEL_UNIV;
-      snum = 0;
-      pnum = 0;
-      shipno = 0;
-      return;
-    default:
-      getplace2(g, string, ignoreexpl);
-      return;
-  }
+  *this = *resolved;
 }

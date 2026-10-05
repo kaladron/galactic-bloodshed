@@ -505,8 +505,10 @@ int main() {
     test::expect_eq(p_valid_ship.level, ScopeLevel::LEVEL_SHIP);
     test::expect_eq(p_valid_ship.shipno, carrier_id);
 
+    g.out.str("");
     Place p_bad_ship_syntax(g, "#abc");
     test::expect_true(p_bad_ship_syntax.err);
+    test::expect_contains(g.out.str(), "You don't own ship #abc.");
 
     Place p_nonexistent_ship(g, "#8888");
     test::expect_true(p_nonexistent_ship.err);
@@ -522,6 +524,74 @@ int main() {
     Place p_alien_ship_ignore_exp(g, std::format("#{}", alien_ship_id), true);
     test::expect_false(p_alien_ship_ignore_exp.err);
     test::expect_eq(p_alien_ship_ignore_exp.shipno, alien_ship_id);
+
+    // 7. Pure Place::resolve() covering all PlaceErrorKind & MC/DC conditions
+    auto dead_handle = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                           .owned_by(1, 1)
+                           .in_star_orbit(1, UniverseCoordinates{0.0, 0.0})
+                           .build_handle();
+    const shipnum_t dead_ship_id = dead_handle->number();
+    ctx.em.kill_ship(1, *dead_handle);
+
+    ScopeContext scope_ctx{
+        .player = 1,
+        .governor = 1,
+        .god = false,
+        .level = ScopeLevel::LEVEL_PLAN,
+        .snum = 1,
+        .pnum = 1,
+        .shipno = 0,
+    };
+
+    // Relative compound path "../Earth" ascends to star then descends to planet
+    auto rel_planet = Place::resolve(ctx.em, scope_ctx, "../Earth");
+    test::expect_true(rel_planet.has_value());
+    test::expect_eq(rel_planet->level, ScopeLevel::LEVEL_PLAN);
+    test::expect_eq(rel_planet->pnum, 1);
+
+    // Killed ship fails DontOwnShip; alien ship succeeds when god == true
+    auto dead_res = Place::resolve(ctx.em, scope_ctx,
+                                   std::format("#{}", dead_ship_id), false);
+    test::expect_false(dead_res.has_value());
+    test::expect_true(dead_res.error().kind == PlaceErrorKind::DontOwnShip);
+
+    ScopeContext god_ctx = scope_ctx;
+    god_ctx.god = true;
+    auto god_alien_res = Place::resolve(
+        ctx.em, god_ctx, std::format("#{}", alien_ship_id), false);
+    test::expect_true(god_alien_res.has_value());
+    test::expect_eq(god_alien_res->shipno, alien_ship_id);
+
+    // Unexplored star/planet succeeds when god == true even with ignore_explore
+    // == false
+    ctx.em.mutate_star(1, [](Star& s) { s.clear_explored_by(player_t{1}); });
+    ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(1).explored = 0; });
+    auto god_unexp = Place::resolve(ctx.em, god_ctx, "/Sol/Earth", false);
+    test::expect_true(god_unexp.has_value());
+    test::expect_eq(god_unexp->level, ScopeLevel::LEVEL_PLAN);
+    ctx.em.mutate_star(1, [](Star& s) { s.mark_explored_by(player_t{1}); });
+    ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(1).explored = 1; });
+
+    // Missing parent carrier when ascending "." from docked ship returns
+    // ShipNotFound instead of throwing EntityNotFoundError
+    ctx.em.mutate_ship(fighter_id, [&](Ship& f) {
+      f.dock_into_carrier(shipnum_t{7777});
+      ScopeContext orphaned_fighter_ctx{
+          .player = 1,
+          .governor = 1,
+          .god = false,
+          .level = ScopeLevel::LEVEL_SHIP,
+          .snum = 1,
+          .pnum = 1,
+          .shipno = fighter_id,
+      };
+      auto orphan_up = Place::resolve(ctx.em, orphaned_fighter_ctx, ".");
+      test::expect_false(orphan_up.has_value());
+      test::expect_true(orphan_up.error().kind == PlaceErrorKind::ShipNotFound);
+      test::expect_eq(format_place_error(orphan_up.error()),
+                      "Ship not found.\n");
+      f.dock_into_carrier(carrier_id);
+    });
   }
 
   std::println(std::cout, "✓ All Coordinates & API Integration tests passed!");

@@ -449,8 +449,8 @@ bool process_single_ship_dock(const command_t& argv, Ship& s, bool is_assault,
     }
   }
 
-  auto target_val = validate_target_ship_for_dock(
-      s, ship2no, is_assault, what, requested_boarders, g);
+  auto target_val = validate_target_ship_for_dock(s, ship2no, is_assault, what,
+                                                  requested_boarders, g);
   if (target_val.abort_loop) {
     should_abort_loop = true;
     return false;
@@ -467,8 +467,7 @@ bool process_single_ship_dock(const command_t& argv, Ship& s, bool is_assault,
     command_t fire_argv{"fire-from-dock", std::format("#{}", ship2no),
                         std::format("#{}", s.number())};
     GB::commands::fire(fire_argv, g);
-    if (!s.alive() ||
-        (what == PopulationType::CIV ? !s.popn() : !s.troops())) {
+    if (!s.alive() || (what == PopulationType::CIV ? !s.popn() : !s.troops())) {
       return true;
     }
     bool s2_alive = false;
@@ -487,8 +486,8 @@ bool process_single_ship_dock(const command_t& argv, Ship& s, bool is_assault,
   bool completed = false;
   g.entity_manager.mutate_ship(ship2no, [&](Ship& s2) {
     if (is_assault) {
-      auto outcome = resolve_boarding_combat(
-          s, s2, what, requested_boarders, target_val.fuel, g);
+      auto outcome = resolve_boarding_combat(s, s2, what, requested_boarders,
+                                             target_val.fuel, g);
       if (outcome.aborted) {
         return;
       }

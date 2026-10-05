@@ -363,13 +363,14 @@ void test_fire_crystal_overload_burnout_and_explosion() {
   //   impossible, so ship can never explode).
   //   burnout threshold = (int)(1.0 * 2.0 / 4.0) = 0 (int_rand(0, 1) > 0 is
   //   50% per shot).
-  shipnum_t burnout_ship = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
-                               .owned_by(1, 1)
-                               .named("BurnoutLaser")
-                               .in_star_orbit(1, SystemCoordinates{100.0, 200.0})
-                               .with_crew(10, 10)
-                               .with_fuel(1000.0)
-                               .build();
+  shipnum_t burnout_ship =
+      TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
+          .owned_by(1, 1)
+          .named("BurnoutLaser")
+          .in_star_orbit(1, SystemCoordinates{100.0, 200.0})
+          .with_crew(10, 10)
+          .with_fuel(1000.0)
+          .build();
   ctx.em.mutate_ship(burnout_ship, [](Ship& s) {
     s.tech() = 2.0;
     s.laser() = true;
@@ -421,15 +422,14 @@ void test_fire_crystal_overload_burnout_and_explosion() {
       [&]() { ctx.em.peek_ship(star_explode_ship); });
 
   // 4. Lethal crystal explosion during CEW fire in deep space (LEVEL_UNIV):
-  shipnum_t univ_explode_ship =
-      TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
-          .owned_by(1, 1)
-          .named("UnivExplodeCEW")
-          .in_deep_space({0.0, 0.0})
-          .with_cew(20000, 100)
-          .with_crew(10, 10)
-          .with_fuel(30000.0)
-          .build();
+  shipnum_t univ_explode_ship = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
+                                    .owned_by(1, 1)
+                                    .named("UnivExplodeCEW")
+                                    .in_deep_space({0.0, 0.0})
+                                    .with_cew(20000, 100)
+                                    .with_crew(10, 10)
+                                    .with_fuel(30000.0)
+                                    .build();
   ctx.em.mutate_ship(univ_explode_ship, [](Ship& s) { s.tech() = 0.0; });
   g.set_level(ScopeLevel::LEVEL_UNIV);
   ctx.em.mutate_universe([](universe_struct& u) { u.set_AP(1, 5); });

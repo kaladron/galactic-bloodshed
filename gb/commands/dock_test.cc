@@ -494,11 +494,11 @@ void test_assault_defensive_fire_commits_ship_destruction() {
                                    .build();
 
   g.out.str("");
-  ctx.assert_dispatch_success(
-      g,
-      {"assault", std::format("#{}", fragile_attacker.value),
-       std::format("#{}", cew_defender.value)},
-      1);
+  ctx.assert_dispatch_success(g,
+                              {"assault",
+                               std::format("#{}", fragile_attacker.value),
+                               std::format("#{}", cew_defender.value)},
+                              1);
   test::expect_throws<EntityNotFoundError>(
       [&]() { ctx.em.peek_ship(fragile_attacker); });
   test::expect_true(ctx.em.peek_ship(cew_defender)->alive());
@@ -538,11 +538,11 @@ void test_assault_defensive_fire_commits_ship_destruction() {
   });
 
   g.out.str("");
-  ctx.assert_dispatch_success(
-      g,
-      {"assault", std::format("#{}", heavy_attacker.value),
-       std::format("#{}", glass_defender.value)},
-      1);
+  ctx.assert_dispatch_success(g,
+                              {"assault",
+                               std::format("#{}", heavy_attacker.value),
+                               std::format("#{}", glass_defender.value)},
+                              1);
   test::expect_true(ctx.em.peek_ship(heavy_attacker)->alive());
   test::expect_throws<EntityNotFoundError>(
       [&]() { ctx.em.peek_ship(glass_defender); });

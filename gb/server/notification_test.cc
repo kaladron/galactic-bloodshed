@@ -244,7 +244,8 @@ void test_d_broadcast_announce_think_and_shout() {
 
   JsonStore store(db);
   RaceRepository races(store);
-  for (const auto& r : {race1, race2, race3, race4}) races.save(r);
+  for (const auto& r : {race1, race2, race3, race4})
+    races.save(r);
 
   Star star{create_star(5)};
   star.mark_inhabited_by(player_t{1});
@@ -262,7 +263,8 @@ void test_d_broadcast_announce_think_and_shout() {
     registry.add_session(s);
 
   auto clear_all = [&]() {
-    for (auto& s : registry.sessions()) s->clear_output();
+    for (auto& s : registry.sessions())
+      s->clear_output();
   };
 
   d_broadcast(registry, em, 1, 1, "Broadcast!\n");

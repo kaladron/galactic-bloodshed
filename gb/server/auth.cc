@@ -153,9 +153,8 @@ void check_connect(Session& session, std::string_view message) {
                              std::ctime(&(race.governor(Governor).login))));
 
     if (!race.Gov_ship) {
-      session.send(
-          "You have no Governmental Center.  No action points will be "
-          "produced\nuntil you build one and designate a capital.\n");
+      session.send("You have no Governmental Center.  No action points will be "
+                   "produced\nuntil you build one and designate a capital.\n");
     } else {
       session.send(
           std::format("Government Center #{} is active.\n", *race.Gov_ship));

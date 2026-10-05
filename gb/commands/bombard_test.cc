@@ -333,8 +333,8 @@ void test_bombard_crystal_overload_burnout_and_explosion() {
   ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 5; });
   g.out.str("");
   ctx.assert_dispatch_success(
-      g,
-      {"bombard", std::format("#{}", explode_bomber.value), "5,5", "10000"}, 1);
+      g, {"bombard", std::format("#{}", explode_bomber.value), "5,5", "10000"},
+      1);
   test::expect_contains(g.out.str(), "No attack.");
   test::expect_eq(ctx.em.peek_star(1)->AP(1), 4);
   test::expect_throws<EntityNotFoundError>(

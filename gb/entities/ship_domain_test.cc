@@ -1154,8 +1154,8 @@ void test_ship_moor_together_and_commandability() {
   ctx.setup_game_obj(g, 1, 2);
   test::expect_true(g.check_commandable(*s1_peek));
 
-  // Unauthorized governor (3) fails check_commandable and receives diagnostic in
-  // g.out (not a rolled-back telegram)
+  // Unauthorized governor (3) fails check_commandable and receives diagnostic
+  // in g.out (not a rolled-back telegram)
   ctx.setup_game_obj(g, 1, 3);
   g.out.str("");
   test::expect_false(g.check_commandable(*s1_peek));

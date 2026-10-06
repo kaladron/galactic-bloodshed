@@ -11,61 +11,68 @@ module gb.mechanics;
 
 namespace {
 
-bool is_hostile_defending_afv(const GameObj& g, const Ship& ship,
-                              Coordinates target_coords,
-                              const Race& alien_race) {
-  if (ship.owner() == g.player() || ship.type() != ShipType::OTYPE_AFV ||
-      !ship.is_landed() || ship.retal_strength() == 0 ||
-      ship.land_coords() != target_coords) {
+bool is_hostile_defending_afv(EntityManager& em, const Race& attacker_race,
+                              const Ship& ship, Coordinates target_coords) {
+  if (ship.owner() == attacker_race.Playernum ||
+      ship.type() != ShipType::OTYPE_AFV || !ship.is_landed() ||
+      ship.retal_strength() == 0 || ship.land_coords() != target_coords) {
     return false;
   }
-  return !g.race->is_allied_with(ship.owner()) ||
-         !alien_race.is_allied_with(g.player());
+  const auto& alien_race = *em.peek_race(ship.owner());
+  return !attacker_race.is_allied_with(ship.owner()) ||
+         !alien_race.is_allied_with(attacker_race.Playernum);
 }
 
-void resolve_afv_sector_engagement(const GameObj& g, Ship& ship,
-                                   const Race& alien_race, governor_t alien_gov,
-                                   const Sector& sect,
-                                   Coordinates target_coords, population_t& civ,
-                                   population_t& mil) {
+void resolve_afv_sector_engagement(
+    EntityManager& em, const Race& attacker_race, Ship& ship,
+    const Race& alien_race, governor_t alien_gov, const Sector& sect,
+    Coordinates target_coords, population_t& civ, population_t& mil,
+    std::vector<MechDefendEngagementRound>& rounds) {
   while ((civ + mil) > 0 && ship.retal_strength() > 0) {
-    auto [short_buf, long_buf] = mech_attack_people(
-        g.entity_manager, ship, &civ, &mil, alien_race, *g.race, sect, true);
-    push_telegram(g.entity_manager, g.player(), g.governor(), long_buf);
-    push_telegram(g.entity_manager, alien_race.Playernum, alien_gov, long_buf);
+    auto mech_attack = mech_attack_people(em, ship, &civ, &mil, alien_race,
+                                          attacker_race, sect, true);
+    std::optional<PeopleAttackMechResult> counterattack = std::nullopt;
     if (civ + mil > 0) {
-      auto [short_buf2, long_buf2] =
-          people_attack_mech(g.entity_manager, ship, civ, mil, *g.race,
-                             alien_race, sect, target_coords);
-      push_telegram(g.entity_manager, g.player(), g.governor(), long_buf2);
-      push_telegram(g.entity_manager, alien_race.Playernum, alien_gov,
-                    long_buf2);
+      counterattack = people_attack_mech(em, ship, civ, mil, attacker_race,
+                                         alien_race, sect, target_coords);
     }
+    rounds.push_back(MechDefendEngagementRound{
+        .defender_player = alien_race.Playernum,
+        .defender_governor = alien_gov,
+        .mech_attack = std::move(mech_attack),
+        .people_counterattack = std::move(counterattack),
+    });
   }
 }
 
 }  // namespace
 
-void mech_defend(const GameObj& g, population_t* people, PopulationType type,
-                 const Planet& p, Coordinates target_coords, const Sector& s2) {
+MechDefendResult mech_defend(EntityManager& em, const Race& attacker_race,
+                             population_t* people, PopulationType type,
+                             const Planet& p, Coordinates target_coords,
+                             const Sector& s2) {
   population_t civ = (type == PopulationType::CIV) ? *people : 0;
   population_t mil = (type == PopulationType::CIV) ? 0 : *people;
+  std::vector<MechDefendEngagementRound> rounds;
 
   for (auto ship_handle :
-       ShipList::on_planet(g.entity_manager, p.star_id(), p.planet_order())) {
+       ShipList::on_planet(em, p.star_id(), p.planet_order())) {
     if (civ + mil == 0) break;
     Ship& ship = *ship_handle;
-    const auto* alien_ptr = g.entity_manager.peek_race(ship.owner());
-    if (!alien_ptr ||
-        !is_hostile_defending_afv(g, ship, target_coords, *alien_ptr)) {
+    if (!is_hostile_defending_afv(em, attacker_race, ship, target_coords)) {
       continue;
     }
-    const auto* star = g.entity_manager.peek_star(ship.storbits());
-    const governor_t oldgov = star->governor(alien_ptr->Playernum);
-    resolve_afv_sector_engagement(g, ship, *alien_ptr, oldgov, s2,
-                                  target_coords, civ, mil);
+    const auto& alien_race = *em.peek_race(ship.owner());
+    const auto& star = *em.peek_star(ship.storbits());
+    const governor_t oldgov = star.governor(alien_race.Playernum);
+    resolve_afv_sector_engagement(em, attacker_race, ship, alien_race, oldgov,
+                                  s2, target_coords, civ, mil, rounds);
   }
   *people = civ + mil;
+  return MechDefendResult{
+      .surviving_people = *people,
+      .rounds = std::move(rounds),
+  };
 }
 
 namespace {
@@ -117,12 +124,12 @@ constexpr double calculate_garrison_combat_strength(const population_t civ,
 
 }  // namespace
 
-std::tuple<std::string, std::string>
-mech_attack_people(EntityManager& em, Ship& ship, population_t* civ,
-                   population_t* mil, const Race& race, const Race& alien,
-                   const Sector& sect, bool ignore) {
-  auto oldciv = *civ;
-  auto oldmil = *mil;
+MechAttackPeopleResult mech_attack_people(EntityManager& em, Ship& ship,
+                                          population_t* civ, population_t* mil,
+                                          const Race& race, const Race& alien,
+                                          const Sector& sect, bool ignore) {
+  const auto oldciv = *civ;
+  const auto oldmil = *mil;
 
   const auto strength = ship.retal_strength();
   const auto astrength =
@@ -131,8 +138,8 @@ mech_attack_people(EntityManager& em, Ship& ship, population_t* civ,
       calculate_garrison_combat_strength(oldciv, oldmil, alien, race, sect);
 
   if (ignore) {
-    auto raw_ammo = static_cast<int>(std::log10(dstrength + 1.0)) - 1;
-    auto ammo =
+    const auto raw_ammo = static_cast<int>(std::log10(dstrength + 1.0)) - 1;
+    const auto ammo =
         std::min(static_cast<weapon_power_t>(std::max(raw_ammo, 0)), strength);
     ship.consume_destruct(ammo);
   } else {
@@ -149,56 +156,66 @@ mech_attack_people(EntityManager& em, Ship& ship, population_t* civ,
   cas_mil = std::min(oldmil, cas_mil);
   *civ -= cas_civ;
   *mil -= cas_mil;
-  std::string short_msg =
-      std::format("{}: {} {} {} [{}]\n", dispshiploc(em, ship), ship,
-                  (*civ + *mil) ? "attacked" : "slaughtered", alien.name,
-                  alien.Playernum.value);
-  std::string long_msg =
-      short_msg +
-      std::format("\tBattle at {} {}: {} guns fired on {} civ/{} mil\n"
-                  "\tAttack: {:.3f}   Defense: {:.3f}.\n"
-                  "\t{} civ/{} mil killed.\n",
-                  sect.coords(), sect.condition_name(), strength, oldciv,
-                  oldmil, astrength, dstrength, cas_civ, cas_mil);
-  return std::make_tuple(short_msg, long_msg);
+  return MechAttackPeopleResult{
+      .location_display = dispshiploc(em, ship),
+      .ship_display = std::format("{}", ship),
+      .defender_race_name = alien.name,
+      .defender_player = alien.Playernum,
+      .sector_coords = sect.coords(),
+      .sector_condition = std::string(sect.condition_name()),
+      .guns_fired = strength,
+      .initial_civ = oldciv,
+      .initial_mil = oldmil,
+      .surviving_civ = *civ,
+      .surviving_mil = *mil,
+      .civ_killed = cas_civ,
+      .mil_killed = cas_mil,
+      .attack_strength = astrength,
+      .defense_strength = dstrength,
+  };
 }
 
-std::tuple<std::string, std::string>
-people_attack_mech(EntityManager& em, Ship& ship, int civ, int mil,
-                   const Race& race, const Race& alien, const Sector& sect,
-                   Coordinates target_coords) {
+PeopleAttackMechResult people_attack_mech(EntityManager& em, Ship& ship,
+                                          population_t civ, population_t mil,
+                                          const Race& race, const Race& alien,
+                                          const Sector& sect,
+                                          Coordinates target_coords) {
   const auto strength = ship.retal_strength();
 
   const double dstrength =
       calculate_mech_combat_strength(ship, strength, alien, race, sect);
   const double astrength =
       calculate_garrison_combat_strength(civ, mil, race, alien, sect);
-  auto raw_ammo = (int)std::log10((double)astrength + 1.0) - 1;
-  auto ammo =
+  const auto raw_ammo = static_cast<int>(std::log10(astrength + 1.0)) - 1;
+  const auto ammo =
       std::min(strength, static_cast<weapon_power_t>(std::max(0, raw_ammo)));
   ship.consume_destruct(ammo);
   const double damage_ceiling =
       (dstrength > 0.0) ? std::min(1e6, 100.0 * astrength / dstrength)
                         : (astrength > 0.0 ? 100.0 : 0.0);
-  auto damage = int_rand(0, round_rand(damage_ceiling));
-  damage = std::min(100, damage);
+  auto damage = static_cast<damage_t>(
+      std::min(100, int_rand(0, round_rand(damage_ceiling))));
   if (ship.apply_damage(damage).destroyed) {
     em.kill_ship(race.Playernum, ship);
   }
-  auto [cas_civ, cas_mil, pdam, sdam] = do_collateral(ship, damage, alien.mass);
-  std::string short_msg = std::format(
-      "{}: {} [{}] {} {}\n", dispshiploc(em, ship), race.name,
-      race.Playernum.value, ship.alive() ? "attacked" : "DESTROYED", ship);
-  std::string long_msg =
-      short_msg +
-      std::format("\tBattle at {} {}: {} civ/{} mil assault {}\n"
-                  "\tAttack: {:.3f}   Defense: {:.3f}.\n"
-                  "\t{}% damage inflicted for a total of {}%\n"
-                  "\t{} civ/{} mil killed   {} prim/{} sec guns knocked out\n",
-                  target_coords, sect.condition_name(), civ, mil,
-                  ship.type_name(), astrength, dstrength, damage, ship.damage(),
-                  cas_civ, cas_mil, pdam, sdam);
-  return std::make_tuple(short_msg, long_msg);
+  const auto collateral = do_collateral(ship, damage, alien.mass);
+  return PeopleAttackMechResult{
+      .location_display = dispshiploc(em, ship),
+      .attacker_race_name = race.name,
+      .attacker_player = race.Playernum,
+      .mech_alive = ship.alive(),
+      .ship_display = std::format("{}", ship),
+      .ship_type_name = std::string(ship.type_name()),
+      .target_coords = target_coords,
+      .sector_condition = std::string(sect.condition_name()),
+      .attacker_civ = civ,
+      .attacker_mil = mil,
+      .attack_strength = astrength,
+      .defense_strength = dstrength,
+      .damage_inflicted = damage,
+      .total_damage = ship.damage(),
+      .collateral = collateral,
+  };
 }
 
 GroundAttackResult ground_attack(const GroundAttackParams& p) {

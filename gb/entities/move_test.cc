@@ -6,6 +6,8 @@
 
 import dallib;
 import gb.entities;
+import gb.mechanics;
+import gb.presentation;
 import gb.services;
 import gb.turn;
 import test;
@@ -280,9 +282,11 @@ int main() {
                        [](Race& r) { r.declare_alliance_with(player_t{1}); });
     ctx.setup_game_obj(g, 1, 1);
     population_t entering_troops = 1000;
-    mech_defend(g, &entering_troops, PopulationType::MIL, *p_earth,
-                Coordinates{3, 3}, target_sect);
+    const auto allied_defend =
+        mech_defend(ctx.em, *g.race, &entering_troops, PopulationType::MIL,
+                    *p_earth, Coordinates{3, 3}, target_sect);
     test::expect_eq(entering_troops, 1000u);
+    test::expect_true(allied_defend.rounds.empty());
 
     // 2. Hostile AFV engages entering troops and takes counter-attack damage
     // even when its destruct drops to 0 after firing its last shell
@@ -292,8 +296,10 @@ int main() {
                        [](Race& r) { r.rescind_alliance_with(player_t{1}); });
     ctx.setup_game_obj(g, 1, 1);
     seed_rand(42);
-    mech_defend(g, &entering_troops, PopulationType::MIL, *p_earth,
-                Coordinates{3, 3}, target_sect);
+    const auto hostile_defend =
+        mech_defend(ctx.em, *g.race, &entering_troops, PopulationType::MIL,
+                    *p_earth, Coordinates{3, 3}, target_sect);
+    test::expect_eq(hostile_defend.rounds.size(), 1u);
     const auto* afv_after = ctx.em.peek_ship(afv_id);
     test::expect_eq(afv_after->destruct(), 0);
     test::expect_true(afv_after->damage() > 0 || !afv_after->alive());
@@ -307,9 +313,11 @@ int main() {
     population_t civ = 20;
     population_t mil = 10;
     ctx.em.mutate_ship(afv_id, [&](Ship& s) {
-      auto [short_msg, long_msg] =
+      const auto res =
           mech_attack_people(ctx.em, s, &civ, &mil, *ctx.em.peek_race(2),
                              *ctx.em.peek_race(1), target_sect, false);
+      const auto long_msg =
+          GB::presentation::render_mech_attack_people_long(res);
       test::expect_contains(long_msg, "Battle at 3,3");
       test::expect_eq(s.destruct(), 3);  // 5 - 2 salvo
     });

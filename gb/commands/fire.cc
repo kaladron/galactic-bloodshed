@@ -6,6 +6,7 @@
 module;
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import scnlib;
 import std;
@@ -150,7 +151,10 @@ void resolve_target_self_retaliation(GameObj& g, Ship& from, Ship& to_ship,
 
   auto strength = retal;
   if (to_ship.is_laser_on()) {
-    check_overload(g.entity_manager, to_ship, 0, &strength);
+    if (const auto overload =
+            check_overload(g.entity_manager, to_ship, 0, &strength)) {
+      GB::commands::notify_reactor_overload(g.entity_manager, *overload);
+    }
   }
 
   auto retal_result =
@@ -201,7 +205,10 @@ void resolve_escort_retaliation(GameObj& g, Ship& from, const Ship& to,
 
     auto strength = ship.check_retal_strength();
     if (ship.is_laser_on()) {
-      check_overload(g.entity_manager, ship, 0, &strength);
+      if (const auto overload =
+              check_overload(g.entity_manager, ship, 0, &strength)) {
+        GB::commands::notify_reactor_overload(g.entity_manager, *overload);
+      }
     }
 
     if (auto s2sresult =
@@ -265,7 +272,10 @@ bool fire_from_ship(const command_t& argv, GameObj& g, Ship& from,
   const int cew_range_flag = is_cew ? 1 : 0;
 
   if (from.is_laser_on() || is_cew) {
-    check_overload(g.entity_manager, from, cew_range_flag, &strength);
+    if (const auto overload =
+            check_overload(g.entity_manager, from, cew_range_flag, &strength)) {
+      GB::commands::notify_reactor_overload(g.entity_manager, *overload);
+    }
     if (strength <= 0) {
       g.out << "No attack.\n";
       deduct_fire_ap(mode, g, from);
@@ -321,6 +331,19 @@ bool fire_from_ship(const command_t& argv, GameObj& g, Ship& from,
 }  // namespace
 
 namespace GB::commands {
+
+void notify_reactor_overload(EntityManager& em,
+                             const ReactorOverloadEvent& event) {
+  const std::string message =
+      GB::presentation::render_reactor_overload_event(event);
+  push_telegram(em, event.owner, event.governor, message);
+  if (event.outcome == ReactorOverloadOutcome::ShipExploded) {
+    post(em, message, NewsType::COMBAT);
+    if (event.scope != ScopeLevel::LEVEL_UNIV) {
+      telegram_star(em, event.star_id, event.owner, event.governor, message);
+    }
+  }
+}
 
 /*! Ship vs ship */
 bool fire(const command_t& argv, GameObj& g) {

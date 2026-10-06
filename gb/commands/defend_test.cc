@@ -134,6 +134,36 @@ void test_defend_retaliation_and_escort() {
       g, {"defend", std::format("#{}", target_id.value), "5,5", "10"});
   std::string out = g.out.str();
   test::expect_contains(out, "Attacker");
+
+  // Configure escort with a laser that burns out (tech = 2.0, fire_laser = 1)
+  // and verify that the burnout is persisted to SQLite even though
+  // shoot_ship_to_planet returns std::nullopt when strength drops to 0.
+  ctx.em.mutate_ship(escort_id, [](Ship& s) {
+    s.tech() = 2.0;
+    s.laser() = true;
+    s.fire_laser() = 1;
+    s.mounted() = true;
+    s.add_fuel(100.0);
+  });
+  bool escort_burned_out = false;
+  for (int attempt = 0; attempt < 40 && !escort_burned_out; ++attempt) {
+    ctx.em.mutate_star(1, [](Star& s) { s.AP(player_t{1}) = 10; });
+    ctx.em.mutate_planet(1, 1, [](Planet& p) {
+      p.info(player_t{1}).destruct = 100;
+      p.info(player_t{1}).guns = 50;
+    });
+    ctx.em.mutate_ship(target_id, [](Ship& s) { s.repair_damage(100); });
+    ctx.assert_dispatch_success(
+        g, {"defend", std::format("#{}", target_id.value), "5,5", "50"});
+    ctx.em.clear_cache();
+    const auto* escort_reloaded = ctx.em.peek_ship(escort_id);
+    if (escort_reloaded && !escort_reloaded->mounted()) {
+      escort_burned_out = true;
+      test::expect_eq(escort_reloaded->fire_laser(), 0u);
+    }
+  }
+  test::expect_true(escort_burned_out);
+
   std::println(std::cout,
                "    ✓ Defend with target and escort retaliation verified");
 

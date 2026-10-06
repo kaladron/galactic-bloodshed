@@ -6,6 +6,7 @@
 module;
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import std;
 #undef stdout
@@ -184,19 +185,27 @@ void engage_sector_defenders(GameObj& g, Ship& ship, const Star& star,
   while ((sect.get_popn() + sect.get_troops()) && ship.retal_strength()) {
     auto civ = sect.get_popn();
     auto mil = sect.get_troops();
-    auto [short_buf, long_buf] = mech_attack_people(
-        g.entity_manager, ship, &civ, &mil, *g.race, *alien, sect, false);
-    g.out << long_buf;
+    const auto mech_res = mech_attack_people(g.entity_manager, ship, &civ, &mil,
+                                             *g.race, *alien, sect, false);
+    const auto short_buf =
+        GB::presentation::render_mech_attack_people_short(mech_res);
+    const auto long_buf =
+        GB::presentation::render_mech_attack_people_long(mech_res);
+    g.present(mech_res);
     warn_player(g.session_registry, g.entity_manager, alien->Playernum, oldgov,
                 long_buf);
     notify_star(g.session_registry, g.entity_manager, playernum, g.governor(),
                 ship.storbits(), short_buf);
     post(g.entity_manager, short_buf, NewsType::COMBAT);
 
-    auto [short_buf2, long_buf2] = people_attack_mech(
+    const auto people_res = people_attack_mech(
         g.entity_manager, ship, sect.get_popn(), sect.get_troops(), *alien,
         *g.race, sect, new_coords);
-    g.out << long_buf2;
+    const auto short_buf2 =
+        GB::presentation::render_people_attack_mech_short(people_res);
+    const auto long_buf2 =
+        GB::presentation::render_people_attack_mech_long(people_res);
+    g.present(people_res);
     warn_player(g.session_registry, g.entity_manager, alien->Playernum, oldgov,
                 long_buf2);
     notify_star(g.session_registry, g.entity_manager, playernum, g.governor(),

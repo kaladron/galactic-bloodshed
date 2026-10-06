@@ -583,6 +583,93 @@ render_ship_order_status(const ShipOrderStatus& status) {
   return out;
 }
 
+/// Formats a `ReactorOverloadEvent` into its ASCII combat report string.
+/// Decomposes `ReactorOverloadEvent` via structured binding.
+[[nodiscard]] inline std::string
+render_reactor_overload_event(const ReactorOverloadEvent& event) {
+  const auto& [outcome, _, _, _, _, location_display, ship_display] = event;
+  switch (outcome) {
+    case ReactorOverloadOutcome::ShipExploded:
+      return std::format(
+          "{}: Matter-antimatter EXPLOSION from overloaded crystal on {}\n",
+          location_display, ship_display);
+    case ReactorOverloadOutcome::CrystalDamaged:
+      return std::format("{}: Crystal damaged from overloading on {}.\n",
+                         location_display, ship_display);
+  }
+  std::unreachable();
+}
+
+/// Formats a `MechAttackPeopleResult` into its short headline string (used for
+/// star notifications and combat news).
+/// Decomposes `MechAttackPeopleResult` via structured binding.
+[[nodiscard]] inline std::string
+render_mech_attack_people_short(const MechAttackPeopleResult& res) {
+  const auto& [location_display, ship_display, defender_race_name,
+               defender_player, _, _, _, _, _, surviving_civ, surviving_mil, _,
+               _, _, _] = res;
+  return std::format("{}: {} {} {} [{}]\n", location_display, ship_display,
+                     (surviving_civ + surviving_mil) ? "attacked"
+                                                     : "slaughtered",
+                     defender_race_name, defender_player);
+}
+
+/// Formats a `MechAttackPeopleResult` into its full multi-line battle report.
+/// Decomposes `MechAttackPeopleResult` via structured binding.
+[[nodiscard]] inline std::string
+render_mech_attack_people_long(const MechAttackPeopleResult& res) {
+  const auto& [location_display, ship_display, defender_race_name,
+               defender_player, sector_coords, sector_condition, guns_fired,
+               initial_civ, initial_mil, surviving_civ, surviving_mil,
+               civ_killed, mil_killed, attack_strength, defense_strength] = res;
+  return std::format("{}: {} {} {} [{}]\n"
+                     "\tBattle at {} {}: {} guns fired on {} civ/{} mil\n"
+                     "\tAttack: {:.3f}   Defense: {:.3f}.\n"
+                     "\t{} civ/{} mil killed.\n",
+                     location_display, ship_display,
+                     (surviving_civ + surviving_mil) ? "attacked"
+                                                     : "slaughtered",
+                     defender_race_name, defender_player, sector_coords,
+                     sector_condition, guns_fired, initial_civ, initial_mil,
+                     attack_strength, defense_strength, civ_killed, mil_killed);
+}
+
+/// Formats a `PeopleAttackMechResult` into its short headline string (used for
+/// star notifications and combat news).
+/// Decomposes `PeopleAttackMechResult` via structured binding.
+[[nodiscard]] inline std::string
+render_people_attack_mech_short(const PeopleAttackMechResult& res) {
+  const auto& [location_display, attacker_race_name, attacker_player,
+               mech_alive, ship_display, _, _, _, _, _, _, _, _, _, _] = res;
+  return std::format("{}: {} [{}] {} {}\n", location_display,
+                     attacker_race_name, attacker_player,
+                     mech_alive ? "attacked" : "DESTROYED", ship_display);
+}
+
+/// Formats a `PeopleAttackMechResult` into its full multi-line battle report.
+/// Decomposes `PeopleAttackMechResult` and `CollateralDamage` via structured
+/// bindings.
+[[nodiscard]] inline std::string
+render_people_attack_mech_long(const PeopleAttackMechResult& res) {
+  const auto& [location_display, attacker_race_name, attacker_player,
+               mech_alive, ship_display, ship_type_name, target_coords,
+               sector_condition, attacker_civ, attacker_mil, attack_strength,
+               defense_strength, damage_inflicted, total_damage, collateral] =
+      res;
+  const auto& [cas_civ, cas_mil, pdam, sdam] = collateral;
+  return std::format(
+      "{}: {} [{}] {} {}\n"
+      "\tBattle at {} {}: {} civ/{} mil assault {}\n"
+      "\tAttack: {:.3f}   Defense: {:.3f}.\n"
+      "\t{}% damage inflicted for a total of {}%\n"
+      "\t{} civ/{} mil killed   {} prim/{} sec guns knocked out\n",
+      location_display, attacker_race_name, attacker_player,
+      mech_alive ? "attacked" : "DESTROYED", ship_display, target_coords,
+      sector_condition, attacker_civ, attacker_mil, ship_type_name,
+      attack_strength, defense_strength, damage_inflicted, total_damage,
+      cas_civ, cas_mil, pdam, sdam);
+}
+
 /// Abstract base class for polymorphic UI presentation across wire protocols.
 class Presenter {
 public:
@@ -601,6 +688,12 @@ public:
   render(const ShipOrdersHeader& vm) const = 0;
   [[nodiscard]] virtual std::string render(const ShipOrderStatus& vm) const = 0;
   [[nodiscard]] virtual std::string render(const OrderUpdate& vm) const = 0;
+  [[nodiscard]] virtual std::string
+  render(const ReactorOverloadEvent& vm) const = 0;
+  [[nodiscard]] virtual std::string
+  render(const MechAttackPeopleResult& vm) const = 0;
+  [[nodiscard]] virtual std::string
+  render(const PeopleAttackMechResult& vm) const = 0;
 };
 
 /// Server-rendered ASCII/ANSI terminal presenter for Telnet sessions.
@@ -640,6 +733,21 @@ public:
 
   [[nodiscard]] std::string render(const OrderUpdate& vm) const override {
     return render_order_update(vm);
+  }
+
+  [[nodiscard]] std::string
+  render(const ReactorOverloadEvent& vm) const override {
+    return render_reactor_overload_event(vm);
+  }
+
+  [[nodiscard]] std::string
+  render(const MechAttackPeopleResult& vm) const override {
+    return render_mech_attack_people_long(vm);
+  }
+
+  [[nodiscard]] std::string
+  render(const PeopleAttackMechResult& vm) const override {
+    return render_people_attack_mech_long(vm);
   }
 };
 
@@ -684,6 +792,21 @@ public:
     return vm.notice == OrderUpdateNotice::None
                ? std::string{}
                : render_json_envelope("order_update", vm);
+  }
+
+  [[nodiscard]] std::string
+  render(const ReactorOverloadEvent& vm) const override {
+    return render_json_envelope("reactor_overload", vm);
+  }
+
+  [[nodiscard]] std::string
+  render(const MechAttackPeopleResult& vm) const override {
+    return render_json_envelope("mech_attack_people", vm);
+  }
+
+  [[nodiscard]] std::string
+  render(const PeopleAttackMechResult& vm) const override {
+    return render_json_envelope("people_attack_mech", vm);
   }
 };
 

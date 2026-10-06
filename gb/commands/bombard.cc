@@ -120,7 +120,10 @@ void resolve_protector_ship_retaliation(GameObj& g, Ship& from,
 
     auto retal_strength = ship.check_retal_strength();
     if (ship.is_laser_on()) {
-      check_overload(g.entity_manager, ship, 0, &retal_strength);
+      if (const auto overload =
+              check_overload(g.entity_manager, ship, 0, &retal_strength)) {
+        GB::commands::notify_reactor_overload(g.entity_manager, *overload);
+      }
     }
 
     if (auto s2s_opt = shoot_ship_to_ship(g.entity_manager, ship, from,
@@ -195,7 +198,10 @@ bool bombard_from_ship(const command_t& argv, GameObj& g, Ship& from) {
         }
 
         if (from.is_laser_on()) {
-          check_overload(g.entity_manager, from, 0, &strength);
+          if (const auto overload =
+                  check_overload(g.entity_manager, from, 0, &strength)) {
+            GB::commands::notify_reactor_overload(g.entity_manager, *overload);
+          }
           if (strength <= 0) {
             g.out << "No attack.\n";
             fired = true;

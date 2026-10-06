@@ -96,6 +96,42 @@ void test_render_json_envelope_and_polymorphic_presenter() {
   test::expect_contains(
       GB::presentation::presenter_for(UiMode::JSON).render(populated_captured),
       "\"type\":\"captured_ships\"");
+
+  static_assert(std::is_aggregate_v<ReactorOverloadEvent>);
+  static_assert(std::is_aggregate_v<MechAttackPeopleResult>);
+  static_assert(std::is_aggregate_v<PeopleAttackMechResult>);
+  static_assert(std::is_aggregate_v<MechDefendEngagementRound>);
+  static_assert(std::is_aggregate_v<MechDefendResult>);
+
+  const ReactorOverloadEvent exploded{
+      .outcome = ReactorOverloadOutcome::ShipExploded,
+      .owner = player_t{1},
+      .governor = governor_t{0},
+      .scope = ScopeLevel::LEVEL_STAR,
+      .star_id = starnum_t{1},
+      .location_display = "/Sol",
+      .ship_display = "B1 Battleship",
+  };
+  test::expect_eq(
+      GB::presentation::presenter_for(UiMode::ASCII).render(exploded),
+      "/Sol: Matter-antimatter EXPLOSION from overloaded crystal on B1 "
+      "Battleship\n");
+  test::expect_contains(
+      GB::presentation::presenter_for(UiMode::JSON).render(exploded),
+      "\"type\":\"reactor_overload\"");
+
+  const ReactorOverloadEvent damaged_crystal{
+      .outcome = ReactorOverloadOutcome::CrystalDamaged,
+      .owner = player_t{1},
+      .governor = governor_t{0},
+      .scope = ScopeLevel::LEVEL_STAR,
+      .star_id = starnum_t{1},
+      .location_display = "/Sol",
+      .ship_display = "B1 Battleship",
+  };
+  test::expect_eq(
+      GB::presentation::presenter_for(UiMode::ASCII).render(damaged_crystal),
+      "/Sol: Crystal damaged from overloading on B1 Battleship.\n");
 }
 
 void test_gameobj_ui_mode_and_present() {

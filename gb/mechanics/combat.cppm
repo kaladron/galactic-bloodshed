@@ -14,8 +14,25 @@ import std;
 
 export bool has_planet_defense(EntityManager&, starnum_t, planetnum_t,
                                player_t);
-export void check_overload(EntityManager& entity_manager, Ship& ship, int cew,
-                           weapon_power_t* strength);
+
+export enum class ReactorOverloadOutcome {
+  CrystalDamaged,
+  ShipExploded,
+};
+
+export struct ReactorOverloadEvent {
+  ReactorOverloadOutcome outcome{ReactorOverloadOutcome::CrystalDamaged};
+  player_t owner{0};
+  governor_t governor{0};
+  ScopeLevel scope{ScopeLevel::LEVEL_UNIV};
+  starnum_t star_id{0};
+  std::string location_display{};
+  std::string ship_display{};
+};
+
+export std::optional<ReactorOverloadEvent>
+check_overload(EntityManager& entity_manager, Ship& ship, int cew,
+               weapon_power_t* strength);
 
 // Damage, Short, Long
 export std::optional<std::tuple<damage_t, std::string, std::string>>
@@ -93,19 +110,69 @@ export struct GroundAttackResult {
 export [[nodiscard]] GroundAttackResult
 ground_attack(const GroundAttackParams& params);
 
-export void mech_defend(const GameObj& g, population_t* people,
-                        PopulationType what, const Planet& p,
-                        Coordinates target_coords, const Sector& s2);
+export struct MechAttackPeopleResult {
+  std::string location_display{};
+  std::string ship_display{};
+  std::string defender_race_name{};
+  player_t defender_player{0};
+  Coordinates sector_coords{};
+  std::string sector_condition{};
+  weapon_power_t guns_fired{0};
+  population_t initial_civ{0};
+  population_t initial_mil{0};
+  population_t surviving_civ{0};
+  population_t surviving_mil{0};
+  population_t civ_killed{0};
+  population_t mil_killed{0};
+  double attack_strength{0.0};
+  double defense_strength{0.0};
+};
 
-export std::tuple<std::string, std::string>
+export struct PeopleAttackMechResult {
+  std::string location_display{};
+  std::string attacker_race_name{};
+  player_t attacker_player{0};
+  bool mech_alive{true};
+  std::string ship_display{};
+  std::string ship_type_name{};
+  Coordinates target_coords{};
+  std::string sector_condition{};
+  population_t attacker_civ{0};
+  population_t attacker_mil{0};
+  double attack_strength{0.0};
+  double defense_strength{0.0};
+  damage_t damage_inflicted{0};
+  damage_t total_damage{0};
+  CollateralDamage collateral{};
+};
+
+export struct MechDefendEngagementRound {
+  player_t defender_player{0};
+  governor_t defender_governor{0};
+  MechAttackPeopleResult mech_attack{};
+  std::optional<PeopleAttackMechResult> people_counterattack{std::nullopt};
+};
+
+export struct MechDefendResult {
+  population_t surviving_people{0};
+  std::vector<MechDefendEngagementRound> rounds{};
+};
+
+export MechDefendResult mech_defend(EntityManager& em,
+                                    const Race& attacker_race,
+                                    population_t* people, PopulationType what,
+                                    const Planet& p, Coordinates target_coords,
+                                    const Sector& s2);
+
+export [[nodiscard]] MechAttackPeopleResult
 mech_attack_people(EntityManager& em, Ship& ship, population_t* civ,
                    population_t* mil, const Race& race, const Race& alien,
                    const Sector& sect, bool ignore);
 
-export std::tuple<std::string, std::string>
-people_attack_mech(EntityManager& em, Ship& ship, int civ, int mil,
-                   const Race& race, const Race& alien, const Sector& sect,
-                   Coordinates target_coords);
+export [[nodiscard]] PeopleAttackMechResult
+people_attack_mech(EntityManager& em, Ship& ship, population_t civ,
+                   population_t mil, const Race& race, const Race& alien,
+                   const Sector& sect, Coordinates target_coords);
 
 /// \brief Simulates proximity triggering, detonation, ship collateral damage,
 /// and orbital planetary bombardment for space mines.

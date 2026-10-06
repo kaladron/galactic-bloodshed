@@ -155,8 +155,12 @@ bool defend(const command_t& argv, GameObj& g) {
                 // not the ship's current damage state, so this correctly
                 // applies the ship's original (pre-damage) attack capability.
                 strength = retal;
-                if (target_ship.is_laser_on())
-                  check_overload(g.entity_manager, target_ship, 0, &strength);
+                if (target_ship.is_laser_on()) {
+                  if (const auto overload = check_overload(
+                          g.entity_manager, target_ship, 0, &strength)) {
+                    notify_reactor_overload(g.entity_manager, *overload);
+                  }
+                }
 
                 if (auto result_opt = shoot_ship_to_planet(
                         g.entity_manager, target_ship, p, strength,
@@ -182,28 +186,28 @@ bool defend(const command_t& argv, GameObj& g) {
               /* protecting ships retaliate individually if damage was inflicted
                */
               if (damage) {
-                for (const Ship& ship : ShipList::readonly_on_planet(
+                for (auto ship_handle : ShipList::on_planet(
                          g.entity_manager, g.snum(), g.pnum())) {
+                  Ship& ship = *ship_handle;
                   if (ship.protect().on && (ship.protect().ship == toship) &&
                       ship.number() != toship && ship.alive() &&
                       ship.active()) {
                     strength = ship.check_retal_strength();
-                    if (ship.is_laser_on())
-                      check_overload(g.entity_manager, const_cast<Ship&>(ship),
-                                     0, &strength);
+                    if (ship.is_laser_on()) {
+                      if (const auto overload = check_overload(
+                              g.entity_manager, ship, 0, &strength)) {
+                        notify_reactor_overload(g.entity_manager, *overload);
+                      }
+                    }
 
                     if (auto result2_opt = shoot_ship_to_planet(
                             g.entity_manager, ship, p, strength, sector_coords,
                             smap, false, guntype_t::NONE)) {
-                      g.entity_manager.mutate_ship(
-                          ship.number(), [&](Ship& ship_mut) {
-                            if (ship.is_laser_on())
-                              ship_mut.consume_fuel(
-                                  ENERGY_WEAPON_FUEL_PER_STRENGTH *
-                                  static_cast<double>(strength));
-                            else
-                              ship_mut.consume_destruct(strength);
-                          });
+                      if (ship.is_laser_on())
+                        ship.consume_fuel(ENERGY_WEAPON_FUEL_PER_STRENGTH *
+                                          static_cast<double>(strength));
+                      else
+                        ship.consume_destruct(strength);
                       post(g.entity_manager, result2_opt->short_message,
                            NewsType::COMBAT);
                       notify_star(g.session_registry, g.entity_manager,

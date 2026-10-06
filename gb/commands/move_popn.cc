@@ -6,6 +6,7 @@
 module;
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import scnlib;
 import std;
@@ -125,11 +126,28 @@ bool move_popn(const command_t& argv, GameObj& g) {
                          what == PopulationType::CIV ? "population" : "troops");
 
     /* check for defending mechs */
+    MechDefendResult defend_res{};
     g.entity_manager.mutate_sectormap(
         g.snum(), g.pnum(), [&](SectorMap& smap_mut) {
           auto& sect2_mut = smap_mut.get(next_coords);
-          mech_defend(g, &people, what, planet_peek, next_coords, sect2_mut);
+          defend_res = mech_defend(g.entity_manager, *g.race, &people, what,
+                                   planet_peek, next_coords, sect2_mut);
         });
+    for (const auto& round : defend_res.rounds) {
+      const auto attack_long =
+          GB::presentation::render_mech_attack_people_long(round.mech_attack);
+      push_telegram(g.entity_manager, Playernum, g.governor(), attack_long);
+      push_telegram(g.entity_manager, round.defender_player,
+                    round.defender_governor, attack_long);
+      if (round.people_counterattack) {
+        const auto counter_long =
+            GB::presentation::render_people_attack_mech_long(
+                *round.people_counterattack);
+        push_telegram(g.entity_manager, Playernum, g.governor(), counter_long);
+        push_telegram(g.entity_manager, round.defender_player,
+                      round.defender_governor, counter_long);
+      }
+    }
     if (!people) {
       g.out << "Attack aborted.\n";
       return any_moved;

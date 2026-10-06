@@ -348,12 +348,12 @@ void test_fire_crystal_overload_burnout_and_explosion() {
     s.laser() = false;
     s.fire_laser() = 0;
     weapon_power_t str = 10;
-    check_overload(ctx.em, s, 0, &str);
+    test::expect_false(check_overload(ctx.em, s, 0, &str).has_value());
     test::expect_eq(str, 10u);
 
     s.laser() = true;
     s.fire_laser() = 0;
-    check_overload(ctx.em, s, 0, &str);
+    test::expect_false(check_overload(ctx.em, s, 0, &str).has_value());
     test::expect_eq(str, 10u);
   });
 

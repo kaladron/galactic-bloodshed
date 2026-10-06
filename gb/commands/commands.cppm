@@ -212,4 +212,7 @@ export bool whois(const command_t&, GameObj&);
 export extern const CommandDescriptor whois_cmd;
 export bool zoom(const command_t&, GameObj&);
 export extern const CommandDescriptor zoom_cmd;
+
+void notify_reactor_overload(EntityManager& em,
+                             const ReactorOverloadEvent& event);
 }  // namespace GB::commands

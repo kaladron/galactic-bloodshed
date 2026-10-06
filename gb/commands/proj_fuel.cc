@@ -6,6 +6,8 @@
 module;
 
 import gb.entities;
+import gb.mechanics;
+import gb.presentation;
 import gb.services;
 import std;
 #undef stdout
@@ -223,9 +225,10 @@ void render_fuel_projections(GameObj& g, const Ship& ship,
   if (!current_res.can_complete) {
     g.out << "The ship will not be able to complete the trip.\n";
   } else {
-    fuel_output(g, target.dist, current_res.fuel_used, target.gravity_factor,
-                tmpship.mass(), current_res.segments,
-                target.launch_planet_name);
+    g.out << GB::presentation::render_trip_estimate(compute_trip_estimate(
+        g.entity_manager, target.dist, current_res.fuel_used,
+        target.gravity_factor, tmpship.mass(), current_res.segments,
+        target.launch_planet_name));
   }
 
   g.out << std::format("At Optimum Fuel Level ({:.2f}f):\n", opt_res.fuel_used);
@@ -234,8 +237,9 @@ void render_fuel_projections(GameObj& g, const Ship& ship,
   } else {
     tmpship.set_simulated_fuel(opt_res.fuel_used);
     domass(tmpship, g.entity_manager);
-    fuel_output(g, target.dist, opt_res.fuel_used, target.gravity_factor,
-                tmpship.mass(), opt_res.segments, target.launch_planet_name);
+    g.out << GB::presentation::render_trip_estimate(compute_trip_estimate(
+        g.entity_manager, target.dist, opt_res.fuel_used, target.gravity_factor,
+        tmpship.mass(), opt_res.segments, target.launch_planet_name));
   }
 }
 

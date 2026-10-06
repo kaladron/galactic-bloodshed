@@ -9,61 +9,45 @@ import std;
 
 module gb.mechanics;
 
-/**
- * @brief Outputs fuel information and estimated arrival time.
- *
- * This function outputs the total distance, number of segments, fuel amount,
- * and estimated arrival time based on the given parameters. It also handles
- * cases where the estimated arrival time is not available due to segment
- * discrepancy.
- *
- * @param g The GameObj reference.
- * @param dist The total distance.
- * @param fuel The amount of fuel.
- * @param grav The gravitational force.
- * @param mass The mass.
- * @param segs The number of segments.
- * @param plan_buf The plan buffer.
- */
-void fuel_output(GameObj& g, const double dist, const double fuel,
-                 const double grav, const double mass, const segments_t segs,
-                 const std::string_view plan_buf) {
-  std::string grav_buf =
-      (grav > 0.00)
-          ? std::format(" ({:.2f} used to launch from {})\n",
-                        grav * mass * LAUNCH_GRAV_MASS_FACTOR, plan_buf)
-          : " ";
-
-  g.out << std::format(
-      "Total Distance = {:.2f}   Number of Segments = {}\nFuel = {:.2f}{}  ",
-      dist, segs, fuel, grav_buf);
-
-  const auto* state = g.entity_manager.peek_server_state();
-  if (!state) {
-    g.out << "Server state unavailable.\n";
-    return;
-  }
-
-  if (state->nsegments_done > state->segments) {
-    g.out << "Estimated arrival time not available due to segment # "
-             "discrepancy.\n";
-    return;
-  }
-
-  std::time_t effective_time =
-      (state->segments == 1)
-          ? state->next_update_time +
-                (static_cast<std::time_t>((segs - 1) *
-                                          (state->update_time_minutes * 60)))
-          : state->next_segment_time +
-                ((segs - 1) * (state->update_time_minutes / state->segments) *
-                 60);
-
-  g.out << std::format("ESTIMATED Arrival Time: {}\n",
-                       std::ctime(&effective_time));
-}
-
 namespace {
+
+struct ArrivalEstimate {
+  ArrivalTimeStatus status;
+  std::time_t time;
+};
+
+ArrivalEstimate compute_arrival_estimate(const ServerState* state,
+                                         const segments_t segs) {
+  if (!state) {
+    return {
+        .status = ArrivalTimeStatus::ServerStateUnavailable,
+        .time = 0,
+    };
+  }
+
+  if (state->segments == 0 || state->nsegments_done > state->segments) {
+    return {
+        .status = ArrivalTimeStatus::SegmentDiscrepancy,
+        .time = 0,
+    };
+  }
+
+  const std::time_t additional_segs =
+      (segs > 0) ? static_cast<std::time_t>(segs - 1) : 0;
+  const std::time_t update_mins =
+      static_cast<std::time_t>(state->update_time_minutes);
+  const std::time_t effective_time =
+      (state->segments == 1)
+          ? state->next_update_time + (additional_segs * update_mins * 60)
+          : state->next_segment_time +
+                (additional_segs *
+                 (update_mins / static_cast<std::time_t>(state->segments)) *
+                 60);
+  return {
+      .status = ArrivalTimeStatus::Available,
+      .time = effective_time,
+  };
+}
 
 bool has_reached_trip_destination(const SimulatedShip& tmpship,
                                   const UniverseCoordinates dest_coords) {
@@ -81,6 +65,39 @@ bool has_reached_trip_destination(const SimulatedShip& tmpship,
 }
 
 }  // namespace
+
+/**
+ * @brief Computes fuel consumption details and estimated arrival time for a
+ * simulated trip.
+ *
+ * @param em The EntityManager for reading server segment state.
+ * @param dist The total trip distance.
+ * @param fuel The amount of fuel consumed.
+ * @param grav The planetary gravity factor at launch (0.0 if already in space).
+ * @param mass The ship's mass at launch.
+ * @param segs The number of movement segments required.
+ * @param plan_buf The launch planet path string.
+ * @return Structured TripEstimate for presentation rendering.
+ */
+TripEstimate compute_trip_estimate(EntityManager& em, const double dist,
+                                   const double fuel, const double grav,
+                                   const double mass, const segments_t segs,
+                                   const std::string_view plan_buf) {
+  const auto [arrival_status, estimated_arrival_time] =
+      compute_arrival_estimate(em.peek_server_state(), segs);
+
+  return TripEstimate{
+      .distance = dist,
+      .segments = segs,
+      .fuel_used = fuel,
+      .launch_gravity_fuel =
+          (grav > 0.00) ? (grav * mass * LAUNCH_GRAV_MASS_FACTOR) : 0.0,
+      .launch_planet_name =
+          (grav > 0.00) ? std::string(plan_buf) : std::string{},
+      .arrival_status = arrival_status,
+      .estimated_arrival_time = estimated_arrival_time,
+  };
+}
 
 /**
  * @brief Performs a trip for a ship to a destination.
@@ -111,12 +128,16 @@ std::tuple<bool, segments_t> do_trip(const Place& tmpdest,
   }
 
   tmpship.set_simulated_fuel(fuel); /* load up the pseudo-ship */
+  domass(tmpship, entity_manager);
   segments_t effective_segment_number = state->nsegments_done;
 
   /* Launch or undock the ship before setting its destination. */
   if (tmpship.is_landed()) {
     const double gravity_fuel =
         gravity_factor * tmpship.mass() * LAUNCH_GRAV_MASS_FACTOR;
+    if (tmpship.fuel() < gravity_fuel) {
+      return {false, 0};
+    }
     tmpship.consume_fuel(gravity_fuel);
     tmpship.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
   } else if (tmpship.is_docked()) {

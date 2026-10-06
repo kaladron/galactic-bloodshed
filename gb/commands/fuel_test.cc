@@ -5,6 +5,8 @@
 
 import commands;
 import gb.entities;
+import gb.mechanics;
+import gb.presentation;
 import gb.services;
 import test;
 import std;
@@ -145,44 +147,74 @@ void test_fuel_output_and_do_trip_branches() {
   TestContext ctx;
   ctx.with_standard_universe();
 
-  auto& registry = get_test_session_registry();
-  GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
-
-  // 1. fuel_output with grav == 0 and segments == 1
+  // 1. compute_trip_estimate with grav == 0 and segments == 1
   ctx.em.mutate_server_state([](ServerState& st) {
     st.segments = 1;
     st.nsegments_done = 1;
     st.update_time_minutes = 60;
   });
-  g.out.str("");
-  fuel_output(g, 100.0, 25.0, 0.0, 10.0, 2, "Earth");
-  test::expect_contains(g.out.str(), "ESTIMATED Arrival Time:");
+  {
+    const auto est =
+        compute_trip_estimate(ctx.em, 100.0, 25.0, 0.0, 10.0, 2, "Earth");
+    test::expect_eq(static_cast<int>(est.arrival_status),
+                    static_cast<int>(ArrivalTimeStatus::Available));
+    const std::string rendered = GB::presentation::render_trip_estimate(est);
+    test::expect_contains(rendered, "ESTIMATED Arrival Time:");
+  }
 
-  // 2. fuel_output with grav > 0 and segments > 1
+  // 2. compute_trip_estimate with grav > 0 and segments > 1 (plus segs == 0)
   ctx.em.mutate_server_state([](ServerState& st) {
     st.segments = 4;
     st.nsegments_done = 2;
   });
-  g.out.str("");
-  fuel_output(g, 100.0, 25.0, 1.0, 10.0, 3, "Earth");
-  test::expect_contains(g.out.str(), "used to launch from Earth");
-  test::expect_contains(g.out.str(), "ESTIMATED Arrival Time:");
+  {
+    const auto est =
+        compute_trip_estimate(ctx.em, 100.0, 25.0, 1.0, 10.0, 3, "Earth");
+    const std::string rendered = GB::presentation::render_trip_estimate(est);
+    test::expect_contains(rendered, "used to launch from Earth");
+    test::expect_contains(rendered, "ESTIMATED Arrival Time:");
 
-  // 3. fuel_output with segment discrepancy (nsegments_done > segments)
+    const auto zero_segs_est =
+        compute_trip_estimate(ctx.em, 10.0, 0.0, 0.0, 10.0, 0, "");
+    test::expect_eq(static_cast<int>(zero_segs_est.arrival_status),
+                    static_cast<int>(ArrivalTimeStatus::Available));
+  }
+
+  // 3. compute_trip_estimate with segment discrepancy (nsegments_done >
+  // segments or segments == 0) and ServerStateUnavailable
   ctx.em.mutate_server_state([](ServerState& st) {
     st.segments = 2;
     st.nsegments_done = 5;
   });
-  g.out.str("");
-  fuel_output(g, 100.0, 25.0, 0.0, 10.0, 1, "Earth");
-  test::expect_contains(
-      g.out.str(),
-      "Estimated arrival time not available due to segment # discrepancy.");
+  {
+    const auto est =
+        compute_trip_estimate(ctx.em, 100.0, 25.0, 0.0, 10.0, 1, "Earth");
+    const std::string rendered = GB::presentation::render_trip_estimate(est);
+    test::expect_contains(
+        rendered,
+        "Estimated arrival time not available due to segment # discrepancy.");
+  }
+  ctx.em.mutate_server_state([](ServerState& st) { st.segments = 0; });
+  {
+    const auto est =
+        compute_trip_estimate(ctx.em, 100.0, 25.0, 0.0, 10.0, 1, "Earth");
+    test::expect_eq(static_cast<int>(est.arrival_status),
+                    static_cast<int>(ArrivalTimeStatus::SegmentDiscrepancy));
+  }
+  {
+    TripEstimate unavail_est{
+        .distance = 50.0,
+        .segments = 1,
+        .fuel_used = 10.0,
+        .arrival_status = ArrivalTimeStatus::ServerStateUnavailable,
+    };
+    test::expect_contains(GB::presentation::render_trip_estimate(unavail_est),
+                          "Server state unavailable.");
+  }
 
   // 4. do_trip with LEVEL_SHIP destination and out-of-fuel failure case
   ctx.em.mutate_server_state([](ServerState& st) {
-    st.segments = 1;
+    st.segments = 2;
     st.nsegments_done = 1;
   });
   const auto target_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
@@ -213,7 +245,8 @@ void test_fuel_output_and_do_trip_branches() {
     test::expect_eq(segs, 1U);
   }
   {
-    // Landed ship deducts launch gravity fuel before flying to destination
+    // Landed ship deducts launch gravity fuel before flying to destination,
+    // and fails immediately if fuel < launch_gravity_fuel
     const auto orbit_ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
                                    .owned_by(1, 1)
                                    .in_planet_orbit(1, 1)
@@ -235,6 +268,37 @@ void test_fuel_output_and_do_trip_branches() {
         do_trip(ship_dest, sim_landed, 500.0, 1.0, target_coords, ctx.em);
     test::expect_true(ok_landed);
     test::expect_lt(sim_landed.fuel(), sim_orbit.fuel());
+
+    SimulatedShip sim_landed_nofuel{*ctx.em.peek_ship(landed_ship_id)};
+    const auto [ok_nofuel, segs_nofuel] =
+        do_trip(ship_dest, sim_landed_nofuel, 0.0, 1.0, target_coords, ctx.em);
+    test::expect_false(ok_nofuel);
+    test::expect_eq(segs_nofuel, 0U);
+  }
+  {
+    // Docked ship undocks before flying to destination
+    SimulatedShip sim_docked{*ctx.em.peek_ship(runner_id)};
+    sim_docked.dock_with_ship(target_id);
+    const auto [ok_docked, segs_docked] =
+        do_trip(ship_dest, sim_docked, 500.0, 0.0, target_coords, ctx.em);
+    test::expect_true(ok_docked);
+    test::expect_gt(segs_docked, 0U);
+  }
+  {
+    // Hyperdrive ship waiting for update segment (fuel unchanged while
+    // hyper_drive().on is true) exercises !tmpship.hyper_drive().on == false
+    ctx.em.mutate_star(2, [](Star& s) {
+      s.set_coordinates(UniverseCoordinates{5000.0, 0.0});
+    });
+    SimulatedShip sim_hyper{*ctx.em.peek_ship(runner_id)};
+    sim_hyper.hyper_drive() = {.charge = 1, .on = true, .has = true};
+    sim_hyper.mounted() = true;
+    Place star_dest{ScopeLevel::LEVEL_STAR, 2, 0, 0};
+    const auto star2_coords = ctx.em.peek_star(2)->coordinates();
+    const auto [ok_hyper, segs_hyper] =
+        do_trip(star_dest, sim_hyper, 500.0, 0.0, star2_coords, ctx.em);
+    test::expect_true(ok_hyper);
+    test::expect_eq(segs_hyper, 2U);
   }
 }
 

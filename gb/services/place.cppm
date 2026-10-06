@@ -28,32 +28,25 @@ export struct PlaceError {
 };
 
 export [[nodiscard]] std::string format_place_error(const PlaceError& error) {
-  std::string result;
-  switch (error.kind) {
+  const auto& [kind, target] = error;
+  switch (kind) {
     case PlaceErrorKind::CantGoHigher:
-      result = "Can't go higher.\n";
-      break;
+      return "Can't go higher.\n";
     case PlaceErrorKind::ShipNotFound:
-      result = "Ship not found.\n";
-      break;
+      return "Ship not found.\n";
     case PlaceErrorKind::StarUnexplored:
     case PlaceErrorKind::PlanetUnexplored:
-      result = std::format("You have not explored {} yet.\n", error.target);
-      break;
+      return std::format("You have not explored {} yet.\n", target);
     case PlaceErrorKind::NoSuchStar:
-      result = std::format("No such star {}.\n", error.target);
-      break;
+      return std::format("No such star {}.\n", target);
     case PlaceErrorKind::NoSuchPlanet:
-      result = std::format("No such planet {}.\n", error.target);
-      break;
+      return std::format("No such planet {}.\n", target);
     case PlaceErrorKind::CantDescend:
-      result = std::format("Can't descend to {}.\n", error.target);
-      break;
+      return std::format("Can't descend to {}.\n", target);
     case PlaceErrorKind::DontOwnShip:
-      result = std::format("You don't own ship #{}.\n", error.target);
-      break;
+      return std::format("You don't own ship #{}.\n", target);
   }
-  return result;
+  return {};
 }
 
 export class Place { /* used in function return for finding place */
@@ -103,7 +96,8 @@ Place::ascend_parent_scope(EntityManager& em, const ScopeContext& ctx,
                            std::string_view string, const bool ignore_explore) {
   switch (level) {
     case ScopeLevel::LEVEL_UNIV:
-      return std::unexpected(PlaceError{PlaceErrorKind::CantGoHigher, {}});
+      return std::unexpected(
+          PlaceError{.kind = PlaceErrorKind::CantGoHigher, .target = {}});
     case ScopeLevel::LEVEL_SHIP: {
       try {
         const Ship* ship = em.peek_ship(shipno);
@@ -119,7 +113,8 @@ Place::ascend_parent_scope(EntityManager& em, const ScopeContext& ctx,
           shipno = 0;
         }
       } catch (const EntityNotFoundError&) {
-        return std::unexpected(PlaceError{PlaceErrorKind::ShipNotFound, {}});
+        return std::unexpected(
+            PlaceError{.kind = PlaceErrorKind::ShipNotFound, .target = {}});
       }
       break;
     }
@@ -150,11 +145,15 @@ std::expected<void, PlaceError> Place::descend_from_universe(
       if (remaining.starts_with('/')) remaining.remove_prefix(1);
       return getplace2(em, ctx, remaining, ignore_explore);
     }
-    return std::unexpected(
-        PlaceError{PlaceErrorKind::StarUnexplored, star.get_name()});
+    return std::unexpected(PlaceError{
+        .kind = PlaceErrorKind::StarUnexplored,
+        .target = star.get_name(),
+    });
   }
-  return std::unexpected(
-      PlaceError{PlaceErrorKind::NoSuchStar, std::string(star_name)});
+  return std::unexpected(PlaceError{
+      .kind = PlaceErrorKind::NoSuchStar,
+      .target = std::string(star_name),
+  });
 }
 
 std::expected<void, PlaceError> Place::descend_from_star(
@@ -170,11 +169,15 @@ std::expected<void, PlaceError> Place::descend_from_star(
       if (remaining.starts_with('/')) remaining.remove_prefix(1);
       return getplace2(em, ctx, remaining, ignore_explore);
     }
-    return std::unexpected(
-        PlaceError{PlaceErrorKind::PlanetUnexplored, star.get_planet_name(i)});
+    return std::unexpected(PlaceError{
+        .kind = PlaceErrorKind::PlanetUnexplored,
+        .target = star.get_planet_name(i),
+    });
   }
-  return std::unexpected(
-      PlaceError{PlaceErrorKind::NoSuchPlanet, std::string(planet_name)});
+  return std::unexpected(PlaceError{
+      .kind = PlaceErrorKind::NoSuchPlanet,
+      .target = std::string(planet_name),
+  });
 }
 
 std::expected<void, PlaceError> Place::getplace2(EntityManager& em,
@@ -199,8 +202,10 @@ std::expected<void, PlaceError> Place::getplace2(EntityManager& em,
     case ScopeLevel::LEVEL_STAR:
       return descend_from_star(em, ctx, substr, remaining, ignoreexpl);
     default:
-      return std::unexpected(
-          PlaceError{PlaceErrorKind::CantDescend, std::string(substr)});
+      return std::unexpected(PlaceError{
+          .kind = PlaceErrorKind::CantDescend,
+          .target = std::string(substr),
+      });
   }
 }
 
@@ -240,24 +245,32 @@ Place::resolve_ship_place(EntityManager& em, const ScopeContext& ctx,
   if (!shipnum) {
     const std::string_view raw_target =
         string.starts_with('#') ? string.substr(1) : string;
-    return std::unexpected(
-        PlaceError{PlaceErrorKind::DontOwnShip, std::string(raw_target)});
+    return std::unexpected(PlaceError{
+        .kind = PlaceErrorKind::DontOwnShip,
+        .target = std::string(raw_target),
+    });
   }
   const Ship* ship = nullptr;
   try {
     ship = em.peek_ship(*shipnum);
   } catch (const EntityNotFoundError&) {
-    return std::unexpected(
-        PlaceError{PlaceErrorKind::DontOwnShip, std::format("{}", *shipnum)});
+    return std::unexpected(PlaceError{
+        .kind = PlaceErrorKind::DontOwnShip,
+        .target = std::format("{}", *shipnum),
+    });
   }
   if (!ctx.god) {
     if (!ship->alive()) {
-      return std::unexpected(
-          PlaceError{PlaceErrorKind::DontOwnShip, std::format("{}", *shipnum)});
+      return std::unexpected(PlaceError{
+          .kind = PlaceErrorKind::DontOwnShip,
+          .target = std::format("{}", *shipnum),
+      });
     }
     if (!ignore_explore && ship->owner() != ctx.player) {
-      return std::unexpected(
-          PlaceError{PlaceErrorKind::DontOwnShip, std::format("{}", *shipnum)});
+      return std::unexpected(PlaceError{
+          .kind = PlaceErrorKind::DontOwnShip,
+          .target = std::format("{}", *shipnum),
+      });
     }
   }
   level = ScopeLevel::LEVEL_SHIP;

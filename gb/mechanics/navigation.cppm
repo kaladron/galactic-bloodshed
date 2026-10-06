@@ -30,9 +30,26 @@ export std::tuple<bool, segments_t> do_trip(const Place&, SimulatedShip&,
                                             UniverseCoordinates dest_coords,
                                             EntityManager&);
 
-export void fuel_output(GameObj& g, double dist, double fuel, double grav,
-                        double mass, segments_t segs,
-                        std::string_view plan_buf);
+export enum class ArrivalTimeStatus {
+  Available,
+  ServerStateUnavailable,
+  SegmentDiscrepancy,
+};
+
+export struct TripEstimate {
+  double distance = 0.0;
+  segments_t segments = 0;
+  double fuel_used = 0.0;
+  double launch_gravity_fuel = 0.0;
+  std::string launch_planet_name;
+  ArrivalTimeStatus arrival_status = ArrivalTimeStatus::Available;
+  std::time_t estimated_arrival_time = 0;
+};
+
+export TripEstimate compute_trip_estimate(EntityManager& em, double dist,
+                                          double fuel, double grav, double mass,
+                                          segments_t segs,
+                                          std::string_view plan_buf);
 
 export void display_orders(GameObj& g, const Ship& ship);
 export void display_orders_header(GameObj& g);

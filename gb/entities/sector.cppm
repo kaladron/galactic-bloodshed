@@ -416,8 +416,27 @@ public:
   [[nodiscard]] const sector_struct& to_struct() const noexcept {
     return data_;
   }
+};
 
-  friend std::ostream& operator<<(std::ostream&, const Sector&);
+export template <>
+struct std::formatter<Sector> : std::formatter<std::string_view> {
+  auto format(const Sector& s, std::format_context& ctx) const {
+    return std::format_to(ctx.out(),
+                          "Efficiency: {}\n"
+                          "Fertility: {}\n"
+                          "Mobilization: {}\n"
+                          "Crystals: {}\n"
+                          "Resource: {}\n"
+                          "Population: {}\n"
+                          "Troops: {}\n"
+                          "Owner: {}\n"
+                          "Type: {}\n"
+                          "Condition: {}\n",
+                          s.get_eff(), s.get_fert(), s.get_mobilization(),
+                          s.get_crystals(), s.get_resource(), s.get_popn(),
+                          s.get_troops(), s.get_owner(), s.get_type(),
+                          s.get_condition());
+  }
 };
 
 constexpr double Race::sector_compatibility(const Sector& sect) const {

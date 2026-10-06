@@ -780,6 +780,30 @@ void test_sector_type_and_condition_names() {
 
   s.set_condition(SectorType::SEC_WASTED);
   test::expect_eq(s.condition_name(), "wasted");
+
+  Sector formatted(sector_struct{
+      .coords = {1, 2},
+      .eff = 75,
+      .fert = 60,
+      .mobilization = 40,
+      .crystals = 3,
+      .resource = 120,
+      .popn = 500,
+      .troops = 25,
+      .owner = player_t{2},
+      .type = SectorType::SEC_MOUNT,
+      .condition = SectorType::SEC_PLATED,
+  });
+  test::expect_eq(std::format("{}", formatted), "Efficiency: 75\n"
+                                                "Fertility: 60\n"
+                                                "Mobilization: 40\n"
+                                                "Crystals: 3\n"
+                                                "Resource: 120\n"
+                                                "Population: 500\n"
+                                                "Troops: 25\n"
+                                                "Owner: 2\n"
+                                                "Type: mountainous\n"
+                                                "Condition: plated\n");
 }
 
 }  // namespace

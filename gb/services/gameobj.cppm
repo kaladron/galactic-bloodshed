@@ -27,6 +27,12 @@ export [[nodiscard]] std::expected<void, CommandableError>
 validate_commandable(const Ship& ship, player_t player, governor_t governor,
                      bool god = false) noexcept;
 
+/// Wire protocol / presentation mode for a client session.
+export enum class UiMode {
+  ASCII,  ///< Server-rendered ASCII text and tables for raw Telnet clients
+  JSON,   ///< Newline-delimited JSON envelopes for structured clients
+};
+
 /// Pure snapshot of a session's player, governor, god flag, and scope location.
 export struct ScopeContext {
   player_t player{0};
@@ -92,6 +98,9 @@ public:
   ScopeLevel level() const {
     return level_;
   }
+  [[nodiscard]] UiMode ui_mode() const noexcept {
+    return ui_mode_;
+  }
   /// Returns a pure value snapshot of the session's current scope and identity.
   [[nodiscard]] ScopeContext scope_context() const noexcept {
     return ScopeContext{
@@ -132,6 +141,9 @@ public:
   }
   void set_level(ScopeLevel l) {
     level_ = l;
+  }
+  void set_ui_mode(UiMode mode) noexcept {
+    ui_mode_ = mode;
   }
 
   /// Set the universe scope viewport center coordinates.
@@ -184,6 +196,7 @@ private:
   planetnum_t pnum_{};
   shipnum_t shipno_{};
   ScopeLevel level_ = ScopeLevel::LEVEL_PLAN;
+  UiMode ui_mode_ = UiMode::ASCII;
   UniverseCoordinates universe_center_{0.0, 0.0};
   SystemCoordinates system_center_{0.0, 0.0};
 };

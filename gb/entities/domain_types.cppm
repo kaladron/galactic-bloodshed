@@ -590,10 +590,6 @@ public:
     return static_cast<T>(lhs.value_) <=> rhs;
   }
 
-  friend std::ostream& operator<<(std::ostream& os, Percentage p) {
-    return os << p.value_;
-  }
-
 private:
   int value_{0};
 };
@@ -718,10 +714,6 @@ public:
   [[nodiscard]] friend constexpr auto operator<=>(Temperature lhs,
                                                   T rhs) noexcept {
     return static_cast<T>(lhs.value_) <=> rhs;
-  }
-
-  friend std::ostream& operator<<(std::ostream& os, Temperature t) {
-    return os << t.value_;
   }
 
 private:

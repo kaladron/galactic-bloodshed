@@ -272,6 +272,19 @@ target_sources(
   PUBLIC FILE_SET CXX_MODULES FILES server/server_module.cppm)
 target_link_libraries(gb_server PUBLIC auth notification server server_config session)
 
+# Standalone Tier-6a Presentation & Protocol Rendering Library (ASCII & Glaze JSON)
+add_library(gb_presentation)
+target_sources(
+  gb_presentation
+  PUBLIC FILE_SET
+         CXX_MODULES
+         FILES
+          presentation/presentation.cppm)
+target_link_libraries(
+  gb_presentation
+  PUBLIC gb_entities gb_services gb_mechanics gb_repositories glaze::glaze
+         glaze_json_module glaze_core_module tabulate_module strong_id_module)
+
 add_library(commands)
 target_sources(
   commands
@@ -367,7 +380,7 @@ target_sources(
           commands/who.cc
           commands/whois.cc
           commands/zoom.cc)
-target_link_libraries(commands PRIVATE gb_turn gb_mechanics gb_entities gb_services glaze::glaze
+target_link_libraries(commands PRIVATE gb_presentation gb_turn gb_mechanics gb_entities gb_services glaze::glaze
                                        scnlib_module tabulate_module)
 
 # Create test utilities module
@@ -380,7 +393,7 @@ target_sources(
           testing/test_context.cc
           testing/test_matrix.cc
           testing/test_builders.cc)
-target_link_libraries(test_module PUBLIC gb_entities gb_repositories gb_services gb_mechanics gb_turn gb_server gb_creator dallib session commands)
+target_link_libraries(test_module PUBLIC gb_entities gb_repositories gb_services gb_mechanics gb_turn gb_presentation gb_server gb_creator dallib session commands)
 
 # Executable targets
 add_executable(makeuniv creator/makeuniv.cc)
@@ -393,7 +406,7 @@ add_executable(racegen creator/racegen.cc)
 target_link_libraries(racegen PRIVATE gb_entities gb_services gb_creator dallib glaze::glaze)
 
 add_executable(GB server/GB_server.cc)
-target_link_libraries(GB PRIVATE gb_turn gb_mechanics gb_entities gb_services gb_server commands asio_module dallib glaze::glaze)
+target_link_libraries(GB PRIVATE gb_presentation gb_turn gb_mechanics gb_entities gb_services gb_server commands asio_module dallib glaze::glaze)
 install(TARGETS GB makeuniv enrol racegen)
 
 # Test helper function
@@ -404,7 +417,7 @@ function(gb_add_test name)
   endif()
   add_executable(${name} ${ARG_SOURCES})
   target_link_libraries(${name} PRIVATE
-    test_module dallib gb_entities gb_repositories gb_services gb_mechanics gb_turn gb_server commands glaze::glaze ${ARG_EXTRA_LIBS}
+    test_module dallib gb_entities gb_repositories gb_services gb_mechanics gb_turn gb_presentation gb_server commands glaze::glaze ${ARG_EXTRA_LIBS}
   )
   add_test(NAME GB_${name} COMMAND ${name})
   set_tests_properties(GB_${name} PROPERTIES ENVIRONMENT
@@ -512,6 +525,7 @@ gb_add_test(planet_test SOURCES entities/planet_test.cc)
 gb_add_test(pledge_test SOURCES commands/pledge_test.cc)
 gb_add_test(power_command_test SOURCES commands/power_test.cc EXTRA_LIBS tabulate::tabulate)
 gb_add_test(power_json_test SOURCES repositories/power_json_test.cc)
+gb_add_test(presentation_test SOURCES presentation/presentation_test.cc)
 gb_add_test(production_test SOURCES commands/production_test.cc)
 gb_add_test(profile_test SOURCES commands/profile_test.cc)
 gb_add_test(prompt_test SOURCES services/prompt_test.cc)

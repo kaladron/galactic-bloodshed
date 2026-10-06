@@ -101,6 +101,9 @@ public:
   ScopeLevel level() const {
     return game_obj_.level();
   }
+  [[nodiscard]] UiMode ui_mode() const noexcept {
+    return game_obj_.ui_mode();
+  }
 
   void set_player(player_t p) {
     game_obj_.set_player(p);
@@ -122,6 +125,9 @@ public:
   }
   void set_level(ScopeLevel l) {
     game_obj_.set_level(l);
+  }
+  void set_ui_mode(UiMode mode) noexcept {
+    game_obj_.set_ui_mode(mode);
   }
 
   /// Access the persistent command execution context owned by this session

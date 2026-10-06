@@ -12,91 +12,88 @@ module gb.mechanics;
 
 namespace {
 
-std::string format_aim_target(EntityManager& em, const Ship& ship) {
-  const auto* mirror = ship.as<SpaceMirrorShip>();
-  if (!mirror) {
-    return "Not aimed";
-  }
-  switch (mirror->aimed_level()) {
+std::string format_aim_target(EntityManager& em,
+                              const SpaceMirrorShip& mirror) {
+  switch (mirror.aimed_level()) {
     case ScopeLevel::LEVEL_UNIV:
       return "";
     case ScopeLevel::LEVEL_STAR: {
-      if (!mirror->aimed_star()) return "/Unknown";
-      const auto* star = em.peek_star(*mirror->aimed_star());
-      return std::format("/{}", star ? star->get_name() : "Unknown");
+      const auto* star = em.peek_star(*mirror.aimed_star());
+      return std::format("/{}", star->get_name());
     }
     case ScopeLevel::LEVEL_PLAN: {
-      if (!mirror->aimed_star() || !mirror->aimed_planet()) {
-        return "/Unknown/Unknown";
-      }
-      const auto* star = em.peek_star(*mirror->aimed_star());
-      return std::format("/{}/{}", star ? star->get_name() : "Unknown",
-                         star ? star->get_planet_name(*mirror->aimed_planet())
-                              : "Unknown");
+      const auto* star = em.peek_star(*mirror.aimed_star());
+      return std::format("/{}/{}", star->get_name(),
+                         star->get_planet_name(*mirror.aimed_planet()));
     }
     case ScopeLevel::LEVEL_SHIP:
-      return std::format("#{}", mirror->aimed_ship().value_or(0));
+      return std::format("#{}", mirror.aimed_ship().value_or(0));
   }
   return "";
 }
 
+struct TelescopeSurveyResult {
+  TelescopeSurveyOutcome outcome{TelescopeSurveyOutcome::None};
+  double distance{0.0};
+};
+
 /*
  * mark wherever the ship is aimed at, as explored by the owning player.
  */
-void survey_aim_target(GameObj& g, const Ship& s) {
-  const auto* mirror = s.as<SpaceMirrorShip>();
-  if (!mirror) {
-    g.out << "Ship is not aimed.\n";
-    return;
-  }
-  const auto coords = s.coordinates();
+TelescopeSurveyResult survey_aim_target(EntityManager& em, player_t player,
+                                        const SpaceMirrorShip& mirror) {
+  const auto coords = mirror.coordinates();
 
-  switch (mirror->aimed_level()) {
+  switch (mirror.aimed_level()) {
     case ScopeLevel::LEVEL_UNIV:
-      g.out << "There is nothing out here to aim at.\n";
-      break;
+      return TelescopeSurveyResult{
+          .outcome = TelescopeSurveyOutcome::NothingAtUniv,
+      };
     case ScopeLevel::LEVEL_STAR: {
-      if (!mirror->aimed_star()) break;
-      const starnum_t aimed_star = *mirror->aimed_star();
-      const auto& str = *g.entity_manager.peek_star(aimed_star);
-      g.out << std::format("Star {}\n", format_aim_target(g.entity_manager, s));
-      if (auto dist = coords.distance_to(str.coordinates());
-          dist <= s.tele_range()) {
-        g.entity_manager.mutate_star(
-            aimed_star, [&](Star& star) { star.mark_explored_by(g.player()); });
-        g.out << std::format("Surveyed, distance {}.\n", dist);
-      } else {
-        g.out << std::format("Too far to see ({}, max {}).\n", dist,
-                             s.tele_range());
+      const starnum_t aimed_star = *mirror.aimed_star();
+      const auto& str = *em.peek_star(aimed_star);
+      const double dist = coords.distance_to(str.coordinates());
+      if (dist <= mirror.tele_range()) {
+        em.mutate_star(aimed_star,
+                       [&](Star& star) { star.mark_explored_by(player); });
+        return TelescopeSurveyResult{
+            .outcome = TelescopeSurveyOutcome::StarSurveyed,
+            .distance = dist,
+        };
       }
-      break;
+      return TelescopeSurveyResult{
+          .outcome = TelescopeSurveyOutcome::StarTooFar,
+          .distance = dist,
+      };
     }
     case ScopeLevel::LEVEL_PLAN: {
-      if (!mirror->aimed_star() || !mirror->aimed_planet()) break;
-      const starnum_t aimed_star = *mirror->aimed_star();
-      const planetnum_t aimed_planet = *mirror->aimed_planet();
-      const auto& str = *g.entity_manager.peek_star(aimed_star);
-      g.out << std::format("Planet {}\n",
-                           format_aim_target(g.entity_manager, s));
-      const auto& p = *g.entity_manager.peek_planet(aimed_star, aimed_planet);
-      if (auto dist = coords.distance_to(p.absolute_coordinates(str));
-          dist <= s.tele_range()) {
-        g.entity_manager.mutate_star(
-            aimed_star, [&](Star& star) { star.mark_explored_by(g.player()); });
-        g.entity_manager.mutate_planet(
-            aimed_star, aimed_planet,
-            [&](Planet& planet) { planet.info(g.player()).explored = 1; });
-        g.out << std::format("Surveyed, distance {}.\n", dist);
-      } else {
-        g.out << std::format("Too far to see ({}, max {}).\n", dist,
-                             s.tele_range());
+      const starnum_t aimed_star = *mirror.aimed_star();
+      const planetnum_t aimed_planet = *mirror.aimed_planet();
+      const auto& str = *em.peek_star(aimed_star);
+      const auto& p = *em.peek_planet(aimed_star, aimed_planet);
+      const double dist = coords.distance_to(p.absolute_coordinates(str));
+      if (dist <= mirror.tele_range()) {
+        em.mutate_star(aimed_star,
+                       [&](Star& star) { star.mark_explored_by(player); });
+        em.mutate_planet(aimed_star, aimed_planet, [&](Planet& planet) {
+          planet.info(player).explored = 1;
+        });
+        return TelescopeSurveyResult{
+            .outcome = TelescopeSurveyOutcome::PlanetSurveyed,
+            .distance = dist,
+        };
       }
-      break;
+      return TelescopeSurveyResult{
+          .outcome = TelescopeSurveyOutcome::PlanetTooFar,
+          .distance = dist,
+      };
     }
     case ScopeLevel::LEVEL_SHIP:
-      g.out << "You can't see anything of use there.\n";
-      break;
+      return TelescopeSurveyResult{
+          .outcome = TelescopeSurveyOutcome::NothingOfUseAtShip,
+      };
   }
+  return TelescopeSurveyResult{};
 }
 
 std::expected<OrderUpdate, OrderError> order_defense(const command_t& argv,
@@ -110,27 +107,33 @@ std::expected<OrderUpdate, OrderError> order_defense(const command_t& argv,
   return OrderUpdate{};
 }
 
-void order_scatter(GameObj& g, const command_t& /*argv*/, Ship& ship) {
+std::expected<OrderUpdate, OrderError> order_scatter(Ship& ship) {
   auto* missile = ship.as<MissileShip>();
   if (!missile) {
-    g.out << "Only missiles can be given this order.\n";
-    return;
+    return std::unexpected(OrderError{
+        .reason = OrderErrorReason::OnlyMissilesCanScatter,
+    });
   }
   missile->set_scatter();
+  return OrderUpdate{};
 }
 
-void order_impact(GameObj& g, const command_t& argv, Ship& ship) {
+std::expected<OrderUpdate, OrderError> order_impact(const command_t& argv,
+                                                    Ship& ship) {
   auto* missile = ship.as<MissileShip>();
   if (!missile) {
-    g.out << "Only missiles can be designated for this.\n";
-    return;
+    return std::unexpected(OrderError{
+        .reason = OrderErrorReason::OnlyMissilesCanBeDesignated,
+    });
   }
   auto coords = (argv.size() > 3) ? Coordinates::parse(argv[3]) : std::nullopt;
   if (!coords) {
-    g.out << "Usage: order <ship> designate <x>,<y>\n";
-    return;
+    return std::unexpected(OrderError{
+        .reason = OrderErrorReason::InvalidDesignateCoords,
+    });
   }
   missile->set_impact_coords(*coords);
+  return OrderUpdate{};
 }
 
 std::expected<OrderUpdate, OrderError> order_jump(const command_t& argv,
@@ -214,26 +217,34 @@ std::expected<OrderUpdate, OrderError> order_navigate(const command_t& argv,
   return OrderUpdate{};
 }
 
-void order_switch(GameObj& g, const command_t& /*argv*/, Ship& ship) {
+std::expected<OrderUpdate, OrderError> order_switch(Ship& ship) {
   if (ship.type() == ShipType::OTYPE_FACTORY) {
-    g.out << "Use \"on\" to bring factory online.\n";
-    return;
+    return std::unexpected(OrderError{
+        .reason = OrderErrorReason::UseOnForFactory,
+    });
   }
   if (!ship.has_switch()) {
-    g.out << "That ship does not have an on/off setting.\n";
-    return;
+    return std::unexpected(OrderError{
+        .reason = OrderErrorReason::NoSwitchSetting,
+    });
   }
   if (ship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
-    g.out << "That ship is being transported.\n";
-    return;
+    return std::unexpected(OrderError{
+        .reason = OrderErrorReason::ShipBeingTransported,
+    });
   }
   ship.on() = !ship.on();
+  OrderUpdateNotice notice = OrderUpdateNotice::None;
   if (ship.type() == ShipType::STYPE_MINE) {
-    g.out << (ship.on() ? "Mine armed and ready.\n" : "Mine disarmed.\n");
+    notice = ship.on() ? OrderUpdateNotice::MineArmed
+                       : OrderUpdateNotice::MineDisarmed;
   } else if (ship.type() == ShipType::OTYPE_TRANSDEV) {
-    g.out << (ship.on() ? "Transporter ready to receive.\n"
-                        : "No longer receiving.\n");
+    notice = ship.on() ? OrderUpdateNotice::TransporterReady
+                       : OrderUpdateNotice::TransporterStopped;
   }
+  return OrderUpdate{
+      .notice = notice,
+  };
 }
 
 std::expected<OrderUpdate, OrderError>
@@ -488,85 +499,100 @@ std::expected<OrderUpdate, OrderError> order_secondary(const command_t& argv,
   return order_battery(argv, ship, SECONDARY);
 }
 
-void order_explosive(GameObj& /*g*/, const command_t& /*argv*/, Ship& ship) {
+std::expected<OrderUpdate, OrderError> order_explosive(Ship& ship) {
   if (auto* mine = ship.as<MineShip>()) {
     mine->set_radiative(false);
   } else if (ship.type() == ShipType::OTYPE_GR) {
     ship.mode() = 0;
   }
+  return OrderUpdate{};
 }
 
-void order_radiative(GameObj& /*g*/, const command_t& /*argv*/, Ship& ship) {
+std::expected<OrderUpdate, OrderError> order_radiative(Ship& ship) {
   if (auto* mine = ship.as<MineShip>()) {
     mine->set_radiative(true);
   } else if (ship.type() == ShipType::OTYPE_GR) {
     ship.mode() = 1;
   }
+  return OrderUpdate{};
 }
 
-bool validate_move_sequence(GameObj& g, std::string& moveseq) {
+std::expected<OrderUpdate, OrderError>
+validate_move_sequence(std::string& moveseq) {
   for (std::size_t i = 0; i < moveseq.size(); ++i) {
     if (i == SHIP_NAMESIZE - 1) {
-      g.out << std::format("Warning: that is more than {} moves.\n",
-                           SHIP_NAMESIZE - 1);
-      g.out << "These move orders have been truncated.\n";
       moveseq.resize(i);
-      break;
+      return OrderUpdate{
+          .notice = OrderUpdateNotice::MoveTruncatedLength,
+          .max_moves = SHIP_NAMESIZE - 1,
+      };
     }
     if (moveseq[i] == 'c' || moveseq[i] == 's') {
       if (i == 0 && moveseq[0] == 'c') {
-        g.out << "Cycling move orders can not be empty!\n";
-        return false;
+        return std::unexpected(OrderError{
+            .reason = OrderErrorReason::EmptyCyclingMoveOrders,
+        });
       }
       if (i + 1 < moveseq.size()) {
-        g.out << std::format(
-            "Warning: '{}' should be the last character in the move order.\n",
-            moveseq[i]);
-        g.out << "These move orders have been truncated.\n";
+        const char mode_char = moveseq[i];
         moveseq.resize(i + 1);
-        break;
+        return OrderUpdate{
+            .notice = OrderUpdateNotice::MoveTruncatedAfterModeChar,
+            .truncated_after_char = mode_char,
+        };
       }
     } else if (moveseq[i] < '1' || moveseq[i] > '9') {
-      g.out << std::format("'{}' is not a valid move direction.\n", moveseq[i]);
-      return false;
+      return std::unexpected(OrderError{
+          .reason = OrderErrorReason::InvalidMoveDirection,
+          .invalid_move_char = moveseq[i],
+      });
     }
   }
-  return true;
+  return OrderUpdate{};
 }
 
-void order_move(GameObj& g, const command_t& argv, Ship& ship) {
+std::expected<OrderUpdate, OrderError> order_move(const command_t& argv,
+                                                  Ship& ship) {
   auto* terraform = ship.as<TerraformerShip>();
   if (!terraform) {
-    g.out << "That ship is not a terraformer or a space plow.\n";
-    return;
+    return std::unexpected(OrderError{
+        .reason = OrderErrorReason::NotTerraformerOrPlow,
+    });
   }
   std::string moveseq = (argv.size() > 3) ? argv[3] : "5";
-  if (!validate_move_sequence(g, moveseq)) {
-    return;
+  auto res = validate_move_sequence(moveseq);
+  if (!res) {
+    return res;
   }
   terraform->shipclass() = moveseq;
   terraform->set_index(0);
+  return res;
 }
 
-void order_trigger(GameObj& g, const command_t& argv, Ship& ship) {
+std::expected<OrderUpdate, OrderError> order_trigger(const command_t& argv,
+                                                     Ship& ship) {
   auto* mine = ship.as<MineShip>();
   if (!mine) {
-    g.out << "This ship cannot be assigned a trigger radius.\n";
-    return;
+    return std::unexpected(OrderError{
+        .reason = OrderErrorReason::CannotAssignTriggerRadius,
+    });
   }
   if (argv.size() <= 3) {
     mine->set_trigger_radius(0);
-    return;
+    return OrderUpdate{};
   }
   auto res = scn::scan<weapon_range_t>(argv[3], "{}");
   mine->set_trigger_radius(res ? res->value() : 0);
+  return OrderUpdate{};
 }
 
-void order_transport(GameObj& g, const command_t& argv, Ship& ship) {
+std::expected<OrderUpdate, OrderError> order_transport(const command_t& argv,
+                                                       Ship& ship) {
   auto* transporter = ship.as<TransporterShip>();
   if (!transporter) {
-    g.out << "This ship is not a transporter.\n";
-    return;
+    return std::unexpected(OrderError{
+        .reason = OrderErrorReason::NotATransporter,
+    });
   }
   std::optional<shipnum_t> target{std::nullopt};
   if (argv.size() > 3) {
@@ -576,12 +602,16 @@ void order_transport(GameObj& g, const command_t& argv, Ship& ship) {
     }
   }
   if (target == ship.number()) {
-    g.out << "A transporter cannot transport to itself.\n";
-    target = std::nullopt;
-  } else {
-    g.out << std::format("Target ship is {}.\n", target.value_or(0));
+    transporter->set_target_ship(std::nullopt);
+    return std::unexpected(OrderError{
+        .reason = OrderErrorReason::CannotTransportToSelf,
+    });
   }
   transporter->set_target_ship(target);
+  return OrderUpdate{
+      .notice = OrderUpdateNotice::TransportTargetSet,
+      .target_ship = target.value_or(0),
+  };
 }
 
 bool requires_maneuver_fuel_to_aim(const Ship& ship) {
@@ -589,58 +619,72 @@ bool requires_maneuver_fuel_to_aim(const Ship& ship) {
          ship.type() != ShipType::OTYPE_TRACT;
 }
 
-void order_aim(GameObj& g, const command_t& argv, Ship& ship) {
-  if (!ship.can_aim()) {
-    g.out << "You can't aim that kind of ship.\n";
-    return;
+std::expected<OrderUpdate, OrderError> order_aim(EntityManager& em,
+                                                 const ScopeContext& scope_ctx,
+                                                 const command_t& argv,
+                                                 Ship& ship) {
+  auto* mirror = ship.as<SpaceMirrorShip>();
+  if (!mirror) {
+    return std::unexpected(OrderError{
+        .reason = OrderErrorReason::CannotAimShip,
+    });
   }
   if (requires_maneuver_fuel_to_aim(ship) && ship.fuel() < FUEL_MANEUVER) {
-    g.out << std::format("Not enough maneuvering fuel ({:.2f}).\n",
-                         FUEL_MANEUVER);
-    return;
+    return std::unexpected(OrderError{
+        .reason = OrderErrorReason::NotEnoughManeuveringFuel,
+        .required_fuel = FUEL_MANEUVER,
+    });
   }
   if (ship.type() == ShipType::STYPE_MIRROR && ship.docked()) {
-    g.out << "docked; use undock or launch first.\n";
-    return;
+    return std::unexpected(OrderError{
+        .reason = OrderErrorReason::MirrorDocked,
+    });
   }
   if (argv.size() <= 3) {
-    g.out << "Error in destination.\n";
-    return;
+    return std::unexpected(OrderError{
+        .reason = OrderErrorReason::AimDestinationError,
+    });
   }
-  auto pl = Place::resolve(g.entity_manager, g.scope_context(), argv[3], true);
+  auto pl = Place::resolve(em, scope_ctx, argv[3], true);
   if (!pl) {
-    g.out << format_place_error(pl.error());
-    g.out << "Error in destination.\n";
-    return;
+    return std::unexpected(OrderError{
+        .reason = OrderErrorReason::AimPlaceError,
+        .place_error = pl.error(),
+    });
   }
-  if (auto* mirror = ship.as<SpaceMirrorShip>()) {
-    switch (pl->level) {
-      case ScopeLevel::LEVEL_UNIV:
-        mirror->clear_aim();
-        break;
-      case ScopeLevel::LEVEL_STAR:
-        mirror->aim_at_star(pl->snum);
-        break;
-      case ScopeLevel::LEVEL_PLAN:
-        mirror->aim_at_planet(pl->snum, pl->pnum);
-        break;
-      case ScopeLevel::LEVEL_SHIP:
-        mirror->aim_at_ship(pl->shipno);
-        break;
-    }
+  switch (pl->level) {
+    case ScopeLevel::LEVEL_UNIV:
+      mirror->clear_aim();
+      break;
+    case ScopeLevel::LEVEL_STAR:
+      mirror->aim_at_star(pl->snum);
+      break;
+    case ScopeLevel::LEVEL_PLAN:
+      mirror->aim_at_planet(pl->snum, pl->pnum);
+      break;
+    case ScopeLevel::LEVEL_SHIP:
+      mirror->aim_at_ship(pl->shipno);
+      break;
   }
   if (requires_maneuver_fuel_to_aim(ship)) {
     ship.consume_fuel(FUEL_MANEUVER);
   }
+  TelescopeSurveyResult survey{};
   if (ship.type() == ShipType::OTYPE_GTELE ||
       ship.type() == ShipType::OTYPE_STELE) {
-    survey_aim_target(g, ship);
+    survey = survey_aim_target(em, scope_ctx.player, *mirror);
   }
-  g.out << std::format("Aimed at {}\n",
-                       format_aim_target(g.entity_manager, ship));
+  return OrderUpdate{
+      .notice = OrderUpdateNotice::Aimed,
+      .aim_target = format_aim_target(em, *mirror),
+      .survey_outcome = survey.outcome,
+      .survey_distance = survey.distance,
+      .tele_range = ship.tele_range(),
+  };
 }
 
-void order_intensity(GameObj& /*g*/, const command_t& argv, Ship& ship) {
+std::expected<OrderUpdate, OrderError> order_intensity(const command_t& argv,
+                                                       Ship& ship) {
   if (auto* mirror = ship.as<SpaceMirrorShip>()) {
     int val = 0;
     if (argv.size() > 3) {
@@ -650,25 +694,27 @@ void order_intensity(GameObj& /*g*/, const command_t& argv, Ship& ship) {
     }
     mirror->set_intensity(std::clamp(val, 0, 100));
   }
+  return OrderUpdate{};
 }
 
-bool activate_factory_on_habitat(GameObj& g, Ship& factory,
-                                 resource_t& oncost) {
-  if (!factory.destshipno()) {
-    return false;
-  }
-  bool ok = false;
-  g.entity_manager.mutate_ship(*factory.destshipno(), [&](Ship& habitat) {
+std::expected<resource_t, OrderError>
+activate_factory_on_habitat(EntityManager& em, Ship& factory) {
+  const shipnum_t carrier_no = *factory.destshipno();
+  std::expected<resource_t, OrderError> result{0};
+  em.mutate_ship(carrier_no, [&](Ship& habitat) {
     if (habitat.type() != ShipType::STYPE_HABITAT) {
-      g.out << "The factory is currently being transported.\n";
+      result = std::unexpected(OrderError{
+          .reason = OrderErrorReason::FactoryBeingTransported,
+      });
       return;
     }
-    oncost = HAB_FACT_ON_COST * factory.build_cost();
+    const resource_t oncost = HAB_FACT_ON_COST * factory.build_cost();
     if (habitat.resource() < oncost) {
-      g.out << std::format(
-          "You don't have {} resources on Habitat #{} to activate this "
-          "factory.\n",
-          oncost, *factory.destshipno());
+      result = std::unexpected(OrderError{
+          .reason = OrderErrorReason::InsufficientHabitatResourcesForFactory,
+          .required_resources = oncost,
+          .habitat_ship = carrier_no,
+      });
       return;
     }
     const int new_size =
@@ -677,117 +723,123 @@ bool activate_factory_on_habitat(GameObj& g, Ship& factory,
     const int hanger_needed =
         new_size - ((habitat.max_hanger() - habitat.hanger()) + factory.size());
     if (hanger_needed > 0) {
-      g.out << std::format(
-          "Not enough hanger space free on Habitat #{}. Need {} more.\n",
-          *factory.destshipno(), hanger_needed);
+      result = std::unexpected(OrderError{
+          .reason = OrderErrorReason::InsufficientHabitatHangarForFactory,
+          .habitat_ship = carrier_no,
+          .hangar_needed = hanger_needed,
+      });
       return;
     }
     habitat.resource() -= oncost;
     habitat.hanger() -= factory.size();
     factory.size() = new_size;
     habitat.hanger() += factory.size();
-    ok = true;
+    result = oncost;
   });
-  return ok;
+  return result;
 }
 
-bool activate_factory_on_planet(GameObj& g, const Ship& factory,
-                                resource_t& oncost) {
-  bool ok = false;
-  g.entity_manager.mutate_planet(
+std::expected<resource_t, OrderError>
+activate_factory_on_planet(EntityManager& em, player_t player,
+                           const Ship& factory) {
+  std::expected<resource_t, OrderError> result{0};
+  em.mutate_planet(
       factory.storbits(), factory.pnumorbits(), [&](Planet& planet) {
-        oncost = 2 * factory.build_cost();
-        if (planet.info(g.player()).resource < oncost) {
-          g.out << std::format(
-              "You don't have {} resources on the planet to activate this "
-              "factory.\n",
-              oncost);
+        const resource_t oncost = 2 * factory.build_cost();
+        if (planet.info(player).resource < oncost) {
+          result = std::unexpected(OrderError{
+              .reason = OrderErrorReason::InsufficientPlanetResourcesForFactory,
+              .required_resources = oncost,
+          });
           return;
         }
-        planet.info(g.player()).resource -= oncost;
-        ok = true;
+        planet.info(player).resource -= oncost;
+        result = oncost;
       });
-  return ok;
+  return result;
 }
 
-void order_on(GameObj& g, const command_t& /*argv*/, Ship& ship) {
+std::expected<OrderUpdate, OrderError> order_on(EntityManager& em,
+                                                player_t player, Ship& ship) {
   if (!ship.has_switch()) {
-    g.out << "This ship does not have an on/off setting.\n";
-    return;
+    return std::unexpected(OrderError{
+        .reason = OrderErrorReason::ThisShipHasNoSwitch,
+    });
   }
   if (ship.damage() && ship.type() != ShipType::OTYPE_FACTORY) {
-    g.out << "Damaged ships cannot be activated.\n";
-    return;
+    return std::unexpected(OrderError{
+        .reason = OrderErrorReason::DamagedShipsCannotBeActivated,
+    });
   }
   if (ship.on()) {
-    g.out << "This ship is already activated.\n";
-    return;
+    return std::unexpected(OrderError{
+        .reason = OrderErrorReason::ShipAlreadyActivated,
+    });
   }
   if (ship.type() == ShipType::OTYPE_FACTORY) {
-    resource_t oncost = 0;
+    std::expected<resource_t, OrderError> oncost{0};
     if (ship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
-      if (!activate_factory_on_habitat(g, ship, oncost)) return;
+      oncost = activate_factory_on_habitat(em, ship);
     } else if (!ship.is_landed()) {
-      g.out << "You cannot activate the factory here.\n";
-      return;
+      return std::unexpected(OrderError{
+          .reason = OrderErrorReason::CannotActivateFactoryHere,
+      });
     } else {
-      if (!activate_factory_on_planet(g, ship, oncost)) return;
+      oncost = activate_factory_on_planet(em, player, ship);
     }
-    g.out << std::format("Factory activated at a cost of {} resources.\n",
-                         oncost);
+    if (!oncost) {
+      return std::unexpected(oncost.error());
+    }
+    ship.on() = 1;
+    return OrderUpdate{
+        .notice = OrderUpdateNotice::FactoryActivated,
+        .factory_activation_cost = *oncost,
+    };
   }
   ship.on() = 1;
+  return OrderUpdate{};
 }
 
-void order_off(GameObj& g, const command_t& /*argv*/, Ship& ship) {
+std::expected<OrderUpdate, OrderError> order_off(Ship& ship) {
   if (ship.type() == ShipType::OTYPE_FACTORY && ship.on()) {
-    g.out << "You can't deactivate a factory once it's online. Consider "
-             "using 'scrap'.\n";
-    return;
+    return std::unexpected(OrderError{
+        .reason = OrderErrorReason::CannotDeactivateFactory,
+    });
   }
   ship.on() = 0;
+  return OrderUpdate{};
 }
+
+struct ShipNoArgOrderDispatchEntry {
+  std::string_view name;
+  std::expected<OrderUpdate, OrderError> (*handler)(Ship&);
+};
+
+constexpr std::array<ShipNoArgOrderDispatchEntry, 5> ship_noarg_order_handlers =
+    {{
+        {"scatter", &order_scatter},
+        {"switch", &order_switch},
+        {"explosive", &order_explosive},
+        {"radiative", &order_radiative},
+        {"off", &order_off},
+    }};
 
 struct ShipOrderDispatchEntry {
   std::string_view name;
   std::expected<OrderUpdate, OrderError> (*handler)(const command_t&, Ship&);
 };
 
-constexpr std::array<ShipOrderDispatchEntry, 14> ship_order_handlers = {{
-    {"defense", &order_defense},
-    {"jump", &order_jump},
-    {"protect", &order_protect},
-    {"navigate", &order_navigate},
-    {"evade", &order_evade},
-    {"bombard", &order_bombard},
-    {"retaliate", &order_retaliate},
-    {"focus", &order_focus},
-    {"laser", &order_laser},
-    {"merchant", &order_merchant},
-    {"speed", &order_speed},
-    {"salvo", &order_salvo},
-    {"primary", &order_primary},
-    {"secondary", &order_secondary},
-}};
-
-struct LegacyOrderDispatchEntry {
-  std::string_view name;
-  void (*handler)(GameObj&, const command_t&, Ship&);
-};
-
-constexpr std::array<LegacyOrderDispatchEntry, 12> legacy_order_handlers = {{
-    {"scatter", &order_scatter},
-    {"impact", &order_impact},
-    {"switch", &order_switch},
-    {"explosive", &order_explosive},
-    {"radiative", &order_radiative},
-    {"move", &order_move},
-    {"trigger", &order_trigger},
-    {"transport", &order_transport},
-    {"aim", &order_aim},
+constexpr std::array<ShipOrderDispatchEntry, 19> ship_order_handlers = {{
+    {"defense", &order_defense},     {"impact", &order_impact},
+    {"jump", &order_jump},           {"protect", &order_protect},
+    {"navigate", &order_navigate},   {"evade", &order_evade},
+    {"bombard", &order_bombard},     {"retaliate", &order_retaliate},
+    {"focus", &order_focus},         {"laser", &order_laser},
+    {"merchant", &order_merchant},   {"speed", &order_speed},
+    {"salvo", &order_salvo},         {"primary", &order_primary},
+    {"secondary", &order_secondary}, {"move", &order_move},
+    {"trigger", &order_trigger},     {"transport", &order_transport},
     {"intensity", &order_intensity},
-    {"on", &order_on},
-    {"off", &order_off},
 }};
 
 std::string format_ship_destination(EntityManager& em, const Ship& ship) {
@@ -873,11 +925,13 @@ std::string format_specialty_options(EntityManager& em, const Ship& ship) {
   }
 
   if (const auto* terraform = ship.as<TerraformerShip>()) {
-    std::string temp = &(terraform->shipclass()[terraform->index()]);
-    out += std::format("/move {}", temp);
-    if (!temp.empty() && temp.back() == 'c') {
-      std::string hidden = terraform->shipclass().substr(0, terraform->index());
-      out += std::format("{}c", hidden);
+    const std::string_view moves = terraform->shipclass();
+    const std::size_t idx =
+        std::min<std::size_t>(terraform->index(), moves.size());
+    const std::string_view remaining = moves.substr(idx);
+    out += std::format("/move {}", remaining);
+    if (!remaining.empty() && remaining.back() == 'c') {
+      out += std::format("{}c", moves.substr(0, idx));
     }
   }
 
@@ -913,11 +967,8 @@ HyperdriveJumpInfo compute_hyperdrive_jump_info(EntityManager& em,
   if (!ship.hyper_drive().on || !ship.has_celestial_destination()) {
     return HyperdriveJumpInfo{};
   }
-  const auto* dest_star = em.peek_star(ship.deststar());
-  if (!dest_star) {
-    return HyperdriveJumpInfo{};
-  }
-  const double dist = ship.coordinates().distance_to(dest_star->coordinates());
+  const auto& dest_star = *em.peek_star(ship.deststar());
+  const double dist = ship.coordinates().distance_to(dest_star.coordinates());
   const double distfac = HYPER_DIST_FACTOR * (ship.tech() + 100.0);
   const double ratio = dist / distfac;
   const double fuse =
@@ -935,9 +986,9 @@ HyperdriveJumpInfo compute_hyperdrive_jump_info(EntityManager& em,
 
 }  // namespace
 
-// TODO(jeffbailey): We take in a non-zero APcount, and do nothing with it!
 std::expected<OrderUpdate, OrderError>
-give_orders(GameObj& g, const command_t& argv, int /* APcount */, Ship& ship) {
+give_orders(EntityManager& em, const ScopeContext& scope_ctx,
+            const command_t& argv, Ship& ship) {
   if (!ship.active()) {
     return std::unexpected(OrderError{
         .reason = OrderErrorReason::ShipIrradiated,
@@ -955,31 +1006,34 @@ give_orders(GameObj& g, const command_t& argv, int /* APcount */, Ship& ship) {
 
   std::expected<OrderUpdate, OrderError> result{OrderUpdate{.modified = false}};
   if (argv.size() > 2) {
-    bool handled = false;
     if (argv[2] == "destination") {
-      result =
-          order_destination(g.entity_manager, g.scope_context(), argv, ship);
-      handled = true;
+      result = order_destination(em, scope_ctx, argv, ship);
+    } else if (argv[2] == "aim") {
+      result = order_aim(em, scope_ctx, argv, ship);
+    } else if (argv[2] == "on") {
+      result = order_on(em, scope_ctx.player, ship);
     } else {
-      for (const auto& entry : ship_order_handlers) {
+      bool handled = false;
+      for (const auto& entry : ship_noarg_order_handlers) {
         if (entry.name == argv[2]) {
-          result = entry.handler(argv, ship);
+          result = entry.handler(ship);
           handled = true;
           break;
         }
       }
-    }
-    if (!handled) {
-      for (const auto& entry : legacy_order_handlers) {
-        if (entry.name == argv[2]) {
-          entry.handler(g, argv, ship);
-          result = OrderUpdate{.modified = true};
-          break;
+      if (!handled) {
+        for (const auto& entry : ship_order_handlers) {
+          if (entry.name == argv[2]) {
+            result = entry.handler(argv, ship);
+            break;
+          }
         }
       }
     }
   }
-  ship.notified() = 0;
+  if (result) {
+    ship.notified() = 0;
+  }
   return result;
 }
 

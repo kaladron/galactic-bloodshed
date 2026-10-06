@@ -181,16 +181,16 @@ public:
   }
 
   void clear_aim() noexcept {
-    aim() = AimedAtData::unaimed();
+    aim() = AimedAtData::unaimed(aim().intensity);
   }
   void aim_at_star(starnum_t star) noexcept {
-    aim() = AimedAtData::at_star(star);
+    aim() = AimedAtData::at_star(star, aim().intensity);
   }
   void aim_at_planet(starnum_t star, planetnum_t planet) noexcept {
-    aim() = AimedAtData::at_planet(star, planet);
+    aim() = AimedAtData::at_planet(star, planet, aim().intensity);
   }
   void aim_at_ship(shipnum_t target_ship) noexcept {
-    aim() = AimedAtData::at_ship(target_ship);
+    aim() = AimedAtData::at_ship(target_ship, aim().intensity);
   }
 
   /// Calculates the 0..7 compass aim direction heading toward the given target

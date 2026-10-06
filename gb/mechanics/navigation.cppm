@@ -107,6 +107,32 @@ export enum class OrderErrorReason {
   NoPrimaryGuns,
   NoSecondaryGuns,
   InvalidBatteryGunCount,
+  OnlyMissilesCanScatter,
+  OnlyMissilesCanBeDesignated,
+  InvalidDesignateCoords,
+  UseOnForFactory,
+  NoSwitchSetting,
+  ShipBeingTransported,
+  NotTerraformerOrPlow,
+  EmptyCyclingMoveOrders,
+  InvalidMoveDirection,
+  CannotAssignTriggerRadius,
+  NotATransporter,
+  CannotTransportToSelf,
+  CannotAimShip,
+  NotEnoughManeuveringFuel,
+  MirrorDocked,
+  AimDestinationError,
+  AimPlaceError,
+  ThisShipHasNoSwitch,
+  DamagedShipsCannotBeActivated,
+  ShipAlreadyActivated,
+  FactoryBeingTransported,
+  InsufficientHabitatResourcesForFactory,
+  InsufficientHabitatHangarForFactory,
+  CannotActivateFactoryHere,
+  InsufficientPlanetResourcesForFactory,
+  CannotDeactivateFactory,
 };
 
 export struct OrderError {
@@ -114,12 +140,50 @@ export struct OrderError {
   std::string ship_display{};
   radiation_t radiation{0};
   std::optional<PlaceError> place_error{std::nullopt};
+  char invalid_move_char{'\0'};
+  double required_fuel{0.0};
+  resource_t required_resources{0};
+  shipnum_t habitat_ship{0};
+  int hangar_needed{0};
+};
+
+export enum class OrderUpdateNotice {
+  None,
+  MineArmed,
+  MineDisarmed,
+  TransporterReady,
+  TransporterStopped,
+  MoveTruncatedLength,
+  MoveTruncatedAfterModeChar,
+  TransportTargetSet,
+  Aimed,
+  FactoryActivated,
+};
+
+export enum class TelescopeSurveyOutcome {
+  None,
+  NothingAtUniv,
+  NothingOfUseAtShip,
+  StarSurveyed,
+  StarTooFar,
+  PlanetSurveyed,
+  PlanetTooFar,
 };
 
 export struct OrderUpdate {
   bool modified{true};
+  OrderUpdateNotice notice{OrderUpdateNotice::None};
+  std::size_t max_moves{0};
+  char truncated_after_char{'\0'};
+  shipnum_t target_ship{0};
+  std::string aim_target{};
+  TelescopeSurveyOutcome survey_outcome{TelescopeSurveyOutcome::None};
+  double survey_distance{0.0};
+  double tele_range{0.0};
+  resource_t factory_activation_cost{0};
 };
 
 export ShipOrderStatus query_ship_order(EntityManager& em, const Ship& ship);
 export std::expected<OrderUpdate, OrderError>
-give_orders(GameObj&, const command_t&, int, Ship&);
+give_orders(EntityManager& em, const ScopeContext& scope_ctx,
+            const command_t& argv, Ship& ship);

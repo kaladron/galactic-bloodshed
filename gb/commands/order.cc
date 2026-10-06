@@ -18,39 +18,34 @@ namespace GB::commands {
 bool order(const command_t& argv, GameObj& g) {
   player_t playernum = g.player();
   governor_t governor = g.governor();
-  ap_t ap_count = 1;
 
-  if (argv.size() == 1) { /* display all ship orders */
-    g.present(ShipOrdersHeader{});
+  g.present(ShipOrdersHeader{});
+  if (argv.size() == 1) {
     const ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
     for (const Ship& ship : ships) {
-      if (ship.alive() && ship.owner() == playernum &&
-          ship.is_authorized_for(governor)) {
+      if (validate_commandable(ship, playernum, governor)) {
         g.present(query_ship_order(g.entity_manager, ship));
       }
     }
     return true;
-  } else if (argv.size() >= 2) {
-    g.present(ShipOrdersHeader{});
-    for (auto ship_handle : ScopedCommandableShips(g, argv[1])) {
-      Ship& ship = *ship_handle;
-
-      if (argv.size() > 2) {
-        if (auto res = give_orders(g, argv, ap_count, ship); !res) {
-          g.out << GB::presentation::format_order_error(res.error());
-        }
-      }
-
-      if (ship.alive() && ship.owner() == playernum &&
-          ship.is_authorized_for(governor)) {
-        g.present(query_ship_order(g.entity_manager, ship));
-      }
-    }
-    return true;
-  } else {
-    g.out << "I don't understand what you mean.\n";
-    return false;
   }
+
+  for (auto ship_handle : ScopedCommandableShips(g, argv[1])) {
+    Ship& ship = *ship_handle;
+
+    if (argv.size() > 2) {
+      if (auto res =
+              give_orders(g.entity_manager, g.scope_context(), argv, ship);
+          res) {
+        g.present(*res);
+      } else {
+        g.out << GB::presentation::format_order_error(res.error());
+      }
+    }
+
+    g.present(query_ship_order(g.entity_manager, ship));
+  }
+  return true;
 }
 
 const CommandDescriptor order_cmd{

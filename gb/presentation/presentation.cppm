@@ -344,7 +344,9 @@ render_captured_ships_report(const CapturedShipsReport& report) {
 /// Formats an `OrderError` into its user-facing error diagnostic string.
 /// Decomposes `OrderError` via structured binding.
 [[nodiscard]] inline std::string format_order_error(const OrderError& err) {
-  const auto& [reason, ship_display, radiation, place_error] = err;
+  const auto& [reason, ship_display, radiation, place_error, invalid_move_char,
+               required_fuel, required_resources, habitat_ship, hangar_needed] =
+      err;
   switch (reason) {
     case OrderErrorReason::ShipIrradiated:
       return std::format("{} is irradiated ({}); it cannot be given orders.\n",
@@ -398,8 +400,155 @@ render_captured_ships_report(const CapturedShipsReport& report) {
       return "This ship does not have secondary guns.\n";
     case OrderErrorReason::InvalidBatteryGunCount:
       return "Specify a nonnegative number of guns.\n";
+    case OrderErrorReason::OnlyMissilesCanScatter:
+      return "Only missiles can be given this order.\n";
+    case OrderErrorReason::OnlyMissilesCanBeDesignated:
+      return "Only missiles can be designated for this.\n";
+    case OrderErrorReason::InvalidDesignateCoords:
+      return "Usage: order <ship> designate <x>,<y>\n";
+    case OrderErrorReason::UseOnForFactory:
+      return "Use \"on\" to bring factory online.\n";
+    case OrderErrorReason::NoSwitchSetting:
+      return "That ship does not have an on/off setting.\n";
+    case OrderErrorReason::ShipBeingTransported:
+      return "That ship is being transported.\n";
+    case OrderErrorReason::NotTerraformerOrPlow:
+      return "That ship is not a terraformer or a space plow.\n";
+    case OrderErrorReason::EmptyCyclingMoveOrders:
+      return "Cycling move orders can not be empty!\n";
+    case OrderErrorReason::InvalidMoveDirection:
+      return std::format("'{}' is not a valid move direction.\n",
+                         invalid_move_char);
+    case OrderErrorReason::CannotAssignTriggerRadius:
+      return "This ship cannot be assigned a trigger radius.\n";
+    case OrderErrorReason::NotATransporter:
+      return "This ship is not a transporter.\n";
+    case OrderErrorReason::CannotTransportToSelf:
+      return "A transporter cannot transport to itself.\n";
+    case OrderErrorReason::CannotAimShip:
+      return "You can't aim that kind of ship.\n";
+    case OrderErrorReason::NotEnoughManeuveringFuel:
+      return std::format("Not enough maneuvering fuel ({:.2f}).\n",
+                         required_fuel);
+    case OrderErrorReason::MirrorDocked:
+      return "docked; use undock or launch first.\n";
+    case OrderErrorReason::AimDestinationError:
+      return "Error in destination.\n";
+    case OrderErrorReason::AimPlaceError:
+      return std::format("{}Error in destination.\n",
+                         place_error ? format_place_error(*place_error)
+                                     : std::string{});
+    case OrderErrorReason::ThisShipHasNoSwitch:
+      return "This ship does not have an on/off setting.\n";
+    case OrderErrorReason::DamagedShipsCannotBeActivated:
+      return "Damaged ships cannot be activated.\n";
+    case OrderErrorReason::ShipAlreadyActivated:
+      return "This ship is already activated.\n";
+    case OrderErrorReason::FactoryBeingTransported:
+      return "The factory is currently being transported.\n";
+    case OrderErrorReason::InsufficientHabitatResourcesForFactory:
+      return std::format(
+          "You don't have {} resources on Habitat #{} to activate this "
+          "factory.\n",
+          required_resources, habitat_ship);
+    case OrderErrorReason::InsufficientHabitatHangarForFactory:
+      return std::format(
+          "Not enough hanger space free on Habitat #{}. Need {} more.\n",
+          habitat_ship, hangar_needed);
+    case OrderErrorReason::CannotActivateFactoryHere:
+      return "You cannot activate the factory here.\n";
+    case OrderErrorReason::InsufficientPlanetResourcesForFactory:
+      return std::format(
+          "You don't have {} resources on the planet to activate this "
+          "factory.\n",
+          required_resources);
+    case OrderErrorReason::CannotDeactivateFactory:
+      return "You can't deactivate a factory once it's online. Consider "
+             "using 'scrap'.\n";
   }
   std::unreachable();
+}
+
+/// Formats an `OrderUpdate` notice into its ASCII presentation string.
+/// Decomposes `OrderUpdate` via structured binding.
+[[nodiscard]] inline std::string
+render_order_update(const OrderUpdate& update) {
+  const auto& [_, notice, max_moves, truncated_after_char, target_ship,
+               aim_target, survey_outcome, survey_distance, tele_range,
+               factory_activation_cost] = update;
+  std::string out;
+  switch (notice) {
+    case OrderUpdateNotice::None:
+      break;
+    case OrderUpdateNotice::MineArmed:
+      out += "Mine armed and ready.\n";
+      break;
+    case OrderUpdateNotice::MineDisarmed:
+      out += "Mine disarmed.\n";
+      break;
+    case OrderUpdateNotice::TransporterReady:
+      out += "Transporter ready to receive.\n";
+      break;
+    case OrderUpdateNotice::TransporterStopped:
+      out += "No longer receiving.\n";
+      break;
+    case OrderUpdateNotice::MoveTruncatedLength:
+      std::format_to(std::back_inserter(out),
+                     "Warning: that is more than {} moves.\n"
+                     "These move orders have been truncated.\n",
+                     max_moves);
+      break;
+    case OrderUpdateNotice::MoveTruncatedAfterModeChar:
+      std::format_to(
+          std::back_inserter(out),
+          "Warning: '{}' should be the last character in the move order.\n"
+          "These move orders have been truncated.\n",
+          truncated_after_char);
+      break;
+    case OrderUpdateNotice::TransportTargetSet:
+      std::format_to(std::back_inserter(out), "Target ship is {}.\n",
+                     target_ship);
+      break;
+    case OrderUpdateNotice::Aimed:
+      switch (survey_outcome) {
+        case TelescopeSurveyOutcome::None:
+          break;
+        case TelescopeSurveyOutcome::NothingAtUniv:
+          out += "There is nothing out here to aim at.\n";
+          break;
+        case TelescopeSurveyOutcome::NothingOfUseAtShip:
+          out += "You can't see anything of use there.\n";
+          break;
+        case TelescopeSurveyOutcome::StarSurveyed:
+          std::format_to(std::back_inserter(out),
+                         "Star {}\nSurveyed, distance {}.\n", aim_target,
+                         survey_distance);
+          break;
+        case TelescopeSurveyOutcome::StarTooFar:
+          std::format_to(std::back_inserter(out),
+                         "Star {}\nToo far to see ({}, max {}).\n", aim_target,
+                         survey_distance, tele_range);
+          break;
+        case TelescopeSurveyOutcome::PlanetSurveyed:
+          std::format_to(std::back_inserter(out),
+                         "Planet {}\nSurveyed, distance {}.\n", aim_target,
+                         survey_distance);
+          break;
+        case TelescopeSurveyOutcome::PlanetTooFar:
+          std::format_to(std::back_inserter(out),
+                         "Planet {}\nToo far to see ({}, max {}).\n",
+                         aim_target, survey_distance, tele_range);
+          break;
+      }
+      std::format_to(std::back_inserter(out), "Aimed at {}\n", aim_target);
+      break;
+    case OrderUpdateNotice::FactoryActivated:
+      std::format_to(std::back_inserter(out),
+                     "Factory activated at a cost of {} resources.\n",
+                     factory_activation_cost);
+      break;
+  }
+  return out;
 }
 
 /// Returns the ASCII table header for standing ship orders.
@@ -451,6 +600,7 @@ public:
   [[nodiscard]] virtual std::string
   render(const ShipOrdersHeader& vm) const = 0;
   [[nodiscard]] virtual std::string render(const ShipOrderStatus& vm) const = 0;
+  [[nodiscard]] virtual std::string render(const OrderUpdate& vm) const = 0;
 };
 
 /// Server-rendered ASCII/ANSI terminal presenter for Telnet sessions.
@@ -486,6 +636,10 @@ public:
 
   [[nodiscard]] std::string render(const ShipOrderStatus& vm) const override {
     return render_ship_order_status(vm);
+  }
+
+  [[nodiscard]] std::string render(const OrderUpdate& vm) const override {
+    return render_order_update(vm);
   }
 };
 
@@ -525,6 +679,12 @@ public:
   [[nodiscard]] std::string render(const ShipOrderStatus& vm) const override {
     return render_json_envelope("ship_order_status", vm);
   }
+
+  [[nodiscard]] std::string render(const OrderUpdate& vm) const override {
+    return vm.notice == OrderUpdateNotice::None
+               ? std::string{}
+               : render_json_envelope("order_update", vm);
+  }
 };
 
 /// Returns the stateless singleton `Presenter` corresponding to `mode`.
@@ -546,21 +706,3 @@ void present_to(std::ostream& out, UiMode mode, const ViewModel& vm) {
 }
 
 }  // namespace GB::presentation
-
-export namespace glz {
-
-template <typename T>
-struct meta<GB::presentation::JsonEnvelope<T>> {
-  using V = GB::presentation::JsonEnvelope<T>;
-  static constexpr auto value = object("type", &V::type, "data", &V::data);
-};
-
-template <>
-struct meta<ArrivalTimeStatus> {
-  using enum ArrivalTimeStatus;
-  static constexpr auto value = enumerate(
-      "available", Available, "server_state_unavailable",
-      ServerStateUnavailable, "segment_discrepancy", SegmentDiscrepancy);
-};
-
-}  // namespace glz

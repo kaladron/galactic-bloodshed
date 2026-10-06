@@ -11,17 +11,6 @@ module gb.mechanics;
 
 namespace {
 
-// Base ASCII character ('?', 0x3F) used to pack a numeric player_t (0..64)
-// into a single printable byte in the '$' planet map client-server wire
-// protocol. Unowned (0) encodes as '?', Player 1 as '@', Player 2 as 'A', etc.,
-// and clients decode the owner ID via (byte - '?').
-constexpr char map_protocol_owner_base_char = '?';
-
-char encode_map_protocol_owner(const Sector& sector) {
-  return static_cast<char>(map_protocol_owner_base_char +
-                           sector.get_owner().value);
-}
-
 char format_troop_sector_char(player_t playernum, const Race& r,
                               const Sector& s) {
   if (s.get_owner() == playernum) return CHAR_MY_TROOPS;
@@ -47,11 +36,19 @@ std::optional<char> format_owned_sector_digit(const Race::gov& gov,
 
 struct LandedShipGrid {
   bool has_visual_iq{false};
-  std::array<std::array<char, MAX_Y>, MAX_X> shiplocs{};
+  std::flat_map<Coordinates, char> shiplocs{};
+
+  [[nodiscard]] std::optional<char> ship_at(Coordinates c) const noexcept {
+    if (const auto it = shiplocs.find(c); it != shiplocs.end()) {
+      return it->second;
+    }
+    return std::nullopt;
+  }
 };
 
 LandedShipGrid scan_planet_ships_for_map(EntityManager& em, starnum_t snum,
                                          planetnum_t pnum, const Planet& p,
+                                         const SectorMap& smap,
                                          player_t playernum,
                                          governor_t governor,
                                          const Race& race) {
@@ -62,115 +59,107 @@ LandedShipGrid scan_planet_ships_for_map(EntityManager& em, starnum_t snum,
   grid.has_visual_iq = p.info(playernum).numsectsowned > 0;
   for (const Ship& s : ShipList::readonly_on_planet(em, snum, pnum)) {
     if (s.owner() == playernum && s.is_authorized_for(governor) &&
-        (s.popn() > 0 || s.type() == ShipType::OTYPE_PROBE)) {
+        s.has_sight()) {
       grid.has_visual_iq = true;
     }
-    if (s.alive() && s.is_landed()) {
-      const Coordinates land = s.land_coords();
-      grid.shiplocs[land.x][land.y] = s.type_letter();
+    if (s.is_landed() && smap.in_bounds(s.land_coords())) {
+      grid.shiplocs[s.land_coords()] = s.type_letter();
     }
   }
   return grid;
 }
 
-void output_map_sector_cell(GameObj& g, player_t playernum, governor_t governor,
-                            const Race& race, const Sector& sector,
-                            char ship_char, bool has_visual_iq) {
+PlanetMapCell build_map_sector_cell(player_t playernum, governor_t governor,
+                                    const Race& race, const Sector& sector,
+                                    std::optional<char> ship_glyph,
+                                    bool has_visual_iq) {
   const auto& toggle = race.governor(governor).toggle;
-  const char display_char = (ship_char != '\0' && has_visual_iq)
-                                ? ship_char
+  const char display_char = (ship_glyph && has_visual_iq)
+                                ? *ship_glyph
                                 : desshow(playernum, governor, race, sector);
-  const char highlight_prefix =
-      (sector.get_owner() == toggle.highlight && toggle.inverse) ? '1' : '0';
-  g.out << std::format("{}{}{}", highlight_prefix,
-                       encode_map_protocol_owner(sector), display_char);
+  const bool inverse =
+      (sector.get_owner() == toggle.highlight && toggle.inverse);
+  return PlanetMapCell{
+      .coords = sector.coords(),
+      .owner = sector.get_owner(),
+      .glyph = display_char,
+      .inverse = inverse,
+  };
 }
 
-void show_planet_aliens(GameObj& g, const Planet& p, player_t playernum,
-                        const Race& race) {
+std::vector<PlanetAlienPresence>
+collect_planet_aliens(const Planet& p, player_t playernum, const Race& race) {
+  std::vector<PlanetAlienPresence> aliens;
   if (!p.explored() && race.tech < TECH_EXPLORE) {
-    g.out << "???";
-    return;
+    return aliens;
   }
-  bool found_alien = false;
   for (const auto& [i, info] : p.info_map()) {
     if (info.numsectsowned != 0 && i != playernum) {
-      found_alien = true;
-      g.out << std::format("{}{}", race.is_at_war_with(i) ? '*' : ' ', i);
+      aliens.push_back(PlanetAlienPresence{
+          .player = i,
+          .at_war = race.is_at_war_with(i),
+      });
     }
   }
-  if (!found_alien) {
-    g.out << "(none)\n";
-  }
-}
-
-void show_planet_stats(GameObj& g, const Planet& p, player_t playernum,
-                       const Race& race) {
-  const auto& pinfo = p.info(playernum);
-  g.out << std::format(
-      "Type: {:<8}   Sects {:<7}: {:<3}   Aliens:", p.type_name(),
-      race.Metamorph ? "covered" : "owned", pinfo.numsectsowned);
-  show_planet_aliens(g, p, playernum, race);
-  g.out << "\n";
-  g.out << std::format(
-      "              Guns : {:<3}             Mob Points : {}\n", pinfo.guns,
-      pinfo.mob_points);
-  g.out << std::format(
-      "      Mobilization : {:<3} ({:<3})     Compatibility: {:.2f}%",
-      pinfo.comread, pinfo.mob_set, p.compatibility(race));
-  if (p.toxic() > 50) {
-    g.out << std::format("    ({}% TOXIC)\n", p.toxic());
-  }
-  g.out << "\n";
-  g.out << std::format("Resource stockpile : {:<9}    Fuel stockpile: {}\n",
-                       pinfo.resource, pinfo.fuel);
-  g.out << std::format(
-      "      Destruct cap : {:<9} {:>18}: {:<5} ({:<5}/{:<})\n", pinfo.destruct,
-      race.Metamorph ? "Tons of biomass" : "Total Population", pinfo.popn,
-      p.popn(), round_rand(.01 * (100. - p.toxic()) * p.maxpopn()));
-  g.out << std::format("          Crystals : {:<9} {:>18}: {:<5} ({:<5})\n",
-                       pinfo.crystals, "Ground forces", pinfo.troops,
-                       p.troops());
-  g.out << std::format("{} Total Resource Deposits     Tax rate {}%  New {}%\n",
-                       p.total_resources(), pinfo.tax, pinfo.newtax);
-  g.out << std::format("Estimated Production Next Update : {:.2f}\n",
-                       pinfo.est_production);
-  if (p.slaved_to()) {
-    g.out << std::format("      ENSLAVED to player {};\n", *p.slaved_to());
-  }
+  return aliens;
 }
 
 }  // namespace
 
-void show_map(GameObj& g, const starnum_t snum, const planetnum_t pnum,
-              const Planet& p) {
-  const player_t playernum = g.player();
-  const governor_t governor = g.governor();
-  const int show = 1;  // TODO(jeffbailey): This was always set to on, but this
-                       // fact is output to the client, which might affect the
-                       // client interface. Can remove the conditional as soon
-                       // as we know that it's not client affecting.
-
-  const auto& race = *g.race;
-  const auto* smap = g.entity_manager.peek_sectormap(snum, pnum);
+PlanetMapViewModel build_planet_map(EntityManager& em, const starnum_t snum,
+                                    const planetnum_t pnum, const Planet& p,
+                                    const player_t playernum,
+                                    const governor_t governor,
+                                    const Race& race) {
+  const auto& smap = *em.peek_sectormap(snum, pnum);
   const LandedShipGrid grid = scan_planet_ships_for_map(
-      g.entity_manager, snum, pnum, p, playernum, governor, race);
+      em, snum, pnum, p, smap, playernum, governor, race);
 
-  /* report that this is a planet map */
-  const auto* star = g.entity_manager.peek_star(snum);
-  g.out << std::format("${};{};{};{};", star->get_planet_name(pnum),
-                       p.dimensions().x, p.dimensions().y, show);
-
-  /* send map data */
-  for (auto [c, sector] : smap->indexed_sectors()) {
-    output_map_sector_cell(g, playernum, governor, race, sector,
-                           grid.shiplocs[c.x][c.y], grid.has_visual_iq);
+  std::vector<PlanetMapCell> sectors;
+  sectors.reserve(static_cast<std::size_t>(smap.num_sectors()));
+  for (const Sector& sector : smap) {
+    sectors.push_back(build_map_sector_cell(playernum, governor, race, sector,
+                                            grid.ship_at(sector.coords()),
+                                            grid.has_visual_iq));
   }
-  g.out << '\n';
 
-  if (show) {
-    show_planet_stats(g, p, playernum, race);
-  }
+  const auto& star = *em.peek_star(snum);
+  const auto& pinfo = p.info(playernum);
+  const bool aliens_unknown = (!p.explored() && race.tech < TECH_EXPLORE);
+  const population_t effective_maxpopn = static_cast<population_t>(
+      std::lround(0.01 * (100.0 - p.toxic()) * p.maxpopn()));
+
+  return PlanetMapViewModel{
+      .planet_name = star.get_planet_name(pnum),
+      .dimensions = p.dimensions(),
+      .sectors = std::move(sectors),
+      .planet_type_name = std::string(p.type_name()),
+      .is_metamorph = race.Metamorph,
+      .sectors_owned = pinfo.numsectsowned,
+      .aliens_unknown = aliens_unknown,
+      .aliens = collect_planet_aliens(p, playernum, race),
+      .guns = pinfo.guns,
+      .mob_points = pinfo.mob_points,
+      .comread = pinfo.comread,
+      .mob_set = pinfo.mob_set,
+      .compatibility = p.compatibility(race),
+      .toxicity = p.toxic(),
+      .resource_stockpile = pinfo.resource,
+      .fuel_stockpile = pinfo.fuel,
+      .destruct_cap = pinfo.destruct,
+      .player_popn = pinfo.popn,
+      .total_popn = p.popn(),
+      .effective_maxpopn = effective_maxpopn,
+      .crystals = pinfo.crystals,
+      .player_troops = pinfo.troops,
+      .total_troops = p.troops(),
+      .total_resources = p.total_resources(),
+      .tax = pinfo.tax,
+      .newtax = pinfo.newtax,
+      .est_production = pinfo.est_production,
+      .slaved_to = p.slaved_to(),
+      .primary_unstable = star.stability() > 50,
+  };
 }
 
 char desshow(const player_t Playernum, const governor_t Governor, const Race& r,

@@ -84,16 +84,12 @@ resolve_fuel_trip_target(const command_t& argv, GameObj& g, const Ship& ship) {
   double gravity_factor = 0.0;
   std::string plan_buf;
   if (ship.is_landed() && ship.whatorbits() == ScopeLevel::LEVEL_PLAN) {
-    const auto* p =
-        g.entity_manager.peek_planet(ship.storbits(), ship.pnumorbits());
-    const auto* star_ptr = g.entity_manager.peek_star(ship.storbits());
-    if (!p || !star_ptr) {
-      g.out << "Planet or star data not found.\n";
-      return std::nullopt;
-    }
-    gravity_factor = p->gravity();
-    plan_buf = std::format("/{}/{}", star_ptr->get_name(),
-                           star_ptr->get_planet_name(ship.pnumorbits()));
+    const auto& p =
+        *g.entity_manager.peek_planet(ship.storbits(), ship.pnumorbits());
+    const auto& star = *g.entity_manager.peek_star(ship.storbits());
+    gravity_factor = p.gravity();
+    plan_buf = std::format("/{}/{}", star.get_name(),
+                           star.get_planet_name(ship.pnumorbits()));
   }
 
   Place tmpdest{ship.whatdest(), ship.deststar(), ship.destpnum(),
@@ -122,10 +118,6 @@ resolve_fuel_trip_target(const command_t& argv, GameObj& g, const Ship& ship) {
   UniverseCoordinates dest_coords{};
   if (tmpdest.level == ScopeLevel::LEVEL_SHIP) {
     const auto* tmpship = g.entity_manager.peek_ship(tmpdest.shipno);
-    if (!tmpship) {
-      g.out << "Destination ship not found.\n";
-      return std::nullopt;
-    }
     Ship mutable_target(tmpship->get_struct());
     if (!followable(g.entity_manager, ship, mutable_target)) {
       g.out << "The ship's destination is out of range.\n";
@@ -137,25 +129,17 @@ resolve_fuel_trip_target(const command_t& argv, GameObj& g, const Ship& ship) {
     }
     dest_coords = tmpship->coordinates();
   } else if (tmpdest.level == ScopeLevel::LEVEL_PLAN) {
-    const auto* dest_star = g.entity_manager.peek_star(tmpdest.snum);
+    const auto& dest_star = *g.entity_manager.peek_star(tmpdest.snum);
     if (ship.storbits() != tmpdest.snum &&
-        (!dest_star || !dest_star->is_explored_by(ship.owner()))) {
+        !dest_star.is_explored_by(ship.owner())) {
       g.out << "You haven't explored the destination system.\n";
       return std::nullopt;
     }
-    const auto* p = g.entity_manager.peek_planet(tmpdest.snum, tmpdest.pnum);
-    if (!p || !dest_star) {
-      g.out << "Destination planet or star not found.\n";
-      return std::nullopt;
-    }
-    dest_coords = p->absolute_coordinates(*dest_star);
+    const auto& p = *g.entity_manager.peek_planet(tmpdest.snum, tmpdest.pnum);
+    dest_coords = p.absolute_coordinates(dest_star);
   } else if (tmpdest.level == ScopeLevel::LEVEL_STAR) {
-    const auto* dest_star = g.entity_manager.peek_star(tmpdest.snum);
-    if (!dest_star) {
-      g.out << "Destination star not found.\n";
-      return std::nullopt;
-    }
-    dest_coords = dest_star->coordinates();
+    const auto& dest_star = *g.entity_manager.peek_star(tmpdest.snum);
+    dest_coords = dest_star.coordinates();
   }
 
   const double dist = ship.coordinates().distance_to(dest_coords);
@@ -225,7 +209,7 @@ void render_fuel_projections(GameObj& g, const Ship& ship,
   if (!current_res.can_complete) {
     g.out << "The ship will not be able to complete the trip.\n";
   } else {
-    g.out << GB::presentation::render_trip_estimate(compute_trip_estimate(
+    g.present(compute_trip_estimate(
         g.entity_manager, target.dist, current_res.fuel_used,
         target.gravity_factor, tmpship.mass(), current_res.segments,
         target.launch_planet_name));
@@ -237,7 +221,7 @@ void render_fuel_projections(GameObj& g, const Ship& ship,
   } else {
     tmpship.set_simulated_fuel(opt_res.fuel_used);
     domass(tmpship, g.entity_manager);
-    g.out << GB::presentation::render_trip_estimate(compute_trip_estimate(
+    g.present(compute_trip_estimate(
         g.entity_manager, target.dist, opt_res.fuel_used, target.gravity_factor,
         tmpship.mass(), opt_res.segments, target.launch_planet_name));
   }

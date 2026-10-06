@@ -27,11 +27,15 @@ export [[nodiscard]] std::expected<void, CommandableError>
 validate_commandable(const Ship& ship, player_t player, governor_t governor,
                      bool god = false) noexcept;
 
+export namespace GB::presentation {
 /// Wire protocol / presentation mode for a client session.
-export enum class UiMode {
+enum class UiMode {
   ASCII,  ///< Server-rendered ASCII text and tables for raw Telnet clients
   JSON,   ///< Newline-delimited JSON envelopes for structured clients
 };
+}  // namespace GB::presentation
+
+export using GB::presentation::UiMode;
 
 /// Pure snapshot of a session's player, governor, god flag, and scope location.
 export struct ScopeContext {
@@ -184,6 +188,13 @@ public:
   /// diagnostic error messages to out and returns false if any precondition
   /// fails.
   [[nodiscard]] bool check_commandable(const Ship& ship);
+
+  /// Renders a view model or command result to `out` via the active
+  /// polymorphic Presenter.
+  template <typename ViewModel>
+  void present(const ViewModel& vm) {
+    present_to(out, ui_mode_, vm);
+  }
 
 private:
   // All state stored locally

@@ -6,6 +6,7 @@
 
 import dallib;
 import gb.entities;
+import gb.mechanics;
 import gb.services;
 import gb.presentation;
 import session;
@@ -21,12 +22,12 @@ struct SampleCommandResult {
   Percentage efficiency{85};
   Temperature temperature{22};
   Coordinates sector{4, 7};
-  std::string status{"ok"};
+  std::string status{"launched"};
 };
 
 namespace {
 
-void test_render_json_envelope_and_mode_dispatch() {
+void test_render_json_envelope_and_polymorphic_presenter() {
   const SampleCommandResult result{
       .player = player_t{2},
       .governor = governor_t{1},
@@ -48,28 +49,52 @@ void test_render_json_envelope_and_mode_dispatch() {
       "\"temperature\":-15,\"sector\":{\"x\":2,\"y\":6},"
       "\"status\":\"launched\"}}\n");
 
-  const auto ascii_fn = [](const SampleCommandResult& r) {
-    return std::format("Ship #{} {} at ({},{})\n", r.ship, r.status, r.sector.x,
-                       r.sector.y);
+  const TripEstimate est{
+      .distance = 42.5,
+      .segments = 2,
+      .fuel_used = 12.0,
+      .launch_gravity_fuel = 0.0,
+      .launch_planet_name = "",
+      .arrival_status = ArrivalTimeStatus::ServerStateUnavailable,
+      .estimated_arrival_time = 0,
   };
 
-  const std::string dispatched_ascii = GB::presentation::render_by_mode(
-      UiMode::ASCII, "launch_result", result, ascii_fn);
-  test::expect_eq(dispatched_ascii, "Ship #19 launched at (2,6)\n");
+  const std::string dispatched_ascii =
+      GB::presentation::presenter_for(UiMode::ASCII).render(est);
+  test::expect_contains(dispatched_ascii, "Total Distance = 42.50");
+  test::expect_contains(dispatched_ascii, "Server state unavailable.");
 
-  const std::string dispatched_json = GB::presentation::render_by_mode(
-      UiMode::JSON, "launch_result", result, ascii_fn);
-  test::expect_eq(dispatched_json, json_out);
+  const std::string dispatched_json =
+      GB::presentation::presenter_for(UiMode::JSON).render(est);
+  test::expect_contains(dispatched_json, "\"type\":\"trip_estimate\"");
+  test::expect_contains(dispatched_json, "\"distance\":42.5");
 }
 
-void test_gameobj_ui_mode_defaults_and_mutation() {
+void test_gameobj_ui_mode_and_present() {
   TestContext ctx;
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
 
+  const TripEstimate est{
+      .distance = 10.0,
+      .segments = 1,
+      .fuel_used = 3.0,
+      .launch_gravity_fuel = 0.0,
+      .launch_planet_name = "",
+      .arrival_status = ArrivalTimeStatus::ServerStateUnavailable,
+      .estimated_arrival_time = 0,
+  };
+
   test::expect_eq(g.ui_mode(), UiMode::ASCII);
+  g.present(est);
+  test::expect_contains(g.out.str(), "Total Distance = 10.00");
+
+  g.out.str("");
   g.set_ui_mode(UiMode::JSON);
   test::expect_eq(g.ui_mode(), UiMode::JSON);
+  g.present(est);
+  test::expect_contains(g.out.str(), "\"type\":\"trip_estimate\"");
+
   g.set_ui_mode(UiMode::ASCII);
   test::expect_eq(g.ui_mode(), UiMode::ASCII);
 }
@@ -77,7 +102,7 @@ void test_gameobj_ui_mode_defaults_and_mutation() {
 }  // namespace
 
 int main() {
-  test_render_json_envelope_and_mode_dispatch();
-  test_gameobj_ui_mode_defaults_and_mutation();
+  test_render_json_envelope_and_polymorphic_presenter();
+  test_gameobj_ui_mode_and_present();
   return 0;
 }

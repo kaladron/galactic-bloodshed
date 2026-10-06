@@ -7,6 +7,7 @@ module;
 
 import std;
 import gb.entities;
+import gb.presentation;
 import gb.services;
 
 module commands;
@@ -325,7 +326,7 @@ bool capture(const command_t& argv, GameObj& g) {
       else if (what == PopulationType::MIL)
         g.out << std::format("{} troops move in.\n",
                              std::min(boarders, ship.troops()));
-      capture_stuff(ship, g);
+      g.present(capture_stuff(g.entity_manager, ship));
       auto short_buf = std::format("{}: {} [{}] CAPTURED {}\n",
                                    dispshiploc(g.entity_manager, ship),
                                    race.name, Playernum, ship);

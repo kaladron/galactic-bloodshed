@@ -5,6 +5,7 @@
 /// invariants.
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import std;
 import test;
@@ -1323,9 +1324,6 @@ void test_blueprint_complexity_defense_and_capture() {
                           "getdefense, capture_stuff...");
   TestContext ctx;
   ctx.with_standard_universe();
-  auto& registry = get_test_session_registry();
-  GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
 
   // Blueprint and constructed state initialization for VN, Berserker, Mine,
   // Transdev, and specialty ships
@@ -1420,12 +1418,43 @@ void test_blueprint_complexity_defense_and_capture() {
   });
   test::expect_true(getdefense(ctx.em, *ctx.em.peek_ship(carrier_id)) >= 0);
 
-  // capture_stuff() recursive capture of carried craft
-  const auto f1_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER, 11)
-                         .owned_by(2, 1)
+  // capture_stuff() and doown() recursive capture of 2-level nested craft
+  const auto shuttle_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 11)
+                              .owned_by(2, 2)
+                              .build();
+  const auto f1_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER, 12)
+                         .owned_by(2, 2)
                          .build();
-  ctx.em.mutate_ship(f1_id, [&](Ship& f) { f.dock_into_carrier(carrier_id); });
-  capture_stuff(*ctx.em.peek_ship(carrier_id), g);
+  ctx.em.mutate_ship(shuttle_id,
+                     [&](Ship& s) { s.dock_into_carrier(carrier_id); });
+  ctx.em.mutate_ship(f1_id, [&](Ship& f) { f.dock_into_carrier(shuttle_id); });
+
+  const auto captured_rep =
+      capture_stuff(ctx.em, *ctx.em.peek_ship(carrier_id));
+  test::expect_eq(captured_rep.captured_ships.size(), 2u);
+  test::expect_eq(ctx.em.peek_ship(shuttle_id)->owner(), player_t{1});
+  test::expect_eq(ctx.em.peek_ship(shuttle_id)->governor(), governor_t{1});
+  test::expect_eq(ctx.em.peek_ship(f1_id)->owner(), player_t{1});
+  test::expect_eq(ctx.em.peek_ship(f1_id)->governor(), governor_t{1});
+  test::expect_contains(
+      GB::presentation::render_captured_ships_report(captured_rep),
+      "CAPTURED!");
+  test::expect_contains(
+      GB::presentation::presenter_for(GB::presentation::UiMode::JSON)
+          .render(captured_rep),
+      "\"type\":\"captured_ships\"");
+
+  // Also verify 2-level nested doown()
+  ctx.em.mutate_ship(shuttle_id, [](Ship& s) {
+    s.owner() = 2;
+    s.governor() = 2;
+  });
+  ctx.em.mutate_ship(f1_id, [](Ship& f) {
+    f.owner() = 2;
+    f.governor() = 2;
+  });
+  ctx.em.mutate_ship(carrier_id, [&](Ship& c) { doown(c, ctx.em); });
+  test::expect_eq(ctx.em.peek_ship(shuttle_id)->owner(), player_t{1});
   test::expect_eq(ctx.em.peek_ship(f1_id)->owner(), player_t{1});
 }
 
@@ -1440,7 +1469,8 @@ void test_moveship_and_followable() {
   const auto p0_coords =
       ctx.em.peek_planet(1, 1)->absolute_coordinates(*ctx.em.peek_star(1));
 
-  // 1. followable() checks: alive, active, carrier-docked, same owner, range
+  // 1. followable() checks: alive, active, carrier-docked, same owner, allied,
+  // range
   const auto s1_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER, 20)
                          .owned_by(1, 1)
                          .in_star_orbit(1)
@@ -1460,25 +1490,51 @@ void test_moveship_and_followable() {
   test::expect_true(
       followable(ctx.em, *ctx.em.peek_ship(s1_id), *ctx.em.peek_ship(s2_id)));
 
-  // Far away foreign non-allied ship is NOT followable
+  // Far away foreign non-allied ship is NOT followable, unless allied or same
+  // owner
   ctx.em.mutate_ship(
       s2_id, [](Ship& s2) { s2.set_coordinates({999999.0, 999999.0}); });
   test::expect_false(
       followable(ctx.em, *ctx.em.peek_ship(s1_id), *ctx.em.peek_ship(s2_id)));
 
-  // Dead target is NOT followable
+  ctx.em.mutate_race(2,
+                     [](Race& r2) { r2.declare_alliance_with(player_t{1}); });
+  test::expect_true(
+      followable(ctx.em, *ctx.em.peek_ship(s1_id), *ctx.em.peek_ship(s2_id)));
+  ctx.em.mutate_race(2,
+                     [](Race& r2) { r2.rescind_alliance_with(player_t{1}); });
+
+  Ship same_owner_s2{ctx.em.peek_ship(s2_id)->to_struct()};
+  same_owner_s2.owner() = 1;
+  test::expect_true(
+      followable(ctx.em, *ctx.em.peek_ship(s1_id), same_owner_s2));
+
+  // Inactive follower, carrier-docked target, or dead target is NOT followable
   ctx.em.mutate_ship(s2_id,
                      [&](Ship& s2) { s2.set_coordinates(star0_coords); });
+  Ship inactive_s1{ctx.em.peek_ship(s1_id)->to_struct()};
+  inactive_s1.active() = false;
+  test::expect_false(followable(ctx.em, inactive_s1, *ctx.em.peek_ship(s2_id)));
+
+  Ship carrier_docked_s2{ctx.em.peek_ship(s2_id)->to_struct()};
+  carrier_docked_s2.dock_into_carrier(s1_id);
+  test::expect_false(
+      followable(ctx.em, *ctx.em.peek_ship(s1_id), carrier_docked_s2));
+
   Ship dead_s2{ctx.em.peek_ship(s2_id)->to_struct()};
   dead_s2.alive() = false;
   test::expect_false(followable(ctx.em, *ctx.em.peek_ship(s1_id), dead_s2));
 
-  // 2. Hyperdrive charging (unmounted vs mounted), jump insufficient fuel, jump
-  // arrival
+  // 2. Hyperdrive charging (unmounted vs mounted), is_update=false, jump
+  // insufficient fuel, jump arrival (mounted short vs long distance)
   ctx.em.mutate_ship(s1_id, [&](Ship& s1) {
     s1.hyper_drive() = {.charge = 0, .on = true, .has = true};
     s1.mounted() = false;
     s1.set_star_destination(2);
+    // Non-update segment does not charge or jump
+    moveship(ctx.em, s1, false, false, false);
+    test::expect_eq(s1.hyper_drive().charge, 0);
+
     moveship(ctx.em, s1, true, true, false);
     test::expect_eq(s1.hyper_drive().charge, 1);
 
@@ -1488,12 +1544,15 @@ void test_moveship_and_followable() {
     test::expect_eq(static_cast<int>(s1.hyper_drive().charge),
                     static_cast<int>(HYPER_DRIVE_READY_CHARGE));
 
-    // Insufficient fuel disables hyperdrive
-    s1.admin_override_fuel(0.1);
+    // Insufficient fuel disables hyperdrive (with send_messages false and true)
+    s1.admin_override_fuel(0.0);
+    moveship(ctx.em, s1, true, false, false);
+    test::expect_false(s1.hyper_drive().on);
+    s1.hyper_drive().on = true;
     moveship(ctx.em, s1, true, true, false);
     test::expect_false(s1.hyper_drive().on);
 
-    // Sufficient fuel executes hyperdrive jump to star 2
+    // Sufficient fuel executes hyperdrive jump to star 2 (mounted short dist)
     s1.admin_override_fuel(500.0);
     s1.hyper_drive().on = true;
     s1.hyper_drive().charge = HYPER_DRIVE_READY_CHARGE;
@@ -1501,6 +1560,24 @@ void test_moveship_and_followable() {
     test::expect_eq(s1.whatorbits(), ScopeLevel::LEVEL_STAR);
     test::expect_eq(s1.storbits(), starnum_t{2});
     test::expect_false(s1.hyper_drive().on);
+
+    // Mounted long-distance jump (dist > distfac) with send_messages=false,
+    // and unmounted jump
+    s1.set_coordinates({50000.0, 0.0});
+    s1.admin_override_fuel(500.0);
+    s1.set_star_destination(1);
+    s1.hyper_drive().on = true;
+    s1.hyper_drive().charge = HYPER_DRIVE_READY_CHARGE;
+    moveship(ctx.em, s1, true, false, false);
+    test::expect_eq(s1.storbits(), starnum_t{1});
+
+    s1.mounted() = false;
+    s1.admin_override_fuel(500.0);
+    s1.set_star_destination(2);
+    s1.hyper_drive().on = true;
+    s1.hyper_drive().charge = HYPER_DRIVE_READY_CHARGE;
+    moveship(ctx.em, s1, true, true, false);
+    test::expect_eq(s1.storbits(), starnum_t{2});
 
     // Hyperdrive guard: if hyper_drive.on is set while landed/docked or
     // without a celestial destination, moveship disables it without jumping or
@@ -1525,7 +1602,25 @@ void test_moveship_and_followable() {
 
   // 3. Sublight navigation step and orbit breaking (PLAN -> STAR -> UNIV) + OOF
   ctx.em.mutate_ship(s1_id, [&](Ship& s1) {
+    // can_ship_move_sublight guards: speed==0, docked, dead, no orders
     s1.enter_planet_orbit(1, 1);
+    s1.speed() = 0;
+    moveship(ctx.em, s1, true, true, false);
+    s1.speed() = 9;
+    s1.alive() = false;
+    moveship(ctx.em, s1, true, true, false);
+    s1.alive() = true;
+    s1.clear_destination();
+    s1.navigate().on = false;
+    moveship(ctx.em, s1, true, true, false);
+
+    // Multi-turn navigate (turns > 1 stays on)
+    s1.set_coordinates(p0_coords);
+    s1.navigate() = {.on = true, .turns = 2, .bearing = 90};
+    moveship(ctx.em, s1, true, true, false);
+    test::expect_true(s1.navigate().on);
+    test::expect_eq(s1.navigate().turns, 1);
+
     s1.set_coordinates(p0_coords + SystemCoordinates{PLORBITSIZE + 5.0, 0.0});
     s1.navigate() = {.on = true, .turns = 1, .bearing = 90};
     moveship(ctx.em, s1, true, true, false);
@@ -1539,7 +1634,13 @@ void test_moveship_and_followable() {
     moveship(ctx.em, s1, true, true, false);
     test::expect_eq(s1.whatorbits(), ScopeLevel::LEVEL_UNIV);
 
-    // Sublight arrival at star 1
+    // Sublight approach from deep space toward star 1 (far and close)
+    s1.set_coordinates(star0_coords +
+                       SystemCoordinates{SYSTEMSIZE * 50.0, 0.0});
+    s1.set_star_destination(1);
+    moveship(ctx.em, s1, true, true, false);
+    test::expect_eq(s1.whatorbits(), ScopeLevel::LEVEL_UNIV);
+
     s1.set_coordinates(star0_coords + SystemCoordinates{SYSTEMSIZE * 0.5, 0.0});
     s1.set_star_destination(1);
     moveship(ctx.em, s1, true, true, false);
@@ -1565,6 +1666,28 @@ void test_moveship_and_followable() {
   });
 
   ctx.em.mutate_ship(s1_id, [&](Ship& s1) {
+    // Approach planet from star orbit outside PLORBITSIZE
+    s1.enter_star_orbit(1);
+    s1.set_coordinates(p0_coords + SystemCoordinates{PLORBITSIZE * 2.0, 0.0});
+    s1.set_planet_destination(1, 1);
+    s1.merchant() = 0;
+    s1.admin_override_fuel(500.0);
+    moveship(ctx.em, s1, true, true, false);
+
+    // Enter planet orbit outside DIST_TO_LAND ("arriving at")
+    s1.enter_star_orbit(1);
+    s1.set_coordinates(
+        p0_coords + SystemCoordinates{(DIST_TO_LAND + PLORBITSIZE) * 0.5, 0.0});
+    s1.set_planet_destination(1, 1);
+    moveship(ctx.em, s1, true, true, false);
+    test::expect_eq(s1.whatorbits(), ScopeLevel::LEVEL_PLAN);
+
+    // Already at destination (truedist < DIST_TO_LAND in LEVEL_PLAN)
+    s1.set_coordinates(p0_coords);
+    s1.set_planet_destination(1, 1);
+    moveship(ctx.em, s1, true, true, false);
+
+    // Merchant route execution when arriving from star orbit
     s1.enter_star_orbit(1);
     s1.set_coordinates(p0_coords + SystemCoordinates{DIST_TO_LAND * 0.5, 0.0});
     s1.set_planet_destination(1, 1);
@@ -1575,6 +1698,47 @@ void test_moveship_and_followable() {
     test::expect_false(s1.is_landed());
     test::expect_eq(s1.deststar(), starnum_t{2});
     test::expect_true(s1.hyper_drive().on);
+    s1.hyper_drive().on = false;
+
+    // Merchant edge cases: foreign sector, unload fuel (not enough fuel to
+    // launch), and same-system route (no hyperjump)
+    ctx.em.mutate_sectormap(
+        1, 1, [](SectorMap& smap) { smap.get({0, 0}).set_owner(2); });
+    s1.enter_star_orbit(1);
+    s1.set_coordinates(p0_coords + SystemCoordinates{DIST_TO_LAND * 0.5, 0.0});
+    s1.set_planet_destination(1, 1);
+    moveship(ctx.em, s1, true, true, false);
+    test::expect_false(s1.is_landed());
+
+    ctx.em.mutate_sectormap(
+        1, 1, [](SectorMap& smap) { smap.get({0, 0}).set_owner(1); });
+    ctx.em.mutate_planet(1, 1, [](Planet& p) {
+      auto& route = p.info(1).route_at(1);
+      route.dest_star = 1;
+      route.dest_planet = 1;
+      route.load = {};
+      route.unload = {.fuel = true};
+    });
+    s1.enter_star_orbit(1);
+    s1.set_coordinates(p0_coords + SystemCoordinates{DIST_TO_LAND * 0.5, 0.0});
+    s1.set_planet_destination(1, 1);
+    s1.admin_override_fuel(50.0);
+    moveship(ctx.em, s1, true, true, false);
+    test::expect_true(s1.is_landed());
+
+    // Already landed merchant refueled on same-system route launches without
+    // hyperdrive
+    ctx.em.mutate_planet(1, 1, [](Planet& p) {
+      auto& route = p.info(1).route_at(1);
+      route.unload = {};
+    });
+    s1.admin_override_fuel(500.0);
+    s1.launch_to_orbit(ScopeLevel::LEVEL_STAR);
+    s1.set_coordinates(p0_coords + SystemCoordinates{DIST_TO_LAND * 0.5, 0.0});
+    s1.set_planet_destination(1, 1);
+    moveship(ctx.em, s1, true, true, false);
+    test::expect_false(s1.hyper_drive().on);
+    s1.merchant() = 0;
   });
 
   // 5. Sublight LEVEL_SHIP following (including same-system LEVEL_PLAN ->
@@ -1595,6 +1759,20 @@ void test_moveship_and_followable() {
     expect_near(s1.coordinates().x, p0_coords.x);
     test::expect_gt(s1.coordinates().y, 0.0);
     test::expect_eq(s1.whatorbits(), ScopeLevel::LEVEL_STAR);
+  });
+
+  // Follow ship in same planet orbit (handle_ship_arrival LEVEL_PLAN)
+  ctx.em.mutate_ship(s2_id, [&](Ship& s2) {
+    s2.owner() = 1;
+    s2.enter_planet_orbit(1, 1);
+    s2.set_coordinates(p0_coords);
+  });
+  ctx.em.mutate_ship(s1_id, [&](Ship& s1) {
+    s1.enter_planet_orbit(1, 1);
+    s1.set_coordinates(p0_coords + SystemCoordinates{DIST_TO_LAND * 2.0, 0.0});
+    s1.set_ship_destination(s2_id);
+    moveship(ctx.em, s1, true, true, false);
+    test::expect_eq(s1.whatorbits(), ScopeLevel::LEVEL_PLAN);
   });
 
   // Cross-system pursuit where both ships orbit planet #1 of different stars
@@ -1623,7 +1801,19 @@ void test_moveship_and_followable() {
     test::expect_eq(s1.whatdest(), ScopeLevel::LEVEL_UNIV);
   });
 
-  // 6. Deep space out-of-fuel loss for cheap / probe ship
+  // 6. Deep space out-of-fuel loss for cheap / probe / VN / Berserker vs
+  // survival for expensive capital ship
+  ctx.em.mutate_ship(s1_id, [&](Ship& s1) {
+    s1.build_cost() = 500;
+    s1.admin_override_fuel(0.0);
+    s1.set_coordinates({50000.0, 50000.0});
+    s1.enter_deep_space();
+    s1.set_star_destination(1);
+    moveship(ctx.em, s1, true, false, false);
+    moveship(ctx.em, s1, true, true, false);
+    test::expect_true(s1.alive());
+  });
+
   const auto probe_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE, 22)
                             .owned_by(1, 1)
                             .with_fuel(0.0)

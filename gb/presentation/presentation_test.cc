@@ -68,6 +68,34 @@ void test_render_json_envelope_and_polymorphic_presenter() {
       GB::presentation::presenter_for(UiMode::JSON).render(est);
   test::expect_contains(dispatched_json, "\"type\":\"trip_estimate\"");
   test::expect_contains(dispatched_json, "\"distance\":42.5");
+
+  static_assert(std::is_aggregate_v<CapturedShipEvent>);
+  static_assert(std::is_aggregate_v<CapturedShipsReport>);
+
+  const CapturedShipsReport empty_captured{};
+  test::expect_eq(
+      GB::presentation::presenter_for(UiMode::ASCII).render(empty_captured),
+      "");
+  test::expect_eq(
+      GB::presentation::presenter_for(UiMode::JSON).render(empty_captured), "");
+
+  const CapturedShipsReport populated_captured{
+      .captured_ships =
+          {
+              CapturedShipEvent{
+                  .ship_number = shipnum_t{12},
+                  .ship_display = "f12 Fighter",
+                  .new_owner = player_t{1},
+                  .new_governor = governor_t{0},
+              },
+          },
+  };
+  test::expect_eq(
+      GB::presentation::presenter_for(UiMode::ASCII).render(populated_captured),
+      "f12 Fighter CAPTURED!\n");
+  test::expect_contains(
+      GB::presentation::presenter_for(UiMode::JSON).render(populated_captured),
+      "\"type\":\"captured_ships\"");
 }
 
 void test_gameobj_ui_mode_and_present() {

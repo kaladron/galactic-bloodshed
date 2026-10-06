@@ -116,8 +116,7 @@ render_ascii_planet_map(const PlanetMapViewModel& vm) {
 
   if (dimensions.x > 0 && dimensions.y > 0) {
     bool in_inverse = false;
-    for (const auto& [coords, owner, glyph, inverse] : sectors) {
-      (void)owner;
+    for (const auto& [coords, _, glyph, inverse] : sectors) {
       if (coords.x == 0) {
         std::format_to(std::back_inserter(out), "{:02d} ", coords.y);
       }
@@ -329,6 +328,19 @@ render_initialized_ship_report(const InitializedShipReport& report) {
   return out;
 }
 
+/// Formats a `CapturedShipsReport` into its ASCII presentation string.
+/// Decomposes `CapturedShipsReport` and `CapturedShipEvent` via structured
+/// bindings.
+[[nodiscard]] inline std::string
+render_captured_ships_report(const CapturedShipsReport& report) {
+  const auto& [captured_ships] = report;
+  std::string out;
+  for (const auto& [_, ship_display, _, _] : captured_ships) {
+    std::format_to(std::back_inserter(out), "{} CAPTURED!\n", ship_display);
+  }
+  return out;
+}
+
 /// Abstract base class for polymorphic UI presentation across wire protocols.
 class Presenter {
 public:
@@ -341,6 +353,8 @@ public:
   render(const CreatedShipSummary& vm) const = 0;
   [[nodiscard]] virtual std::string
   render(const InitializedShipReport& vm) const = 0;
+  [[nodiscard]] virtual std::string
+  render(const CapturedShipsReport& vm) const = 0;
 };
 
 /// Server-rendered ASCII/ANSI terminal presenter for Telnet sessions.
@@ -364,6 +378,11 @@ public:
   render(const InitializedShipReport& vm) const override {
     return render_initialized_ship_report(vm);
   }
+
+  [[nodiscard]] std::string
+  render(const CapturedShipsReport& vm) const override {
+    return render_captured_ships_report(vm);
+  }
 };
 
 /// Structured Glaze JSON-lines presenter for modern rich/TUI/GUI clients.
@@ -386,6 +405,13 @@ public:
   [[nodiscard]] std::string
   render(const InitializedShipReport& vm) const override {
     return render_json_envelope("initialized_ship", vm);
+  }
+
+  [[nodiscard]] std::string
+  render(const CapturedShipsReport& vm) const override {
+    return vm.captured_ships.empty()
+               ? std::string{}
+               : render_json_envelope("captured_ships", vm);
   }
 };
 

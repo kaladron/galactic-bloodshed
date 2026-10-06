@@ -12,8 +12,19 @@ import gb.entities;
 import gb.services;
 import std;
 
+export struct CapturedShipEvent {
+  shipnum_t ship_number{0};
+  std::string ship_display{};
+  player_t new_owner{0};
+  governor_t new_governor{0};
+};
+
+export struct CapturedShipsReport {
+  std::vector<CapturedShipEvent> captured_ships{};
+};
+
 export armor_t getdefense(EntityManager&, const Ship&);
-export void capture_stuff(const Ship&, GameObj&);
+export CapturedShipsReport capture_stuff(EntityManager&, const Ship&);
 export void domass(Ship&, EntityManager&);
 export void doown(Ship&, EntityManager&);
 export std::string prin_ship_orbits(EntityManager&, const Ship&);

@@ -6,6 +6,7 @@
 module;
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import std;
 #undef stdout
@@ -79,7 +80,7 @@ bool give(const command_t& argv, GameObj& g) {
 
           ship.owner() = who;
           ship.governor() = Race::leader_id; /* give to the leader */
-          capture_stuff(ship, g);
+          g.present(capture_stuff(g.entity_manager, ship));
 
           /* set inhabited/explored bits */
           switch (ship.whatorbits()) {

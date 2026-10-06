@@ -7,6 +7,7 @@ module;
 
 import std;
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import scnlib;
 
@@ -375,7 +376,7 @@ void report_boarding_outcome(const Ship& s, const Ship& s2, PopulationType what,
       if (outcome.boarders) {
         g.out << std::format("{} boarders move in.\n", outcome.boarders);
       }
-      capture_stuff(s2, g);
+      g.present(capture_stuff(g.entity_manager, s2));
     } else if (s2.popn() + s2.troops()) {
       g.out << "The boarding was repulsed; try again.\n";
       telegram += "You fought them off!\n";

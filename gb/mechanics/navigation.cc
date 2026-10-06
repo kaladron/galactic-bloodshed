@@ -21,16 +21,33 @@ armor_t getdefense(EntityManager& em, const Ship& ship) {
   return 0;
 }
 
-void capture_stuff(const Ship& ship, GameObj& g) {
-  for (auto ship_handle :
-       ShipList::in_carrier(g.entity_manager, ship.number())) {
+namespace {
+
+void collect_captured_ships(EntityManager& em, const Ship& ship,
+                            std::vector<CapturedShipEvent>& out) {
+  for (auto ship_handle : ShipList::in_carrier(em, ship.number())) {
     Ship& s = *ship_handle;
-    capture_stuff(s, g); /* recursive call */
     s.owner() =
         ship.owner(); /* make sure he gets all of the ships landed on it */
     s.governor() = ship.governor();
-    g.out << std::format("{} CAPTURED!\n", s);
+    collect_captured_ships(em, s, out); /* recursive call */
+    out.push_back(CapturedShipEvent{
+        .ship_number = s.number(),
+        .ship_display = std::format("{}", s),
+        .new_owner = s.owner(),
+        .new_governor = s.governor(),
+    });
   }
+}
+
+}  // namespace
+
+CapturedShipsReport capture_stuff(EntityManager& em, const Ship& ship) {
+  std::vector<CapturedShipEvent> captured;
+  collect_captured_ships(em, ship, captured);
+  return CapturedShipsReport{
+      .captured_ships = std::move(captured),
+  };
 }
 
 void domass(Ship& ship, EntityManager& entity_manager) {
@@ -56,9 +73,9 @@ void domass(Ship& ship, EntityManager& entity_manager) {
 
 void doown(Ship& ship, EntityManager& entity_manager) {
   for (auto nested_ship : ShipList::in_carrier(entity_manager, ship.number())) {
-    doown(*nested_ship, entity_manager); /* recursive call */
     nested_ship->owner() = ship.owner();
     nested_ship->governor() = ship.governor();
+    doown(*nested_ship, entity_manager); /* recursive call */
   }
 }
 

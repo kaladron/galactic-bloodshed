@@ -6,6 +6,8 @@
 import commands;
 import dallib;
 import gb.entities;
+import gb.mechanics;
+import gb.presentation;
 import gb.services;
 import test;
 import std;
@@ -541,6 +543,142 @@ void test_order_factory_activation_and_errors() {
                "    ✓ Factory activation and error conditions verified");
 }
 
+void test_navigation_and_combat_order_mcdc_and_json() {
+  static_assert(std::is_aggregate_v<ShipOrdersHeader>);
+  static_assert(std::is_aggregate_v<ShipOrderStatus>);
+  static_assert(std::is_aggregate_v<OrderError>);
+  static_assert(std::is_aggregate_v<OrderUpdate>);
+
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 1);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(1);
+
+  // 1. Navigate with turns == 0 disables navigation rather than leaving on=true
+  // with turns=0; bearing >= 360 wraps modulo 360
+  ctx.assert_dispatch_success(g, {"order", "#1", "navigate", "450", "3"});
+  ctx.em.clear_cache();
+  test::expect_true(ctx.em.peek_ship(1)->navigate().on);
+  test::expect_eq(ctx.em.peek_ship(1)->navigate().bearing, 90U);
+  test::expect_eq(ctx.em.peek_ship(1)->navigate().turns, 3U);
+
+  ctx.assert_dispatch_success(g, {"order", "#1", "navigate", "90", "0"});
+  ctx.em.clear_cache();
+  test::expect_false(ctx.em.peek_ship(1)->navigate().on);
+  test::expect_eq(ctx.em.peek_ship(1)->navigate().turns, 0U);
+
+  // 2. Destination edge cases: unexplored system planet, invalid place,
+  // out-of-range target ship, docked ship, missing destination arg
+  ctx.em.mutate_star(2, [](Star& vega) { vega.clear_all_explored(); });
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"order", "#1", "destination", "/Vega/Vega Prime"});
+  test::expect_contains(g.out.str(), "You haven't explored this system.");
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"order", "#1", "destination", "/NoSuchStar"});
+  test::expect_contains(g.out.str(), "No such star");
+
+  const auto far_enemy_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER, 70)
+                                .owned_by(2, 1)
+                                .in_star_orbit(2)
+                                .with_crew(50, 0)
+                                .build();
+  ctx.em.mutate_ship(far_enemy_id,
+                     [](Ship& s) { s.set_coordinates({999999.0, 999999.0}); });
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"order", "#1", "destination", std::format("#{}", far_enemy_id)});
+  test::expect_contains(g.out.str(), "Warning: that ship is out of range.");
+
+  ctx.assert_dispatch_success(g, {"order", "#1", "destination"});
+
+  // 3. Jump edge cases: no hyperdrive, destination not star/planet, unmounted
+  // charging display, and insufficient max_fuel_capacity warning
+  const auto no_hd_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 71)
+                            .owned_by(1, 1)
+                            .in_planet_orbit(1, 1)
+                            .with_crew(5, 0)
+                            .with_speed(3)
+                            .build();
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"order", std::format("#{}", no_hd_id), "jump", "on"});
+  test::expect_contains(g.out.str(),
+                        "This ship does not have hyper drive capability.");
+
+  ctx.assert_dispatch_success(g, {"order", "#1", "destination", "-"});
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"order", "#1", "jump", "on"});
+  test::expect_contains(g.out.str(), "Destination must be star or planet.");
+
+  ctx.em.mutate_ship(1, [](Ship& s) {
+    s.mounted() = false;
+    s.hyper_drive().charge = 0;
+    s.set_mass(500.0);
+    s.max_fuel() = 0.0;
+    s.set_star_destination(2);
+  });
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"order", "#1", "jump", "on"});
+  test::expect_contains(g.out.str(), "/jump charging 0");
+  test::expect_contains(g.out.str(),
+                        "Your ship cannot carry enough fuel to do this jump.");
+  ctx.em.mutate_ship(1, [](Ship& s) {
+    s.mounted() = true;
+    s.max_fuel() = 500.0;
+    s.hyper_drive().on = false;
+  });
+
+  // 4. Laser without crystal mounted, laser on without power arg, secondary
+  // guns missing, speed/salvo missing arg, and OMCL bombard/retaliate no-op
+  ctx.em.mutate_ship(1, [](Ship& s) { s.mounted() = false; });
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"order", "#1", "laser", "on", "5"});
+  test::expect_contains(g.out.str(), "You do not have a crystal mounted.");
+  ctx.em.mutate_ship(1, [](Ship& s) { s.mounted() = true; });
+  ctx.assert_dispatch_success(g, {"order", "#1", "laser", "on"});
+
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"order", std::format("#{}", no_hd_id), "secondary"});
+  test::expect_contains(g.out.str(), "This ship does not have secondary guns.");
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"order", "#1", "speed"});
+  test::expect_contains(g.out.str(), "Specify a positive speed.");
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"order", "#1", "salvo"});
+  test::expect_contains(g.out.str(), "Specify a positive number of guns.");
+
+  const auto omcl_id = TestShipBuilder(ctx.em, ShipType::OTYPE_OMCL, 72)
+                           .owned_by(1, 1)
+                           .in_planet_orbit(1, 1)
+                           .with_crew(10, 0)
+                           .build();
+  ctx.assert_dispatch_success(
+      g, {"order", std::format("#{}", omcl_id), "bombard", "on"});
+  ctx.assert_dispatch_success(
+      g, {"order", std::format("#{}", omcl_id), "retaliate", "on"});
+
+  // 5. UiMode::JSON rendering of order query
+  g.out.str("");
+  g.set_ui_mode(UiMode::JSON);
+  ctx.assert_dispatch_success(g, {"order", "#1"});
+  test::expect_contains(g.out.str(), "\"type\":\"ship_order_status\"");
+  test::expect_contains(g.out.str(), "\"name\":\"TestShip\"");
+  g.set_ui_mode(UiMode::ASCII);
+
+  std::println(std::cout,
+               "    ✓ Navigation & combat order MC/DC and JSON verified");
+}
+
 }  // namespace
 
 int main() {
@@ -548,6 +686,7 @@ int main() {
   test_order_combat_and_movement_options();
   test_order_specialty_ships();
   test_order_factory_activation_and_errors();
+  test_navigation_and_combat_order_mcdc_and_json();
   std::println(std::cout, "\n✅ All order tests passed!");
   return 0;
 }

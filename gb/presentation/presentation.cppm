@@ -341,6 +341,99 @@ render_captured_ships_report(const CapturedShipsReport& report) {
   return out;
 }
 
+/// Formats an `OrderError` into its user-facing error diagnostic string.
+/// Decomposes `OrderError` via structured binding.
+[[nodiscard]] inline std::string format_order_error(const OrderError& err) {
+  const auto& [reason, ship_display, radiation, place_error] = err;
+  switch (reason) {
+    case OrderErrorReason::ShipIrradiated:
+      return std::format("{} is irradiated ({}); it cannot be given orders.\n",
+                         ship_display, radiation);
+    case OrderErrorReason::ShipHasNoCrew:
+      return std::format("{} has no crew and is not a robotic ship.\n",
+                         ship_display);
+    case OrderErrorReason::CannotBeAssignedOrders:
+      return "That ship cannot be assigned those orders.\n";
+    case OrderErrorReason::ShipDockedUseLaunchOrUndock:
+      return "That ship is docked. Use 'launch' or 'undock' first.\n";
+    case OrderErrorReason::NoHyperDriveCapability:
+      return "This ship does not have hyper drive capability.\n";
+    case OrderErrorReason::DestinationMustBeStarOrPlanet:
+      return "Destination must be star or planet.\n";
+    case OrderErrorReason::CannotProtectSelf:
+      return "You can't do that.\n";
+    case OrderErrorReason::CannotProtect:
+      return "That ship cannot protect.\n";
+    case OrderErrorReason::CannotBeLaunched:
+      return "That ship cannot be launched.\n";
+    case OrderErrorReason::ShipDockedUndockOrLaunchFirst:
+      return "That ship is docked; use undock or launch first.\n";
+    case OrderErrorReason::InvalidPlace:
+      return place_error ? format_place_error(*place_error) : std::string{};
+    case OrderErrorReason::TargetShipOutOfRange:
+      return "Warning: that ship is out of range.\n";
+    case OrderErrorReason::SystemUnexplored:
+      return "You haven't explored this system.\n";
+    case OrderErrorReason::ShipTypeCannotRetaliate:
+      return "This type of ship cannot be set to retaliate.\n";
+    case OrderErrorReason::ShipCannotRetaliate:
+      return "This ship cannot be set to retaliate.\n";
+    case OrderErrorReason::NoLaser:
+      return "No laser.\n";
+    case OrderErrorReason::NotEquippedWithCombatLasers:
+      return "This ship is not equipped with combat lasers.\n";
+    case OrderErrorReason::NoCrystalMounted:
+      return "You do not have a crystal mounted.\n";
+    case OrderErrorReason::BadRouteNumber:
+      return "Bad route number.\n";
+    case OrderErrorReason::NoSpeedRating:
+      return "This ship does not have a speed rating.\n";
+    case OrderErrorReason::InvalidSpeed:
+      return "Specify a positive speed.\n";
+    case OrderErrorReason::InvalidSalvoGunCount:
+      return "Specify a positive number of guns.\n";
+    case OrderErrorReason::NoPrimaryGuns:
+      return "This ship does not have primary guns.\n";
+    case OrderErrorReason::NoSecondaryGuns:
+      return "This ship does not have secondary guns.\n";
+    case OrderErrorReason::InvalidBatteryGunCount:
+      return "Specify a nonnegative number of guns.\n";
+  }
+  std::unreachable();
+}
+
+/// Returns the ASCII table header for standing ship orders.
+[[nodiscard]] inline std::string
+render_ship_orders_header(const ShipOrdersHeader&) {
+  return "    #       name       sp orbits     destin     options\n";
+}
+
+/// Formats a `ShipOrderStatus` into its ASCII presentation string.
+/// Decomposes `ShipOrderStatus` via structured binding.
+[[nodiscard]] inline std::string
+render_ship_order_status(const ShipOrderStatus& status) {
+  const auto& [ship_number, type_letter, name, hyper_indicator, speed,
+               orbits_display, destination_display, combat_options,
+               navigation_options, specialty_options, has_hyperdrive_jump,
+               jump_distance, jump_fuel_cost, insufficient_fuel_capacity] =
+      status;
+
+  std::string out = std::format(
+      "{:5} {} {:14.14} {}{} {:10.10} {}{}{}{}\n", ship_number, type_letter,
+      name, hyper_indicator, speed, orbits_display, destination_display,
+      combat_options, navigation_options, specialty_options);
+
+  if (has_hyperdrive_jump) {
+    std::format_to(std::back_inserter(out),
+                   "  *** distance {:.0f} - jump will cost {:.1f}f ***\n",
+                   jump_distance, jump_fuel_cost);
+    if (insufficient_fuel_capacity) {
+      out += "Your ship cannot carry enough fuel to do this jump.\n";
+    }
+  }
+  return out;
+}
+
 /// Abstract base class for polymorphic UI presentation across wire protocols.
 class Presenter {
 public:
@@ -355,6 +448,9 @@ public:
   render(const InitializedShipReport& vm) const = 0;
   [[nodiscard]] virtual std::string
   render(const CapturedShipsReport& vm) const = 0;
+  [[nodiscard]] virtual std::string
+  render(const ShipOrdersHeader& vm) const = 0;
+  [[nodiscard]] virtual std::string render(const ShipOrderStatus& vm) const = 0;
 };
 
 /// Server-rendered ASCII/ANSI terminal presenter for Telnet sessions.
@@ -382,6 +478,14 @@ public:
   [[nodiscard]] std::string
   render(const CapturedShipsReport& vm) const override {
     return render_captured_ships_report(vm);
+  }
+
+  [[nodiscard]] std::string render(const ShipOrdersHeader& vm) const override {
+    return render_ship_orders_header(vm);
+  }
+
+  [[nodiscard]] std::string render(const ShipOrderStatus& vm) const override {
+    return render_ship_order_status(vm);
   }
 };
 
@@ -412,6 +516,14 @@ public:
     return vm.captured_ships.empty()
                ? std::string{}
                : render_json_envelope("captured_ships", vm);
+  }
+
+  [[nodiscard]] std::string render(const ShipOrdersHeader&) const override {
+    return std::string{};
+  }
+
+  [[nodiscard]] std::string render(const ShipOrderStatus& vm) const override {
+    return render_json_envelope("ship_order_status", vm);
   }
 };
 

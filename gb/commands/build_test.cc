@@ -46,6 +46,9 @@ void test_build_happy_paths() {
   g.out.str("");
   // ":" = Probe
   ctx.assert_dispatch_success(g, {"build", ":", "5,5", "1"}, 1);
+  test::expect_contains(g.out.str(), "built at a cost of");
+  test::expect_contains(g.out.str(), "is on sector 5,5.");
+  test::expect_true(ctx.em.get_telegrams(1, 1).empty());
 
   // Verify planet resources were deducted
   ctx.em.clear_cache();

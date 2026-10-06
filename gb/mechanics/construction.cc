@@ -49,8 +49,7 @@ can_build_on_sector(EntityManager& entity_manager, const ShipType what,
   if (what == ShipType::OTYPE_QUARRY) {
     for (const Ship& s : ShipList::readonly_on_planet(
              entity_manager, planet.star_id(), planet.planet_order())) {
-      if (s.alive() && s.type() == ShipType::OTYPE_QUARRY &&
-          s.land_coords() == c) {
+      if (s.type() == ShipType::OTYPE_QUARRY && s.land_coords() == c) {
         return std::unexpected("There already is a quarry here.\n");
       }
     }
@@ -65,19 +64,21 @@ int getcount(const command_t& argv, const std::size_t elem) {
   return std::max(count, 0);
 }
 
-bool can_build_at_planet(GameObj& g, const Star& star, const Planet& planet) {
-  player_t Playernum = g.player();
-  governor_t Governor = g.governor();
-  if (planet.is_enslaved_to_foreign(Playernum)) {
-    g.out << std::format("This planet is enslaved by player {}.\n",
-                         *planet.slaved_to());
-    return false;
+std::expected<void, PlanetBuildError>
+can_build_at_planet(const player_t playernum, const governor_t governor,
+                    const Star& star, const Planet& planet) {
+  if (planet.is_enslaved_to_foreign(playernum)) {
+    return std::unexpected(PlanetBuildError{
+        .reason = PlanetBuildErrorReason::EnslavedByForeignPlayer,
+        .enslaving_player = *planet.slaved_to(),
+    });
   }
-  if (!star.control(Playernum, Governor)) {
-    g.out << "You are not authorized in this system.\n";
-    return false;
+  if (!star.control(playernum, governor)) {
+    return std::unexpected(PlanetBuildError{
+        .reason = PlanetBuildErrorReason::NotAuthorizedInSystem,
+    });
   }
-  return true;
+  return {};
 }
 
 std::optional<ShipType> get_build_type(const char shipc) {
@@ -128,36 +129,46 @@ can_build_on_ship(ShipType what, const Race& race, const Ship& builder) {
   return {};
 }
 
-std::optional<ScopeLevel> build_at_ship(GameObj& g, const Ship& builder,
-                                        starnum_t& snum, planetnum_t& pnum) {
-  if (!g.check_commandable(builder)) return {};
+std::expected<ShipBuildLocation, ShipBuildError>
+build_at_ship(const player_t playernum, const governor_t governor,
+              const bool god, const Ship& builder) {
+  if (const auto cmd_ok =
+          validate_commandable(builder, playernum, governor, god);
+      !cmd_ok) {
+    switch (cmd_ok.error()) {
+      case CommandableError::ShipDead:
+        return std::unexpected(ShipBuildError::ShipDead);
+      case CommandableError::ShipIrradiated:
+        return std::unexpected(ShipBuildError::ShipIrradiated);
+      case CommandableError::NotOwner:
+        return std::unexpected(ShipBuildError::NotOwner);
+      case CommandableError::NotAuthorizedGovernor:
+        return std::unexpected(ShipBuildError::NotAuthorizedGovernor);
+    }
+  }
   if (!builder.can_construct_ships()) {
-    g.out << "This ship cannot construct other ships.\n";
-    return {};
+    return std::unexpected(ShipBuildError::CannotConstructShips);
   }
   if (!builder.popn()) {
-    g.out << "This ship has no crew.\n";
-    return {};
+    return std::unexpected(ShipBuildError::NoCrew);
   }
   if (builder.is_docked()) {
-    g.out << "Undock this ship first.\n";
-    return {};
+    return std::unexpected(ShipBuildError::ShipDocked);
   }
   if (builder.damage()) {
-    g.out << "This ship is damaged and cannot build.\n";
-    return {};
+    return std::unexpected(ShipBuildError::ShipDamaged);
   }
   if (builder.type() == ShipType::OTYPE_FACTORY && !builder.on()) {
-    g.out << "This factory is not online.\n";
-    return {};
+    return std::unexpected(ShipBuildError::FactoryNotOnline);
   }
   if (builder.type() == ShipType::OTYPE_FACTORY && !builder.is_landed()) {
-    g.out << "Factories must be landed on a planet.\n";
-    return {};
+    return std::unexpected(ShipBuildError::FactoryNotLanded);
   }
-  snum = builder.storbits();
-  pnum = builder.pnumorbits();
-  return builder.whatorbits();
+  return ShipBuildLocation{
+      .level = builder.whatorbits(),
+      .snum = builder.storbits(),
+      .pnum = builder.pnumorbits(),
+  };
 }
 
 std::pair<population_t, fuel_t> autoload_at_planet(player_t Playernum,
@@ -183,62 +194,28 @@ std::pair<population_t, fuel_t> autoload_at_ship(const Ship& s, Ship& b,
   return {crew, fuel};
 }
 
-namespace {
-
-void report_new_ship_status(GameObj& g, const Ship& newship,
-                            population_t load_crew, fuel_t load_fuel) {
-  switch (newship.type()) {
-    case ShipType::STYPE_MINE:
-      g.out << "Mine disarmed.\nTrigger radius set at 100.\n";
-      break;
-    case ShipType::OTYPE_TRANSDEV:
-      g.out << "Receive OFF.  Change with order.\n";
-      break;
-    case ShipType::OTYPE_AP:
-      g.out << "Processor OFF.\n";
-      break;
-    case ShipType::OTYPE_STELE:
-    case ShipType::OTYPE_GTELE:
-      g.out << std::format("Telescope range is {:.2f}.\n",
-                           newship.tele_range());
-      break;
-    default:
-      break;
-  }
-  if (newship.damage()) {
-    g.out << std::format(
-        "Warning: This ship is constructed with a {}% damage level.\n",
-        newship.damage());
-    if (!newship.can_repair() && newship.max_crew_capacity())
-      g.out << "It will need resources to become fully operational.\n";
-  }
-  if (newship.can_repair() && newship.max_crew_capacity())
-    g.out << "This ship does not need resources to repair.\n";
-  if (newship.type() == ShipType::OTYPE_FACTORY)
-    g.out
-        << "This factory may not begin repairs until it has been activated.\n";
-  if (!newship.max_crew_capacity())
-    g.out << "This ship is robotic, and may not repair itself.\n";
-
-  g.out << std::format("Loaded with {} crew and {:.1f} fuel.\n", load_crew,
-                       load_fuel);
+InitializedShipReport initialize_new_ship(const Race& race,
+                                          const governor_t governor,
+                                          Ship& newship, const fuel_t load_fuel,
+                                          const population_t load_crew) {
+  newship.initialize_constructed_state(race, governor, load_fuel, load_crew);
+  return InitializedShipReport{
+      .ship_type = newship.type(),
+      .tele_range = newship.tele_range(),
+      .damage = newship.damage(),
+      .can_repair = newship.can_repair(),
+      .has_crew_capacity = newship.max_crew_capacity() > 0,
+      .loaded_crew = load_crew,
+      .loaded_fuel = load_fuel,
+  };
 }
 
-}  // namespace
-
-void initialize_new_ship(GameObj& g, const Race& race, Ship& newship,
-                         fuel_t load_fuel, population_t load_crew) {
-  newship.initialize_constructed_state(race, g.governor(), load_fuel,
-                                       load_crew);
-  report_new_ship_status(g, newship, load_crew, load_fuel);
-}
-
-void create_ship_by_planet(EntityManager& entity_manager, player_t Playernum,
-                           governor_t Governor, const Race& race, Ship& newship,
-                           Planet& planet, starnum_t snum, planetnum_t pnum,
-                           Coordinates land_coords) {
-  shipnum_t shipno;
-
+CreatedShipSummary create_ship_by_planet(EntityManager& entity_manager,
+                                         player_t Playernum,
+                                         governor_t Governor, const Race& race,
+                                         Ship& newship, Planet& planet,
+                                         starnum_t snum, planetnum_t pnum,
+                                         Coordinates land_coords) {
   newship.tech() = race.tech;
   const auto& star = *entity_manager.peek_star(snum);
   newship.set_coordinates(planet.absolute_coordinates(star));
@@ -249,39 +226,35 @@ void create_ship_by_planet(EntityManager& entity_manager, player_t Playernum,
   newship.land_on_planet(snum, pnum, land_coords);
   planet.info(Playernum).resource -= newship.build_cost();
 
-  // Ship number will be assigned by EntityManager when created
-  shipno = entity_manager.next_available_ship_number();
-  newship.number() = shipno;
+  newship.number() = entity_manager.next_available_ship_number();
   newship.owner() = Playernum;
   newship.governor() = Governor;
+
+  std::optional<Percentage> prev_tox{std::nullopt};
+  std::optional<Percentage> new_tox{std::nullopt};
   if (auto* waste_ship = newship.as<ToxicWasteShip>()) {
-    std::string message =
-        std::format("Toxin concentration on planet was {}%,", planet.toxic());
-    push_telegram(entity_manager, Playernum, Governor, message);
+    prev_tox = planet.toxic();
     const int toxic_amount = std::min(TOXMAX, static_cast<int>(planet.toxic()));
     waste_ship->set_toxic_level(toxic_amount);
     planet.toxic() -= toxic_amount;
-    std::string toxMsg = std::format(" now {}%.\n", planet.toxic());
-    push_telegram(entity_manager, Playernum, Governor, toxMsg);
+    new_tox = planet.toxic();
   }
-  std::string message = std::format("{} built at a cost of {} resources.\n",
-                                    newship, newship.build_cost());
-  push_telegram(entity_manager, Playernum, Governor, message);
 
-  std::string techMsg = std::format("Technology {:.1f}.\n", newship.tech());
-  push_telegram(entity_manager, Playernum, Governor, techMsg);
-
-  std::string locMsg =
-      std::format("{} is on sector {}.\n", newship, newship.land_coords());
-  push_telegram(entity_manager, Playernum, Governor, locMsg);
+  return CreatedShipSummary{
+      .ship_display = std::format("{}", newship),
+      .build_cost = newship.build_cost(),
+      .tech = newship.tech(),
+      .landed_sector = newship.land_coords(),
+      .previous_toxicity = prev_tox,
+      .updated_toxicity = new_tox,
+  };
 }
 
-void create_ship_by_ship(EntityManager& entity_manager, player_t Playernum,
-                         governor_t Governor, const Race& race, bool outside,
-                         Ship& newship, Ship& builder) {
-  // Ship number will be assigned by EntityManager when created
-  shipnum_t shipno = entity_manager.next_available_ship_number();
-  newship.number() = shipno;
+CreatedShipSummary create_ship_by_ship(EntityManager& entity_manager,
+                                       player_t Playernum, governor_t Governor,
+                                       const Race& race, bool outside,
+                                       Ship& newship, Ship& builder) {
+  newship.number() = entity_manager.next_available_ship_number();
   newship.owner() = Playernum;
   newship.governor() = Governor;
   if (outside) {
@@ -298,12 +271,14 @@ void create_ship_by_ship(EntityManager& entity_manager, player_t Playernum,
                              : "Standard");
   builder.consume_resource(newship.build_cost());
 
-  std::string message = std::format("{} built at a cost of {} resources.\n",
-                                    newship, newship.build_cost());
-  push_telegram(entity_manager, Playernum, Governor, message);
-
-  std::string techMsg = std::format("Technology {:.1f}.\n", newship.tech());
-  push_telegram(entity_manager, Playernum, Governor, techMsg);
+  return CreatedShipSummary{
+      .ship_display = std::format("{}", newship),
+      .build_cost = newship.build_cost(),
+      .tech = newship.tech(),
+      .landed_sector = std::nullopt,
+      .previous_toxicity = std::nullopt,
+      .updated_toxicity = std::nullopt,
+  };
 }
 
 std::unique_ptr<Ship> getship(ShipType i, const Race& r) {

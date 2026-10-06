@@ -6,6 +6,8 @@
 module;
 
 import gb.entities;
+import gb.mechanics;
+import gb.presentation;
 import gb.services;
 import scnlib;
 import std;
@@ -194,9 +196,14 @@ std::optional<PlanetBuildPlan> validate_planet_build(const command_t& argv,
   }
   const auto& planet = *g.entity_manager.peek_planet(snum, pnum);
   const auto& star = *g.entity_manager.peek_star(snum);
-  if (!can_build_at_planet(g, star, planet) && !race.God) {
-    g.out << "You can't build that here.\n";
-    return std::nullopt;
+  if (!race.God) {
+    if (const auto res =
+            can_build_at_planet(g.player(), g.governor(), star, planet);
+        !res) {
+      g.out << GB::presentation::format_planet_build_error(res.error());
+      g.out << "You can't build that here.\n";
+      return std::nullopt;
+    }
   }
   auto coords_opt = Coordinates::parse(argv[2]);
   if (!coords_opt) {
@@ -242,8 +249,8 @@ bool execute_single_planet_build(GameObj& g, const PlanetBuildPlan& plan,
       g.out << "You don't have 1 action points there.\n";
       return;
     }
-    create_ship_by_planet(g.entity_manager, Playernum, Governor, race, *newship,
-                          planet, snum, pnum, plan.coords);
+    g.present(create_ship_by_planet(g.entity_manager, Playernum, Governor, race,
+                                    *newship, planet, snum, pnum, plan.coords));
     std::pair<population_t, fuel_t> loaded{0, 0.0};
     if (g.current_governor().toggle.autoload &&
         plan.what != ShipType::OTYPE_TRANSDEV && !race.God) {
@@ -253,7 +260,8 @@ bool execute_single_planet_build(GameObj& g, const PlanetBuildPlan& plan,
       });
     }
     const auto [load_crew, load_fuel] = loaded;
-    initialize_new_ship(g, race, *newship, load_fuel, load_crew);
+    g.present(
+        initialize_new_ship(race, Governor, *newship, load_fuel, load_crew));
     g.entity_manager.create_ship(std::move(newship));
     built = true;
   });
@@ -316,7 +324,10 @@ validate_factory_ship_build(const command_t& argv, GameObj& g,
   if (build_level == ScopeLevel::LEVEL_PLAN) {
     const auto& planet = *g.entity_manager.peek_planet(snum, pnum);
     const auto& star = *g.entity_manager.peek_star(snum);
-    if (!can_build_at_planet(g, star, planet)) {
+    if (const auto res =
+            can_build_at_planet(g.player(), g.governor(), star, planet);
+        !res) {
+      g.out << GB::presentation::format_planet_build_error(res.error());
       g.out << "You can't build that here.\n";
       return std::nullopt;
     }
@@ -396,8 +407,9 @@ bool execute_single_factory_build(GameObj& g, Ship& builder,
       g.out << "You don't have 1 action points there.\n";
       return;
     }
-    create_ship_by_planet(g.entity_manager, Playernum, Governor, race, *newship,
-                          planet, snum, pnum, plan.land_coords);
+    g.present(create_ship_by_planet(g.entity_manager, Playernum, Governor, race,
+                                    *newship, planet, snum, pnum,
+                                    plan.land_coords));
     if (g.current_governor().toggle.autoload &&
         plan.what != ShipType::OTYPE_TRANSDEV && !race.God) {
       g.entity_manager.mutate_sectormap(snum, pnum, [&](SectorMap& sectormap) {
@@ -413,7 +425,8 @@ bool execute_single_factory_build(GameObj& g, Ship& builder,
   }
 
   const auto [load_crew, load_fuel] = loaded;
-  initialize_new_ship(g, race, *newship, load_fuel, load_crew);
+  g.present(
+      initialize_new_ship(race, Governor, *newship, load_fuel, load_crew));
   g.entity_manager.create_ship(std::move(newship));
   g.entity_manager.mutate_ship(builder.number(),
                                [&](Ship& b) { b = Ship(builder.to_struct()); });
@@ -449,15 +462,16 @@ bool execute_single_non_factory_ship_build(GameObj& g, Ship& builder,
     }
   }
 
-  create_ship_by_ship(g.entity_manager, Playernum, Governor, race, plan.outside,
-                      *newship, builder);
+  g.present(create_ship_by_ship(g.entity_manager, Playernum, Governor, race,
+                                plan.outside, *newship, builder));
   const auto [load_crew, load_fuel] =
       (g.current_governor().toggle.autoload &&
        plan.what != ShipType::OTYPE_TRANSDEV && !race.God)
           ? autoload_at_ship(*newship, builder, race.mass)
           : std::pair<population_t, fuel_t>{0, 0.0};
 
-  initialize_new_ship(g, race, *newship, load_fuel, load_crew);
+  g.present(
+      initialize_new_ship(race, Governor, *newship, load_fuel, load_crew));
   g.entity_manager.create_ship(std::move(newship));
   g.entity_manager.mutate_ship(builder.number(),
                                [&](Ship& b) { b = Ship(builder.to_struct()); });
@@ -467,14 +481,14 @@ bool execute_single_non_factory_ship_build(GameObj& g, Ship& builder,
 bool execute_ship_build_command(const command_t& argv, GameObj& g) {
   const auto& builder_ref = *g.entity_manager.peek_ship(g.shipno());
   Ship builder(builder_ref.to_struct());
-  starnum_t snum = g.snum();
-  planetnum_t pnum = g.pnum();
-  auto test_build_level = build_at_ship(g, builder, snum, pnum);
-  if (!test_build_level) {
+  const auto build_loc =
+      build_at_ship(g.player(), g.governor(), g.god(), builder);
+  if (!build_loc) {
+    g.out << GB::presentation::format_ship_build_error(build_loc.error());
     g.out << "You can't build here.\n";
     return false;
   }
-  ScopeLevel build_level = test_build_level.value();
+  const auto [build_level, snum, pnum] = *build_loc;
 
   std::optional<ShipBuildPlan> plan;
   if (builder.type() == ShipType::OTYPE_FACTORY) {

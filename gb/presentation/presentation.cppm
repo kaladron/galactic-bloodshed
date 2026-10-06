@@ -210,6 +210,125 @@ render_json_planet_map(const PlanetMapViewModel& vm) {
   return render_json_envelope("map", vm);
 }
 
+/// Formats a `PlanetBuildError` into its user-facing error diagnostic string.
+/// Decomposes `PlanetBuildError` via structured binding.
+[[nodiscard]] inline std::string
+format_planet_build_error(const PlanetBuildError& err) {
+  const auto& [reason, enslaving_player] = err;
+  std::string out;
+  switch (reason) {
+    case PlanetBuildErrorReason::EnslavedByForeignPlayer:
+      std::format_to(std::back_inserter(out),
+                     "This planet is enslaved by player {}.\n",
+                     enslaving_player);
+      break;
+    case PlanetBuildErrorReason::NotAuthorizedInSystem:
+      out = "You are not authorized in this system.\n";
+      break;
+  }
+  return out;
+}
+
+/// Formats a `ShipBuildError` into its user-facing error diagnostic string.
+[[nodiscard]] inline std::string format_ship_build_error(ShipBuildError err) {
+  switch (err) {
+    case ShipBuildError::ShipDead:
+      return "Has been destroyed.\n";
+    case ShipBuildError::ShipIrradiated:
+      return "This ship is irradiated and inactive.\n";
+    case ShipBuildError::NotOwner:
+      return "You do not own this ship.\n";
+    case ShipBuildError::NotAuthorizedGovernor:
+      return "You are not authorized to do this.\n";
+    case ShipBuildError::CannotConstructShips:
+      return "This ship cannot construct other ships.\n";
+    case ShipBuildError::NoCrew:
+      return "This ship has no crew.\n";
+    case ShipBuildError::ShipDocked:
+      return "Undock this ship first.\n";
+    case ShipBuildError::ShipDamaged:
+      return "This ship is damaged and cannot build.\n";
+    case ShipBuildError::FactoryNotOnline:
+      return "This factory is not online.\n";
+    case ShipBuildError::FactoryNotLanded:
+      return "Factories must be landed on a planet.\n";
+  }
+  std::unreachable();
+}
+
+/// Formats a `CreatedShipSummary` into its ASCII presentation string.
+/// Decomposes `CreatedShipSummary` via structured binding.
+[[nodiscard]] inline std::string
+render_created_ship_summary(const CreatedShipSummary& summary) {
+  const auto& [ship_display, build_cost, tech, landed_sector, previous_toxicity,
+               updated_toxicity] = summary;
+
+  std::string out;
+  if (previous_toxicity && updated_toxicity) {
+    std::format_to(std::back_inserter(out),
+                   "Toxin concentration on planet was {}%, now {}%.\n",
+                   *previous_toxicity, *updated_toxicity);
+  }
+  std::format_to(std::back_inserter(out),
+                 "{} built at a cost of {} resources.\nTechnology {:.1f}.\n",
+                 ship_display, build_cost, tech);
+  if (landed_sector) {
+    std::format_to(std::back_inserter(out), "{} is on sector {}.\n",
+                   ship_display, *landed_sector);
+  }
+  return out;
+}
+
+/// Formats an `InitializedShipReport` into its ASCII presentation string.
+/// Decomposes `InitializedShipReport` via structured binding.
+[[nodiscard]] inline std::string
+render_initialized_ship_report(const InitializedShipReport& report) {
+  const auto& [ship_type, tele_range, damage, can_repair, has_crew_capacity,
+               loaded_crew, loaded_fuel] = report;
+
+  std::string out;
+  switch (ship_type) {
+    case ShipType::STYPE_MINE:
+      out += "Mine disarmed.\nTrigger radius set at 100.\n";
+      break;
+    case ShipType::OTYPE_TRANSDEV:
+      out += "Receive OFF.  Change with order.\n";
+      break;
+    case ShipType::OTYPE_AP:
+      out += "Processor OFF.\n";
+      break;
+    case ShipType::OTYPE_STELE:
+    case ShipType::OTYPE_GTELE:
+      std::format_to(std::back_inserter(out), "Telescope range is {:.2f}.\n",
+                     tele_range);
+      break;
+    default:
+      break;
+  }
+  if (damage) {
+    std::format_to(
+        std::back_inserter(out),
+        "Warning: This ship is constructed with a {}% damage level.\n", damage);
+    if (!can_repair && has_crew_capacity) {
+      out += "It will need resources to become fully operational.\n";
+    }
+  }
+  if (can_repair && has_crew_capacity) {
+    out += "This ship does not need resources to repair.\n";
+  }
+  if (ship_type == ShipType::OTYPE_FACTORY) {
+    out += "This factory may not begin repairs until it has been activated.\n";
+  }
+  if (!has_crew_capacity) {
+    out += "This ship is robotic, and may not repair itself.\n";
+  }
+
+  std::format_to(std::back_inserter(out),
+                 "Loaded with {} crew and {:.1f} fuel.\n", loaded_crew,
+                 loaded_fuel);
+  return out;
+}
+
 /// Abstract base class for polymorphic UI presentation across wire protocols.
 class Presenter {
 public:
@@ -218,6 +337,10 @@ public:
   [[nodiscard]] virtual std::string render(const TripEstimate& vm) const = 0;
   [[nodiscard]] virtual std::string
   render(const PlanetMapViewModel& vm) const = 0;
+  [[nodiscard]] virtual std::string
+  render(const CreatedShipSummary& vm) const = 0;
+  [[nodiscard]] virtual std::string
+  render(const InitializedShipReport& vm) const = 0;
 };
 
 /// Server-rendered ASCII/ANSI terminal presenter for Telnet sessions.
@@ -231,6 +354,16 @@ public:
   render(const PlanetMapViewModel& vm) const override {
     return render_ascii_planet_map(vm);
   }
+
+  [[nodiscard]] std::string
+  render(const CreatedShipSummary& vm) const override {
+    return render_created_ship_summary(vm);
+  }
+
+  [[nodiscard]] std::string
+  render(const InitializedShipReport& vm) const override {
+    return render_initialized_ship_report(vm);
+  }
 };
 
 /// Structured Glaze JSON-lines presenter for modern rich/TUI/GUI clients.
@@ -243,6 +376,16 @@ public:
   [[nodiscard]] std::string
   render(const PlanetMapViewModel& vm) const override {
     return render_json_planet_map(vm);
+  }
+
+  [[nodiscard]] std::string
+  render(const CreatedShipSummary& vm) const override {
+    return render_json_envelope("created_ship", vm);
+  }
+
+  [[nodiscard]] std::string
+  render(const InitializedShipReport& vm) const override {
+    return render_json_envelope("initialized_ship", vm);
   }
 };
 

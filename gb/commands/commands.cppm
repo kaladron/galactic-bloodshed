@@ -126,6 +126,7 @@ export bool deploy(const command_t&, GameObj&);
 export extern const CommandDescriptor deploy_cmd;
 export bool mount(const command_t&, GameObj&);
 export extern const CommandDescriptor mount_cmd;
+export bool dismount(const command_t&, GameObj&);
 export extern const CommandDescriptor dismount_cmd;
 export bool name(const command_t&, GameObj&);
 export extern const CommandDescriptor name_cmd;

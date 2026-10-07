@@ -157,6 +157,52 @@ void test_jettison_domain_errors() {
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"jettison", "#1", "r", "10"});
   test::expect_contains(g.out.str(), "Ship is landed, cannot jettison");
+
+  // 4. Jettison when irradiated (!active())
+  ctx.em.mutate_ship(1, [](Ship& s) {
+    s.enter_star_orbit(1);
+    s.active() = false;
+  });
+  ctx.assert_dispatch_rejected(g, {"jettison", "#1", "r", "10"});
+  test::expect_contains(g.out.str(), "is irradiated and inactive.");
+
+  // Restore active
+  ctx.em.mutate_ship(1, [](Ship& s) { s.active() = true; });
+
+  // 5. Negative amount ("Nice try.") and exceeding available ("You can jettison
+  // at most")
+  ctx.assert_dispatch_rejected(g, {"jettison", "#1", "r", "-5"});
+  test::expect_contains(g.out.str(), "Nice try.");
+
+  ctx.assert_dispatch_rejected(g, {"jettison", "#1", "r", "999"});
+  test::expect_contains(g.out.str(), "You can jettison at most 50");
+
+  // 6. Non-numeric amount
+  ctx.assert_dispatch_rejected(g, {"jettison", "#1", "r", "abc"});
+  test::expect_contains(g.out.str(), "Invalid amount.");
+
+  // 7. Crewless boobytrapped pod: partial destruct jettison vs full destruct
+  // jettison
+  TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST, 2)
+      .owned_by(1, 1)
+      .in_star_orbit(1)
+      .with_destruct(10)
+      .with_crew(0, 0)
+      .build();
+  ctx.em.mutate_ship(2, [](Ship& s) { s.max_crew() = 0; });
+
+  ctx.assert_dispatch_success(g, {"jettison", "#2", "d", "4"});
+  test::expect_contains(g.out.str(), "still boobytrapped.");
+
+  ctx.assert_dispatch_success(g, {"jettison", "#2", "d"});
+  test::expect_contains(g.out.str(), "no longer boobytrapped.");
+
+  // 8. Jettison when available amount is 0 (NothingToJettison)
+  ctx.assert_dispatch_rejected(g, {"jettison", "#2", "d"});
+
+  // 9. Explicit unowned/non-existent ship reports diagnostic
+  ctx.assert_dispatch_rejected(g, {"jettison", "#999", "r"});
+  test::expect_contains(g.out.str(), "You don't own ship #999.");
 }
 
 }  // namespace

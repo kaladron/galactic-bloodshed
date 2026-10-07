@@ -930,7 +930,7 @@ export class ScopedCommandableShips {
 public:
   ScopedCommandableShips(EntityManager& em, const ScopeContext& ctx,
                          std::string_view filter, bool require_active = false);
-  ScopedCommandableShips(const GameObj& g, std::string_view filter,
+  ScopedCommandableShips(GameObj& g, std::string_view filter,
                          bool require_active = false);
 
   class Iterator {

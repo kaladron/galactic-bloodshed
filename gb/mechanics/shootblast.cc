@@ -730,3 +730,21 @@ std::optional<MineDetonationReport> domine(Ship& ship, bool detonate,
   entity_manager.kill_ship(ship.owner(), ship);
   return report;
 }
+
+std::expected<MineDetonationReport, DetonateError>
+detonate_ship_mine(EntityManager& entity_manager, Ship& ship) {
+  if (ship.type() != ShipType::STYPE_MINE) {
+    return std::unexpected(DetonateError::NotAMine);
+  }
+  if (!ship.on()) {
+    return std::unexpected(DetonateError::NotActivated);
+  }
+  if (ship.docked()) {
+    return std::unexpected(DetonateError::DockedOrLanded);
+  }
+  auto report = domine(ship, /*detonate=*/true, entity_manager);
+  if (!report) {
+    return std::unexpected(DetonateError::DetonationFailed);
+  }
+  return *report;
+}

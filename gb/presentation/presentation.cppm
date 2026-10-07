@@ -769,6 +769,138 @@ render_mine_detonation_report(const MineDetonationReport& report) {
   return out;
 }
 
+/// Formats a `DetonateError` into its ASCII error string.
+[[nodiscard]] inline std::string render_detonate_error(DetonateError err) {
+  switch (err) {
+    case DetonateError::NotAMine:
+      return "That is not a mine.\n";
+    case DetonateError::NotActivated:
+      return "The mine is not activated.\n";
+    case DetonateError::DockedOrLanded:
+      return "The mine is docked or landed.\n";
+    case DetonateError::DetonationFailed:
+      return "";
+  }
+  std::unreachable();
+}
+
+/// Formats a `JettisonError` into its ASCII error string.
+[[nodiscard]] inline std::string
+render_jettison_error(const JettisonError& err) {
+  switch (err.reason) {
+    case JettisonErrorReason::ShipLanded:
+      return "Ship is landed, cannot jettison.\n";
+    case JettisonErrorReason::ShipIrradiated:
+      return std::format("{} is irradiated and inactive.\n", err.ship_display);
+    case JettisonErrorReason::InvalidCommodity:
+      return "No such commodity valid.\n";
+    case JettisonErrorReason::NegativeAmount:
+      return "Nice try.\n";
+    case JettisonErrorReason::ExceedsAvailable:
+      return std::format("You can jettison at most {}\n", err.max_available);
+    case JettisonErrorReason::NothingToJettison:
+      return "";
+  }
+  std::unreachable();
+}
+
+/// Formats a `JettisonResult` into its ASCII presentation string.
+[[nodiscard]] inline std::string
+render_jettison_result(const JettisonResult& res) {
+  switch (res.commodity) {
+    case JettisonCommodity::Crystals:
+      return std::format("{} crystal{} jettisoned.\n", res.amount,
+                         (res.amount == 1) ? "" : "s");
+    case JettisonCommodity::Crew:
+      return std::format("{} crew {} into deep space.\n"
+                         "Complement of {} is now {}.\n",
+                         res.amount,
+                         (res.amount == 1) ? "hurls itself" : "hurl themselves",
+                         res.ship_display, res.remaining_complement);
+    case JettisonCommodity::Military:
+      return std::format("{} military {} into deep space.\n"
+                         "Complement of ship #{} is now {}.\n",
+                         res.amount,
+                         (res.amount == 1) ? "hurls itself" : "hurl themselves",
+                         res.ship_number, res.remaining_complement);
+    case JettisonCommodity::Destruct: {
+      std::string out = std::format("{} destruct jettisoned.\n", res.amount);
+      if (res.check_boobytrap) {
+        std::format_to(std::back_inserter(out), "\n{} {}\n", res.ship_display,
+                       res.still_boobytrapped ? "still boobytrapped."
+                                              : "no longer boobytrapped.");
+      }
+      return out;
+    }
+    case JettisonCommodity::Fuel:
+      return std::format("{} fuel jettisoned.\n", res.amount);
+    case JettisonCommodity::Resources:
+      return std::format("{} resources jettisoned.\n", res.amount);
+  }
+  std::unreachable();
+}
+
+/// Formats a `MountCrystalError` into its ASCII error string.
+[[nodiscard]] inline std::string
+render_mount_crystal_error(MountCrystalError err) {
+  switch (err) {
+    case MountCrystalError::NoCrystalMount:
+      return "This ship is not equipped with a crystal mount.\n";
+    case MountCrystalError::AlreadyMounted:
+      return "You already have a crystal mounted.\n";
+    case MountCrystalError::NoCrystalsOnBoard:
+      return "You have no crystals on board.\n";
+  }
+  std::unreachable();
+}
+
+/// Formats a `MountCrystalResult` into its ASCII presentation string.
+[[nodiscard]] inline std::string
+render_mount_crystal_result(const MountCrystalResult&) {
+  return "Mounted.\n";
+}
+
+/// Formats a `DismountCrystalError` into its ASCII error string.
+[[nodiscard]] inline std::string
+render_dismount_crystal_error(DismountCrystalError err) {
+  switch (err) {
+    case DismountCrystalError::NoCrystalMount:
+      return "This ship is not equipped with a crystal mount.\n";
+    case DismountCrystalError::NotMounted:
+      return "You don't have a crystal mounted.\n";
+    case DismountCrystalError::MaxCrystalsOnBoard:
+      return "You can't dismount the crystal. Max allowed already on board.\n";
+  }
+  std::unreachable();
+}
+
+/// Formats a `DismountCrystalResult` into its ASCII presentation string.
+[[nodiscard]] inline std::string
+render_dismount_crystal_result(const DismountCrystalResult& res) {
+  std::string out = "Dismounted.\n";
+  if (res.hyperdrive_discharged) {
+    out += "Discharged.\n";
+  }
+  if (res.laser_deactivated) {
+    out += "Laser deactivated.\n";
+  }
+  return out;
+}
+
+/// Formats a `GrantShipResult` into its caller ASCII presentation string.
+[[nodiscard]] inline std::string
+render_grant_ship_result(const GrantShipResult& res) {
+  return std::format("{} granted to \"{}\"\n", res.ship_display,
+                     res.recipient_governor_name);
+}
+
+/// Formats a `GrantShipResult` into the recipient governor's notification.
+[[nodiscard]] inline std::string
+render_grant_ship_notification(const GrantShipResult& res) {
+  return std::format("\"{}\" granted you {} at {}\n", res.donor_governor_name,
+                     res.ship_display, res.orbits_display);
+}
+
 /// Abstract base class for polymorphic UI presentation across wire protocols.
 class Presenter {
 public:
@@ -797,6 +929,12 @@ public:
   [[nodiscard]] virtual std::string render(const BombardResult& vm) const = 0;
   [[nodiscard]] virtual std::string
   render(const MineDetonationReport& vm) const = 0;
+  [[nodiscard]] virtual std::string render(const JettisonResult& vm) const = 0;
+  [[nodiscard]] virtual std::string
+  render(const MountCrystalResult& vm) const = 0;
+  [[nodiscard]] virtual std::string
+  render(const DismountCrystalResult& vm) const = 0;
+  [[nodiscard]] virtual std::string render(const GrantShipResult& vm) const = 0;
 };
 
 /// Server-rendered ASCII/ANSI terminal presenter for Telnet sessions.
@@ -864,6 +1002,24 @@ public:
   [[nodiscard]] std::string
   render(const MineDetonationReport& vm) const override {
     return render_mine_detonation_report(vm);
+  }
+
+  [[nodiscard]] std::string render(const JettisonResult& vm) const override {
+    return render_jettison_result(vm);
+  }
+
+  [[nodiscard]] std::string
+  render(const MountCrystalResult& vm) const override {
+    return render_mount_crystal_result(vm);
+  }
+
+  [[nodiscard]] std::string
+  render(const DismountCrystalResult& vm) const override {
+    return render_dismount_crystal_result(vm);
+  }
+
+  [[nodiscard]] std::string render(const GrantShipResult& vm) const override {
+    return render_grant_ship_result(vm);
   }
 };
 
@@ -936,6 +1092,24 @@ public:
   [[nodiscard]] std::string
   render(const MineDetonationReport& vm) const override {
     return render_json_envelope("mine_detonation", vm);
+  }
+
+  [[nodiscard]] std::string render(const JettisonResult& vm) const override {
+    return render_json_envelope("jettison", vm);
+  }
+
+  [[nodiscard]] std::string
+  render(const MountCrystalResult& vm) const override {
+    return render_json_envelope("mount_crystal", vm);
+  }
+
+  [[nodiscard]] std::string
+  render(const DismountCrystalResult& vm) const override {
+    return render_json_envelope("dismount_crystal", vm);
+  }
+
+  [[nodiscard]] std::string render(const GrantShipResult& vm) const override {
+    return render_json_envelope("grant_ship", vm);
   }
 };
 

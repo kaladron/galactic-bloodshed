@@ -308,6 +308,7 @@ target_sources(
           commands/declare.cc
           commands/defend.cc
           commands/detonate.cc
+          commands/dismount.cc
           commands/dispatch.cc
           commands/dissolve.cc
           commands/distance.cc
@@ -457,6 +458,7 @@ gb_add_test(database_test SOURCES dal/database_test.cc)
 gb_add_test(declare_test SOURCES commands/declare_test.cc)
 gb_add_test(defend_test SOURCES commands/defend_test.cc)
 gb_add_test(detonate_test SOURCES commands/detonate_test.cc)
+gb_add_test(dismount_test SOURCES commands/dismount_test.cc)
 gb_add_test(dispatch_pipeline_test SOURCES commands/dispatch_pipeline_test.cc)
 gb_add_test(dissolve_test SOURCES commands/dissolve_test.cc)
 gb_add_test(distance_test SOURCES commands/distance_test.cc)

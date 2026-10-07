@@ -6,6 +6,8 @@
 module;
 
 import gb.entities;
+import gb.mechanics;
+import gb.presentation;
 import gb.services;
 import std;
 import scnlib;
@@ -55,18 +57,17 @@ bool grant(const command_t& argv, GameObj& g) {
       g.out << "Syntax: grant <governor> ship <shiplist>\n";
       return false;
     }
+    bool any_granted = false;
     for (auto ship_handle : ScopedCommandableShips(g, argv[3])) {
-      Ship& ship = *ship_handle;
-
-      ship.governor() = gov;
+      GrantShipResult res = grant_ship_governor(g.entity_manager, *ship_handle,
+                                                gov, g.current_governor().name,
+                                                race.governor(gov).name);
       warn_player(g.session_registry, g.entity_manager, Playernum, gov,
-                  std::format("\"{}\" granted you {} at {}\n",
-                              g.current_governor().name, ship,
-                              prin_ship_orbits(g.entity_manager, ship)));
-      g.out << std::format("{} granted to \"{}\"\n", ship,
-                           race.governor(gov).name);
+                  GB::presentation::render_grant_ship_notification(res));
+      g.present(res);
+      any_granted = true;
     }
-    return true;
+    return any_granted;
   }
 
   if (argv[2] == "money") {
@@ -80,10 +81,6 @@ bool grant(const command_t& argv, GameObj& g) {
       return false;
     }
     long amount = parsed_amount->value();
-    if (amount < 0 && !g.is_leader()) {
-      g.out << "Only leaders may take away money.\n";
-      return false;
-    }
     g.entity_manager.mutate_race(Playernum, [&](Race& race_mut) {
       auto& donor = race_mut.governor(Governor);
       auto& recipient = race_mut.governor(gov);
@@ -91,20 +88,19 @@ bool grant(const command_t& argv, GameObj& g) {
         amount = donor.money;
       else if (-amount > recipient.money)
         amount = -recipient.money;
-      if (amount >= 0)
+      if (amount >= 0) {
         g.out << std::format("{} money granted to \"{}\".\n", amount,
                              recipient.name);
-      else
-        g.out << std::format("{} money deducted from \"{}\".\n", -amount,
-                             recipient.name);
-      if (amount >= 0)
         warn_player(
             g.session_registry, g.entity_manager, Playernum, gov,
             std::format("\"{}\" granted you {} money.\n", donor.name, amount));
-      else
+      } else {
+        g.out << std::format("{} money deducted from \"{}\".\n", -amount,
+                             recipient.name);
         warn_player(
             g.session_registry, g.entity_manager, Playernum, gov,
             std::format("\"{}\" docked you {} money.\n", donor.name, -amount));
+      }
       donor.money -= amount;
       recipient.money += amount;
     });

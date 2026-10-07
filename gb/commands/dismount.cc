@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file mount.cc
-/// \brief Mount a crystal into a ship's hyperdrive.
+/// \file dismount.cc
+/// \brief Dismount a crystal from a ship's hyperdrive.
 
 module;
 
@@ -15,13 +15,13 @@ module commands;
 
 namespace GB::commands {
 
-bool mount(const command_t& argv, GameObj& g) {
+bool dismount(const command_t& argv, GameObj& g) {
   bool success = false;
 
   for (auto ship_handle : ScopedCommandableShips(g, argv[1])) {
-    auto res = mount_ship_crystal(*ship_handle);
+    auto res = dismount_ship_crystal(*ship_handle);
     if (!res) {
-      g.out << GB::presentation::render_mount_crystal_error(res.error());
+      g.out << GB::presentation::render_dismount_crystal_error(res.error());
       continue;
     }
     g.present(*res);
@@ -30,15 +30,15 @@ bool mount(const command_t& argv, GameObj& g) {
   return success;
 }
 
-const CommandDescriptor mount_cmd{
-    .name = "mount",
+const CommandDescriptor dismount_cmd{
+    .name = "dismount",
     .roles = {},
     .scopes = AllowedScopes::any(),
     .ap = APCost::free(),
     .min_args = 2,
-    .syntax = "mount <ship>",
-    .description = "Mount a crystal into a ship's hyperdrive",
-    .handler = &mount,
+    .syntax = "dismount <ship>",
+    .description = "Dismount a crystal from a ship's hyperdrive",
+    .handler = &dismount,
 };
 
 }  // namespace GB::commands

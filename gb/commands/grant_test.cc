@@ -99,11 +99,14 @@ void test_grant_dispatch() {
   test::expect_eq(saved_ship->governor(), 2);
   test::expect_contains(g.out.str(), "granted to \"SubGov\"");
 
-  // 9. Grant ship missing shiplist argument
+  // 9. Grant ship missing shiplist argument or non-existent ship
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"grant", "2", "ship"});
   test::expect_contains(g.out.str(),
                         "Syntax: grant <governor> ship <shiplist>");
+
+  ctx.assert_dispatch_rejected(g, {"grant", "2", "ship", "#999"});
+  test::expect_contains(g.out.str(), "You don't own ship #999.");
 
   // 10. Grant unknown target
   g.out.str("");

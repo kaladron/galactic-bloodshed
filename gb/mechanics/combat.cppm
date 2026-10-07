@@ -273,3 +273,14 @@ detonate_mine_against_ships(Ship& mine, EntityManager& entity_manager);
 /// \return Bombardment result if the mine was in planetary orbit.
 export std::optional<BombardResult>
 detonate_mine_against_planet(Ship& mine, EntityManager& entity_manager);
+
+export enum class DetonateError {
+  NotAMine,
+  NotActivated,
+  DockedOrLanded,
+  DetonationFailed,
+};
+
+/// \brief Validates and manually detonates a single space mine.
+export std::expected<MineDetonationReport, DetonateError>
+detonate_ship_mine(EntityManager& entity_manager, Ship& ship);

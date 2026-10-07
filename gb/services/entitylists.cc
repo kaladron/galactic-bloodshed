@@ -247,11 +247,28 @@ ScopedCommandableShips::ScopedCommandableShips(EntityManager& em,
   }
 }
 
-ScopedCommandableShips::ScopedCommandableShips(const GameObj& g,
+ScopedCommandableShips::ScopedCommandableShips(GameObj& g,
                                                std::string_view filter,
                                                bool require_active)
     : ScopedCommandableShips(g.entity_manager, g.scope_context(), filter,
-                             require_active) {}
+                             require_active) {
+  if (GB::is_ship_number_filter(filter) && begin() == end()) {
+    if (const auto shipno = GB::parse_ship_selection(filter);
+        shipno && *shipno > 0) {
+      try {
+        const Ship& ship = *g.entity_manager.peek_ship(*shipno);
+        const auto check =
+            validate_commandable(ship, g.player(), g.governor(), g.god());
+        if (!check && (require_active ||
+                       check.error() != CommandableError::ShipIrradiated)) {
+          (void)g.check_commandable(ship);
+        }
+      } catch (const EntityNotFoundError&) {
+        g.out << std::format("You don't own ship #{}.\n", *shipno);
+      }
+    }
+  }
+}
 
 ScopedCommandableShips::Iterator::Iterator(
     EntityManager& em, const ScopeContext& ctx, std::string_view filter,

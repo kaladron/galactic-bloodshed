@@ -102,15 +102,39 @@ void test_detonate_domain_errors() {
   ctx.assert_dispatch_rejected(g, {"detonate"});
   test::expect_contains(g.out.str(), "Syntax: detonate <mine>");
 
-  // 2. Ship is not a mine
+  // 2. Explicit foreign ship (#2 is owned by player 2)
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"detonate", "#2"});
+  test::expect_contains(g.out.str(), "You don't own ship #2.");
+
+  // 2b. Owned ship is not a mine
+  TestShipBuilder(ctx.em, ShipType::STYPE_CARGO, 3)
+      .owned_by(1, 1)
+      .in_star_orbit(1)
+      .build();
+  ctx.assert_dispatch_rejected(g, {"detonate", "#3"});
 
   // 3. Mine is not activated (on = false)
   ctx.em.mutate_ship(1, [](Ship& s) { s.on() = false; });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"detonate", "#1"});
   test::expect_contains(g.out.str(), "not activated");
+
+  // 4. Mine is docked (docked() == true)
+  ctx.em.mutate_ship(1, [](Ship& s) {
+    s.on() = true;
+    s.dock_with_ship(2);
+  });
+  ctx.assert_dispatch_rejected(g, {"detonate", "#1"});
+  test::expect_contains(g.out.str(), "The mine is docked or landed.");
+
+  // 5. Mine in planetary orbit detonating against planet surface
+  ctx.em.mutate_ship(1, [](Ship& s) {
+    s.enter_planet_orbit(1, 1);
+    s.destruct() = 30;
+  });
+  ctx.assert_dispatch_success(g, {"detonate", "#1"});
+  test::expect_contains(g.out.str(), "detonated at");
 
   ctx.verify_universe_invariants();
 }

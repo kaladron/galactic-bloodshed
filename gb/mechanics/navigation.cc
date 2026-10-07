@@ -753,3 +753,169 @@ bool followable(EntityManager& em, const Ship& s1, const Ship& s2) {
   return (s1.owner() == s2.owner()) || r->is_allied_with(s1.owner()) ||
          (s1.coordinates().distance_to(s2.coordinates()) <= range);
 }
+
+namespace {
+std::expected<int, JettisonError> resolve_jettison_amount(int requested_amount,
+                                                          int max_available) {
+  const int amount = (requested_amount == 0) ? max_available : requested_amount;
+  if (amount < 0) {
+    return std::unexpected(
+        JettisonError{.reason = JettisonErrorReason::NegativeAmount});
+  }
+  if (amount > max_available) {
+    return std::unexpected(JettisonError{
+        .reason = JettisonErrorReason::ExceedsAvailable,
+        .max_available = max_available,
+    });
+  }
+  if (amount == 0) {
+    return std::unexpected(
+        JettisonError{.reason = JettisonErrorReason::NothingToJettison});
+  }
+  return amount;
+}
+}  // namespace
+
+std::expected<JettisonResult, JettisonError>
+jettison_ship_cargo(Ship& ship, char commod, int requested_amount,
+                    double race_mass) {
+  if (ship.is_landed()) {
+    return std::unexpected(
+        JettisonError{.reason = JettisonErrorReason::ShipLanded});
+  }
+  if (!ship.active()) {
+    return std::unexpected(JettisonError{
+        .reason = JettisonErrorReason::ShipIrradiated,
+        .ship_display = std::format("{}", ship),
+    });
+  }
+
+  switch (commod) {
+    case 'x': {
+      auto amt = resolve_jettison_amount(requested_amount,
+                                         static_cast<int>(ship.crystals()));
+      if (!amt) return std::unexpected(amt.error());
+      ship.consume_crystals(*amt);
+      return JettisonResult{
+          .commodity = JettisonCommodity::Crystals,
+          .amount = *amt,
+      };
+    }
+    case 'c': {
+      auto amt = resolve_jettison_amount(requested_amount,
+                                         static_cast<int>(ship.popn()));
+      if (!amt) return std::unexpected(amt.error());
+      ship.remove_popn(*amt, race_mass);
+      return JettisonResult{
+          .commodity = JettisonCommodity::Crew,
+          .amount = *amt,
+          .ship_display = std::format("{}", ship),
+          .remaining_complement = ship.popn(),
+      };
+    }
+    case 'm': {
+      auto amt = resolve_jettison_amount(requested_amount,
+                                         static_cast<int>(ship.troops()));
+      if (!amt) return std::unexpected(amt.error());
+      ship.remove_troops(*amt, race_mass);
+      return JettisonResult{
+          .commodity = JettisonCommodity::Military,
+          .amount = *amt,
+          .ship_number = ship.number(),
+          .remaining_complement = ship.troops(),
+      };
+    }
+    case 'd': {
+      auto amt = resolve_jettison_amount(requested_amount,
+                                         static_cast<int>(ship.destruct()));
+      if (!amt) return std::unexpected(amt.error());
+      ship.consume_destruct(*amt);
+      return JettisonResult{
+          .commodity = JettisonCommodity::Destruct,
+          .amount = *amt,
+          .ship_display = std::format("{}", ship),
+          .check_boobytrap = !ship.max_crew_capacity(),
+          .still_boobytrapped = ship.destruct() > 0,
+      };
+    }
+    case 'f': {
+      auto amt = resolve_jettison_amount(requested_amount,
+                                         static_cast<int>(ship.fuel()));
+      if (!amt) return std::unexpected(amt.error());
+      ship.consume_fuel(static_cast<double>(*amt));
+      return JettisonResult{
+          .commodity = JettisonCommodity::Fuel,
+          .amount = *amt,
+      };
+    }
+    case 'r': {
+      auto amt = resolve_jettison_amount(requested_amount,
+                                         static_cast<int>(ship.resource()));
+      if (!amt) return std::unexpected(amt.error());
+      ship.consume_resource(*amt);
+      return JettisonResult{
+          .commodity = JettisonCommodity::Resources,
+          .amount = *amt,
+      };
+    }
+    default:
+      return std::unexpected(
+          JettisonError{.reason = JettisonErrorReason::InvalidCommodity});
+  }
+}
+
+std::expected<MountCrystalResult, MountCrystalError>
+mount_ship_crystal(Ship& ship) {
+  if (!ship.mount()) {
+    return std::unexpected(MountCrystalError::NoCrystalMount);
+  }
+  if (ship.mounted()) {
+    return std::unexpected(MountCrystalError::AlreadyMounted);
+  }
+  if (!ship.crystals()) {
+    return std::unexpected(MountCrystalError::NoCrystalsOnBoard);
+  }
+  ship.mounted() = 1;
+  ship.consume_crystals(1);
+  return MountCrystalResult{};
+}
+
+std::expected<DismountCrystalResult, DismountCrystalError>
+dismount_ship_crystal(Ship& ship) {
+  if (!ship.mount()) {
+    return std::unexpected(DismountCrystalError::NoCrystalMount);
+  }
+  if (!ship.mounted()) {
+    return std::unexpected(DismountCrystalError::NotMounted);
+  }
+  if (ship.crystals() >= ship.max_crystals_capacity()) {
+    return std::unexpected(DismountCrystalError::MaxCrystalsOnBoard);
+  }
+  ship.mounted() = 0;
+  ship.add_crystals(1);
+  const bool discharged = ship.hyper_drive().charge > 0;
+  if (discharged) {
+    ship.hyper_drive().charge = 0;
+  }
+  const bool deactivated = ship.laser() && ship.fire_laser();
+  if (deactivated) {
+    ship.fire_laser() = 0;
+  }
+  return DismountCrystalResult{
+      .hyperdrive_discharged = discharged,
+      .laser_deactivated = deactivated,
+  };
+}
+
+GrantShipResult grant_ship_governor(EntityManager& em, Ship& ship,
+                                    governor_t new_gov,
+                                    std::string_view donor_gov_name,
+                                    std::string_view recipient_gov_name) {
+  ship.governor() = new_gov;
+  return GrantShipResult{
+      .ship_display = std::format("{}", ship),
+      .orbits_display = prin_ship_orbits(em, ship),
+      .donor_governor_name = std::string(donor_gov_name),
+      .recipient_governor_name = std::string(recipient_gov_name),
+  };
+}

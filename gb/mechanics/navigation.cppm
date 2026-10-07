@@ -187,3 +187,78 @@ export ShipOrderStatus query_ship_order(EntityManager& em, const Ship& ship);
 export std::expected<OrderUpdate, OrderError>
 give_orders(EntityManager& em, const ScopeContext& scope_ctx,
             const command_t& argv, Ship& ship);
+
+export enum class JettisonCommodity {
+  Crystals,
+  Crew,
+  Military,
+  Destruct,
+  Fuel,
+  Resources,
+};
+
+export enum class JettisonErrorReason {
+  ShipLanded,
+  ShipIrradiated,
+  InvalidCommodity,
+  NegativeAmount,
+  ExceedsAvailable,
+  NothingToJettison,
+};
+
+export struct JettisonError {
+  JettisonErrorReason reason{JettisonErrorReason::InvalidCommodity};
+  std::string ship_display{};
+  int max_available{0};
+};
+
+export struct JettisonResult {
+  JettisonCommodity commodity{JettisonCommodity::Resources};
+  int amount{0};
+  std::string ship_display{};
+  shipnum_t ship_number{0};
+  population_t remaining_complement{0};
+  bool check_boobytrap{false};
+  bool still_boobytrapped{false};
+};
+
+export std::expected<JettisonResult, JettisonError>
+jettison_ship_cargo(Ship& ship, char commod, int requested_amount,
+                    double race_mass);
+
+export enum class MountCrystalError {
+  NoCrystalMount,
+  AlreadyMounted,
+  NoCrystalsOnBoard,
+};
+
+export struct MountCrystalResult {};
+
+export std::expected<MountCrystalResult, MountCrystalError>
+mount_ship_crystal(Ship& ship);
+
+export enum class DismountCrystalError {
+  NoCrystalMount,
+  NotMounted,
+  MaxCrystalsOnBoard,
+};
+
+export struct DismountCrystalResult {
+  bool hyperdrive_discharged{false};
+  bool laser_deactivated{false};
+};
+
+export std::expected<DismountCrystalResult, DismountCrystalError>
+dismount_ship_crystal(Ship& ship);
+
+export struct GrantShipResult {
+  std::string ship_display{};
+  std::string orbits_display{};
+  std::string donor_governor_name{};
+  std::string recipient_governor_name{};
+};
+
+export GrantShipResult grant_ship_governor(EntityManager& em, Ship& ship,
+                                           governor_t new_gov,
+                                           std::string_view donor_gov_name,
+                                           std::string_view recipient_gov_name);

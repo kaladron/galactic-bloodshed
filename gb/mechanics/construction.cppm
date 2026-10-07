@@ -99,3 +99,39 @@ export CreatedShipSummary create_ship_by_ship(EntityManager& entity_manager,
                                               governor_t Governor,
                                               const Race& race, bool outside,
                                               Ship& newship, Ship& builder);
+
+export enum class ScrapError {
+  NoCrew,
+  StarNotFound,
+  InsufficientUniverseAp,
+  InsufficientStarAp,
+  OtherShipNotDocked,
+};
+
+export struct ScrapShipResult {
+  std::string ship_display{};
+  bool was_landed{false};
+  bool reclaimed{false};
+  std::optional<int> toxin_released{std::nullopt};
+  resource_t original_cost{0};
+  bool has_resource_stockpile{false};
+  resource_t initial_scrap_value{0};
+  std::optional<resource_t> resource_room_limit{std::nullopt};
+  fuel_t initial_fuel{0.0};
+  std::optional<fuel_t> fuel_room_limit{std::nullopt};
+  resource_t initial_destruct{0};
+  std::optional<resource_t> destruct_room_limit{std::nullopt};
+  population_t initial_popn{0};
+  population_t initial_troops{0};
+  bool foreign_sector_blocks_crew{false};
+  std::optional<population_t> troops_room_limit{std::nullopt};
+  std::optional<population_t> crew_room_limit{std::nullopt};
+  int initial_crystals{0};
+  bool foreign_sector_blocks_crystals{false};
+  std::optional<int> crystals_room_limit{std::nullopt};
+  int recovered_crystals{0};
+  std::optional<Coordinates> colonized_sector{std::nullopt};
+};
+
+export std::expected<ScrapShipResult, ScrapError>
+scrap_single_ship(EntityManager& entity_manager, Ship& s, const Race& race);

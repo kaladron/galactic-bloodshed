@@ -901,6 +901,112 @@ render_grant_ship_notification(const GrantShipResult& res) {
                      res.ship_display, res.orbits_display);
 }
 
+/// Formats a `ScrapError` into its ASCII error string.
+[[nodiscard]] inline std::string render_scrap_error(ScrapError err) {
+  switch (err) {
+    case ScrapError::NoCrew:
+      return "Can't scrap that ship - no crew.\n";
+    case ScrapError::StarNotFound:
+      return "Star not found.\n";
+    case ScrapError::InsufficientUniverseAp:
+      return "You need 1 universe action point.\n";
+    case ScrapError::InsufficientStarAp:
+      return "You don't have 1 action points there.\n";
+    case ScrapError::OtherShipNotDocked:
+      return "Warning, other ship not docked..\n";
+  }
+  std::unreachable();
+}
+
+/// Formats a `ScrapShipResult` into its ASCII presentation string.
+[[nodiscard]] inline std::string
+render_scrap_ship_result(const ScrapShipResult& res) {
+  std::string out;
+  if (res.toxin_released.has_value()) {
+    std::format_to(std::back_inserter(out),
+                   "WARNING: This will release {} toxin points back into the "
+                   "atmosphere!!\n",
+                   *res.toxin_released);
+  }
+  if (!res.reclaimed) {
+    std::format_to(
+        std::back_inserter(out),
+        "{} is not landed or docked.\nNo resources can be reclaimed.\n",
+        res.ship_display);
+  } else {
+    std::format_to(std::back_inserter(out), "{}: original cost: {}\n",
+                   res.ship_display, res.original_cost);
+    std::format_to(std::back_inserter(out),
+                   "         scrap value{}: {} rp's.\n",
+                   res.has_resource_stockpile ? "(with stockpile) " : "",
+                   res.initial_scrap_value);
+    if (res.foreign_sector_blocks_crew) {
+      out += "You don't own this sector; no crew can be recovered.\n";
+    }
+    if (res.foreign_sector_blocks_crystals) {
+      out += "You don't own this sector; no crystals can be recovered.\n";
+    }
+    if (res.resource_room_limit.has_value()) {
+      std::format_to(std::back_inserter(out),
+                     "(There is only room for {} resources.)\n",
+                     *res.resource_room_limit);
+    }
+    if (res.initial_fuel > 0.0) {
+      std::format_to(std::back_inserter(out), "Fuel recovery: {:.0f}.\n",
+                     res.initial_fuel);
+      if (res.fuel_room_limit.has_value()) {
+        std::format_to(std::back_inserter(out),
+                       "(There is only room for {:.2f} fuel.)\n",
+                       *res.fuel_room_limit);
+      }
+    }
+    if (res.initial_destruct > 0) {
+      std::format_to(std::back_inserter(out), "Weapons recovery: {}.\n",
+                     res.initial_destruct);
+      if (res.destruct_room_limit.has_value()) {
+        std::format_to(std::back_inserter(out),
+                       "(There is only room for {} destruct.)\n",
+                       *res.destruct_room_limit);
+      }
+    }
+    if (res.initial_popn + res.initial_troops > 0 &&
+        !res.foreign_sector_blocks_crew) {
+      std::format_to(std::back_inserter(out),
+                     "Population/Troops recovery: {}/{}.\n", res.initial_popn,
+                     res.initial_troops);
+      if (res.troops_room_limit.has_value()) {
+        std::format_to(std::back_inserter(out),
+                       "(There is only room for {} troops.)\n",
+                       *res.troops_room_limit);
+      }
+      if (res.crew_room_limit.has_value()) {
+        std::format_to(std::back_inserter(out),
+                       "(There is only room for {} crew.)\n",
+                       *res.crew_room_limit);
+      }
+    }
+    if (res.initial_crystals > 0 && !res.foreign_sector_blocks_crystals) {
+      if (res.crystals_room_limit.has_value()) {
+        std::format_to(std::back_inserter(out),
+                       "(There is only room for {} crystals.)\n",
+                       *res.crystals_room_limit);
+      }
+      std::format_to(std::back_inserter(out), "Crystal recovery: {}.\n",
+                     res.recovered_crystals);
+    }
+  }
+  if (res.colonized_sector.has_value()) {
+    std::format_to(std::back_inserter(out), "Sector {} Colonized.\n",
+                   *res.colonized_sector);
+  }
+  if (res.was_landed) {
+    out += "\nScrapped.\n";
+  } else {
+    out += "\nDestroyed.\n";
+  }
+  return out;
+}
+
 /// Abstract base class for polymorphic UI presentation across wire protocols.
 class Presenter {
 public:
@@ -935,6 +1041,7 @@ public:
   [[nodiscard]] virtual std::string
   render(const DismountCrystalResult& vm) const = 0;
   [[nodiscard]] virtual std::string render(const GrantShipResult& vm) const = 0;
+  [[nodiscard]] virtual std::string render(const ScrapShipResult& vm) const = 0;
 };
 
 /// Server-rendered ASCII/ANSI terminal presenter for Telnet sessions.
@@ -1020,6 +1127,10 @@ public:
 
   [[nodiscard]] std::string render(const GrantShipResult& vm) const override {
     return render_grant_ship_result(vm);
+  }
+
+  [[nodiscard]] std::string render(const ScrapShipResult& vm) const override {
+    return render_scrap_ship_result(vm);
   }
 };
 
@@ -1110,6 +1221,10 @@ public:
 
   [[nodiscard]] std::string render(const GrantShipResult& vm) const override {
     return render_json_envelope("grant_ship", vm);
+  }
+
+  [[nodiscard]] std::string render(const ScrapShipResult& vm) const override {
+    return render_json_envelope("scrap_ship", vm);
   }
 };
 

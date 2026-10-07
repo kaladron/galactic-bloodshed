@@ -341,3 +341,168 @@ std::tuple<money_t, double> shipping_cost(EntityManager& em, const starnum_t to,
   money_t fcost = std::round(factor * (double)value);
   return {fcost, dist};
 }
+
+std::expected<ScrapShipResult, ScrapError>
+scrap_single_ship(EntityManager& em, Ship& s, const Race& race) {
+  if (s.max_crew_capacity() > 0 && s.popn() == 0) {
+    return std::unexpected(ScrapError::NoCrew);
+  }
+
+  if (s.is_docked() && s.whatorbits() != ScopeLevel::LEVEL_SHIP) {
+    const Ship& s2 = *em.peek_ship(*s.destshipno());
+    if (!s2.docked() || s2.destshipno() != s.number()) {
+      return std::unexpected(ScrapError::OtherShipNotDocked);
+    }
+  }
+
+  const bool in_deep_space =
+      (s.whatorbits() == ScopeLevel::LEVEL_UNIV || s.storbits() == 0);
+  if (in_deep_space) {
+    if (!race.God) {
+      const auto* univ = em.peek_universe();
+      if (univ->get_AP(race.Playernum) < 1) {
+        return std::unexpected(ScrapError::InsufficientUniverseAp);
+      }
+      em.mutate_universe(
+          [&](universe_struct& u) { u.deduct_AP(race.Playernum, 1); });
+    }
+  } else {
+    const auto* star = em.peek_star(s.storbits());
+    if (!star) {
+      return std::unexpected(ScrapError::StarNotFound);
+    }
+    if (!race.God) {
+      if (star->AP(race.Playernum) < 1) {
+        return std::unexpected(ScrapError::InsufficientStarAp);
+      }
+      em.mutate_star(s.storbits(),
+                     [&](Star& st) { st.AP(race.Playernum) -= 1; });
+    }
+  }
+
+  ScrapShipResult result{
+      .ship_display = std::format("{}", s),
+      .was_landed = s.is_landed(),
+      .reclaimed = s.docked(),
+  };
+
+  if (s.whatorbits() == ScopeLevel::LEVEL_PLAN) {
+    if (const auto* tox = s.as<ToxicWasteShip>()) {
+      result.toxin_released = tox->toxic_level();
+    }
+  }
+
+  const bool is_landed_on_planet =
+      (s.whatorbits() == ScopeLevel::LEVEL_PLAN && s.is_landed());
+  player_t sect_owner = 0;
+  if (is_landed_on_planet) {
+    sect_owner = em.peek_sectormap(s.storbits(), s.pnumorbits())
+                     ->get(s.land_coords())
+                     .get_owner();
+  }
+  const bool foreign_sector =
+      (is_landed_on_planet && sect_owner != 0 && sect_owner != race.Playernum);
+
+  resource_t scrapval = s.effective_cost() / 2 + s.resource();
+  fuel_t fuelval = s.fuel();
+  resource_t destval = s.destruct();
+  population_t troopval = s.troops();
+  population_t crewval = s.popn();
+  int xtalval = s.crystals() + s.mounted();
+
+  if (s.docked()) {
+    result.original_cost = s.effective_cost();
+    result.has_resource_stockpile = (s.resource() > 0);
+    result.initial_scrap_value = scrapval;
+    result.initial_fuel = fuelval;
+    result.initial_destruct = destval;
+    result.initial_popn = crewval;
+    result.initial_troops = troopval;
+    result.initial_crystals = xtalval;
+
+    if (foreign_sector) {
+      if (crewval + troopval > 0) {
+        result.foreign_sector_blocks_crew = true;
+        crewval = 0;
+        troopval = 0;
+      }
+      if (xtalval > 0) {
+        result.foreign_sector_blocks_crystals = true;
+        xtalval = 0;
+      }
+    }
+
+    if (s.is_docked()) {
+      const Ship& s2 = *em.peek_ship(*s.destshipno());
+      if (!s2.can_strap_cargo_to_hull() &&
+          s2.resource() + scrapval > s2.max_resource_capacity()) {
+        scrapval =
+            std::max<resource_t>(0, s2.max_resource_capacity() - s2.resource());
+        result.resource_room_limit = scrapval;
+      }
+      if (fuelval > 0.0 && s2.fuel() + fuelval > s2.max_fuel_capacity()) {
+        fuelval = std::max(0.0, s2.max_fuel_capacity() - s2.fuel());
+        result.fuel_room_limit = fuelval;
+      }
+      if (destval > 0 && s2.destruct() + destval > s2.max_destruct_capacity()) {
+        destval =
+            std::max<resource_t>(0, s2.max_destruct_capacity() - s2.destruct());
+        result.destruct_room_limit = destval;
+      }
+      if (crewval + troopval > 0) {
+        const population_t avail_berths = s2.available_crew_capacity();
+        if (troopval > avail_berths) {
+          troopval = avail_berths;
+          result.troops_room_limit = troopval;
+        }
+        const population_t remaining_berths = avail_berths - troopval;
+        if (crewval > remaining_berths) {
+          crewval = remaining_berths;
+          result.crew_room_limit = crewval;
+        }
+      }
+      if (xtalval > 0 && s2.crystals() + xtalval > s2.max_crystals_capacity()) {
+        xtalval =
+            s2.max_crystals_capacity() > s2.crystals()
+                ? static_cast<int>(s2.max_crystals_capacity() - s2.crystals())
+                : 0;
+        result.crystals_room_limit = xtalval;
+      }
+    }
+    result.recovered_crystals = xtalval;
+  }
+
+  if (s.is_docked()) {
+    const shipnum_t dest_ship = *s.destshipno();
+    em.mutate_ship(dest_ship, [&](Ship& s2) {
+      s2.add_crystals(xtalval);
+      s2.add_fuel(fuelval);
+      s2.add_destruct(destval);
+      s2.add_resource(scrapval);
+      s2.add_troops(troopval, race.mass);
+      s2.add_popn(crewval, race.mass);
+    });
+  }
+
+  em.kill_ship(race.Playernum, s);
+
+  if (is_landed_on_planet) {
+    em.mutate_sectormap(s.storbits(), s.pnumorbits(), [&](SectorMap& smap) {
+      em.mutate_planet(s.storbits(), s.pnumorbits(), [&](Planet& planet) {
+        auto& sector = smap.get(s.land_coords());
+        const bool was_unowned = !sector.is_owned();
+        planet.adjust_sector_population(sector, race.Playernum, crewval,
+                                        troopval);
+        if (was_unowned && sector.is_owned()) {
+          result.colonized_sector = s.land_coords();
+        }
+        planet.info(race.Playernum).resource += scrapval;
+        planet.info(race.Playernum).destruct += destval;
+        planet.info(race.Playernum).fuel += static_cast<int>(fuelval);
+        planet.info(race.Playernum).crystals += xtalval;
+      });
+    });
+  }
+
+  return result;
+}

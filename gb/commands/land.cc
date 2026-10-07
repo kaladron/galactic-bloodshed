@@ -6,6 +6,7 @@
 module;
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import scnlib;
 import std;
@@ -164,13 +165,16 @@ void resolve_planetary_defense_fire(GameObj& g, Ship& s, const Star& star,
 
       if (auto p2s_opt =
               shoot_planet_to_ship(g.entity_manager, alien, s, strength)) {
-        const auto& [p_damage, p_short, p_long] = *p2s_opt;
+        const std::string p_short =
+            GB::presentation::render_ship_shot_short(*p2s_opt);
+        const std::string p_long =
+            GB::presentation::render_ship_shot_long(*p2s_opt);
         post(g.entity_manager, p_short, NewsType::COMBAT);
         notify_star(g.session_registry, g.entity_manager, 0, 0, s.storbits(),
                     p_short);
         warn_player(g.session_registry, g.entity_manager, i, star.governor(i),
                     p_long);
-        g.out << p_long;
+        g.present(*p2s_opt);
       }
       p.info(i).destruct -= strength;
     });

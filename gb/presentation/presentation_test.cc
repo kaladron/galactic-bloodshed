@@ -132,6 +132,126 @@ void test_render_json_envelope_and_polymorphic_presenter() {
   test::expect_eq(
       GB::presentation::presenter_for(UiMode::ASCII).render(damaged_crystal),
       "/Sol: Crystal damaged from overloading on B1 Battleship.\n");
+
+  static_assert(std::is_aggregate_v<CriticalHitSystemsDamage>);
+  static_assert(std::is_aggregate_v<CriticalHitResult>);
+  static_assert(std::is_aggregate_v<ShipShotResult>);
+  static_assert(std::is_aggregate_v<BombardResult>);
+  static_assert(std::is_aggregate_v<MineShipVictimReport>);
+  static_assert(std::is_aggregate_v<MineDetonationReport>);
+
+  const ShipShotResult ship_shot{
+      .attacker_kind = ShipShotAttackerKind::Ship,
+      .attacker_player = player_t{1},
+      .attacker_display = "d1 Destroyer",
+      .target_location_display = "/Sol",
+      .target_display = "c2 Cruiser",
+      .target_alive = false,
+      .weapon = ShipShotWeaponKind::HeavyGuns,
+      .strength = 3,
+      .range = 12.0,
+      .hits = 2,
+      .hit_probability = 75,
+      .damage = 45,
+      .total_damage = 100,
+      .radiation_dosage = 0,
+      .total_radiation = 0,
+      .armor_reduced_to = armor_t{4},
+      .penetrations = 1,
+      .effective_armor = 4,
+      .defense = 2,
+      .penetration_probability = 0.5,
+      .critical =
+          CriticalHitResult{
+              .count = 1,
+              .damage = 15,
+              .systems =
+                  CriticalHitSystemsDamage{
+                      .cew_destroyed = true,
+                      .laser_destroyed = true,
+                      .cloak_destroyed = true,
+                      .hyper_drive_destroyed = true,
+                      .reduced_max_speed = speed_t{2},
+                      .reduced_armor = armor_t{3},
+                  },
+          },
+      .collateral =
+          CollateralDamage{
+              .civilian_casualties = 5,
+              .military_casualties = 2,
+              .primary_guns_lost = 1,
+              .secondary_guns_lost = 1,
+          },
+  };
+  const std::string ship_shot_ascii =
+      GB::presentation::presenter_for(UiMode::ASCII).render(ship_shot);
+  test::expect_contains(ship_shot_ascii,
+                        "/Sol: d1 Destroyer DESTROYED c2 Cruiser\n");
+  test::expect_contains(ship_shot_ascii, "CEW ");
+  test::expect_contains(ship_shot_ascii, "Laser ");
+  test::expect_contains(ship_shot_ascii, "Cloak ");
+  test::expect_contains(ship_shot_ascii, "Hyper-drive ");
+  test::expect_contains(ship_shot_ascii, "Speed=2");
+  test::expect_contains(ship_shot_ascii, "Armor=3");
+  test::expect_contains(ship_shot_ascii, "5 civ + 2 mil casualties");
+  test::expect_contains(ship_shot_ascii,
+                        "1 primary/1 secondary guns destroyed");
+  test::expect_contains(
+      GB::presentation::presenter_for(UiMode::JSON).render(ship_shot),
+      "\"type\":\"ship_shot\"");
+
+  const ShipShotResult planet_rad_shot{
+      .attacker_kind = ShipShotAttackerKind::Planet,
+      .attacker_player = player_t{1},
+      .attacker_display = "/Sol/Terra",
+      .target_location_display = "/Sol/Terra",
+      .target_display = "c2 Cruiser",
+      .target_alive = true,
+      .weapon = ShipShotWeaponKind::Radiation,
+      .strength = 4,
+      .range = 0.0,
+      .hits = 2,
+      .hit_probability = 60,
+      .damage = 0,
+      .total_damage = 10,
+      .radiation_dosage = 30,
+      .total_radiation = 50,
+  };
+  const std::string planet_rad_ascii =
+      GB::presentation::render_ship_shot_long(planet_rad_shot);
+  test::expect_contains(planet_rad_ascii,
+                        "/Sol/Terra [1] attacked c2 Cruiser\n");
+  test::expect_contains(planet_rad_ascii, "Rad: 30% for a total of 50%");
+
+  const BombardResult bombard_res{
+      .ship_display = "B1 Battleship",
+      .location_display = "/Sol/Terra",
+      .previous_sector_owner = player_t{2},
+      .sectors_destroyed = 2,
+      .nuked_players = {player_t{2}},
+  };
+  test::expect_contains(
+      GB::presentation::presenter_for(UiMode::ASCII).render(bombard_res),
+      "B1 Battleship bombards /Sol/Terra [2]\n\t2 sectors destroyed\n");
+  test::expect_contains(
+      GB::presentation::presenter_for(UiMode::JSON).render(bombard_res),
+      "\"type\":\"bombard_result\"");
+
+  const MineDetonationReport mine_report{
+      .ship_display = "M1 Mine",
+      .orbit_display = "/Sol/Terra",
+      .ship_victims = {},
+      .planet_strike = bombard_res,
+  };
+  test::expect_contains(
+      GB::presentation::presenter_for(UiMode::ASCII).render(mine_report),
+      "M1 Mine detonated at /Sol/Terra\n");
+  test::expect_contains(
+      GB::presentation::render_mine_planet_strike_telegram(mine_report),
+      "2 sectors destroyed.");
+  test::expect_contains(
+      GB::presentation::presenter_for(UiMode::JSON).render(mine_report),
+      "\"type\":\"mine_detonation\"");
 }
 
 void test_gameobj_ui_mode_and_present() {

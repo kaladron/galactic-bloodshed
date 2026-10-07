@@ -135,8 +135,11 @@ bool defend(const command_t& argv, GameObj& g) {
                 return;
               }
               fired = true;
-              auto [p_damage, p_short, p_long] = *p2s_opt;
-              damage = p_damage;
+              damage = p2s_opt->damage;
+              const std::string p_short =
+                  GB::presentation::render_ship_shot_short(*p2s_opt);
+              const std::string p_long =
+                  GB::presentation::render_ship_shot_long(*p2s_opt);
 
               p.info(Playernum).destruct -= strength;
               if (!target_ship.alive())
@@ -145,7 +148,7 @@ bool defend(const command_t& argv, GameObj& g) {
                           Governor, target_ship.storbits(), p_short);
               warn_player(g.session_registry, g.entity_manager,
                           target_ship.owner(), target_ship.governor(), p_long);
-              g.out << p_long;
+              g.present(*p2s_opt);
 
               /* defending ship retaliates */
               strength = 0;
@@ -171,15 +174,17 @@ bool defend(const command_t& argv, GameObj& g) {
                   else
                     target_ship.consume_destruct(strength);
 
-                  post(g.entity_manager, result_opt->short_message,
-                       NewsType::COMBAT);
+                  const std::string short_msg =
+                      GB::presentation::render_bombard_short(*result_opt);
+                  const std::string long_msg =
+                      GB::presentation::render_bombard_long(*result_opt);
+                  post(g.entity_manager, short_msg, NewsType::COMBAT);
                   notify_star(g.session_registry, g.entity_manager, Playernum,
-                              Governor, target_ship.storbits(),
-                              result_opt->short_message);
-                  g.out << result_opt->long_message;
+                              Governor, target_ship.storbits(), short_msg);
+                  g.present(*result_opt);
                   warn_player(g.session_registry, g.entity_manager,
                               target_ship.owner(), target_ship.governor(),
-                              result_opt->long_message);
+                              long_msg);
                 }
               }
 
@@ -208,15 +213,17 @@ bool defend(const command_t& argv, GameObj& g) {
                                           static_cast<double>(strength));
                       else
                         ship.consume_destruct(strength);
-                      post(g.entity_manager, result2_opt->short_message,
-                           NewsType::COMBAT);
+                      const std::string short_msg2 =
+                          GB::presentation::render_bombard_short(*result2_opt);
+                      const std::string long_msg2 =
+                          GB::presentation::render_bombard_long(*result2_opt);
+                      post(g.entity_manager, short_msg2, NewsType::COMBAT);
                       notify_star(g.session_registry, g.entity_manager,
                                   Playernum, Governor, ship.storbits(),
-                                  result2_opt->short_message);
-                      g.out << result2_opt->long_message;
+                                  short_msg2);
+                      g.present(*result2_opt);
                       warn_player(g.session_registry, g.entity_manager,
-                                  ship.owner(), ship.governor(),
-                                  result2_opt->long_message);
+                                  ship.owner(), ship.governor(), long_msg2);
                     }
                   }
                 }

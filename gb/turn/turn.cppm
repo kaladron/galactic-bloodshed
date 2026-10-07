@@ -11,6 +11,7 @@ export module gb.turn;
 import gb.entities;
 import gb.services;
 import gb.mechanics;
+import gb.presentation;
 
 export import :turnstats;
 export import :bombard;

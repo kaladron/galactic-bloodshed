@@ -6,6 +6,7 @@
 module;
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import std;
 
@@ -32,8 +33,32 @@ bool detonate(const command_t& argv, GameObj& g) {
       continue;
     }
 
-    domine(s, /*detonate=*/true, g.entity_manager);
-    any_detonated = true;
+    if (const auto report = domine(s, /*detonate=*/true, g.entity_manager)) {
+      const std::string notice =
+          GB::presentation::render_mine_detonation_notice(*report);
+      post(g.entity_manager, notice, NewsType::COMBAT);
+      telegram_star(g.entity_manager, s.storbits(), s.owner(), s.governor(),
+                    notice);
+      for (const auto& victim : report->ship_victims) {
+        post(g.entity_manager,
+             GB::presentation::render_ship_shot_short(victim.shot),
+             NewsType::COMBAT);
+        push_telegram(g.entity_manager, victim.victim_owner,
+                      victim.victim_governor,
+                      GB::presentation::render_ship_shot_long(victim.shot));
+      }
+      if (report->planet_strike) {
+        const std::string planet_msg =
+            GB::presentation::render_mine_planet_strike_telegram(*report);
+        const auto& star = *g.entity_manager.peek_star(s.storbits());
+        for (player_t i : report->planet_strike->nuked_players) {
+          push_telegram(g.entity_manager, i, star.governor(i), planet_msg);
+        }
+        push_telegram(g.entity_manager, s.owner(), s.governor(), planet_msg);
+      }
+      g.present(*report);
+      any_detonated = true;
+    }
   }
 
   return any_detonated;

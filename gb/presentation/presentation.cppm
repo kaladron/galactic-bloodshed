@@ -42,28 +42,23 @@ template <typename T>
 
 /// Formats a `TripEstimate` into its ASCII presentation string using a single
 /// named return variable (`out`) for guaranteed NRVO.
-/// Decomposes `TripEstimate` via structured binding so adding any field to
-/// `TripEstimate` triggers a compile-time error until handled here.
 [[nodiscard]] inline std::string render_trip_estimate(const TripEstimate& est) {
-  const auto& [distance, segments, fuel_used, launch_gravity_fuel,
-               launch_planet_name, arrival_status, estimated_arrival_time] =
-      est;
-
   std::string out;
-  if (launch_gravity_fuel > 0.00) {
+  if (est.launch_gravity_fuel > 0.00) {
     std::format_to(
         std::back_inserter(out),
         "Total Distance = {:.2f}   Number of Segments = {}\nFuel = {:.2f} "
         "({:.2f} used to launch from {})\n  ",
-        distance, segments, fuel_used, launch_gravity_fuel, launch_planet_name);
+        est.distance, est.segments, est.fuel_used, est.launch_gravity_fuel,
+        est.launch_planet_name);
   } else {
     std::format_to(
         std::back_inserter(out),
         "Total Distance = {:.2f}   Number of Segments = {}\nFuel = {:.2f}   ",
-        distance, segments, fuel_used);
+        est.distance, est.segments, est.fuel_used);
   }
 
-  switch (arrival_status) {
+  switch (est.arrival_status) {
     case ArrivalTimeStatus::ServerStateUnavailable:
       out += "Server state unavailable.\n";
       break;
@@ -72,7 +67,7 @@ template <typename T>
              "discrepancy.\n";
       break;
     case ArrivalTimeStatus::Available: {
-      std::time_t arrival = estimated_arrival_time;
+      std::time_t arrival = est.estimated_arrival_time;
       std::format_to(std::back_inserter(out), "ESTIMATED Arrival Time: {}\n",
                      std::ctime(&arrival));
       break;
@@ -84,51 +79,40 @@ template <typename T>
 /// Renders a `PlanetMapViewModel` as a 2D ASCII planetary map with X/Y
 /// coordinate headers, ANSI SGR reverse-video (`\x1b[7m...\x1b[27m`) for
 /// `inverse` cells, and a `tabulate::Table` for planetary statistics.
-/// Decomposes `PlanetMapViewModel`, `PlanetMapCell`, and `PlanetAlienPresence`
-/// via structured bindings so adding any field triggers a compile-time error
-/// until handled here.
 [[nodiscard]] inline std::string
 render_ascii_planet_map(const PlanetMapViewModel& vm) {
-  const auto& [planet_name, dimensions, sectors, planet_type_name, is_metamorph,
-               sectors_owned, aliens_unknown, aliens, guns, mob_points, comread,
-               mob_set, compatibility, toxicity, resource_stockpile,
-               fuel_stockpile, destruct_cap, player_popn, total_popn,
-               effective_maxpopn, crystals, player_troops, total_troops,
-               total_resources, tax, newtax, est_production, slaved_to,
-               primary_unstable] = vm;
-
   std::string out;
-  std::format_to(std::back_inserter(out), "     {}\n", planet_name);
+  std::format_to(std::back_inserter(out), "     {}\n", vm.planet_name);
 
-  if (dimensions.x >= 10) {
+  if (vm.dimensions.x >= 10) {
     out += "   ";
-    for (const int x : std::views::iota(0, dimensions.x)) {
+    for (const int x : std::views::iota(0, vm.dimensions.x)) {
       out.push_back(static_cast<char>('0' + ((x / 10) % 10)));
     }
     out.push_back('\n');
   }
 
   out += "   ";
-  for (const int x : std::views::iota(0, dimensions.x)) {
+  for (const int x : std::views::iota(0, vm.dimensions.x)) {
     out.push_back(static_cast<char>('0' + (x % 10)));
   }
   out.push_back('\n');
 
-  if (dimensions.x > 0 && dimensions.y > 0) {
+  if (vm.dimensions.x > 0 && vm.dimensions.y > 0) {
     bool in_inverse = false;
-    for (const auto& [coords, _, glyph, inverse] : sectors) {
-      if (coords.x == 0) {
-        std::format_to(std::back_inserter(out), "{:02d} ", coords.y);
+    for (const auto& cell : vm.sectors) {
+      if (cell.coords.x == 0) {
+        std::format_to(std::back_inserter(out), "{:02d} ", cell.coords.y);
       }
-      if (inverse && !in_inverse) {
+      if (cell.inverse && !in_inverse) {
         out += "\x1b[7m";
         in_inverse = true;
-      } else if (!inverse && in_inverse) {
+      } else if (!cell.inverse && in_inverse) {
         out += "\x1b[27m";
         in_inverse = false;
       }
-      out.push_back(glyph);
-      if (coords.x + 1 == dimensions.x) {
+      out.push_back(cell.glyph);
+      if (cell.coords.x + 1 == vm.dimensions.x) {
         if (in_inverse) {
           out += "\x1b[27m";
           in_inverse = false;
@@ -139,24 +123,25 @@ render_ascii_planet_map(const PlanetMapViewModel& vm) {
   }
   out.push_back('\n');
 
-  std::format_to(std::back_inserter(out),
-                 "Type: {:<8}   Sects {:<7}: {:<3}   Aliens:", planet_type_name,
-                 is_metamorph ? "covered" : "owned", sectors_owned);
-  if (aliens_unknown) {
+  std::format_to(
+      std::back_inserter(out),
+      "Type: {:<8}   Sects {:<7}: {:<3}   Aliens:", vm.planet_type_name,
+      vm.is_metamorph ? "covered" : "owned", vm.sectors_owned);
+  if (vm.aliens_unknown) {
     out += "???";
-  } else if (aliens.empty()) {
+  } else if (vm.aliens.empty()) {
     out += "(none)";
   } else {
-    for (const auto& [alien_player, at_war] : aliens) {
-      std::format_to(std::back_inserter(out), "{}{}", at_war ? '*' : ' ',
-                     alien_player);
+    for (const auto& alien : vm.aliens) {
+      std::format_to(std::back_inserter(out), "{}{}", alien.at_war ? '*' : ' ',
+                     alien.player);
     }
   }
   out.push_back('\n');
 
-  std::string compat_str = std::format("{:.2f}%", compatibility);
-  if (toxicity > 50) {
-    std::format_to(std::back_inserter(compat_str), " ({}% TOXIC)", toxicity);
+  std::string compat_str = std::format("{:.2f}%", vm.compatibility);
+  if (vm.toxicity > 50) {
+    std::format_to(std::back_inserter(compat_str), " ({}% TOXIC)", vm.toxicity);
   }
 
   tabulate::Table stats_table;
@@ -168,21 +153,22 @@ render_ascii_planet_map(const PlanetMapViewModel& vm) {
       tabulate::FontAlign::right);
   stats_table.column(3).format().width(26);
 
-  stats_table.add_row({"Guns :", std::format("{}", guns),
-                       "Mob Points :", std::format("{}", mob_points)});
+  stats_table.add_row({"Guns :", std::format("{}", vm.guns),
+                       "Mob Points :", std::format("{}", vm.mob_points)});
   stats_table.add_row(
-      {"Mobilization :", std::format("{} ({})", comread, mob_set),
+      {"Mobilization :", std::format("{} ({})", vm.comread, vm.mob_set),
        "Compatibility :", compat_str});
   stats_table.add_row(
-      {"Resource stockpile :", std::format("{}", resource_stockpile),
-       "Fuel stockpile :", std::format("{}", fuel_stockpile)});
+      {"Resource stockpile :", std::format("{}", vm.resource_stockpile),
+       "Fuel stockpile :", std::format("{}", vm.fuel_stockpile)});
   stats_table.add_row(
-      {"Destruct cap :", std::format("{}", destruct_cap),
-       is_metamorph ? "Tons of biomass :" : "Total Population :",
-       std::format("{} ({}/{})", player_popn, total_popn, effective_maxpopn)});
+      {"Destruct cap :", std::format("{}", vm.destruct_cap),
+       vm.is_metamorph ? "Tons of biomass :" : "Total Population :",
+       std::format("{} ({}/{})", vm.player_popn, vm.total_popn,
+                   vm.effective_maxpopn)});
   stats_table.add_row(
-      {"Crystals :", std::format("{}", crystals),
-       "Ground forces :", std::format("{} ({})", player_troops, total_troops)});
+      {"Crystals :", std::format("{}", vm.crystals), "Ground forces :",
+       std::format("{} ({})", vm.player_troops, vm.total_troops)});
 
   out += stats_table.str();
   out.push_back('\n');
@@ -190,13 +176,13 @@ render_ascii_planet_map(const PlanetMapViewModel& vm) {
   std::format_to(std::back_inserter(out),
                  "{} Total Resource Deposits     Tax rate {}%  New {}%\n"
                  "Estimated Production Next Update : {:.2f}\n",
-                 total_resources, tax, newtax, est_production);
+                 vm.total_resources, vm.tax, vm.newtax, vm.est_production);
 
-  if (slaved_to) {
+  if (vm.slaved_to) {
     std::format_to(std::back_inserter(out), "      ENSLAVED to player {};\n",
-                   *slaved_to);
+                   *vm.slaved_to);
   }
-  if (primary_unstable) {
+  if (vm.primary_unstable) {
     out += "WARNING! This planet's primary is unstable.\n";
   }
   return out;
@@ -210,16 +196,14 @@ render_json_planet_map(const PlanetMapViewModel& vm) {
 }
 
 /// Formats a `PlanetBuildError` into its user-facing error diagnostic string.
-/// Decomposes `PlanetBuildError` via structured binding.
 [[nodiscard]] inline std::string
 format_planet_build_error(const PlanetBuildError& err) {
-  const auto& [reason, enslaving_player] = err;
   std::string out;
-  switch (reason) {
+  switch (err.reason) {
     case PlanetBuildErrorReason::EnslavedByForeignPlayer:
       std::format_to(std::back_inserter(out),
                      "This planet is enslaved by player {}.\n",
-                     enslaving_player);
+                     err.enslaving_player);
       break;
     case PlanetBuildErrorReason::NotAuthorizedInSystem:
       out = "You are not authorized in this system.\n";
@@ -256,37 +240,29 @@ format_planet_build_error(const PlanetBuildError& err) {
 }
 
 /// Formats a `CreatedShipSummary` into its ASCII presentation string.
-/// Decomposes `CreatedShipSummary` via structured binding.
 [[nodiscard]] inline std::string
 render_created_ship_summary(const CreatedShipSummary& summary) {
-  const auto& [ship_display, build_cost, tech, landed_sector, previous_toxicity,
-               updated_toxicity] = summary;
-
   std::string out;
-  if (previous_toxicity && updated_toxicity) {
+  if (summary.previous_toxicity && summary.updated_toxicity) {
     std::format_to(std::back_inserter(out),
                    "Toxin concentration on planet was {}%, now {}%.\n",
-                   *previous_toxicity, *updated_toxicity);
+                   *summary.previous_toxicity, *summary.updated_toxicity);
   }
   std::format_to(std::back_inserter(out),
                  "{} built at a cost of {} resources.\nTechnology {:.1f}.\n",
-                 ship_display, build_cost, tech);
-  if (landed_sector) {
+                 summary.ship_display, summary.build_cost, summary.tech);
+  if (summary.landed_sector) {
     std::format_to(std::back_inserter(out), "{} is on sector {}.\n",
-                   ship_display, *landed_sector);
+                   summary.ship_display, *summary.landed_sector);
   }
   return out;
 }
 
 /// Formats an `InitializedShipReport` into its ASCII presentation string.
-/// Decomposes `InitializedShipReport` via structured binding.
 [[nodiscard]] inline std::string
 render_initialized_ship_report(const InitializedShipReport& report) {
-  const auto& [ship_type, tele_range, damage, can_repair, has_crew_capacity,
-               loaded_crew, loaded_fuel] = report;
-
   std::string out;
-  switch (ship_type) {
+  switch (report.ship_type) {
     case ShipType::STYPE_MINE:
       out += "Mine disarmed.\nTrigger radius set at 100.\n";
       break;
@@ -299,61 +275,56 @@ render_initialized_ship_report(const InitializedShipReport& report) {
     case ShipType::OTYPE_STELE:
     case ShipType::OTYPE_GTELE:
       std::format_to(std::back_inserter(out), "Telescope range is {:.2f}.\n",
-                     tele_range);
+                     report.tele_range);
       break;
     default:
       break;
   }
-  if (damage) {
+  if (report.damage) {
     std::format_to(
         std::back_inserter(out),
-        "Warning: This ship is constructed with a {}% damage level.\n", damage);
-    if (!can_repair && has_crew_capacity) {
+        "Warning: This ship is constructed with a {}% damage level.\n",
+        report.damage);
+    if (!report.can_repair && report.has_crew_capacity) {
       out += "It will need resources to become fully operational.\n";
     }
   }
-  if (can_repair && has_crew_capacity) {
+  if (report.can_repair && report.has_crew_capacity) {
     out += "This ship does not need resources to repair.\n";
   }
-  if (ship_type == ShipType::OTYPE_FACTORY) {
+  if (report.ship_type == ShipType::OTYPE_FACTORY) {
     out += "This factory may not begin repairs until it has been activated.\n";
   }
-  if (!has_crew_capacity) {
+  if (!report.has_crew_capacity) {
     out += "This ship is robotic, and may not repair itself.\n";
   }
 
   std::format_to(std::back_inserter(out),
-                 "Loaded with {} crew and {:.1f} fuel.\n", loaded_crew,
-                 loaded_fuel);
+                 "Loaded with {} crew and {:.1f} fuel.\n", report.loaded_crew,
+                 report.loaded_fuel);
   return out;
 }
 
 /// Formats a `CapturedShipsReport` into its ASCII presentation string.
-/// Decomposes `CapturedShipsReport` and `CapturedShipEvent` via structured
-/// bindings.
 [[nodiscard]] inline std::string
 render_captured_ships_report(const CapturedShipsReport& report) {
-  const auto& [captured_ships] = report;
   std::string out;
-  for (const auto& [_, ship_display, _, _] : captured_ships) {
-    std::format_to(std::back_inserter(out), "{} CAPTURED!\n", ship_display);
+  for (const auto& ship : report.captured_ships) {
+    std::format_to(std::back_inserter(out), "{} CAPTURED!\n",
+                   ship.ship_display);
   }
   return out;
 }
 
 /// Formats an `OrderError` into its user-facing error diagnostic string.
-/// Decomposes `OrderError` via structured binding.
 [[nodiscard]] inline std::string format_order_error(const OrderError& err) {
-  const auto& [reason, ship_display, radiation, place_error, invalid_move_char,
-               required_fuel, required_resources, habitat_ship, hangar_needed] =
-      err;
-  switch (reason) {
+  switch (err.reason) {
     case OrderErrorReason::ShipIrradiated:
       return std::format("{} is irradiated ({}); it cannot be given orders.\n",
-                         ship_display, radiation);
+                         err.ship_display, err.radiation);
     case OrderErrorReason::ShipHasNoCrew:
       return std::format("{} has no crew and is not a robotic ship.\n",
-                         ship_display);
+                         err.ship_display);
     case OrderErrorReason::CannotBeAssignedOrders:
       return "That ship cannot be assigned those orders.\n";
     case OrderErrorReason::ShipDockedUseLaunchOrUndock:
@@ -371,7 +342,8 @@ render_captured_ships_report(const CapturedShipsReport& report) {
     case OrderErrorReason::ShipDockedUndockOrLaunchFirst:
       return "That ship is docked; use undock or launch first.\n";
     case OrderErrorReason::InvalidPlace:
-      return place_error ? format_place_error(*place_error) : std::string{};
+      return err.place_error ? format_place_error(*err.place_error)
+                             : std::string{};
     case OrderErrorReason::TargetShipOutOfRange:
       return "Warning: that ship is out of range.\n";
     case OrderErrorReason::SystemUnexplored:
@@ -418,7 +390,7 @@ render_captured_ships_report(const CapturedShipsReport& report) {
       return "Cycling move orders can not be empty!\n";
     case OrderErrorReason::InvalidMoveDirection:
       return std::format("'{}' is not a valid move direction.\n",
-                         invalid_move_char);
+                         err.invalid_move_char);
     case OrderErrorReason::CannotAssignTriggerRadius:
       return "This ship cannot be assigned a trigger radius.\n";
     case OrderErrorReason::NotATransporter:
@@ -429,15 +401,15 @@ render_captured_ships_report(const CapturedShipsReport& report) {
       return "You can't aim that kind of ship.\n";
     case OrderErrorReason::NotEnoughManeuveringFuel:
       return std::format("Not enough maneuvering fuel ({:.2f}).\n",
-                         required_fuel);
+                         err.required_fuel);
     case OrderErrorReason::MirrorDocked:
       return "docked; use undock or launch first.\n";
     case OrderErrorReason::AimDestinationError:
       return "Error in destination.\n";
     case OrderErrorReason::AimPlaceError:
       return std::format("{}Error in destination.\n",
-                         place_error ? format_place_error(*place_error)
-                                     : std::string{});
+                         err.place_error ? format_place_error(*err.place_error)
+                                         : std::string{});
     case OrderErrorReason::ThisShipHasNoSwitch:
       return "This ship does not have an on/off setting.\n";
     case OrderErrorReason::DamagedShipsCannotBeActivated:
@@ -450,18 +422,18 @@ render_captured_ships_report(const CapturedShipsReport& report) {
       return std::format(
           "You don't have {} resources on Habitat #{} to activate this "
           "factory.\n",
-          required_resources, habitat_ship);
+          err.required_resources, err.habitat_ship);
     case OrderErrorReason::InsufficientHabitatHangarForFactory:
       return std::format(
           "Not enough hanger space free on Habitat #{}. Need {} more.\n",
-          habitat_ship, hangar_needed);
+          err.habitat_ship, err.hangar_needed);
     case OrderErrorReason::CannotActivateFactoryHere:
       return "You cannot activate the factory here.\n";
     case OrderErrorReason::InsufficientPlanetResourcesForFactory:
       return std::format(
           "You don't have {} resources on the planet to activate this "
           "factory.\n",
-          required_resources);
+          err.required_resources);
     case OrderErrorReason::CannotDeactivateFactory:
       return "You can't deactivate a factory once it's online. Consider "
              "using 'scrap'.\n";
@@ -470,14 +442,10 @@ render_captured_ships_report(const CapturedShipsReport& report) {
 }
 
 /// Formats an `OrderUpdate` notice into its ASCII presentation string.
-/// Decomposes `OrderUpdate` via structured binding.
 [[nodiscard]] inline std::string
 render_order_update(const OrderUpdate& update) {
-  const auto& [_, notice, max_moves, truncated_after_char, target_ship,
-               aim_target, survey_outcome, survey_distance, tele_range,
-               factory_activation_cost] = update;
   std::string out;
-  switch (notice) {
+  switch (update.notice) {
     case OrderUpdateNotice::None:
       break;
     case OrderUpdateNotice::MineArmed:
@@ -496,21 +464,21 @@ render_order_update(const OrderUpdate& update) {
       std::format_to(std::back_inserter(out),
                      "Warning: that is more than {} moves.\n"
                      "These move orders have been truncated.\n",
-                     max_moves);
+                     update.max_moves);
       break;
     case OrderUpdateNotice::MoveTruncatedAfterModeChar:
       std::format_to(
           std::back_inserter(out),
           "Warning: '{}' should be the last character in the move order.\n"
           "These move orders have been truncated.\n",
-          truncated_after_char);
+          update.truncated_after_char);
       break;
     case OrderUpdateNotice::TransportTargetSet:
       std::format_to(std::back_inserter(out), "Target ship is {}.\n",
-                     target_ship);
+                     update.target_ship);
       break;
     case OrderUpdateNotice::Aimed:
-      switch (survey_outcome) {
+      switch (update.survey_outcome) {
         case TelescopeSurveyOutcome::None:
           break;
         case TelescopeSurveyOutcome::NothingAtUniv:
@@ -521,31 +489,34 @@ render_order_update(const OrderUpdate& update) {
           break;
         case TelescopeSurveyOutcome::StarSurveyed:
           std::format_to(std::back_inserter(out),
-                         "Star {}\nSurveyed, distance {}.\n", aim_target,
-                         survey_distance);
+                         "Star {}\nSurveyed, distance {}.\n", update.aim_target,
+                         update.survey_distance);
           break;
         case TelescopeSurveyOutcome::StarTooFar:
           std::format_to(std::back_inserter(out),
-                         "Star {}\nToo far to see ({}, max {}).\n", aim_target,
-                         survey_distance, tele_range);
+                         "Star {}\nToo far to see ({}, max {}).\n",
+                         update.aim_target, update.survey_distance,
+                         update.tele_range);
           break;
         case TelescopeSurveyOutcome::PlanetSurveyed:
           std::format_to(std::back_inserter(out),
-                         "Planet {}\nSurveyed, distance {}.\n", aim_target,
-                         survey_distance);
+                         "Planet {}\nSurveyed, distance {}.\n",
+                         update.aim_target, update.survey_distance);
           break;
         case TelescopeSurveyOutcome::PlanetTooFar:
           std::format_to(std::back_inserter(out),
                          "Planet {}\nToo far to see ({}, max {}).\n",
-                         aim_target, survey_distance, tele_range);
+                         update.aim_target, update.survey_distance,
+                         update.tele_range);
           break;
       }
-      std::format_to(std::back_inserter(out), "Aimed at {}\n", aim_target);
+      std::format_to(std::back_inserter(out), "Aimed at {}\n",
+                     update.aim_target);
       break;
     case OrderUpdateNotice::FactoryActivated:
       std::format_to(std::back_inserter(out),
                      "Factory activated at a cost of {} resources.\n",
-                     factory_activation_cost);
+                     update.factory_activation_cost);
       break;
   }
   return out;
@@ -558,25 +529,19 @@ render_ship_orders_header(const ShipOrdersHeader&) {
 }
 
 /// Formats a `ShipOrderStatus` into its ASCII presentation string.
-/// Decomposes `ShipOrderStatus` via structured binding.
 [[nodiscard]] inline std::string
 render_ship_order_status(const ShipOrderStatus& status) {
-  const auto& [ship_number, type_letter, name, hyper_indicator, speed,
-               orbits_display, destination_display, combat_options,
-               navigation_options, specialty_options, has_hyperdrive_jump,
-               jump_distance, jump_fuel_cost, insufficient_fuel_capacity] =
-      status;
-
   std::string out = std::format(
-      "{:5} {} {:14.14} {}{} {:10.10} {}{}{}{}\n", ship_number, type_letter,
-      name, hyper_indicator, speed, orbits_display, destination_display,
-      combat_options, navigation_options, specialty_options);
+      "{:5} {} {:14.14} {}{} {:10.10} {}{}{}{}\n", status.ship_number,
+      status.type_letter, status.name, status.hyper_indicator, status.speed,
+      status.orbits_display, status.destination_display, status.combat_options,
+      status.navigation_options, status.specialty_options);
 
-  if (has_hyperdrive_jump) {
+  if (status.has_hyperdrive_jump) {
     std::format_to(std::back_inserter(out),
                    "  *** distance {:.0f} - jump will cost {:.1f}f ***\n",
-                   jump_distance, jump_fuel_cost);
-    if (insufficient_fuel_capacity) {
+                   status.jump_distance, status.jump_fuel_cost);
+    if (status.insufficient_fuel_capacity) {
       out += "Your ship cannot carry enough fuel to do this jump.\n";
     }
   }
@@ -584,90 +549,224 @@ render_ship_order_status(const ShipOrderStatus& status) {
 }
 
 /// Formats a `ReactorOverloadEvent` into its ASCII combat report string.
-/// Decomposes `ReactorOverloadEvent` via structured binding.
 [[nodiscard]] inline std::string
 render_reactor_overload_event(const ReactorOverloadEvent& event) {
-  const auto& [outcome, _, _, _, _, location_display, ship_display] = event;
-  switch (outcome) {
+  switch (event.outcome) {
     case ReactorOverloadOutcome::ShipExploded:
       return std::format(
           "{}: Matter-antimatter EXPLOSION from overloaded crystal on {}\n",
-          location_display, ship_display);
+          event.location_display, event.ship_display);
     case ReactorOverloadOutcome::CrystalDamaged:
       return std::format("{}: Crystal damaged from overloading on {}.\n",
-                         location_display, ship_display);
+                         event.location_display, event.ship_display);
   }
   std::unreachable();
 }
 
 /// Formats a `MechAttackPeopleResult` into its short headline string (used for
 /// star notifications and combat news).
-/// Decomposes `MechAttackPeopleResult` via structured binding.
 [[nodiscard]] inline std::string
 render_mech_attack_people_short(const MechAttackPeopleResult& res) {
-  const auto& [location_display, ship_display, defender_race_name,
-               defender_player, _, _, _, _, _, surviving_civ, surviving_mil, _,
-               _, _, _] = res;
-  return std::format("{}: {} {} {} [{}]\n", location_display, ship_display,
-                     (surviving_civ + surviving_mil) ? "attacked"
-                                                     : "slaughtered",
-                     defender_race_name, defender_player);
+  return std::format(
+      "{}: {} {} {} [{}]\n", res.location_display, res.ship_display,
+      (res.surviving_civ + res.surviving_mil) ? "attacked" : "slaughtered",
+      res.defender_race_name, res.defender_player);
 }
 
 /// Formats a `MechAttackPeopleResult` into its full multi-line battle report.
-/// Decomposes `MechAttackPeopleResult` via structured binding.
 [[nodiscard]] inline std::string
 render_mech_attack_people_long(const MechAttackPeopleResult& res) {
-  const auto& [location_display, ship_display, defender_race_name,
-               defender_player, sector_coords, sector_condition, guns_fired,
-               initial_civ, initial_mil, surviving_civ, surviving_mil,
-               civ_killed, mil_killed, attack_strength, defense_strength] = res;
   return std::format("{}: {} {} {} [{}]\n"
                      "\tBattle at {} {}: {} guns fired on {} civ/{} mil\n"
                      "\tAttack: {:.3f}   Defense: {:.3f}.\n"
                      "\t{} civ/{} mil killed.\n",
-                     location_display, ship_display,
-                     (surviving_civ + surviving_mil) ? "attacked"
-                                                     : "slaughtered",
-                     defender_race_name, defender_player, sector_coords,
-                     sector_condition, guns_fired, initial_civ, initial_mil,
-                     attack_strength, defense_strength, civ_killed, mil_killed);
+                     res.location_display, res.ship_display,
+                     (res.surviving_civ + res.surviving_mil) ? "attacked"
+                                                             : "slaughtered",
+                     res.defender_race_name, res.defender_player,
+                     res.sector_coords, res.sector_condition, res.guns_fired,
+                     res.initial_civ, res.initial_mil, res.attack_strength,
+                     res.defense_strength, res.civ_killed, res.mil_killed);
 }
 
 /// Formats a `PeopleAttackMechResult` into its short headline string (used for
 /// star notifications and combat news).
-/// Decomposes `PeopleAttackMechResult` via structured binding.
 [[nodiscard]] inline std::string
 render_people_attack_mech_short(const PeopleAttackMechResult& res) {
-  const auto& [location_display, attacker_race_name, attacker_player,
-               mech_alive, ship_display, _, _, _, _, _, _, _, _, _, _] = res;
-  return std::format("{}: {} [{}] {} {}\n", location_display,
-                     attacker_race_name, attacker_player,
-                     mech_alive ? "attacked" : "DESTROYED", ship_display);
+  return std::format("{}: {} [{}] {} {}\n", res.location_display,
+                     res.attacker_race_name, res.attacker_player,
+                     res.mech_alive ? "attacked" : "DESTROYED",
+                     res.ship_display);
 }
 
 /// Formats a `PeopleAttackMechResult` into its full multi-line battle report.
-/// Decomposes `PeopleAttackMechResult` and `CollateralDamage` via structured
-/// bindings.
 [[nodiscard]] inline std::string
 render_people_attack_mech_long(const PeopleAttackMechResult& res) {
-  const auto& [location_display, attacker_race_name, attacker_player,
-               mech_alive, ship_display, ship_type_name, target_coords,
-               sector_condition, attacker_civ, attacker_mil, attack_strength,
-               defense_strength, damage_inflicted, total_damage, collateral] =
-      res;
-  const auto& [cas_civ, cas_mil, pdam, sdam] = collateral;
   return std::format(
       "{}: {} [{}] {} {}\n"
       "\tBattle at {} {}: {} civ/{} mil assault {}\n"
       "\tAttack: {:.3f}   Defense: {:.3f}.\n"
       "\t{}% damage inflicted for a total of {}%\n"
       "\t{} civ/{} mil killed   {} prim/{} sec guns knocked out\n",
-      location_display, attacker_race_name, attacker_player,
-      mech_alive ? "attacked" : "DESTROYED", ship_display, target_coords,
-      sector_condition, attacker_civ, attacker_mil, ship_type_name,
-      attack_strength, defense_strength, damage_inflicted, total_damage,
-      cas_civ, cas_mil, pdam, sdam);
+      res.location_display, res.attacker_race_name, res.attacker_player,
+      res.mech_alive ? "attacked" : "DESTROYED", res.ship_display,
+      res.target_coords, res.sector_condition, res.attacker_civ,
+      res.attacker_mil, res.ship_type_name, res.attack_strength,
+      res.defense_strength, res.damage_inflicted, res.total_damage,
+      res.collateral.civilian_casualties, res.collateral.military_casualties,
+      res.collateral.primary_guns_lost, res.collateral.secondary_guns_lost);
+}
+
+/// Formats the short one-line summary for `ShipShotResult`
+/// (`shoot_ship_to_ship` and `shoot_planet_to_ship`).
+[[nodiscard]] inline std::string
+render_ship_shot_short(const ShipShotResult& res) {
+  if (res.attacker_kind == ShipShotAttackerKind::Planet) {
+    return std::format("{} [{}] {} {}\n", res.target_location_display,
+                       res.attacker_player.value,
+                       res.target_alive ? "attacked" : "DESTROYED",
+                       res.target_display);
+  }
+  return std::format(
+      "{}: {} {} {}\n", res.target_location_display, res.attacker_display,
+      res.target_alive ? "attacked" : "DESTROYED", res.target_display);
+}
+
+/// Formats the full multi-line combat report for `ShipShotResult`.
+[[nodiscard]] inline std::string
+render_ship_shot_long(const ShipShotResult& res) {
+  std::string out = render_ship_shot_short(res);
+  if (res.weapon == ShipShotWeaponKind::Radiation) {
+    std::format_to(std::back_inserter(out),
+                   "\tAttack: {} radiation\n"
+                   "\t  Hits: {}\n"
+                   "\t   Rad: {}% for a total of {}%\n",
+                   res.strength, res.hits, res.radiation_dosage,
+                   res.total_radiation);
+    return out;
+  }
+
+  const std::string_view weapon_label = [weapon =
+                                             res.weapon]() -> std::string_view {
+    switch (weapon) {
+      case ShipShotWeaponKind::Cew:
+        return "strength CEW";
+      case ShipShotWeaponKind::FocusedLaser:
+        return "strength focused laser";
+      case ShipShotWeaponKind::Laser:
+        return "strength laser";
+      case ShipShotWeaponKind::LightGuns:
+      case ShipShotWeaponKind::Radiation:
+        return "light guns";
+      case ShipShotWeaponKind::MediumGuns:
+        return "medium guns";
+      case ShipShotWeaponKind::HeavyGuns:
+        return "heavy guns";
+    }
+  }();
+
+  std::format_to(std::back_inserter(out),
+                 "\tAttack: {} {} at a range of {:.0f}\n"
+                 "\t  Hits: {}  {}% probability\n",
+                 res.strength, weapon_label, res.range, res.hits,
+                 res.hit_probability);
+
+  if (res.armor_reduced_to) {
+    std::format_to(std::back_inserter(out), "\t\tArmor reduced to {}\n",
+                   *res.armor_reduced_to);
+  }
+  if (res.penetrations > 0) {
+    std::format_to(std::back_inserter(out),
+                   "\t\t{} penetrations  eff armor={} defense={} prob={:.3f}\n",
+                   res.penetrations, res.effective_armor, res.defense,
+                   res.penetration_probability);
+  }
+  if (res.critical.count > 0) {
+    const auto& sys = res.critical.systems;
+    std::format_to(std::back_inserter(out),
+                   "\t\t{} CRITICAL hits do {}% damage\n"
+                   "\t\tSpecial systems damage: ",
+                   res.critical.count, res.critical.damage);
+    if (sys.cew_destroyed) out += "CEW ";
+    if (sys.laser_destroyed) out += "Laser ";
+    if (sys.cloak_destroyed) out += "Cloak ";
+    if (sys.hyper_drive_destroyed) out += "Hyper-drive ";
+    if (sys.reduced_max_speed) {
+      std::format_to(std::back_inserter(out), "Speed={} ",
+                     *sys.reduced_max_speed);
+    }
+    if (sys.reduced_armor) {
+      std::format_to(std::back_inserter(out), "Armor={} ", *sys.reduced_armor);
+    }
+    out += '\n';
+  }
+  if (res.damage > 0) {
+    std::format_to(std::back_inserter(out),
+                   "\tDamage: {}% damage for a total of {}%\n", res.damage,
+                   res.total_damage);
+  }
+  if (res.collateral.primary_guns_lost > 0 ||
+      res.collateral.secondary_guns_lost > 0) {
+    std::format_to(std::back_inserter(out),
+                   "\t Other: {} primary/{} secondary guns destroyed\n",
+                   res.collateral.primary_guns_lost,
+                   res.collateral.secondary_guns_lost);
+  }
+  if (res.collateral.civilian_casualties > 0 ||
+      res.collateral.military_casualties > 0) {
+    std::format_to(
+        std::back_inserter(out), "\tKilled: {} civ + {} mil casualties\n",
+        res.collateral.civilian_casualties, res.collateral.military_casualties);
+  }
+  return out;
+}
+
+/// Formats the short one-line summary for `BombardResult`
+/// (`shoot_ship_to_planet`).
+[[nodiscard]] inline std::string
+render_bombard_short(const BombardResult& res) {
+  return std::format("{} bombards {} [{}]\n", res.ship_display,
+                     res.location_display, res.previous_sector_owner);
+}
+
+/// Formats the full multi-line report for `BombardResult`
+/// (`shoot_ship_to_planet`).
+[[nodiscard]] inline std::string render_bombard_long(const BombardResult& res) {
+  return std::format("{} bombards {} [{}]\n\t{} sectors destroyed\n",
+                     res.ship_display, res.location_display,
+                     res.previous_sector_owner, res.sectors_destroyed);
+}
+
+/// Formats the combat news/star notification line for `MineDetonationReport`.
+[[nodiscard]] inline std::string
+render_mine_detonation_notice(const MineDetonationReport& report) {
+  return std::format("{} detonated at {}\n", report.ship_display,
+                     report.orbit_display);
+}
+
+/// Formats the planetary strike telegram for `MineDetonationReport`.
+[[nodiscard]] inline std::string
+render_mine_planet_strike_telegram(const MineDetonationReport& report) {
+  std::string out = std::format("{} detonated at {}\n", report.ship_display,
+                                report.orbit_display);
+  if (report.planet_strike && report.planet_strike->sectors_destroyed > 0) {
+    std::format_to(std::back_inserter(out), " - {} sectors destroyed.",
+                   report.planet_strike->sectors_destroyed);
+  }
+  out += '\n';
+  return out;
+}
+
+/// Formats the full interactive command report for `MineDetonationReport`.
+[[nodiscard]] inline std::string
+render_mine_detonation_report(const MineDetonationReport& report) {
+  std::string out = report.planet_strike
+                        ? render_mine_planet_strike_telegram(report)
+                        : render_mine_detonation_notice(report);
+  for (const auto& victim : report.ship_victims) {
+    out += render_ship_shot_long(victim.shot);
+  }
+  return out;
 }
 
 /// Abstract base class for polymorphic UI presentation across wire protocols.
@@ -694,6 +793,10 @@ public:
   render(const MechAttackPeopleResult& vm) const = 0;
   [[nodiscard]] virtual std::string
   render(const PeopleAttackMechResult& vm) const = 0;
+  [[nodiscard]] virtual std::string render(const ShipShotResult& vm) const = 0;
+  [[nodiscard]] virtual std::string render(const BombardResult& vm) const = 0;
+  [[nodiscard]] virtual std::string
+  render(const MineDetonationReport& vm) const = 0;
 };
 
 /// Server-rendered ASCII/ANSI terminal presenter for Telnet sessions.
@@ -748,6 +851,19 @@ public:
   [[nodiscard]] std::string
   render(const PeopleAttackMechResult& vm) const override {
     return render_people_attack_mech_long(vm);
+  }
+
+  [[nodiscard]] std::string render(const ShipShotResult& vm) const override {
+    return render_ship_shot_long(vm);
+  }
+
+  [[nodiscard]] std::string render(const BombardResult& vm) const override {
+    return render_bombard_long(vm);
+  }
+
+  [[nodiscard]] std::string
+  render(const MineDetonationReport& vm) const override {
+    return render_mine_detonation_report(vm);
   }
 };
 
@@ -807,6 +923,19 @@ public:
   [[nodiscard]] std::string
   render(const PeopleAttackMechResult& vm) const override {
     return render_json_envelope("people_attack_mech", vm);
+  }
+
+  [[nodiscard]] std::string render(const ShipShotResult& vm) const override {
+    return render_json_envelope("ship_shot", vm);
+  }
+
+  [[nodiscard]] std::string render(const BombardResult& vm) const override {
+    return render_json_envelope("bombard_result", vm);
+  }
+
+  [[nodiscard]] std::string
+  render(const MineDetonationReport& vm) const override {
+    return render_json_envelope("mine_detonation", vm);
   }
 };
 

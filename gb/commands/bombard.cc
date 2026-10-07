@@ -6,6 +6,7 @@
 module;
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import scnlib;
 import std;
@@ -81,10 +82,13 @@ void resolve_planetary_retaliation(GameObj& g, Ship& from, Planet& p,
 
       if (auto p2s_opt = shoot_planet_to_ship(g.entity_manager, alien, from,
                                               retal_strength)) {
-        const auto& [p_damage, p_short, p_long] = *p2s_opt;
+        const std::string p_short =
+            GB::presentation::render_ship_shot_short(*p2s_opt);
+        const std::string p_long =
+            GB::presentation::render_ship_shot_long(*p2s_opt);
         warn_player(g.session_registry, g.entity_manager, i, star->governor(i),
                     p_long);
-        g.out << p_long;
+        g.present(*p2s_opt);
         if (!from.alive()) {
           post(g.entity_manager, p_short, NewsType::COMBAT);
         }
@@ -128,7 +132,10 @@ void resolve_protector_ship_retaliation(GameObj& g, Ship& from,
 
     if (auto s2s_opt = shoot_ship_to_ship(g.entity_manager, ship, from,
                                           retal_strength, 0)) {
-      const auto& [dmg, short_buf, long_buf] = *s2s_opt;
+      const std::string short_buf =
+          GB::presentation::render_ship_shot_short(*s2s_opt);
+      const std::string long_buf =
+          GB::presentation::render_ship_shot_long(*s2s_opt);
       if (ship.is_laser_on()) {
         ship.consume_fuel(ENERGY_WEAPON_FUEL_PER_STRENGTH *
                           static_cast<double>(retal_strength));
@@ -142,7 +149,7 @@ void resolve_protector_ship_retaliation(GameObj& g, Ship& from,
                   from.storbits(), short_buf);
       warn_player(g.session_registry, g.entity_manager, ship.owner(),
                   ship.governor(), long_buf);
-      g.out << long_buf;
+      g.present(*s2s_opt);
     }
   }
 }
@@ -230,15 +237,19 @@ bool bombard_from_ship(const command_t& argv, GameObj& g, Ship& from) {
           from.consume_destruct(strength);
         }
 
-        post(g.entity_manager, result.short_message, NewsType::COMBAT);
+        const std::string short_msg =
+            GB::presentation::render_bombard_short(result);
+        const std::string long_msg =
+            GB::presentation::render_bombard_long(result);
+        post(g.entity_manager, short_msg, NewsType::COMBAT);
         notify_star(g.session_registry, g.entity_manager, g.player(),
-                    g.governor(), from.storbits(), result.short_message);
+                    g.governor(), from.storbits(), short_msg);
         const auto* star = g.entity_manager.peek_star(from.storbits());
         for (player_t i : result.nuked_players) {
           warn_player(g.session_registry, g.entity_manager, i,
-                      star->governor(i), result.long_message);
+                      star->governor(i), long_msg);
         }
-        g.out << result.long_message;
+        g.present(result);
 
         resolve_planetary_retaliation(g, from, p, result);
         resolve_protector_ship_retaliation(g, from, result);

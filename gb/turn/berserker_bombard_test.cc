@@ -270,11 +270,12 @@ int main() {
                           .build_handle();
 
     BombardResult result{
+        .ship_display = std::format("{}", *alert_ship),
+        .location_display = "/Sol/Prime",
+        .previous_sector_owner = player_t{2},
         .sectors_destroyed = 3,
-        .short_message = "Direct kinetic impact on surface.\n",
-        .long_message = "",
+        .nuked_players = {player_t{2}},
     };
-    result.nuked_players.insert(player_t{2});
 
     dispatch_bombardment_alerts(ctx.em, *alert_ship, star, Coordinates{5, 5},
                                 player_t{2}, 3, result);

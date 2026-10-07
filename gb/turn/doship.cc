@@ -574,8 +574,9 @@ void execute_missile_planet_strike(Ship& missile,
               if (auto result_opt = shoot_ship_to_planet(
                       entity_manager, missile, p, missile.destruct_power(),
                       bomb_coords, smap, false, guntype_t::HEAVY)) {
-                push_telegram(entity_manager, missile.owner(),
-                              missile.governor(), result_opt->long_message);
+                push_telegram(
+                    entity_manager, missile.owner(), missile.governor(),
+                    GB::presentation::render_bombard_long(*result_opt));
                 entity_manager.kill_ship(missile.owner(), missile);
                 std::string sectors_destroyed_msg = std::format(
                     "{} dropped on {}.\n\t{} sectors destroyed.\n", missile,
@@ -617,7 +618,10 @@ void execute_missile_ship_strike(Ship& missile, EntityManager& entity_manager) {
       auto s2sresult = shoot_ship_to_ship(entity_manager, missile, target,
                                           missile.destruct_power(), 0);
       if (s2sresult) {
-        auto const& [damage, short_buf, long_buf] = *s2sresult;
+        const std::string short_buf =
+            GB::presentation::render_ship_shot_short(*s2sresult);
+        const std::string long_buf =
+            GB::presentation::render_ship_shot_long(*s2sresult);
         push_telegram(entity_manager, missile.owner(), missile.governor(),
                       long_buf);
         push_telegram(entity_manager, target.owner(), target.governor(),
@@ -691,7 +695,10 @@ void doabm(Ship& ship, EntityManager& entity_manager) {
         auto const& s2sresult =
             shoot_ship_to_ship(entity_manager, ship, target, numdest, 0);
         if (s2sresult) {
-          auto [damage, short_buf, long_buf] = *s2sresult;
+          const std::string short_buf =
+              GB::presentation::render_ship_shot_short(*s2sresult);
+          const std::string long_buf =
+              GB::presentation::render_ship_shot_long(*s2sresult);
           push_telegram(entity_manager, ship.owner(), ship.governor(),
                         long_buf);
           push_telegram(entity_manager, target.owner(), target.governor(),

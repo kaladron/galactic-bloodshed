@@ -193,6 +193,19 @@ target_link_libraries(
   gb_mechanics
   PUBLIC gb_entities gb_services scnlib_module)
 
+# Standalone Tier-4b Presentation & Protocol Rendering Library (ASCII & Glaze JSON)
+add_library(gb_presentation)
+target_sources(
+  gb_presentation
+  PUBLIC FILE_SET
+         CXX_MODULES
+         FILES
+          presentation/presentation.cppm)
+target_link_libraries(
+  gb_presentation
+  PUBLIC gb_entities gb_services gb_mechanics gb_repositories glaze::glaze
+         glaze_json_module glaze_core_module tabulate_module strong_id_module)
+
 # Standalone Tier-5 Turn & Segment Simulation Engine Library
 add_library(gb_turn)
 target_sources(
@@ -216,7 +229,7 @@ target_sources(
           turn/vn.cc)
 target_link_libraries(
   gb_turn
-  PUBLIC gb_entities gb_services gb_mechanics strong_id_module dallib types_module scnlib_module tabulate_module)
+  PUBLIC gb_entities gb_services gb_mechanics gb_presentation strong_id_module dallib types_module scnlib_module tabulate_module)
 
 add_library(gb_creator)
 target_sources(
@@ -271,19 +284,6 @@ target_sources(
   gb_server
   PUBLIC FILE_SET CXX_MODULES FILES server/server_module.cppm)
 target_link_libraries(gb_server PUBLIC auth notification server server_config session)
-
-# Standalone Tier-6a Presentation & Protocol Rendering Library (ASCII & Glaze JSON)
-add_library(gb_presentation)
-target_sources(
-  gb_presentation
-  PUBLIC FILE_SET
-         CXX_MODULES
-         FILES
-          presentation/presentation.cppm)
-target_link_libraries(
-  gb_presentation
-  PUBLIC gb_entities gb_services gb_mechanics gb_repositories glaze::glaze
-         glaze_json_module glaze_core_module tabulate_module strong_id_module)
 
 add_library(commands)
 target_sources(

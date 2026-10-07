@@ -15,19 +15,13 @@ struct SalvoHitRoll {
   hit_odds_t probability{0};
 };
 
-struct CriticalHitResult {
-  hit_count_t count{0};
-  damage_t damage{0};
-  std::string message;
-};
-
-static std::pair<damage_t, std::string> do_radiation(Ship& ship, double tech,
-                                                     weapon_power_t strength,
-                                                     hit_count_t hits);
-static std::pair<damage_t, std::string>
-do_damage(EntityManager& em, player_t who, Ship& ship, double tech,
+static std::pair<radiation_t, radiation_t> do_radiation(Ship& ship, double tech,
+                                                        hit_count_t hits);
+static ShipShotResult
+do_damage(EntityManager& em, ShipShotAttackerKind attacker_kind, player_t who,
+          std::string attacker_display, Ship& ship, double tech,
           weapon_power_t strength, hit_count_t hits, armor_t defense,
-          guntype_t caliber, double range, const std::string_view weapon,
+          guntype_t caliber, double range, ShipShotWeaponKind weapon,
           hit_odds_t hit_probability);
 
 static std::tuple<bool, speed_t, ship_size_t>
@@ -44,7 +38,7 @@ static hit_odds_t cew_hit_odds(double dist, weapon_range_t cew_range);
 static CriticalHitResult do_critical_hits(hit_count_t penetrate, Ship& ship,
                                           guntype_t caliber);
 
-std::optional<std::tuple<damage_t, std::string, std::string>>
+std::optional<ShipShotResult>
 shoot_ship_to_ship(EntityManager& em, const Ship& attacker, Ship& target,
                    const weapon_power_t cew_strength,
                    const weapon_range_t range, const bool ignore) {
@@ -60,8 +54,9 @@ shoot_ship_to_ship(EntityManager& em, const Ship& attacker, Ship& target,
   if (attacker.storbits() != target.storbits()) return std::nullopt;
   if (attacker.has_switch() && !attacker.on()) return std::nullopt;
 
-  /* compute caliber */
-  const auto caliber = attacker.current_caliber();
+  /* compute caliber: CEWs fire equivalent destruct units (LIGHT caliber) */
+  const auto caliber =
+      (range != 0) ? guntype_t::LIGHT : attacker.current_caliber();
 
   double dist = [&attacker, &target]() -> double {
     if (attacker.type() ==
@@ -93,53 +88,58 @@ shoot_ship_to_ship(EntityManager& em, const Ship& attacker, Ship& target,
 
   // mode is whether a ship has been set to radiative with the orders command.
   if (attacker.mode()) {
-    auto [damage, damage_msg] =
-        do_radiation(target, attacker.tech(), cew_strength, hits);
-    std::string short_msg =
-        std::format("{}: {} {} {}\n", dispshiploc(em, target), attacker,
-                    target.alive() ? "attacked" : "DESTROYED", target);
-    std::string long_msg = short_msg;
-    long_msg += damage_msg;
-    return std::make_tuple(damage, short_msg, long_msg);
+    const auto [dosage, total_rad] =
+        do_radiation(target, attacker.tech(), hits);
+    return ShipShotResult{
+        .attacker_kind = ShipShotAttackerKind::Ship,
+        .attacker_player = attacker.owner(),
+        .attacker_display = std::format("{}", attacker),
+        .target_location_display = dispshiploc(em, target),
+        .target_display = std::format("{}", target),
+        .target_alive = target.alive(),
+        .weapon = ShipShotWeaponKind::Radiation,
+        .strength = cew_strength,
+        .range = dist,
+        .hits = hits,
+        .hit_probability = hit_probability,
+        .damage = static_cast<damage_t>(dosage),
+        .total_damage = target.damage(),
+        .radiation_dosage = dosage,
+        .total_radiation = total_rad,
+    };
   }
 
+  if (caliber == guntype_t::NONE) return std::nullopt;
+
   // CEW, destruct, lasers
-  auto weapon = [range, &attacker, caliber] -> std::string {
-    if (range != 0) return "strength CEW";
+  const auto weapon = [range, &attacker, caliber]() -> ShipShotWeaponKind {
+    if (range != 0) return ShipShotWeaponKind::Cew;
 
     if (attacker.is_laser_on()) {
-      if (attacker.focus()) return "strength focused laser";
-      return "strength laser";
+      return attacker.focus() ? ShipShotWeaponKind::FocusedLaser
+                              : ShipShotWeaponKind::Laser;
     }
 
     switch (caliber) {
       case guntype_t::LIGHT:
-        return "light guns";
-      case guntype_t::MEDIUM:
-        return "medium guns";
-      case guntype_t::HEAVY:
-        return "heavy guns";
       case guntype_t::NONE:
-        return "pea-shooter";
+        return ShipShotWeaponKind::LightGuns;
+      case guntype_t::MEDIUM:
+        return ShipShotWeaponKind::MediumGuns;
+      case guntype_t::HEAVY:
+        return ShipShotWeaponKind::HeavyGuns;
     }
   }();
 
-  if (caliber == guntype_t::NONE) return std::nullopt;
-
-  auto [damage, damage_msg] = do_damage(
-      em, attacker.owner(), target, (double)attacker.tech(), cew_strength, hits,
-      defense, caliber, dist, weapon, hit_probability);
-  std::string short_msg =
-      std::format("{}: {} {} {}\n", dispshiploc(em, target), attacker,
-                  target.alive() ? "attacked" : "DESTROYED", target);
-  std::string long_msg = short_msg;
-  long_msg += damage_msg;
-  return std::make_tuple(damage, short_msg, long_msg);
+  return do_damage(em, ShipShotAttackerKind::Ship, attacker.owner(),
+                   std::format("{}", attacker), target,
+                   static_cast<double>(attacker.tech()), cew_strength, hits,
+                   defense, caliber, dist, weapon, hit_probability);
 }
 
-std::optional<std::tuple<damage_t, std::string, std::string>>
-shoot_planet_to_ship(EntityManager& em, Race& race, Ship& ship,
-                     weapon_power_t strength) {
+std::optional<ShipShotResult> shoot_planet_to_ship(EntityManager& em,
+                                                   const Race& race, Ship& ship,
+                                                   weapon_power_t strength) {
   if (strength <= 0) return std::nullopt;
   if (!ship.alive()) return std::nullopt;
   if (ship.whatorbits() != ScopeLevel::LEVEL_PLAN) return std::nullopt;
@@ -150,16 +150,9 @@ shoot_planet_to_ship(EntityManager& em, Race& race, Ship& ship,
       roll_salvo_hits(0.0, false, strength, race.tech, 0, evade, false, speed,
                       0, body, guntype_t::MEDIUM, 1);
 
-  auto [damage, damage_msg] =
-      do_damage(em, race.Playernum, ship, race.tech, strength, hits, 0,
-                guntype_t::MEDIUM, 0.0, "medium guns", hit_probability);
-
-  std::string short_msg = std::format(
-      "{} [{}] {} {}\n", dispshiploc(em, ship), race.Playernum.value,
-      ship.alive() ? "attacked" : "DESTROYED", ship);
-  std::string long_msg = short_msg + damage_msg;
-
-  return std::make_tuple(damage, short_msg, long_msg);
+  return do_damage(em, ShipShotAttackerKind::Planet, race.Playernum, {}, ship,
+                   race.tech, strength, hits, 0, guntype_t::MEDIUM, 0.0,
+                   ShipShotWeaponKind::MediumGuns, hit_probability);
 }
 
 /**
@@ -195,73 +188,73 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
 
   std::flat_map<player_t, int> sum_mob{};
 
-  for (auto y2 = 0; y2 < pl.dimensions().y; y2++) {
-    for (auto x2 = 0; x2 < pl.dimensions().x; x2++) {
-      int dx =
-          std::min(std::abs(x2 - target_sector.x),
-                   std::abs(target_sector.x + (pl.dimensions().x - 1) - x2));
-      int dy = std::abs(y2 - target_sector.y);
-      double d = std::sqrt((double)(dx * dx + dy * dy));
-      auto& s = smap.get(Coordinates{x2, y2});
+  for (auto& s : smap) {
+    const auto coords = s.coords();
+    int dx = std::min(
+        std::abs(coords.x - target_sector.x),
+        std::abs(target_sector.x + (pl.dimensions().x - 1) - coords.x));
+    int dy = std::abs(coords.y - target_sector.y);
+    double d = std::sqrt(static_cast<double>(dx * dx + dy * dy));
 
-      if (d <= r) {
-        double fac = SECTOR_DAMAGE * (double)strength *
-                     (double)gun_caliber(caliber) / (d + 1.);
+    if (d <= r) {
+      double fac = SECTOR_DAMAGE * static_cast<double>(strength) *
+                   static_cast<double>(gun_caliber(caliber)) / (d + 1.);
 
-        if (s.get_owner() != 0) {
-          population_t kills = 0;
-          if (s.get_popn()) {
-            kills = int_rand(0, ((int)(fac / 10.0) * s.get_popn())) /
-                    (1 + s.is_plated());
-            if (kills > s.get_popn())
-              s.clear_popn();
-            else
-              s.subtract_popn(kills);
-          }
-          // Entrenched troops are sheltered unless blast intensity exceeds
-          // TROOP_BOMBARD_FORTIFICATION_SCALE times the sector defense bonus.
-          if (s.get_troops() &&
-              (fac > TROOP_BOMBARD_FORTIFICATION_SCALE *
-                         static_cast<double>(s.defense_bonus()))) {
-            kills = int_rand(0, ((int)(fac / 20.0) * s.get_troops())) /
-                    (1 + s.is_plated());
-            if (kills > s.get_troops())
-              s.set_troops(0);
-            else
-              s.set_troops(s.get_troops() - kills);
-          }
-
-          s.clear_owner_if_empty();
+      const player_t sector_owner = s.get_owner();
+      if (sector_owner != 0) {
+        population_t kills = 0;
+        if (s.get_popn()) {
+          kills = int_rand(0, (static_cast<int>(fac / 10.0) * s.get_popn())) /
+                  (1 + s.is_plated());
+          if (kills > s.get_popn())
+            s.clear_popn();
+          else
+            s.subtract_popn(kills);
+        }
+        // Entrenched troops are sheltered unless blast intensity exceeds
+        // TROOP_BOMBARD_FORTIFICATION_SCALE times the sector defense bonus.
+        if (s.get_troops() &&
+            (fac > TROOP_BOMBARD_FORTIFICATION_SCALE *
+                       static_cast<double>(s.defense_bonus()))) {
+          kills = int_rand(0, (static_cast<int>(fac / 20.0) * s.get_troops())) /
+                  (1 + s.is_plated());
+          if (kills > s.get_troops())
+            s.set_troops(0);
+          else
+            s.set_troops(s.get_troops() - kills);
         }
 
-        // High-intensity blasts can strip surface terraforming back to the
-        // sector's underlying geological type.
-        if (fac >= TERRAFORM_STRIP_BLAST_THRESHOLD && !int_rand(0, 10)) {
-          if (int_rand(0, 6) >= s.defense_bonus())
-            s.set_condition(s.get_type());
-        }
-
-        if (round_rand(fac) > s.defense_bonus() * int_rand(0, 10)) {
-          if (s.get_owner() != 0) nuked.insert(s.get_owner());
-          s.clear_popn();
-          s.set_troops(int_rand(0, (int)s.get_troops()));
-          s.clear_owner_if_empty(); /* troops may survive this */
-          s.clear_efficiency();
-          s.set_resource(s.get_resource() / ((int)fac + 1));
-          s.set_mobilization(0);
-          s.set_fert(0); /*all is lost !*/
-          s.set_crystals(int_rand(0, (int)s.get_crystals()));
-          s.set_condition(SectorType::SEC_WASTED);
-          numdest++;
-        } else {
-          s.set_fert(std::max(0, (int)s.get_fert() - (int)fac));
-          s.degrade_efficiency(std::lround(fac));
-          s.set_mobilization(std::max(0, (int)s.get_mobilization() - (int)fac));
-          s.deplete_resource(std::lround(fac));
-        }
+        s.clear_owner_if_empty();
       }
-      if (s.get_owner() != 0) sum_mob[s.get_owner()] += s.get_mobilization();
+
+      // High-intensity blasts can strip surface terraforming back to the
+      // sector's underlying geological type.
+      if (fac >= TERRAFORM_STRIP_BLAST_THRESHOLD && !int_rand(0, 10)) {
+        if (int_rand(0, 6) >= s.defense_bonus()) s.set_condition(s.get_type());
+      }
+
+      if (round_rand(fac) > s.defense_bonus() * int_rand(0, 10)) {
+        if (sector_owner != 0) nuked.insert(sector_owner);
+        s.clear_popn();
+        s.set_troops(int_rand(0, static_cast<int>(s.get_troops())));
+        s.clear_owner_if_empty(); /* troops may survive this */
+        s.clear_efficiency();
+        s.set_resource(s.get_resource() / (static_cast<int>(fac) + 1));
+        s.set_mobilization(0);
+        s.set_fert(0); /*all is lost !*/
+        s.set_crystals(int_rand(0, static_cast<int>(s.get_crystals())));
+        s.set_condition(SectorType::SEC_WASTED);
+        numdest++;
+      } else {
+        s.set_fert(std::max(0, static_cast<int>(s.get_fert()) -
+                                   static_cast<int>(fac)));
+        s.degrade_efficiency(std::lround(fac));
+        s.set_mobilization(std::max(0, static_cast<int>(s.get_mobilization()) -
+                                           static_cast<int>(fac)));
+        s.deplete_resource(std::lround(fac));
+      }
     }
+    if (s.get_owner() != 0) sum_mob[s.get_owner()] += s.get_mobilization();
   }
   auto num_sectors = pl.num_sectors();
   for (const Race& race : RaceList::readonly(em)) {
@@ -277,25 +270,21 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
   }
 
   /* planet toxicity goes up a bit */
-  pl.toxic() += static_cast<int>((100 - pl.toxic()) *
-                                 ((double)numdest / (double)num_sectors));
+  pl.toxic() +=
+      static_cast<int>((100 - pl.toxic()) * (static_cast<double>(numdest) /
+                                             static_cast<double>(num_sectors)));
 
-  std::string short_msg = std::format("{} bombards {} [{}]\n", ship,
-                                      dispshiploc(em, ship), oldowner);
-  std::string long_msg =
-      short_msg + std::format("\t{} sectors destroyed\n", numdest);
   return BombardResult{
+      .ship_display = std::format("{}", ship),
+      .location_display = dispshiploc(em, ship),
+      .previous_sector_owner = oldowner,
       .sectors_destroyed = numdest,
       .nuked_players = std::move(nuked),
-      .short_message = std::move(short_msg),
-      .long_message = std::move(long_msg),
   };
 }
 
-static std::pair<damage_t, std::string> do_radiation(Ship& ship, double tech,
-                                                     weapon_power_t strength,
-                                                     hit_count_t hits) {
-  std::stringstream msg;
+static std::pair<radiation_t, radiation_t> do_radiation(Ship& ship, double tech,
+                                                        hit_count_t hits) {
   const double fac = p_factor(tech, ship.tech());
 
   const auto armor_reduction =
@@ -323,27 +312,21 @@ static std::pair<damage_t, std::string> do_radiation(Ship& ship, double tech,
   // Radiation does not kill crew immediately upon impact; instead, irradiated
   // ships suffer 20% crew/troop attrition per turn update in
   // process_ship_radiation() (help/ships.md).
-  msg << std::format("\tAttack: {} radiation\n\t  Hits: {}\n", strength, hits);
-  msg << std::format("\t   Rad: {}% for a total of {}%\n", dosage, ship.rad());
-  return {static_cast<damage_t>(dosage), msg.str()};
+  return {dosage, ship.rad()};
 }
 
-static std::pair<damage_t, std::string>
-do_damage(EntityManager& em, player_t who, Ship& ship, double tech,
+static ShipShotResult
+do_damage(EntityManager& em, ShipShotAttackerKind attacker_kind, player_t who,
+          std::string attacker_display, Ship& ship, double tech,
           weapon_power_t strength, hit_count_t hits, armor_t defense,
-          guntype_t caliber, double range, const std::string_view weapon,
+          guntype_t caliber, double range, ShipShotWeaponKind weapon,
           hit_odds_t hit_probability) {
-  std::stringstream msg;
-
-  msg << std::format("\tAttack: {} {} at a range of {:.0f}\n", strength, weapon,
-                     range);
-  msg << std::format("\t  Hits: {}  {}% probability\n", hits, hit_probability);
+  std::optional<armor_t> armor_reduced_to = std::nullopt;
   /* ship may lose some armor */
-  if (ship.armor())
-    if (success(hits * gun_caliber(caliber))) {
-      ship.armor()--;
-      msg << std::format("\t\tArmor reduced to {}\n", ship.armor());
-    }
+  if (ship.armor() && success(hits * gun_caliber(caliber))) {
+    ship.armor()--;
+    armor_reduced_to = ship.armor();
+  }
 
   const double fac = p_factor(tech, ship.tech());
   const armor_t total_defense = ship.effective_armor() + defense;
@@ -372,15 +355,9 @@ do_damage(EntityManager& em, player_t who, Ship& ship, double tech,
   damage = std::min<damage_t>(100, damage);
   const auto damage_result = ship.apply_damage(damage);
 
-  double race_mass = 1.0;
-  try {
-    const auto& r = *em.peek_race(ship.owner());
-    race_mass = r.mass;
-  } catch (const EntityNotFoundError&) {
-    race_mass = 1.0;
-  }
-  auto [casualties, casualties1, primgundamage, secgundamage] =
-      do_collateral(ship, damage, race_mass);
+  const double race_mass = em.peek_race(ship.owner())->mass;
+  const auto collateral = do_collateral(ship, damage, race_mass);
+
   /* set laser strength for ships to maximum safe limit */
   if (ship.fire_laser()) {
     const auto safe = static_cast<weapon_power_t>(
@@ -388,32 +365,32 @@ do_damage(EntityManager& em, player_t who, Ship& ship, double tech,
     if (ship.fire_laser() > safe) ship.fire_laser() = safe;
   }
 
-  if (penetrate) {
-    msg << std::format(
-        "\t\t{} penetrations  eff armor={} defense={} prob={:.3f}\n", penetrate,
-        arm, defense, r);
-  }
-  if (crit.count > 0) {
-    msg << std::format("\t\t{} CRITICAL hits do {}% damage\n", crit.count,
-                       crit.damage);
-    msg << crit.message;
-  }
-  if (damage) {
-    msg << std::format("\tDamage: {}% damage for a total of {}%\n", damage,
-                       ship.damage());
-  }
-  if (primgundamage || secgundamage) {
-    msg << std::format("\t Other: {} primary/{} secondary guns destroyed\n",
-                       primgundamage, secgundamage);
-  }
-  if (casualties || casualties1) {
-    msg << std::format("\tKilled: {} civ + {} mil casualties\n", casualties,
-                       casualties1);
-  }
-
+  const damage_t total_damage = ship.damage();
   if (damage_result.destroyed) em.kill_ship(who, ship);
   ship.build_cost() = cost(ship);
-  return {damage, msg.str()};
+
+  return ShipShotResult{
+      .attacker_kind = attacker_kind,
+      .attacker_player = who,
+      .attacker_display = std::move(attacker_display),
+      .target_location_display = dispshiploc(em, ship),
+      .target_display = std::format("{}", ship),
+      .target_alive = ship.alive(),
+      .weapon = weapon,
+      .strength = strength,
+      .range = range,
+      .hits = hits,
+      .hit_probability = hit_probability,
+      .damage = damage,
+      .total_damage = total_damage,
+      .armor_reduced_to = armor_reduced_to,
+      .penetrations = penetrate,
+      .effective_armor = arm,
+      .defense = defense,
+      .penetration_probability = r,
+      .critical = crit,
+      .collateral = collateral,
+  };
 }
 
 /**
@@ -535,7 +512,6 @@ static hit_odds_t cew_hit_odds(double range, weapon_range_t cew_range) {
 
 static CriticalHitResult do_critical_hits(hit_count_t penetrate, Ship& ship,
                                           guntype_t caliber) {
-  std::stringstream critmsg;
   hit_count_t crithits = 0;
   damage_t critdam = 0;
   const unsigned int caliber_val = std::max(1u, gun_caliber(caliber));
@@ -548,38 +524,37 @@ static CriticalHitResult do_critical_hits(hit_count_t penetrate, Ship& ship,
     }
   }
   critdam = std::min<damage_t>(100, critdam);
-  /* check for special systems damage */
-  critmsg << "\t\tSpecial systems damage: ";
+
+  CriticalHitSystemsDamage systems{};
   if (ship.cew() && success(critdam)) {
-    critmsg << "CEW ";
+    systems.cew_destroyed = true;
     ship.cew() = 0;
   }
   if (ship.laser() && success(critdam)) {
-    critmsg << "Laser ";
+    systems.laser_destroyed = true;
     ship.laser() = 0;
   }
   if (ship.cloak() && success(critdam)) {
-    critmsg << "Cloak ";
+    systems.cloak_destroyed = true;
     ship.cloak() = 0;
   }
   if (ship.hyper_drive().has && success(critdam)) {
-    critmsg << "Hyper-drive ";
+    systems.hyper_drive_destroyed = true;
     ship.hyper_drive().has = 0;
   }
   if (ship.max_speed() && success(critdam)) {
     ship.speed() = 0;
     ship.max_speed() = int_rand(0, ship.max_speed() - 1);
-    critmsg << std::format("Speed={} ", ship.max_speed());
+    systems.reduced_max_speed = ship.max_speed();
   }
   if (ship.armor() && success(critdam)) {
     ship.armor() = int_rand(0, ship.armor() - 1);
-    critmsg << std::format("Armor={} ", ship.armor());
+    systems.reduced_armor = ship.armor();
   }
-  critmsg << "\n";
   return {
       .count = crithits,
       .damage = critdam,
-      .message = critmsg.str(),
+      .systems = systems,
   };
 }
 
@@ -659,10 +634,12 @@ bool check_mine_proximity_trigger(const Ship& mine,
   return false;
 }
 
-void detonate_mine_against_ships(Ship& mine, EntityManager& entity_manager) {
+std::vector<MineShipVictimReport>
+detonate_mine_against_ships(Ship& mine, EntityManager& entity_manager) {
+  std::vector<MineShipVictimReport> victim_reports;
   if (mine.whatorbits() != ScopeLevel::LEVEL_STAR &&
       mine.whatorbits() != ScopeLevel::LEVEL_PLAN) {
-    return;
+    return victim_reports;
   }
 
   std::vector<shipnum_t> victims;
@@ -683,24 +660,29 @@ void detonate_mine_against_ships(Ship& mine, EntityManager& entity_manager) {
   for (shipnum_t victim_num : victims) {
     entity_manager.mutate_ship(victim_num, [&](Ship& s) {
       if (!s.alive()) return;
-      auto s2sresult = shoot_ship_to_ship(entity_manager, mine, s,
-                                          mine.destruct_power(), 0, false);
-      if (s2sresult) {
-        auto const& [damage, short_buf, long_buf] = *s2sresult;
-        post(entity_manager, short_buf, NewsType::COMBAT);
-        push_telegram(entity_manager, s.owner(), s.governor(), long_buf);
+      const player_t victim_owner = s.owner();
+      const governor_t victim_governor = s.governor();
+      if (auto s2sresult = shoot_ship_to_ship(
+              entity_manager, mine, s, mine.destruct_power(), 0, false)) {
+        victim_reports.push_back(MineShipVictimReport{
+            .victim_owner = victim_owner,
+            .victim_governor = victim_governor,
+            .shot = std::move(*s2sresult),
+        });
       }
     });
   }
+  return victim_reports;
 }
 
-void detonate_mine_against_planet(Ship& mine, const std::string& postmsg,
-                                  EntityManager& entity_manager) {
+std::optional<BombardResult>
+detonate_mine_against_planet(Ship& mine, EntityManager& entity_manager) {
   if (mine.whatorbits() != ScopeLevel::LEVEL_PLAN) {
-    return;
+    return std::nullopt;
   }
 
   /* pick a random sector to nuke */
+  std::optional<BombardResult> result_opt;
   entity_manager.mutate_planet(
       mine.storbits(), mine.pnumorbits(), [&](Planet& planet) {
         entity_manager.mutate_sectormap(
@@ -709,57 +691,42 @@ void detonate_mine_against_planet(Ship& mine, const std::string& postmsg,
                   mine.is_landed() ? mine.land_coords()
                                    : smap.get_random().coords();
 
-              if (auto result_opt = shoot_ship_to_planet(
-                      entity_manager, mine, planet, mine.destruct_power(),
-                      target_coords, smap, false, guntype_t::LIGHT)) {
-                std::stringstream telegram;
-                telegram << postmsg;
-                if (result_opt->sectors_destroyed > 0) {
-                  telegram << std::format(" - {} sectors destroyed.",
-                                          result_opt->sectors_destroyed);
-                }
-                telegram << "\n";
-
-                const auto& star = *entity_manager.peek_star(mine.storbits());
-                for (player_t i : result_opt->nuked_players) {
-                  push_telegram(entity_manager, i, star.governor(i),
-                                telegram.str());
-                }
-                push_telegram(entity_manager, mine.owner(), mine.governor(),
-                              telegram.str());
-              }
+              result_opt = shoot_ship_to_planet(
+                  entity_manager, mine, planet, mine.destruct_power(),
+                  target_coords, smap, false, guntype_t::LIGHT);
             });
       });
+  return result_opt;
 }
 
-void domine(Ship& ship, bool detonate, EntityManager& entity_manager) {
+std::optional<MineDetonationReport> domine(Ship& ship, bool detonate,
+                                           EntityManager& entity_manager) {
   if (ship.type() != ShipType::STYPE_MINE || !ship.alive() ||
       ship.owner() == 0) {
-    return;
+    return std::nullopt;
   }
 
   /* check around and see if we should explode. */
   if (!ship.on() && !detonate) {
-    return;
+    return std::nullopt;
   }
 
   if (ship.whatorbits() == ScopeLevel::LEVEL_UNIV ||
       ship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
-    return;
+    return std::nullopt;
   }
 
   if (!detonate && !check_mine_proximity_trigger(ship, entity_manager)) {
-    return;
+    return std::nullopt;
   }
 
-  std::string postmsg = std::format("{} detonated at {}\n", ship,
-                                    prin_ship_orbits(entity_manager, ship));
-  post(entity_manager, postmsg, NewsType::COMBAT);
-  telegram_star(entity_manager, ship.storbits(), ship.owner(), ship.governor(),
-                postmsg);
-
-  detonate_mine_against_ships(ship, entity_manager);
-  detonate_mine_against_planet(ship, postmsg, entity_manager);
+  MineDetonationReport report{
+      .ship_display = std::format("{}", ship),
+      .orbit_display = prin_ship_orbits(entity_manager, ship),
+      .ship_victims = detonate_mine_against_ships(ship, entity_manager),
+      .planet_strike = detonate_mine_against_planet(ship, entity_manager),
+  };
 
   entity_manager.kill_ship(ship.owner(), ship);
+  return report;
 }

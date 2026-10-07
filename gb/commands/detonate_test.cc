@@ -52,6 +52,7 @@ void test_detonate_happy_path() {
   ctx.assert_dispatch_success(g, {"detonate", "#1"});
 
   std::println(std::cout, "Command output: {}", g.out.str());
+  test::expect_contains(g.out.str(), "detonated at");
 
   // Verify mine was detonated (hard-deleted)
   test::expect_throws<EntityNotFoundError>([&]() { ctx.em.peek_ship(1); });

@@ -163,7 +163,10 @@ void resolve_target_self_retaliation(GameObj& g, Ship& from, Ship& to_ship,
     return;
   }
 
-  const auto& [r_damage, r_short_buf, r_long_buf] = *retal_result;
+  const std::string r_short_buf =
+      GB::presentation::render_ship_shot_short(*retal_result);
+  const std::string r_long_buf =
+      GB::presentation::render_ship_shot_long(*retal_result);
   if (to_ship.is_laser_on()) {
     to_ship.consume_fuel(ENERGY_WEAPON_FUEL_PER_STRENGTH *
                          static_cast<double>(strength));
@@ -175,7 +178,7 @@ void resolve_target_self_retaliation(GameObj& g, Ship& from, Ship& to_ship,
   }
   notify_star(g.session_registry, g.entity_manager, g.player(), g.governor(),
               from.storbits(), r_short_buf);
-  g.out << r_long_buf;
+  g.present(*retal_result);
   warn_player(g.session_registry, g.entity_manager, to_ship.owner(),
               to_ship.governor(), r_long_buf);
 }
@@ -213,7 +216,10 @@ void resolve_escort_retaliation(GameObj& g, Ship& from, const Ship& to,
 
     if (auto s2sresult =
             shoot_ship_to_ship(g.entity_manager, ship, from, strength, 0)) {
-      const auto& [dmg, short_buf, long_buf] = *s2sresult;
+      const std::string short_buf =
+          GB::presentation::render_ship_shot_short(*s2sresult);
+      const std::string long_buf =
+          GB::presentation::render_ship_shot_long(*s2sresult);
       if (ship.is_laser_on()) {
         ship.consume_fuel(ENERGY_WEAPON_FUEL_PER_STRENGTH *
                           static_cast<double>(strength));
@@ -225,7 +231,7 @@ void resolve_escort_retaliation(GameObj& g, Ship& from, const Ship& to,
       }
       notify_star(g.session_registry, g.entity_manager, g.player(),
                   g.governor(), from.storbits(), short_buf);
-      g.out << long_buf;
+      g.present(*s2sresult);
       warn_player(g.session_registry, g.entity_manager, ship.owner(),
                   ship.governor(), long_buf);
     }
@@ -295,9 +301,13 @@ bool fire_from_ship(const command_t& argv, GameObj& g, Ship& from,
       return;
     }
 
-    const auto& [dmg, short_buf, long_buf] = *s2sresult;
-    damage = dmg;
+    damage = s2sresult->damage;
     fired = true;
+
+    const std::string short_buf =
+        GB::presentation::render_ship_shot_short(*s2sresult);
+    const std::string long_buf =
+        GB::presentation::render_ship_shot_long(*s2sresult);
 
     if (from.is_laser_on() || is_cew) {
       from.consume_fuel(ENERGY_WEAPON_FUEL_PER_STRENGTH *
@@ -313,7 +323,7 @@ bool fire_from_ship(const command_t& argv, GameObj& g, Ship& from,
                 from.storbits(), short_buf);
     warn_player(g.session_registry, g.entity_manager, to_ship.owner(),
                 to_ship.governor(), long_buf);
-    g.out << long_buf;
+    g.present(*s2sresult);
 
     resolve_target_self_retaliation(g, from, to_ship, retal, damage);
   });

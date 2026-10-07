@@ -65,7 +65,7 @@ void dispatch_bombardment_alerts(EntityManager& entity_manager,
   /* tell the bombarding player about it.. */
   std::stringstream telegram_report;
   telegram_report << std::format("REPORT from ship #{}\n\n", ship.number());
-  telegram_report << result.short_message;
+  telegram_report << GB::presentation::render_bombard_short(result);
   telegram_report << std::format(
       "sector {} (owner {}). {} sectors destroyed.\n", target, old_owner,
       sectors_destroyed);

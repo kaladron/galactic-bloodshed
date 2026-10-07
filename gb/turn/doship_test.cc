@@ -775,8 +775,12 @@ void test_detonate_mine_against_ships() {
                          .in_star_orbit(1)
                          .build();
 
-  ctx.em.mutate_ship(
-      mine_id, [&](Ship& mine) { detonate_mine_against_ships(mine, ctx.em); });
+  ctx.em.mutate_ship(mine_id, [&](Ship& mine) {
+    const auto victims = detonate_mine_against_ships(mine, ctx.em);
+    test::expect_eq(victims.size(), 1u);
+    test::expect_eq(victims[0].victim_owner, player_t{2});
+    test::expect_false(victims[0].shot.target_alive);
+  });
 
   test::expect_throws<EntityNotFoundError>(
       [&] { (void)ctx.em.peek_ship(target_id); });
@@ -810,7 +814,7 @@ void test_detonate_mine_against_planet() {
                                .build();
 
   ctx.em.mutate_ship(star_mine_id, [&](Ship& mine) {
-    detonate_mine_against_planet(mine, "Test detonation", ctx.em);
+    test::expect_false(detonate_mine_against_planet(mine, ctx.em).has_value());
   });
   const auto& smap_star = *ctx.em.peek_sectormap(1, 1);
   int populated_sectors = 0;
@@ -828,7 +832,7 @@ void test_detonate_mine_against_planet() {
                                .build();
 
   ctx.em.mutate_ship(plan_mine_id, [&](Ship& mine) {
-    detonate_mine_against_planet(mine, "Orbital detonation", ctx.em);
+    test::expect_true(detonate_mine_against_planet(mine, ctx.em).has_value());
   });
   const auto& smap_after = *ctx.em.peek_sectormap(1, 1);
   int damaged_sectors = 0;
@@ -866,7 +870,7 @@ void test_domine_trigger_and_detonation() {
                           .build();
 
   ctx.em.mutate_ship(mine_id, [&](Ship& m) {
-    domine(m, /*detonate=*/false, ctx.em);
+    test::expect_false(domine(m, /*detonate=*/false, ctx.em).has_value());
     test::expect_true(m.alive());
   });
 
@@ -879,8 +883,10 @@ void test_domine_trigger_and_detonation() {
                            .build();
 
   ctx.em.mutate_ship(mine_id, [&](Ship& m) {
-    domine(m, /*detonate=*/false, ctx.em);
+    const auto report = domine(m, /*detonate=*/false, ctx.em);
+    test::expect_true(report.has_value());
     test::expect_false(m.alive());
+    test::expect_false(report->ship_victims.empty());
   });
 
   test::expect_throws<EntityNotFoundError>(
@@ -906,8 +912,10 @@ void test_domine_trigger_and_detonation() {
           .build();
 
   ctx.em.mutate_ship(plan_mine_id, [&](Ship& m) {
-    domine(m, /*detonate=*/true, ctx.em);
+    const auto report = domine(m, /*detonate=*/true, ctx.em);
+    test::expect_true(report.has_value());
     test::expect_false(m.alive());
+    test::expect_true(report->planet_strike.has_value());
   });
 
   test::expect_throws<EntityNotFoundError>(

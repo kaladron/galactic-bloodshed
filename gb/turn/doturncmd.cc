@@ -88,7 +88,33 @@ static void process_ships(TurnState& state) {
   // Process mine detonation for each ship
   for (auto ship_handle :
        ShipList(state.entity_manager, ShipList::IterationType::AllAlive)) {
-    domine(*ship_handle, /*detonate=*/false, state.entity_manager);
+    Ship& ship = *ship_handle;
+    if (const auto report =
+            domine(ship, /*detonate=*/false, state.entity_manager)) {
+      const std::string notice =
+          GB::presentation::render_mine_detonation_notice(*report);
+      post(state.entity_manager, notice, NewsType::COMBAT);
+      telegram_star(state.entity_manager, ship.storbits(), ship.owner(),
+                    ship.governor(), notice);
+      for (const auto& victim : report->ship_victims) {
+        post(state.entity_manager,
+             GB::presentation::render_ship_shot_short(victim.shot),
+             NewsType::COMBAT);
+        push_telegram(state.entity_manager, victim.victim_owner,
+                      victim.victim_governor,
+                      GB::presentation::render_ship_shot_long(victim.shot));
+      }
+      if (report->planet_strike) {
+        const std::string planet_msg =
+            GB::presentation::render_mine_planet_strike_telegram(*report);
+        const auto& star = *state.entity_manager.peek_star(ship.storbits());
+        for (player_t i : report->planet_strike->nuked_players) {
+          push_telegram(state.entity_manager, i, star.governor(i), planet_msg);
+        }
+        push_telegram(state.entity_manager, ship.owner(), ship.governor(),
+                      planet_msg);
+      }
+    }
   }
 }
 

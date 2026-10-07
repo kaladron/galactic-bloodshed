@@ -3,7 +3,6 @@
 /// \file shootblast_test.cc
 /// \brief Unit tests for shoot_planet_to_ship and shoot_ship_to_planet.
 
-import dallib;
 import gb.entities;
 import gb.services;
 import gb.turn;
@@ -13,9 +12,7 @@ import std;
 void test_shoot_planet_to_ship_invalid_cases() {
   std::println(std::cout, "Test: shoot_planet_to_ship invalid cases");
 
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   Race race{};
   race.Playernum = player_t{1};
@@ -28,18 +25,18 @@ void test_shoot_planet_to_ship_invalid_cases() {
   ship.alive() = true;
 
   // Test 1: Zero strength -> returns std::nullopt
-  auto dam1 = shoot_planet_to_ship(em, race, ship, 0);
+  auto dam1 = shoot_planet_to_ship(ctx.em, race, ship, 0);
   test::expect_false(dam1.has_value());
 
   // Test 2: Dead ship -> returns std::nullopt
   ship.alive() = false;
-  auto dam2 = shoot_planet_to_ship(em, race, ship, 10);
+  auto dam2 = shoot_planet_to_ship(ctx.em, race, ship, 10);
   test::expect_false(dam2.has_value());
 
   // Test 3: Wrong orbit level -> returns std::nullopt
   ship.alive() = true;
   ship.enter_star_orbit(1);
-  auto dam3 = shoot_planet_to_ship(em, race, ship, 10);
+  auto dam3 = shoot_planet_to_ship(ctx.em, race, ship, 10);
   test::expect_false(dam3.has_value());
 
   std::println(std::cout, "  ✓ shoot_planet_to_ship invalid cases passed");
@@ -48,30 +45,8 @@ void test_shoot_planet_to_ship_invalid_cases() {
 void test_shoot_planet_to_ship_valid_attack() {
   std::println(std::cout, "Test: shoot_planet_to_ship valid attack");
 
-  Database db(":memory:");
-  initialize_schema(db);
-  JsonStore store(db);
-  EntityManager em(db);
-
-  // Create star 1 and planet 1 in db
-  TestStarBuilder(em, db, "Sol", 1).build();
-  TestPlanetBuilder(em, db, 1, PlanetType::EARTH, Coordinates{10, 10}, 1)
-      .named("Terra")
-      .build();
-
-  RaceRepository race_repo(store);
-
-  Race race1{};
-  race1.Playernum = player_t{1};
-  race1.name = "Attacker";
-  race1.tech = 10.0;
-  race_repo.save(race1);
-
-  Race race2{};
-  race2.Playernum = player_t{2};
-  race2.name = "Defender";
-  race2.tech = 10.0;
-  race_repo.save(race2);
+  TestContext ctx;
+  ctx.with_standard_universe();
 
   // Create a target ship in planet scope
   Ship ship{};
@@ -87,24 +62,25 @@ void test_shoot_planet_to_ship_valid_attack() {
   ship.set_mass(10.0);
   ship.armor() = 5;
 
-  auto res = shoot_planet_to_ship(em, race1, ship, 20);
+  const auto* race1 = ctx.em.peek_race(player_t{1});
+  auto res = shoot_planet_to_ship(ctx.em, *race1, ship, 20);
   test::expect_true(res.has_value());
-  auto [damage, short_msg, long_msg] = *res;
-  test::expect_ge(damage, 0);
-  test::expect_false(short_msg.empty());
-  test::expect_false(long_msg.empty());
+  test::expect_ge(res->damage, 0);
+  test::expect_eq(res->attacker_kind, ShipShotAttackerKind::Planet);
+  test::expect_eq(res->weapon, ShipShotWeaponKind::MediumGuns);
+  test::expect_eq(res->attacker_player, player_t{1});
+  test::expect_false(res->target_location_display.empty());
+  test::expect_false(res->target_display.empty());
 
   std::println(std::cout,
                "  ✓ shoot_planet_to_ship valid attack passed (damage={})",
-               damage);
+               res->damage);
 }
 
 void test_shoot_ship_to_planet_invalid_cases() {
   std::println(std::cout, "Test: shoot_ship_to_planet invalid cases");
 
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
+  TestContext ctx;
 
   Planet planet{1, 1, PlanetType::EARTH, Coordinates{5, 5}};
 
@@ -118,21 +94,35 @@ void test_shoot_ship_to_planet_invalid_cases() {
   ship.on() = true;
 
   // Test 1: Zero strength -> returns std::nullopt
-  auto res1 = shoot_ship_to_planet(em, ship, planet, 0, Coordinates{0, 0}, smap,
-                                   0, guntype_t::NONE);
+  auto res1 = shoot_ship_to_planet(ctx.em, ship, planet, 0, Coordinates{0, 0},
+                                   smap, 0, guntype_t::NONE);
   test::expect_false(res1.has_value());
 
   // Test 2: Dead ship -> returns std::nullopt
   ship.alive() = false;
-  auto res2 = shoot_ship_to_planet(em, ship, planet, 10, Coordinates{0, 0},
+  auto res2 = shoot_ship_to_planet(ctx.em, ship, planet, 10, Coordinates{0, 0},
                                    smap, 0, guntype_t::NONE);
   test::expect_false(res2.has_value());
 
   // Test 3: Invalid planet coords -> returns std::nullopt
   ship.alive() = true;
-  auto res3 = shoot_ship_to_planet(em, ship, planet, 10, Coordinates{10, 10},
-                                   smap, 0, guntype_t::NONE);
+  auto res3 = shoot_ship_to_planet(
+      ctx.em, ship, planet, 10, Coordinates{10, 10}, smap, 0, guntype_t::NONE);
   test::expect_false(res3.has_value());
+
+  // Test 4: Non-planet orbit -> returns std::nullopt
+  ship.enter_star_orbit(1);
+  auto res4 = shoot_ship_to_planet(ctx.em, ship, planet, 10, Coordinates{0, 0},
+                                   smap, 0, guntype_t::HEAVY);
+  test::expect_false(res4.has_value());
+
+  // Test 5: Ship with switch turned off and ignore=0 -> returns std::nullopt
+  ship.enter_planet_orbit(1, 1);
+  ship.type() = ShipType::STYPE_MINE;
+  ship.on() = false;
+  auto res5 = shoot_ship_to_planet(ctx.em, ship, planet, 10, Coordinates{0, 0},
+                                   smap, 0, guntype_t::HEAVY);
+  test::expect_false(res5.has_value());
 
   std::println(std::cout, "  ✓ shoot_ship_to_planet invalid cases passed");
 }
@@ -140,27 +130,10 @@ void test_shoot_ship_to_planet_invalid_cases() {
 void test_shoot_ship_to_planet_valid_attack() {
   std::println(std::cout, "Test: shoot_ship_to_planet valid attack");
 
-  Database db(":memory:");
-  initialize_schema(db);
-  JsonStore store(db);
-  EntityManager em(db);
+  TestContext ctx;
+  ctx.with_standard_universe();
 
-  TestStarBuilder(em, db, "Sol", 1).build();
-  TestPlanetBuilder(em, db, 1, PlanetType::EARTH, Coordinates{4, 4}, 1)
-      .named("Terra")
-      .build();
-  Planet planet(em.peek_planet(1, 1)->get_struct());
-
-  RaceRepository race_repo(store);
-  Race race1{};
-  race1.Playernum = player_t{1};
-  race1.name = "Attacker";
-  race_repo.save(race1);
-
-  Race race2{};
-  race2.Playernum = player_t{2};
-  race2.name = "Target";
-  race_repo.save(race2);
+  Planet planet(ctx.em.peek_planet(1, 1)->get_struct());
 
   SectorMap smap(planet);
   auto& s = smap.get(Coordinates{1, 1});
@@ -179,12 +152,13 @@ void test_shoot_ship_to_planet_valid_attack() {
   ship.tech() = 10.0;
   ship.size() = 10;
 
-  auto res = shoot_ship_to_planet(em, ship, planet, 10, Coordinates{1, 1}, smap,
-                                  0, guntype_t::HEAVY);
+  auto res = shoot_ship_to_planet(ctx.em, ship, planet, 20, Coordinates{1, 1},
+                                  smap, 0, guntype_t::HEAVY);
   test::expect_true(res.has_value());
   test::expect_ge(res->sectors_destroyed, 0);
-  test::expect_false(res->short_message.empty());
-  test::expect_false(res->long_message.empty());
+  test::expect_false(res->ship_display.empty());
+  test::expect_false(res->location_display.empty());
+  test::expect_eq(res->previous_sector_owner, player_t{2});
   test::expect_true(res->nuked_players.contains(player_t{2}));
 
   std::println(std::cout,
@@ -225,21 +199,8 @@ void test_hit_odds_sizing() {
 void test_zero_body_ship_combat() {
   std::println(std::cout, "Test: zero-body ship combat safety");
 
-  Database db(":memory:");
-  initialize_schema(db);
-  JsonStore store(db);
-  EntityManager em(db);
-
-  TestStarBuilder(em, db, "Sol", 1).build();
-  TestPlanetBuilder(em, db, 1, PlanetType::EARTH, Coordinates{10, 10}, 1)
-      .named("Terra")
-      .build();
-
-  Race race{};
-  race.Playernum = player_t{1};
-  race.name = "Attacker";
-  race.tech = 50.0;
-  RaceRepository(store).save(race);
+  TestContext ctx;
+  ctx.with_standard_universe();
 
   // Target ship with 0 size and 0 armor (shipbody() == 0, effective_armor()
   // == 0)
@@ -260,14 +221,14 @@ void test_zero_body_ship_combat() {
   test::expect_eq(ship.effective_armor(), 0u);
 
   // Attack zero-body ship - must not divide by zero or crash
-  auto res = shoot_planet_to_ship(em, race, ship, 25);
+  const auto* race = ctx.em.peek_race(player_t{1});
+  auto res = shoot_planet_to_ship(ctx.em, *race, ship, 25);
   test::expect_true(res.has_value());
-  auto [damage, short_msg, long_msg] = *res;
-  test::expect_ge(damage, 0);
-  test::expect_false(short_msg.empty());
+  test::expect_ge(res->damage, 0);
+  test::expect_false(res->target_location_display.empty());
 
   std::println(std::cout, "  ✓ zero-body ship combat passed (damage={})",
-               damage);
+               res->damage);
 }
 
 void test_penetration_factor_domain() {
@@ -336,15 +297,80 @@ void test_do_collateral_casualties() {
   test::expect_eq(ship.troops(), 30);
   test::expect_eq(ship.mass(), initial_mass);
 
-  // Damage = 100: guaranteed collateral casualties (structured binding)
-  auto [cas100_civ, cas100_mil, p1, s1] = do_collateral(ship, 100, 2.0);
-  test::expect_eq(cas100_civ, 50);
-  test::expect_eq(cas100_mil, 30);
+  // Damage = 100: guaranteed collateral casualties
+  CollateralDamage res100 = do_collateral(ship, 100, 2.0);
+  test::expect_eq(res100.civilian_casualties, 50);
+  test::expect_eq(res100.military_casualties, 30);
   test::expect_eq(ship.popn(), 0);
   test::expect_eq(ship.troops(), 0);
   test::expect_eq(ship.mass(), initial_mass - 80.0 * 2.0);
 
   std::println(std::cout, "  ✓ do_collateral casualty tracking passed");
+}
+
+void test_shoot_ship_to_ship_and_cew_caliber() {
+  std::println(std::cout,
+               "Test: shoot_ship_to_ship guard clauses and CEW caliber");
+
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  auto attacker_h = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER, 1)
+                        .owned_by(1, 1)
+                        .named("Attacker")
+                        .in_star_orbit(1, SystemCoordinates{10.0, 10.0})
+                        .with_size(100)
+                        .with_tech(100.0)
+                        .with_on(true)
+                        .build_handle();
+  Ship& attacker = *attacker_h;
+  attacker.guns() = ActiveBattery::NONE;
+  attacker.cew() = 20;
+  attacker.cew_range() = 50;
+
+  auto target_h = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER, 2)
+                      .owned_by(2, 1)
+                      .named("Target")
+                      .in_star_orbit(1, SystemCoordinates{12.0, 10.0})
+                      .with_size(100)
+                      .with_tech(10.0)
+                      .with_armor(2)
+                      .with_crew(50, 0)
+                      .with_on(true)
+                      .build_handle();
+  Ship& target = *target_h;
+  target.set_mass(100.0);
+
+  // 1. Conventional attack with ActiveBattery::NONE fails (caliber == NONE)
+  test::expect_false(
+      shoot_ship_to_ship(ctx.em, attacker, target, 5, 0, false).has_value());
+
+  // 2. CEW attack (range != 0) succeeds even when conventional guns == NONE,
+  //    using guntype_t::LIGHT equivalent destruct units.
+  auto cew_res = shoot_ship_to_ship(ctx.em, attacker, target, 10, 2, false);
+  test::expect_true(cew_res.has_value());
+  test::expect_eq(cew_res->weapon, ShipShotWeaponKind::Cew);
+  test::expect_eq(cew_res->strength, 10);
+
+  // 3. Out of range fails
+  const auto orig_coords = target.coordinates();
+  target.coordinates() = UniverseCoordinates{10000.0, 10000.0};
+  test::expect_false(
+      shoot_ship_to_ship(ctx.em, attacker, target, 10, 0, false).has_value());
+
+  // 4. Radiative weapon mode (mode == 1)
+  target.coordinates() = orig_coords;
+  target.alive() = true;
+  attacker.type() = ShipType::STYPE_MINE;
+  attacker.mode() = 1;
+  auto rad_res = shoot_ship_to_ship(ctx.em, attacker, target, 10, 0, true);
+  test::expect_true(rad_res.has_value());
+  test::expect_eq(rad_res->weapon, ShipShotWeaponKind::Radiation);
+  test::expect_eq(rad_res->damage,
+                  static_cast<damage_t>(rad_res->radiation_dosage));
+
+  std::println(std::cout,
+               "  ✓ shoot_ship_to_ship guard clauses and CEW caliber passed");
 }
 
 int main() {
@@ -356,6 +382,7 @@ int main() {
   test_zero_body_ship_combat();
   test_penetration_factor_domain();
   test_do_collateral_casualties();
+  test_shoot_ship_to_ship_and_cew_caliber();
 
   std::println(std::cout, "\n✅ All shootblast tests passed!");
   return 0;

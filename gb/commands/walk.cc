@@ -99,9 +99,12 @@ void resolve_afv_duel(GameObj& g, Ship& attacker, Ship& defender) {
     Ship attacker_snapshot(attacker.get_struct());
     if (auto def_shot = shoot_ship_to_ship(g.entity_manager, defender, attacker,
                                            def_strength, 0, false)) {
-      const auto& [dmg1, short_buf, long_buf] = *def_shot;
+      const std::string short_buf =
+          GB::presentation::render_ship_shot_short(*def_shot);
+      const std::string long_buf =
+          GB::presentation::render_ship_shot_long(*def_shot);
       defender.consume_destruct(def_strength);
-      g.out << long_buf;
+      g.present(*def_shot);
       warn_player(g.session_registry, g.entity_manager, defender.owner(),
                   defender.governor(), long_buf);
       if (!attacker.alive()) {
@@ -115,9 +118,12 @@ void resolve_afv_duel(GameObj& g, Ship& attacker, Ship& defender) {
       if (auto att_shot =
               shoot_ship_to_ship(g.entity_manager, attacker_snapshot, defender,
                                  att_strength, 0, true)) {
-        const auto& [dmg2, short_buf2, long_buf2] = *att_shot;
+        const std::string short_buf2 =
+            GB::presentation::render_ship_shot_short(*att_shot);
+        const std::string long_buf2 =
+            GB::presentation::render_ship_shot_long(*att_shot);
         attacker.consume_destruct(att_strength);
-        g.out << long_buf2;
+        g.present(*att_shot);
         warn_player(g.session_registry, g.entity_manager, defender.owner(),
                     defender.governor(), long_buf2);
         if (!defender.alive()) {
@@ -141,12 +147,9 @@ void engage_defending_afvs(GameObj& g, Ship& ship, starnum_t snum,
     if (ship2.owner() != playernum && ship2.type() == ShipType::OTYPE_AFV &&
         ship2.is_landed() && ship2.retal_strength() &&
         ship2.land_coords() == new_coords) {
-      const auto* alien = g.entity_manager.peek_race(ship2.owner());
-      if (!alien) {
-        continue;
-      }
+      const auto& alien = *g.entity_manager.peek_race(ship2.owner());
       if (!g.race->is_allied_with(ship2.owner()) ||
-          !alien->is_allied_with(playernum)) {
+          !alien.is_allied_with(playernum)) {
         resolve_afv_duel(g, ship, ship2);
       }
     }

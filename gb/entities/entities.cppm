@@ -10,7 +10,6 @@ export module gb.entities;
 export import :types;
 export import :rand;
 export import :tweakables;
-export import :csp;
 export import :universe;
 export import :race;
 export import :star;

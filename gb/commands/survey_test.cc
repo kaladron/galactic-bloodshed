@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /// \file survey_test.cc
-/// \brief Unit tests for survey and client_survey commands
+/// \brief Unit tests for survey command
 
 import commands;
 import dallib;
@@ -102,24 +102,6 @@ void test_survey_universe_scope() {
   std::println(std::cout, "    ✓ Universe scope survey succeeded");
 }
 
-void test_client_survey_dispatch() {
-  std::println(std::cout, "Test: client_survey command dispatch");
-
-  TestContext ctx;
-  setup_test_world(ctx);
-
-  auto& registry = get_test_session_registry();
-  GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
-
-  ctx.assert_dispatch_success(g, {"client_survey", "0:2,0:2"});
-  test::expect_false(g.out.str().empty());
-  std::println(std::cout, "    ✓ client_survey dispatched successfully");
-}
-
 }  // namespace
 
 int main() {
@@ -127,7 +109,6 @@ int main() {
   test_survey_sector_range_with_header();
   test_survey_star_scope();
   test_survey_universe_scope();
-  test_client_survey_dispatch();
 
   std::println(std::cout, "\n✅ All survey tests passed!");
   return 0;

@@ -54,6 +54,8 @@ void test_live_registry_integrity() {
 void test_find_command_descriptor_not_found() {
   test::expect_eq(GB::commands::find_command_descriptor("nonexistent_cmd_xyz"),
                   nullptr);
+  test::expect_eq(GB::commands::find_command_descriptor("client_survey"),
+                  nullptr);
   test::expect_eq(GB::commands::find_command_descriptor(""), nullptr);
 }
 

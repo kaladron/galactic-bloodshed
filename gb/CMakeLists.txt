@@ -97,7 +97,6 @@ target_sources(
          CXX_MODULES
          FILES
           entities/entities.cppm
-          entities/csp.cppm
           entities/domain_types.cppm
           entities/planet.cppm
           entities/race.cppm

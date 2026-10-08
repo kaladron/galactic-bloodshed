@@ -40,7 +40,7 @@ std::string_view get_tox(int toxicity) {
   return kToxDescriptions[index];
 }
 
-// Ship location data for CSP output
+// Ship location data for sector survey view model
 struct ShipLocInfo {
   shipnum_t shipno;
   char ltr;
@@ -121,50 +121,6 @@ void render_human_survey(std::ostream& out, const Race& race,
   out << table << "\n";
 }
 
-// CSP (Client Server Protocol) formatter (for "client_survey" command)
-void render_csp_survey(std::ostream& out, const Planet& p, const Star& star,
-                       std::string_view planet_name, player_t player,
-                       const Race& race, bool all, bool player_presence,
-                       const std::vector<SectorRowData>& rows) {
-  // Write CSP header
-  if (all) {
-    out << std::format(
-        "{} {} {} {} {} {} {} {} {} {} {} {} {:.2f} {}\n", GB::csp::CSP_CLIENT,
-        GB::csp::CSP_SURVEY_INTRO, p.dimensions().x, p.dimensions().y,
-        star.get_name(), planet_name, p.info(player).resource,
-        p.info(player).fuel, p.info(player).destruct, p.popn(), p.maxpopn(),
-        p.toxic(), p.compatibility(race), p.slaved_to().value_or(0));
-  }
-
-  // Write sector rows
-  for (const auto& row : rows) {
-    const auto& s = *row.sector;
-    char sect_char = s.condition_symbol();
-
-    out << std::format(
-        "{} {} {} {} {} {} {} {} {} {} {} {} {} {} {} {}", GB::csp::CSP_CLIENT,
-        GB::csp::CSP_SURVEY_SECTOR, row.coords.x, row.coords.y, sect_char,
-        row.desshow_char, (s.is_wasted() ? 1 : 0), s.get_owner(), s.get_eff(),
-        s.get_fert(), s.get_mobilization(),
-        ((s.get_crystals() && (race.discoveries.crystal || race.God)) ? 1 : 0),
-        s.get_resource(), s.get_popn(), s.get_troops(),
-        maxsupport(race, s, row.compat, row.toxic));
-
-    if (row.ship_data && row.ship_data->count > 0 && player_presence) {
-      out << ";";
-      for (int i = 0; i < row.ship_data->count; i++) {
-        out << std::format(" {} {} {};", row.ship_data->ships[i].shipno,
-                           row.ship_data->ships[i].ltr,
-                           row.ship_data->ships[i].owner);
-      }
-    }
-    out << "\n";
-  }
-
-  // Write CSP footer
-  out << std::format("{} {}\n", GB::csp::CSP_CLIENT, GB::csp::CSP_SURVEY_END);
-}
-
 std::string_view stability_label(int pct) {
   if (pct < 20) return "stable";
   if (pct < 40) return "unstable";
@@ -216,11 +172,8 @@ std::optional<Place> parse_survey_location(const command_t& argv, GameObj& g,
 
 // Helper: Survey planet sectors (detailed sector-by-sector view)
 void survey_planet_sectors(GameObj& g, const Place& where,
-                           const std::string& range_arg, bool all,
-                           bool is_csp_format) {
+                           const std::string& range_arg, bool all) {
   const auto& race = *g.race;
-
-  const auto& star = *g.entity_manager.peek_star(where.snum);
 
   const auto& p = *g.entity_manager.peek_planet(where.snum, where.pnum);
 
@@ -241,27 +194,19 @@ void survey_planet_sectors(GameObj& g, const Place& where,
   }
   const auto [low, high] = bounds;
 
-  // Build ship location data if needed (only for CSP format)
+  // Build ship location data for sector survey view model
   std::vector<std::vector<SectorShipData>> shiplocs(
       p.dimensions().x, std::vector<SectorShipData>(p.dimensions().y));
-  bool inhere = false;  // Track if player has presence on planet
-  if (is_csp_format) {
-    inhere = p.info(g.player()).numsectsowned > 0;
-    for (const Ship& shipa : ShipList::readonly_on_planet(
-             g.entity_manager, where.snum, where.pnum)) {
-      if (shipa.owner() == g.player() &&
-          (shipa.popn() || (shipa.type() == ShipType::OTYPE_PROBE))) {
-        inhere = true;
-      }
-      if (shipa.alive() && shipa.is_landed()) {
-        Coordinates land = shipa.land_coords();
-        if (shiplocs[land.x][land.y].count < MAX_SHIPS_PER_SECTOR) {
-          auto& loc = shiplocs[land.x][land.y];
-          loc.ships[loc.count].shipno = shipa.number();
-          loc.ships[loc.count].owner = shipa.owner();
-          loc.ships[loc.count].ltr = shipa.type_letter();
-          loc.count++;
-        }
+  for (const Ship& shipa :
+       ShipList::readonly_on_planet(g.entity_manager, where.snum, where.pnum)) {
+    if (shipa.alive() && shipa.is_landed()) {
+      Coordinates land = shipa.land_coords();
+      if (shiplocs[land.x][land.y].count < MAX_SHIPS_PER_SECTOR) {
+        auto& loc = shiplocs[land.x][land.y];
+        loc.ships[loc.count].shipno = shipa.number();
+        loc.ships[loc.count].owner = shipa.owner();
+        loc.ships[loc.count].ltr = shipa.type_letter();
+        loc.count++;
       }
     }
   }
@@ -281,13 +226,7 @@ void survey_planet_sectors(GameObj& g, const Place& where,
                     .ship_data = ship_data});
   }
 
-  // Render the complete survey
-  if (is_csp_format) {
-    render_csp_survey(g.out, p, star, star.get_planet_name(where.pnum),
-                      g.player(), race, all, inhere, rows);
-  } else {
-    render_human_survey(g.out, race, rows);
-  }
+  render_human_survey(g.out, race, rows);
 }
 
 // Helper: Survey planet overview (conditions, stats, etc.)
@@ -400,9 +339,6 @@ void survey_star(GameObj& g, const Place& where) {
 namespace GB::commands {
 
 bool survey(const command_t& argv, GameObj& g) {
-  // Determine if this is CSP format based on command name
-  bool is_csp_format = (argv[0] == "client_survey");
-
   // Parse arguments and determine what to survey
   bool all = false;
   std::string range_arg;
@@ -418,7 +354,7 @@ bool survey(const command_t& argv, GameObj& g) {
       if ((argv.size() > 1 && std::isdigit(argv[1][0]) &&
            argv[1].contains(',')) ||
           all) {
-        survey_planet_sectors(g, where, range_arg, all, is_csp_format);
+        survey_planet_sectors(g, where, range_arg, all);
       } else {
         survey_planet_overview(g, where);
       }
@@ -446,17 +382,6 @@ const CommandDescriptor survey_cmd{
     .min_args = 1,
     .syntax = "survey [<coords>|<range>|<place>]",
     .description = "Detailed survey of planet, sector, or star",
-    .handler = &survey,
-};
-
-const CommandDescriptor client_survey_cmd{
-    .name = "client_survey",
-    .roles = {},
-    .scopes = AllowedScopes::any(),
-    .ap = APCost::free(),
-    .min_args = 1,
-    .syntax = "client_survey [<coords>|<range>|<place>]",
-    .description = "Machine-readable survey format for client interfaces",
     .handler = &survey,
 };
 

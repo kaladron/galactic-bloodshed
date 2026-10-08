@@ -181,7 +181,6 @@ export bool star_locations(const command_t&, GameObj&);
 export extern const CommandDescriptor stars_cmd;
 export bool survey(const command_t&, GameObj&);
 export extern const CommandDescriptor survey_cmd;
-export extern const CommandDescriptor client_survey_cmd;
 export bool tax(const command_t&, GameObj&);
 export extern const CommandDescriptor tax_cmd;
 export bool technology(const command_t&, GameObj&);

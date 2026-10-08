@@ -141,7 +141,6 @@ build_registry() {
         reg(stars_cmd);
         reg(status_cmd);
         reg(survey_cmd);
-        reg(client_survey_cmd);
         reg(tactical_cmd);
         reg(announce_cmd);
         reg(broadcast_cmd);

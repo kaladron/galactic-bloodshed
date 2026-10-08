@@ -1065,6 +1065,18 @@ public:
     return retal_strength();
   }
 
+  /// \brief Consumes weapon fuel (if combat laser or CEW is fired) or destruct
+  /// munitions for a weapon discharge of the given strength.
+  void consume_weapon_resources(weapon_power_t strength,
+                                bool is_cew = false) noexcept {
+    if (is_laser_on() || is_cew) {
+      consume_fuel(ENERGY_WEAPON_FUEL_PER_STRENGTH *
+                   static_cast<double>(strength));
+    } else {
+      consume_destruct(strength);
+    }
+  }
+
   /// \brief Computes effective orbital bombardment firepower based on gun
   /// capacity, hull efficiency, and available destruct munitions.
   [[nodiscard]] weapon_power_t bombardment_strength() const noexcept {

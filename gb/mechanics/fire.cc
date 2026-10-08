@@ -36,19 +36,19 @@ bool has_planet_defense(EntityManager& entity_manager, const starnum_t star_id,
  *
  * @param ship The ship object to check for overload conditions.
  * @param cew Strength of Confined Energy Weapons.
- * @param strength A pointer to the strength value of the ship.
- * @return Structured ReactorOverloadEvent if crystal burnout or explosion
- * occurs, std::nullopt otherwise.
+ * @param strength The requested weapon strength of the ship.
+ * @return Pair of effective weapon strength (0 on overload) and optional
+ * ReactorOverloadEvent if crystal burnout or explosion occurs.
  */
-std::optional<ReactorOverloadEvent>
+std::pair<weapon_power_t, std::optional<ReactorOverloadEvent>>
 check_overload(EntityManager& entity_manager, Ship& ship, int cew,
-               weapon_power_t* strength) {
-  if (!(ship.laser() && ship.fire_laser()) && (cew == 0)) {
-    return std::nullopt;
+               weapon_power_t strength) {
+  if (!ship.is_laser_on() && (cew == 0)) {
+    return {strength, std::nullopt};
   }
 
   // Check to see if the ship blows up
-  if (int_rand(0, *strength) >
+  if (int_rand(0, strength) >
       static_cast<int>((1.0 - .01 * ship.damage()) * ship.tech() / 2.0)) {
     ReactorOverloadEvent event{
         .outcome = ReactorOverloadOutcome::ShipExploded,
@@ -60,23 +60,24 @@ check_overload(EntityManager& entity_manager, Ship& ship, int cew,
         .ship_display = std::format("{}", ship),
     };
     entity_manager.kill_ship(ship.owner(), ship);
-    *strength = 0;
-    return event;
+    return {0, event};
   }
-  if (int_rand(0, *strength) >
+  if (int_rand(0, strength) >
       static_cast<int>((1.0 - .01 * ship.damage()) * ship.tech() / 4.0)) {
     ship.fire_laser() = 0;
     ship.mounted() = 0;
-    *strength = 0;
-    return ReactorOverloadEvent{
-        .outcome = ReactorOverloadOutcome::CrystalDamaged,
-        .owner = ship.owner(),
-        .governor = ship.governor(),
-        .scope = ship.whatorbits(),
-        .star_id = ship.storbits(),
-        .location_display = dispshiploc(entity_manager, ship),
-        .ship_display = std::format("{}", ship),
+    return {
+        0,
+        ReactorOverloadEvent{
+            .outcome = ReactorOverloadOutcome::CrystalDamaged,
+            .owner = ship.owner(),
+            .governor = ship.governor(),
+            .scope = ship.whatorbits(),
+            .star_id = ship.storbits(),
+            .location_display = dispshiploc(entity_manager, ship),
+            .ship_display = std::format("{}", ship),
+        },
     };
   }
-  return std::nullopt;
+  return {strength, std::nullopt};
 }

@@ -122,12 +122,11 @@ void resolve_protector_ship_retaliation(GameObj& g, Ship& from,
       continue;
     }
 
-    auto retal_strength = ship.check_retal_strength();
-    if (ship.is_laser_on()) {
-      if (const auto overload =
-              check_overload(g.entity_manager, ship, 0, &retal_strength)) {
-        GB::commands::notify_reactor_overload(g.entity_manager, *overload);
-      }
+    auto [retal_strength, overload] =
+        check_overload(g.entity_manager, ship, 0, ship.check_retal_strength());
+    if (overload) {
+      GB::commands::notify_reactor_overload(g.entity_manager, *overload);
+      continue;
     }
 
     if (auto s2s_opt = shoot_ship_to_ship(g.entity_manager, ship, from,
@@ -136,12 +135,7 @@ void resolve_protector_ship_retaliation(GameObj& g, Ship& from,
           GB::presentation::render_ship_shot_short(*s2s_opt);
       const std::string long_buf =
           GB::presentation::render_ship_shot_long(*s2s_opt);
-      if (ship.is_laser_on()) {
-        ship.consume_fuel(ENERGY_WEAPON_FUEL_PER_STRENGTH *
-                          static_cast<double>(retal_strength));
-      } else {
-        ship.consume_destruct(retal_strength);
-      }
+      ship.consume_weapon_resources(retal_strength);
       if (!from.alive()) {
         post(g.entity_manager, short_buf, NewsType::COMBAT);
       }
@@ -204,24 +198,21 @@ bool bombard_from_ship(const command_t& argv, GameObj& g, Ship& from) {
           return;
         }
 
-        if (from.is_laser_on()) {
-          if (const auto overload =
-                  check_overload(g.entity_manager, from, 0, &strength)) {
-            GB::commands::notify_reactor_overload(g.entity_manager, *overload);
-          }
-          if (strength <= 0) {
-            g.out << "No attack.\n";
-            fired = true;
-            return;
-          }
+        auto [effective_strength, overload] =
+            check_overload(g.entity_manager, from, 0, strength);
+        if (overload) {
+          GB::commands::notify_reactor_overload(g.entity_manager, *overload);
+          g.out << "No attack.\n";
+          fired = true;
+          return;
         }
 
         std::optional<BombardResult> opt_result;
         g.entity_manager.mutate_sectormap(
             from.storbits(), from.pnumorbits(), [&](SectorMap& smap) {
-              opt_result = shoot_ship_to_planet(g.entity_manager, from, p,
-                                                strength, target_coords, smap,
-                                                false, guntype_t::NONE);
+              opt_result = shoot_ship_to_planet(
+                  g.entity_manager, from, p, effective_strength, target_coords,
+                  smap, false, guntype_t::NONE);
             });
 
         if (!opt_result) {
@@ -230,12 +221,7 @@ bool bombard_from_ship(const command_t& argv, GameObj& g, Ship& from) {
         }
         const auto& result = *opt_result;
 
-        if (from.is_laser_on()) {
-          from.consume_fuel(ENERGY_WEAPON_FUEL_PER_STRENGTH *
-                            static_cast<double>(strength));
-        } else {
-          from.consume_destruct(strength);
-        }
+        from.consume_weapon_resources(effective_strength);
 
         const std::string short_msg =
             GB::presentation::render_bombard_short(result);

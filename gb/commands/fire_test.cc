@@ -347,14 +347,15 @@ void test_fire_crystal_overload_burnout_and_explosion() {
   ctx.em.mutate_ship(1, [&](Ship& s) {
     s.laser() = false;
     s.fire_laser() = 0;
-    weapon_power_t str = 10;
-    test::expect_false(check_overload(ctx.em, s, 0, &str).has_value());
-    test::expect_eq(str, 10u);
+    auto [str1, ev1] = check_overload(ctx.em, s, 0, 10);
+    test::expect_false(ev1.has_value());
+    test::expect_eq(str1, 10u);
 
     s.laser() = true;
     s.fire_laser() = 0;
-    test::expect_false(check_overload(ctx.em, s, 0, &str).has_value());
-    test::expect_eq(str, 10u);
+    auto [str2, ev2] = check_overload(ctx.em, s, 0, 10);
+    test::expect_false(ev2.has_value());
+    test::expect_eq(str2, 10u);
   });
 
   // 2. Non-lethal crystal burnout during laser fire:

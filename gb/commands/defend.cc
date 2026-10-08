@@ -151,28 +151,19 @@ bool defend(const command_t& argv, GameObj& g) {
               g.present(*p2s_opt);
 
               /* defending ship retaliates */
-              strength = 0;
               if (retal && damage && target_ship.protect().retaliate) {
                 // Use pre-damage retaliation strength (saved in 'retal' above).
                 // shoot_ship_to_planet() uses the explicit strength parameter,
                 // not the ship's current damage state, so this correctly
                 // applies the ship's original (pre-damage) attack capability.
-                strength = retal;
-                if (target_ship.is_laser_on()) {
-                  if (const auto overload = check_overload(
-                          g.entity_manager, target_ship, 0, &strength)) {
-                    notify_reactor_overload(g.entity_manager, *overload);
-                  }
-                }
-
-                if (auto result_opt = shoot_ship_to_planet(
-                        g.entity_manager, target_ship, p, strength,
-                        sector_coords, smap, false, guntype_t::NONE)) {
-                  if (target_ship.is_laser_on())
-                    target_ship.consume_fuel(ENERGY_WEAPON_FUEL_PER_STRENGTH *
-                                             static_cast<double>(strength));
-                  else
-                    target_ship.consume_destruct(strength);
+                auto [retal_strength, overload] =
+                    check_overload(g.entity_manager, target_ship, 0, retal);
+                if (overload) {
+                  notify_reactor_overload(g.entity_manager, *overload);
+                } else if (auto result_opt = shoot_ship_to_planet(
+                               g.entity_manager, target_ship, p, retal_strength,
+                               sector_coords, smap, false, guntype_t::NONE)) {
+                  target_ship.consume_weapon_resources(retal_strength);
 
                   const std::string short_msg =
                       GB::presentation::render_bombard_short(*result_opt);
@@ -197,22 +188,17 @@ bool defend(const command_t& argv, GameObj& g) {
                   if (ship.protect().on && (ship.protect().ship == toship) &&
                       ship.number() != toship && ship.alive() &&
                       ship.active()) {
-                    strength = ship.check_retal_strength();
-                    if (ship.is_laser_on()) {
-                      if (const auto overload = check_overload(
-                              g.entity_manager, ship, 0, &strength)) {
-                        notify_reactor_overload(g.entity_manager, *overload);
-                      }
+                    auto [escort_strength, overload] = check_overload(
+                        g.entity_manager, ship, 0, ship.check_retal_strength());
+                    if (overload) {
+                      notify_reactor_overload(g.entity_manager, *overload);
+                      continue;
                     }
 
                     if (auto result2_opt = shoot_ship_to_planet(
-                            g.entity_manager, ship, p, strength, sector_coords,
-                            smap, false, guntype_t::NONE)) {
-                      if (ship.is_laser_on())
-                        ship.consume_fuel(ENERGY_WEAPON_FUEL_PER_STRENGTH *
-                                          static_cast<double>(strength));
-                      else
-                        ship.consume_destruct(strength);
+                            g.entity_manager, ship, p, escort_strength,
+                            sector_coords, smap, false, guntype_t::NONE)) {
+                      ship.consume_weapon_resources(escort_strength);
                       const std::string short_msg2 =
                           GB::presentation::render_bombard_short(*result2_opt);
                       const std::string long_msg2 =

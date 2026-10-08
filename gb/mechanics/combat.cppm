@@ -8,6 +8,7 @@ module;
 
 export module gb.mechanics:combat;
 
+import :navigation;
 import gb.entities;
 import gb.services;
 import std;
@@ -30,9 +31,9 @@ export struct ReactorOverloadEvent {
   std::string ship_display{};
 };
 
-export std::optional<ReactorOverloadEvent>
+export std::pair<weapon_power_t, std::optional<ReactorOverloadEvent>>
 check_overload(EntityManager& entity_manager, Ship& ship, int cew,
-               weapon_power_t* strength);
+               weapon_power_t strength);
 
 /// \brief Collateral casualties and system damage inflicted on a target ship.
 export struct CollateralDamage {
@@ -284,3 +285,144 @@ export enum class DetonateError {
 /// \brief Validates and manually detonates a single space mine.
 export std::expected<MineDetonationReport, DetonateError>
 detonate_ship_mine(EntityManager& entity_manager, Ship& ship);
+
+export enum class PeacefulDockErrorReason {
+  ShipIrradiated,
+  ShipAlreadyDocked,
+  CannotDockWithSelf,
+  TargetNotFound,
+  TargetNotCommandable,
+  NotInSameScope,
+  TargetAlreadyDocked,
+  TooFarAway,
+  InsufficientFuel,
+};
+
+export struct PeacefulDockError {
+  PeacefulDockErrorReason reason{PeacefulDockErrorReason::TargetNotFound};
+  bool abort_loop{false};
+  std::string ship_display{};
+  std::string target_display{};
+  radiation_t radiation{0};
+  double max_distance{0.0};
+};
+
+export struct PeacefulDockResult {
+  std::string ship_display{};
+  std::string target_display{};
+  double distance{0.0};
+  double fuel_cost{0.0};
+  double initial_fuel{0.0};
+  bool hyperdrive_deactivated{false};
+};
+
+/// \brief Validates and executes a peaceful ship-to-ship dock.
+export std::expected<PeacefulDockResult, PeacefulDockError>
+dock_single_ship(EntityManager& em, Ship& s, shipnum_t target_id,
+                 player_t player, governor_t governor, bool god = false);
+
+export struct EscortRetaliationEvent {
+  player_t escort_owner{0};
+  governor_t escort_governor{0};
+  std::optional<ReactorOverloadEvent> overload{std::nullopt};
+  std::optional<ShipShotResult> shot{std::nullopt};
+};
+
+export struct ShipCombatExchange {
+  player_t shooter_owner{0};
+  governor_t shooter_governor{0};
+  player_t target_owner{0};
+  governor_t target_governor{0};
+  starnum_t star_id{0};
+  std::optional<ReactorOverloadEvent> primary_overload{std::nullopt};
+  bool primary_overload_fizzled{false};
+  std::optional<ShipShotResult> primary_shot{std::nullopt};
+  std::optional<ReactorOverloadEvent> retaliation_overload{std::nullopt};
+  std::optional<ShipShotResult> retaliation_shot{std::nullopt};
+  std::vector<EscortRetaliationEvent> escort_shots{};
+};
+
+/// \brief Executes pre-boarding defensive fire from a target ship against an
+/// assaulting ship, including self-retaliation and escort retaliation.
+export std::optional<ShipCombatExchange>
+execute_defensive_fire(EntityManager& em, Ship& attacker, Ship& defender);
+
+export struct BoardingOutcomeReport {
+  PopulationType what{PopulationType::MIL};
+  player_t old_defender_owner{0};
+  governor_t old_defender_gov{0};
+  ScopeLevel scope{ScopeLevel::LEVEL_STAR};
+  starnum_t star_id{0};
+  std::string attacker_display{};
+  std::string target_display{};
+  std::string attacker_orbit_display{};
+  std::string target_orbit_display{};
+  double attack_strength{0.0};
+  double defense_strength{0.0};
+  bool hyperdrive_deactivated{false};
+  bool boobytrap_triggered{false};
+  damage_t booby_damage{0};
+  damage_t attacker_damage{0};
+  damage_t attacker_total_damage{0};
+  bool attacker_alive{true};
+  damage_t defender_damage{0};
+  damage_t defender_total_damage{0};
+  bool defender_alive{true};
+  bool captured{false};
+  population_t surviving_boarders{0};
+  population_t target_max_crew{0};
+  bool defender_has_remaining_crew{false};
+  bool attacker_has_remaining_crew{true};
+  population_t attacker_casualties{0};
+  population_t defender_civ_casualties{0};
+  population_t defender_mil_casualties{0};
+  CapturedShipsReport captured_ships{};
+};
+
+export enum class AssaultErrorReason {
+  ShipIrradiated,
+  PodsCannotAssault,
+  ShipLandedOnCarrier,
+  ShipAlreadyDocked,
+  NoCrew,
+  NoTroops,
+  CannotAssaultSelf,
+  TargetNotFound,
+  NotInSameScope,
+  CannotAssaultVonNeumann,
+  TargetAlreadyLanded,
+  TooFarAway,
+  InsufficientFuel,
+  IllegalBoarderCount,
+  InsufficientUniverseAp,
+  InsufficientStarAp,
+  UnmoorFailed,
+};
+
+export struct AssaultError {
+  AssaultErrorReason reason{AssaultErrorReason::TargetNotFound};
+  bool abort_loop{false};
+  std::string ship_display{};
+  std::string target_display{};
+  radiation_t radiation{0};
+  double max_distance{0.0};
+  population_t boarders{0};
+};
+
+export struct AssaultResult {
+  std::string target_display{};
+  double distance{0.0};
+  double fuel_cost{0.0};
+  double initial_fuel{0.0};
+  bool abort_loop{false};
+  std::optional<ShipCombatExchange> defensive_fire{std::nullopt};
+  std::optional<BoardingOutcomeReport> boarding{std::nullopt};
+};
+
+/// \brief Validates and executes a hostile ship-to-ship boarding assault,
+/// including AP deduction, pre-boarding defensive fire, and boarding combat.
+export std::expected<AssaultResult, AssaultError>
+assault_single_ship(EntityManager& em, Ship& s, shipnum_t target_id,
+                    PopulationType what,
+                    std::optional<population_t> requested_boarders,
+                    player_t player, governor_t governor, bool god = false);

@@ -149,12 +149,11 @@ void resolve_target_self_retaliation(GameObj& g, Ship& from, Ship& to_ship,
     return;
   }
 
-  auto strength = retal;
-  if (to_ship.is_laser_on()) {
-    if (const auto overload =
-            check_overload(g.entity_manager, to_ship, 0, &strength)) {
-      GB::commands::notify_reactor_overload(g.entity_manager, *overload);
-    }
+  auto [strength, overload] =
+      check_overload(g.entity_manager, to_ship, 0, retal);
+  if (overload) {
+    GB::commands::notify_reactor_overload(g.entity_manager, *overload);
+    return;
   }
 
   auto retal_result =
@@ -167,12 +166,7 @@ void resolve_target_self_retaliation(GameObj& g, Ship& from, Ship& to_ship,
       GB::presentation::render_ship_shot_short(*retal_result);
   const std::string r_long_buf =
       GB::presentation::render_ship_shot_long(*retal_result);
-  if (to_ship.is_laser_on()) {
-    to_ship.consume_fuel(ENERGY_WEAPON_FUEL_PER_STRENGTH *
-                         static_cast<double>(strength));
-  } else {
-    to_ship.consume_destruct(strength);
-  }
+  to_ship.consume_weapon_resources(strength);
   if (!from.alive()) {
     post(g.entity_manager, r_short_buf, NewsType::COMBAT);
   }
@@ -206,12 +200,11 @@ void resolve_escort_retaliation(GameObj& g, Ship& from, const Ship& to,
       continue;
     }
 
-    auto strength = ship.check_retal_strength();
-    if (ship.is_laser_on()) {
-      if (const auto overload =
-              check_overload(g.entity_manager, ship, 0, &strength)) {
-        GB::commands::notify_reactor_overload(g.entity_manager, *overload);
-      }
+    auto [strength, overload] =
+        check_overload(g.entity_manager, ship, 0, ship.check_retal_strength());
+    if (overload) {
+      GB::commands::notify_reactor_overload(g.entity_manager, *overload);
+      continue;
     }
 
     if (auto s2sresult =
@@ -220,12 +213,7 @@ void resolve_escort_retaliation(GameObj& g, Ship& from, const Ship& to,
           GB::presentation::render_ship_shot_short(*s2sresult);
       const std::string long_buf =
           GB::presentation::render_ship_shot_long(*s2sresult);
-      if (ship.is_laser_on()) {
-        ship.consume_fuel(ENERGY_WEAPON_FUEL_PER_STRENGTH *
-                          static_cast<double>(strength));
-      } else {
-        ship.consume_destruct(strength);
-      }
+      ship.consume_weapon_resources(strength);
       if (!from.alive()) {
         post(g.entity_manager, short_buf, NewsType::COMBAT);
       }
@@ -263,13 +251,13 @@ bool fire_from_ship(const command_t& argv, GameObj& g, Ship& from,
   if (!strength_opt) {
     return false;
   }
-  auto strength = *strength_opt;
+  const auto initial_strength = *strength_opt;
 
   if (!has_fire_ap(mode, g, from)) {
     return false;
   }
 
-  if (strength <= 0) {
+  if (initial_strength <= 0) {
     g.out << "No attack.\n";
     return false;
   }
@@ -277,16 +265,13 @@ bool fire_from_ship(const command_t& argv, GameObj& g, Ship& from,
   const bool is_cew = (mode == FireMode::Cew);
   const int cew_range_flag = is_cew ? 1 : 0;
 
-  if (from.is_laser_on() || is_cew) {
-    if (const auto overload =
-            check_overload(g.entity_manager, from, cew_range_flag, &strength)) {
-      GB::commands::notify_reactor_overload(g.entity_manager, *overload);
-    }
-    if (strength <= 0) {
-      g.out << "No attack.\n";
-      deduct_fire_ap(mode, g, from);
-      return true;
-    }
+  auto [strength, overload] =
+      check_overload(g.entity_manager, from, cew_range_flag, initial_strength);
+  if (overload) {
+    GB::commands::notify_reactor_overload(g.entity_manager, *overload);
+    g.out << "No attack.\n";
+    deduct_fire_ap(mode, g, from);
+    return true;
   }
 
   const auto retal = to->check_retal_strength();
@@ -309,12 +294,7 @@ bool fire_from_ship(const command_t& argv, GameObj& g, Ship& from,
     const std::string long_buf =
         GB::presentation::render_ship_shot_long(*s2sresult);
 
-    if (from.is_laser_on() || is_cew) {
-      from.consume_fuel(ENERGY_WEAPON_FUEL_PER_STRENGTH *
-                        static_cast<double>(strength));
-    } else {
-      from.consume_destruct(strength);
-    }
+    from.consume_weapon_resources(strength, is_cew);
 
     if (!to_ship.alive()) {
       post(g.entity_manager, short_buf, NewsType::COMBAT);

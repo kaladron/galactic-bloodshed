@@ -1007,6 +1007,235 @@ render_scrap_ship_result(const ScrapShipResult& res) {
   return out;
 }
 
+/// Formats a `PeacefulDockError` into its ASCII error string.
+[[nodiscard]] inline std::string
+render_peaceful_dock_error(const PeacefulDockError& err) {
+  switch (err.reason) {
+    case PeacefulDockErrorReason::ShipIrradiated:
+      return std::format("{} is irradiated {}% and inactive.\n",
+                         err.ship_display, err.radiation);
+    case PeacefulDockErrorReason::ShipAlreadyDocked:
+      return std::format("{} is already docked.\n", err.ship_display);
+    case PeacefulDockErrorReason::CannotDockWithSelf:
+      return "You can't dock with yourself!\n";
+    case PeacefulDockErrorReason::TargetNotFound:
+      return "The ship wasn't found.\n";
+    case PeacefulDockErrorReason::TargetNotCommandable:
+      return "You are not authorized to do this.\n";
+    case PeacefulDockErrorReason::NotInSameScope:
+      return "Those ships are not in the same scope.\n";
+    case PeacefulDockErrorReason::TargetAlreadyDocked:
+      return std::format("{} is already docked.\n", err.target_display);
+    case PeacefulDockErrorReason::TooFarAway:
+      return std::format("{} must be {:.2f} or closer to {}.\n",
+                         err.ship_display, err.max_distance,
+                         err.target_display);
+    case PeacefulDockErrorReason::InsufficientFuel:
+      return "Not enough fuel.\n";
+  }
+  std::unreachable();
+}
+
+/// Formats a `PeacefulDockResult` into its ASCII presentation string.
+[[nodiscard]] inline std::string
+render_peaceful_dock_result(const PeacefulDockResult& res) {
+  std::string out = std::format(
+      "Distance to {}: {:.2f}.\n"
+      "This maneuver will take {:.2f} fuel (of {:.2f}.)\n\n",
+      res.target_display, res.distance, res.fuel_cost, res.initial_fuel);
+  if (res.hyperdrive_deactivated) {
+    out += "Hyper-drive deactivated.\n";
+  }
+  std::format_to(std::back_inserter(out), "{} docked with {}.\n",
+                 res.ship_display, res.target_display);
+  return out;
+}
+
+/// Formats an `AssaultError` into its ASCII error string.
+[[nodiscard]] inline std::string render_assault_error(const AssaultError& err) {
+  switch (err.reason) {
+    case AssaultErrorReason::ShipIrradiated:
+      return std::format("{} is irradiated {}% and inactive.\n",
+                         err.ship_display, err.radiation);
+    case AssaultErrorReason::PodsCannotAssault:
+      return "Sorry. Pods cannot be used to assault.\n";
+    case AssaultErrorReason::ShipLandedOnCarrier:
+      return "Your ship is landed on another ship.\n";
+    case AssaultErrorReason::ShipAlreadyDocked:
+      return "Your ship is already docked.\n";
+    case AssaultErrorReason::NoCrew:
+      return "You have no crew on this ship to assault with.\n";
+    case AssaultErrorReason::NoTroops:
+      return "You have no troops on this ship to assault with.\n";
+    case AssaultErrorReason::CannotAssaultSelf:
+      return "You can't dock with yourself!\n";
+    case AssaultErrorReason::TargetNotFound:
+      return "The ship wasn't found.\n";
+    case AssaultErrorReason::NotInSameScope:
+      return "Those ships are not in the same scope.\n";
+    case AssaultErrorReason::CannotAssaultVonNeumann:
+      return "You can't assault Von Neumann machines.\n";
+    case AssaultErrorReason::TargetAlreadyLanded:
+      return std::format("{} is already docked.\n", err.target_display);
+    case AssaultErrorReason::TooFarAway:
+      return std::format("{} must be {:.2f} or closer to {}.\n",
+                         err.ship_display, err.max_distance,
+                         err.target_display);
+    case AssaultErrorReason::InsufficientFuel:
+      return "Not enough fuel.\n";
+    case AssaultErrorReason::IllegalBoarderCount:
+      return std::format("Illegal number of boarders ({}).\n", err.boarders);
+    case AssaultErrorReason::InsufficientUniverseAp:
+      return "You need 1 universe action point.\n";
+    case AssaultErrorReason::InsufficientStarAp:
+      return "You don't have 1 action points there.\n";
+    case AssaultErrorReason::UnmoorFailed:
+      return "Failed to unmoor assaulted ship.\n";
+  }
+  std::unreachable();
+}
+
+/// Formats a `BoardingOutcomeReport` into the defender's warning telegram.
+[[nodiscard]] inline std::string
+render_boarding_defender_telegram(const BoardingOutcomeReport& b) {
+  std::string telegram =
+      std::format("{} ASSAULTED by {} at {}\n"
+                  "Your damage: {}%, theirs: {}%.\n",
+                  b.target_display, b.attacker_display, b.target_orbit_display,
+                  b.defender_damage, b.attacker_damage);
+  if (b.boobytrap_triggered) {
+    std::format_to(std::back_inserter(telegram),
+                   "(Your boobytrap gave them {}% damage.)\n", b.booby_damage);
+  }
+  if (!b.attacker_alive) {
+    telegram += "              Their ship DESTROYED!!!\n";
+  }
+  if (!b.defender_alive) {
+    telegram += "              YOUR SHIP WAS DESTROYED!!!\n";
+  }
+  if (b.attacker_alive) {
+    if (b.captured) {
+      telegram += "CAPTURED!\n";
+    } else if (b.defender_has_remaining_crew) {
+      telegram += "You fought them off!\n";
+    }
+  } else {
+    telegram += "The assault was too much for their ship..\n";
+  }
+  if (b.defender_alive) {
+    if (!b.attacker_has_remaining_crew) {
+      telegram += "You killed all their crew!\n";
+    }
+  } else {
+    telegram += "Your ship was weakened too much!\n";
+  }
+  std::format_to(std::back_inserter(telegram),
+                 "Casualties: Yours: {} mil/{} civ    Theirs: {} {}\n",
+                 b.defender_mil_casualties, b.defender_civ_casualties,
+                 b.attacker_casualties,
+                 b.what == PopulationType::MIL ? "mil" : "civ");
+  return telegram;
+}
+
+/// Formats a `BoardingOutcomeReport` into a combat news/star notification line.
+[[nodiscard]] inline std::string
+render_boarding_news(const BoardingOutcomeReport& b) {
+  return std::format("{} {} {} at {}.\n", b.attacker_display,
+                     b.defender_alive ? (b.captured ? "CAPTURED" : "assaulted")
+                                      : "DESTROYED",
+                     b.target_display, b.attacker_orbit_display);
+}
+
+/// Formats a `ShipCombatExchange` into its ASCII presentation string.
+[[nodiscard]] inline std::string
+render_ship_combat_exchange(const ShipCombatExchange& df) {
+  std::string out;
+  if (df.primary_overload_fizzled) {
+    out += "No attack.\n";
+  }
+  if (df.primary_shot) {
+    out += render_ship_shot_long(*df.primary_shot);
+  }
+  if (df.retaliation_shot) {
+    out += render_ship_shot_long(*df.retaliation_shot);
+  }
+  for (const auto& escort : df.escort_shots) {
+    if (escort.shot) {
+      out += render_ship_shot_long(*escort.shot);
+    }
+  }
+  return out;
+}
+
+/// Formats a `BoardingOutcomeReport` into its ASCII presentation string.
+[[nodiscard]] inline std::string
+render_boarding_outcome(const BoardingOutcomeReport& b) {
+  std::string out =
+      std::format("Boarding strength :{:.2f}       Defense strength: {:.2f}.\n",
+                  b.attack_strength, b.defense_strength);
+  if (b.hyperdrive_deactivated) {
+    out += "Hyper-drive deactivated.\n";
+  }
+  if (b.boobytrap_triggered) {
+    std::format_to(std::back_inserter(out),
+                   "Their boobytrap gave you {}% damage!)\n", b.booby_damage);
+  }
+  std::format_to(std::back_inserter(out), "Damage taken:  You: {}% (now {}%)\n",
+                 b.attacker_damage, b.attacker_total_damage);
+  if (!b.attacker_alive) {
+    out += "              YOUR SHIP WAS DESTROYED!!!\n";
+  }
+  std::format_to(std::back_inserter(out), "              Them: {}% (now {}%)\n",
+                 b.defender_damage, b.defender_total_damage);
+  if (!b.defender_alive) {
+    out += "              Their ship DESTROYED!!!  Boarders are dead.\n";
+  }
+  if (b.attacker_alive) {
+    if (b.captured) {
+      out += "VICTORY! the ship is yours!\n";
+      if (b.surviving_boarders > 0) {
+        std::format_to(std::back_inserter(out), "{} boarders move in.\n",
+                       b.surviving_boarders);
+      }
+      out += render_captured_ships_report(b.captured_ships);
+    } else if (b.defender_has_remaining_crew) {
+      out += "The boarding was repulsed; try again.\n";
+    }
+  } else {
+    out += "The assault was too much for your bucket of bolts.\n";
+  }
+  if (b.defender_alive) {
+    if (b.target_max_crew > 0 && b.surviving_boarders == 0) {
+      out += "Oh no! They killed your boarding party to the last man!\n";
+    }
+  } else {
+    out += "The assault weakened their ship too much!\n";
+  }
+  std::format_to(std::back_inserter(out),
+                 "Crew casualties: Yours: {} {}    Theirs: {} mil/{} civ\n",
+                 b.attacker_casualties,
+                 b.what == PopulationType::MIL ? "mil" : "civ",
+                 b.defender_mil_casualties, b.defender_civ_casualties);
+  return out;
+}
+
+/// Formats an `AssaultResult` into its ASCII presentation string.
+[[nodiscard]] inline std::string
+render_assault_result(const AssaultResult& res) {
+  std::string out = std::format(
+      "Distance to {}: {:.2f}.\n"
+      "This maneuver will take {:.2f} fuel (of {:.2f}.)\n\n",
+      res.target_display, res.distance, res.fuel_cost, res.initial_fuel);
+
+  if (res.defensive_fire) {
+    out += render_ship_combat_exchange(*res.defensive_fire);
+  }
+  if (res.boarding) {
+    out += render_boarding_outcome(*res.boarding);
+  }
+  return out;
+}
+
 /// Abstract base class for polymorphic UI presentation across wire protocols.
 class Presenter {
 public:
@@ -1042,6 +1271,9 @@ public:
   render(const DismountCrystalResult& vm) const = 0;
   [[nodiscard]] virtual std::string render(const GrantShipResult& vm) const = 0;
   [[nodiscard]] virtual std::string render(const ScrapShipResult& vm) const = 0;
+  [[nodiscard]] virtual std::string
+  render(const PeacefulDockResult& vm) const = 0;
+  [[nodiscard]] virtual std::string render(const AssaultResult& vm) const = 0;
 };
 
 /// Server-rendered ASCII/ANSI terminal presenter for Telnet sessions.
@@ -1131,6 +1363,15 @@ public:
 
   [[nodiscard]] std::string render(const ScrapShipResult& vm) const override {
     return render_scrap_ship_result(vm);
+  }
+
+  [[nodiscard]] std::string
+  render(const PeacefulDockResult& vm) const override {
+    return render_peaceful_dock_result(vm);
+  }
+
+  [[nodiscard]] std::string render(const AssaultResult& vm) const override {
+    return render_assault_result(vm);
   }
 };
 
@@ -1225,6 +1466,15 @@ public:
 
   [[nodiscard]] std::string render(const ScrapShipResult& vm) const override {
     return render_json_envelope("scrap_ship", vm);
+  }
+
+  [[nodiscard]] std::string
+  render(const PeacefulDockResult& vm) const override {
+    return render_json_envelope("peaceful_dock", vm);
+  }
+
+  [[nodiscard]] std::string render(const AssaultResult& vm) const override {
+    return render_json_envelope("assault", vm);
   }
 };
 

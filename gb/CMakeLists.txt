@@ -184,6 +184,7 @@ target_sources(
           mechanics/fuel.cc
           mechanics/order.cc
           mechanics/fire.cc
+          mechanics/boarding.cc
           mechanics/shootblast.cc
           mechanics/ground_combat.cc
           mechanics/construction.cc
@@ -294,6 +295,7 @@ target_sources(
           commands/analysis.cc
           commands/announce.cc
           commands/arm.cc
+          commands/assault.cc
           commands/autoreport.cc
           commands/bid.cc
           commands/bless.cc
@@ -434,6 +436,7 @@ gb_add_test(allocate_test SOURCES commands/allocate_test.cc)
 gb_add_test(analysis_test SOURCES commands/analysis_test.cc)
 gb_add_test(announce_test SOURCES commands/announce_test.cc EXTRA_LIBS session notification)
 gb_add_test(arm_test SOURCES commands/arm_test.cc)
+gb_add_test(assault_test SOURCES commands/assault_test.cc)
 gb_add_test(auth_test SOURCES server/auth_test.cc EXTRA_LIBS session auth)
 gb_add_test(autoreport_test SOURCES commands/autoreport_test.cc)
 gb_add_test(berserker_bombard_test SOURCES turn/berserker_bombard_test.cc)

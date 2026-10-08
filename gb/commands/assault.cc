@@ -47,48 +47,6 @@ std::optional<population_t> parse_requested_boarders(const command_t& argv) {
   return std::nullopt;
 }
 
-void notify_combat_shot(GameObj& g, starnum_t star_id, player_t recipient_owner,
-                        governor_t recipient_governor,
-                        const ShipShotResult& shot) {
-  const std::string short_buf = GB::presentation::render_ship_shot_short(shot);
-  const std::string long_buf = GB::presentation::render_ship_shot_long(shot);
-  if (!shot.target_alive) {
-    post(g.entity_manager, short_buf, NewsType::COMBAT);
-  }
-  notify_star(g.session_registry, g.entity_manager, g.player(), g.governor(),
-              star_id, short_buf);
-  warn_player(g.session_registry, g.entity_manager, recipient_owner,
-              recipient_governor, long_buf);
-}
-
-void notify_defensive_fire(GameObj& g, const ShipCombatExchange& df) {
-  if (df.primary_overload) {
-    notify_reactor_overload(g.entity_manager, *df.primary_overload);
-  }
-  if (df.primary_shot) {
-    notify_combat_shot(g, df.star_id, df.shooter_owner, df.shooter_governor,
-                       *df.primary_shot);
-  }
-
-  if (df.retaliation_overload) {
-    notify_reactor_overload(g.entity_manager, *df.retaliation_overload);
-  }
-  if (df.retaliation_shot) {
-    notify_combat_shot(g, df.star_id, df.shooter_owner, df.shooter_governor,
-                       *df.retaliation_shot);
-  }
-
-  for (const auto& escort : df.escort_shots) {
-    if (escort.overload) {
-      notify_reactor_overload(g.entity_manager, *escort.overload);
-    }
-    if (escort.shot) {
-      notify_combat_shot(g, df.star_id, escort.escort_owner,
-                         escort.escort_governor, *escort.shot);
-    }
-  }
-}
-
 void notify_boarding_outcome(GameObj& g, const BoardingOutcomeReport& b) {
   warn_player(g.session_registry, g.entity_manager, b.old_defender_owner,
               b.old_defender_gov,
@@ -134,7 +92,9 @@ bool assault(const command_t& argv, GameObj& g) {
     }
 
     if (res->defensive_fire) {
-      notify_defensive_fire(g, *res->defensive_fire);
+      notify_ship_combat_exchange(g, *res->defensive_fire,
+                                  res->defensive_fire->shooter_owner,
+                                  res->defensive_fire->shooter_governor);
     }
     if (res->boarding) {
       notify_boarding_outcome(g, *res->boarding);

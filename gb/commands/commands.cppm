@@ -217,4 +217,7 @@ export extern const CommandDescriptor zoom_cmd;
 
 void notify_reactor_overload(EntityManager& em,
                              const ReactorOverloadEvent& event);
+void notify_ship_combat_exchange(GameObj& g, const ShipCombatExchange& exchange,
+                                 player_t other_owner,
+                                 governor_t other_governor);
 }  // namespace GB::commands

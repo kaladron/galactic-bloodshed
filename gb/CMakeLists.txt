@@ -305,6 +305,7 @@ target_sources(
           commands/capital.cc
           commands/capture.cc
           commands/center.cc
+          commands/cew.cc
           commands/colonies.cc
           commands/cs.cc
           commands/declare.cc
@@ -452,6 +453,7 @@ gb_add_test(build_test_extended SOURCES commands/build_test_extended.cc)
 gb_add_test(capital_test SOURCES commands/capital_test.cc)
 gb_add_test(capture_test SOURCES commands/capture_test.cc)
 gb_add_test(center_test SOURCES commands/center_test.cc)
+gb_add_test(cew_test SOURCES commands/cew_test.cc)
 gb_add_test(colonies_test SOURCES commands/colonies_test.cc)
 gb_add_test(command_registry_test SOURCES commands/command_registry_test.cc)
 gb_add_test(commod_json_test SOURCES repositories/commod_json_test.cc)

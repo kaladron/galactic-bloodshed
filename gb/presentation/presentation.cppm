@@ -1236,6 +1236,80 @@ render_assault_result(const AssaultResult& res) {
   return out;
 }
 
+/// Formats the primary error message for a `FireErrorReason`.
+[[nodiscard]] inline std::string
+render_fire_error_reason(const FireError& err) {
+  switch (err.reason) {
+    case FireErrorReason::ShipIrradiated:
+      return std::format("{} is irradiated and inactive.\n", err.ship_display);
+    case FireErrorReason::CannotFireAtSelf:
+      return "Get real.\n";
+    case FireErrorReason::TargetNotFound:
+      return {};
+    case FireErrorReason::AfvNotLanded:
+      return std::format("{} isn't landed on a planet!\n", err.ship_display);
+    case FireErrorReason::AfvTargetNotLanded:
+      return std::format("{} isn't landed on a planet!\n", err.target_display);
+    case FireErrorReason::LandedOnDifferentPlanets:
+      return "Landed ships can only attack other landed ships if they are on "
+             "the same planet!\n";
+    case FireErrorReason::NotAdjacentOnPlanet:
+      return "You are not adjacent to your target!\n";
+    case FireErrorReason::NotEquippedForCew:
+      return "That ship is not equipped to fire CEWs.\n";
+    case FireErrorReason::NoCrystalMounted:
+      return "You need to have a crystal mounted to fire CEWs.\n";
+    case FireErrorReason::InsufficientCewFuel:
+      return std::format("You need {} fuel to fire CEWs.\n", err.cew_strength);
+    case FireErrorReason::CewLandedOriginOrTarget:
+      return "CEWs cannot originate from or targeted to ships landed on "
+             "planets.\n";
+    case FireErrorReason::InsufficientUniverseAp:
+      return "You need 1 universe action points.\n";
+    case FireErrorReason::InsufficientStarAp:
+      return "You don't have 1 action points there.\n";
+    case FireErrorReason::NoAttackStrength:
+      return "No attack.\n";
+    case FireErrorReason::IllegalAttack:
+      return "Illegal attack.\n";
+  }
+  return {};
+}
+
+/// Formats a `FireError` into its ASCII diagnostic string.
+[[nodiscard]] inline std::string render_fire_error(const FireError& err) {
+  std::string out;
+  if (err.cew_strength > 0 &&
+      err.reason != FireErrorReason::InsufficientCewFuel) {
+    std::format_to(std::back_inserter(out), "CEW strength {}.\n",
+                   err.cew_strength);
+  }
+  if (err.clamped_strength) {
+    std::format_to(std::back_inserter(out), "{} set to {}\n",
+                   err.clamped_is_laser ? "Laser strength" : "Guns",
+                   *err.clamped_strength);
+  }
+  out += render_fire_error_reason(err);
+  return out;
+}
+
+/// Formats a `FireShipResult` into its ASCII presentation string.
+[[nodiscard]] inline std::string
+render_fire_ship_result(const FireShipResult& res) {
+  std::string out;
+  if (res.cew_strength) {
+    std::format_to(std::back_inserter(out), "CEW strength {}.\n",
+                   *res.cew_strength);
+  }
+  if (res.clamped_strength) {
+    std::format_to(std::back_inserter(out), "{} set to {}\n",
+                   res.clamped_is_laser ? "Laser strength" : "Guns",
+                   *res.clamped_strength);
+  }
+  out += render_ship_combat_exchange(res.exchange);
+  return out;
+}
+
 /// Abstract base class for polymorphic UI presentation across wire protocols.
 class Presenter {
 public:
@@ -1274,6 +1348,7 @@ public:
   [[nodiscard]] virtual std::string
   render(const PeacefulDockResult& vm) const = 0;
   [[nodiscard]] virtual std::string render(const AssaultResult& vm) const = 0;
+  [[nodiscard]] virtual std::string render(const FireShipResult& vm) const = 0;
 };
 
 /// Server-rendered ASCII/ANSI terminal presenter for Telnet sessions.
@@ -1372,6 +1447,10 @@ public:
 
   [[nodiscard]] std::string render(const AssaultResult& vm) const override {
     return render_assault_result(vm);
+  }
+
+  [[nodiscard]] std::string render(const FireShipResult& vm) const override {
+    return render_fire_ship_result(vm);
   }
 };
 
@@ -1475,6 +1554,10 @@ public:
 
   [[nodiscard]] std::string render(const AssaultResult& vm) const override {
     return render_json_envelope("assault", vm);
+  }
+
+  [[nodiscard]] std::string render(const FireShipResult& vm) const override {
+    return render_json_envelope("fire_ship", vm);
   }
 };
 

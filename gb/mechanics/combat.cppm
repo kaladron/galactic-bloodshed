@@ -426,3 +426,53 @@ assault_single_ship(EntityManager& em, Ship& s, shipnum_t target_id,
                     PopulationType what,
                     std::optional<population_t> requested_boarders,
                     player_t player, governor_t governor, bool god = false);
+
+export enum class FireErrorReason {
+  ShipIrradiated,
+  CannotFireAtSelf,
+  TargetNotFound,
+  AfvNotLanded,
+  AfvTargetNotLanded,
+  LandedOnDifferentPlanets,
+  NotAdjacentOnPlanet,
+  NotEquippedForCew,
+  NoCrystalMounted,
+  InsufficientCewFuel,
+  CewLandedOriginOrTarget,
+  InsufficientUniverseAp,
+  InsufficientStarAp,
+  NoAttackStrength,
+  IllegalAttack,
+};
+
+export struct FireError {
+  FireErrorReason reason{FireErrorReason::NoAttackStrength};
+  bool abort_loop{false};
+  std::string ship_display{};
+  std::string target_display{};
+  weapon_power_t cew_strength{0};
+  std::optional<weapon_power_t> clamped_strength{std::nullopt};
+  bool clamped_is_laser{false};
+};
+
+export struct FireShipResult {
+  std::optional<weapon_power_t> cew_strength{std::nullopt};
+  std::optional<weapon_power_t> clamped_strength{std::nullopt};
+  bool clamped_is_laser{false};
+  ShipCombatExchange exchange{};
+};
+
+/// \brief Validates and executes conventional or laser weapon fire from a
+/// single ship against a target ship, including target self-retaliation and
+/// escort retaliation.
+export std::expected<FireShipResult, FireError>
+fire_single_ship(EntityManager& em, Ship& from, shipnum_t target_id,
+                 std::optional<weapon_power_t> requested_strength,
+                 player_t player, bool god = false);
+
+/// \brief Validates and executes Confined Energy Weapon (CEW) fire from a
+/// single ship against a target ship, including target self-retaliation and
+/// escort retaliation.
+export std::expected<FireShipResult, FireError>
+cew_single_ship(EntityManager& em, Ship& from, shipnum_t target_id,
+                player_t player, bool god = false);

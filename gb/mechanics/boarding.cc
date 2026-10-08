@@ -56,89 +56,6 @@ bool maneuver_ship_to_target(Ship& s, const Ship& s2, double fuel) {
   return false;
 }
 
-bool is_eligible_escort(const Ship& escort, shipnum_t protected_id,
-                        shipnum_t target_id) {
-  if (!escort.active() || !escort.protect().on) {
-    return false;
-  }
-  if (escort.protect().ship != protected_id) {
-    return false;
-  }
-  return escort.number() != protected_id && escort.number() != target_id;
-}
-
-void resolve_defensive_self_retaliation(EntityManager& em, Ship& attacker,
-                                        Ship& defender, weapon_power_t retal,
-                                        damage_t damage,
-                                        ShipCombatExchange& exchange) {
-  if (retal <= 0 || damage <= 0 || !attacker.protect().retaliate) {
-    return;
-  }
-  auto [retal_strength, overload] = check_overload(em, attacker, 0, retal);
-  if (overload) {
-    exchange.retaliation_overload = overload;
-    return;
-  }
-  exchange.retaliation_shot =
-      shoot_ship_to_ship(em, attacker, defender, retal_strength, 0, true);
-  if (exchange.retaliation_shot) {
-    attacker.consume_weapon_resources(retal_strength);
-  }
-}
-
-std::optional<EscortRetaliationEvent>
-execute_escort_shot(EntityManager& em, Ship& escort, Ship& defender) {
-  auto [strength, overload] =
-      check_overload(em, escort, 0, escort.check_retal_strength());
-  if (overload) {
-    return EscortRetaliationEvent{
-        .escort_owner = escort.owner(),
-        .escort_governor = escort.governor(),
-        .overload = overload,
-    };
-  }
-  auto shot = shoot_ship_to_ship(em, escort, defender, strength, 0);
-  if (!shot) {
-    return std::nullopt;
-  }
-  escort.consume_weapon_resources(strength);
-  return EscortRetaliationEvent{
-      .escort_owner = escort.owner(),
-      .escort_governor = escort.governor(),
-      .shot = shot,
-  };
-}
-
-void resolve_defensive_escort_retaliation(EntityManager& em,
-                                          const Ship& attacker, Ship& defender,
-                                          damage_t damage,
-                                          ShipCombatExchange& exchange) {
-  if (damage <= 0 || !defender.alive()) {
-    return;
-  }
-  if (attacker.whatorbits() != ScopeLevel::LEVEL_STAR &&
-      attacker.whatorbits() != ScopeLevel::LEVEL_PLAN) {
-    return;
-  }
-
-  ShipList shiplist =
-      (attacker.whatorbits() == ScopeLevel::LEVEL_STAR)
-          ? ShipList::in_star(em, attacker.storbits())
-          : ShipList::on_planet(em, attacker.storbits(), attacker.pnumorbits());
-  for (auto ship_handle : shiplist) {
-    if (!defender.alive()) {
-      break;
-    }
-    Ship& escort = *ship_handle;
-    if (!is_eligible_escort(escort, attacker.number(), defender.number())) {
-      continue;
-    }
-    if (auto event = execute_escort_shot(em, escort, defender)) {
-      exchange.escort_shots.push_back(*event);
-    }
-  }
-}
-
 void apply_boarding_casualties(EntityManager& em, Ship& s, Ship& s2,
                                Race& alien, double bstrength, double b2strength,
                                player_t attacker_player,
@@ -471,48 +388,6 @@ dock_single_ship(EntityManager& em, Ship& s, shipnum_t target_id,
   });
 
   return result;
-}
-
-std::optional<ShipCombatExchange>
-execute_defensive_fire(EntityManager& em, Ship& attacker, Ship& defender) {
-  if (!defender.alive() || !defender.active()) {
-    return std::nullopt;
-  }
-
-  const weapon_power_t initial_strength = defender.check_retal_strength();
-  if (initial_strength <= 0) {
-    return std::nullopt;
-  }
-
-  ShipCombatExchange exchange{
-      .shooter_owner = defender.owner(),
-      .shooter_governor = defender.governor(),
-      .target_owner = attacker.owner(),
-      .target_governor = attacker.governor(),
-      .star_id = defender.storbits(),
-  };
-
-  auto [strength, overload] = check_overload(em, defender, 0, initial_strength);
-  if (overload) {
-    exchange.primary_overload = overload;
-    exchange.primary_overload_fizzled = true;
-    return exchange;
-  }
-
-  const auto retal = attacker.check_retal_strength();
-  exchange.primary_shot =
-      shoot_ship_to_ship(em, defender, attacker, strength, 0);
-  if (!exchange.primary_shot) {
-    return std::nullopt;
-  }
-
-  defender.consume_weapon_resources(strength);
-  const damage_t damage = exchange.primary_shot->damage;
-  resolve_defensive_self_retaliation(em, attacker, defender, retal, damage,
-                                     exchange);
-  resolve_defensive_escort_retaliation(em, attacker, defender, damage,
-                                       exchange);
-  return exchange;
 }
 
 std::expected<AssaultResult, AssaultError>

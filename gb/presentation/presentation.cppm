@@ -1310,6 +1310,95 @@ render_fire_ship_result(const FireShipResult& res) {
   return out;
 }
 
+/// Landed ship entry on a surveyed planetary sector.
+struct SurveySectorShip {
+  shipnum_t shipno{0};
+  char ltr{' '};
+  player_t owner{0};
+};
+
+/// Single sector row in a planetary sector-range survey.
+struct SurveySectorRow {
+  Coordinates coords{0, 0};
+  char sect_char{' '};
+  char type_char{' '};
+  char desshow_char{' '};
+  bool wasted{false};
+  player_t owner{0};
+  Percentage eff{0};
+  Percentage fert{0};
+  Percentage mobilization{0};
+  bool crystals{false};
+  resource_t resource{0};
+  population_t popn{0};
+  population_t troops{0};
+  population_t maxpopn{0};
+  std::vector<SurveySectorShip> ships{};
+};
+
+/// View model for planetary sector-range surveys (`survey -` or
+/// `survey x:x,y:y`).
+struct SurveySectorViewModel {
+  Coordinates dimensions{0, 0};
+  std::string star_name{};
+  std::string planet_name{};
+  resource_t resource_stock{0};
+  resource_t fuel_stock{0};
+  resource_t destruct_stock{0};
+  population_t popn{0};
+  population_t maxpopn{0};
+  Percentage toxicity{0};
+  double compatibility{0.0};
+  player_t enslaved_to{0};
+  std::vector<SurveySectorRow> sectors{};
+};
+
+/// Renders a `SurveySectorViewModel` as a `tabulate::Table` for
+/// `UiMode::ASCII`.
+[[nodiscard]] inline std::string
+render_survey_sectors(const SurveySectorViewModel& vm) {
+  tabulate::Table table;
+  table.format().hide_border().column_separator(" ");
+
+  table.column(0).format().width(6);
+  table.column(1).format().width(9);
+  table.column(2).format().width(5).font_align(tabulate::FontAlign::right);
+  table.column(3).format().width(3).font_align(tabulate::FontAlign::right);
+  table.column(4).format().width(3).font_align(tabulate::FontAlign::right);
+  table.column(5).format().width(3).font_align(tabulate::FontAlign::right);
+  table.column(6).format().width(4).font_align(tabulate::FontAlign::right);
+  table.column(7).format().width(4).font_align(tabulate::FontAlign::right);
+  table.column(8).format().width(4).font_align(tabulate::FontAlign::right);
+  table.column(9).format().width(5).font_align(tabulate::FontAlign::right);
+  table.column(10).format().width(5).font_align(tabulate::FontAlign::right);
+
+  table.add_row({"x,y", "cond/type", "owner", "eff", "mob", "frt", "res", "mil",
+                 "popn", "^popn", "xtals"});
+  table[0].format().font_style({tabulate::FontStyle::bold});
+
+  for (const auto& row : vm.sectors) {
+    if (row.desshow_char == CHAR_CLOAKED) {
+      table.add_row({std::format("{}", row.coords), "?  (    ?)", "", "", "",
+                     "", "", "", "", "", ""});
+    } else {
+      std::string cond_type =
+          std::format(" {}   {}", row.sect_char, row.type_char);
+      std::string crystals = row.crystals ? "yes" : "";
+      table.add_row({std::format("{}", row.coords), cond_type,
+                     std::format("{}", row.owner), std::format("{}", row.eff),
+                     std::format("{}", row.mobilization),
+                     std::format("{}", row.fert),
+                     std::format("{}", row.resource),
+                     std::format("{}", row.troops), std::format("{}", row.popn),
+                     std::format("{}", row.maxpopn), crystals});
+    }
+  }
+
+  std::string out = table.str();
+  out.push_back('\n');
+  return out;
+}
+
 /// Abstract base class for polymorphic UI presentation across wire protocols.
 class Presenter {
 public:
@@ -1349,6 +1438,8 @@ public:
   render(const PeacefulDockResult& vm) const = 0;
   [[nodiscard]] virtual std::string render(const AssaultResult& vm) const = 0;
   [[nodiscard]] virtual std::string render(const FireShipResult& vm) const = 0;
+  [[nodiscard]] virtual std::string
+  render(const SurveySectorViewModel& vm) const = 0;
 };
 
 /// Server-rendered ASCII/ANSI terminal presenter for Telnet sessions.
@@ -1451,6 +1542,11 @@ public:
 
   [[nodiscard]] std::string render(const FireShipResult& vm) const override {
     return render_fire_ship_result(vm);
+  }
+
+  [[nodiscard]] std::string
+  render(const SurveySectorViewModel& vm) const override {
+    return render_survey_sectors(vm);
   }
 };
 
@@ -1558,6 +1654,11 @@ public:
 
   [[nodiscard]] std::string render(const FireShipResult& vm) const override {
     return render_json_envelope("fire_ship", vm);
+  }
+
+  [[nodiscard]] std::string
+  render(const SurveySectorViewModel& vm) const override {
+    return render_json_envelope("survey_sectors", vm);
   }
 };
 

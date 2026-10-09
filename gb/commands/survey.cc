@@ -6,9 +6,9 @@
 module;
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import std;
-import tabulate;
 #undef stdout
 
 module commands;
@@ -38,87 +38,6 @@ std::string_view get_tox(int toxicity) {
     index = 11;  // "???" for toxicity > 100%
   }
   return kToxDescriptions[index];
-}
-
-// Ship location data for sector survey view model
-struct ShipLocInfo {
-  shipnum_t shipno;
-  char ltr;
-  player_t owner;
-};
-
-struct SectorShipData {
-  int count;
-  std::array<ShipLocInfo, MAX_SHIPS_PER_SECTOR> ships;
-};
-
-// Sector row data for rendering
-struct SectorRowData {
-  Coordinates coords;
-  const Sector* sector;
-  char desshow_char;
-  double compat;
-  int toxic;
-  const SectorShipData* ship_data;
-};
-
-// Human-readable formatter (for "survey" command)
-void render_human_survey(std::ostream& out, const Race& race,
-                         const std::vector<SectorRowData>& rows) {
-  tabulate::Table table;
-  table.format().hide_border().column_separator(" ");
-
-  // Configure column widths and alignments
-  table.column(0).format().width(6);  // x,y
-  table.column(1).format().width(9);  // cond/type
-  table.column(2).format().width(5).font_align(
-      tabulate::FontAlign::right);  // owner
-  table.column(3).format().width(3).font_align(
-      tabulate::FontAlign::right);  // eff
-  table.column(4).format().width(3).font_align(
-      tabulate::FontAlign::right);  // mob
-  table.column(5).format().width(3).font_align(
-      tabulate::FontAlign::right);  // frt
-  table.column(6).format().width(4).font_align(
-      tabulate::FontAlign::right);  // res
-  table.column(7).format().width(4).font_align(
-      tabulate::FontAlign::right);  // mil
-  table.column(8).format().width(4).font_align(
-      tabulate::FontAlign::right);  // popn
-  table.column(9).format().width(5).font_align(
-      tabulate::FontAlign::right);  // ^popn
-  table.column(10).format().width(5).font_align(
-      tabulate::FontAlign::right);  // xtals
-
-  // Add header row
-  table.add_row({"x,y", "cond/type", "owner", "eff", "mob", "frt", "res", "mil",
-                 "popn", "^popn", "xtals"});
-  table[0].format().font_style({tabulate::FontStyle::bold});
-
-  // Add data rows
-  for (const auto& row : rows) {
-    const auto& s = *row.sector;
-    if (row.desshow_char == CHAR_CLOAKED) {
-      table.add_row({std::format("{}", row.coords), "?  (    ?)", "", "", "",
-                     "", "", "", "", "", ""});
-    } else {
-      std::string cond_type =
-          std::format(" {}   {}", s.condition_symbol(), s.type_symbol());
-      std::string crystals =
-          (s.get_crystals() && (race.discoveries.crystal || race.God)) ? "yes"
-                                                                       : "";
-      table.add_row(
-          {std::format("{}", row.coords), cond_type,
-           std::format("{}", s.get_owner()), std::format("{}", s.get_eff()),
-           std::format("{}", s.get_mobilization()),
-           std::format("{}", s.get_fert()), std::format("{}", s.get_resource()),
-           std::format("{}", s.get_troops()), std::format("{}", s.get_popn()),
-           std::format("{}", maxsupport(race, s, row.compat, row.toxic)),
-           crystals});
-    }
-  }
-
-  out << table << "\n";
 }
 
 std::string_view stability_label(int pct) {
@@ -170,14 +89,45 @@ std::optional<Place> parse_survey_location(const command_t& argv, GameObj& g,
   return *where;
 }
 
+bool has_planetary_survey_presence(GameObj& g, const Place& where,
+                                   const Planet& p) {
+  if (p.info(g.player()).numsectsowned > 0) return true;
+  for (const Ship& shipa :
+       ShipList::readonly_on_planet(g.entity_manager, where.snum, where.pnum)) {
+    if (shipa.owner() == g.player() && shipa.is_authorized_for(g.governor()) &&
+        shipa.has_sight()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+std::flat_map<Coordinates, std::vector<GB::presentation::SurveySectorShip>>
+collect_landed_sector_ships(GameObj& g, const Place& where, const Planet& p) {
+  std::flat_map<Coordinates, std::vector<GB::presentation::SurveySectorShip>>
+      shiplocs;
+  if (!has_planetary_survey_presence(g, where, p)) {
+    return shiplocs;
+  }
+  for (const Ship& shipa :
+       ShipList::readonly_on_planet(g.entity_manager, where.snum, where.pnum)) {
+    if (!shipa.alive() || !shipa.is_landed()) continue;
+    auto& loc = shiplocs[shipa.land_coords()];
+    if (std::ssize(loc) < MAX_SHIPS_PER_SECTOR) {
+      loc.push_back({.shipno = shipa.number(),
+                     .ltr = shipa.type_letter(),
+                     .owner = shipa.owner()});
+    }
+  }
+  return shiplocs;
+}
+
 // Helper: Survey planet sectors (detailed sector-by-sector view)
 void survey_planet_sectors(GameObj& g, const Place& where,
                            const std::string& range_arg, bool all) {
   const auto& race = *g.race;
-
+  const auto& star = *g.entity_manager.peek_star(where.snum);
   const auto& p = *g.entity_manager.peek_planet(where.snum, where.pnum);
-
-  double compat = p.compatibility(race);
   const auto* smap = g.entity_manager.peek_sectormap(where.snum, where.pnum);
 
   // Determine sector range
@@ -194,39 +144,52 @@ void survey_planet_sectors(GameObj& g, const Place& where,
   }
   const auto [low, high] = bounds;
 
-  // Build ship location data for sector survey view model
-  std::vector<std::vector<SectorShipData>> shiplocs(
-      p.dimensions().x, std::vector<SectorShipData>(p.dimensions().y));
-  for (const Ship& shipa :
-       ShipList::readonly_on_planet(g.entity_manager, where.snum, where.pnum)) {
-    if (shipa.alive() && shipa.is_landed()) {
-      Coordinates land = shipa.land_coords();
-      if (shiplocs[land.x][land.y].count < MAX_SHIPS_PER_SECTOR) {
-        auto& loc = shiplocs[land.x][land.y];
-        loc.ships[loc.count].shipno = shipa.number();
-        loc.ships[loc.count].owner = shipa.owner();
-        loc.ships[loc.count].ltr = shipa.type_letter();
-        loc.count++;
-      }
-    }
-  }
+  auto shiplocs = collect_landed_sector_ships(g, where, p);
+  const double compat = p.compatibility(race);
+  const auto& pinfo = p.info(g.player());
 
-  // Accumulate sector row data
-  std::vector<SectorRowData> rows;
+  GB::presentation::SurveySectorViewModel vm{
+      .dimensions = p.dimensions(),
+      .star_name = star.get_name(),
+      .planet_name = star.get_planet_name(where.pnum),
+      .resource_stock = pinfo.resource,
+      .fuel_stock = pinfo.fuel,
+      .destruct_stock = pinfo.destruct,
+      .popn = p.popn(),
+      .maxpopn = p.maxpopn(),
+      .toxicity = p.toxic(),
+      .compatibility = compat,
+      .enslaved_to = p.slaved_to().value_or(0),
+  };
+
   for (auto [c, s] : smap->indexed_sectors()) {
     if (!c.within_bounds(low, high)) continue;
 
-    const SectorShipData* ship_data =
-        (shiplocs[c.x][c.y].count > 0) ? &shiplocs[c.x][c.y] : nullptr;
-    rows.push_back({.coords = c,
-                    .sector = &s,
-                    .desshow_char = desshow(g.player(), g.governor(), race, s),
-                    .compat = compat,
-                    .toxic = p.toxic(),
-                    .ship_data = ship_data});
+    std::vector<GB::presentation::SurveySectorShip> ships;
+    if (auto it = shiplocs.find(c); it != shiplocs.end()) {
+      ships = it->second;
+    }
+    vm.sectors.push_back({
+        .coords = c,
+        .sect_char = s.condition_symbol(),
+        .type_char = s.type_symbol(),
+        .desshow_char = desshow(g.player(), g.governor(), race, s),
+        .wasted = s.is_wasted(),
+        .owner = s.get_owner(),
+        .eff = s.get_eff(),
+        .fert = s.get_fert(),
+        .mobilization = s.get_mobilization(),
+        .crystals =
+            s.get_crystals() > 0 && (race.discoveries.crystal || race.God),
+        .resource = s.get_resource(),
+        .popn = s.get_popn(),
+        .troops = s.get_troops(),
+        .maxpopn = maxsupport(race, s, compat, p.toxic()),
+        .ships = std::move(ships),
+    });
   }
 
-  render_human_survey(g.out, race, rows);
+  g.present(vm);
 }
 
 // Helper: Survey planet overview (conditions, stats, etc.)

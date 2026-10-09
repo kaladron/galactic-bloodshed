@@ -6,6 +6,7 @@
 import commands;
 import dallib;
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import test;
 import std;
@@ -102,6 +103,50 @@ void test_survey_universe_scope() {
   std::println(std::cout, "    ✓ Universe scope survey succeeded");
 }
 
+void test_survey_sectors_json_and_landed_ships() {
+  std::println(std::cout,
+               "Test: survey sectors JSON envelope and landed ship visibility");
+
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  // Land a probe owned by player 1, governor 3 on planet (2, 1) at (0, 0),
+  // where player 1 owns 0 sectors so ship sight governs planetary presence.
+  ctx.em.mutate_race(1, [](Race& r) {
+    r.appoint_governor(2);
+    r.appoint_governor(3);
+  });
+  (void)TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE, 42)
+      .owned_by(1, 3)
+      .landed_on(2, 1, {0, 0})
+      .build();
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 2);
+  g.set_ui_mode(GB::presentation::UiMode::JSON);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(2);
+  g.set_pnum(1);
+
+  // Governor 2 is not authorized for governor 3's probe -> ships list empty
+  ctx.assert_dispatch_success(g, {"survey", "0:0,0:0"});
+  std::string unauthorized_json = g.out.str();
+  test::expect_contains(unauthorized_json, R"("type":"survey_sectors")");
+  test::expect_contains(unauthorized_json, R"("ships":[]})");
+
+  // Governor 1 (leader) is authorized for all governors' ships -> sees #42
+  g.out.str("");
+  g.out.clear();
+  g.set_governor(1);
+  ctx.assert_dispatch_success(g, {"survey", "-"});
+  std::string authorized_json = g.out.str();
+  test::expect_contains(authorized_json, R"("type":"survey_sectors")");
+  test::expect_contains(authorized_json, R"("shipno":42)");
+  std::println(std::cout,
+               "    ✓ JSON sector survey and ship authorization verified");
+}
+
 }  // namespace
 
 int main() {
@@ -109,6 +154,7 @@ int main() {
   test_survey_sector_range_with_header();
   test_survey_star_scope();
   test_survey_universe_scope();
+  test_survey_sectors_json_and_landed_ships();
 
   std::println(std::cout, "\n✅ All survey tests passed!");
   return 0;

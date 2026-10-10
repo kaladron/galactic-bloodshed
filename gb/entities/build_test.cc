@@ -10,7 +10,7 @@ import gb.entities;
 import gb.repositories;
 import gb.services;
 import gb.mechanics;
-import gb.presentation;
+import gb.presentation.construction;
 import test;
 import std;
 

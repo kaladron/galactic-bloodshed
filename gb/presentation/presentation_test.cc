@@ -60,12 +60,12 @@ void test_render_json_envelope_and_polymorphic_presenter() {
   };
 
   const std::string dispatched_ascii =
-      GB::presentation::presenter_for(UiMode::ASCII).render(est);
+      GB::presentation::render_for_mode(UiMode::ASCII, est);
   test::expect_contains(dispatched_ascii, "Total Distance = 42.50");
   test::expect_contains(dispatched_ascii, "Server state unavailable.");
 
   const std::string dispatched_json =
-      GB::presentation::presenter_for(UiMode::JSON).render(est);
+      GB::presentation::render_for_mode(UiMode::JSON, est);
   test::expect_contains(dispatched_json, "\"type\":\"trip_estimate\"");
   test::expect_contains(dispatched_json, "\"distance\":42.5");
 
@@ -74,10 +74,9 @@ void test_render_json_envelope_and_polymorphic_presenter() {
 
   const CapturedShipsReport empty_captured{};
   test::expect_eq(
-      GB::presentation::presenter_for(UiMode::ASCII).render(empty_captured),
-      "");
+      GB::presentation::render_for_mode(UiMode::ASCII, empty_captured), "");
   test::expect_eq(
-      GB::presentation::presenter_for(UiMode::JSON).render(empty_captured), "");
+      GB::presentation::render_for_mode(UiMode::JSON, empty_captured), "");
 
   const CapturedShipsReport populated_captured{
       .captured_ships =
@@ -91,10 +90,10 @@ void test_render_json_envelope_and_polymorphic_presenter() {
           },
   };
   test::expect_eq(
-      GB::presentation::presenter_for(UiMode::ASCII).render(populated_captured),
+      GB::presentation::render_for_mode(UiMode::ASCII, populated_captured),
       "f12 Fighter CAPTURED!\n");
   test::expect_contains(
-      GB::presentation::presenter_for(UiMode::JSON).render(populated_captured),
+      GB::presentation::render_for_mode(UiMode::JSON, populated_captured),
       "\"type\":\"captured_ships\"");
 
   static_assert(std::is_aggregate_v<ReactorOverloadEvent>);

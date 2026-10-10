@@ -7,7 +7,7 @@ module;
 
 import std;
 import gb.entities;
-import gb.presentation;
+import gb.presentation.navigation;
 import gb.services;
 
 module commands;

@@ -7,10 +7,9 @@ module;
 
 import gb.entities;
 import gb.mechanics;
-import gb.presentation;
+import gb.presentation.navigation;
 import gb.services;
 import std;
-#undef stdout
 
 module commands;
 

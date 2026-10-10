@@ -5,7 +5,7 @@
 /// invariants.
 
 import gb.entities;
-import gb.presentation;
+import gb.presentation.navigation;
 import gb.services;
 import std;
 import test;
@@ -1439,10 +1439,9 @@ void test_blueprint_complexity_defense_and_capture() {
   test::expect_contains(
       GB::presentation::render_captured_ships_report(captured_rep),
       "CAPTURED!");
-  test::expect_contains(
-      GB::presentation::presenter_for(GB::presentation::UiMode::JSON)
-          .render(captured_rep),
-      "\"type\":\"captured_ships\"");
+  test::expect_contains(GB::presentation::render_for_mode(
+                            GB::presentation::UiMode::JSON, captured_rep),
+                        "\"type\":\"captured_ships\"");
 
   // Also verify 2-level nested doown()
   ctx.em.mutate_ship(shuttle_id, [](Ship& s) {

@@ -15,33 +15,35 @@ module commands;
 namespace {
 constexpr int MAX_SHIPS_PER_SECTOR = 10;
 
+struct SurveyRequest {
+  Place where;
+  bool all_sectors{false};
+  std::string range_arg{};
+};
+
 // Helper: Parse survey arguments and determine location
-std::optional<Place> parse_survey_location(const command_t& argv, GameObj& g,
-                                           bool& all, std::string& range_arg) {
-  all = false;
-  range_arg.clear();
-
-  if (argv.size() == 1) {
+std::optional<SurveyRequest> parse_survey_location(const command_t& argv,
+                                                   GameObj& g) {
+  if (argv.size() == 1 || argv[1].empty()) {
     // No args - use current scope
-    return Place(g.level(), g.snum(), g.pnum());
+    return SurveyRequest{
+        .where = Place(g.level(), g.snum(), g.pnum()),
+    };
   }
 
-  // Parse argument to determine survey type
-  if (argv[1].empty()) {
-    return Place(g.level(), g.snum(), g.pnum());
-  }
-
-  if ((std::isdigit(argv[1][0]) && argv[1].contains(',')) ||
-      ((argv[1][0] == '-') && (all = true))) {
+  const bool is_range = std::isdigit(argv[1][0]) && argv[1].contains(',');
+  const bool is_all = argv[1][0] == '-';
+  if (is_range || is_all) {
     // Sector range or full survey
     if (g.level() != ScopeLevel::LEVEL_PLAN) {
       g.out << "There are no sectors here.\n";
       return std::nullopt;
     }
-    if (!all) {
-      range_arg = argv[1];
-    }
-    return Place(ScopeLevel::LEVEL_PLAN, g.snum(), g.pnum());
+    return SurveyRequest{
+        .where = Place(ScopeLevel::LEVEL_PLAN, g.snum(), g.pnum()),
+        .all_sectors = is_all,
+        .range_arg = is_range ? argv[1] : std::string{},
+    };
   }
 
   // Survey a named location
@@ -53,7 +55,7 @@ std::optional<Place> parse_survey_location(const command_t& argv, GameObj& g,
   if (where->level == ScopeLevel::LEVEL_SHIP) {
     return std::nullopt;
   }
-  return *where;
+  return SurveyRequest{.where = *where};
 }
 
 bool has_planetary_survey_presence(GameObj& g, const Place& where,
@@ -78,7 +80,7 @@ collect_landed_sector_ships(GameObj& g, const Place& where, const Planet& p) {
   }
   for (const Ship& shipa :
        ShipList::readonly_on_planet(g.entity_manager, where.snum, where.pnum)) {
-    if (!shipa.alive() || !shipa.is_landed()) continue;
+    if (!shipa.is_landed()) continue;
     auto& loc = shiplocs[shipa.land_coords()];
     if (std::ssize(loc) < MAX_SHIPS_PER_SECTOR) {
       loc.push_back({.shipno = shipa.number(),
@@ -234,29 +236,21 @@ void survey_star(GameObj& g, const Place& where) {
 namespace GB::commands {
 
 bool survey(const command_t& argv, GameObj& g) {
-  // Parse arguments and determine what to survey
-  bool all = false;
-  std::string range_arg;
-  auto where_opt = parse_survey_location(argv, g, all, range_arg);
-  if (!where_opt) return false;
-
-  const auto& where = *where_opt;
+  auto req = parse_survey_location(argv, g);
+  if (!req) return false;
 
   // Dispatch based on scope level
-  switch (where.level) {
+  switch (req->where.level) {
     case ScopeLevel::LEVEL_PLAN:
-      // Check if this is a sector survey or planet overview
-      if ((argv.size() > 1 && std::isdigit(argv[1][0]) &&
-           argv[1].contains(',')) ||
-          all) {
-        survey_planet_sectors(g, where, range_arg, all);
+      if (!req->range_arg.empty() || req->all_sectors) {
+        survey_planet_sectors(g, req->where, req->range_arg, req->all_sectors);
       } else {
-        survey_planet_overview(g, where);
+        survey_planet_overview(g, req->where);
       }
       return true;
 
     case ScopeLevel::LEVEL_STAR:
-      survey_star(g, where);
+      survey_star(g, req->where);
       return true;
 
     case ScopeLevel::LEVEL_UNIV:

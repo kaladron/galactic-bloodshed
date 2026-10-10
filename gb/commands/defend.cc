@@ -3,6 +3,7 @@
 module;
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import scnlib;
 import std;

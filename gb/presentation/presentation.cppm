@@ -6,6 +6,9 @@
 
 export module gb.presentation;
 
+export import gb.presentation.core;
+export import gb.presentation.planet_views;
+
 import strong_id;
 import glaze.core;
 import glaze.json;
@@ -13,32 +16,9 @@ import gb.entities;
 import gb.services;
 import gb.mechanics;
 import gb.repositories.glaze;
-import tabulate;
 import std;
 
 export namespace GB::presentation {
-
-/// Wire-protocol JSON envelope wrapping a typed command result, view model, or
-/// asynchronous domain event without copying the payload.
-template <typename T>
-struct JsonEnvelope {
-  std::string_view type{};
-  const T* data{nullptr};
-};
-
-/// Serializes `data` into a newline-delimited JSON envelope:
-/// `{"type":"<type>","data":<json>}\n`.
-/// Uses a single named return variable (`out`) for guaranteed NRVO.
-template <typename T>
-[[nodiscard]] std::string render_json_envelope(std::string_view type,
-                                               const T& data) {
-  std::string out;
-  const JsonEnvelope<T> envelope{.type = type, .data = &data};
-  if (const auto ec = glz::write_json(envelope, out); !ec) {
-    out.push_back('\n');
-  }
-  return out;
-}
 
 /// Formats a `TripEstimate` into its ASCII presentation string using a single
 /// named return variable (`out`) for guaranteed NRVO.
@@ -74,125 +54,6 @@ template <typename T>
     }
   }
   return out;
-}
-
-/// Renders a `PlanetMapViewModel` as a 2D ASCII planetary map with X/Y
-/// coordinate headers, ANSI SGR reverse-video (`\x1b[7m...\x1b[27m`) for
-/// `inverse` cells, and a `tabulate::Table` for planetary statistics.
-[[nodiscard]] inline std::string
-render_ascii_planet_map(const PlanetMapViewModel& vm) {
-  std::string out;
-  std::format_to(std::back_inserter(out), "     {}\n", vm.planet_name);
-
-  if (vm.dimensions.x >= 10) {
-    out += "   ";
-    for (const int x : std::views::iota(0, vm.dimensions.x)) {
-      out.push_back(static_cast<char>('0' + ((x / 10) % 10)));
-    }
-    out.push_back('\n');
-  }
-
-  out += "   ";
-  for (const int x : std::views::iota(0, vm.dimensions.x)) {
-    out.push_back(static_cast<char>('0' + (x % 10)));
-  }
-  out.push_back('\n');
-
-  if (vm.dimensions.x > 0 && vm.dimensions.y > 0) {
-    bool in_inverse = false;
-    for (const auto& cell : vm.sectors) {
-      if (cell.coords.x == 0) {
-        std::format_to(std::back_inserter(out), "{:02d} ", cell.coords.y);
-      }
-      if (cell.inverse && !in_inverse) {
-        out += "\x1b[7m";
-        in_inverse = true;
-      } else if (!cell.inverse && in_inverse) {
-        out += "\x1b[27m";
-        in_inverse = false;
-      }
-      out.push_back(cell.glyph);
-      if (cell.coords.x + 1 == vm.dimensions.x) {
-        if (in_inverse) {
-          out += "\x1b[27m";
-          in_inverse = false;
-        }
-        out.push_back('\n');
-      }
-    }
-  }
-  out.push_back('\n');
-
-  std::format_to(
-      std::back_inserter(out),
-      "Type: {:<8}   Sects {:<7}: {:<3}   Aliens:", vm.planet_type_name,
-      vm.is_metamorph ? "covered" : "owned", vm.sectors_owned);
-  if (vm.aliens_unknown) {
-    out += "???";
-  } else if (vm.aliens.empty()) {
-    out += "(none)";
-  } else {
-    for (const auto& alien : vm.aliens) {
-      std::format_to(std::back_inserter(out), "{}{}", alien.at_war ? '*' : ' ',
-                     alien.player);
-    }
-  }
-  out.push_back('\n');
-
-  std::string compat_str = std::format("{:.2f}%", vm.compatibility);
-  if (vm.toxicity > 50) {
-    std::format_to(std::back_inserter(compat_str), " ({}% TOXIC)", vm.toxicity);
-  }
-
-  tabulate::Table stats_table;
-  stats_table.format().hide_border().column_separator(" ");
-  stats_table.column(0).format().width(20).font_align(
-      tabulate::FontAlign::right);
-  stats_table.column(1).format().width(10);
-  stats_table.column(2).format().width(20).font_align(
-      tabulate::FontAlign::right);
-  stats_table.column(3).format().width(26);
-
-  stats_table.add_row({"Guns :", std::format("{}", vm.guns),
-                       "Mob Points :", std::format("{}", vm.mob_points)});
-  stats_table.add_row(
-      {"Mobilization :", std::format("{} ({})", vm.comread, vm.mob_set),
-       "Compatibility :", compat_str});
-  stats_table.add_row(
-      {"Resource stockpile :", std::format("{}", vm.resource_stockpile),
-       "Fuel stockpile :", std::format("{}", vm.fuel_stockpile)});
-  stats_table.add_row(
-      {"Destruct cap :", std::format("{}", vm.destruct_cap),
-       vm.is_metamorph ? "Tons of biomass :" : "Total Population :",
-       std::format("{} ({}/{})", vm.player_popn, vm.total_popn,
-                   vm.effective_maxpopn)});
-  stats_table.add_row(
-      {"Crystals :", std::format("{}", vm.crystals), "Ground forces :",
-       std::format("{} ({})", vm.player_troops, vm.total_troops)});
-
-  out += stats_table.str();
-  out.push_back('\n');
-
-  std::format_to(std::back_inserter(out),
-                 "{} Total Resource Deposits     Tax rate {}%  New {}%\n"
-                 "Estimated Production Next Update : {:.2f}\n",
-                 vm.total_resources, vm.tax, vm.newtax, vm.est_production);
-
-  if (vm.slaved_to) {
-    std::format_to(std::back_inserter(out), "      ENSLAVED to player {};\n",
-                   *vm.slaved_to);
-  }
-  if (vm.primary_unstable) {
-    out += "WARNING! This planet's primary is unstable.\n";
-  }
-  return out;
-}
-
-/// Serializes a `PlanetMapViewModel` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"map","data":{...}}\n`).
-[[nodiscard]] inline std::string
-render_json_planet_map(const PlanetMapViewModel& vm) {
-  return render_json_envelope("map", vm);
 }
 
 /// Formats a `PlanetBuildError` into its user-facing error diagnostic string.
@@ -1310,103 +1171,12 @@ render_fire_ship_result(const FireShipResult& res) {
   return out;
 }
 
-/// Landed ship entry on a surveyed planetary sector.
-struct SurveySectorShip {
-  shipnum_t shipno{0};
-  char ltr{' '};
-  player_t owner{0};
-};
-
-/// Single sector row in a planetary sector-range survey.
-struct SurveySectorRow {
-  Coordinates coords{0, 0};
-  char sect_char{' '};
-  char type_char{' '};
-  char desshow_char{' '};
-  bool wasted{false};
-  player_t owner{0};
-  Percentage eff{0};
-  Percentage fert{0};
-  Percentage mobilization{0};
-  bool crystals{false};
-  resource_t resource{0};
-  population_t popn{0};
-  population_t troops{0};
-  population_t maxpopn{0};
-  std::vector<SurveySectorShip> ships{};
-};
-
-/// View model for planetary sector-range surveys (`survey -` or
-/// `survey x:x,y:y`).
-struct SurveySectorViewModel {
-  Coordinates dimensions{0, 0};
-  std::string star_name{};
-  std::string planet_name{};
-  resource_t resource_stock{0};
-  resource_t fuel_stock{0};
-  resource_t destruct_stock{0};
-  population_t popn{0};
-  population_t maxpopn{0};
-  Percentage toxicity{0};
-  double compatibility{0.0};
-  player_t enslaved_to{0};
-  std::vector<SurveySectorRow> sectors{};
-};
-
-/// Renders a `SurveySectorViewModel` as a `tabulate::Table` for
-/// `UiMode::ASCII`.
-[[nodiscard]] inline std::string
-render_survey_sectors(const SurveySectorViewModel& vm) {
-  tabulate::Table table;
-  table.format().hide_border().column_separator(" ");
-
-  table.column(0).format().width(6);
-  table.column(1).format().width(9);
-  table.column(2).format().width(5).font_align(tabulate::FontAlign::right);
-  table.column(3).format().width(3).font_align(tabulate::FontAlign::right);
-  table.column(4).format().width(3).font_align(tabulate::FontAlign::right);
-  table.column(5).format().width(3).font_align(tabulate::FontAlign::right);
-  table.column(6).format().width(4).font_align(tabulate::FontAlign::right);
-  table.column(7).format().width(4).font_align(tabulate::FontAlign::right);
-  table.column(8).format().width(4).font_align(tabulate::FontAlign::right);
-  table.column(9).format().width(5).font_align(tabulate::FontAlign::right);
-  table.column(10).format().width(5).font_align(tabulate::FontAlign::right);
-
-  table.add_row({"x,y", "cond/type", "owner", "eff", "mob", "frt", "res", "mil",
-                 "popn", "^popn", "xtals"});
-  table[0].format().font_style({tabulate::FontStyle::bold});
-
-  for (const auto& row : vm.sectors) {
-    if (row.desshow_char == CHAR_CLOAKED) {
-      table.add_row({std::format("{}", row.coords), "?  (    ?)", "", "", "",
-                     "", "", "", "", "", ""});
-    } else {
-      std::string cond_type =
-          std::format(" {}   {}", row.sect_char, row.type_char);
-      std::string crystals = row.crystals ? "yes" : "";
-      table.add_row({std::format("{}", row.coords), cond_type,
-                     std::format("{}", row.owner), std::format("{}", row.eff),
-                     std::format("{}", row.mobilization),
-                     std::format("{}", row.fert),
-                     std::format("{}", row.resource),
-                     std::format("{}", row.troops), std::format("{}", row.popn),
-                     std::format("{}", row.maxpopn), crystals});
-    }
-  }
-
-  std::string out = table.str();
-  out.push_back('\n');
-  return out;
-}
-
 /// Abstract base class for polymorphic UI presentation across wire protocols.
 class Presenter {
 public:
   virtual ~Presenter() = default;
 
   [[nodiscard]] virtual std::string render(const TripEstimate& vm) const = 0;
-  [[nodiscard]] virtual std::string
-  render(const PlanetMapViewModel& vm) const = 0;
   [[nodiscard]] virtual std::string
   render(const CreatedShipSummary& vm) const = 0;
   [[nodiscard]] virtual std::string
@@ -1438,8 +1208,6 @@ public:
   render(const PeacefulDockResult& vm) const = 0;
   [[nodiscard]] virtual std::string render(const AssaultResult& vm) const = 0;
   [[nodiscard]] virtual std::string render(const FireShipResult& vm) const = 0;
-  [[nodiscard]] virtual std::string
-  render(const SurveySectorViewModel& vm) const = 0;
 };
 
 /// Server-rendered ASCII/ANSI terminal presenter for Telnet sessions.
@@ -1447,11 +1215,6 @@ class AsciiPresenter final : public Presenter {
 public:
   [[nodiscard]] std::string render(const TripEstimate& vm) const override {
     return render_trip_estimate(vm);
-  }
-
-  [[nodiscard]] std::string
-  render(const PlanetMapViewModel& vm) const override {
-    return render_ascii_planet_map(vm);
   }
 
   [[nodiscard]] std::string
@@ -1543,11 +1306,6 @@ public:
   [[nodiscard]] std::string render(const FireShipResult& vm) const override {
     return render_fire_ship_result(vm);
   }
-
-  [[nodiscard]] std::string
-  render(const SurveySectorViewModel& vm) const override {
-    return render_survey_sectors(vm);
-  }
 };
 
 /// Structured Glaze JSON-lines presenter for modern rich/TUI/GUI clients.
@@ -1555,11 +1313,6 @@ class JsonPresenter final : public Presenter {
 public:
   [[nodiscard]] std::string render(const TripEstimate& vm) const override {
     return render_json_envelope("trip_estimate", vm);
-  }
-
-  [[nodiscard]] std::string
-  render(const PlanetMapViewModel& vm) const override {
-    return render_json_planet_map(vm);
   }
 
   [[nodiscard]] std::string
@@ -1655,11 +1408,6 @@ public:
   [[nodiscard]] std::string render(const FireShipResult& vm) const override {
     return render_json_envelope("fire_ship", vm);
   }
-
-  [[nodiscard]] std::string
-  render(const SurveySectorViewModel& vm) const override {
-    return render_json_envelope("survey_sectors", vm);
-  }
 };
 
 /// Returns the stateless singleton `Presenter` corresponding to `mode`.
@@ -1672,10 +1420,10 @@ public:
   return ascii;
 }
 
-/// Polymorphically formats `vm` according to `mode` and writes it to `out`.
-/// Found via ADL from `GameObj::present(const ViewModel&)` because `UiMode`
-/// resides in `namespace GB::presentation`.
+/// Polymorphically formats `vm` according to `mode` and writes it to `out`
+/// for legacy ViewModels not yet migrated to `render_for_mode`.
 template <typename ViewModel>
+  requires(!HasModeRenderOverload<ViewModel>)
 void present_to(std::ostream& out, UiMode mode, const ViewModel& vm) {
   out << presenter_for(mode).render(vm);
 }

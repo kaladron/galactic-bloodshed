@@ -6,7 +6,7 @@
 module;
 
 import gb.entities;
-import gb.presentation;
+import gb.presentation.planet_views;
 import gb.services;
 import std;
 #undef stdout

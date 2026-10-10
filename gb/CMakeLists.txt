@@ -200,7 +200,10 @@ target_sources(
   PUBLIC FILE_SET
          CXX_MODULES
          FILES
-          presentation/presentation.cppm)
+          presentation/core.cppm
+          presentation/planet_views.cppm
+          presentation/presentation.cppm
+  PRIVATE presentation/planet_views.cc)
 target_link_libraries(
   gb_presentation
   PUBLIC gb_entities gb_services gb_mechanics gb_repositories glaze::glaze

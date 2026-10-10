@@ -202,38 +202,6 @@ bool has_planet_sight(EntityManager& em, starnum_t snum, planetnum_t pnum,
   return false;
 }
 
-std::string
-format_legacy_orbit_wire(const GB::presentation::OrbitViewModel& vm) {
-  std::string out = "#";
-  for (const auto& star : vm.stars) {
-    std::format_to(std::back_inserter(out), "{} {} {} 0 * {} {};",
-                   star.symbol_standout ? 1 : 0,
-                   static_cast<int>(star.coords.x),
-                   static_cast<int>(star.coords.y), star.label_standout ? 1 : 0,
-                   star.label);
-  }
-  for (const auto& planet : vm.planets) {
-    std::format_to(std::back_inserter(out), "{} {} {} 0 {} {} {}",
-                   planet.symbol_standout ? 1 : 0,
-                   static_cast<int>(planet.coords.x),
-                   static_cast<int>(planet.coords.y), planet.symbol,
-                   planet.label_standout ? 1 : 0, planet.label);
-    if (planet.compatibility) {
-      std::format_to(std::back_inserter(out), "({})", *planet.compatibility);
-    }
-    out.push_back(';');
-  }
-  for (const auto& ship : vm.ships) {
-    const int stand = ship.standout ? 1 : 0;
-    std::format_to(std::back_inserter(out), "{} {} {} {} {} {} {};", stand,
-                   static_cast<int>(ship.coords.x),
-                   static_cast<int>(ship.coords.y), ship.mirror_heading,
-                   ship.symbol, stand, ship.shipno);
-  }
-  out.push_back('\n');
-  return out;
-}
-
 }  // namespace
 
 namespace GB::commands {
@@ -336,7 +304,7 @@ bool orbit(const command_t& argv, GameObj& g) {
       return false;
   }
 
-  g.out << format_legacy_orbit_wire(vm);
+  g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
   return true;
 }
 

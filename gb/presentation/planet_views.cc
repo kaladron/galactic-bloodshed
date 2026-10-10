@@ -317,4 +317,128 @@ std::string render_for_mode(UiMode mode, const SurveyUniverseViewModel& vm) {
                               : render_survey_universe(vm);
 }
 
+namespace {
+
+constexpr int ORBIT_CANVAS_WIDTH = 60;
+constexpr int ORBIT_CANVAS_HEIGHT = 20;
+constexpr double ORBIT_MAX_COORD = 200.0;
+
+struct OrbitCanvasCell {
+  char ch{' '};
+  bool inverse{false};
+};
+
+using OrbitCanvasGrid =
+    std::array<std::array<OrbitCanvasCell, ORBIT_CANVAS_WIDTH>,
+               ORBIT_CANVAS_HEIGHT>;
+
+void plot_orbit_symbol(OrbitCanvasGrid& grid, SystemCoordinates coords,
+                       char symbol, bool inverse) {
+  const int col = std::clamp(
+      static_cast<int>(coords.x * (ORBIT_CANVAS_WIDTH - 1) / ORBIT_MAX_COORD),
+      0, ORBIT_CANVAS_WIDTH - 1);
+  const int row = std::clamp(
+      static_cast<int>(coords.y * (ORBIT_CANVAS_HEIGHT - 1) / ORBIT_MAX_COORD),
+      0, ORBIT_CANVAS_HEIGHT - 1);
+  grid[row][col] = OrbitCanvasCell{.ch = symbol, .inverse = inverse};
+}
+
+void append_standout(std::string& out, std::string_view text, bool inverse) {
+  if (inverse) {
+    std::format_to(std::back_inserter(out), "\x1b[7m{}\x1b[27m", text);
+  } else {
+    out += text;
+  }
+}
+
+void append_standout_char(std::string& out, char ch, bool inverse) {
+  if (inverse) {
+    std::format_to(std::back_inserter(out), "\x1b[7m{}\x1b[27m", ch);
+  } else {
+    out.push_back(ch);
+  }
+}
+
+}  // namespace
+
+std::string render_ascii_orbit_map(const OrbitViewModel& vm) {
+  OrbitCanvasGrid grid{};
+  for (const auto& star : vm.stars) {
+    plot_orbit_symbol(grid, star.coords, '*',
+                      vm.inverse && star.symbol_standout);
+  }
+  for (const auto& planet : vm.planets) {
+    plot_orbit_symbol(grid, planet.coords, planet.symbol,
+                      vm.inverse && planet.symbol_standout);
+  }
+  for (const auto& ship : vm.ships) {
+    plot_orbit_symbol(grid, ship.coords, ship.symbol,
+                      vm.inverse && ship.standout);
+  }
+
+  std::string out;
+  for (const auto& row : grid) {
+    bool in_inverse = false;
+    for (const auto& cell : row) {
+      if (cell.inverse && !in_inverse) {
+        out += "\x1b[7m";
+        in_inverse = true;
+      } else if (!cell.inverse && in_inverse) {
+        out += "\x1b[27m";
+        in_inverse = false;
+      }
+      out.push_back(cell.ch);
+    }
+    if (in_inverse) {
+      out += "\x1b[27m";
+    }
+    out.push_back('\n');
+  }
+
+  for (const auto& star : vm.stars) {
+    if (!star.label.empty()) {
+      out += "  ";
+      append_standout_char(out, '*', vm.inverse && star.symbol_standout);
+      out.push_back(' ');
+      append_standout(out, star.label, vm.inverse && star.label_standout);
+      out.push_back('\n');
+    }
+  }
+  for (const auto& planet : vm.planets) {
+    if (!planet.label.empty()) {
+      out += "  ";
+      append_standout_char(out, planet.symbol,
+                           vm.inverse && planet.symbol_standout);
+      out.push_back(' ');
+      append_standout(out, planet.label, vm.inverse && planet.label_standout);
+      if (planet.compatibility) {
+        std::format_to(std::back_inserter(out), "({})", *planet.compatibility);
+      }
+      out.push_back('\n');
+    }
+  }
+  for (const auto& ship : vm.ships) {
+    out += "  ";
+    const std::string ship_tag =
+        std::format("{} #{}", ship.symbol, ship.shipno);
+    append_standout(out, ship_tag, vm.inverse && ship.standout);
+    if (ship.symbol == 'M') {
+      std::format_to(std::back_inserter(out), " (aim: {})",
+                     ship.mirror_heading);
+    }
+    out.push_back('\n');
+  }
+
+  return out;
+}
+
+std::string render_json_orbit_map(const OrbitViewModel& vm) {
+  return render_json_envelope("orbit", vm);
+}
+
+std::string render_for_mode(UiMode mode, const OrbitViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_orbit_map(vm)
+                              : render_ascii_orbit_map(vm);
+}
+
 }  // namespace GB::presentation

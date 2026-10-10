@@ -105,10 +105,10 @@ void test_orbit_happy_path() {
 
     g.out.str("");
     ctx.assert_dispatch_success(g, {"orbit", "-1", "/TestStar"});
-    // Planet 1 (TestPlanet) and Ship #1 (f 0 1;) must both be suppressed
-    // when -1 is passed (verifies DontDispNum is not decremented to 0).
+    // Planet 1 (TestPlanet) and Ship #1 (f #1) must both be suppressed
+    // when -1 is passed (verifies suppress_id is not decremented to 0).
     test::expect_false(g.out.str().contains("TestPlanet"));
-    test::expect_false(g.out.str().contains("f 0 1;"));
+    test::expect_false(g.out.str().contains("f #1"));
     std::println(std::cout,
                  "    ✓ Orbit -1 suppresses 1-based planet 1 and ship #1");
   }
@@ -124,7 +124,8 @@ void test_orbit_happy_path() {
     ctx.assert_dispatch_success(g, {"orbit"});
 
     std::string out = g.out.str();
-    test::expect_false(out.empty());
+    test::expect_contains(out, "TestPlanet");
+    test::expect_contains(out, "s #3");
     std::println(std::cout, "    ✓ Planet-level orbit displays orbiting ships");
   }
 
@@ -139,7 +140,7 @@ void test_orbit_happy_path() {
     std::string out_no_ships = g.out.str();
     test::expect_contains(out_no_ships, "TestStar");
     test::expect_contains(out_no_ships, "TestPlanet");
-    test::expect_false(out_no_ships.contains("f 0 1;"));
+    test::expect_false(out_no_ships.contains("f #1"));
 
     g.out.str("");
     ctx.assert_dispatch_success(g, {"orbit", "-p"});
@@ -153,6 +154,38 @@ void test_orbit_happy_path() {
     test::expect_false(out_no_star_names.contains("TestStar"));
     test::expect_contains(out_no_star_names, "TestPlanet");
     std::println(std::cout, "    ✓ Orbit -s, -p, -S options verified");
+  }
+
+  // TEST: Orbit inverse video standout and JSON mode
+  std::println(std::cout, "Orbit inverse standout and JSON mode");
+  {
+    g.set_level(ScopeLevel::LEVEL_STAR);
+    g.set_snum(1);
+
+    ctx.em.mutate_race(1, [](Race& r) {
+      r.governor(1).toggle.inverse = true;
+      r.governor(1).toggle.highlight = player_t{1};
+      r.governor(1).toggle.compat = true;
+    });
+    g.race = ctx.em.peek_race(1);
+
+    g.out.str("");
+    ctx.assert_dispatch_success(g, {"orbit"});
+    std::string inv_out = g.out.str();
+    test::expect_contains(inv_out, "\x1b[7m*\x1b[27m");
+    test::expect_contains(inv_out, "\x1b[7mf #1\x1b[27m");
+
+    g.set_ui_mode(UiMode::JSON);
+    g.out.str("");
+    ctx.assert_dispatch_success(g, {"orbit"});
+    std::string json_out = g.out.str();
+    test::expect_contains(json_out, "\"type\":\"orbit\"");
+    test::expect_contains(json_out, "\"label\":\"TestStar\"");
+    test::expect_contains(json_out, "\"label\":\"TestPlanet\"");
+    test::expect_contains(json_out, "\"shipno\":1");
+    g.set_ui_mode(UiMode::ASCII);
+    std::println(std::cout,
+                 "    ✓ Orbit inverse standout and JSON output verified");
   }
 
   // TEST: Orbit display at universe level
@@ -251,7 +284,7 @@ void test_orbit_space_mirror_aiming() {
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"orbit"});
-  test::expect_contains(g.out.str(), "3 M 0 4;");
+  test::expect_contains(g.out.str(), "M #4 (aim: 3)");
 
   std::println(std::cout, "    ✓ Space mirror targeting, direction heading, "
                           "and orbit display verified");

@@ -201,4 +201,16 @@ render_json_survey_universe(const SurveyUniverseViewModel& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const SurveyUniverseViewModel& vm);
 
+/// Renders an `OrbitViewModel` as a 2D ASCII orbital canvas with object legend
+/// and ANSI SGR reverse-video (`\x1b[7m...\x1b[27m`) for `inverse` standout.
+[[nodiscard]] std::string render_ascii_orbit_map(const OrbitViewModel& vm);
+
+/// Serializes an `OrbitViewModel` into a newline-delimited Glaze JSON
+/// envelope (`{"type":"orbit","data":{...}}\n`).
+[[nodiscard]] std::string render_json_orbit_map(const OrbitViewModel& vm);
+
+/// Dispatches `OrbitViewModel` rendering based on `mode`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const OrbitViewModel& vm);
+
 }  // namespace GB::presentation

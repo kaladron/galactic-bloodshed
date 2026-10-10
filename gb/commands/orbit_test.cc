@@ -4,7 +4,6 @@
 /// \brief Test orbit command graphic display and scope handling
 
 import commands;
-import dallib;
 import gb.entities;
 import gb.services;
 import test;
@@ -13,44 +12,21 @@ import std;
 namespace {
 
 void setup_test_world(TestContext& ctx) {
-  JsonStore store(ctx.db);
+  TestWorldBuilder(ctx)
+      .add_race("TestRace", 100.0, false, player_t{1})
+      .add_race("EnemyRace", 100.0, false, player_t{2});
 
-  // Setup: Create universe
-  universe_struct us{};
+  ctx.create_star("TestStar", starnum_t{1})
+      .with_position(UniverseCoordinates{100.0, 200.0})
+      .with_explored(player_t{1})
+      .with_inhabited(player_t{1})
+      .build();
 
-  UniverseRepository universe_repo(store);
-  universe_repo.save(us);
-
-  // Setup: Create test race
-  Race race{};
-  race.Playernum = 1;
-  race.name = "TestRace";
-
-  RaceRepository races(store);
-  races.save(race);
-
-  // Setup: Create a test star
-  star_struct ss{};
-  ss.star_id = 1;
-  ss.name = "TestStar";
-  ss.coordinates = {100.0, 200.0};
-  ss.explored.insert(player_t{1});
-  ss.pnames.push_back("TestPlanet");
-  Star star(ss);
-
-  StarRepository stars_repo(store);
-  stars_repo.save(star);
-
-  // Setup: Create a test planet
-  planet_struct ps{};
-  ps.star_id = 1;
-  ps.planet_order = 1;
-  ps.type = PlanetType::EARTH;
-  ps.info[player_t{1}].explored = true;
-  Planet planet(ps);
-
-  PlanetRepository planets_repo(store);
-  planets_repo.save(planet);
+  ctx.create_planet(1, PlanetType::EARTH, {10, 10}, planetnum_t{1})
+      .named("TestPlanet")
+      .with_explored(player_t{1}, true)
+      .with_colony(player_t{1}, 1000)
+      .build();
 
   // Setup: Create test ships at different scope levels
   TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
@@ -227,6 +203,152 @@ void test_orbit_domain_errors() {
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"orbit", "nonexistent/star"});
   test::expect_contains(g.out.str(), "orbit: error in args.");
+  // 3. Ship scope is rejected with "Bad scope."
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"orbit", "#1"});
+  test::expect_contains(g.out.str(), "Bad scope.");
+}
+
+void test_orbit_visibility_and_filtering() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  // Add a second unexplored planet in star 1
+  ctx.create_planet(1, PlanetType::GASGIANT, {10, 10}, planetnum_t{2})
+      .named("HiddenWorld")
+      .with_position(SystemCoordinates{50.0, -50.0})
+      .with_explored(player_t{1}, false)
+      .build();
+
+  // Add canister, greenhouse, friendly mine, enemy mine, enemy fighter in star
+  TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST, 10)
+      .owned_by(1, 1)
+      .in_star_orbit(1, UniverseCoordinates{100.0, 200.0})
+      .build();
+  TestShipBuilder(ctx.em, ShipType::OTYPE_GREEN, 11)
+      .owned_by(1, 1)
+      .in_star_orbit(1, UniverseCoordinates{100.0, 200.0})
+      .build();
+  TestShipBuilder(ctx.em, ShipType::STYPE_MINE, 12)
+      .owned_by(1, 1)
+      .in_star_orbit(1, UniverseCoordinates{100.0, 200.0})
+      .build();
+  TestShipBuilder(ctx.em, ShipType::STYPE_MINE, 13)
+      .owned_by(2, 1)
+      .in_star_orbit(1, UniverseCoordinates{100.0, 200.0})
+      .build();
+  TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER, 14)
+      .owned_by(2, 1)
+      .in_star_orbit(1, UniverseCoordinates{100.0, 200.0})
+      .build();
+
+  // Add out-of-bounds ships (negative projected X and negative projected Y)
+  TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER, 15)
+      .owned_by(1, 1)
+      .in_star_orbit(1, UniverseCoordinates{-50000.0, 200.0})
+      .build();
+  TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER, 16)
+      .owned_by(1, 1)
+      .in_star_orbit(1, UniverseCoordinates{100.0, -50000.0})
+      .build();
+
+  // Add enemy deep-space ship (#17), landed planet ship (#18), and enemy
+  // planet-orbiting ship (#19)
+  TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER, 17)
+      .owned_by(2, 1)
+      .in_deep_space(UniverseCoordinates{150.0, 250.0})
+      .build();
+  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 18)
+      .owned_by(1, 1)
+      .landed_on(1, 1, {0, 0})
+      .build();
+  TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER, 19)
+      .owned_by(2, 1)
+      .in_planet_orbit(1, 1, UniverseCoordinates{105.0, 205.0})
+      .build();
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 1);
+
+  // 1. Star scope with sight (ship #1 has crew): sees friendly mine (#12) and
+  // enemy fighter (#14), hides canister (#10), green (#11), enemy mine (#13),
+  // and out-of-bounds ships (#15, #16). Unexplored planet 2 renders '?' symbol.
+  ctx.em.mutate_ship(1, [](Ship& s) { s.popn() = 1; });
+  ctx.em.mutate_ship(3, [](Ship& s) { s.popn() = 1; });
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(1);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"orbit"});
+  std::string star_out = g.out.str();
+  test::expect_contains(star_out, "? HiddenWorld");
+  test::expect_contains(star_out, "+ #12");
+  test::expect_contains(star_out, "f #14");
+  test::expect_false(star_out.contains("#10"));
+  test::expect_false(star_out.contains("#11"));
+  test::expect_false(star_out.contains("#13"));
+  test::expect_false(star_out.contains("#15"));
+  test::expect_false(star_out.contains("#16"));
+
+  // 2. Star scope without sight (player 2 has no crewed ship if #14 is
+  // uncrewed): player 1 with ship #1 uncrewed cannot see enemy #14 unless god.
+  ctx.em.mutate_ship(1, [](Ship& s) { s.popn() = 0; });
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"orbit"});
+  test::expect_false(g.out.str().contains("f #14"));
+
+  // God mode restores sight in star system without crewed ships
+  g.set_god(true);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"orbit"});
+  test::expect_contains(g.out.str(), "f #14");
+  g.set_god(false);
+
+  // 3. Planet scope: landed ship (#18) is hidden; enemy ship (#19) is visible
+  // when #3 has sight, hidden when #3 has no crew, and -s / -3 flags work.
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(1);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"orbit"});
+  test::expect_contains(g.out.str(), "s #3");
+  test::expect_contains(g.out.str(), "f #19");
+  test::expect_false(g.out.str().contains("#18"));
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"orbit", "-3"});
+  test::expect_false(g.out.str().contains("s #3"));
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"orbit", "-s"});
+  test::expect_false(g.out.str().contains("s #3"));
+
+  ctx.em.mutate_ship(3, [](Ship& s) { s.popn() = 0; });
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"orbit"});
+  test::expect_false(g.out.str().contains("f #19"));
+
+  // 4. Universe scope: enemy deep-space ship (#17) hidden unless god; -1 and
+  // -s flags filter universe stars and ships.
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"orbit"});
+  test::expect_contains(g.out.str(), "C #2");
+  test::expect_false(g.out.str().contains("#17"));
+
+  g.set_god(true);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"orbit"});
+  test::expect_contains(g.out.str(), "C #17");
+  g.set_god(false);
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"orbit", "-1", "-s"});
+  test::expect_false(g.out.str().contains("TestStar"));
+  test::expect_false(g.out.str().contains("C #2"));
+
+  std::println(std::cout,
+               "    ✓ Orbit visibility, sight IQ, and filtering verified");
 }
 
 void test_orbit_space_mirror_aiming() {
@@ -295,6 +417,7 @@ void test_orbit_space_mirror_aiming() {
 int main() {
   test_orbit_happy_path();
   test_orbit_domain_errors();
+  test_orbit_visibility_and_filtering();
   test_orbit_space_mirror_aiming();
 
   std::println(std::cout, "\n✅ All orbit tests passed!");

@@ -7,7 +7,7 @@ module commands;
 
 import gb.entities;
 import gb.mechanics;
-import gb.presentation;
+import gb.presentation.ship_ops;
 import gb.services;
 import scnlib;
 import std;

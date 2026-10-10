@@ -7,7 +7,7 @@ import commands;
 import dallib;
 import gb.entities;
 import gb.mechanics;
-import gb.presentation;
+import gb.presentation.ship_ops;
 import gb.services;
 import test;
 import std;

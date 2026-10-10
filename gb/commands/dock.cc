@@ -8,7 +8,7 @@ module;
 import std;
 import gb.entities;
 import gb.mechanics;
-import gb.presentation;
+import gb.presentation.ship_ops;
 import gb.services;
 
 module commands;

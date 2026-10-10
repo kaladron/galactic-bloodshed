@@ -147,6 +147,52 @@ void test_survey_sectors_json_and_landed_ships() {
                "    ✓ JSON sector survey and ship authorization verified");
 }
 
+void test_survey_planet_star_and_universe_json() {
+  std::println(std::cout,
+               "Test: survey planet overview, star, and universe JSON");
+
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 1);
+  g.set_ui_mode(GB::presentation::UiMode::JSON);
+
+  // Planet overview in JSON mode
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(1);
+  ctx.assert_dispatch_success(g, {"survey"});
+  std::string planet_json = g.out.str();
+  test::expect_contains(planet_json, R"("type":"survey_planet")");
+  test::expect_contains(planet_json, R"("planet_name":"Earth")");
+  test::expect_contains(planet_json, R"("star_name":"Sol")");
+
+  // Star survey in JSON mode
+  g.out.str("");
+  g.out.clear();
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(2);
+  ctx.assert_dispatch_success(g, {"survey"});
+  std::string star_json = g.out.str();
+  test::expect_contains(star_json, R"("type":"survey_star")");
+  test::expect_contains(star_json, R"("star_name":"Vega")");
+  test::expect_contains(star_json, R"("stability":45)");
+
+  // Universe survey in JSON mode
+  g.out.str("");
+  g.out.clear();
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  ctx.assert_dispatch_success(g, {"survey"});
+  std::string univ_json = g.out.str();
+  test::expect_contains(univ_json, R"("type":"survey_universe")");
+  test::expect_contains(univ_json, R"("It's just _there_, you know?")");
+  std::println(
+      std::cout,
+      "    ✓ JSON planet overview, star, and universe surveys verified");
+}
+
 }  // namespace
 
 int main() {
@@ -155,6 +201,7 @@ int main() {
   test_survey_star_scope();
   test_survey_universe_scope();
   test_survey_sectors_json_and_landed_ships();
+  test_survey_planet_star_and_universe_json();
 
   std::println(std::cout, "\n✅ All survey tests passed!");
   return 0;

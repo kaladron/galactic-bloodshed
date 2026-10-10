@@ -179,4 +179,142 @@ std::string render_for_mode(UiMode mode, const SurveySectorViewModel& vm) {
                               : render_survey_sectors(vm);
 }
 
+namespace {
+
+constexpr std::array<std::string_view, 12> kToxDescriptions = {
+    "Stage 0, mild",
+    "Stage 1, mild",
+    "Stage 2, semi-mild",
+    "Stage 3, semi-semi mild",
+    "Stage 4, ecologically unsound",
+    "Stage 5: ecologically unsound",
+    "Stage 6: below birth threshold",
+    "Stage 7: ecologically unstable--below birth threshold",
+    "Stage 8: ecologically poisonous --below birth threshold",
+    "Stage 9: WARNING: nearing 100% toxicity",
+    "Stage 10: WARNING: COMPLETELY TOXIC!!!",
+    "???"};
+
+std::string_view toxicity_description(Percentage toxicity) {
+  const int index = std::clamp(toxicity.value() / 10, 0, 11);
+  return kToxDescriptions[index];
+}
+
+std::string_view stability_label(int pct) {
+  if (pct < 20) return "stable";
+  if (pct < 40) return "unstable";
+  if (pct < 60) return "dangerous";
+  if (pct < 100) return "WARNING! Nova iminent!";
+  return "undergoing nova";
+}
+
+}  // namespace
+
+std::string
+render_survey_planet_overview(const SurveyPlanetOverviewViewModel& vm) {
+  const std::string_view pop_label = vm.is_metamorph ? "biomass" : "popltn";
+  std::string out = std::format(
+      "{}:\n"
+      "gravity   x,y absolute     x,y relative to {}\n"
+      "{:7.2f}   {:7.1f},{:7.1f}   {:8.1f},{:8.1f}\n"
+      "======== Planetary conditions: ========\n"
+      "atmosphere concentrations:\n"
+      "     methane {:02d}%({:02d}%)     oxygen {:02d}%({:02d}%)\n"
+      "         CO2 {:02d}%({:02d}%)   hydrogen {:02d}%({:02d}%)      "
+      "temperature: {:3d} ({:3d})\n"
+      "    nitrogen {:02d}%({:02d}%)     sulfur {:02d}%({:02d}%)           "
+      "normal: {:3d}\n"
+      "      helium {:02d}%({:02d}%)      other {:02d}%({:02d}%)\n"
+      "                     Toxicity: {}% ({})\n"
+      "Total planetary compatibility: {:.2f}%\n"
+      "{:>29}: {}\n{:>29}: {}\n{:>29}: {}\n"
+      "{:>29}: {}\n"
+      "fuel_stock  resource_stock dest_pot.   {}    ^{}\n"
+      "{:10}  {:14} {:9}  {:7}{:11}\n",
+      vm.planet_name, vm.star_name, vm.gravity, vm.absolute_coords.x,
+      vm.absolute_coords.y, vm.system_coords.x, vm.system_coords.y,
+      vm.planet_conditions.methane, vm.race_conditions.methane,
+      vm.planet_conditions.oxygen, vm.race_conditions.oxygen,
+      vm.planet_conditions.co2, vm.race_conditions.co2,
+      vm.planet_conditions.hydrogen, vm.race_conditions.hydrogen,
+      vm.planet_temp, vm.race_temp, vm.planet_conditions.nitrogen,
+      vm.race_conditions.nitrogen, vm.planet_conditions.sulfur,
+      vm.race_conditions.sulfur, vm.normal_temp, vm.planet_conditions.helium,
+      vm.race_conditions.helium, vm.planet_conditions.other,
+      vm.race_conditions.other, vm.toxicity, toxicity_description(vm.toxicity),
+      vm.compatibility, "Average fertility", vm.avg_fertility,
+      "Average resource", vm.avg_resource, "Crystal sectors",
+      vm.crystal_sectors, "Total resource deposits", vm.total_resources,
+      pop_label, pop_label, vm.fuel_stock, vm.resource_stock, vm.destruct_stock,
+      vm.popn, vm.maxpopn);
+  if (vm.slaved_to) {
+    std::format_to(std::back_inserter(out),
+                   "This planet ENSLAVED to player {}!\n", *vm.slaved_to);
+  }
+  return out;
+}
+
+std::string
+render_json_survey_planet_overview(const SurveyPlanetOverviewViewModel& vm) {
+  return render_json_envelope("survey_planet", vm);
+}
+
+std::string render_for_mode(UiMode mode,
+                            const SurveyPlanetOverviewViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_survey_planet_overview(vm)
+                              : render_survey_planet_overview(vm);
+}
+
+std::string render_survey_star(const SurveyStarViewModel& vm) {
+  std::string out =
+      std::format("Star {}\nlocn: {}\n", vm.star_name, vm.coordinates);
+
+  if (vm.is_god) {
+    for (const auto& name : vm.planet_names) {
+      std::format_to(std::back_inserter(out), " \"{}\"\n", name);
+    }
+  }
+
+  std::format_to(std::back_inserter(out),
+                 "Gravity: {:.2f}\tInstability: ", vm.gravity);
+
+  if (vm.stability) {
+    std::format_to(std::back_inserter(out), "{}% ({})\n", *vm.stability,
+                   stability_label(*vm.stability));
+  } else {
+    out += "(cannot determine)\n";
+  }
+
+  std::format_to(std::back_inserter(out),
+                 "temperature class (1->10) {}\n{} planets are ",
+                 vm.temperature_class, vm.planet_names.size());
+  for (const auto& name : vm.planet_names) {
+    std::format_to(std::back_inserter(out), "{} ", name);
+  }
+  out.push_back('\n');
+  return out;
+}
+
+std::string render_json_survey_star(const SurveyStarViewModel& vm) {
+  return render_json_envelope("survey_star", vm);
+}
+
+std::string render_for_mode(UiMode mode, const SurveyStarViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_survey_star(vm)
+                              : render_survey_star(vm);
+}
+
+std::string render_survey_universe(const SurveyUniverseViewModel& vm) {
+  return std::format("{}\n", vm.message);
+}
+
+std::string render_json_survey_universe(const SurveyUniverseViewModel& vm) {
+  return render_json_envelope("survey_universe", vm);
+}
+
+std::string render_for_mode(UiMode mode, const SurveyUniverseViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_survey_universe(vm)
+                              : render_survey_universe(vm);
+}
+
 }  // namespace GB::presentation

@@ -9,44 +9,11 @@ import gb.entities;
 import gb.presentation.planet_views;
 import gb.services;
 import std;
-#undef stdout
 
 module commands;
 
 namespace {
 constexpr int MAX_SHIPS_PER_SECTOR = 10;
-
-constexpr std::array<std::string_view, 12> kToxDescriptions = {
-    "Stage 0, mild",
-    "Stage 1, mild",
-    "Stage 2, semi-mild",
-    "Stage 3, semi-semi mild",
-    "Stage 4, ecologically unsound",
-    "Stage 5: ecologically unsound",
-    "Stage 6: below birth threshold",
-    "Stage 7: ecologically unstable--below birth threshold",
-    "Stage 8: ecologically poisonous --below birth threshold",
-    "Stage 9: WARNING: nearing 100% toxicity",
-    "Stage 10: WARNING: COMPLETELY TOXIC!!!",
-    "???"};
-
-std::string_view get_tox(int toxicity) {
-  int index = toxicity / 10;
-  if (index < 0) {
-    index = 0;
-  } else if (index > 10) {
-    index = 11;  // "???" for toxicity > 100%
-  }
-  return kToxDescriptions[index];
-}
-
-std::string_view stability_label(int pct) {
-  if (pct < 20) return "stable";
-  if (pct < 40) return "unstable";
-  if (pct < 60) return "dangerous";
-  if (pct < 100) return "WARNING! Nova iminent!";
-  return "undergoing nova";
-}
 
 // Helper: Parse survey arguments and determine location
 std::optional<Place> parse_survey_location(const command_t& argv, GameObj& g,
@@ -195,106 +162,71 @@ void survey_planet_sectors(GameObj& g, const Place& where,
 // Helper: Survey planet overview (conditions, stats, etc.)
 void survey_planet_overview(GameObj& g, const Place& where) {
   const auto& race = *g.race;
-
   const auto& star = *g.entity_manager.peek_star(where.snum);
-
   const auto& p = *g.entity_manager.peek_planet(where.snum, where.pnum);
-
-  g.out << std::format("{}:\n", star.get_planet_name(where.pnum));
-  g.out << std::format("gravity   x,y absolute     x,y relative to {}\n",
-                       star.get_name());
-  const auto abs_coords = p.absolute_coordinates(star);
-  const auto sys_coords = p.system_coordinates();
-  g.out << std::format("{:7.2f}   {:7.1f},{:7.1f}   {:8.1f},{:8.1f}\n",
-                       p.gravity(), abs_coords.x, abs_coords.y, sys_coords.x,
-                       sys_coords.y);
-  g.out << "======== Planetary conditions: ========\n";
-  g.out << "atmosphere concentrations:\n";
-  g.out << std::format(
-      "     methane {:02d}%({:02d}%)     oxygen {:02d}%({:02d}%)\n",
-      p.conditions(METHANE), race.conditions[METHANE], p.conditions(OXYGEN),
-      race.conditions[OXYGEN]);
-  g.out << std::format("         CO2 {:02d}%({:02d}%)   hydrogen "
-                       "{:02d}%({:02d}%)      temperature: {:3d} ({:3d})\n",
-                       p.conditions(CO2), race.conditions[CO2],
-                       p.conditions(HYDROGEN), race.conditions[HYDROGEN],
-                       p.temp(), race.temp);
-  g.out << std::format("    nitrogen {:02d}%({:02d}%)     sulfur "
-                       "{:02d}%({:02d}%)           normal: {:3d}\n",
-                       p.conditions(NITROGEN), race.conditions[NITROGEN],
-                       p.conditions(SULFUR), race.conditions[SULFUR],
-                       p.rtemp());
-  g.out << std::format(
-      "      helium {:02d}%({:02d}%)      other {:02d}%({:02d}%)\n",
-      p.conditions(HELIUM), race.conditions[HELIUM], p.conditions(OTHER),
-      race.conditions[OTHER]);
-
-  g.out << std::format("                     Toxicity: {}% ({})\n", p.toxic(),
-                       get_tox(p.toxic()));
-  g.out << std::format("Total planetary compatibility: {:.2f}%\n",
-                       p.compatibility(race));
-
   const auto* smap = g.entity_manager.peek_sectormap(where.snum, where.pnum);
 
-  int crystal_count = 0;
-  int avg_fert = 0;
-  int avg_resource = 0;
+  sector_count_t crystal_count = 0;
+  int total_fert = 0;
+  resource_t total_resource = 0;
   for (const auto& s : *smap) {
-    avg_fert += s.get_fert();
-    avg_resource += s.get_resource();
-    if (race.discoveries.crystal || race.God) {
-      crystal_count += !!s.get_crystals();
+    total_fert += s.get_fert();
+    total_resource += s.get_resource();
+    if ((race.discoveries.crystal || race.God) && s.get_crystals() > 0) {
+      ++crystal_count;
     }
   }
 
-  g.out << std::format("{:>29}: {}\n{:>29}: {}\n{:>29}: {}\n",
-                       "Average fertility", avg_fert / p.num_sectors(),
-                       "Average resource", avg_resource / p.num_sectors(),
-                       "Crystal sectors", crystal_count);
-  g.out << std::format("{:>29}: {}\n", "Total resource deposits",
-                       p.total_resources());
-  g.out << std::format("fuel_stock  resource_stock dest_pot.   {}    ^{}\n",
-                       race.Metamorph ? "biomass" : "popltn",
-                       race.Metamorph ? "biomass" : "popltn");
-  g.out << std::format("{:10}  {:14} {:9}  {:7}{:11}\n",
-                       p.info(g.player()).fuel, p.info(g.player()).resource,
-                       p.info(g.player()).destruct, p.popn(), p.maxpopn());
-  if (p.slaved_to()) {
-    g.out << std::format("This planet ENSLAVED to player {}!\n",
-                         *p.slaved_to());
-  }
+  const auto& pinfo = p.info(g.player());
+  const int num_sects = std::max(1, p.num_sectors());
+  const GB::presentation::SurveyPlanetOverviewViewModel vm{
+      .planet_name = star.get_planet_name(where.pnum),
+      .star_name = star.get_name(),
+      .gravity = p.gravity(),
+      .absolute_coords = p.absolute_coordinates(star),
+      .system_coords = p.system_coordinates(),
+      .planet_conditions = p.conditions(),
+      .race_conditions = race.conditions,
+      .planet_temp = p.temp(),
+      .race_temp = race.temp,
+      .normal_temp = p.rtemp(),
+      .toxicity = p.toxic(),
+      .compatibility = p.compatibility(race),
+      .avg_fertility = Percentage{total_fert / num_sects},
+      .avg_resource = total_resource / num_sects,
+      .crystal_sectors = crystal_count,
+      .total_resources = p.total_resources(),
+      .is_metamorph = race.Metamorph,
+      .fuel_stock = pinfo.fuel,
+      .resource_stock = pinfo.resource,
+      .destruct_stock = pinfo.destruct,
+      .popn = p.popn(),
+      .maxpopn = p.maxpopn(),
+      .slaved_to = p.slaved_to(),
+  };
+  g.present(vm);
 }
 
 // Helper: Survey star system
 void survey_star(GameObj& g, const Place& where) {
   const auto& race = *g.race;
-
   const auto& star = *g.entity_manager.peek_star(where.snum);
 
-  g.out << std::format("Star {}\n", star.get_name());
-  g.out << std::format("locn: {}\n", star.coordinates());
-
-  if (race.God) {
-    for (const auto& name : star.planet_names()) {
-      g.out << std::format(" \"{}\"\n", name);
-    }
-  }
-
-  g.out << std::format("Gravity: {:.2f}\tInstability: ", star.gravity());
-
+  std::optional<int> stability = std::nullopt;
   if (race.tech >= TECH_SEE_STABILITY || race.God) {
-    g.out << std::format("{}% ({})\n", star.stability(),
-                         stability_label(star.stability()));
-  } else {
-    g.out << "(cannot determine)\n";
+    stability = star.stability();
   }
 
-  g.out << std::format("temperature class (1->10) {}\n", star.temperature());
-  g.out << std::format("{} planets are ", star.numplanets());
-  for (const auto& name : star.planet_names()) {
-    g.out << std::format("{} ", name);
-  }
-  g.out << "\n";
+  const GB::presentation::SurveyStarViewModel vm{
+      .star_name = star.get_name(),
+      .coordinates = star.coordinates(),
+      .is_god = race.God,
+      .gravity = star.gravity(),
+      .stability = stability,
+      .temperature_class = star.temperature(),
+      .planet_names = star.planet_names(),
+  };
+  g.present(vm);
 }
 
 }  // namespace
@@ -328,7 +260,7 @@ bool survey(const command_t& argv, GameObj& g) {
       return true;
 
     case ScopeLevel::LEVEL_UNIV:
-      g.out << "It's just _there_, you know?\n";
+      g.present(GB::presentation::SurveyUniverseViewModel{});
       return true;
 
     default:

@@ -57,6 +57,49 @@ struct SurveySectorViewModel {
   std::vector<SurveySectorRow> sectors{};
 };
 
+/// View model for planetary overview surveys (`survey` at planet scope).
+struct SurveyPlanetOverviewViewModel {
+  std::string planet_name{};
+  std::string star_name{};
+  double gravity{0.0};
+  UniverseCoordinates absolute_coords{0.0, 0.0};
+  SystemCoordinates system_coords{0.0, 0.0};
+  ConditionValues planet_conditions{};
+  ConditionValues race_conditions{};
+  temperature_t planet_temp{0};
+  temperature_t race_temp{0};
+  temperature_t normal_temp{0};
+  Percentage toxicity{0};
+  double compatibility{0.0};
+  Percentage avg_fertility{0};
+  resource_t avg_resource{0};
+  sector_count_t crystal_sectors{0};
+  resource_t total_resources{0};
+  bool is_metamorph{false};
+  resource_t fuel_stock{0};
+  resource_t resource_stock{0};
+  resource_t destruct_stock{0};
+  population_t popn{0};
+  population_t maxpopn{0};
+  std::optional<player_t> slaved_to{std::nullopt};
+};
+
+/// View model for stellar system surveys (`survey` at star scope).
+struct SurveyStarViewModel {
+  std::string star_name{};
+  UniverseCoordinates coordinates{0.0, 0.0};
+  bool is_god{false};
+  double gravity{0.0};
+  std::optional<int> stability{std::nullopt};
+  int temperature_class{0};
+  std::vector<std::string> planet_names{};
+};
+
+/// View model for universe-scope surveys (`survey` at universe scope).
+struct SurveyUniverseViewModel {
+  std::string message{"It's just _there_, you know?"};
+};
+
 /// Renders a `PlanetMapViewModel` as a 2D ASCII planetary map with X/Y
 /// coordinate headers, ANSI SGR reverse-video (`\x1b[7m...\x1b[27m`) for
 /// `inverse` cells, and a `tabulate::Table` for planetary statistics.
@@ -83,5 +126,43 @@ render_json_survey_sectors(const SurveySectorViewModel& vm);
 /// Dispatches `SurveySectorViewModel` rendering based on `mode`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const SurveySectorViewModel& vm);
+
+/// Renders a `SurveyPlanetOverviewViewModel` for `UiMode::ASCII`.
+[[nodiscard]] std::string
+render_survey_planet_overview(const SurveyPlanetOverviewViewModel& vm);
+
+/// Serializes a `SurveyPlanetOverviewViewModel` into a newline-delimited Glaze
+/// JSON envelope (`{"type":"survey_planet","data":{...}}\n`).
+[[nodiscard]] std::string
+render_json_survey_planet_overview(const SurveyPlanetOverviewViewModel& vm);
+
+/// Dispatches `SurveyPlanetOverviewViewModel` rendering based on `mode`.
+[[nodiscard]] std::string
+render_for_mode(UiMode mode, const SurveyPlanetOverviewViewModel& vm);
+
+/// Renders a `SurveyStarViewModel` for `UiMode::ASCII`.
+[[nodiscard]] std::string render_survey_star(const SurveyStarViewModel& vm);
+
+/// Serializes a `SurveyStarViewModel` into a newline-delimited Glaze JSON
+/// envelope (`{"type":"survey_star","data":{...}}\n`).
+[[nodiscard]] std::string
+render_json_survey_star(const SurveyStarViewModel& vm);
+
+/// Dispatches `SurveyStarViewModel` rendering based on `mode`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const SurveyStarViewModel& vm);
+
+/// Renders a `SurveyUniverseViewModel` for `UiMode::ASCII`.
+[[nodiscard]] std::string
+render_survey_universe(const SurveyUniverseViewModel& vm);
+
+/// Serializes a `SurveyUniverseViewModel` into a newline-delimited Glaze JSON
+/// envelope (`{"type":"survey_universe","data":{...}}\n`).
+[[nodiscard]] std::string
+render_json_survey_universe(const SurveyUniverseViewModel& vm);
+
+/// Dispatches `SurveyUniverseViewModel` rendering based on `mode`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const SurveyUniverseViewModel& vm);
 
 }  // namespace GB::presentation

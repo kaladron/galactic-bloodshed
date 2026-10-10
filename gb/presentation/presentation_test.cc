@@ -112,11 +112,11 @@ void test_render_json_envelope_and_polymorphic_presenter() {
       .ship_display = "B1 Battleship",
   };
   test::expect_eq(
-      GB::presentation::presenter_for(UiMode::ASCII).render(exploded),
+      GB::presentation::render_for_mode(UiMode::ASCII, exploded),
       "/Sol: Matter-antimatter EXPLOSION from overloaded crystal on B1 "
       "Battleship\n");
   test::expect_contains(
-      GB::presentation::presenter_for(UiMode::JSON).render(exploded),
+      GB::presentation::render_for_mode(UiMode::JSON, exploded),
       "\"type\":\"reactor_overload\"");
 
   const ReactorOverloadEvent damaged_crystal{
@@ -129,7 +129,7 @@ void test_render_json_envelope_and_polymorphic_presenter() {
       .ship_display = "B1 Battleship",
   };
   test::expect_eq(
-      GB::presentation::presenter_for(UiMode::ASCII).render(damaged_crystal),
+      GB::presentation::render_for_mode(UiMode::ASCII, damaged_crystal),
       "/Sol: Crystal damaged from overloading on B1 Battleship.\n");
 
   static_assert(std::is_aggregate_v<CriticalHitSystemsDamage>);
@@ -183,7 +183,7 @@ void test_render_json_envelope_and_polymorphic_presenter() {
           },
   };
   const std::string ship_shot_ascii =
-      GB::presentation::presenter_for(UiMode::ASCII).render(ship_shot);
+      GB::presentation::render_for_mode(UiMode::ASCII, ship_shot);
   test::expect_contains(ship_shot_ascii,
                         "/Sol: d1 Destroyer DESTROYED c2 Cruiser\n");
   test::expect_contains(ship_shot_ascii, "CEW ");
@@ -196,7 +196,7 @@ void test_render_json_envelope_and_polymorphic_presenter() {
   test::expect_contains(ship_shot_ascii,
                         "1 primary/1 secondary guns destroyed");
   test::expect_contains(
-      GB::presentation::presenter_for(UiMode::JSON).render(ship_shot),
+      GB::presentation::render_for_mode(UiMode::JSON, ship_shot),
       "\"type\":\"ship_shot\"");
 
   const ShipShotResult planet_rad_shot{
@@ -230,10 +230,10 @@ void test_render_json_envelope_and_polymorphic_presenter() {
       .nuked_players = {player_t{2}},
   };
   test::expect_contains(
-      GB::presentation::presenter_for(UiMode::ASCII).render(bombard_res),
+      GB::presentation::render_for_mode(UiMode::ASCII, bombard_res),
       "B1 Battleship bombards /Sol/Terra [2]\n\t2 sectors destroyed\n");
   test::expect_contains(
-      GB::presentation::presenter_for(UiMode::JSON).render(bombard_res),
+      GB::presentation::render_for_mode(UiMode::JSON, bombard_res),
       "\"type\":\"bombard_result\"");
 
   const MineDetonationReport mine_report{
@@ -243,13 +243,13 @@ void test_render_json_envelope_and_polymorphic_presenter() {
       .planet_strike = bombard_res,
   };
   test::expect_contains(
-      GB::presentation::presenter_for(UiMode::ASCII).render(mine_report),
+      GB::presentation::render_for_mode(UiMode::ASCII, mine_report),
       "M1 Mine detonated at /Sol/Terra\n");
   test::expect_contains(
       GB::presentation::render_mine_planet_strike_telegram(mine_report),
       "2 sectors destroyed.");
   test::expect_contains(
-      GB::presentation::presenter_for(UiMode::JSON).render(mine_report),
+      GB::presentation::render_for_mode(UiMode::JSON, mine_report),
       "\"type\":\"mine_detonation\"");
 }
 

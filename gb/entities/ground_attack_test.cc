@@ -7,7 +7,7 @@
 import dallib;
 import gb.entities;
 import gb.mechanics;
-import gb.presentation;
+import gb.presentation.combat;
 import gb.services;
 import gb.turn;
 import test;

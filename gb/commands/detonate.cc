@@ -6,7 +6,8 @@
 module;
 
 import gb.entities;
-import gb.presentation;
+import gb.presentation.combat;
+import gb.presentation.ship_ops;
 import gb.services;
 import std;
 

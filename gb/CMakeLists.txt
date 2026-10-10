@@ -205,11 +205,13 @@ target_sources(
           presentation/navigation.cppm
           presentation/construction.cppm
           presentation/ship_ops.cppm
+          presentation/combat.cppm
           presentation/presentation.cppm
   PRIVATE presentation/planet_views.cc
           presentation/navigation.cc
           presentation/construction.cc
-          presentation/ship_ops.cc)
+          presentation/ship_ops.cc
+          presentation/combat.cc)
 target_link_libraries(
   gb_presentation
   PUBLIC gb_entities gb_services gb_mechanics gb_repositories glaze::glaze

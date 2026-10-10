@@ -6,10 +6,9 @@
 module;
 
 import gb.entities;
-import gb.presentation;
+import gb.presentation.combat;
 import gb.services;
 import std;
-#undef stdout
 
 module commands;
 

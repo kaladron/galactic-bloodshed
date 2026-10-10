@@ -5,7 +5,7 @@
 
 module;
 
-import gb.presentation;
+import gb.presentation.combat;
 import std;
 
 module gb.turn;

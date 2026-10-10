@@ -14,7 +14,7 @@ namespace {
 constexpr double TAN_22_5_DEG = std::numbers::sqrt2 - 1.0;
 constexpr double TAN_67_5_DEG = std::numbers::sqrt2 + 1.0;
 
-[[nodiscard]] int octant_for_positive_dy(double slope) noexcept {
+[[nodiscard]] bearing_t octant_for_positive_dy(double slope) noexcept {
   if (slope < -TAN_67_5_DEG || slope > TAN_67_5_DEG) return 4;
   if (slope > TAN_22_5_DEG) return 3;
   if (slope > 0.000) return 2;
@@ -22,7 +22,7 @@ constexpr double TAN_67_5_DEG = std::numbers::sqrt2 + 1.0;
   return 5;
 }
 
-[[nodiscard]] int octant_for_negative_dy(double slope) noexcept {
+[[nodiscard]] bearing_t octant_for_negative_dy(double slope) noexcept {
   if (slope < -TAN_67_5_DEG || slope > TAN_67_5_DEG) return 0;
   if (slope > TAN_22_5_DEG) return 7;
   if (slope > 0.000) return 6;
@@ -52,20 +52,19 @@ constexpr double TAN_67_5_DEG = std::numbers::sqrt2 + 1.0;
 ///
 /// \param target_coords Absolute universe coordinates of the target.
 /// \return Compass direction heading index (0..7).
-int SpaceMirrorShip::aim_direction(
+bearing_t SpaceMirrorShip::aim_direction(
     UniverseCoordinates target_coords) const noexcept {
-  const auto [xt, yt] = target_coords;
-  const auto my_coords = coordinates();
-  if (xt == my_coords.x) {
-    return (yt > my_coords.y) ? 4 : 0;
+  const SystemCoordinates delta = target_coords - coordinates();
+  if (delta.x == 0.0) {
+    return (delta.y > 0.0) ? 4 : 0;
   }
-  if (yt == my_coords.y) {
-    return (xt > my_coords.x) ? 2 : 6;
+  if (delta.y == 0.0) {
+    return (delta.x > 0.0) ? 2 : 6;
   }
 
-  const double slope = (yt - my_coords.y) / (xt - my_coords.x);
-  return (yt > my_coords.y) ? octant_for_positive_dy(slope)
-                            : octant_for_negative_dy(slope);
+  const double slope = delta.y / delta.x;
+  return (delta.y > 0.0) ? octant_for_positive_dy(slope)
+                         : octant_for_negative_dy(slope);
 }
 
 std::unique_ptr<Ship> ShipFactory::create(ship_struct data) {

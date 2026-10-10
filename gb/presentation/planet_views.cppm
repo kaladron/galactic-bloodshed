@@ -100,6 +100,42 @@ struct SurveyUniverseViewModel {
   std::string message{"It's just _there_, you know?"};
 };
 
+/// Star entry in an orbital system/universe map.
+struct OrbitStarEntry {
+  SystemCoordinates coords{0.0, 0.0};
+  bool symbol_standout{false};
+  bool label_standout{false};
+  std::string label{};
+};
+
+/// Planet entry in an orbital system/planet map.
+struct OrbitPlanetEntry {
+  SystemCoordinates coords{0.0, 0.0};
+  char symbol{'?'};
+  bool symbol_standout{false};
+  bool label_standout{false};
+  std::string label{};
+  std::optional<Percentage> compatibility{std::nullopt};
+};
+
+/// Ship entry in an orbital map.
+struct OrbitShipEntry {
+  SystemCoordinates coords{0.0, 0.0};
+  bearing_t mirror_heading{0};
+  char symbol{' '};
+  bool standout{false};
+  shipnum_t shipno{0};
+};
+
+/// View model for `orbit` command maps (universe, star system, or planet
+/// orbit).
+struct OrbitViewModel {
+  bool inverse{false};
+  std::vector<OrbitStarEntry> stars{};
+  std::vector<OrbitPlanetEntry> planets{};
+  std::vector<OrbitShipEntry> ships{};
+};
+
 /// Renders a `PlanetMapViewModel` as a 2D ASCII planetary map with X/Y
 /// coordinate headers, ANSI SGR reverse-video (`\x1b[7m...\x1b[27m`) for
 /// `inverse` cells, and a `tabulate::Table` for planetary statistics.

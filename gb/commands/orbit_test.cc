@@ -105,10 +105,10 @@ void test_orbit_happy_path() {
 
     g.out.str("");
     ctx.assert_dispatch_success(g, {"orbit", "-1", "/TestStar"});
-    // Planet 1 (TestPlanet) and Ship #1 (f false 1;) must both be suppressed
+    // Planet 1 (TestPlanet) and Ship #1 (f 0 1;) must both be suppressed
     // when -1 is passed (verifies DontDispNum is not decremented to 0).
     test::expect_false(g.out.str().contains("TestPlanet"));
-    test::expect_false(g.out.str().contains("f false 1;"));
+    test::expect_false(g.out.str().contains("f 0 1;"));
     std::println(std::cout,
                  "    ✓ Orbit -1 suppresses 1-based planet 1 and ship #1");
   }
@@ -128,8 +128,8 @@ void test_orbit_happy_path() {
     std::println(std::cout, "    ✓ Planet-level orbit displays orbiting ships");
   }
 
-  // TEST: Orbit options flags (-s to suppress ships)
-  std::println(std::cout, "Orbit options flags (-s, -p)");
+  // TEST: Orbit options flags (-s, -p, -S) preserve star scope and filter
+  std::println(std::cout, "Orbit options flags (-s, -p, -S)");
   {
     g.set_level(ScopeLevel::LEVEL_STAR);
     g.set_snum(1);
@@ -137,9 +137,22 @@ void test_orbit_happy_path() {
     g.out.str("");
     ctx.assert_dispatch_success(g, {"orbit", "-s"});
     std::string out_no_ships = g.out.str();
+    test::expect_contains(out_no_ships, "TestStar");
+    test::expect_contains(out_no_ships, "TestPlanet");
+    test::expect_false(out_no_ships.contains("f 0 1;"));
 
-    test::expect_false(out_no_ships.empty());
-    std::println(std::cout, "    ✓ Orbit -s option executed cleanly");
+    g.out.str("");
+    ctx.assert_dispatch_success(g, {"orbit", "-p"});
+    std::string out_no_planet_names = g.out.str();
+    test::expect_contains(out_no_planet_names, "TestStar");
+    test::expect_false(out_no_planet_names.contains("TestPlanet"));
+
+    g.out.str("");
+    ctx.assert_dispatch_success(g, {"orbit", "-S"});
+    std::string out_no_star_names = g.out.str();
+    test::expect_false(out_no_star_names.contains("TestStar"));
+    test::expect_contains(out_no_star_names, "TestPlanet");
+    std::println(std::cout, "    ✓ Orbit -s, -p, -S options verified");
   }
 
   // TEST: Orbit display at universe level
@@ -226,8 +239,8 @@ void test_orbit_space_mirror_aiming() {
   test::expect_eq(ship_coords->x, 150.0);
   test::expect_eq(ship_coords->y, 250.0);
 
-  int dir = ctx.em.resolve_mirror_aim_direction(*updated_mirror);
-  test::expect_eq(dir, 3);  // slope = +1.0, dy > 0 -> direction 3
+  const bearing_t dir = ctx.em.resolve_mirror_aim_direction(*updated_mirror);
+  test::expect_eq(dir, 3u);  // slope = +1.0, dy > 0 -> direction 3
 
   // 3. Verify orbit command includes the mirror in system view
   auto& registry = get_test_session_registry();
@@ -238,7 +251,7 @@ void test_orbit_space_mirror_aiming() {
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"orbit"});
-  test::expect_contains(g.out.str(), "3 M false");
+  test::expect_contains(g.out.str(), "3 M 0 4;");
 
   std::println(std::cout, "    ✓ Space mirror targeting, direction heading, "
                           "and orbit display verified");

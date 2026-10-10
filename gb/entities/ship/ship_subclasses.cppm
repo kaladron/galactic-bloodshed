@@ -195,7 +195,7 @@ public:
 
   /// Calculates the 0..7 compass aim direction heading toward the given target
   /// coordinates.
-  [[nodiscard]] int
+  [[nodiscard]] bearing_t
   aim_direction(UniverseCoordinates target_coords) const noexcept;
 };
 

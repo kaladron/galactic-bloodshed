@@ -181,7 +181,7 @@ std::string render_for_mode(UiMode mode, const SurveySectorViewModel& vm) {
 
 namespace {
 
-constexpr std::array<std::string_view, 12> kToxDescriptions = {
+constexpr std::array<std::string_view, 12> TOX_DESCRIPTIONS = {
     "Stage 0, mild",
     "Stage 1, mild",
     "Stage 2, semi-mild",
@@ -197,7 +197,7 @@ constexpr std::array<std::string_view, 12> kToxDescriptions = {
 
 std::string_view toxicity_description(Percentage toxicity) {
   const int index = std::clamp(toxicity.value() / 10, 0, 11);
-  return kToxDescriptions[index];
+  return TOX_DESCRIPTIONS[index];
 }
 
 std::string_view stability_label(int pct) {

@@ -1259,7 +1259,7 @@ void test_mirror_aim_and_formatting_helpers() {
     test::expect_eq(mirror->aimed_ship(), std::nullopt);
     test::expect_false(
         ctx.em.resolve_mirror_target_coordinates(*mirror).has_value());
-    test::expect_eq(ctx.em.resolve_mirror_aim_direction(*mirror), 0);
+    test::expect_eq(ctx.em.resolve_mirror_aim_direction(*mirror), 0u);
 
     // Aimed at star 1 and planet (1,1)
     mirror->aim_at_star(1);
@@ -1290,22 +1290,25 @@ void test_mirror_aim_and_formatting_helpers() {
       return ctx.em.resolve_mirror_aim_direction(*mirror);
     };
 
-    test::expect_eq(check_heading(0.0, -10.0), 0);  // North (xt == x, yt < y)
-    test::expect_eq(check_heading(0.0, 10.0), 4);   // South (xt == x, yt > y)
-    test::expect_eq(check_heading(10.0, 0.0), 2);   // East  (yt == y, xt > x)
-    test::expect_eq(check_heading(-10.0, 0.0), 6);  // West  (yt == y, xt < x)
-    test::expect_eq(check_heading(1.0, 10.0), 4);   // Positive dy, steep slope
-    test::expect_eq(check_heading(10.0, 10.0), 3);  // SE (slope = 1.0)
-    test::expect_eq(check_heading(10.0, 1.0), 2);   // E-SE (0 < slope < 0.414)
-    test::expect_eq(check_heading(-10.0, 1.0), 6);  // W-SW (-0.414 < slope < 0)
-    test::expect_eq(check_heading(-10.0, 10.0), 5);  // SW (slope = -1.0)
-    test::expect_eq(check_heading(1.0, -10.0), 0);   // Negative dy, steep slope
+    test::expect_eq(check_heading(0.0, -10.0), 0u);  // North (xt == x, yt < y)
+    test::expect_eq(check_heading(0.0, 10.0), 4u);   // South (xt == x, yt > y)
+    test::expect_eq(check_heading(10.0, 0.0), 2u);   // East  (yt == y, xt > x)
+    test::expect_eq(check_heading(-10.0, 0.0), 6u);  // West  (yt == y, xt < x)
+    test::expect_eq(check_heading(1.0, 10.0), 4u);   // Positive dy, steep slope
+    test::expect_eq(check_heading(10.0, 10.0), 3u);  // SE (slope = 1.0)
+    test::expect_eq(check_heading(10.0, 1.0), 2u);   // E-SE (0 < slope < 0.414)
+    test::expect_eq(check_heading(-10.0, 1.0),
+                    6u);  // W-SW (-0.414 < slope < 0)
+    test::expect_eq(check_heading(-10.0, 10.0), 5u);  // SW (slope = -1.0)
+    test::expect_eq(check_heading(1.0, -10.0), 0u);  // Negative dy, steep slope
     test::expect_eq(check_heading(-10.0, -10.0),
-                    7);                              // NW (slope = 1.0, yt < y)
-    test::expect_eq(check_heading(-10.0, -1.0), 6);  // W-NW (0 < slope < 0.414)
-    test::expect_eq(check_heading(10.0, -1.0), 2);  // E-NE (-0.414 < slope < 0)
+                    7u);  // NW (slope = 1.0, yt < y)
+    test::expect_eq(check_heading(-10.0, -1.0),
+                    6u);  // W-NW (0 < slope < 0.414)
+    test::expect_eq(check_heading(10.0, -1.0),
+                    2u);  // E-NE (-0.414 < slope < 0)
     test::expect_eq(check_heading(10.0, -10.0),
-                    1);  // NE (slope = -1.0, yt < y)
+                    1u);  // NE (slope = -1.0, yt < y)
   });
 
   // Verify kill_ship clears any SpaceMirrorShip aimed at the destroyed ship to

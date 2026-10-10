@@ -1602,7 +1602,8 @@ EntityManager::resolve_mirror_target_coordinates(
   }
 }
 
-int EntityManager::resolve_mirror_aim_direction(const SpaceMirrorShip& mirror) {
+bearing_t
+EntityManager::resolve_mirror_aim_direction(const SpaceMirrorShip& mirror) {
   const auto target_coords = resolve_mirror_target_coordinates(mirror);
   if (!target_coords) {
     return 0;

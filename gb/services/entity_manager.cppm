@@ -445,7 +445,8 @@ public:
   void kill_ship(player_t destroyer, Ship& ship);
   [[nodiscard]] std::optional<UniverseCoordinates>
   resolve_mirror_target_coordinates(const SpaceMirrorShip& mirror);
-  [[nodiscard]] int resolve_mirror_aim_direction(const SpaceMirrorShip& mirror);
+  [[nodiscard]] bearing_t
+  resolve_mirror_aim_direction(const SpaceMirrorShip& mirror);
 
   // Docking & Mooring operations (service layer)
   [[nodiscard]] std::expected<void, DockError>

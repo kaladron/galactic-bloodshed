@@ -482,4 +482,47 @@ std::string render_for_mode(UiMode mode, const TechStatusViewModel& vm) {
                               : render_tech_status(vm);
 }
 
+std::string render_examine(const ExamineViewModel& vm) {
+  std::string out;
+  if (!vm.description.empty()) {
+    std::format_to(std::back_inserter(out), "\n{}", vm.description);
+    if (!vm.description.ends_with('\n')) {
+      out.push_back('\n');
+    }
+  }
+  if (vm.has_switch) {
+    out += "This device has an on/off switch that can be set with order.\n";
+  }
+  if (vm.irradiated) {
+    out += "This device has been irradiated;\n"
+           "Its crew is dying and it cannot move for the time being.\n";
+  }
+  return out;
+}
+
+std::string render_json_examine(const ExamineViewModel& vm) {
+  return render_json_envelope("examine", vm);
+}
+
+std::string render_for_mode(UiMode mode, const ExamineViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_examine(vm) : render_examine(vm);
+}
+
+std::string render_dump(const DumpViewModel& vm) {
+  std::string out;
+  for (const auto& err : vm.errors) {
+    out += err;
+  }
+  out += "Exploration Data transferred.\n";
+  return out;
+}
+
+std::string render_json_dump(const DumpViewModel& vm) {
+  return render_json_envelope("dump", vm);
+}
+
+std::string render_for_mode(UiMode mode, const DumpViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_dump(vm) : render_dump(vm);
+}
+
 }  // namespace GB::presentation

@@ -6,6 +6,7 @@
 module;
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import std;
 
@@ -37,6 +38,10 @@ bool dump(const command_t& argv, GameObj& g) {
     return false;
   }
 
+  GB::presentation::DumpViewModel vm{
+      .recipient = recipient_id,
+  };
+
   // Transfer all planet and star knowledge to the recipient
   if (argv.size() < 3) {
     for (auto current_star_handle : StarList(g.entity_manager)) {
@@ -48,7 +53,7 @@ bool dump(const command_t& argv, GameObj& g) {
       auto where =
           Place::resolve(g.entity_manager, g.scope_context(), place_arg, true);
       if (!where) {
-        g.out << format_place_error(where.error());
+        vm.errors.push_back(format_place_error(where.error()));
       } else if (where->level != ScopeLevel::LEVEL_UNIV &&
                  where->level != ScopeLevel::LEVEL_SHIP) {
         g.entity_manager.mutate_star(where->snum, [&](Star& current_star) {
@@ -62,7 +67,7 @@ bool dump(const command_t& argv, GameObj& g) {
   warn_race(g.session_registry, g.entity_manager, recipient_id,
             std::format("{} [{}] has given you exploration data.\n",
                         g.race->name, donor_id));
-  g.out << "Exploration Data transferred.\n";
+  g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
   return true;
 }
 

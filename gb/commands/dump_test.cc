@@ -155,11 +155,20 @@ void test_dump_specific_places() {
   test::expect_contains(g.out.str(), "Exploration Data transferred");
   test::expect_true(ctx.em.peek_planet(1, 1)->info(player_t{2}).explored);
 
-  // 3. Dump with universe, ship, and invalid scopes (safely ignored)
+  // 3. Dump with universe, valid ship (#1), and invalid scopes (safely ignored)
+  TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+      .owned_by(1)
+      .in_deep_space()
+      .build();
   g.out.str("");
   ctx.assert_dispatch_success(
-      g, {"dump", "Klingons", "/", "#100", "/NonExistentStar"}, 10);
+      g, {"dump", "Klingons", "/", "#1", "/NonExistentStar"}, 10);
   test::expect_contains(g.out.str(), "Exploration Data transferred");
+
+  // 4. JSON mode
+  g.set_ui_mode(UiMode::JSON);
+  ctx.assert_dispatch_success(g, {"dump", "Klingons", "/Sol"}, 10);
+  test::expect_contains(g.out.str(), "\"type\":\"dump\"");
 }
 
 void test_dump_matrix() {

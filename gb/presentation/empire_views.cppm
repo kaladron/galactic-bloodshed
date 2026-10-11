@@ -362,4 +362,40 @@ render_json_tech_status(const TechStatusViewModel& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const TechStatusViewModel& vm);
 
+/// View model for `examine` command output.
+struct ExamineViewModel {
+  shipnum_t shipno{0};
+  ShipType ship_type{ShipType::STYPE_POD};
+  std::string description{};
+  bool has_switch{false};
+  bool irradiated{false};
+};
+
+/// Renders an `ExamineViewModel` for `UiMode::ASCII`.
+[[nodiscard]] std::string render_examine(const ExamineViewModel& vm);
+
+/// Serializes an `ExamineViewModel` into a newline-delimited Glaze JSON
+/// envelope (`{"type":"examine","data":{...}}\n`).
+[[nodiscard]] std::string render_json_examine(const ExamineViewModel& vm);
+
+/// Dispatches `ExamineViewModel` rendering based on `mode`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const ExamineViewModel& vm);
+
+/// View model for `dump` command output.
+struct DumpViewModel {
+  player_t recipient{0};
+  std::vector<std::string> errors{};
+};
+
+/// Renders a `DumpViewModel` for `UiMode::ASCII`.
+[[nodiscard]] std::string render_dump(const DumpViewModel& vm);
+
+/// Serializes a `DumpViewModel` into a newline-delimited Glaze JSON
+/// envelope (`{"type":"dump","data":{...}}\n`).
+[[nodiscard]] std::string render_json_dump(const DumpViewModel& vm);
+
+/// Dispatches `DumpViewModel` rendering based on `mode`.
+[[nodiscard]] std::string render_for_mode(UiMode mode, const DumpViewModel& vm);
+
 }  // namespace GB::presentation

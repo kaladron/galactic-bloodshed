@@ -7,6 +7,7 @@ module;
 
 import std;
 import gb.entities;
+import gb.presentation;
 import gb.services;
 
 module commands;
@@ -15,71 +16,49 @@ namespace GB::commands {
 bool examine(const command_t& argv, GameObj& g) {
   const ap_t APcount = 0;
 
-  if (argv.size() < 2) {
-    g.out << "Examine what?\n";
-    return false;
-  }
-
   auto shipno = string_to_shipnum(argv[1]);
-
   if (!shipno) {
     return false;
   }
 
+  const Ship* ship = nullptr;
   try {
-    bool ok = false;
-    g.entity_manager.mutate_ship(*shipno, [&](Ship& ship) {
-      if (!ship.alive()) {
-        g.out << "that ship is dead.\n";
-        return;
-      }
-      if (ship.whatorbits() == ScopeLevel::LEVEL_UNIV) {
-        g.out << "That ship it not visible to you.\n";
-        return;
-      }
-      bool visible =
-          g.entity_manager.with_star(ship.storbits(), [&](const Star& star) {
-            return star.is_inhabited_by(g.player());
-          });
-      if (!visible) {
-        g.out << "That ship it not visible to you.\n";
-        return;
-      }
-
-      g.entity_manager.with_ship_exam(ship.type(), [&](const ShipExam& exam) {
-        if (!exam.description.empty()) {
-          g.out << "\n" << exam.description;
-          if (!exam.description.ends_with('\n')) {
-            g.out << "\n";
-          }
-        }
-      });
-
-      if (!ship.examined()) {
-        if (ship.whatorbits() == ScopeLevel::LEVEL_UNIV) {
-          g.deduct_univ_ap(APcount);
-        } else {
-          g.deduct_ap(ship.storbits(), APcount);
-        }
-
-        ship.examined() = 1;
-      }
-
-      if (ship.has_switch()) {
-        g.out
-            << "This device has an on/off switch that can be set with order.\n";
-      }
-      if (!ship.active()) {
-        g.out << "This device has been irradiated;\n";
-        g.out << "Its crew is dying and it cannot move for the time being.\n";
-      }
-      ok = true;
-    });
-    return ok;
+    ship = g.entity_manager.peek_ship(*shipno);
   } catch (const EntityNotFoundError&) {
     g.out << "Ship not found.\n";
     return false;
   }
+
+  if (ship->whatorbits() == ScopeLevel::LEVEL_UNIV) {
+    g.out << "That ship it not visible to you.\n";
+    return false;
+  }
+  const bool visible =
+      g.entity_manager.with_star(ship->storbits(), [&](const Star& star) {
+        return star.is_inhabited_by(g.player());
+      });
+  if (!visible) {
+    g.out << "That ship it not visible to you.\n";
+    return false;
+  }
+
+  GB::presentation::ExamineViewModel vm{
+      .shipno = *shipno,
+      .ship_type = ship->type(),
+      .has_switch = ship->has_switch(),
+      .irradiated = !ship->active(),
+  };
+  g.entity_manager.with_ship_exam(ship->type(), [&](const ShipExam& exam) {
+    vm.description = exam.description;
+  });
+
+  if (!ship->examined()) {
+    g.deduct_ap(ship->storbits(), APcount);
+    g.entity_manager.mutate_ship(*shipno, [](Ship& s) { s.examined() = 1; });
+  }
+
+  g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
+  return true;
 }
 
 const CommandDescriptor examine_cmd{

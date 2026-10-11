@@ -321,4 +321,34 @@ std::string render_for_mode(UiMode mode, const OrderUpdate& vm) {
   return render_order_update(vm);
 }
 
+std::string render_proj_fuel(const ProjFuelViewModel& vm) {
+  std::string out = std::format(
+      "\n  ----- ===== FUEL ESTIMATES ===== ----\n\nAt Current Fuel "
+      "Cargo ({:.2f}f):\n",
+      vm.current_fuel_cargo);
+  if (!vm.current_estimate) {
+    out += "The ship will not be able to complete the trip.\n";
+  } else {
+    out += render_trip_estimate(*vm.current_estimate);
+  }
+
+  std::format_to(std::back_inserter(out), "At Optimum Fuel Level ({:.2f}f):\n",
+                 vm.optimum_fuel_level);
+  if (!vm.optimum_estimate) {
+    out += "The ship will not be able to complete the trip.\n";
+  } else {
+    out += render_trip_estimate(*vm.optimum_estimate);
+  }
+  return out;
+}
+
+std::string render_json_proj_fuel(const ProjFuelViewModel& vm) {
+  return render_json_envelope("fuel", vm);
+}
+
+std::string render_for_mode(UiMode mode, const ProjFuelViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_proj_fuel(vm)
+                              : render_proj_fuel(vm);
+}
+
 }  // namespace GB::presentation

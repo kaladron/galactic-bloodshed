@@ -8,7 +8,6 @@ module;
 import gb.entities;
 import gb.mechanics;
 import gb.presentation.navigation;
-import gb.presentation.planet_views;
 import gb.services;
 import std;
 
@@ -35,7 +34,7 @@ struct FuelSimulationResult {
  * projection.
  */
 const Ship* validate_fuel_ship(const command_t& argv, GameObj& g) {
-  if (argv.size() < 2 || argv.size() > 3) {
+  if (argv.size() > 3) {
     g.out << "Invalid number of options.\n\"fuel #<shipnumber> "
              "[destination]\"...\n";
     return nullptr;
@@ -103,10 +102,6 @@ resolve_fuel_trip_target(const command_t& argv, GameObj& g, const Ship& ship) {
       return std::nullopt;
     }
     tmpdest = *resolved;
-  }
-  if (tmpdest.err) {
-    g.out << "fuel:  bad scope.\n";
-    return std::nullopt;
   }
   if (tmpdest.level == ScopeLevel::LEVEL_UNIV) {
     g.out << (argv.size() == 2
@@ -194,37 +189,33 @@ FuelSimulationResult simulate_optimal_fuel(const Ship& ship,
 }
 
 /**
- * @brief Format and print current-cargo and optimum-level fuel estimates.
+ * @brief Build current-cargo and optimum-level fuel projection view model.
  */
-void render_fuel_projections(GameObj& g, const Ship& ship,
-                             const FuelTripTarget& target,
-                             const FuelSimulationResult& current_res,
-                             const FuelSimulationResult& opt_res) {
+GB::presentation::ProjFuelViewModel
+build_fuel_projections(EntityManager& em, const Ship& ship,
+                       const FuelTripTarget& target,
+                       const FuelSimulationResult& current_res,
+                       const FuelSimulationResult& opt_res) {
   SimulatedShip tmpship(ship);
-  g.out << std::format(
-      "\n  ----- ===== FUEL ESTIMATES ===== ----\n\nAt Current Fuel "
-      "Cargo ({:.2f}f):\n",
-      tmpship.fuel());
-  domass(tmpship, g.entity_manager);
-  if (!current_res.can_complete) {
-    g.out << "The ship will not be able to complete the trip.\n";
-  } else {
-    g.present(compute_trip_estimate(
-        g.entity_manager, target.dist, current_res.fuel_used,
-        target.gravity_factor, tmpship.mass(), current_res.segments,
-        target.launch_planet_name));
+  GB::presentation::ProjFuelViewModel vm{
+      .current_fuel_cargo = tmpship.fuel(),
+      .optimum_fuel_level = opt_res.fuel_used,
+  };
+  domass(tmpship, em);
+  if (current_res.can_complete) {
+    vm.current_estimate = compute_trip_estimate(
+        em, target.dist, current_res.fuel_used, target.gravity_factor,
+        tmpship.mass(), current_res.segments, target.launch_planet_name);
   }
 
-  g.out << std::format("At Optimum Fuel Level ({:.2f}f):\n", opt_res.fuel_used);
-  if (!opt_res.can_complete) {
-    g.out << "The ship will not be able to complete the trip.\n";
-  } else {
+  if (opt_res.can_complete) {
     tmpship.set_simulated_fuel(opt_res.fuel_used);
-    domass(tmpship, g.entity_manager);
-    g.present(compute_trip_estimate(
-        g.entity_manager, target.dist, opt_res.fuel_used, target.gravity_factor,
-        tmpship.mass(), opt_res.segments, target.launch_planet_name));
+    domass(tmpship, em);
+    vm.optimum_estimate = compute_trip_estimate(
+        em, target.dist, opt_res.fuel_used, target.gravity_factor,
+        tmpship.mass(), opt_res.segments, target.launch_planet_name);
   }
+  return vm;
 }
 
 }  // namespace
@@ -257,7 +248,8 @@ bool proj_fuel(const command_t& argv, GameObj& g) {
 
   const FuelSimulationResult opt_res =
       simulate_optimal_fuel(*ship, target, g.entity_manager);
-  render_fuel_projections(g, *ship, target, current_res, opt_res);
+  g.present(build_fuel_projections(g.entity_manager, *ship, target, current_res,
+                                   opt_res));
   return true;
 }
 

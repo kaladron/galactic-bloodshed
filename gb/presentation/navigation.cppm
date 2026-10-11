@@ -54,4 +54,23 @@ render_ship_order_status(const ShipOrderStatus& status);
 /// Open ADL dispatch for `OrderUpdate`.
 [[nodiscard]] std::string render_for_mode(UiMode mode, const OrderUpdate& vm);
 
+/// View model for `fuel` (`proj_fuel`) command reports.
+struct ProjFuelViewModel {
+  double current_fuel_cargo{0.0};
+  std::optional<TripEstimate> current_estimate{std::nullopt};
+  double optimum_fuel_level{0.0};
+  std::optional<TripEstimate> optimum_estimate{std::nullopt};
+};
+
+/// Formats a `ProjFuelViewModel` into its ASCII presentation string.
+[[nodiscard]] std::string render_proj_fuel(const ProjFuelViewModel& vm);
+
+/// Serializes a `ProjFuelViewModel` into a newline-delimited Glaze JSON
+/// envelope (`{"type":"fuel","data":{...}}\n`).
+[[nodiscard]] std::string render_json_proj_fuel(const ProjFuelViewModel& vm);
+
+/// Open ADL dispatch for `ProjFuelViewModel`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const ProjFuelViewModel& vm);
+
 }  // namespace GB::presentation

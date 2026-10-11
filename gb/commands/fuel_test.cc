@@ -53,15 +53,17 @@ void test_fuel_matrix() {
   ctx.assert_dispatch_rejected(g, {"fuel", "#1", "/Vega", "extra"});
   test::expect_contains(g.out.str(), "Invalid number of options");
 
-  // 4. Non-numeric #ship (verifies no nullopt dereference crash)
+  // 4. Non-numeric #ship and #0 (verifies no nullopt dereference crash)
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"fuel", "#abc", "/Vega"});
   test::expect_contains(g.out.str(), "rst: no such ship #abc");
+  ctx.assert_dispatch_rejected(g, {"fuel", "#0", "/Vega"});
+  test::expect_contains(g.out.str(), "rst: no such ship #0");
 
   // 5. Unowned ship, landed ship without destination, stationary ship, factory
   shipnum_t enemy_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
                              .owned_by(2, 1)
-                             .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
+                             .in_star_orbit(1, SystemCoordinates{50.0, 0.0})
                              .with_speed(2)
                              .build();
   g.out.str("");
@@ -87,6 +89,18 @@ void test_fuel_matrix() {
   g.out.str("");
   ctx.assert_dispatch_success(
       g, {"fuel", std::format("#{}", landed_ship.value), "/Vega/Vega Prime"});
+  test::expect_contains(g.out.str(), "FUEL ESTIMATES");
+
+  // Docked ship (is_landed() == true, whatorbits() == LEVEL_SHIP) & same-star
+  // planet destination (/Sol/Earth)
+  shipnum_t docked_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+                              .owned_by(1, 1)
+                              .docked_to(ship_num, 1)
+                              .with_speed(2)
+                              .with_fuel(100.0)
+                              .build();
+  ctx.assert_dispatch_success(
+      g, {"fuel", std::format("#{}", docked_ship.value), "/Sol/Earth"});
   test::expect_contains(g.out.str(), "FUEL ESTIMATES");
 
   shipnum_t stopped_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
@@ -139,6 +153,44 @@ void test_fuel_matrix() {
       g, {"fuel", std::format("#{}", ship_num.value), "/Vega/Vega Prime"});
   test::expect_contains(g.out.str(),
                         "You haven't explored the destination system.");
+
+  // 7. LEVEL_SHIP destinations (in-range owned, out-of-range, foreign, missing)
+  //    plus insufficient fuel / max_fuel and JSON mode
+  shipnum_t near_target = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+                              .owned_by(1, 1)
+                              .in_star_orbit(1, SystemCoordinates{50.0, 0.0})
+                              .build();
+  ctx.assert_dispatch_success(g, {"fuel", std::format("#{}", ship_num.value),
+                                  std::format("#{}", near_target.value)});
+
+  ctx.assert_dispatch_rejected(g, {"fuel", std::format("#{}", ship_num.value),
+                                   std::format("#{}", docked_ship.value)});
+  test::expect_contains(g.out.str(), "The ship's destination is out of range.");
+
+  ctx.em.mutate_ship(ship_num,
+                     [&](Ship& s) { s.set_ship_destination(enemy_ship); });
+  ctx.assert_dispatch_rejected(g, {"fuel", std::format("#{}", ship_num.value)});
+  test::expect_contains(g.out.str(), "Nice try.");
+  ctx.em.mutate_ship(ship_num,
+                     [&](Ship& s) { s.set_ship_destination(near_target); });
+
+  shipnum_t no_fuel_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+                               .owned_by(1, 1)
+                               .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
+                               .with_speed(2)
+                               .with_fuel(0.0)
+                               .with_max_fuel(0.0)
+                               .build();
+  ctx.assert_dispatch_success(g,
+                              {"fuel", std::format("#{}", no_fuel_ship.value),
+                               std::format("#{}", near_target.value)});
+  test::expect_contains(g.out.str(),
+                        "The ship will not be able to complete the trip.");
+
+  g.set_ui_mode(UiMode::JSON);
+  ctx.assert_dispatch_success(
+      g, {"fuel", std::format("#{}", ship_num.value), "/Vega"});
+  test::expect_contains(g.out.str(), "\"type\":\"fuel\"");
 
   ctx.verify_universe_invariants();
 }

@@ -4,7 +4,6 @@
 /// \brief Unit tests for who command.
 
 import commands;
-import dallib;
 import gb.entities;
 import gb.services;
 import test;
@@ -17,41 +16,29 @@ void test_who_matrix() {
   RecordingSessionRegistry mock_registry;
   GameObj g(ctx.em, mock_registry);
 
-  // 1. Setup races and stars
-  Race race1{};
-  race1.Playernum = 1;
-  race1.name = "Federation";
-  race1.leader().name = "Kirk";
-  race1.leader().toggle.invisible = false;
-  race1.leader().toggle.gag = false;
+  TestWorldBuilder(ctx)
+      .add_race("Federation", 50.0, false, player_t{1})
+      .add_race("Klingons", 50.0, false, player_t{2})
+      .add_race("Deity", 50.0, false, player_t{3});
 
-  Race race2{};
-  race2.Playernum = 2;
-  race2.name = "Klingons";
-  race2.leader().name = "Kang";
-  race2.leader().toggle.invisible = true;  // invisible player
-  race2.leader().toggle.gag = true;
+  ctx.em.mutate_race(player_t{1}, [](Race& race1) {
+    race1.leader().name = "Kirk";
+    race1.leader().toggle.invisible = false;
+    race1.leader().toggle.gag = false;
+  });
 
-  Race god_race{};
-  god_race.Playernum = 3;
-  god_race.name = "Deity";
-  god_race.God = true;
-  god_race.leader().name = "Admin";
+  ctx.em.mutate_race(player_t{2}, [](Race& race2) {
+    race2.leader().name = "Kang";
+    race2.leader().toggle.invisible = true;
+    race2.leader().toggle.gag = true;
+  });
 
-  {
-    JsonStore store(ctx.db);
-    RaceRepository races(store);
-    races.save(race1);
-    races.save(race2);
-    races.save(god_race);
+  ctx.em.mutate_race(player_t{3}, [](Race& god_race) {
+    god_race.God = true;
+    god_race.leader().name = "Admin";
+  });
 
-    StarRepository stars(store);
-    star_struct sdata{};
-    sdata.star_id = 1;
-    sdata.name = "Sol";
-    Star star{sdata};
-    stars.save(star);
-  }
+  ctx.create_star("Sol", starnum_t{1}).build();
 
   std::time_t now = std::time(nullptr);
   mock_registry.sessions = {
@@ -124,7 +111,17 @@ void test_who_matrix() {
   test::expect_contains(out, "Sol");
   test::expect_contains(out, "INVISIBLE");
 
-  // --- Case 4: Scope Testing (Works across all scopes: UNIV, STAR, PLAN, SHIP)
+  // --- Case 4: JSON mode rendering ---
+  g.set_ui_mode(UiMode::JSON);
+  test::expect_true(
+      GB::commands::dispatch_command(g, GB::commands::who_cmd, {"who"}));
+  out = g.out.str();
+  test::expect_contains(out, "\"type\":\"who\"");
+  test::expect_contains(out, "\"governor_name\":\"Kirk\"");
+  test::expect_contains(out, "\"star_name\":\"Sol\"");
+  g.set_ui_mode(UiMode::ASCII);
+
+  // --- Case 5: Scope Testing (Works across all scopes: UNIV, STAR, PLAN, SHIP)
   // ---
   for (auto scope : {ScopeLevel::LEVEL_UNIV, ScopeLevel::LEVEL_STAR,
                      ScopeLevel::LEVEL_PLAN, ScopeLevel::LEVEL_SHIP}) {

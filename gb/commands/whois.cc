@@ -6,24 +6,34 @@
 module;
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import std;
 
 module commands;
 
 namespace {
-void display_whois(GameObj& g, player_t j) {
+GB::presentation::WhoisEntry build_whois_entry(GameObj& g, player_t target) {
   try {
-    g.entity_manager.with_race(j, [&](const Race& race) {
-      if (j == g.player()) {
-        g.out << std::format("[{:2d}, {}] {} \"{}\"\n", j, g.governor(),
-                             race.name, race.governor(g.governor()).name);
-      } else {
-        g.out << std::format("[{:2d}] {}\n", j, race.name);
+    return g.entity_manager.with_race(target, [&](const Race& race) {
+      if (target == g.player()) {
+        return GB::presentation::WhoisEntry{
+            .player = target,
+            .governor = g.governor(),
+            .race_name = race.name,
+            .governor_name = race.governor(g.governor()).name,
+        };
       }
+      return GB::presentation::WhoisEntry{
+          .player = target,
+          .race_name = race.name,
+      };
     });
   } catch (const EntityNotFoundError&) {
-    g.out << std::format("Race #{} not found.\n", j);
+    return GB::presentation::WhoisEntry{
+        .player = target,
+        .error = std::format("Race #{} not found.", target),
+    };
   }
 }
 }  // namespace
@@ -31,21 +41,26 @@ void display_whois(GameObj& g, player_t j) {
 namespace GB::commands {
 
 bool whois(const command_t& argv, GameObj& g) {
+  GB::presentation::WhoisViewModel vm{};
   if (argv.size() <= 1) {
-    display_whois(g, g.player());
+    vm.entries.push_back(build_whois_entry(g, g.player()));
+    g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
     return true;
   }
 
   for (const auto& player_str :
        std::ranges::subrange(argv.begin() + 1, argv.end())) {
-    player_t j = get_player(g.entity_manager, player_str);
-    if (j == player_t{0}) {
-      g.out << std::format("Identify: Invalid player {}. Try again.\n",
-                           player_str);
+    const player_t target = get_player(g.entity_manager, player_str);
+    if (target == player_t{0}) {
+      vm.entries.push_back(GB::presentation::WhoisEntry{
+          .error = std::format("Identify: Invalid player {}. Try again.",
+                               player_str),
+      });
       continue;
     }
-    display_whois(g, j);
+    vm.entries.push_back(build_whois_entry(g, target));
   }
+  g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
   return true;
 }
 

@@ -6,24 +6,22 @@
 module;
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
-import tabulate;
 import std;
-#undef stdout
 
 module commands;
 
 namespace GB::commands {
 
 bool who(const command_t&, GameObj& g) {
-  std::time_t now = std::time(nullptr);
-  bool is_god = g.god();
-  int coward_count = 0;
+  const std::time_t now = std::time(nullptr);
+  const bool is_god = g.god();
 
-  g.out << std::format("Current Players: {}", std::ctime(&now));
-
-  tabulate::Table table;
-  table.add_row({"Race", "Governor", "Player", "Idle", "Star", "Flags"});
+  GB::presentation::WhoViewModel vm{
+      .now = now,
+      .show_cowards = SHOW_COWARDS,
+  };
 
   // Get all connected sessions as metadata (no Session type exposure)
   for (const auto& info : g.session_registry.get_connected_sessions()) {
@@ -32,47 +30,33 @@ bool who(const command_t&, GameObj& g) {
     g.entity_manager.with_race(info.player, [&](const Race& r) {
       const auto& gov = r.governor(info.governor);
       // Check if this player should be visible
-      bool is_visible =
+      const bool is_visible =
           !gov.toggle.invisible || info.player == g.player() || is_god;
 
       if (is_visible) {
-        std::string gov_name = std::format("\"{}\"", gov.name);
         std::string star_name;
         if (is_god) {
           g.entity_manager.with_star(info.snum, [&](const Star& star) {
             star_name = star.get_name();
           });
         }
-        std::time_t idle_seconds = now - info.last_time;
-        std::string player_gov =
-            std::format("[{},{}]", info.player, info.governor);
-        std::string idle_str = std::format("{}s", idle_seconds);
-
-        std::vector<std::string> flags;
-        if (gov.toggle.gag) flags.push_back("GAG");
-        if (gov.toggle.invisible) flags.push_back("INVISIBLE");
-        std::string flags_str;
-        for (std::size_t i = 0; i < flags.size(); ++i) {
-          if (i > 0) flags_str += " ";
-          flags_str += flags[i];
-        }
-
-        table.add_row(
-            {r.name, gov_name, player_gov, idle_str, star_name, flags_str});
-      } else if (!is_god) {
-        coward_count++;  // Non-God player sees someone invisible
+        vm.rows.push_back(GB::presentation::WhoRow{
+            .race_name = r.name,
+            .governor_name = gov.name,
+            .player = info.player,
+            .governor = info.governor,
+            .idle_seconds = now - info.last_time,
+            .star_name = std::move(star_name),
+            .gag = gov.toggle.gag,
+            .invisible = gov.toggle.invisible,
+        });
+      } else {
+        vm.coward_count++;
       }
     });
   }
 
-  g.out << table << "\n";
-
-  if (SHOW_COWARDS) {
-    g.out << std::format("And {} coward{}.\n", coward_count,
-                         (coward_count == 1) ? "" : "s");
-  } else {
-    g.out << "Finished.\n";
-  }
+  g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
   return true;
 }
 

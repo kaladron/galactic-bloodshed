@@ -4,7 +4,6 @@
 /// \brief Test profile command functionality and reporting via
 /// CommandDescriptor.
 
-import dallib;
 import gb.entities;
 import gb.services;
 import test;
@@ -30,7 +29,6 @@ void test_profile_dispatch() {
   ctx.setup_game_obj(g, 1, 1);
 
   // 1. Profile for self (default baseline: capital #100, normal race, mortal)
-  g.out.str("");
   ctx.assert_dispatch_success(g, {"profile"});
   std::string out = g.out.str();
   test::expect_contains(out, "Racial profile for Federation");
@@ -58,7 +56,6 @@ void test_profile_dispatch() {
     r.discoveries.wormhole = true;
   });
 
-  g.out.str("");
   ctx.assert_dispatch_success(g, {"profile"});
   out = g.out.str();
   test::expect_contains(out, "*** Diety Status ***");
@@ -81,14 +78,13 @@ void test_profile_dispatch() {
   // 3. Profile for other player by name with high translation (> 80)
   ctx.em.mutate_race(1, [](Race& r) {
     r.God = false;
-    r.translate[player_t{2}] = 90;
+    r.translate[player_t{2}] = Percentage{90};
   });
   ctx.em.mutate_race(2, [](Race& r) {
     r.info = "Warrior empire";
     r.likesbest = SectorType::SEC_MOUNT;
   });
 
-  g.out.str("");
   ctx.assert_dispatch_success(g, {"profile", "Klingons"});
   out = g.out.str();
   test::expect_contains(out, "Race report on Klingons");
@@ -99,9 +95,9 @@ void test_profile_dispatch() {
                "    ✓ Other player profile (translate > 80) verified");
 
   // 4. Profile for other player with low translation (<= 50)
-  ctx.em.mutate_race(1, [](Race& r) { r.translate[player_t{2}] = 30; });
+  ctx.em.mutate_race(
+      1, [](Race& r) { r.translate[player_t{2}] = Percentage{30}; });
 
-  g.out.str("");
   ctx.assert_dispatch_success(g, {"profile", "2"});
   out = g.out.str();
   test::expect_contains(out, "Race report on Klingons");
@@ -110,23 +106,47 @@ void test_profile_dispatch() {
   std::println(std::cout,
                "    ✓ Other player profile (translate <= 50) verified");
 
-  // 5. Profile for other player with mutual deity status
+  // 5. Profile for other player when viewer is God and target is mortal
+  // Metamorph (race.God && !r.God)
   ctx.em.mutate_race(1, [](Race& r) { r.God = true; });
+  ctx.em.mutate_race(2, [](Race& r) {
+    r.God = false;
+    r.Metamorph = true;
+  });
+
+  ctx.assert_dispatch_success(g, {"profile", "2"});
+  out = g.out.str();
+  test::expect_false(out.contains("*** Deity Status ***"));
+  test::expect_contains(out, "Metamorphic Race");
+  std::println(std::cout,
+               "    ✓ God viewing mortal Metamorph race profile verified");
+
+  // 6. Profile for other player with mutual deity status (race.God && r.God)
   ctx.em.mutate_race(2, [](Race& r) { r.God = true; });
 
-  g.out.str("");
   ctx.assert_dispatch_success(g, {"profile", "2"});
   out = g.out.str();
   test::expect_contains(out, "*** Deity Status ***");
   std::println(std::cout, "    ✓ Mutual deity status verified");
 
-  // 6. Error case: non-existent player
-  g.out.str("");
+  // 7. JSON mode rendering for both self and other profile
+  g.set_ui_mode(UiMode::JSON);
+  ctx.assert_dispatch_success(g, {"profile"});
+  test::expect_contains(g.out.str(), "\"type\":\"profile_self\"");
+  test::expect_contains(g.out.str(), "\"race_name\":\"Federation\"");
+
+  ctx.assert_dispatch_success(g, {"profile", "2"});
+  test::expect_contains(g.out.str(), "\"type\":\"profile_other\"");
+  test::expect_contains(g.out.str(), "\"race_name\":\"Klingons\"");
+  g.set_ui_mode(UiMode::ASCII);
+  std::println(std::cout, "    ✓ JSON mode profile rendering verified");
+
+  // 8. Error case: non-existent player
   ctx.assert_dispatch_rejected(g, {"profile", "99"});
   test::expect_contains(g.out.str(), "Player does not exist");
   std::println(std::cout, "    ✓ Non-existent player rejected");
 
-  // 7. Command matrix validation (roles, guests, governor, scopes)
+  // 9. Command matrix validation (roles, guests, governor, scopes)
   TestCommandMatrix(ctx, "profile")
       .with_valid_argv({"profile"})
       .with_invalid_argv({"profile", "99"})

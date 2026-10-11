@@ -96,4 +96,91 @@ struct WhoisViewModel {
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const WhoisViewModel& vm);
 
+/// View model for `profile` command when inspecting one's own race.
+struct ProfileSelfViewModel {
+  std::string race_name{};
+  player_t player{0};
+  bool is_god{false};
+  std::string personal_info{};
+  std::string home_star_name{};
+  std::string home_planet_name{};
+  std::optional<shipnum_t> gov_ship{std::nullopt};
+  long morale{0};
+  turn_t updates_active{0};
+  double gun_range{0.0};
+  double space_tele_range{0.0};
+  double ground_tele_range{0.0};
+  bool is_metamorph{false};
+  fertilize_t fertilize{0};
+  birthrate_t birthrate{0.0};
+  mass_t mass{0.0};
+  fighters_t fighters{0};
+  metabolism_t metabolism{0.0};
+  sexes_t number_sexes{1};
+  adventurism_t adventurism{0.0};
+  iq_t iq{0};
+  double tech{0.0};
+  temperature_t temp{0};
+  ConditionValues conditions{};
+  SectorCompatibilities sector_compat{};
+  TechDiscoveries discoveries{};
+};
+
+/// Renders a `ProfileSelfViewModel` for `UiMode::ASCII`.
+[[nodiscard]] std::string render_profile_self(const ProfileSelfViewModel& vm);
+
+/// Serializes a `ProfileSelfViewModel` into a newline-delimited Glaze JSON
+/// envelope (`{"type":"profile_self","data":{...}}\n`).
+[[nodiscard]] std::string
+render_json_profile_self(const ProfileSelfViewModel& vm);
+
+/// Dispatches `ProfileSelfViewModel` rendering based on `mode`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const ProfileSelfViewModel& vm);
+
+/// View model for `profile <race>` command when inspecting another race.
+struct ProfileOtherViewModel {
+  std::string race_name{};
+  player_t player{0};
+  bool show_deity_status{false};
+  std::string personal_info{};
+  Percentage know{0};
+  std::optional<bool> is_metamorph{std::nullopt};
+  std::string fertilize{};
+  std::string temp{};
+  std::string birthrate{};
+  std::string methane{};
+  std::string mass{};
+  std::string oxygen{};
+  std::string gun_range{};
+  std::string fighters{};
+  std::string helium{};
+  std::string space_tele_range{};
+  std::string metabolism{};
+  std::string nitrogen{};
+  std::string ground_tele_range{};
+  std::string number_sexes{};
+  std::string co2{};
+  std::string adventurism{};
+  std::string hydrogen{};
+  std::string iq{};
+  std::string sulfur{};
+  std::string tech{};
+  std::string other{};
+  std::string morale{};
+  std::string best_sector{};
+};
+
+/// Renders a `ProfileOtherViewModel` for `UiMode::ASCII`.
+[[nodiscard]] std::string render_profile_other(const ProfileOtherViewModel& vm);
+
+/// Serializes a `ProfileOtherViewModel` into a newline-delimited Glaze JSON
+/// envelope (`{"type":"profile_other","data":{...}}\n`).
+[[nodiscard]] std::string
+render_json_profile_other(const ProfileOtherViewModel& vm);
+
+/// Dispatches `ProfileOtherViewModel` rendering based on `mode`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const ProfileOtherViewModel& vm);
+
 }  // namespace GB::presentation

@@ -251,7 +251,242 @@ void test_tactical_scope_rejection() {
 
   ctx.assert_dispatch_rejected(g_tactical, {"tactical"});
   test::expect_contains(g_tactical.out.str(), "Invalid scope for this command");
+
+  // Direct handler invocation at LEVEL_UNIV
+  g_tactical.out.str("");
+  test::expect_false(GB::commands::tactical({"tactical"}, g_tactical));
+  test::expect_contains(g_tactical.out.str(),
+                        "You can't do tactical from universe level");
+
   std::println(std::cout, "  ✓ Tactical rejected at universe level");
+}
+
+void test_tactical_combat_params_and_target_filtering() {
+  std::println(std::cout,
+               "Test: Tactical combat params, governor authorization, and "
+               "target filtering");
+
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  ctx.em.mutate_race(1, [](Race& r) {
+    r.declare_war_on(player_t{2});
+    r.declare_alliance_with(player_t{3});
+    r.appoint_governor(governor_t{2});
+  });
+
+  // Ship 1: Gov 2 firer with unfocused laser and destination-based movement
+  {
+    auto s1 = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER, 1)
+                  .owned_by(player_t{1}, governor_t{2})
+                  .named("UnfocusedFirer")
+                  .in_planet_orbit(1, 1)
+                  .with_guns(guntype_t::MEDIUM, 4)
+                  .with_crew(20, 0)
+                  .with_speed(6)
+                  .targeting_planet(1, 1)
+                  .build_handle();
+    s1->laser() = 1;
+    s1->fire_laser() = 5;
+    s1->focus() = 0;
+    s1->protect().evade = true;
+  }
+
+  // Ship 2: Gov 2 active landed firer (docked() == true, speed/evade
+  // suppressed)
+  {
+    auto s2 = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV, 2)
+                  .owned_by(player_t{1}, governor_t{2})
+                  .named("LandedFirer")
+                  .landed_on(1, 1, Coordinates{4, 5})
+                  .with_guns(guntype_t::LIGHT, 2)
+                  .with_crew(10, 0)
+                  .with_speed(4)
+                  .build_handle();
+    s2->navigate().on = 1;
+    s2->protect().evade = true;
+  }
+
+  // Ship 3: Gov 2 spaceborne inactive firer (!docked() && !active(), shows
+  // INACTIVE(rad))
+  {
+    auto s3 = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER, 3)
+                  .owned_by(player_t{1}, governor_t{2})
+                  .named("InactiveFirer")
+                  .in_planet_orbit(1, 1)
+                  .with_guns(guntype_t::MEDIUM, 4)
+                  .with_crew(20, 0)
+                  .with_speed(6)
+                  .with_active(false)
+                  .with_radiation(40)
+                  .build_handle();
+    s3->navigate().on = 1;
+    s3->protect().evade = true;
+  }
+
+  // Ship 4: Gov 2 uncrewed ship (has_sight() == false, skipped as firer)
+  TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER, 4)
+      .owned_by(player_t{1}, governor_t{2})
+      .named("BlindShip")
+      .in_planet_orbit(1, 1)
+      .with_crew(0, 0)
+      .build();
+
+  // Ship 5: Player 1 Leader's ship (unauthorized for Gov 2 -> valid target, not
+  // firer)
+  TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER, 5)
+      .owned_by(player_t{1}, governor_t{1})
+      .named("LeaderShip")
+      .in_planet_orbit(1, 1)
+      .with_crew(20, 0)
+      .build();
+
+  // Ship 6: Enemy target moving via destination (whatdest != LEVEL_UNIV,
+  // navigate == 0)
+  {
+    auto s6 = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER, 6)
+                  .owned_by(player_t{2}, governor_t{1})
+                  .named("DestTarget")
+                  .in_planet_orbit(1, 1)
+                  .with_speed(5)
+                  .targeting_planet(1, 1)
+                  .build_handle();
+    s6->protect().evade = true;
+  }
+
+  // Ship 7: Allied landed target (+, docked() == true, speed/evade suppressed)
+  {
+    auto s7 = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV, 7)
+                  .owned_by(player_t{3}, governor_t{1})
+                  .named("AlliedLanded")
+                  .landed_on(1, 1, Coordinates{2, 2})
+                  .with_speed(5)
+                  .build_handle();
+    s7->navigate().on = 1;
+    s7->protect().evade = true;
+  }
+
+  // Ship 8: Neutral spaceborne target (' ') that is inactive (!docked() &&
+  // !active())
+  {
+    auto s8 = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER, 8)
+                  .owned_by(player_t{4}, governor_t{1})
+                  .named("NeutralInact")
+                  .in_planet_orbit(1, 1)
+                  .with_speed(5)
+                  .with_active(false)
+                  .build_handle();
+    s8->navigate().on = 1;
+    s8->protect().evade = true;
+  }
+
+  // Ship 9: Greenhouse (excluded from tactical targets)
+  TestShipBuilder(ctx.em, ShipType::OTYPE_GREEN, 9)
+      .owned_by(player_t{2}, governor_t{1})
+      .named("Greenhouse")
+      .in_planet_orbit(1, 1)
+      .build();
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, player_t{1}, governor_t{2});
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(1);
+
+  ctx.assert_dispatch_success(g, {"tactical"});
+  const std::string out = g.out.str();
+
+  test::expect_contains(out, "UnfocusedFirer");
+  test::expect_contains(out, "LandedFirer");
+  test::expect_contains(out, "(4,5)");
+  test::expect_contains(out, "INACTIVE(40)");
+  test::expect_false(out.contains("BlindShip"),
+                     "Uncrewed ship without sight should not report tactical");
+  test::expect_contains(out, "LeaderShip",
+                        "Same-race ship owned by another governor is a target");
+  test::expect_contains(out, "DestTarget");
+  test::expect_contains(out, "AlliedLanded");
+  test::expect_contains(out, "+3,1");
+  test::expect_contains(out, "NeutralInact");
+  test::expect_false(out.contains("Greenhouse"),
+                     "OTYPE_GREEN should be excluded from targets");
+
+  std::println(std::cout, "  ✓ Combat params and target filtering verified");
+}
+
+void test_tactical_orbits_and_argument_edge_cases() {
+  std::println(std::cout, "Test: Tactical orbital scopes and argument edges");
+
+  TestContext ctx;
+  setup_test_universe(ctx);
+
+  // Add second planet on Star 1 with 0 sectors owned and unexplored by Player 1
+  ctx.create_planet(1, PlanetType::MARS, Coordinates{5, 5}, 2)
+      .named("Mars")
+      .with_position(SystemCoordinates{100.0, 0.0})
+      .with_explored(player_t{1}, false)
+      .build();
+
+  // Ship 6: Player 1 ship in star orbit
+  TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER, 6)
+      .owned_by(player_t{1}, governor_t{1})
+      .named("StarOrbitShip")
+      .in_star_orbit(1, SystemCoordinates{100.0, 0.0})
+      .with_guns(guntype_t::MEDIUM, 4)
+      .with_crew(20, 0)
+      .build();
+
+  // Ship 7: Player 1 ship in deep space
+  TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER, 7)
+      .owned_by(player_t{1}, governor_t{1})
+      .named("DeepSpaceShip")
+      .in_deep_space(UniverseCoordinates{500.0, 500.0})
+      .with_guns(guntype_t::MEDIUM, 4)
+      .with_crew(20, 0)
+      .build();
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, player_t{1}, governor_t{1});
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(1);
+
+  // Numeric ship argument without '#' prefix
+  ctx.assert_dispatch_success(g, {"tactical", "2"});
+  test::expect_contains(g.out.str(), "Destroyer1");
+
+  // Multiple explicit ship arguments (star orbit + deep space)
+  ctx.assert_dispatch_success(g, {"tactical", "#6", "#7"});
+  test::expect_contains(g.out.str(), "StarOrbitShip");
+  test::expect_contains(g.out.str(), "DeepSpaceShip");
+  test::expect_contains(g.out.str(), "Mars");
+
+  // Explicit ship + ship-type filter in argv[2]
+  ctx.assert_dispatch_success(g, {"tactical", "#2", "C"});
+  test::expect_contains(g.out.str(), "EnemyCruiser");
+  test::expect_false(g.out.str().contains("EnemyTank"));
+
+  // Single ship-type filter argument (argv.size() == 2)
+  ctx.assert_dispatch_success(g, {"tactical", "C"});
+  test::expect_contains(g.out.str(), "EnemyCruiser");
+  test::expect_false(g.out.str().contains("EnemyTank"));
+
+  // Empty filter strings
+  ctx.assert_dispatch_success(g, {"tactical", "", ""});
+  ctx.assert_dispatch_rejected(g, {"tactical", "#2", ""});
+  ctx.assert_dispatch_rejected(g, {"tactical", "#0"});
+
+  // Unexplored star at LEVEL_STAR
+  ctx.em.mutate_star(2, [](Star& s) { s.clear_explored_by(player_t{1}); });
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(2);
+  ctx.assert_dispatch_success(g, {"tactical"});
+  test::expect_true(g.out.str().empty());
+
+  std::println(std::cout,
+               "  ✓ Orbital scopes and argument edge cases verified");
 }
 
 }  // namespace
@@ -264,6 +499,8 @@ int main() {
   test_tactical_star_scope();
   test_tactical_explicit_ship_and_filters();
   test_tactical_scope_rejection();
+  test_tactical_combat_params_and_target_filtering();
+  test_tactical_orbits_and_argument_edge_cases();
 
   std::println(std::cout, "\n✅ All tactical tests passed!");
   return 0;

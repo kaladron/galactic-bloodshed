@@ -6,13 +6,19 @@
 module;
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import std;
 
 module commands;
 
 namespace {
-void colonies_at_star(GameObj& g, const Race& race, const starnum_t star) {
+
+using GB::presentation::ColoniesViewModel;
+using GB::presentation::ColonyRow;
+
+void colonies_at_star(ColoniesViewModel& vm, GameObj& g, const Race& race,
+                      const starnum_t star) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
 
@@ -26,25 +32,32 @@ void colonies_at_star(GameObj& g, const Race& race, const starnum_t star) {
       continue;
     }
 
-    auto formatted = std::format(
-        " {:c} {:4.4}/{:<4.4}{:c}{:4d}{:3d}{:5d}{:8d}{:3d}{:6d}{:5d}{:6d} "
-        "{:3d}/{:<3d}{:3.0f}/{:<3d}{:3d}/{:<3d}",
-        pl.type_symbol(), star_ref.get_name(),
-        star_ref.get_planet_name(pl.planet_order()),
-        (pl.info(Playernum).autorep ? '*' : ' '), star_ref.governor(Playernum),
-        pl.info(Playernum).numsectsowned, pl.info(Playernum).tech_invest,
-        pl.info(Playernum).popn, pl.info(Playernum).crystals,
-        pl.info(Playernum).resource, pl.info(Playernum).destruct,
-        pl.info(Playernum).fuel, pl.info(Playernum).tax,
-        pl.info(Playernum).newtax, pl.compatibility(race), pl.toxic(),
-        pl.info(Playernum).comread, pl.info(Playernum).mob_set);
-    g.out << formatted;
-    for (const auto& [j, info] : pl.info_map())
+    ColonyRow row{
+        .type_symbol = pl.type_symbol(),
+        .star_name = star_ref.get_name(),
+        .planet_name = star_ref.get_planet_name(pl.planet_order()),
+        .autorep = pl.info(Playernum).autorep != 0,
+        .governor = star_ref.governor(Playernum),
+        .sectors_owned = pl.info(Playernum).numsectsowned,
+        .tech_invest = pl.info(Playernum).tech_invest,
+        .popn = pl.info(Playernum).popn,
+        .crystals = pl.info(Playernum).crystals,
+        .resource = pl.info(Playernum).resource,
+        .destruct = pl.info(Playernum).destruct,
+        .fuel = pl.info(Playernum).fuel,
+        .tax = pl.info(Playernum).tax,
+        .newtax = pl.info(Playernum).newtax,
+        .compatibility = pl.compatibility(race),
+        .toxicity = pl.toxic(),
+        .comread = pl.info(Playernum).comread,
+        .mob_set = pl.info(Playernum).mob_set,
+    };
+    for (const auto& [j, info] : pl.info_map()) {
       if ((j != Playernum) && (info.numsectsowned > 0)) {
-        auto race_str = std::format(" {}", j);
-        g.out << race_str;
+        row.alien_owners.push_back(j);
       }
-    g.out << "\n";
+    }
+    vm.rows.push_back(std::move(row));
   }
 }
 }  // namespace
@@ -52,30 +65,27 @@ void colonies_at_star(GameObj& g, const Race& race, const starnum_t star) {
 namespace GB::commands {
 
 bool colonies(const command_t& argv, GameObj& g) {
-  g.out << "          ========== Colonization Report ==========\n";
-  g.out << "  Planet     gov sec tech    popn  x   res  "
-           "des  fuel  tax  cmpt/tox mob  Aliens\n";
+  ColoniesViewModel vm{};
 
   if (argv.size() < 2) {
     for (const Star& star : StarList::readonly(g.entity_manager)) {
-      colonies_at_star(g, *g.race, star.star_id());
+      colonies_at_star(vm, g, *g.race, star.star_id());
     }
   } else {
-    for (int i = 1; i < argv.size(); i++) {
+    for (std::size_t i = 1; i < argv.size(); i++) {
       auto where = Place::resolve(g.entity_manager, g.scope_context(), argv[i]);
       if (!where) {
-        g.out << format_place_error(where.error());
+        vm.errors.push_back(format_place_error(where.error()));
       }
       if (!where || (where->level == ScopeLevel::LEVEL_UNIV) ||
           (where->level == ScopeLevel::LEVEL_SHIP)) {
-        auto error_msg = std::format("Bad location `{}'.\n", argv[i]);
-        g.out << error_msg;
+        vm.errors.push_back(std::format("Bad location `{}'.\n", argv[i]));
         continue;
-      } /* ok, a proper location */
-      colonies_at_star(g, *g.race, where->snum);
+      }
+      colonies_at_star(vm, g, *g.race, where->snum);
     }
   }
-  g.out << "\n";
+  g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
   return true;
 }
 

@@ -7,17 +7,24 @@ module;
 
 import std;
 import gb.entities;
+import gb.presentation;
 import gb.services;
-import tabulate;
 
 module commands;
 
 namespace GB::commands {
 
 bool block(const command_t& argv, GameObj& g) {
-  player_t p;
+  using GB::presentation::BlockDetailReport;
+  using GB::presentation::BlockListReport;
+  using GB::presentation::BlockMemberRow;
+  using GB::presentation::BlockPlayerReport;
+  using GB::presentation::BlockSummaryRow;
+  using GB::presentation::BlockViewModel;
 
+  player_t p;
   const auto* race = g.race;
+  BlockViewModel vm{};
 
   if (argv.size() == 3 && argv[1] == "player") {
     p = get_player(g.entity_manager, argv[2]);
@@ -30,52 +37,29 @@ bool block(const command_t& argv, GameObj& g) {
       g.out << "Race not found.\n";
       return false;
     }
-    // Flag for finding a block
-    bool found_any = false;
-    g.out << std::format("Race #{} [{}] is a member of ", p, r->name);
+
+    BlockPlayerReport report{
+        .player = p,
+        .race_name = r->name,
+    };
     for (const auto& block_i : BlockList::readonly(g.entity_manager)) {
       if (block_i.is_member(p)) {
-        g.out << std::format("{}{}", found_any ? ", " : " ", block_i.Playernum);
-        found_any = true;
+        report.member_blocks.push_back(block_i.Playernum);
       }
-    }
-    if (!found_any)
-      g.out << "no blocks\n";
-    else
-      g.out << "\n";
-
-    found_any = false;
-    g.out << std::format("Race #{} [{}] has been invited to join ", p, r->name);
-    for (const auto& block_i : BlockList::readonly(g.entity_manager)) {
       if (!block_i.is_pledged(p) && block_i.is_invited(p)) {
-        g.out << std::format("{}{}", found_any ? ", " : " ", block_i.Playernum);
-        found_any = true;
+        report.invited_blocks.push_back(block_i.Playernum);
       }
-    }
-    if (!found_any)
-      g.out << "no blocks\n";
-    else
-      g.out << "\n";
-
-    found_any = false;
-    g.out << std::format("Race #{} [{}] has pledged ", p, r->name);
-    for (const auto& block_i : BlockList::readonly(g.entity_manager)) {
       if (block_i.is_pledged(p) && !block_i.is_invited(p)) {
-        g.out << std::format("{}{}", found_any ? ", " : " ", block_i.Playernum);
-        found_any = true;
+        report.pledged_blocks.push_back(block_i.Playernum);
       }
     }
-    if (!found_any)
-      g.out << "no blocks\n";
-    else
-      g.out << "\n";
+    vm.player_report = std::move(report);
   } else if (argv.size() > 1) {
     p = get_player(g.entity_manager, argv[1]);
     if (p == 0) {
       g.out << "No such player,\n";
       return false;
     }
-    /* list the players who are in this alliance block */
     const struct block* block_p = nullptr;
     try {
       block_p = g.entity_manager.peek_block(p);
@@ -83,96 +67,64 @@ bool block(const command_t& argv, GameObj& g) {
       g.out << "Block not found.\n";
       return false;
     }
-    g.out << std::format("         ========== {} Power Report ==========\n",
-                         block_p->name);
-    g.out << std::format("                 {:<64.64}\n", block_p->motto);
 
-    tabulate::Table table;
-    table.format().hide_border().column_separator("  ");
-
-    table.column(0).format().width(2).font_align(tabulate::FontAlign::right);
-    table.column(1).format().width(20);
-    table.column(2).format().width(6).font_align(tabulate::FontAlign::right);
-    table.column(3).format().width(5).font_align(tabulate::FontAlign::right);
-    table.column(4).format().width(5).font_align(tabulate::FontAlign::right);
-    table.column(5).format().width(5).font_align(tabulate::FontAlign::right);
-    table.column(6).format().width(5).font_align(tabulate::FontAlign::right);
-    table.column(7).format().width(5).font_align(tabulate::FontAlign::right);
-    table.column(8).format().width(5).font_align(tabulate::FontAlign::right);
-    table.column(9).format().width(5).font_align(tabulate::FontAlign::right);
-    table.column(10).format().width(4).font_align(tabulate::FontAlign::right);
-
-    table.add_row({"#", "Name", "troops", "pop", "money", "ship", "plan", "res",
-                   "fuel", "dest", "know"});
-    table[0].format().font_style({tabulate::FontStyle::bold});
-
+    BlockDetailReport report{
+        .block_name = block_p->name,
+        .motto = block_p->motto,
+    };
     for (const Race& r : RaceList::readonly(g.entity_manager)) {
       if (!block_p->is_member(r.Playernum) || r.dissolved) continue;
       try {
         g.entity_manager.with_power(r.Playernum, [&](const auto& p_info) {
-          table.add_row({std::format("{}", r.Playernum), std::string(r.name),
-                         race->estimate(p_info.troops, r),
-                         race->estimate(p_info.popn, r),
-                         race->estimate(p_info.money, r),
-                         race->estimate(p_info.ships_owned, r),
-                         race->estimate(p_info.planets_owned, r),
-                         race->estimate(p_info.resource, r),
-                         race->estimate(p_info.fuel, r),
-                         race->estimate(p_info.destruct, r),
-                         std::format("{}%", race->translation_for(r))});
+          report.members.push_back(BlockMemberRow{
+              .player = r.Playernum,
+              .name = r.name,
+              .troops = race->estimate(p_info.troops, r),
+              .pop = race->estimate(p_info.popn, r),
+              .money = race->estimate(p_info.money, r),
+              .ships = race->estimate(p_info.ships_owned, r),
+              .planets = race->estimate(p_info.planets_owned, r),
+              .resource = race->estimate(p_info.resource, r),
+              .fuel = race->estimate(p_info.fuel, r),
+              .destruct = race->estimate(p_info.destruct, r),
+              .know = race->translation_for(r),
+          });
         });
       } catch (const EntityNotFoundError&) {
         continue;
       }
     }
-
-    g.out << table << "\n";
+    vm.detail_report = std::move(report);
   } else {
-    /* list power report for all the alliance blocks (as of the last update) */
     const auto* state = g.entity_manager.peek_server_state();
     const std::time_t update_time = state ? state->last_update_time : 0;
-    const std::string time_str = format_timestamp(update_time);
-    g.out << std::format(
-        "         ========== Global Alliance Block Report ==========\n");
-    g.out << std::format("                 (updated: {:<24.24})\n", time_str);
 
-    tabulate::Table table;
-    table.format().hide_border().column_separator("  ");
-
-    table.column(0).format().width(2).font_align(tabulate::FontAlign::right);
-    table.column(1).format().width(19);
-    table.column(2).format().width(4).font_align(tabulate::FontAlign::right);
-    table.column(3).format().width(5).font_align(tabulate::FontAlign::right);
-    table.column(4).format().width(5).font_align(tabulate::FontAlign::right);
-    table.column(5).format().width(5).font_align(tabulate::FontAlign::right);
-    table.column(6).format().width(5).font_align(tabulate::FontAlign::right);
-    table.column(7).format().width(5).font_align(tabulate::FontAlign::right);
-    table.column(8).format().width(5).font_align(tabulate::FontAlign::right);
-    table.column(9).format().width(5).font_align(tabulate::FontAlign::right);
-    table.column(10).format().width(5).font_align(tabulate::FontAlign::right);
-    table.column(11).format().width(4).font_align(tabulate::FontAlign::right);
-
-    table.add_row({"#", "Name", "memb", "money", "popn", "ship", "sys", "res",
-                   "fuel", "dest", "VPs", "know"});
-    table[0].format().font_style({tabulate::FontStyle::bold});
-
+    BlockListReport report{
+        .update_time = format_timestamp(update_time),
+    };
     for (const auto& block_i : BlockList::readonly(g.entity_manager)) {
       player_t i = block_i.Playernum;
       if (block_i.members == 0) continue;
 
-      table.add_row(
-          {std::format("{}", i), std::string(block_i.name),
-           std::format("{}", block_i.members), race->estimate(block_i.money, i),
-           race->estimate(block_i.popn, i),
-           race->estimate(block_i.ships_owned, i),
-           race->estimate(block_i.systems_owned, i),
-           race->estimate(block_i.resource, i), race->estimate(block_i.fuel, i),
-           race->estimate(block_i.destruct, i), race->estimate(block_i.VPs, i),
-           std::format("{}%", race->translation_for(i))});
+      report.blocks.push_back(BlockSummaryRow{
+          .player = i,
+          .name = block_i.name,
+          .members = block_i.members,
+          .money = race->estimate(block_i.money, i),
+          .popn = race->estimate(block_i.popn, i),
+          .ships = race->estimate(block_i.ships_owned, i),
+          .systems = race->estimate(block_i.systems_owned, i),
+          .resource = race->estimate(block_i.resource, i),
+          .fuel = race->estimate(block_i.fuel, i),
+          .destruct = race->estimate(block_i.destruct, i),
+          .vps = race->estimate(block_i.VPs, i),
+          .know = race->translation_for(i),
+      });
     }
-
-    g.out << table << "\n";
+    vm.list_report = std::move(report);
   }
+
+  g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
   return true;
 }
 

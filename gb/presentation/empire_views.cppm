@@ -183,4 +183,115 @@ render_json_profile_other(const ProfileOtherViewModel& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const ProfileOtherViewModel& vm);
 
+/// Player membership, invitation, and pledge summary for `block player <p>`.
+struct BlockPlayerReport {
+  player_t player{0};
+  std::string race_name{};
+  std::vector<player_t> member_blocks{};
+  std::vector<player_t> invited_blocks{};
+  std::vector<player_t> pledged_blocks{};
+};
+
+/// Single member race row in a specific alliance block report (`block <p>`).
+struct BlockMemberRow {
+  player_t player{0};
+  std::string name{};
+  std::string troops{};
+  std::string pop{};
+  std::string money{};
+  std::string ships{};
+  std::string planets{};
+  std::string resource{};
+  std::string fuel{};
+  std::string destruct{};
+  Percentage know{0};
+};
+
+/// Specific alliance block power report (`block <p>`).
+struct BlockDetailReport {
+  std::string block_name{};
+  std::string motto{};
+  std::vector<BlockMemberRow> members{};
+};
+
+/// Single alliance block summary row in a global `block` report.
+struct BlockSummaryRow {
+  player_t player{0};
+  std::string name{};
+  std::uint32_t members{0};
+  std::string money{};
+  std::string popn{};
+  std::string ships{};
+  std::string systems{};
+  std::string resource{};
+  std::string fuel{};
+  std::string destruct{};
+  std::string vps{};
+  Percentage know{0};
+};
+
+/// Global alliance block power report (`block`).
+struct BlockListReport {
+  std::string update_time{};
+  std::vector<BlockSummaryRow> blocks{};
+};
+
+/// View model for `block` command reports.
+struct BlockViewModel {
+  std::optional<BlockPlayerReport> player_report{std::nullopt};
+  std::optional<BlockDetailReport> detail_report{std::nullopt};
+  std::optional<BlockListReport> list_report{std::nullopt};
+};
+
+/// Renders a `BlockViewModel` for `UiMode::ASCII`.
+[[nodiscard]] std::string render_block(const BlockViewModel& vm);
+
+/// Serializes a `BlockViewModel` into a newline-delimited Glaze JSON
+/// envelope (`{"type":"block","data":{...}}\n`).
+[[nodiscard]] std::string render_json_block(const BlockViewModel& vm);
+
+/// Dispatches `BlockViewModel` rendering based on `mode`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const BlockViewModel& vm);
+
+/// Single colonized planet row in a `colonies` report.
+struct ColonyRow {
+  char type_symbol{' '};
+  std::string star_name{};
+  std::string planet_name{};
+  bool autorep{false};
+  governor_t governor{0};
+  std::uint32_t sectors_owned{0};
+  money_t tech_invest{0};
+  population_t popn{0};
+  resource_t crystals{0};
+  resource_t resource{0};
+  resource_t destruct{0};
+  resource_t fuel{0};
+  Percentage tax{0};
+  Percentage newtax{0};
+  double compatibility{0.0};
+  Percentage toxicity{0};
+  Percentage comread{0};
+  Percentage mob_set{0};
+  std::vector<player_t> alien_owners{};
+};
+
+/// View model for `colonies` command reports.
+struct ColoniesViewModel {
+  std::vector<std::string> errors{};
+  std::vector<ColonyRow> rows{};
+};
+
+/// Renders a `ColoniesViewModel` for `UiMode::ASCII`.
+[[nodiscard]] std::string render_colonies(const ColoniesViewModel& vm);
+
+/// Serializes a `ColoniesViewModel` into a newline-delimited Glaze JSON
+/// envelope (`{"type":"colonies","data":{...}}\n`).
+[[nodiscard]] std::string render_json_colonies(const ColoniesViewModel& vm);
+
+/// Dispatches `ColoniesViewModel` rendering based on `mode`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const ColoniesViewModel& vm);
+
 }  // namespace GB::presentation

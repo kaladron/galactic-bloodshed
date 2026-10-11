@@ -272,4 +272,120 @@ std::string render_for_mode(UiMode mode, const ProfileOtherViewModel& vm) {
                               : render_profile_other(vm);
 }
 
+std::string render_block(const BlockViewModel& vm) {
+  std::string out;
+
+  if (vm.player_report) {
+    const auto& pr = *vm.player_report;
+    auto append_block_list = [&](std::string_view prefix,
+                                 std::span<const player_t> blocks) {
+      std::format_to(std::back_inserter(out), "Race #{} [{}] {}", pr.player,
+                     pr.race_name, prefix);
+      if (blocks.empty()) {
+        out += "no blocks\n";
+        return;
+      }
+      for (std::size_t idx = 0; idx < blocks.size(); ++idx) {
+        std::format_to(std::back_inserter(out), "{}{}", idx > 0 ? ", " : " ",
+                       blocks[idx]);
+      }
+      out.push_back('\n');
+    };
+
+    append_block_list("is a member of ", pr.member_blocks);
+    append_block_list("has been invited to join ", pr.invited_blocks);
+    append_block_list("has pledged ", pr.pledged_blocks);
+  }
+
+  if (vm.detail_report) {
+    const auto& dr = *vm.detail_report;
+    std::format_to(std::back_inserter(out),
+                   "         ========== {} Power Report ==========\n"
+                   "                 {:<64.64}\n",
+                   dr.block_name, dr.motto);
+
+    tabulate::Table table;
+    table.format().hide_border().column_separator("  ");
+    table.add_row({"#", "Name", "troops", "pop", "money", "ship", "plan", "res",
+                   "fuel", "dest", "know"});
+    table[0].format().font_style({tabulate::FontStyle::bold});
+
+    for (const auto& m : dr.members) {
+      table.add_row({std::format("{}", m.player), m.name, m.troops, m.pop,
+                     m.money, m.ships, m.planets, m.resource, m.fuel,
+                     m.destruct, std::format("{}%", m.know)});
+    }
+    std::format_to(std::back_inserter(out), "{}\n", table.str());
+  }
+
+  if (vm.list_report) {
+    const auto& lr = *vm.list_report;
+    std::format_to(
+        std::back_inserter(out),
+        "         ========== Global Alliance Block Report ==========\n"
+        "                 (updated: {:<24.24})\n",
+        lr.update_time);
+
+    tabulate::Table table;
+    table.format().hide_border().column_separator("  ");
+    table.add_row({"#", "Name", "memb", "money", "popn", "ship", "sys", "res",
+                   "fuel", "dest", "VPs", "know"});
+    table[0].format().font_style({tabulate::FontStyle::bold});
+
+    for (const auto& b : lr.blocks) {
+      table.add_row({std::format("{}", b.player), b.name,
+                     std::format("{}", b.members), b.money, b.popn, b.ships,
+                     b.systems, b.resource, b.fuel, b.destruct, b.vps,
+                     std::format("{}%", b.know)});
+    }
+    std::format_to(std::back_inserter(out), "{}\n", table.str());
+  }
+
+  return out;
+}
+
+std::string render_json_block(const BlockViewModel& vm) {
+  return render_json_envelope("block", vm);
+}
+
+std::string render_for_mode(UiMode mode, const BlockViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_block(vm) : render_block(vm);
+}
+
+std::string render_colonies(const ColoniesViewModel& vm) {
+  std::string out = "          ========== Colonization Report ==========\n"
+                    "  Planet     gov sec tech    popn  x   res  "
+                    "des  fuel  tax  cmpt/tox mob  Aliens\n";
+
+  for (const auto& err : vm.errors) {
+    out += err;
+  }
+
+  for (const auto& row : vm.rows) {
+    std::format_to(
+        std::back_inserter(out),
+        " {:c} {:4.4}/{:<4.4}{:c}{:4d}{:3d}{:5d}{:8d}{:3d}{:6d}{:5d}{:6d} "
+        "{:3d}/{:<3d}{:3.0f}/{:<3d}{:3d}/{:<3d}",
+        row.type_symbol, row.star_name, row.planet_name,
+        row.autorep ? '*' : ' ', row.governor, row.sectors_owned,
+        row.tech_invest, row.popn, row.crystals, row.resource, row.destruct,
+        row.fuel, row.tax, row.newtax, row.compatibility, row.toxicity,
+        row.comread, row.mob_set);
+    for (const player_t alien : row.alien_owners) {
+      std::format_to(std::back_inserter(out), " {}", alien);
+    }
+    out.push_back('\n');
+  }
+  out.push_back('\n');
+  return out;
+}
+
+std::string render_json_colonies(const ColoniesViewModel& vm) {
+  return render_json_envelope("colonies", vm);
+}
+
+std::string render_for_mode(UiMode mode, const ColoniesViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_colonies(vm) : render_colonies(vm);
+}
+
 }  // namespace GB::presentation

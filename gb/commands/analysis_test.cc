@@ -75,6 +75,7 @@ int main() {
   smap.get(Coordinates{0, 0}).set_popn_exact(1000);
   smap.get(Coordinates{0, 0}).set_troops(10);
   smap.get(Coordinates{0, 0}).set_condition(SectorType::SEC_LAND);
+  smap.get(Coordinates{0, 0}).set_crystals(true);
 
   smap.get(Coordinates{1, 0}).set_owner(1);
   smap.get(Coordinates{1, 0}).set_efficiency_bounded(90);
@@ -514,6 +515,35 @@ int main() {
     g.out.str("");
     std::println(std::cout,
                  "✓ SpecificPlayer mode works correctly for different players");
+  }
+
+  // Test low-tech crystal masking, scope resolution, error paths, and JSON mode
+  {
+    GameObj g_p2(ctx.em, registry);
+    ctx.setup_game_obj(g_p2, player_t{2}, governor_t{1});
+    g_p2.set_level(ScopeLevel::LEVEL_PLAN);
+    g_p2.set_snum(1);
+    g_p2.set_pnum(1);
+    ctx.assert_dispatch_success(g_p2, {"analysis", "/TestStar"});
+    test::expect_contains(g_p2.out.str(), "Analysis of /TestStar/TestPlanet:");
+
+    ctx.assert_dispatch_rejected(g, {"analysis", "99"});
+    test::expect_contains(g.out.str(), "No such player #");
+
+    ctx.assert_dispatch_success(g, {"analysis", ""});
+
+    ctx.assert_dispatch_rejected(g, {"analysis", "q"});
+    test::expect_contains(g.out.str(), "Unrecognized argument: q");
+
+    g.set_level(ScopeLevel::LEVEL_SHIP);
+    ctx.assert_dispatch_rejected(g, {"analysis"});
+    test::expect_contains(g.out.str(), "You can only analyze planets");
+
+    g.set_level(ScopeLevel::LEVEL_PLAN);
+    g.set_ui_mode(UiMode::JSON);
+    ctx.assert_dispatch_success(g, {"analysis"});
+    test::expect_contains(g.out.str(), "\"type\":\"analysis\"");
+    test::expect_contains(g.out.str(), "\"planet_name\":\"TestPlanet\"");
   }
 
   std::println(std::cout,

@@ -6,16 +6,21 @@
 module;
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import std;
-import tabulate;
-#undef stdout
 
 module commands;
 
 static constexpr int CARE = 5;
 
 namespace {
+
+using GB::presentation::AnalysisPlanetReport;
+using GB::presentation::AnalysisSectorEntry;
+using GB::presentation::AnalysisStatsRow;
+using GB::presentation::AnalysisViewModel;
+
 struct AnalSect {
   Coordinates coords{};
   SectorType des{SectorType::SEC_SEA};
@@ -35,14 +40,14 @@ enum class PlayerFilterMode {
 
 struct PlayerFilter {
   PlayerFilterMode mode;
-  std::optional<player_t> player;
+  player_t player{0};
 
   static PlayerFilter all_players() {
-    return {.mode = PlayerFilterMode::AllPlayers, .player = std::nullopt};
+    return {.mode = PlayerFilterMode::AllPlayers};
   }
 
   static PlayerFilter unoccupied() {
-    return {.mode = PlayerFilterMode::Unoccupied, .player = std::nullopt};
+    return {.mode = PlayerFilterMode::Unoccupied};
   }
 
   static PlayerFilter specific(player_t p) {
@@ -56,7 +61,7 @@ struct PlayerFilter {
       case PlayerFilterMode::Unoccupied:
         return owner.value == 0;
       case PlayerFilterMode::SpecificPlayer:
-        return player.has_value() && owner == *player;
+        return owner == player;
     }
     return false;
   }
@@ -68,7 +73,7 @@ struct PlayerFilter {
       case PlayerFilterMode::Unoccupied:
         return " sectors that are unoccupied.\n";
       case PlayerFilterMode::SpecificPlayer:
-        return std::format(" sectors owned by {}.\n", player->value);
+        return std::format(" sectors owned by {}.\n", player.value);
     }
     return " sectors.\n";
   }
@@ -76,9 +81,10 @@ struct PlayerFilter {
 
 void insert(Mode mode, std::array<struct AnalSect, CARE>& arr, AnalSect in) {
   auto* insertion_point = std::ranges::find_if(arr, [&](const auto& elem) {
-    return (mode == Mode::TopFive && elem.value < in.value) ||
-           (mode == Mode::BottomFive &&
-            (elem.value > in.value || elem.value == -1));
+    if (mode == Mode::TopFive) {
+      return elem.value < in.value;
+    }
+    return elem.value == -1 || elem.value > in.value;
   });
 
   if (insertion_point != arr.end()) {
@@ -87,16 +93,18 @@ void insert(Mode mode, std::array<struct AnalSect, CARE>& arr, AnalSect in) {
   }
 }
 
-void print_top(GameObj& g, const std::array<struct AnalSect, CARE> kArr,
-               const std::string& name) {
-  g.out << std::format("{:>8}:", name);
-
-  for (const auto& as : kArr) {
+std::vector<AnalysisSectorEntry>
+to_entries(const std::array<AnalSect, CARE>& arr) {
+  std::vector<AnalysisSectorEntry> out;
+  for (const auto& as : arr) {
     if (as.value == -1) continue;
-    g.out << std::format("{:>5}{}({:>2},{:>2})", as.value,
-                         get_sector_char(as.des), as.coords.x, as.coords.y);
+    out.push_back(AnalysisSectorEntry{
+        .coords = as.coords,
+        .sector_char = get_sector_char(as.des),
+        .value = as.value,
+    });
   }
-  g.out << "\n";
+  return out;
 }
 
 struct PlayerSectorStats {
@@ -203,9 +211,37 @@ TopSectorLists find_top_sectors(GameObj& g, const SectorMap& smap,
   return tops;
 }
 
-void do_analysis(GameObj& g, const PlayerFilter& filter, Mode mode,
-                 std::optional<SectorType> sector_type, starnum_t Starnum,
-                 planetnum_t Planetnum) {
+std::optional<std::string>
+format_sector_type_name(std::optional<SectorType> sector_type) {
+  if (!sector_type.has_value()) {
+    return std::nullopt;
+  }
+  switch (*sector_type) {
+    case SectorType::SEC_SEA:
+      return "Ocean";
+    case SectorType::SEC_LAND:
+      return "Land";
+    case SectorType::SEC_MOUNT:
+      return "Mountain";
+    case SectorType::SEC_GAS:
+      return "Gas";
+    case SectorType::SEC_ICE:
+      return "Ice";
+    case SectorType::SEC_FOREST:
+      return "Forest";
+    case SectorType::SEC_DESERT:
+      return "Desert";
+    case SectorType::SEC_PLATED:
+      return "Plated";
+    case SectorType::SEC_WASTED:
+      return "Wasted";
+  }
+  return std::nullopt;
+}
+
+void do_analysis(AnalysisViewModel& vm, GameObj& g, const PlayerFilter& filter,
+                 Mode mode, std::optional<SectorType> sector_type,
+                 starnum_t Starnum, planetnum_t Planetnum) {
   g.entity_manager.with_planet(Starnum, Planetnum, [&](const Planet& planet) {
     if (!planet.info(g.player()).explored) {
       return;
@@ -215,160 +251,72 @@ void do_analysis(GameObj& g, const PlayerFilter& filter, Mode mode,
 
     g.entity_manager.with_sectormap(
         Starnum, Planetnum, [&](const SectorMap& smap) {
-          // Accumulate statistics for all sectors
           auto stats = accumulate_statistics(g, smap);
-
-          // Find top sectors matching the filter
           auto tops =
               find_top_sectors(g, smap, planet, mode, filter, sector_type);
 
-          std::stringstream header;
+          AnalysisPlanetReport report{
+              .is_top_five = (mode == Mode::TopFive),
+              .care_count = CARE,
+              .sector_type_name = format_sector_type_name(sector_type),
+              .filter_description = filter.describe(),
+              .troops = to_entries(tops.troops),
+              .res = to_entries(tops.res),
+              .eff = to_entries(tops.eff),
+              .frt = to_entries(tops.frt),
+              .mob = to_entries(tops.mob),
+              .popn = to_entries(tops.popn),
+              .m_popn = to_entries(tops.m_popn),
+          };
           g.entity_manager.with_star(Starnum, [&](const Star& star) {
-            header << std::format("\nAnalysis of /{}/{}:\n", star.get_name(),
-                                  star.get_planet_name(Planetnum));
+            report.star_name = star.get_name();
+            report.planet_name = star.get_planet_name(Planetnum);
           });
-          header << std::format(
-              "{} {}", (mode == Mode::TopFive ? "Highest" : "Lowest"), CARE);
-          if (!sector_type.has_value()) {
-            header << " of all";
-          } else {
-            switch (*sector_type) {
-              case SectorType::SEC_SEA:
-                header << " Ocean";
-                break;
-              case SectorType::SEC_LAND:
-                header << " Land";
-                break;
-              case SectorType::SEC_MOUNT:
-                header << " Mountain";
-                break;
-              case SectorType::SEC_GAS:
-                header << " Gas";
-                break;
-              case SectorType::SEC_ICE:
-                header << " Ice";
-                break;
-              case SectorType::SEC_FOREST:
-                header << " Forest";
-                break;
-              case SectorType::SEC_DESERT:
-                header << " Desert";
-                break;
-              case SectorType::SEC_PLATED:
-                header << " Plated";
-                break;
-              case SectorType::SEC_WASTED:
-                header << " Wasted";
-                break;
-            }
-          }
-          header << filter.describe();
-          g.out << header.str();
 
-          print_top(g, tops.troops, "Troops");
-          print_top(g, tops.res, "Res");
-          print_top(g, tops.eff, "Eff");
-          print_top(g, tops.frt, "Frt");
-          print_top(g, tops.mob, "Mob");
-          print_top(g, tops.popn, "Popn");
-          print_top(g, tops.m_popn, "^Popn");
-
-          g.out << "\n";
-
-          // Build table with dynamic sector-type columns
-          tabulate::Table table;
-          table.format().hide_border().column_separator("  ");
-
-          // Configure fixed columns
-          table.column(0).format().width(2).font_align(
-              tabulate::FontAlign::right);
-          table.column(1).format().width(3).font_align(
-              tabulate::FontAlign::right);
-          table.column(2).format().width(7).font_align(
-              tabulate::FontAlign::right);
-          table.column(3).format().width(6).font_align(
-              tabulate::FontAlign::right);
-          table.column(4).format().width(5).font_align(
-              tabulate::FontAlign::right);
-          table.column(5).format().width(5).font_align(
-              tabulate::FontAlign::right);
-          table.column(6).format().width(5).font_align(
-              tabulate::FontAlign::right);
-          table.column(7).format().width(2).font_align(
-              tabulate::FontAlign::right);
-          // Dynamic sector columns configured after adding rows
-
-          // Build header row
-          std::vector<std::string> table_header = {
-              "Pl", "sec", "popn", "troops", "a.eff", "a.mob", "res", "x"};
-          for (SectorType st : all_sector_types) {
-            table_header.emplace_back(1, get_sector_char(st));
-          }
-          table.add_row(
-              tabulate::Table::Row_t(table_header.begin(), table_header.end()));
-          table[0].format().font_style({tabulate::FontStyle::bold});
-
-          auto format_row = [&](player_t p, const PlayerSectorStats& ps) {
-            std::vector<std::string> row = {
-                std::format("{}", p),
-                std::format("{}", ps.t_sect),
-                std::format("{}", ps.popn),
-                std::format("{}", ps.troops),
-                std::format("{:.1f}", static_cast<double>(ps.eff) / ps.t_sect),
-                std::format("{:.1f}", static_cast<double>(ps.mob) / ps.t_sect),
-                std::format("{}", ps.res),
-                std::format("{}", ps.crys)};
-            for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
-              row.push_back(std::format("{}", ps.sect[i]));
-            }
-            return row;
+          auto make_row = [](std::string label, const PlayerSectorStats& ps) {
+            return AnalysisStatsRow{
+                .label = std::move(label),
+                .sectors = ps.t_sect,
+                .popn = ps.popn,
+                .troops = ps.troops,
+                .avg_eff = static_cast<double>(ps.eff) / ps.t_sect,
+                .avg_mob = static_cast<double>(ps.mob) / ps.t_sect,
+                .res = ps.res,
+                .crystals = ps.crys,
+                .by_type = ps.sect,
+            };
           };
 
-          // Add unowned row (player 0) if any unowned sectors exist
           if (stats.unowned.t_sect != 0) {
-            auto row = format_row(0, stats.unowned);
-            table.add_row(tabulate::Table::Row_t(row.begin(), row.end()));
+            report.rows.push_back(make_row("0", stats.unowned));
           }
 
-          // Add player rows
           for (const auto& [p, ps] : stats.players) {
             if (ps.t_sect != 0) {
-              auto row = format_row(p, ps);
-              table.add_row(tabulate::Table::Row_t(row.begin(), row.end()));
+              report.rows.push_back(make_row(std::format("{}", p), ps));
             }
           }
 
-          // Add totals row
-          std::vector<std::string> totals = {
-              "Tl",
-              std::format("{}", total_sect),
-              std::format("{}", stats.total_popn),
-              std::format("{}", stats.total_troops),
-              std::format("{:.1f}",
-                          static_cast<double>(stats.total_eff) / total_sect),
-              std::format("{:.1f}",
-                          static_cast<double>(stats.total_mob) / total_sect),
-              std::format("{}", stats.total_res),
-              std::format("{}", stats.total_crys)};
-          for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
-            totals.push_back(std::format("{}", stats.sect[i]));
-          }
-          table.add_row(tabulate::Table::Row_t(totals.begin(), totals.end()));
+          report.rows.push_back(AnalysisStatsRow{
+              .label = "Tl",
+              .sectors = total_sect,
+              .popn = stats.total_popn,
+              .troops = stats.total_troops,
+              .avg_eff = static_cast<double>(stats.total_eff) / total_sect,
+              .avg_mob = static_cast<double>(stats.total_mob) / total_sect,
+              .res = stats.total_res,
+              .crystals = stats.total_crys,
+              .by_type = stats.sect,
+          });
 
-          // Configure dynamic sector columns
-          for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
-            table.column(8 + i).format().width(4).font_align(
-                tabulate::FontAlign::right);
-          }
-
-          g.out << table << "\n";
+          vm.planets.push_back(std::move(report));
         });
   });
 }
 
 // Parse a single character into a sector type
 std::optional<SectorType> parse_sector_type(char c) {
-  static const std::unordered_map<char, SectorType> kSectorTypes = {
+  static const std::unordered_map<char, SectorType> SECTOR_TYPES = {
       {CHAR_SEA, SectorType::SEC_SEA},
       {CHAR_LAND, SectorType::SEC_LAND},
       {CHAR_MOUNT, SectorType::SEC_MOUNT},
@@ -380,7 +328,7 @@ std::optional<SectorType> parse_sector_type(char c) {
       {CHAR_WASTED, SectorType::SEC_WASTED},
   };
 
-  if (auto it = kSectorTypes.find(c); it != kSectorTypes.end()) {
+  if (auto it = SECTOR_TYPES.find(c); it != SECTOR_TYPES.end()) {
     return it->second;
   }
   return std::nullopt;
@@ -388,7 +336,8 @@ std::optional<SectorType> parse_sector_type(char c) {
 
 // Parse a string as a player number
 std::optional<int> parse_player_number(const std::string& arg) {
-  if (arg.empty() || !std::isdigit(arg[0])) return std::nullopt;
+  if (arg.empty() || !std::isdigit(static_cast<unsigned char>(arg[0])))
+    return std::nullopt;
   return std::stoi(arg);
 }
 
@@ -400,7 +349,7 @@ bool analysis(const command_t& argv, GameObj& g) {
   auto filter = PlayerFilter::all_players();
   auto mode = Mode::TopFive;
 
-  auto where = Place{g.level(), g.snum(), g.pnum()};
+  auto where = Place{g.level(), g.snum(), g.pnum(), g.shipno()};
 
   for (const auto& arg : argv | std::views::drop(1)) {
     // Mode flag: "-" switches to bottom five
@@ -443,11 +392,7 @@ bool analysis(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  if (where.err) {
-    g.out << "Invalid scope.\n";
-    return false;
-  }
-
+  AnalysisViewModel vm{};
   switch (where.level) {
     case ScopeLevel::LEVEL_UNIV:
       [[fallthrough]];
@@ -455,18 +400,19 @@ bool analysis(const command_t& argv, GameObj& g) {
       g.out << "You can only analyze planets.\n";
       return false;
     case ScopeLevel::LEVEL_PLAN:
-      do_analysis(g, filter, mode, sector_type, where.snum, where.pnum);
-      return true;
+      do_analysis(vm, g, filter, mode, sector_type, where.snum, where.pnum);
+      break;
     case ScopeLevel::LEVEL_STAR: {
       const auto& star = *g.entity_manager.peek_star(where.snum);
       for (const auto& planet : PlanetList::readonly(
                g.entity_manager, where.snum, star.numplanets())) {
-        do_analysis(g, filter, mode, sector_type, where.snum,
+        do_analysis(vm, g, filter, mode, sector_type, where.snum,
                     planet.planet_order());
       }
-      return true;
+      break;
     }
   }
+  g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
   return true;
 }
 

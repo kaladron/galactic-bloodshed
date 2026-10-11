@@ -252,4 +252,59 @@ struct ExploreViewModel {
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const ExploreViewModel& vm);
 
+/// Single ranked sector entry in a planetary `analysis` category list.
+struct AnalysisSectorEntry {
+  Coordinates coords{0, 0};
+  char sector_char{'.'};
+  resource_t value{0};
+};
+
+/// Single player, unowned, or total summary row in a planetary `analysis`
+/// table.
+struct AnalysisStatsRow {
+  std::string label{};
+  int sectors{0};
+  population_t popn{0};
+  population_t troops{0};
+  double avg_eff{0.0};
+  double avg_mob{0.0};
+  resource_t res{0};
+  int crystals{0};
+  std::array<int, SectorType::SEC_WASTED + 1> by_type{};
+};
+
+/// Planetary report entry in an `analysis` view model.
+struct AnalysisPlanetReport {
+  std::string star_name{};
+  std::string planet_name{};
+  bool is_top_five{true};
+  int care_count{5};
+  std::optional<std::string> sector_type_name{std::nullopt};
+  std::string filter_description{};
+  std::vector<AnalysisSectorEntry> troops{};
+  std::vector<AnalysisSectorEntry> res{};
+  std::vector<AnalysisSectorEntry> eff{};
+  std::vector<AnalysisSectorEntry> frt{};
+  std::vector<AnalysisSectorEntry> mob{};
+  std::vector<AnalysisSectorEntry> popn{};
+  std::vector<AnalysisSectorEntry> m_popn{};
+  std::vector<AnalysisStatsRow> rows{};
+};
+
+/// View model for `analysis` command reports (planet or star scope).
+struct AnalysisViewModel {
+  std::vector<AnalysisPlanetReport> planets{};
+};
+
+/// Renders an `AnalysisViewModel` for `UiMode::ASCII`.
+[[nodiscard]] std::string render_analysis(const AnalysisViewModel& vm);
+
+/// Serializes an `AnalysisViewModel` into a newline-delimited Glaze JSON
+/// envelope (`{"type":"analysis","data":{...}}\n`).
+[[nodiscard]] std::string render_json_analysis(const AnalysisViewModel& vm);
+
+/// Dispatches `AnalysisViewModel` rendering based on `mode`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const AnalysisViewModel& vm);
+
 }  // namespace GB::presentation

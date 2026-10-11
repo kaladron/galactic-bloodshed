@@ -504,4 +504,81 @@ std::string render_for_mode(UiMode mode, const ExploreViewModel& vm) {
   return mode == UiMode::JSON ? render_json_explore(vm) : render_explore(vm);
 }
 
+std::string render_analysis(const AnalysisViewModel& vm) {
+  std::string out;
+
+  for (const auto& report : vm.planets) {
+    std::format_to(std::back_inserter(out), "\nAnalysis of /{}/{}:\n{} {} {}{}",
+                   report.star_name, report.planet_name,
+                   report.is_top_five ? "Highest" : "Lowest", report.care_count,
+                   report.sector_type_name ? *report.sector_type_name
+                                           : "of all",
+                   report.filter_description);
+
+    auto append_top_line = [&](std::string_view name,
+                               std::span<const AnalysisSectorEntry> entries) {
+      std::format_to(std::back_inserter(out), "{:>8}:", name);
+      for (const auto& entry : entries) {
+        std::format_to(std::back_inserter(out), "{:>5}{}({:>2},{:>2})",
+                       entry.value, entry.sector_char, entry.coords.x,
+                       entry.coords.y);
+      }
+      out.push_back('\n');
+    };
+
+    append_top_line("Troops", report.troops);
+    append_top_line("Res", report.res);
+    append_top_line("Eff", report.eff);
+    append_top_line("Frt", report.frt);
+    append_top_line("Mob", report.mob);
+    append_top_line("Popn", report.popn);
+    append_top_line("^Popn", report.m_popn);
+    out.push_back('\n');
+
+    tabulate::Table table;
+    table.format().hide_border().column_separator("  ");
+
+    std::vector<std::string> table_header = {"Pl",    "sec",   "popn", "troops",
+                                             "a.eff", "a.mob", "res",  "x"};
+    for (const SectorType st : all_sector_types) {
+      table_header.emplace_back(1, get_sector_char(st));
+    }
+    table.add_row(
+        tabulate::Table::Row_t(table_header.begin(), table_header.end()));
+    table[0].format().font_style({tabulate::FontStyle::bold});
+
+    for (const auto& r : report.rows) {
+      std::vector<std::string> row = {r.label,
+                                      std::format("{}", r.sectors),
+                                      std::format("{}", r.popn),
+                                      std::format("{}", r.troops),
+                                      std::format("{:.1f}", r.avg_eff),
+                                      std::format("{:.1f}", r.avg_mob),
+                                      std::format("{}", r.res),
+                                      std::format("{}", r.crystals)};
+      for (const int count : r.by_type) {
+        row.push_back(std::format("{}", count));
+      }
+      table.add_row(tabulate::Table::Row_t(row.begin(), row.end()));
+    }
+
+    for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
+      table.column(8 + i).format().width(4).font_align(
+          tabulate::FontAlign::right);
+    }
+
+    std::format_to(std::back_inserter(out), "{}\n", table.str());
+  }
+
+  return out;
+}
+
+std::string render_json_analysis(const AnalysisViewModel& vm) {
+  return render_json_envelope("analysis", vm);
+}
+
+std::string render_for_mode(UiMode mode, const AnalysisViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_analysis(vm) : render_analysis(vm);
+}
+
 }  // namespace GB::presentation

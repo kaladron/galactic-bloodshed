@@ -15,8 +15,6 @@ import gb.presentation;
 import gb.services;
 import scnlib;
 import std;
-import tabulate;
-#undef stdout
 
 module commands;
 
@@ -183,248 +181,6 @@ RstGeneralRow build_general_row(EntityManager& em, const Ship& s) {
   };
 }
 
-void render_stock_row(GameObj& g, bool& first, bool per_ship_header,
-                      const RstStockRow& row) {
-  tabulate::Table table;
-  table.format().hide_border().column_separator("  ");
-  table.column(0).format().width(5).font_align(tabulate::FontAlign::right);
-  table.column(1).format().width(16);
-  table.column(2).format().width(3).font_align(tabulate::FontAlign::center);
-  table.column(3).format().width(10).font_align(tabulate::FontAlign::center);
-  table.column(4).format().width(12).font_align(tabulate::FontAlign::center);
-  table.column(5).format().width(12).font_align(tabulate::FontAlign::center);
-  table.column(6).format().width(14).font_align(tabulate::FontAlign::center);
-  table.column(7).format().width(12).font_align(tabulate::FontAlign::center);
-
-  if (first) {
-    table.add_row(
-        {"#", "name", "x", "hanger", "res", "des", "fuel", "crew/mil"});
-    table[0].format().font_style({tabulate::FontStyle::bold});
-    if (!per_ship_header) first = false;
-  }
-
-  table.add_row(
-      {std::format("{}", row.number),
-       std::format("{}{} {}", row.type_letter, row.crystals ? 'x' : ' ',
-                   row.active ? row.name : "INACTIVE"),
-       std::format("{}", row.crystals),
-       std::format("{}:{}", row.hanger, row.max_hanger),
-       std::format("{}:{}", row.resource, row.max_resource),
-       std::format("{}:{}", row.destruct, row.max_destruct),
-       std::format("{:.1f}:{}", row.fuel, row.max_fuel),
-       std::format("{}/{}:{}", row.popn, row.troops, row.max_crew)});
-
-  g.out << table << "\n";
-}
-
-void render_status_row(GameObj& g, bool& first, bool per_ship_header,
-                       const RstStatusRow& row) {
-  tabulate::Table table;
-  table.format().hide_border().column_separator("  ");
-  table.column(0).format().width(5).font_align(tabulate::FontAlign::right);
-  table.column(1).format().width(1).font_align(tabulate::FontAlign::center);
-  table.column(2).format().width(14);
-  table.column(3).format().width(4).font_align(tabulate::FontAlign::center);
-  table.column(4).format().width(4).font_align(tabulate::FontAlign::center);
-  table.column(5).format().width(4).font_align(tabulate::FontAlign::center);
-  table.column(6).format().width(7).font_align(tabulate::FontAlign::center);
-  table.column(7).format().width(4).font_align(tabulate::FontAlign::right);
-  table.column(8).format().width(5).font_align(tabulate::FontAlign::right);
-  table.column(9).format().width(4).font_align(tabulate::FontAlign::right);
-  table.column(10).format().width(5).font_align(tabulate::FontAlign::right);
-  table.column(11).format().width(7).font_align(tabulate::FontAlign::right);
-  table.column(12).format().width(4).font_align(tabulate::FontAlign::right);
-
-  if (first) {
-    table.add_row({"#", "", "name", "las", "cew", "hyp", "guns", "arm", "tech",
-                   "spd", "cost", "mass", "size"});
-    table[0].format().font_style({tabulate::FontStyle::bold});
-    if (!per_ship_header) first = false;
-  }
-
-  const std::string pod_suffix =
-      row.pod_temperature ? std::format(" ({})", *row.pod_temperature) : "";
-
-  table.add_row(
-      {std::format("{}", row.number), std::format("{}", row.type_letter),
-       row.active ? row.name : "INACTIVE", row.has_laser ? "yes" : "",
-       row.has_cew ? "yes" : "", row.has_hyperdrive ? "yes" : "",
-       row.battery_summary, std::format("{}", row.effective_armor),
-       std::format("{:.0f}", row.tech), std::format("{}", row.max_speed),
-       std::format("{}", row.effective_cost), std::format("{:.1f}", row.mass),
-       std::format("{}{}", row.size, pod_suffix)});
-
-  g.out << table << "\n";
-}
-
-void render_weapons_row(GameObj& g, bool& first, bool per_ship_header,
-                        const RstWeaponsRow& row) {
-  tabulate::Table table;
-  table.format().hide_border().column_separator("  ");
-  table.column(0).format().width(5).font_align(tabulate::FontAlign::right);
-  table.column(1).format().width(1).font_align(tabulate::FontAlign::center);
-  table.column(2).format().width(14);
-  table.column(3).format().width(5).font_align(tabulate::FontAlign::center);
-  table.column(4).format().width(8).font_align(tabulate::FontAlign::center);
-  table.column(5).format().width(4).font_align(tabulate::FontAlign::right);
-  table.column(6).format().width(8).font_align(tabulate::FontAlign::center);
-  table.column(7).format().width(6).font_align(tabulate::FontAlign::center);
-  table.column(8).format().width(8);
-
-  if (first) {
-    table.add_row(
-        {"#", "", "name", "laser", "cew", "safe", "guns", "damage", "class"});
-    table[0].format().font_style({tabulate::FontStyle::bold});
-    if (!per_ship_header) first = false;
-  }
-
-  table.add_row({std::format("{}", row.number),
-                 std::format("{}", row.type_letter),
-                 row.active ? row.name : "INACTIVE", row.has_laser ? "yes" : "",
-                 std::format("{}/{}", row.cew, row.cew_range),
-                 std::format("{}", row.safe_cew), row.battery_summary,
-                 std::format("{}%", row.damage), row.ship_class});
-
-  g.out << table << "\n";
-}
-
-void render_factory_row(GameObj& g, bool& first, bool per_ship_header,
-                        const RstFactoryRow& row) {
-  tabulate::Table table;
-  table.format().hide_border().column_separator("  ");
-  table.column(0).format().width(5).font_align(tabulate::FontAlign::right);
-  table.column(1).format().width(1).font_align(tabulate::FontAlign::center);
-  table.column(2).format().width(4).font_align(tabulate::FontAlign::right);
-  table.column(3).format().width(6).font_align(tabulate::FontAlign::right);
-  table.column(4).format().width(5).font_align(tabulate::FontAlign::right);
-  table.column(5).format().width(3).font_align(tabulate::FontAlign::right);
-  table.column(6).format().width(2).font_align(tabulate::FontAlign::right);
-  table.column(7).format().width(4).font_align(tabulate::FontAlign::right);
-  table.column(8).format().width(4).font_align(tabulate::FontAlign::right);
-  table.column(9).format().width(4).font_align(tabulate::FontAlign::right);
-  table.column(10).format().width(4).font_align(tabulate::FontAlign::right);
-  table.column(11).format().width(4).font_align(tabulate::FontAlign::right);
-  table.column(12).format().width(3).font_align(tabulate::FontAlign::center);
-  table.column(13).format().width(7).font_align(tabulate::FontAlign::center);
-  table.column(14).format().width(3).font_align(tabulate::FontAlign::center);
-  table.column(15).format().width(4).font_align(tabulate::FontAlign::right);
-  table.column(16).format().width(5).font_align(tabulate::FontAlign::right);
-  table.column(17).format().width(4).font_align(tabulate::FontAlign::center);
-
-  if (first) {
-    table.add_row({"#", "", "Cost", "Tech", "Mass", "Sz", "A", "Crw", "Ful",
-                   "Crg", "Hng", "Dst", "Sp", "Weapons", "Lsr", "CEWs", "Range",
-                   "Dmg"});
-    table[0].format().font_style({tabulate::FontStyle::bold});
-    if (!per_ship_header) first = false;
-  }
-
-  if (row.unconfigured) {
-    table.add_row({std::format("{}", row.number), "", "", "", "", "", "", "",
-                   "", "", "", "", "", "(No ship type specified yet)", "", "",
-                   "", "75% (OFF)"});
-    g.out << table << "\n";
-    return;
-  }
-
-  const std::string speed_indicator = std::format(
-      "{}{}", row.has_hyperdrive ? (row.has_mount ? "+" : "*") : " ",
-      row.max_speed);
-
-  std::string damage_status = std::format("{}%", row.damage);
-  if (row.damage && !row.on) {
-    damage_status += "*";
-  }
-
-  table.add_row(
-      {std::format("{}", row.number), std::format("{}", row.build_type_letter),
-       std::format("{}", row.build_cost), std::format("{:.1f}", row.complexity),
-       std::format("{:.1f}", row.base_mass), std::format("{}", row.size),
-       std::format("{}", row.armor), std::format("{}", row.max_crew),
-       std::format("{}", row.max_fuel), std::format("{}", row.max_resource),
-       std::format("{}", row.max_hanger), std::format("{}", row.max_destruct),
-       speed_indicator,
-       std::format("{}/{}", row.primary_guns, row.secondary_guns),
-       row.has_laser ? "yes" : " no",
-       row.cew ? std::format("{}", row.cew) : "----",
-       row.cew ? std::format("{}", row.cew_range) : "-----", damage_status});
-
-  g.out << table << "\n";
-}
-
-void render_general_row(GameObj& g, bool& first, bool per_ship_header,
-                        const RstGeneralRow& row) {
-  tabulate::Table table;
-  table.format().hide_border().column_separator("  ");
-  table.column(0).format().width(1).font_align(tabulate::FontAlign::center);
-  table.column(1).format().width(5);
-  table.column(2).format().width(12);
-  table.column(3).format().width(2).font_align(tabulate::FontAlign::right);
-  table.column(4).format().width(3).font_align(tabulate::FontAlign::right);
-  table.column(5).format().width(5).font_align(tabulate::FontAlign::right);
-  table.column(6).format().width(4).font_align(tabulate::FontAlign::right);
-  table.column(7).format().width(5).font_align(tabulate::FontAlign::right);
-  table.column(8).format().width(5).font_align(tabulate::FontAlign::right);
-  table.column(9).format().width(2).font_align(tabulate::FontAlign::center);
-  table.column(10).format().width(10);
-  table.column(11).format().width(18);
-
-  if (first) {
-    table.add_row({"", "#", "name", "gov", "dam", "crew", "mil", "des", "fuel",
-                   "sp", "orbits", "destination"});
-    table[0].format().font_style({tabulate::FontStyle::bold});
-    if (!per_ship_header) first = false;
-  }
-
-  const std::string name_str =
-      row.active ? row.name : std::format("INACTIVE({})", row.radiation);
-  const std::string speed_indicator = std::format(
-      "{}{}", row.has_hyperdrive ? (row.mounted ? "+" : "*") : " ", row.speed);
-  std::string destination;
-  if (row.docked) {
-    if (row.whatdest == ScopeLevel::LEVEL_SHIP) {
-      destination = std::format("D#{}", row.dest_shipno.value_or(0));
-    } else {
-      destination =
-          std::format("L{:2},{:<2}", row.land_coords.x, row.land_coords.y);
-    }
-  } else if (row.navigating) {
-    destination = std::format("nav:{} ({})", row.nav_bearing, row.nav_turns);
-  } else {
-    destination = row.dest_path;
-  }
-
-  table.add_row(
-      {std::format("{}", row.type_letter), std::format("{}", row.number),
-       name_str, std::format("{}", row.governor), std::format("{}", row.damage),
-       std::format("{}", row.popn), std::format("{}", row.troops),
-       std::format("{}", row.destruct), std::format("{:.0f}", row.fuel),
-       speed_indicator, row.orbits, destination});
-
-  g.out << table << "\n";
-}
-
-void render_rst_view_model(GameObj& g, const RstViewModel& vm) {
-  bool first = true;
-  for (const auto& entry : vm.ships) {
-    if (entry.stock) {
-      render_stock_row(g, first, vm.flags.ship, *entry.stock);
-    }
-    if (entry.status) {
-      render_status_row(g, first, vm.flags.ship, *entry.status);
-    }
-    if (entry.weapons) {
-      render_weapons_row(g, first, vm.flags.ship, *entry.weapons);
-    }
-    if (entry.factory) {
-      render_factory_row(g, first, vm.flags.ship, *entry.factory);
-    }
-    if (entry.general) {
-      render_general_row(g, first, vm.flags.ship, *entry.general);
-    }
-  }
-}
-
 bool should_report_ship(const Ship& s, player_t player_num, governor_t governor,
                         const ReportSet& rep_on) {
   if (!s.alive()) return false;
@@ -501,7 +257,12 @@ bool run_rst(const command_t& argv, GameObj& g, const RstReportFlags& flags) {
   const shipnum_t n_ships = g.entity_manager.num_ships();
 
   if (argv.size() >= 2) {
-    if (*argv[1].c_str() == '#' || std::isdigit(*argv[1].c_str())) {
+    if (!argv[1].empty() &&
+        (argv[1].front() == '#' ||
+         std::isdigit(static_cast<unsigned char>(argv[1].front())))) {
+      auto all_letters = get_all_ship_letters();
+      std::ranges::copy(all_letters,
+                        std::inserter(report_types, report_types.end()));
       for (std::size_t l = 1; l < argv.size(); ++l) {
         std::string_view arg_sv = argv[l];
         if (!arg_sv.empty() && arg_sv.front() == '#') {
@@ -524,12 +285,9 @@ bool run_rst(const command_t& argv, GameObj& g, const RstReportFlags& flags) {
           return false;
         }
 
-        auto all_letters = get_all_ship_letters();
-        std::ranges::copy(all_letters,
-                          std::inserter(report_types, report_types.end()));
         collect_ship_report(g, vm, *ship, report_types);
       }
-      render_rst_view_model(g, vm);
+      g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
       return true;
     }
 
@@ -592,7 +350,7 @@ bool run_rst(const command_t& argv, GameObj& g, const RstReportFlags& flags) {
     }
   }
 
-  render_rst_view_model(g, vm);
+  g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
   return true;
 }
 

@@ -218,4 +218,13 @@ struct RstViewModel {
   std::vector<RstShipEntry> ships{};
 };
 
+/// Formats an `RstViewModel` into its ASCII tabular presentation string.
+[[nodiscard]] std::string render_rst(const RstViewModel& vm);
+
+/// Formats an `RstViewModel` into its JSON envelope string.
+[[nodiscard]] std::string render_json_rst(const RstViewModel& vm);
+
+/// Open ADL dispatch for `RstViewModel`.
+[[nodiscard]] std::string render_for_mode(UiMode mode, const RstViewModel& vm);
+
 }  // namespace GB::presentation

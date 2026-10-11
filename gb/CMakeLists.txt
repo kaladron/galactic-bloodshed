@@ -202,12 +202,14 @@ target_sources(
          FILES
           presentation/core.cppm
           presentation/planet_views.cppm
+          presentation/empire_views.cppm
           presentation/navigation.cppm
           presentation/construction.cppm
           presentation/ship_ops.cppm
           presentation/combat.cppm
           presentation/presentation.cppm
   PRIVATE presentation/planet_views.cc
+          presentation/empire_views.cc
           presentation/navigation.cc
           presentation/construction.cc
           presentation/ship_ops.cc

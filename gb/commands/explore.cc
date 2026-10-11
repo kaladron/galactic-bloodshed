@@ -6,17 +6,16 @@
 module;
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import std;
-import tabulate;
-#undef stdout
 
 module commands;
 
 namespace GB::commands {
 bool explore(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player();
-  int starq = -1;
+  std::optional<starnum_t> target_star{std::nullopt};
 
   if (argv.size() == 2) {
     auto where = Place::resolve(g.entity_manager, g.scope_context(), argv[1]);
@@ -30,78 +29,59 @@ bool explore(const command_t& argv, GameObj& g) {
       g.out << std::format("Bad scope '{}'\n", argv[1]);
       return false;
     }
-    starq = static_cast<int>(where->snum.value);
+    target_star = where->snum;
   }
 
   const auto& sdata = *g.entity_manager.peek_universe();
-  g.out << "         ========== Exploration Report ==========\n";
-  g.out << std::format(" Global action points : [{:2}]\n",
-                       sdata.get_AP(Playernum));
+  GB::presentation::ExploreViewModel vm{
+      .global_ap = sdata.get_AP(Playernum),
+  };
 
   for (const Star& star_ref : StarList::readonly(g.entity_manager)) {
-    if ((starq == -1) || (starq == star_ref.star_id())) {
-      if (star_ref.is_explored_by(Playernum)) {
-        // Output star header
-        if (g.race->tech >= TECH_SEE_STABILITY) {
-          g.out << std::format("\n{} ({:2})[{:2}]\n", star_ref.get_name(),
-                               star_ref.stability(), star_ref.AP(Playernum));
-        } else {
-          g.out << std::format("\n{} (/?/?)[{:2}]\n", star_ref.get_name(),
-                               star_ref.AP(Playernum));
-        }
-
-        // Create planet table for this star
-        tabulate::Table table;
-        table.format().hide_border().column_separator("  ");
-
-        // Configure columns
-        table.column(0).format().width(3).font_align(
-            tabulate::FontAlign::right);     // #
-        table.column(1).format().width(15);  // Planet
-        table.column(2).format().width(30);  // Attributes
-        table.column(3).format().width(12);  // Type
-        table.column(4).format().width(6).font_align(
-            tabulate::FontAlign::right);  // Compat
-
-        // Add header
-        table.add_row({"#", "Planet", "Attributes", "Type", "Compat"});
-        table[0].format().font_style({tabulate::FontStyle::bold});
-
-        for (const Planet& pl : PlanetList::readonly(
-                 g.entity_manager, star_ref.star_id(), star_ref)) {
-          const planetnum_t i = pl.planet_order();
-
-          // Build attributes string
-          std::string attrs;
-          std::string type_col;
-          std::string compat_col;
-          if (pl.info(Playernum).explored) {
-            if (pl.info(Playernum).explored) attrs += "Ex ";
-            if (pl.info(Playernum).autorep) attrs += "Rep ";
-            if (pl.info(Playernum).numsectsowned) attrs += "Inhab ";
-            if (pl.is_enslaved()) attrs += "SLAVED ";
-
-            for (const auto& [j, info] : pl.info_map()) {
-              if (j != Playernum && info.numsectsowned) {
-                attrs += std::format("{} ", j);
-              }
-            }
-            if (pl.toxic() > 70) attrs += "TOXIC ";
-
-            type_col = pl.type_name();
-            compat_col = std::format("{:.0f}%", pl.compatibility(*g.race));
-          } else {
-            attrs = "No Data";
-          }
-
-          table.add_row({std::format("{}", i), star_ref.get_planet_name(i),
-                         attrs, type_col, compat_col});
-        }
-
-        g.out << table << "\n";
-      }
+    if (target_star && (*target_star != star_ref.star_id())) {
+      continue;
     }
+    if (!star_ref.is_explored_by(Playernum)) {
+      continue;
+    }
+
+    GB::presentation::ExploreStarEntry star_entry{
+        .star_name = star_ref.get_name(),
+        .stability = (g.race->tech >= TECH_SEE_STABILITY)
+                         ? std::optional<int>{star_ref.stability()}
+                         : std::nullopt,
+        .ap = star_ref.AP(Playernum),
+    };
+
+    for (const Planet& pl :
+         PlanetList::readonly(g.entity_manager, star_ref.star_id(), star_ref)) {
+      const planetnum_t pnum = pl.planet_order();
+      const auto& pinfo = pl.info(Playernum);
+      GB::presentation::ExplorePlanetRow row{
+          .planet_order = pnum,
+          .planet_name = star_ref.get_planet_name(pnum),
+          .explored = pinfo.explored,
+      };
+      if (row.explored) {
+        row.autorep = (pinfo.autorep != 0);
+        row.inhabited = (pinfo.numsectsowned > 0);
+        row.enslaved = pl.is_enslaved();
+        for (const auto& [other_player, info] : pl.info_map()) {
+          if (other_player != Playernum && info.numsectsowned > 0) {
+            row.alien_owners.push_back(other_player);
+          }
+        }
+        row.toxic = (pl.toxic() > 70);
+        row.type_name = pl.type_name();
+        row.compatibility = pl.compatibility(*g.race);
+      }
+      star_entry.planets.push_back(std::move(row));
+    }
+
+    vm.stars.push_back(std::move(star_entry));
   }
+
+  g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
   return true;
 }
 

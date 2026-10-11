@@ -201,6 +201,34 @@ render_json_survey_universe(const SurveyUniverseViewModel& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const SurveyUniverseViewModel& vm);
 
+/// Planet row in an `explore` star system table.
+struct ExplorePlanetRow {
+  planetnum_t planet_order{0};
+  std::string planet_name{};
+  bool explored{false};
+  bool autorep{false};
+  bool inhabited{false};
+  bool enslaved{false};
+  std::vector<player_t> alien_owners{};
+  bool toxic{false};
+  std::string type_name{};
+  double compatibility{0.0};
+};
+
+/// Star system entry in an `explore` report.
+struct ExploreStarEntry {
+  std::string star_name{};
+  std::optional<int> stability{std::nullopt};
+  ap_t ap{0};
+  std::vector<ExplorePlanetRow> planets{};
+};
+
+/// View model for `explore` command global or star-specific census reports.
+struct ExploreViewModel {
+  ap_t global_ap{0};
+  std::vector<ExploreStarEntry> stars{};
+};
+
 /// Renders an `OrbitViewModel` as a 2D ASCII orbital canvas with object legend
 /// and ANSI SGR reverse-video (`\x1b[7m...\x1b[27m`) for `inverse` standout.
 [[nodiscard]] std::string render_ascii_orbit_map(const OrbitViewModel& vm);
@@ -212,5 +240,16 @@ render_json_survey_universe(const SurveyUniverseViewModel& vm);
 /// Dispatches `OrbitViewModel` rendering based on `mode`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const OrbitViewModel& vm);
+
+/// Renders an `ExploreViewModel` for `UiMode::ASCII`.
+[[nodiscard]] std::string render_explore(const ExploreViewModel& vm);
+
+/// Serializes an `ExploreViewModel` into a newline-delimited Glaze JSON
+/// envelope (`{"type":"explore","data":{...}}\n`).
+[[nodiscard]] std::string render_json_explore(const ExploreViewModel& vm);
+
+/// Dispatches `ExploreViewModel` rendering based on `mode`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const ExploreViewModel& vm);
 
 }  // namespace GB::presentation

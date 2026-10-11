@@ -441,4 +441,67 @@ std::string render_for_mode(UiMode mode, const OrbitViewModel& vm) {
                               : render_ascii_orbit_map(vm);
 }
 
+std::string render_explore(const ExploreViewModel& vm) {
+  std::string out =
+      std::format("         ========== Exploration Report ==========\n"
+                  " Global action points : [{:2}]\n",
+                  vm.global_ap);
+
+  for (const auto& star : vm.stars) {
+    if (star.stability) {
+      std::format_to(std::back_inserter(out), "\n{} ({:2})[{:2}]\n",
+                     star.star_name, *star.stability, star.ap);
+    } else {
+      std::format_to(std::back_inserter(out), "\n{} (/?/?)[{:2}]\n",
+                     star.star_name, star.ap);
+    }
+
+    tabulate::Table table;
+    table.format().hide_border().column_separator("  ");
+    table.column(0).format().width(3).font_align(tabulate::FontAlign::right);
+    table.column(1).format().width(15);
+    table.column(2).format().width(30);
+    table.column(3).format().width(12);
+    table.column(4).format().width(6).font_align(tabulate::FontAlign::right);
+
+    table.add_row({"#", "Planet", "Attributes", "Type", "Compat"});
+    table[0].format().font_style({tabulate::FontStyle::bold});
+
+    for (const auto& planet : star.planets) {
+      std::string attrs;
+      std::string type_col;
+      std::string compat_col;
+      if (planet.explored) {
+        attrs += "Ex ";
+        if (planet.autorep) attrs += "Rep ";
+        if (planet.inhabited) attrs += "Inhab ";
+        if (planet.enslaved) attrs += "SLAVED ";
+        for (const player_t owner : planet.alien_owners) {
+          std::format_to(std::back_inserter(attrs), "{} ", owner);
+        }
+        if (planet.toxic) attrs += "TOXIC ";
+
+        type_col = planet.type_name;
+        compat_col = std::format("{:.0f}%", planet.compatibility);
+      } else {
+        attrs = "No Data";
+      }
+
+      table.add_row({std::format("{}", planet.planet_order), planet.planet_name,
+                     attrs, type_col, compat_col});
+    }
+
+    std::format_to(std::back_inserter(out), "{}\n", table.str());
+  }
+  return out;
+}
+
+std::string render_json_explore(const ExploreViewModel& vm) {
+  return render_json_envelope("explore", vm);
+}
+
+std::string render_for_mode(UiMode mode, const ExploreViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_explore(vm) : render_explore(vm);
+}
+
 }  // namespace GB::presentation

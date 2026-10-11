@@ -7,11 +7,12 @@ module;
 
 import std;
 import gb.entities;
+import gb.presentation;
 import gb.services;
 
 module commands;
 
-static auto allied(const Race& r, const player_t p) {
+static std::string allied(const Race& r, const player_t p) {
   if (r.is_at_war_with(p)) return "WAR";
   if (r.is_allied_with(p)) return "ALLIED";
   return "neutral";
@@ -31,23 +32,23 @@ bool relation(const command_t& argv, GameObj& g) {
 
   try {
     g.entity_manager.with_race(q, [&](const Race& race) {
-      g.out << std::format("\n              Racial Relations Report for {}\n\n",
-                           race.name);
-      g.out
-          << " #       know             Race name       Yours        Theirs\n";
-      g.out
-          << " -       ----             ---------       -----        ------\n";
+      GB::presentation::RelationViewModel vm{
+          .subject_player = race.Playernum,
+          .subject_race_name = race.name,
+      };
       for (const Race& r : RaceList::readonly(g.entity_manager)) {
         if (r.Playernum == race.Playernum) continue;
-        g.out << std::format("{:2} {:5} ({:3d}%) {:>20.20} : {:>10}   {:>10}\n",
-                             r.Playernum,
-                             ((race.God || (race.translation_for(r) > 30)) &&
-                              r.Metamorph && (Playernum == q))
-                                 ? "Morph"
-                                 : "     ",
-                             race.translation_for(r), r.name,
-                             allied(race, r.Playernum), allied(r, q));
+        const Percentage know = race.translation_for(r);
+        vm.rows.push_back(GB::presentation::RelationRow{
+            .player = r.Playernum,
+            .is_known_morph = (know > 30 && r.Metamorph && Playernum == q),
+            .know = know,
+            .race_name = r.name,
+            .yours = allied(race, r.Playernum),
+            .theirs = allied(r, q),
+        });
       }
+      g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
     });
   } catch (const EntityNotFoundError&) {
     g.out << "Race not found.\n";

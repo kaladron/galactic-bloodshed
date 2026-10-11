@@ -388,4 +388,98 @@ std::string render_for_mode(UiMode mode, const ColoniesViewModel& vm) {
   return mode == UiMode::JSON ? render_json_colonies(vm) : render_colonies(vm);
 }
 
+std::string render_power(const PowerViewModel& vm) {
+  std::string out =
+      "         ========== Galactic Bloodshed Power Report ==========\n";
+
+  tabulate::Table table;
+  table.format().hide_border().column_separator("  ");
+  table.column(0).format().width(4).font_align(tabulate::FontAlign::right);
+  table.column(1).format().width(4);
+  table.column(2).format().width(2);
+  table.column(3).format().width(15);
+  table.column(4).format().width(5).font_align(tabulate::FontAlign::right);
+  table.column(5).format().width(5).font_align(tabulate::FontAlign::right);
+  table.column(6).format().width(5).font_align(tabulate::FontAlign::right);
+  table.column(7).format().width(5).font_align(tabulate::FontAlign::right);
+  table.column(8).format().width(5).font_align(tabulate::FontAlign::right);
+  table.column(9).format().width(3).font_align(tabulate::FontAlign::right);
+  table.column(10).format().width(5).font_align(tabulate::FontAlign::right);
+  table.column(11).format().width(5).font_align(tabulate::FontAlign::right);
+  table.column(12).format().width(5).font_align(tabulate::FontAlign::right);
+  table.column(13).format().width(5).font_align(tabulate::FontAlign::right);
+  table.column(14).format().width(5).font_align(tabulate::FontAlign::right);
+
+  table.add_row({vm.show_rank_header ? "rank" : "", "#", "", "Name", "VP",
+                 "mil", "civ", "cash", "ship", "pl", "res", "fuel", "dest",
+                 "morl", vm.is_god ? "VNs" : "know"});
+  table[0].format().font_style({tabulate::FontStyle::bold});
+
+  for (const auto& row : vm.rows) {
+    table.add_row({row.rank != 0 ? std::format("{}", row.rank) : "",
+                   std::format("[{:2d}]", row.player), row.alliance, row.name,
+                   row.vp, row.mil, row.civ, row.cash, row.ships, row.planets,
+                   row.resource, row.fuel, row.destruct, row.morale,
+                   row.know_or_vns});
+  }
+
+  std::format_to(std::back_inserter(out), "{}\n", table.str());
+  return out;
+}
+
+std::string render_json_power(const PowerViewModel& vm) {
+  return render_json_envelope("power", vm);
+}
+
+std::string render_for_mode(UiMode mode, const PowerViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_power(vm) : render_power(vm);
+}
+
+std::string render_tech_status(const TechStatusViewModel& vm) {
+  std::string out = "             ========== Technology Report ==========\n\n";
+
+  for (const auto& err : vm.errors) {
+    out += err;
+  }
+
+  tabulate::Table table;
+  table.format().hide_border().column_separator("  ");
+  table.column(0).format().width(16);
+  table.column(1).format().width(10).font_align(tabulate::FontAlign::right);
+  table.column(2).format().width(10).font_align(tabulate::FontAlign::right);
+  table.column(3).format().width(8).font_align(tabulate::FontAlign::right);
+  table.column(4).format().width(8).font_align(tabulate::FontAlign::right);
+
+  table.add_row({"Planet", "popn", "invest", "gain", "^gain"});
+  table[0].format().font_style({tabulate::FontStyle::bold});
+
+  for (const auto& row : vm.rows) {
+    table.add_row({row.location, std::format("{}", row.popn),
+                   std::format("{}", row.tech_invest),
+                   std::format("{:.3f}", row.gain),
+                   std::format("{:.3f}", row.max_gain)});
+  }
+
+  std::format_to(std::back_inserter(out), "{}\n", table.str());
+
+  if (!vm.total_popn) {
+    out += "       Total Popn:  unknown\n";
+  } else {
+    std::format_to(std::back_inserter(out), "       Total Popn:  {:7}\n",
+                   *vm.total_popn);
+  }
+  std::format_to(std::back_inserter(out), "Tech: {:31}{:8.3f}{:8.3f}\n",
+                 vm.total_invest, vm.total_gain, vm.total_max_gain);
+  return out;
+}
+
+std::string render_json_tech_status(const TechStatusViewModel& vm) {
+  return render_json_envelope("tech_status", vm);
+}
+
+std::string render_for_mode(UiMode mode, const TechStatusViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_tech_status(vm)
+                              : render_tech_status(vm);
+}
+
 }  // namespace GB::presentation

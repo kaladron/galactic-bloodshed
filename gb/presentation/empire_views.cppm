@@ -294,4 +294,72 @@ struct ColoniesViewModel {
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const ColoniesViewModel& vm);
 
+/// Single player row in a `power` report.
+struct PowerRow {
+  int rank{0};
+  player_t player{0};
+  std::string alliance{};
+  std::string name{};
+  std::string vp{};
+  std::string mil{};
+  std::string civ{};
+  std::string cash{};
+  std::string ships{};
+  std::string planets{};
+  std::string resource{};
+  std::string fuel{};
+  std::string destruct{};
+  std::string morale{};
+  std::string know_or_vns{};
+};
+
+/// View model for `power` command reports.
+struct PowerViewModel {
+  bool show_rank_header{true};
+  bool is_god{false};
+  std::vector<PowerRow> rows{};
+};
+
+/// Renders a `PowerViewModel` for `UiMode::ASCII`.
+[[nodiscard]] std::string render_power(const PowerViewModel& vm);
+
+/// Serializes a `PowerViewModel` into a newline-delimited Glaze JSON
+/// envelope (`{"type":"power","data":{...}}\n`).
+[[nodiscard]] std::string render_json_power(const PowerViewModel& vm);
+
+/// Dispatches `PowerViewModel` rendering based on `mode`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const PowerViewModel& vm);
+
+/// Single colony technology row in a `status` (`tech_status`) report.
+struct TechStatusRow {
+  std::string location{};
+  population_t popn{0};
+  money_t tech_invest{0};
+  double gain{0.0};
+  double max_gain{0.0};
+};
+
+/// View model for `status` (`tech_status`) command reports.
+struct TechStatusViewModel {
+  std::vector<std::string> errors{};
+  std::vector<TechStatusRow> rows{};
+  std::optional<population_t> total_popn{std::nullopt};
+  money_t total_invest{0};
+  double total_gain{0.0};
+  double total_max_gain{0.0};
+};
+
+/// Renders a `TechStatusViewModel` for `UiMode::ASCII`.
+[[nodiscard]] std::string render_tech_status(const TechStatusViewModel& vm);
+
+/// Serializes a `TechStatusViewModel` into a newline-delimited Glaze JSON
+/// envelope (`{"type":"tech_status","data":{...}}\n`).
+[[nodiscard]] std::string
+render_json_tech_status(const TechStatusViewModel& vm);
+
+/// Dispatches `TechStatusViewModel` rendering based on `mode`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const TechStatusViewModel& vm);
+
 }  // namespace GB::presentation

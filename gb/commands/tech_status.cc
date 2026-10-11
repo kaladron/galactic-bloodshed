@@ -6,29 +6,25 @@
 module;
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import std;
-import tabulate;
-#undef stdout
 
 module commands;
 
 namespace {
 
-struct returns {
-  int invest = 0;
-  double gain = 0;
-  double max_gain = 0;
-};
+using GB::presentation::TechStatusRow;
+using GB::presentation::TechStatusViewModel;
 
-void tech_report_star(GameObj& g, const Star& star, starnum_t snum,
-                      tabulate::Table& table, returns& totals) {
+void tech_report_star(TechStatusViewModel& vm, GameObj& g, const Star& star,
+                      starnum_t snum) {
   const player_t Playernum = g.player();
   const governor_t Governor = g.governor();
 
   if (!star.is_explored_by(Playernum) || !star.control(Playernum, Governor)) {
     return;
-  };
+  }
 
   for (const auto& pl :
        PlanetList::readonly(g.entity_manager, snum, star.numplanets())) {
@@ -45,14 +41,17 @@ void tech_report_star(GameObj& g, const Star& star, starnum_t snum,
     auto max_gain =
         tech_prod(pl.info(Playernum).prod_res, pl.info(Playernum).popn);
 
-    table.add_row({location, std::format("{}", pl.info(Playernum).popn),
-                   std::format("{}", pl.info(Playernum).tech_invest),
-                   std::format("{:.3f}", gain),
-                   std::format("{:.3f}", max_gain)});
+    vm.rows.push_back(TechStatusRow{
+        .location = std::move(location),
+        .popn = pl.info(Playernum).popn,
+        .tech_invest = pl.info(Playernum).tech_invest,
+        .gain = gain,
+        .max_gain = max_gain,
+    });
 
-    totals.invest += pl.info(Playernum).tech_invest;
-    totals.gain += gain;
-    totals.max_gain += max_gain;
+    vm.total_invest += pl.info(Playernum).tech_invest;
+    vm.total_gain += gain;
+    vm.total_max_gain += max_gain;
   }
 }
 }  // namespace
@@ -60,64 +59,41 @@ void tech_report_star(GameObj& g, const Star& star, starnum_t snum,
 namespace GB::commands {
 bool tech_status(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player();
+  TechStatusViewModel vm{};
 
-  g.out << "             ========== Technology Report ==========\n\n";
-
-  // Create table
-  tabulate::Table table;
-  table.format().hide_border().column_separator("  ");
-
-  // Configure columns
-  table.column(0).format().width(16);  // Planet
-  table.column(1).format().width(10).font_align(
-      tabulate::FontAlign::right);  // popn
-  table.column(2).format().width(10).font_align(
-      tabulate::FontAlign::right);  // invest
-  table.column(3).format().width(8).font_align(
-      tabulate::FontAlign::right);  // gain
-  table.column(4).format().width(8).font_align(
-      tabulate::FontAlign::right);  // ^gain
-
-  // Add header
-  table.add_row({"Planet", "popn", "invest", "gain", "^gain"});
-  table[0].format().font_style({tabulate::FontStyle::bold});
-
-  returns totals{};
   if (argv.size() == 1) {
     for (const Star& star : StarList::readonly(g.entity_manager)) {
-      tech_report_star(g, star, star.star_id(), table, totals);
+      tech_report_star(vm, g, star, star.star_id());
     }
   } else { /* Several arguments */
-    for (int k = 1; k < argv.size(); k++) {
+    for (std::size_t k = 1; k < argv.size(); k++) {
       auto where = Place::resolve(g.entity_manager, g.scope_context(), argv[k]);
       if (!where) {
-        g.out << format_place_error(where.error());
+        vm.errors.push_back(format_place_error(where.error()));
       }
       if (!where || where->level == ScopeLevel::LEVEL_UNIV ||
           where->level == ScopeLevel::LEVEL_SHIP) {
-        g.out << std::format("Bad location `{}`.\n", argv[k]);
+        vm.errors.push_back(std::format("Bad location `{}`.\n", argv[k]));
         continue;
       } /* ok, a proper location */
       starnum_t star = where->snum;
       try {
         const auto& star_ref = *g.entity_manager.peek_star(star);
-        tech_report_star(g, star_ref, star, table, totals);
+        tech_report_star(vm, g, star_ref, star);
       } catch (const EntityNotFoundError&) {
         continue;
       }
     }
   }
 
-  g.out << table << "\n";
-
-  const auto* power_ptr = g.entity_manager.peek_power(Playernum);
-  if (!power_ptr) {
-    g.out << "       Total Popn:  unknown\n";
-  } else {
-    g.out << std::format("       Total Popn:  {:7}\n", power_ptr->popn);
+  try {
+    if (const auto* power_ptr = g.entity_manager.peek_power(Playernum)) {
+      vm.total_popn = power_ptr->popn;
+    }
+  } catch (const EntityNotFoundError&) {
   }
-  g.out << std::format("Tech: {:31}{:8.3f}{:8.3f}\n", totals.invest,
-                       totals.gain, totals.max_gain);
+
+  g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
   return true;
 }
 

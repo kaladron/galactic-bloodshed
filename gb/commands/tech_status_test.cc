@@ -13,49 +13,25 @@ import std;
 namespace {
 
 void setup_test_world(TestContext& ctx) {
+  ctx.with_standard_universe();
   JsonStore store(ctx.db);
+  PowerRepository(store).save(power{
+      .id = 1,
+      .popn = 1000,
+  });
 
-  // Initialize universe
-  universe_struct us{};
-  UniverseRepository universe_repo(store);
-  universe_repo.save(us);
+  ctx.em.mutate_planet(1, 1, [](Planet& pl) {
+    pl.info(player_t{1}).autorep = 1;
+    pl.info(player_t{1}).tech_invest = 50;
+    pl.info(player_t{1}).prod_res = 100;
+  });
+  ctx.em.mutate_planet(
+      3, 1, [](Planet& pl) { pl.info(player_t{1}).explored = false; });
 
-  // Initialize player race
-  Race race{};
-  race.Playernum = 1;
-  race.name = "Researchers";
-  race.Guest = false;
-
-  RaceRepository races(store);
-  races.save(race);
-
-  // Initialize power record for population total
-  power p{};
-  p.id = 1;
-  p.popn = 10000;
-  PowerRepository power_repo(store);
-  power_repo.save(p);
-
-  // Star 1
-  Star star0{1, "Sol", {0.0, 0.0}};
-  star0.mark_explored_by(1);
-  star0.mark_inhabited_by(1);
-  star0.set_governor(1, 1);
-  star0.set_planet_name(1, "Earth");
-
-  StarRepository stars(store);
-  stars.save(star0);
-
-  // Planet 1 on Star 1
-  Planet planet0{1, 1, PlanetType::EARTH, Coordinates{10, 10}};
-  planet0.info(player_t{1}).explored = 1;
-  planet0.info(player_t{1}).numsectsowned = 10;
-  planet0.info(player_t{1}).popn = 10000;
-  planet0.info(player_t{1}).tech_invest = 50;
-  planet0.info(player_t{1}).prod_res = 100;
-
-  PlanetRepository planets(store);
-  planets.save(planet0);
+  TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+      .owned_by(1)
+      .in_deep_space()
+      .build();
 }
 
 void test_status_dispatch() {
@@ -67,22 +43,49 @@ void test_status_dispatch() {
   ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
-  // 1. Happy path: status without arguments
+  // 1. Happy path: status without arguments (covers explored colony on Sol,
+  //    uncolonized explored planet on Vega, and unexplored planet on Antares)
   ctx.assert_dispatch_success(g, {"status"});
   std::string output = g.out.str();
   test::expect_contains(output, "Technology Report");
-  test::expect_contains(output, "Sol/Earth");
-  test::expect_contains(output, "10000");  // Population
-  test::expect_contains(output, "50");     // Tech invest
+  test::expect_contains(output, "Sol/Earth*");
+  test::expect_contains(output, "1000");  // Population
+  test::expect_contains(output, "50");    // Tech invest
   std::println(std::cout, "    ✓ status global colony report succeeded");
 
-  // 2. Happy path: status with star location argument
+  // 2. Happy path: status with star location argument & non-controlling gov
   g.out.str("");
   ctx.assert_dispatch_success(g, {"status", "/Sol"});
   output = g.out.str();
   test::expect_contains(output, "Technology Report");
-  test::expect_contains(output, "Sol/Earth");
+  test::expect_contains(output, "Sol/Earth*");
+  g.set_governor(governor_t{2});
+  ctx.assert_dispatch_success(g, {"status", "/Sol"});
+  test::expect_false(g.out.str().contains("Sol/Earth*"));
+  g.set_governor(governor_t{1});
   std::println(std::cout, "    ✓ status with /Sol filter succeeded");
+
+  // 3. Unexplored star, invalid/universe/ship locations, missing power, & JSON
+  ctx.em.mutate_star(3, [](Star& s) { s.clear_explored_by(player_t{1}); });
+  ctx.assert_dispatch_success(g,
+                              {"status", "/Antares", "/NoSuchStar", "/", "#1"});
+  test::expect_contains(g.out.str(), "Bad location `/NoSuchStar`.");
+  test::expect_contains(g.out.str(), "Bad location `/`.");
+  test::expect_contains(g.out.str(), "Bad location `#1`.");
+
+  g.set_ui_mode(UiMode::JSON);
+  ctx.assert_dispatch_success(g, {"status", "/Sol"});
+  test::expect_contains(g.out.str(), "\"type\":\"tech_status\"");
+
+  ctx.verify_universe_invariants();
+
+  JsonStore store(ctx.db);
+  PowerRepository(store).remove(2);
+  ctx.em.clear_cache();
+  g.set_ui_mode(UiMode::ASCII);
+  ctx.setup_game_obj(g, 2, 1);
+  ctx.assert_dispatch_success(g, {"status"});
+  test::expect_contains(g.out.str(), "Total Popn:  unknown");
 }
 
 }  // namespace

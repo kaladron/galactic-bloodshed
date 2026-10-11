@@ -5,18 +5,19 @@
 module;
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import std;
-import tabulate;
-#undef stdout
 
 module commands;
 
 namespace {
-void add_power_row(tabulate::Table& table, EntityManager& em, const Race& race,
-                   const Race& r, player_t i, int rank) {
-  std::string rank_col = (rank != 0) ? std::format("{}", rank) : "";
 
+using GB::presentation::PowerRow;
+using GB::presentation::PowerViewModel;
+
+void add_power_row(PowerViewModel& vm, EntityManager& em, const Race& race,
+                   const Race& r, player_t i, int rank) {
   std::string alliance_them = race.is_allied_with(i)   ? "+"
                               : race.is_at_war_with(i) ? "-"
                                                        : " ";
@@ -39,16 +40,23 @@ void add_power_row(tabulate::Table& table, EntityManager& em, const Race& race,
     know_col = std::format("{}%", race.translation_for(i));
   }
 
-  table.add_row(
-      {rank_col, std::format("[{:2d}]", i), alliance_them + alliance_us,
-       std::string(r.name), race.estimate(r.victory_score, i),
-       race.estimate(power_ptr->troops, i), race.estimate(power_ptr->popn, i),
-       race.estimate(power_ptr->money, i),
-       race.estimate(power_ptr->ships_owned, i),
-       race.estimate(power_ptr->planets_owned, i),
-       race.estimate(power_ptr->resource, i), race.estimate(power_ptr->fuel, i),
-       race.estimate(power_ptr->destruct, i), race.estimate(r.morale, i),
-       know_col});
+  vm.rows.push_back(PowerRow{
+      .rank = rank,
+      .player = i,
+      .alliance = alliance_them + alliance_us,
+      .name = std::string(r.name),
+      .vp = race.estimate(r.victory_score, i),
+      .mil = race.estimate(power_ptr->troops, i),
+      .civ = race.estimate(power_ptr->popn, i),
+      .cash = race.estimate(power_ptr->money, i),
+      .ships = race.estimate(power_ptr->ships_owned, i),
+      .planets = race.estimate(power_ptr->planets_owned, i),
+      .resource = race.estimate(power_ptr->resource, i),
+      .fuel = race.estimate(power_ptr->fuel, i),
+      .destruct = race.estimate(power_ptr->destruct, i),
+      .morale = race.estimate(r.morale, i),
+      .know_or_vns = std::move(know_col),
+  });
 }
 }  // namespace
 
@@ -66,47 +74,10 @@ bool power(const command_t& argv, GameObj& g) {
   }
 
   const auto* race = g.race;
-
-  g.out << "         ========== Galactic Bloodshed Power Report ==========\n";
-
-  tabulate::Table table;
-  table.format().hide_border().column_separator("  ");
-
-  // Configure columns
-  table.column(0).format().width(4).font_align(
-      tabulate::FontAlign::right);     // rank
-  table.column(1).format().width(4);   // #
-  table.column(2).format().width(2);   // alliance
-  table.column(3).format().width(15);  // name
-  table.column(4).format().width(5).font_align(
-      tabulate::FontAlign::right);  // VP
-  table.column(5).format().width(5).font_align(
-      tabulate::FontAlign::right);  // mil
-  table.column(6).format().width(5).font_align(
-      tabulate::FontAlign::right);  // civ
-  table.column(7).format().width(5).font_align(
-      tabulate::FontAlign::right);  // cash
-  table.column(8).format().width(5).font_align(
-      tabulate::FontAlign::right);  // ship
-  table.column(9).format().width(3).font_align(
-      tabulate::FontAlign::right);  // pl
-  table.column(10).format().width(5).font_align(
-      tabulate::FontAlign::right);  // res
-  table.column(11).format().width(5).font_align(
-      tabulate::FontAlign::right);  // fuel
-  table.column(12).format().width(5).font_align(
-      tabulate::FontAlign::right);  // dest
-  table.column(13).format().width(5).font_align(
-      tabulate::FontAlign::right);  // morl
-  table.column(14).format().width(5).font_align(
-      tabulate::FontAlign::right);  // know/VNs
-
-  // Add header
-  std::string rank_header = (argv.size() < 2) ? "rank" : "";
-  std::string know_header = race->God ? "VNs" : "know";
-  table.add_row({rank_header, "#", "", "Name", "VP", "mil", "civ", "cash",
-                 "ship", "pl", "res", "fuel", "dest", "morl", know_header});
-  table[0].format().font_style({tabulate::FontStyle::bold});
+  PowerViewModel vm{
+      .show_rank_header = argv.size() < 2,
+      .is_god = race->God,
+  };
 
   if (argv.size() < 2) {
     auto vicvec = create_victory_list(g.entity_manager);
@@ -117,7 +88,7 @@ bool power(const command_t& argv, GameObj& g) {
       const auto* r = g.entity_manager.peek_race(p);
       if (!r) continue;
       if (!r->dissolved && race->translation_for(p) >= 10) {
-        add_power_row(table, g.entity_manager, *race, *r, p, rank);
+        add_power_row(vm, g.entity_manager, *race, *r, p, rank);
       }
     }
   } else {
@@ -126,10 +97,10 @@ bool power(const command_t& argv, GameObj& g) {
       g.out << "Race not found.\n";
       return false;
     }
-    add_power_row(table, g.entity_manager, *race, *r, target_player.value(), 0);
+    add_power_row(vm, g.entity_manager, *race, *r, target_player.value(), 0);
   }
 
-  g.out << table << "\n";
+  g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
   return true;
 }
 

@@ -124,4 +124,87 @@ render_boarding_outcome(const BoardingOutcomeReport& b);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const FireShipResult& vm);
 
+/// Header row for a ship firer in a tactical report.
+struct TacticalShipHeader {
+  shipnum_t number{0};
+  char type_letter{' '};
+  bool active{false};
+  std::string name{};
+  double tech{0.0};
+  std::string battery_summary{};
+  armor_t armor{0};
+  ship_size_t size{0};
+  resource_t destruct{0};
+  double fuel{0.0};
+  damage_t damage{0};
+  speed_t fspeed{0};
+  bool evade{false};
+  std::string orbits{};
+  std::optional<Coordinates> landed_coords{std::nullopt};
+  radiation_t radiation{0};
+};
+
+/// Header row for a planetary firer in a tactical report.
+struct TacticalPlanetHeader {
+  std::string planet_name{};
+  double tech{0.0};
+  gun_count_t guns{0};
+  resource_t destruct{0};
+  resource_t fuel{0};
+};
+
+/// Target row for a ship target in a tactical report.
+struct TacticalShipTargetRow {
+  shipnum_t number{0};
+  char relation_indicator{' '};
+  player_t owner{0};
+  governor_t governor{0};
+  char type_letter{' '};
+  std::string name{};
+  double distance{0.0};
+  unsigned int range_50_pct{0};
+  ship_size_t size{0};
+  speed_t speed{0};
+  bool evade{false};
+  unsigned int hit_prob{0};
+  damage_t damage{0};
+  std::optional<Coordinates> landed_coords{std::nullopt};
+  bool active{false};
+};
+
+/// Target row for a planetary target in a tactical report.
+struct TacticalPlanetTargetRow {
+  std::string planet_name{};
+  double distance{0.0};
+};
+
+/// A single target row (either ship or planet) within a tactical report entry.
+struct TacticalTargetEntry {
+  std::optional<TacticalShipTargetRow> ship{std::nullopt};
+  std::optional<TacticalPlanetTargetRow> planet{std::nullopt};
+};
+
+/// A complete tactical report section for a single firer (ship or planet) and
+/// its targets in range.
+struct TacticalReportEntry {
+  std::optional<TacticalShipHeader> ship_header{std::nullopt};
+  std::optional<TacticalPlanetHeader> planet_header{std::nullopt};
+  std::vector<TacticalTargetEntry> targets{};
+};
+
+/// View model for the `tactical` command.
+struct TacticalViewModel {
+  std::vector<TacticalReportEntry> entries{};
+};
+
+/// Formats a `TacticalViewModel` into its ASCII tabular presentation string.
+[[nodiscard]] std::string render_tactical(const TacticalViewModel& vm);
+
+/// Formats a `TacticalViewModel` into its JSON envelope string.
+[[nodiscard]] std::string render_json_tactical(const TacticalViewModel& vm);
+
+/// Open ADL dispatch for `TacticalViewModel`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const TacticalViewModel& vm);
+
 }  // namespace GB::presentation

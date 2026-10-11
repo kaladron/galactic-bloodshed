@@ -12,6 +12,7 @@ import glaze.core;
 import glaze.json;
 import gb.repositories.glaze;
 import strong_id;
+import tabulate;
 
 namespace GB::presentation {
 
@@ -506,6 +507,89 @@ std::string render_for_mode(UiMode mode, const FireShipResult& vm) {
     return render_json_envelope("fire_ship", vm);
   }
   return render_fire_ship_result(vm);
+}
+
+std::string render_tactical(const TacticalViewModel& vm) {
+  std::string out;
+  for (const auto& entry : vm.entries) {
+    tabulate::Table header_table;
+    header_table.format().hide_border().column_separator("  ");
+    header_table.add_row({"#", "", "name", "tech", "guns", "armor", "size",
+                          "dest", "fuel", "dam", "spd", "evad", "orbits"});
+    header_table[0].format().font_style({tabulate::FontStyle::bold});
+
+    if (entry.ship_header) {
+      const auto& h = *entry.ship_header;
+      const std::string name_str = h.active ? h.name : "INACTIVE";
+      const std::string loc_suffix =
+          h.landed_coords ? std::format(" ({})", *h.landed_coords) : "";
+      const std::string inactive_suffix =
+          h.active ? "" : std::format(" INACTIVE({})", h.radiation);
+
+      header_table.add_row(
+          {std::format("{}", h.number), std::format("{}", h.type_letter),
+           name_str, std::format("{:.0f}", h.tech), h.battery_summary,
+           std::format("{}", h.armor), std::format("{}", h.size),
+           std::format("{}", h.destruct), std::format("{:.1f}", h.fuel),
+           std::format("{}%", h.damage), std::format("{}", h.fspeed),
+           h.evade ? "yes" : "",
+           std::format("{}{}{}", h.orbits, loc_suffix, inactive_suffix)});
+    } else if (entry.planet_header) {
+      const auto& h = *entry.planet_header;
+      header_table.add_row({"", "", std::format("(planet){}", h.planet_name),
+                            std::format("{:.0f}", h.tech),
+                            std::format("{}M", h.guns), "", "",
+                            std::format("{}", h.destruct),
+                            std::format("{}", h.fuel), "", "", "", ""});
+    }
+
+    std::format_to(std::back_inserter(out), "\n{}\n", header_table.str());
+
+    if (entry.targets.empty()) {
+      continue;
+    }
+
+    tabulate::Table tactical_table;
+    tactical_table.format().hide_border().column_separator("  ");
+    tactical_table.add_row({"Tactical: #", "own", "typ", "name", "rng", "(50%)",
+                            "size", "spd", "evade", "hit", "dam", "loc"});
+    tactical_table[0].format().font_style({tabulate::FontStyle::bold});
+
+    for (const auto& target : entry.targets) {
+      if (target.ship) {
+        const auto& t = *target.ship;
+        const std::string loc_str =
+            t.landed_coords ? std::format("{}", *t.landed_coords) : "";
+        const std::string status_suffix = t.active ? "" : " INACTIVE";
+
+        tactical_table.add_row(
+            {std::format("{}", t.number),
+             std::format("{}{},{}", t.relation_indicator, t.owner, t.governor),
+             std::format("{}", t.type_letter), std::format("{:.14}", t.name),
+             std::format("{:.0f}", t.distance),
+             std::format("{}", t.range_50_pct), std::format("{}", t.size),
+             std::format("{}", t.speed), t.evade ? "yes" : "",
+             std::format("{}%", t.hit_prob), std::format("{}%", t.damage),
+             std::format("{}{}", loc_str, status_suffix)});
+      } else if (target.planet) {
+        const auto& t = *target.planet;
+        tactical_table.add_row({"", "(planet)", "", t.planet_name,
+                                std::format("{:.0f}", t.distance), "", "", "",
+                                "", "", "", ""});
+      }
+    }
+
+    std::format_to(std::back_inserter(out), "\n{}\n", tactical_table.str());
+  }
+  return out;
+}
+
+std::string render_json_tactical(const TacticalViewModel& vm) {
+  return render_json_envelope("tactical", vm);
+}
+
+std::string render_for_mode(UiMode mode, const TacticalViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_tactical(vm) : render_tactical(vm);
 }
 
 }  // namespace GB::presentation

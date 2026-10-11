@@ -9,6 +9,7 @@
 
 import commands;
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import test;
 import std;
@@ -224,6 +225,14 @@ void test_tactical_explicit_ship_and_filters() {
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"tactical"});
   test::expect_contains(g.out.str(), "No ship is currently scoped");
+
+  // JSON mode output
+  g.set_ui_mode(UiMode::JSON);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"tactical", "#2", "2"});
+  test::expect_contains(g.out.str(), "\"type\":\"tactical\"");
+  test::expect_contains(g.out.str(), "\"name\":\"Destroyer1\"");
+  test::expect_contains(g.out.str(), "\"name\":\"EnemyCruiser\"");
 
   std::println(std::cout,
                "  ✓ Explicit ship and filter arguments work properly");

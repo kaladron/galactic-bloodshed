@@ -11,19 +11,22 @@
 module;
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import scnlib;
 import std;
-import tabulate;
-#undef stdout
 
 module commands;
 
 namespace {
 
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
+using GB::presentation::TacticalPlanetHeader;
+using GB::presentation::TacticalPlanetTargetRow;
+using GB::presentation::TacticalReportEntry;
+using GB::presentation::TacticalShipHeader;
+using GB::presentation::TacticalShipTargetRow;
+using GB::presentation::TacticalTargetEntry;
+using GB::presentation::TacticalViewModel;
 
 struct TacticalParams {
   double tech = 0.0;
@@ -41,13 +44,6 @@ struct TacticalContext {
   std::optional<player_t>
       filter_player;  // Filter by player number (nullopt = no filter)
 };
-
-// Forward declarations
-class TacticalItem;
-
-// ============================================================================
-// BASE CLASS: TacticalItem
-// ============================================================================
 
 class TacticalItem {
 protected:
@@ -71,34 +67,25 @@ public:
     return std::nullopt;
   }
 
-  // Add header row to tactical summary table (polymorphic)
-  virtual void add_tactical_header_row(tabulate::Table&, GameObj&, player_t,
-                                       const TacticalParams&) const = 0;
+  virtual void populate_header(TacticalReportEntry& entry, GameObj& g,
+                               player_t player_num,
+                               const TacticalParams& params) const = 0;
 
-  // Add target row to tactical targets table (polymorphic)
-  virtual void add_tactical_target_row(tabulate::Table&, GameObj&,
-                                       TacticalContext&, const Race&,
-                                       double dist,
-                                       const TacticalParams& firer) const = 0;
+  virtual std::optional<TacticalTargetEntry>
+  build_target_entry(GameObj& g, TacticalContext& ctx, const Race& race,
+                     double dist, const TacticalParams& firer) const = 0;
 
-  // Get tactical parameters for this item
   virtual TacticalParams get_tactical_params(const Race&) const = 0;
 
-  // Check if we should generate tactical report for this item
   virtual bool should_report_tactical(player_t player_num,
                                       governor_t governor) const = 0;
 
-  // Generate tactical report for this item
-  void report_tactical(GameObj& g, TacticalContext& ctx,
-                       const std::vector<std::unique_ptr<TacticalItem>>& items,
-                       const TacticalParams& params) const;
+  TacticalReportEntry
+  build_report_entry(GameObj& g, TacticalContext& ctx, const Race& race,
+                     const std::vector<std::unique_ptr<TacticalItem>>& items,
+                     const TacticalParams& params) const;
 };
 
-// ============================================================================
-// DERIVED CLASSES
-// ============================================================================
-
-// Ship tactical item - holds non-owning pointer from peek_ship
 class ShipTacticalItem : public TacticalItem {
   const Ship* ship_;
 
@@ -110,14 +97,13 @@ public:
     return ship_->number();
   }
 
-  void add_tactical_header_row(tabulate::Table& table, GameObj& g,
-                               player_t player_num,
-                               const TacticalParams& params) const override;
+  void populate_header(TacticalReportEntry& entry, GameObj& g,
+                       player_t player_num,
+                       const TacticalParams& params) const override;
 
-  void add_tactical_target_row(tabulate::Table& table, GameObj& g,
-                               TacticalContext& ctx, const Race& race,
-                               double dist,
-                               const TacticalParams& firer) const override;
+  std::optional<TacticalTargetEntry>
+  build_target_entry(GameObj& g, TacticalContext& ctx, const Race& race,
+                     double dist, const TacticalParams& firer) const override;
 
   TacticalParams get_tactical_params(const Race& race) const override;
 
@@ -125,7 +111,6 @@ public:
                               governor_t governor) const override;
 };
 
-// Planet tactical item - holds non-owning pointer from peek_planet
 class PlanetTacticalItem : public TacticalItem {
   const Planet* planet_;
 
@@ -133,87 +118,19 @@ public:
   PlanetTacticalItem(const Planet* planet, UniverseCoordinates coords)
       : TacticalItem(coords), planet_(planet) {}
 
-  void add_tactical_header_row(tabulate::Table& table, GameObj& g,
-                               player_t player_num,
-                               const TacticalParams& params) const override;
+  void populate_header(TacticalReportEntry& entry, GameObj& g,
+                       player_t player_num,
+                       const TacticalParams& params) const override;
 
-  void add_tactical_target_row(tabulate::Table& table, GameObj& g,
-                               TacticalContext& ctx, const Race& race,
-                               double dist,
-                               const TacticalParams& firer) const override;
+  std::optional<TacticalTargetEntry>
+  build_target_entry(GameObj& g, TacticalContext& ctx, const Race& race,
+                     double dist, const TacticalParams& firer) const override;
 
   TacticalParams get_tactical_params(const Race& race) const override;
 
   bool should_report_tactical(player_t player_num,
                               governor_t governor) const override;
 };
-
-// ============================================================================
-// TABLE FORMATTING & HELPER FUNCTIONS
-// ============================================================================
-
-void configure_tactical_header_table(tabulate::Table& header_table) {
-  header_table.format().hide_border().column_separator("  ");
-
-  header_table.column(0).format().width(3).font_align(
-      tabulate::FontAlign::right);
-  header_table.column(1).format().width(1).font_align(
-      tabulate::FontAlign::center);
-  header_table.column(2).format().width(16);
-  header_table.column(3).format().width(4).font_align(
-      tabulate::FontAlign::right);
-  header_table.column(4).format().width(7).font_align(
-      tabulate::FontAlign::center);
-  header_table.column(5).format().width(5).font_align(
-      tabulate::FontAlign::right);
-  header_table.column(6).format().width(4).font_align(
-      tabulate::FontAlign::right);
-  header_table.column(7).format().width(5).font_align(
-      tabulate::FontAlign::right);
-  header_table.column(8).format().width(7).font_align(
-      tabulate::FontAlign::right);
-  header_table.column(9).format().width(3).font_align(
-      tabulate::FontAlign::right);
-  header_table.column(10).format().width(3).font_align(
-      tabulate::FontAlign::right);
-  header_table.column(11).format().width(4).font_align(
-      tabulate::FontAlign::center);
-  header_table.column(12).format().width(30);
-
-  header_table.add_row({"#", "", "name", "tech", "guns", "armor", "size",
-                        "dest", "fuel", "dam", "spd", "evad", "orbits"});
-  header_table[0].format().font_style({tabulate::FontStyle::bold});
-}
-
-void configure_tactical_targets_table(tabulate::Table& tactical_table) {
-  tactical_table.format().hide_border().column_separator("  ");
-
-  tactical_table.column(0).format().width(13);
-  tactical_table.column(1).format().width(5).font_align(
-      tabulate::FontAlign::center);
-  tactical_table.column(2).format().width(3).font_align(
-      tabulate::FontAlign::center);
-  tactical_table.column(3).format().width(14);
-  tactical_table.column(4).format().width(4).font_align(
-      tabulate::FontAlign::right);
-  tactical_table.column(5).format().width(4).font_align(
-      tabulate::FontAlign::right);
-  tactical_table.column(6).format().width(4).font_align(
-      tabulate::FontAlign::right);
-  tactical_table.column(7).format().width(3).font_align(
-      tabulate::FontAlign::right);
-  tactical_table.column(8).format().width(5).font_align(
-      tabulate::FontAlign::center);
-  tactical_table.column(9).format().width(3).font_align(
-      tabulate::FontAlign::right);
-  tactical_table.column(10).format().width(3).font_align(
-      tabulate::FontAlign::right);
-  tactical_table.column(11).format().width(10);
-
-  tactical_table.add_row({"Tactical: #", "own", "typ", "name", "rng", "(50%)",
-                          "size", "spd", "evade", "hit", "dam", "loc"});
-  tactical_table[0].format().font_style({tabulate::FontStyle::bold});
-}
 
 /* Add a ship to the tactical item list if not already present */
 void add_tactical_ship(std::vector<std::unique_ptr<TacticalItem>>& items,
@@ -268,20 +185,12 @@ void star_get_tactical_items(GameObj& g,
   }
 }
 
-void TacticalItem::report_tactical(
-    GameObj& g, TacticalContext& ctx,
+TacticalReportEntry TacticalItem::build_report_entry(
+    GameObj& g, TacticalContext& ctx, const Race& race,
     const std::vector<std::unique_ptr<TacticalItem>>& items,
     const TacticalParams& params) const {
-  const auto* race = g.entity_manager.peek_race(g.player());
-  if (!race) return;
-
-  tabulate::Table header_table;
-  configure_tactical_header_table(header_table);
-  add_tactical_header_row(header_table, g, g.player(), params);
-  g.out << "\n" << header_table << "\n";
-
-  tabulate::Table tactical_table;
-  configure_tactical_targets_table(tactical_table);
+  TacticalReportEntry entry{};
+  populate_header(entry, g, g.player(), params);
 
   for (const auto& target : items) {
     if (target.get() == this) continue;
@@ -289,44 +198,42 @@ void TacticalItem::report_tactical(
     const double dist = coords_.distance_to(target->coordinates());
     if (dist >= params.weapon_range) continue;
 
-    target->add_tactical_target_row(tactical_table, g, ctx, *race, dist,
-                                    params);
+    if (auto target_row =
+            target->build_target_entry(g, ctx, race, dist, params)) {
+      entry.targets.push_back(std::move(*target_row));
+    }
   }
 
-  if (tactical_table.size() > 1) {
-    g.out << "\n" << tactical_table << "\n";
-  }
+  return entry;
 }
 
-// ============================================================================
-// SHIP TACTICAL IMPLEMENTATIONS
-// ============================================================================
-
-void ShipTacticalItem::add_tactical_header_row(
-    tabulate::Table& table, GameObj& g, player_t,
-    const TacticalParams& params) const {
+void ShipTacticalItem::populate_header(TacticalReportEntry& entry, GameObj& g,
+                                       player_t,
+                                       const TacticalParams& params) const {
   const auto& s = *ship_;
-  std::string name_str = s.active() ? s.name() : "INACTIVE";
-  std::string orbits_str = dispshiploc(g.entity_manager, s);
-
-  std::string location_suffix;
+  std::optional<Coordinates> landed_coords{std::nullopt};
   if (s.is_landed()) {
-    location_suffix = std::format(" ({})", s.land_coords());
+    landed_coords = s.land_coords();
   }
 
-  std::string inactive_suffix;
-  if (!s.active()) {
-    inactive_suffix = std::format(" INACTIVE({})", s.rad());
-  }
-
-  table.add_row(
-      {std::format("{}", s.number()), std::format("{}", s.type_letter()),
-       name_str, std::format("{:.0f}", s.tech()), s.battery_summary(),
-       std::format("{}", s.armor()), std::format("{}", s.size()),
-       std::format("{}", s.destruct()), std::format("{:.1f}", s.fuel()),
-       std::format("{}%", s.damage()), std::format("{}", params.fspeed),
-       params.fev ? "yes" : "",
-       std::format("{}{}{}", orbits_str, location_suffix, inactive_suffix)});
+  entry.ship_header = TacticalShipHeader{
+      .number = s.number(),
+      .type_letter = s.type_letter(),
+      .active = s.active(),
+      .name = s.name(),
+      .tech = s.tech(),
+      .battery_summary = s.battery_summary(),
+      .armor = s.armor(),
+      .size = s.size(),
+      .destruct = s.destruct(),
+      .fuel = s.fuel(),
+      .damage = s.damage(),
+      .fspeed = params.fspeed,
+      .evade = params.fev,
+      .orbits = dispshiploc(g.entity_manager, s),
+      .landed_coords = landed_coords,
+      .radiation = s.rad(),
+  };
 }
 
 bool is_valid_ship_target(const Ship& s, const GameObj& g,
@@ -350,12 +257,13 @@ bool is_valid_ship_target(const Ship& s, const GameObj& g,
   return true;
 }
 
-void ShipTacticalItem::add_tactical_target_row(
-    tabulate::Table& table, GameObj& g, TacticalContext& ctx, const Race& race,
-    double dist, const TacticalParams& firer) const {
+std::optional<TacticalTargetEntry>
+ShipTacticalItem::build_target_entry(GameObj& g, TacticalContext& ctx,
+                                     const Race& race, double dist,
+                                     const TacticalParams& firer) const {
   const auto& s = *ship_;
   if (!is_valid_ship_target(s, g, ctx, race)) {
-    return;
+    return std::nullopt;
   }
 
   // Calculate target ship's evasion and speed (only if moving and active)
@@ -378,22 +286,34 @@ void ShipTacticalItem::add_tactical_target_row(
     prob = prob * prob / 100;
   }
 
-  const auto* war_status = race.is_at_war_with(s.owner())   ? "-"
-                           : race.is_allied_with(s.owner()) ? "+"
-                                                            : " ";
+  const char relation_indicator = race.is_at_war_with(s.owner())   ? '-'
+                                  : race.is_allied_with(s.owner()) ? '+'
+                                                                   : ' ';
+  std::optional<Coordinates> landed_coords{std::nullopt};
+  if (s.is_landed()) {
+    landed_coords = s.land_coords();
+  }
 
-  std::string loc_str =
-      s.is_landed() ? std::format("{}", s.land_coords()) : std::string{};
-  std::string status_suffix = s.active() ? "" : " INACTIVE";
-
-  table.add_row({std::format("{}", s.number()),
-                 std::format("{}{},{}", war_status, s.owner(), s.governor()),
-                 std::format("{}", s.type_letter()),
-                 std::format("{:.14}", s.name()), std::format("{:.0f}", dist),
-                 std::format("{}", factor), std::format("{}", body),
-                 std::format("{}", tspeed), tev ? "yes" : "",
-                 std::format("{}%", prob), std::format("{}%", s.damage()),
-                 std::format("{}{}", loc_str, status_suffix)});
+  return TacticalTargetEntry{
+      .ship =
+          TacticalShipTargetRow{
+              .number = s.number(),
+              .relation_indicator = relation_indicator,
+              .owner = s.owner(),
+              .governor = s.governor(),
+              .type_letter = s.type_letter(),
+              .name = s.name(),
+              .distance = dist,
+              .range_50_pct = factor,
+              .size = body,
+              .speed = tspeed,
+              .evade = tev,
+              .hit_prob = prob,
+              .damage = s.damage(),
+              .landed_coords = landed_coords,
+              .active = s.active(),
+          },
+  };
 }
 
 TacticalParams ShipTacticalItem::get_tactical_params(const Race&) const {
@@ -422,36 +342,36 @@ bool ShipTacticalItem::should_report_tactical(player_t player_num,
          s.is_authorized_for(governor) && s.has_sight();
 }
 
-// ============================================================================
-// PLANET TACTICAL IMPLEMENTATIONS
-// ============================================================================
-
-void PlanetTacticalItem::add_tactical_header_row(
-    tabulate::Table& table, GameObj& g, player_t player_num,
-    const TacticalParams& params) const {
+void PlanetTacticalItem::populate_header(TacticalReportEntry& entry, GameObj& g,
+                                         player_t player_num,
+                                         const TacticalParams& params) const {
   const auto& p = *planet_;
   const auto* star = g.entity_manager.peek_star(p.star_id());
 
-  std::string name_str = std::format(
-      "(planet){}", star ? star->get_planet_name(p.planet_order()) : "Unknown");
-
-  table.add_row({"", "", name_str, std::format("{:.0f}", params.tech),
-                 std::format("{}M", p.info(player_num).guns), "", "",
-                 std::format("{}", p.info(player_num).destruct),
-                 std::format("{}", p.info(player_num).fuel), "", "", "", ""});
+  entry.planet_header = TacticalPlanetHeader{
+      .planet_name = star ? star->get_planet_name(p.planet_order()) : "Unknown",
+      .tech = params.tech,
+      .guns = p.info(player_num).guns,
+      .destruct = p.info(player_num).destruct,
+      .fuel = p.info(player_num).fuel,
+  };
 }
 
-void PlanetTacticalItem::add_tactical_target_row(tabulate::Table& table,
-                                                 GameObj& g, TacticalContext&,
-                                                 const Race&, double dist,
-                                                 const TacticalParams&) const {
+std::optional<TacticalTargetEntry>
+PlanetTacticalItem::build_target_entry(GameObj& g, TacticalContext&,
+                                       const Race&, double dist,
+                                       const TacticalParams&) const {
   const auto& p = *planet_;
   const auto* star = g.entity_manager.peek_star(p.star_id());
-  std::string name_str =
-      star ? star->get_planet_name(p.planet_order()) : "Unknown";
 
-  table.add_row({"", "(planet)", "", name_str, std::format("{:.0f}", dist), "",
-                 "", "", "", "", "", ""});
+  return TacticalTargetEntry{
+      .planet =
+          TacticalPlanetTargetRow{
+              .planet_name =
+                  star ? star->get_planet_name(p.planet_order()) : "Unknown",
+              .distance = dist,
+          },
+  };
 }
 
 TacticalParams PlanetTacticalItem::get_tactical_params(const Race& race) const {
@@ -466,10 +386,6 @@ bool PlanetTacticalItem::should_report_tactical(player_t player_num,
   return planet_->info(player_num).numsectsowned != 0;
 }
 
-// ============================================================================
-// TACTICAL REPORT DRIVER & COMMAND HELPERS
-// ============================================================================
-
 void generate_tactical_reports(
     GameObj& g, TacticalContext& ctx,
     const std::vector<std::unique_ptr<TacticalItem>>& items) {
@@ -479,13 +395,17 @@ void generate_tactical_reports(
     return;
   }
 
+  TacticalViewModel vm{};
   for (const auto& item : items) {
     if (!item->should_report_tactical(g.player(), g.governor())) {
       continue;
     }
     TacticalParams params = item->get_tactical_params(*race);
-    item->report_tactical(g, ctx, items, params);
+    vm.entries.push_back(
+        item->build_report_entry(g, ctx, *race, items, params));
   }
+
+  g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
 }
 
 void collect_ship_area_items(GameObj& g,
@@ -581,10 +501,6 @@ bool collect_scoped_tactical_items(
 }
 
 }  // namespace
-
-// ============================================================================
-// COMMAND ENTRY POINT
-// ============================================================================
 
 namespace GB::commands {
 bool tactical(const command_t& argv, GameObj& g) {

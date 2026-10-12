@@ -3,16 +3,13 @@
 /// \file victory.cc
 /// \brief Display current victory standings and player rankings.
 
-module;
+module commands;
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import scnlib;
 import std;
-import tabulate;
-#undef stdout
-
-module commands;
 
 namespace GB::commands {
 bool victory(const command_t& argv, GameObj& g) {
@@ -29,70 +26,35 @@ bool victory(const command_t& argv, GameObj& g) {
 
   auto viclist = create_victory_list(g.entity_manager);
 
-  // Create table
-  tabulate::Table table;
+  GB::presentation::VictoryViewModel vm{
+      .is_god = g.god(),
+  };
 
-  // Format table: no borders, just spacing between columns
-  table.format().hide_border().column_separator("  ");
-
-  // Set column alignments and widths
-  table.column(0).format().width(3).font_align(
-      tabulate::FontAlign::right);  // No.
-  table.column(1).format().width(1).font_align(
-      tabulate::FontAlign::center);  // M flag
-  table.column(2).format().width(4).font_align(
-      tabulate::FontAlign::center);    // [Race]
-  table.column(3).format().width(15);  // Name
-
-  if (g.god()) {
-    table.column(4).format().width(6).font_align(
-        tabulate::FontAlign::right);  // Score
-    table.column(5).format().width(6).font_align(
-        tabulate::FontAlign::right);  // Tech
-    table.column(6).format().width(3).font_align(
-        tabulate::FontAlign::right);     // IQ
-    table.column(7).format().width(10);  // Password
-    table.column(8).format().width(10);  // Gov Pass
-  }
-
-  // Add header
-  g.out << "----==== PLAYER RANKINGS ====----\n";
-
-  // Add header row
-  tabulate::Table::Row_t header = {"No.", "", "Race", "Name"};
-  if (g.god()) {
-    header.insert(header.end(),
-                  {"Score", "Tech", "IQ", "Password", "Gov Pass"});
-  }
-  table.add_row(header);
-  table[0].format().font_style({tabulate::FontStyle::bold});
-
-  // Add data rows
-  for (int rank = 0; auto& vic : viclist) {
+  for (int rank = 0; const auto& vic : viclist) {
     rank++;
     if (rank > count) break;
 
-    // Build base row
-    tabulate::Table::Row_t row = {
-        std::format("{}", rank), std::format("{}", vic.thing ? 'M' : ' '),
-        std::format("[{}]", vic.racenum), std::format("{:.15}", vic.name)};
+    GB::presentation::VictoryRow row{
+        .rank = rank,
+        .is_metamorph = vic.thing != 0,
+        .player = vic.racenum,
+        .name = vic.name,
+        .raw_score = vic.rawscore,
+        .tech = vic.tech,
+        .iq = vic.iq,
+    };
 
-    // Add god-only columns
     if (g.god()) {
       const auto* race = g.entity_manager.peek_race(vic.racenum);
       if (!race) continue;
-
-      row.insert(row.end(),
-                 {std::format("{}", vic.rawscore),
-                  std::format("{:.2f}", vic.tech), std::format("{}", vic.iq),
-                  std::format("{}", race->password),
-                  std::format("{}", race->leader().password)});
+      row.password = race->password;
+      row.gov_password = race->leader().password;
     }
 
-    table.add_row(row);
+    vm.rows.push_back(std::move(row));
   }
 
-  g.out << table << "\n";
+  g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
   return true;
 }
 

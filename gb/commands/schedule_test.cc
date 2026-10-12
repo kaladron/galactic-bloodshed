@@ -3,7 +3,6 @@
 /// \file schedule_test.cc
 /// \brief Unit tests for schedule command and scheduling engine.
 
-import dallib;
 import gb.entities;
 import gb.services;
 import test;
@@ -14,29 +13,16 @@ namespace {
 
 void test_schedule_display() {
   TestContext ctx;
-  JsonStore store(ctx.db);
+  ctx.with_standard_universe();
 
-  // Create test race
-  Race race{};
-  race.Playernum = 1;
-  race.name = "Schedulers";
-  race.Guest = false;
+  ctx.em.mutate_server_state([](ServerState& state) {
+    state.update_time_minutes = 30;
+    state.segments = 5;
+    state.nsegments_done = 2;
+    state.next_update_time = std::time(nullptr) + 1800;
+    state.next_segment_time = std::time(nullptr) + 360;
+  });
 
-  RaceRepository races(store);
-  races.save(race);
-
-  // Setup server state
-  ServerState state{};
-  state.update_time_minutes = 30;
-  state.segments = 5;
-  state.nsegments_done = 2;
-  state.next_update_time = std::time(nullptr) + 1800;
-  state.next_segment_time = std::time(nullptr) + 360;
-
-  ServerStateRepository states(store);
-  states.save(state);
-
-  // Create GameObj
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
@@ -48,34 +34,24 @@ void test_schedule_display() {
   std::string out = g.out.str();
   test::expect_contains(out, "30 minute update intervals");
   test::expect_contains(out, "5 movement segments per update");
-  test::expect_contains(out, "Next Segment");
+  test::expect_contains(out, "Next Segment  3 :");
   test::expect_contains(out, "Next Update");
+
+  ctx.verify_universe_invariants();
 }
 
 void test_do_next_thing_branching() {
   TestContext ctx;
-  JsonStore store(ctx.db);
-
-  Race race{};
-  race.Playernum = 1;
-  race.name = "Schedulers";
-  race.Guest = false;
-  RaceRepository races(store);
-  races.save(race);
-
-  universe_struct u{};
-  UniverseRepository univ_repo(store);
-  univ_repo.save(u);
+  ctx.with_standard_universe();
 
   // Case A: nsegments_done < segments -> advances segment
-  ServerState state{};
-  state.update_time_minutes = 30;
-  state.segments = 5;
-  state.nsegments_done = 2;
-  state.next_update_time = std::time(nullptr) + 1800;
-  state.next_segment_time = std::time(nullptr) + 360;
-  ServerStateRepository states(store);
-  states.save(state);
+  ctx.em.mutate_server_state([](ServerState& state) {
+    state.update_time_minutes = 30;
+    state.segments = 5;
+    state.nsegments_done = 2;
+    state.next_update_time = std::time(nullptr) + 1800;
+    state.next_segment_time = std::time(nullptr) + 360;
+  });
 
   auto& registry = get_test_session_registry();
   do_next_thing(ctx.em, registry);
@@ -91,6 +67,8 @@ void test_do_next_thing_branching() {
   const auto* state_after_upd = ctx.em.peek_server_state();
   test::expect_ne(state_after_upd, nullptr);
   test::expect_eq(state_after_upd->nsegments_done, 1);
+
+  ctx.verify_universe_invariants();
 }
 
 }  // namespace

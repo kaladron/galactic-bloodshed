@@ -525,4 +525,86 @@ std::string render_for_mode(UiMode mode, const DumpViewModel& vm) {
   return mode == UiMode::JSON ? render_json_dump(vm) : render_dump(vm);
 }
 
+std::string render_time(const TimeViewModel& vm) {
+  return std::format("{}{}{}"
+                     "Current time    : {}\n",
+                     vm.start_line, vm.update_line, vm.segment_line,
+                     vm.current_time);
+}
+
+std::string render_json_time(const TimeViewModel& vm) {
+  return render_json_envelope("time", vm);
+}
+
+std::string render_for_mode(UiMode mode, const TimeViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_time(vm) : render_time(vm);
+}
+
+std::string render_schedule(const ScheduleViewModel& vm) {
+  return std::format("{} minute update intervals\n"
+                     "{} movement segments per update\n"
+                     "Current time    : {}\n"
+                     "Next Segment {:2d} : {}\n"
+                     "Next Update {:3d} : {}\n",
+                     vm.update_time_minutes, vm.segments, vm.current_time,
+                     vm.next_segment_number, vm.next_segment_time,
+                     vm.next_update_number, vm.next_update_time);
+}
+
+std::string render_json_schedule(const ScheduleViewModel& vm) {
+  return render_json_envelope("schedule", vm);
+}
+
+std::string render_for_mode(UiMode mode, const ScheduleViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_schedule(vm) : render_schedule(vm);
+}
+
+std::string render_victory(const VictoryViewModel& vm) {
+  std::string out = "----==== PLAYER RANKINGS ====----\n";
+
+  tabulate::Table table;
+  table.format().hide_border().column_separator("  ");
+  table.column(0).format().width(3).font_align(tabulate::FontAlign::right);
+  table.column(1).format().width(1).font_align(tabulate::FontAlign::center);
+  table.column(2).format().width(4).font_align(tabulate::FontAlign::center);
+  table.column(3).format().width(15);
+
+  tabulate::Table::Row_t header = {"No.", "", "Race", "Name"};
+  if (vm.is_god) {
+    table.column(4).format().width(6).font_align(tabulate::FontAlign::right);
+    table.column(5).format().width(6).font_align(tabulate::FontAlign::right);
+    table.column(6).format().width(3).font_align(tabulate::FontAlign::right);
+    table.column(7).format().width(10);
+    table.column(8).format().width(10);
+    header.insert(header.end(),
+                  {"Score", "Tech", "IQ", "Password", "Gov Pass"});
+  }
+  table.add_row(header);
+  table[0].format().font_style({tabulate::FontStyle::bold});
+
+  for (const auto& r : vm.rows) {
+    tabulate::Table::Row_t row = {std::format("{}", r.rank),
+                                  std::format("{}", r.is_metamorph ? 'M' : ' '),
+                                  std::format("[{}]", r.player),
+                                  std::format("{:.15}", r.name)};
+    if (vm.is_god) {
+      row.insert(row.end(),
+                 {std::format("{}", r.raw_score), std::format("{:.2f}", r.tech),
+                  std::format("{}", r.iq), r.password, r.gov_password});
+    }
+    table.add_row(row);
+  }
+
+  std::format_to(std::back_inserter(out), "{}\n", table.str());
+  return out;
+}
+
+std::string render_json_victory(const VictoryViewModel& vm) {
+  return render_json_envelope("victory", vm);
+}
+
+std::string render_for_mode(UiMode mode, const VictoryViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_victory(vm) : render_victory(vm);
+}
+
 }  // namespace GB::presentation

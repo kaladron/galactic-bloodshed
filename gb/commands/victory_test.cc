@@ -4,7 +4,6 @@
 /// \brief Test victory command functionality and standings output via
 /// CommandDescriptor.
 
-import dallib;
 import gb.entities;
 import gb.services;
 import test;
@@ -17,44 +16,26 @@ void test_victory_dispatch() {
   std::println(std::cout, "Test: victory command dispatch and rankings");
 
   TestContext ctx;
-  JsonStore store(ctx.db);
+  ctx.with_standard_universe();
 
-  // Setup: Create universe
-  universe_struct us{};
-  UniverseRepository universe_repo(store);
-  universe_repo.save(us);
+  ctx.em.mutate_race(1, [](Race& race1) {
+    race1.name = "Terrans";
+    race1.victory_score = 100;
+    race1.tech = 50.0;
+    race1.IQ = 120;
+    race1.password = "secret1";
+    race1.leader().password = "govsec1";
+  });
 
-  // Setup: Create test races
-  Race race1{};
-  race1.Playernum = 1;
-  race1.name = "Terrans";
-  race1.victory_score = 100.0;
-  race1.tech = 50.0;
-  race1.IQ = 120;
-  race1.password = "secret1";
-  race1.leader().password = "govsec1";
-
-  Race race2{};
-  race2.Playernum = 2;
-  race2.name = "Martians";
-  race2.victory_score = 250.0;
-  race2.tech = 80.0;
-  race2.IQ = 140;
-  race2.password = "secret2";
-  race2.leader().password = "govsec2";
-
-  RaceRepository races(store);
-  races.save(race1);
-  races.save(race2);
-
-  // Setup: Create power records (needed by victory list calculation)
-  power p1{};
-  p1.id = 1;
-  power p2{};
-  p2.id = 2;
-  PowerRepository powers(store);
-  powers.save(p1);
-  powers.save(p2);
+  ctx.em.mutate_race(2, [](Race& race2) {
+    race2.name = "Martians";
+    race2.Metamorph = true;
+    race2.victory_score = 250;
+    race2.tech = 80.0;
+    race2.IQ = 140;
+    race2.password = "secret2";
+    race2.leader().password = "govsec2";
+  });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -67,6 +48,7 @@ void test_victory_dispatch() {
   std::string out = g.out.str();
   test::expect_contains(out, "PLAYER RANKINGS");
   test::expect_true(out.contains("Martians") && out.contains("Terrans"));
+  test::expect_contains(out, "M");
   std::println(std::cout, "    ✓ victory all players standings succeeded");
 
   // 2. Victory top count (victory 1 - top 1 player)
@@ -75,6 +57,7 @@ void test_victory_dispatch() {
   out = g.out.str();
   test::expect_contains(out, "PLAYER RANKINGS");
   test::expect_contains(out, "Martians");
+  test::expect_false(out.contains("Terrans"));
   std::println(std::cout, "    ✓ victory top 1 player standings succeeded");
 
   // 3. Error case: invalid count
@@ -94,8 +77,24 @@ void test_victory_dispatch() {
   ctx.assert_dispatch_success(g, {"victory"});
   out = g.out.str();
   test::expect_true(out.contains("Password") && out.contains("Gov Pass"));
-  test::expect_true(out.contains("secret1") || out.contains("secret2"));
+  test::expect_true(out.contains("secret1") && out.contains("secret2"));
+  test::expect_true(out.contains("govsec1") && out.contains("govsec2"));
   std::println(std::cout, "    ✓ victory god mode details succeeded");
+
+  // 5. JSON mode
+  g.set_ui_mode(UiMode::JSON);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"victory", "2"});
+  out = g.out.str();
+  test::expect_contains(out, "\"type\":\"victory\"");
+  test::expect_contains(out, "\"is_god\":true");
+  test::expect_contains(out, "\"is_metamorph\":true");
+  test::expect_contains(out, "\"name\":\"Martians\"");
+  test::expect_contains(out, "\"password\":\"secret2\"");
+  test::expect_contains(out, "\"gov_password\":\"govsec2\"");
+  g.set_ui_mode(UiMode::ASCII);
+
+  ctx.verify_universe_invariants();
 }
 
 }  // namespace

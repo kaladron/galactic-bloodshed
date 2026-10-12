@@ -6,6 +6,7 @@
 module commands;
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import std;
 
@@ -17,10 +18,13 @@ bool time(const command_t&, GameObj& g) {
     g.out << "Server state unavailable.\n";
     return false;
   }
-  g.out << state->start_line();
-  g.out << state->update_line();
-  g.out << state->segment_line();
-  g.out << std::format("Current time    : {}\n", format_timestamp(clk));
+  GB::presentation::TimeViewModel vm{
+      .start_line = state->start_line(),
+      .update_line = state->update_line(),
+      .segment_line = state->segment_line(),
+      .current_time = format_timestamp(clk),
+  };
+  g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
   return true;
 }
 
@@ -31,17 +35,18 @@ bool schedule(const command_t&, GameObj& g) {
     g.out << "Server state unavailable.\n";
     return false;
   }
-  g.out << std::format("{0} minute update intervals\n",
-                       state->update_time_minutes);
-  g.out << std::format("{0} movement segments per update\n", state->segments);
-  g.out << std::format("Current time    : {}\n", format_timestamp(clk));
-  g.out << std::format("Next Segment {:2d} : {}\n",
-                       state->nsegments_done == state->segments
-                           ? 1U
-                           : state->nsegments_done + 1U,
-                       format_timestamp(state->next_segment_time));
-  g.out << std::format("Next Update {:3d} : {}\n", state->nupdates_done + 1U,
-                       format_timestamp(state->next_update_time));
+  GB::presentation::ScheduleViewModel vm{
+      .update_time_minutes = state->update_time_minutes,
+      .segments = state->segments,
+      .current_time = format_timestamp(clk),
+      .next_segment_number = state->nsegments_done == state->segments
+                                 ? 1U
+                                 : state->nsegments_done + 1U,
+      .next_segment_time = format_timestamp(state->next_segment_time),
+      .next_update_number = state->nupdates_done + 1U,
+      .next_update_time = format_timestamp(state->next_update_time),
+  };
+  g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
   return true;
 }
 

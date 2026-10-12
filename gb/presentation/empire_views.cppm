@@ -398,4 +398,74 @@ struct DumpViewModel {
 /// Dispatches `DumpViewModel` rendering based on `mode`.
 [[nodiscard]] std::string render_for_mode(UiMode mode, const DumpViewModel& vm);
 
+/// View model for `time` command output.
+struct TimeViewModel {
+  std::string start_line{};
+  std::string update_line{};
+  std::string segment_line{};
+  std::string current_time{};
+};
+
+/// Renders a `TimeViewModel` for `UiMode::ASCII`.
+[[nodiscard]] std::string render_time(const TimeViewModel& vm);
+
+/// Serializes a `TimeViewModel` into a newline-delimited Glaze JSON
+/// envelope (`{"type":"time","data":{...}}\n`).
+[[nodiscard]] std::string render_json_time(const TimeViewModel& vm);
+
+/// Dispatches `TimeViewModel` rendering based on `mode`.
+[[nodiscard]] std::string render_for_mode(UiMode mode, const TimeViewModel& vm);
+
+/// View model for `schedule` command output.
+struct ScheduleViewModel {
+  int update_time_minutes{0};
+  segments_t segments{0};
+  std::string current_time{};
+  segments_t next_segment_number{0};
+  std::string next_segment_time{};
+  turn_t next_update_number{0};
+  std::string next_update_time{};
+};
+
+/// Renders a `ScheduleViewModel` for `UiMode::ASCII`.
+[[nodiscard]] std::string render_schedule(const ScheduleViewModel& vm);
+
+/// Serializes a `ScheduleViewModel` into a newline-delimited Glaze JSON
+/// envelope (`{"type":"schedule","data":{...}}\n`).
+[[nodiscard]] std::string render_json_schedule(const ScheduleViewModel& vm);
+
+/// Dispatches `ScheduleViewModel` rendering based on `mode`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const ScheduleViewModel& vm);
+
+/// Single player ranking row in a `victory` report.
+struct VictoryRow {
+  int rank{0};
+  bool is_metamorph{false};
+  player_t player{0};
+  std::string name{};
+  victory_score_t raw_score{0};
+  double tech{0.0};
+  iq_t iq{0};
+  std::string password{};
+  std::string gov_password{};
+};
+
+/// View model for `victory` command output.
+struct VictoryViewModel {
+  bool is_god{false};
+  std::vector<VictoryRow> rows{};
+};
+
+/// Renders a `VictoryViewModel` for `UiMode::ASCII`.
+[[nodiscard]] std::string render_victory(const VictoryViewModel& vm);
+
+/// Serializes a `VictoryViewModel` into a newline-delimited Glaze JSON
+/// envelope (`{"type":"victory","data":{...}}\n`).
+[[nodiscard]] std::string render_json_victory(const VictoryViewModel& vm);
+
+/// Dispatches `VictoryViewModel` rendering based on `mode`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const VictoryViewModel& vm);
+
 }  // namespace GB::presentation

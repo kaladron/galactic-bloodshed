@@ -7,6 +7,7 @@
 import asio;
 import dallib;
 import gb.entities;
+import gb.presentation.core;
 import gb.services;
 import gb.server;
 import session;
@@ -543,6 +544,61 @@ int main() {
     std::println(std::cout,
                  "✓ Write queue overflow (> MAX_WRITE_QUEUE_SIZE) disconnects "
                  "slow client");
+  }
+
+  // Telnet IAC stripping and RFC 1091 TTYPE capability negotiation
+  {
+    using GB::presentation::detect_terminal_capabilities;
+    using GB::presentation::TerminalCapabilities;
+
+    static_assert(
+        detect_terminal_capabilities("xterm-256color") ==
+        TerminalCapabilities{.ansi_sgr = true, .color = true, .utf8 = true});
+    static_assert(
+        detect_terminal_capabilities("VT100") ==
+        TerminalCapabilities{.ansi_sgr = true, .color = false, .utf8 = false});
+    static_assert(
+        detect_terminal_capabilities("dumb") ==
+        TerminalCapabilities{.ansi_sgr = false, .color = false, .utf8 = false});
+
+    asio::io_context io;
+    asio::ip::tcp::acceptor acceptor(
+        io, asio::ip::tcp::endpoint(asio::ip::address_v6::loopback(), 0));
+    asio::ip::tcp::socket client_socket(io);
+    client_socket.connect(acceptor.local_endpoint());
+    asio::ip::tcp::socket server_socket = acceptor.accept();
+
+    MockSessionRegistry registry;
+    auto session = Session::create(std::move(server_socket), em, registry);
+    session->start();
+
+    // Send Telnet IAC WILL TTYPE (0xFF 0xFB 0x18), IAC DO SGA (0xFF 0xFD 0x03),
+    // and IAC SB TTYPE IS "xterm-256color" IAC SE followed by a login command.
+    using namespace std::string_literals;
+    const std::string telnet_payload =
+        "\xff\xfb\x18\xff\xfd\x03\xff\xfa\x18\x00"
+        "xterm-256color\xff\xf0"
+        "1 1\r\n"s;
+    client_socket.write_some(asio::buffer(telnet_payload));
+    io.poll();
+
+    // Verify IAC sequences were stripped from the command line
+    test::expect_true(session->has_pending_input());
+    test::expect_eq(session->pop_input(), "1 1");
+    test::expect_eq(session->terminal_type(), "xterm-256color");
+    test::expect_true(session->terminal_capabilities().ansi_sgr);
+    test::expect_true(session->terminal_capabilities().color);
+    test::expect_true(session->terminal_capabilities().utf8);
+
+    // Verify server replied with IAC SB TTYPE SEND IAC SE
+    std::array<char, 32> reply_buf{};
+    std::size_t reply_bytes = client_socket.read_some(asio::buffer(reply_buf));
+    test::expect_eq(std::string_view(reply_buf.data(), reply_bytes),
+                    std::string_view("\xff\xfa\x18\x01\xff\xf0", 6));
+
+    std::println(std::cout,
+                 "✓ Telnet IAC stripping and RFC 1091 TTYPE negotiation "
+                 "verified");
   }
 
   std::println(std::cout, "\n✅ All session module tests passed!");

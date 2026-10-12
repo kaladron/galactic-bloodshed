@@ -159,6 +159,7 @@ PlanetMapViewModel build_planet_map(EntityManager& em, const starnum_t snum,
       .est_production = pinfo.est_production,
       .slaved_to = p.slaved_to(),
       .primary_unstable = star.stability() > 50,
+      .use_color = race.governor(governor).toggle.color,
   };
 }
 

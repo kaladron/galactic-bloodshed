@@ -56,6 +56,7 @@ export struct PlanetMapViewModel {
   double est_production{0.0};
   std::optional<player_t> slaved_to{std::nullopt};
   bool primary_unstable{false};
+  bool use_color{false};
 
   [[nodiscard]] bool
   operator==(const PlanetMapViewModel&) const noexcept = default;

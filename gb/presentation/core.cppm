@@ -54,4 +54,61 @@ void present_to(std::ostream& out, UiMode mode, const ViewModel& vm) {
   out << render_for_mode(mode, vm);
 }
 
+/// Terminal display capabilities derived from a Telnet `TTYPE` (`$TERM`)
+/// identifier.
+struct TerminalCapabilities {
+  bool ansi_sgr{false};
+  bool color{false};
+  bool utf8{false};
+
+  [[nodiscard]] constexpr bool
+  operator==(const TerminalCapabilities&) const noexcept = default;
+};
+
+/// Pure compile-time classifier mapping a `$TERM` / Telnet `TTYPE` string to
+/// supported ANSI SGR, colour, and UTF-8 capabilities.
+[[nodiscard]] constexpr TerminalCapabilities
+detect_terminal_capabilities(std::string_view term) noexcept {
+  auto contains_ci = [](std::string_view haystack,
+                        std::string_view needle) constexpr noexcept {
+    if (needle.empty() || haystack.size() < needle.size()) {
+      return false;
+    }
+    for (std::size_t i = 0; i <= haystack.size() - needle.size(); ++i) {
+      bool match = true;
+      for (std::size_t j = 0; j < needle.size(); ++j) {
+        char a = haystack[i + j];
+        char b = needle[j];
+        if (a >= 'A' && a <= 'Z') a = static_cast<char>(a - 'A' + 'a');
+        if (b >= 'A' && b <= 'Z') b = static_cast<char>(b - 'A' + 'a');
+        if (a != b) {
+          match = false;
+          break;
+        }
+      }
+      if (match) return true;
+    }
+    return false;
+  };
+
+  if (term.empty() || contains_ci(term, "dumb")) {
+    return {};
+  }
+  const bool color =
+      contains_ci(term, "color") || contains_ci(term, "xterm") ||
+      contains_ci(term, "rxvt") || contains_ci(term, "tmux") ||
+      contains_ci(term, "screen") || contains_ci(term, "linux") ||
+      contains_ci(term, "ansi") || contains_ci(term, "alacritty") ||
+      contains_ci(term, "kitty") || contains_ci(term, "wezterm") ||
+      contains_ci(term, "ghostty") || contains_ci(term, "foot");
+  const bool ansi_sgr = color || contains_ci(term, "vt100") ||
+                        contains_ci(term, "vt102") ||
+                        contains_ci(term, "vt220");
+  return TerminalCapabilities{
+      .ansi_sgr = ansi_sgr,
+      .color = color,
+      .utf8 = color,
+  };
+}
+
 }  // namespace GB::presentation

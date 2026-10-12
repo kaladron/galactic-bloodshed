@@ -136,8 +136,8 @@ struct meta<toggletype> {
   using T = toggletype;
   static constexpr auto value =
       object("invisible", &T::invisible, "gag", &T::gag, "double_digits",
-             &T::double_digits, "inverse", &T::inverse, "geography",
-             &T::geography, "autoload", &T::autoload, "highlight",
+             &T::double_digits, "inverse", &T::inverse, "color", &T::color,
+             "geography", &T::geography, "autoload", &T::autoload, "highlight",
              &T::highlight, "compat", &T::compat);
 };
 

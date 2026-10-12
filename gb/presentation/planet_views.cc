@@ -10,6 +10,32 @@ import std;
 
 namespace GB::presentation {
 
+namespace {
+
+constexpr std::string_view terrain_ansi_color(char glyph) noexcept {
+  switch (glyph) {
+    case CHAR_SEA:
+      return "\x1b[34m";
+    case CHAR_LAND:
+    case CHAR_FOREST:
+      return "\x1b[32m";
+    case CHAR_DESERT:
+    case CHAR_PLATED:
+      return "\x1b[33m";
+    case CHAR_MOUNT:
+      return "\x1b[35m";
+    case CHAR_GAS:
+    case CHAR_CRYSTAL:
+      return "\x1b[36m";
+    case CHAR_WASTED:
+      return "\x1b[31m";
+    default:
+      return {};
+  }
+}
+
+}  // namespace
+
 std::string render_ascii_planet_map(const PlanetMapViewModel& vm) {
   std::string out;
   std::format_to(std::back_inserter(out), "     {}\n", vm.planet_name);
@@ -41,7 +67,15 @@ std::string render_ascii_planet_map(const PlanetMapViewModel& vm) {
         out += "\x1b[27m";
         in_inverse = false;
       }
+      const std::string_view color =
+          vm.use_color ? terrain_ansi_color(cell.glyph) : std::string_view{};
+      if (!color.empty()) {
+        out += color;
+      }
       out.push_back(cell.glyph);
+      if (!color.empty()) {
+        out += "\x1b[39m";
+      }
       if (cell.coords.x + 1 == vm.dimensions.x) {
         if (in_inverse) {
           out += "\x1b[27m";

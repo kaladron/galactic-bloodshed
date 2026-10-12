@@ -13,167 +13,96 @@ import std;
 void test_toggle_database_persistence() {
   std::println(std::cout, "Test: toggle command database persistence");
 
-  // Create in-memory database
   TestContext ctx;
+  ctx.with_standard_universe();
 
-  // Setup: Create a race
-  Race race{};
-  race.Playernum = 1;
-  race.Guest = 0;  // Not a guest
-  race.God = 0;    // Not God initially
-  race.leader().toggle.gag = false;
-  race.leader().toggle.inverse = false;
-  race.leader().toggle.double_digits = false;
-  race.leader().toggle.geography = false;
-  race.leader().toggle.autoload = false;
-  race.leader().toggle.compat = false;
-  race.leader().toggle.invisible = false;
-
-  JsonStore store(ctx.db);
-  RaceRepository races(store);
-  races.save(race);
-
-  // Create GameObj for command execution
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);  // Set race pointer like production does
+  ctx.setup_game_obj(g);
+  const auto& leader = ctx.em.peek_race(1)->leader();
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(leader.homesystem);
+  g.set_pnum(leader.homeplanetnum);
 
   // TEST 1: Display all toggle settings (no argument)
-  std::println(std::cout, "  Testing: Display all toggle settings");
   {
     ctx.assert_dispatch_success(g, {"toggle"});
-
-    // Verify output contains all toggle names
     std::string out_str = g.out.str();
-    test::expect_contains(out_str, "gag");
-    test::expect_contains(out_str, "inverse");
-    test::expect_contains(out_str, "double_digits");
-    test::expect_contains(out_str, "geography");
-    test::expect_contains(out_str, "autoload");
-    test::expect_contains(out_str, "compatibility");
+    test::expect_contains(out_str, "gag is OFF");
+    test::expect_contains(out_str, "inverse is ON");
+    test::expect_contains(out_str, "color is OFF");
+    test::expect_contains(out_str, "double_digits is OFF");
+    test::expect_contains(out_str, "geography is OFF");
+    test::expect_contains(out_str, "autoload is OFF");
+    test::expect_contains(out_str, "compatibility is OFF");
     test::expect_contains(out_str, "VISIBLE");
-    std::println(std::cout, "    ✓ Output displays all toggles");
-    g.out.str("");  // Clear output for next test
+    g.out.str("");
   }
 
-  // TEST 2: Toggle gag setting
-  std::println(std::cout, "  Testing: Toggle gag setting");
+  // TEST 2: Toggle gag setting on and off
   {
     ctx.assert_dispatch_success(g, {"toggle", "gag"});
-
-    // Verify output
-    std::string out_str = g.out.str();
-    test::expect_contains(out_str, "gag is now on");
-    std::println(std::cout, "    ✓ Output message correct");
+    test::expect_contains(g.out.str(), "gag is now on");
+    test::expect_true(ctx.em.peek_race(1)->leader().toggle.gag);
     g.out.str("");
 
-    // Verify database: gag should be true
-    auto saved = races.find_by_player(1);
-    test::expect_true(saved.has_value());
-    test::expect_true(saved->leader().toggle.gag);
-    std::println(std::cout, "    ✓ Database: gag = true");
-
-    // Toggle again - should turn off
     ctx.assert_dispatch_success(g, {"toggle", "gag"});
-    out_str = g.out.str();
-    test::expect_contains(out_str, "gag is now off");
-
-    saved = races.find_by_player(1);
-    test::expect_true(saved.has_value());
-    test::expect_false(saved->leader().toggle.gag);
-    std::println(std::cout, "    ✓ Database: gag = false after second toggle");
+    test::expect_contains(g.out.str(), "gag is now off");
+    test::expect_false(ctx.em.peek_race(1)->leader().toggle.gag);
     g.out.str("");
   }
 
-  // TEST 3: Toggle inverse setting
-  std::println(std::cout, "  Testing: Toggle inverse setting");
+  // TEST 3: Toggle inverse, color/colour, double_digits, geography, autoload,
+  // compatibility, and visible
   {
     ctx.assert_dispatch_success(g, {"toggle", "inverse"});
-
-    // Verify database
-    auto saved = races.find_by_player(1);
-    test::expect_true(saved.has_value());
-    test::expect_true(saved->leader().toggle.inverse);
-    std::println(std::cout, "    ✓ Database: inverse = true");
+    test::expect_false(ctx.em.peek_race(1)->leader().toggle.inverse);
     g.out.str("");
-  }
 
-  // TEST 4: Toggle double_digits setting
-  std::println(std::cout, "  Testing: Toggle double_digits setting");
-  {
-    ctx.assert_dispatch_success(g, {"toggle", "double_digits"});
-
-    // Verify database
-    auto saved = races.find_by_player(1);
-    test::expect_true(saved.has_value());
-    test::expect_true(saved->leader().toggle.double_digits);
-    std::println(std::cout, "    ✓ Database: double_digits = true");
-    g.out.str("");
-  }
-
-  // TEST 5: Toggle geography setting
-  std::println(std::cout, "  Testing: Toggle geography setting");
-  {
     ctx.assert_dispatch_success(g, {"toggle", "geography"});
-
-    // Verify database
-    auto saved = races.find_by_player(1);
-    test::expect_true(saved.has_value());
-    test::expect_true(saved->leader().toggle.geography);
-    std::println(std::cout, "    ✓ Database: geography = true");
+    test::expect_true(ctx.em.peek_race(1)->leader().toggle.geography);
     g.out.str("");
-  }
 
-  // TEST 6: Toggle autoload setting
-  std::println(std::cout, "  Testing: Toggle autoload setting");
-  {
+    ctx.assert_dispatch_success(g, {"toggle", "color"});
+    test::expect_contains(g.out.str(), "color is now on");
+    test::expect_true(ctx.em.peek_race(1)->leader().toggle.color);
+    g.out.str("");
+
+    // Verify planetary map renders ANSI terrain foreground color when enabled
+    ctx.assert_dispatch_success(g, {"map"});
+    test::expect_contains(g.out.str(), "\x1b[39m");
+    g.out.str("");
+
+    // Toggle colour alias turns color back off
+    ctx.assert_dispatch_success(g, {"toggle", "colour"});
+    test::expect_contains(g.out.str(), "color is now off");
+    test::expect_false(ctx.em.peek_race(1)->leader().toggle.color);
+    g.out.str("");
+
+    ctx.assert_dispatch_success(g, {"toggle", "double_digits"});
+    test::expect_true(ctx.em.peek_race(1)->leader().toggle.double_digits);
+    g.out.str("");
+
     ctx.assert_dispatch_success(g, {"toggle", "autoload"});
-
-    // Verify database
-    auto saved = races.find_by_player(1);
-    test::expect_true(saved.has_value());
-    test::expect_true(saved->leader().toggle.autoload);
-    std::println(std::cout, "    ✓ Database: autoload = true");
+    test::expect_true(ctx.em.peek_race(1)->leader().toggle.autoload);
     g.out.str("");
-  }
 
-  // TEST 8: Toggle compatibility setting
-  std::println(std::cout, "  Testing: Toggle compatibility setting");
-  {
     ctx.assert_dispatch_success(g, {"toggle", "compatibility"});
-
-    // Verify database
-    auto saved = races.find_by_player(1);
-    test::expect_true(saved.has_value());
-    test::expect_true(saved->leader().toggle.compat);
-    std::println(std::cout, "    ✓ Database: compat = true");
+    test::expect_true(ctx.em.peek_race(1)->leader().toggle.compat);
     g.out.str("");
-  }
 
-  // TEST 9: Toggle visible setting
-  std::println(std::cout, "  Testing: Toggle visible setting");
-  {
     ctx.assert_dispatch_success(g, {"toggle", "visible"});
-
-    // Verify database (invisible flag should toggle)
-    auto saved = races.find_by_player(1);
-    test::expect_true(saved.has_value());
-    test::expect_true(saved->leader().toggle.invisible);
-    std::println(std::cout, "    ✓ Database: invisible = true");
+    test::expect_true(ctx.em.peek_race(1)->leader().toggle.invisible);
     g.out.str("");
   }
 
-  // TEST 11: Reject invalid toggle option
-  std::println(std::cout, "  Testing: Reject invalid toggle option");
+  // TEST 4: Reject invalid toggle option
   {
     ctx.assert_dispatch_rejected(g, {"toggle", "invalid_option"});
-
-    // Verify error message
-    std::string out_str = g.out.str();
-    test::expect_contains(out_str, "No such option");
-    std::println(std::cout, "    ✓ Error message correct");
+    test::expect_contains(g.out.str(), "No such option");
   }
 
+  ctx.verify_universe_invariants();
   std::println(std::cout, "  ✅ All toggle database persistence tests passed!");
 }
 

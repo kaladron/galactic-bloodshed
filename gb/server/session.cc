@@ -65,6 +65,72 @@ void Session::send(std::string_view message) {
   }
 }
 
+std::string Session::process_telnet_sequences(std::string_view raw) {
+  static constexpr unsigned char TELNET_IAC = 0xFF;
+  static constexpr unsigned char TELNET_SE = 0xF0;
+  static constexpr unsigned char TELNET_SB = 0xFA;
+  static constexpr unsigned char TELNET_WILL = 0xFB;
+  static constexpr unsigned char TELNET_WONT = 0xFC;
+  static constexpr unsigned char TELNET_DO = 0xFD;
+  static constexpr unsigned char TELNET_DONT = 0xFE;
+  static constexpr unsigned char TELNET_OPT_TTYPE = 0x18;
+  static constexpr unsigned char TELNET_TTYPE_IS = 0x00;
+
+  if (raw.find(static_cast<char>(TELNET_IAC)) == std::string_view::npos) {
+    return std::string(raw);
+  }
+
+  std::string clean;
+  clean.reserve(raw.size());
+  for (std::size_t i = 0; i < raw.size();) {
+    const auto byte = static_cast<unsigned char>(raw[i]);
+    if (byte != TELNET_IAC) {
+      clean.push_back(raw[i]);
+      ++i;
+      continue;
+    }
+    if (i + 1 >= raw.size()) {
+      break;
+    }
+    const auto cmd = static_cast<unsigned char>(raw[i + 1]);
+    if (cmd == TELNET_IAC) {
+      clean.push_back(static_cast<char>(TELNET_IAC));
+      i += 2;
+      continue;
+    }
+    if (cmd == TELNET_WILL || cmd == TELNET_WONT || cmd == TELNET_DO ||
+        cmd == TELNET_DONT) {
+      if (i + 2 < raw.size()) {
+        const auto opt = static_cast<unsigned char>(raw[i + 2]);
+        if (cmd == TELNET_WILL && opt == TELNET_OPT_TTYPE) {
+          queue_for_write(std::string("\xff\xfa\x18\x01\xff\xf0", 6));
+        }
+      }
+      i = std::min(raw.size(), i + 3);
+      continue;
+    }
+    if (cmd == TELNET_SB) {
+      std::size_t end = i + 2;
+      while (end + 1 < raw.size() &&
+             !(static_cast<unsigned char>(raw[end]) == TELNET_IAC &&
+               static_cast<unsigned char>(raw[end + 1]) == TELNET_SE)) {
+        ++end;
+      }
+      if (i + 3 < end &&
+          static_cast<unsigned char>(raw[i + 2]) == TELNET_OPT_TTYPE &&
+          static_cast<unsigned char>(raw[i + 3]) == TELNET_TTYPE_IS) {
+        terminal_type_.assign(raw.substr(i + 4, end - (i + 4)));
+        terminal_capabilities_ =
+            GB::presentation::detect_terminal_capabilities(terminal_type_);
+      }
+      i = (end + 1 < raw.size()) ? end + 2 : raw.size();
+      continue;
+    }
+    i += 2;
+  }
+  return clean;
+}
+
 void Session::do_read() {
   auto self = shared_from_this();
   asio::async_read_until(
@@ -87,6 +153,7 @@ void Session::do_read() {
         std::istream is(&input_buffer_);
         std::string line;
         std::getline(is, line);
+        line = process_telnet_sequences(line);
         // Remove trailing \r if present (Windows clients)
         if (!line.empty() && line.back() == '\r') line.pop_back();
         if (line.size() > MAX_COMMAND_LEN) {

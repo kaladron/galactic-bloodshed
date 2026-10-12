@@ -11,6 +11,7 @@ export module session;
 
 import gb.entities;
 import gb.services;
+import gb.presentation.core;
 import asio;
 import std;
 
@@ -102,6 +103,13 @@ public:
   [[nodiscard]] UiMode ui_mode() const noexcept {
     return game_obj_.ui_mode();
   }
+  [[nodiscard]] std::string_view terminal_type() const noexcept {
+    return terminal_type_;
+  }
+  [[nodiscard]] GB::presentation::TerminalCapabilities
+  terminal_capabilities() const noexcept {
+    return terminal_capabilities_;
+  }
 
   void set_player(player_t p) {
     game_obj_.set_player(p);
@@ -175,6 +183,7 @@ private:
   void do_read();
   void do_write();
   void queue_for_write(std::string content);  // Internal: add to write queue
+  std::string process_telnet_sequences(std::string_view raw);
 
   asio::ip::tcp::socket socket_;
   asio::streambuf input_buffer_{MAX_COMMAND_LEN * 16};
@@ -183,6 +192,8 @@ private:
   std::deque<std::string> input_queue_;
 
   GameObj game_obj_;  // Single source of truth for player, scope, and viewport
+  std::string terminal_type_;
+  GB::presentation::TerminalCapabilities terminal_capabilities_{};
   bool connected_ = false;
   bool disconnected_ = false;
   bool writing_ = false;

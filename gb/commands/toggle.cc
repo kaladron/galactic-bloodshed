@@ -22,6 +22,7 @@ void display_toggles(GameObj& g, const Race::gov& governor) {
   g.out << std::format("gag is {}\n", governor.toggle.gag ? "ON" : "OFF");
   g.out << std::format("inverse is {}\n",
                        governor.toggle.inverse ? "ON" : "OFF");
+  g.out << std::format("color is {}\n", governor.toggle.color ? "ON" : "OFF");
   g.out << std::format("double_digits is {}\n",
                        governor.toggle.double_digits ? "ON" : "OFF");
   g.out << std::format("geography is {}\n",
@@ -54,6 +55,9 @@ bool toggle(const command_t& argv, GameObj& g) {
     auto& toggles = race.governor(Governor).toggle;
     if (argv[1] == "inverse") {
       tog(g, &toggles.inverse, "inverse");
+      result = true;
+    } else if (argv[1] == "color" || argv[1] == "colour") {
+      tog(g, &toggles.color, "color");
       result = true;
     } else if (argv[1] == "double_digits") {
       tog(g, &toggles.double_digits, "double_digits");

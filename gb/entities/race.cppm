@@ -9,15 +9,18 @@ import :types;
 import :tweakables;
 import std;
 
-export using toggletype = struct {
-  bool invisible;
-  bool gag;
-  bool double_digits;
-  bool inverse;
-  bool geography;
-  bool autoload;
-  player_t highlight; /* which race to highlight */
-  bool compat;
+export struct toggletype {
+  bool invisible{false};
+  bool gag{false};
+  bool double_digits{false};
+  bool inverse{false};
+  bool color{false};
+  bool geography{false};
+  bool autoload{false};
+  player_t highlight{0}; /* which race to highlight */
+  bool compat{false};
+
+  [[nodiscard]] bool operator==(const toggletype&) const noexcept = default;
 };
 
 /// Technology discoveries and breakthrough unlocks achieved by a race.

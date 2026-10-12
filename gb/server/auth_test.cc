@@ -42,6 +42,12 @@ void test_parse_connect() {
   auto p2 = parse_connect("racepass govpass");
   test::expect_eq(p2.player, "racepass");
   test::expect_eq(p2.governor, "govpass");
+  test::expect_true(p2.ui_mode == UiMode::ASCII);
+
+  auto p_json = parse_connect("racepass govpass json");
+  test::expect_eq(p_json.player, "racepass");
+  test::expect_eq(p_json.governor, "govpass");
+  test::expect_true(p_json.ui_mode == UiMode::JSON);
 
   auto p3 = parse_connect("too many arguments passed");
   test::expect_true(p3.player.empty() && p3.governor.empty());
@@ -94,17 +100,13 @@ void test_check_connect_failure() {
 
 void test_check_connect_duplicate_session_rejection() {
   TestContext ctx;
-  Race race{};
-  race.Playernum = 1;
-  race.name = "TestRace";
-  race.password = "raceword";
-  race.leader().name = "Gov1";
-  race.leader().password = "govword";
-  {
-    JsonStore store(ctx.db);
-    RaceRepository races(store);
-    races.save(race);
-  }
+  ctx.with_standard_universe();
+  ctx.em.mutate_race(1, [](Race& race) {
+    race.name = "TestRace";
+    race.password = "raceword";
+    race.leader().name = "Gov1";
+    race.leader().password = "govword";
+  });
 
   // Use RecordingSessionRegistry configured with active session for player 1
   // governor 1
@@ -120,55 +122,31 @@ void test_check_connect_duplicate_session_rejection() {
   check_connect(*session, "raceword govword");
   test::expect_false(session->connected());
   test::expect_contains(session->pending_output(), "Connection refused.");
+
+  ctx.verify_universe_invariants();
 }
 
 void test_check_connect_success_and_clamping() {
   TestContext ctx;
-  Race race{};
-  race.Playernum = 1;
-  race.name = "TestRace";
-  race.password = "raceword";
-  race.morale = 100;
-  race.leader().name = "Gov1";
-  race.leader().password = "govword";
-  race.leader().deflevel = ScopeLevel::LEVEL_PLAN;
-  race.leader().defsystem = 999;     // Out of bounds -> should clamp to 1
-  race.leader().defplanetnum = 999;  // Out of bounds -> should clamp to 1
-  race.leader().login = 0;
-  {
-    JsonStore store(ctx.db);
-    RaceRepository races(store);
-    races.save(race);
+  ctx.with_standard_universe();
 
-    StarRepository star_repo(store);
-    star_struct sdata{};
-    sdata.star_id = 1;
-    sdata.name = "FirstStar";
-    sdata.pnames = {"FirstPlanet"};
-    Star star{sdata};
-    star_repo.save(star);
+  TestShipBuilder(ctx.em, ShipType::OTYPE_GOV, 42)
+      .owned_by(1, 1)
+      .landed_on(1, 1, {0, 0})
+      .build();
 
-    PlanetRepository planet_repo(store);
-    Planet planet{1, 1};
-    planet_repo.save(planet);
-
-    ShipRepository ship_repo(store);
-    Ship gov_ship{};
-    gov_ship.number() = 42;
-    gov_ship.owner() = 1;
-    gov_ship.governor() = 1;
-    gov_ship.alive() = true;
-    gov_ship.type() = ShipType::OTYPE_GOV;
-    gov_ship.land_on_planet(1, 1);
-    ship_repo.save(gov_ship);
-
+  ctx.em.mutate_race(1, [](Race& race) {
+    race.name = "TestRace";
+    race.password = "raceword";
+    race.morale = 100;
     race.Gov_ship = 42;
-    races.save(race);
-
-    UniverseRepository univ_repo(store);
-    universe_struct u{};
-    univ_repo.save(u);
-  }
+    race.leader().name = "Gov1";
+    race.leader().password = "govword";
+    race.leader().deflevel = ScopeLevel::LEVEL_PLAN;
+    race.leader().defsystem = 999;     // Out of bounds -> should clamp to 1
+    race.leader().defplanetnum = 999;  // Out of bounds -> should clamp to 1
+    race.leader().login = 0;
+  });
 
   asio::io_context io;
   asio::ip::tcp::socket socket(io);
@@ -194,6 +172,45 @@ void test_check_connect_success_and_clamping() {
   test::expect_contains(output, "Government Center #42 is active.");
   test::expect_contains(output, "Morale: 100");
   test::expect_contains(output, "You have:");
+
+  ctx.verify_universe_invariants();
+}
+
+void test_check_connect_json_mode() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  ctx.em.mutate_race(1, [](Race& race) {
+    race.name = "JsonRace";
+    race.password = "raceword";
+    race.morale = 85;
+    race.leader().name = "JsonGov";
+    race.leader().password = "govword";
+  });
+
+  asio::io_context io;
+  asio::ip::tcp::socket socket(io);
+  auto& registry = get_test_session_registry();
+  auto session = Session::create(std::move(socket), ctx.em, registry);
+
+  check_connect(*session, "raceword govword json");
+  test::expect_true(session->connected());
+  test::expect_true(session->ui_mode() == UiMode::JSON);
+
+  // Also send a plain-text notification to verify Session::send text wrapping
+  session->send("Broadcast alert\n");
+
+  std::string_view output = session->pending_output();
+  test::expect_contains(output, "\"type\":\"login\"");
+  test::expect_contains(output, "\"race_name\":\"JsonRace\"");
+  test::expect_contains(output, "\"gov_name\":\"JsonGov\"");
+  test::expect_contains(output, "\"morale\":85");
+  test::expect_contains(output, "\"type\":\"time\"");
+  test::expect_contains(output, "You have: 10000");
+  test::expect_contains(
+      output, "{\"type\":\"text\",\"data\":{\"message\":\"Broadcast alert\"}}");
+
+  ctx.verify_universe_invariants();
 }
 
 }  // namespace
@@ -205,6 +222,7 @@ int main() {
   test_check_connect_failure();
   test_check_connect_duplicate_session_rejection();
   test_check_connect_success_and_clamping();
+  test_check_connect_json_mode();
 
   std::println(std::cout, "✓ auth_test passed!");
   return 0;

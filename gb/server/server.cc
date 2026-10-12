@@ -246,6 +246,14 @@ void Server::reap_disconnected_sessions() {
 }
 
 bool Server::do_command(Session& session, std::string_view comm) {
+  if (comm == "protocol json") {
+    session.set_ui_mode(UiMode::JSON);
+    return true;
+  }
+  if (comm == "protocol ascii") {
+    session.set_ui_mode(UiMode::ASCII);
+    return true;
+  }
   auto& g = session.game_obj();
   if (!session.connected()) {
     check_connect(session, comm);

@@ -9,6 +9,7 @@ module;
 import commands;
 import dallib;
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import gb.turn;
 import session;
@@ -42,11 +43,14 @@ command_t make_command_t(std::string_view message) {
 ConnectionPassword parse_connect(const std::string_view message) {
   auto argv = make_command_t(message);
 
-  if (argv.size() != 2) {
-    return {"", ""};
+  if (argv.size() == 2) {
+    return {argv[0], argv[1], UiMode::ASCII};
+  }
+  if (argv.size() == 3 && (argv[2] == "json" || argv[2] == "JSON")) {
+    return {argv[0], argv[1], UiMode::JSON};
   }
 
-  return {argv[0], argv[1]};
+  return {"", "", UiMode::ASCII};
 }
 
 void welcome_user(Session& session, EntityManager& entity_manager) {
@@ -67,7 +71,10 @@ void welcome_user(Session& session, EntityManager& entity_manager) {
 }
 
 void check_connect(Session& session, std::string_view message) {
-  auto [race_password, gov_password] = parse_connect(message);
+  auto [race_password, gov_password, requested_mode] = parse_connect(message);
+  if (requested_mode == UiMode::JSON) {
+    session.set_ui_mode(UiMode::JSON);
+  }
 
   if (EXTERNAL_TRIGGER) {
     if (race_password == SEGMENT_PASSWORD) {
@@ -90,6 +97,7 @@ void check_connect(Session& session, std::string_view message) {
   }
 
   bool authenticated = false;
+  GB::presentation::LoginViewModel login_vm{};
   try {
     session.entity_manager().with_race(Playernum, [&](const Race& race) {
       // Check if player is already connected
@@ -127,11 +135,16 @@ void check_connect(Session& session, std::string_view message) {
             }
           });
 
-      // Send login messages
-      session.send(std::format("\n{} \"{}\" [{},{}] logged on.\n", race.name,
-                               gov.name, Playernum, Governor));
-      session.send(std::format("You are {}.\n",
-                               gov.toggle.invisible ? "invisible" : "visible"));
+      login_vm = GB::presentation::LoginViewModel{
+          .race_id = Playernum,
+          .gov_id = Governor,
+          .race_name = race.name,
+          .gov_name = gov.name,
+          .invisible = gov.toggle.invisible,
+          .last_login = format_timestamp(gov.login),
+          .gov_ship = race.Gov_ship,
+          .morale = race.morale,
+      };
     });
   } catch (const EntityNotFoundError&) {
     session.send("Connection refused.\n");
@@ -139,8 +152,14 @@ void check_connect(Session& session, std::string_view message) {
   }
   if (!authenticated) return;
 
-  // Display time and treasury via centralized command dispatch pipeline
   auto& g = session.game_obj();
+  if (session.ui_mode() == UiMode::JSON) {
+    session.send(GB::presentation::render_json_login(login_vm));
+  } else {
+    session.send(GB::presentation::render_login_banner(login_vm));
+  }
+
+  // Display time and treasury via centralized command dispatch pipeline
   g.out.str("");
   g.out.clear();
   GB::commands::dispatch_command(g, {"time"});
@@ -148,19 +167,9 @@ void check_connect(Session& session, std::string_view message) {
   g.out.str("");
   g.out.clear();
 
-  session.entity_manager().with_race(Playernum, [&](const Race& race) {
-    session.send(std::format("\nLast login      : {}",
-                             std::ctime(&(race.governor(Governor).login))));
-
-    if (!race.Gov_ship) {
-      session.send("You have no Governmental Center.  No action points will be "
-                   "produced\nuntil you build one and designate a capital.\n");
-    } else {
-      session.send(
-          std::format("Government Center #{} is active.\n", *race.Gov_ship));
-    }
-    session.send(std::format("     Morale: {}\n", race.morale));
-  });
+  if (session.ui_mode() != UiMode::JSON) {
+    session.send(GB::presentation::render_login_status(login_vm));
+  }
 
   GB::commands::dispatch_command(g, {"treasury"});
   session.send(g.out.view());

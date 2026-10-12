@@ -468,4 +468,62 @@ struct VictoryViewModel {
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const VictoryViewModel& vm);
 
+using ::PromptViewModel;
+
+/// Renders a `PromptViewModel` for `UiMode::ASCII`.
+[[nodiscard]] std::string render_prompt(const PromptViewModel& vm);
+
+/// Serializes a `PromptViewModel` into a newline-delimited Glaze JSON
+/// envelope (`{"type":"prompt","data":{...}}\n`).
+[[nodiscard]] std::string render_json_prompt(const PromptViewModel& vm);
+
+/// Dispatches `PromptViewModel` rendering based on `mode`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const PromptViewModel& vm);
+
+/// View model for plain-text output lines wrapped in `UiMode::JSON`.
+struct TextViewModel {
+  std::string message{};
+};
+
+/// Renders a `TextViewModel` for `UiMode::ASCII`.
+[[nodiscard]] std::string render_text(const TextViewModel& vm);
+
+/// Serializes a `TextViewModel` into a newline-delimited Glaze JSON
+/// envelope (`{"type":"text","data":{"message":"..."}}\n`).
+[[nodiscard]] std::string render_json_text(const TextViewModel& vm);
+
+/// Dispatches `TextViewModel` rendering based on `mode`.
+[[nodiscard]] std::string render_for_mode(UiMode mode, const TextViewModel& vm);
+
+/// View model for player login session details (`auth.cc`).
+struct LoginViewModel {
+  player_t race_id{0};
+  governor_t gov_id{0};
+  std::string race_name{};
+  std::string gov_name{};
+  bool invisible{false};
+  std::string last_login{};
+  std::optional<shipnum_t> gov_ship{std::nullopt};
+  long morale{0};
+};
+
+/// Renders the initial login banner for `UiMode::ASCII`.
+[[nodiscard]] std::string render_login_banner(const LoginViewModel& vm);
+
+/// Renders the post-time login status (last login, gov center, morale) for
+/// `UiMode::ASCII`.
+[[nodiscard]] std::string render_login_status(const LoginViewModel& vm);
+
+/// Renders the full login summary for `UiMode::ASCII`.
+[[nodiscard]] std::string render_login(const LoginViewModel& vm);
+
+/// Serializes a `LoginViewModel` into a newline-delimited Glaze JSON
+/// envelope (`{"type":"login","data":{...}}\n`).
+[[nodiscard]] std::string render_json_login(const LoginViewModel& vm);
+
+/// Dispatches `LoginViewModel` rendering based on `mode`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const LoginViewModel& vm);
+
 }  // namespace GB::presentation

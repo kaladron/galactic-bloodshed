@@ -607,4 +607,59 @@ std::string render_for_mode(UiMode mode, const VictoryViewModel& vm) {
   return mode == UiMode::JSON ? render_json_victory(vm) : render_victory(vm);
 }
 
+std::string render_prompt(const PromptViewModel& vm) {
+  return std::format(" ( [{}] {} )\n", vm.ap, vm.path);
+}
+
+std::string render_json_prompt(const PromptViewModel& vm) {
+  return render_json_envelope("prompt", vm);
+}
+
+std::string render_for_mode(UiMode mode, const PromptViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_prompt(vm) : render_prompt(vm);
+}
+
+std::string render_text(const TextViewModel& vm) {
+  return std::format("{}\n", vm.message);
+}
+
+std::string render_json_text(const TextViewModel& vm) {
+  return render_json_envelope("text", vm);
+}
+
+std::string render_for_mode(UiMode mode, const TextViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_text(vm) : render_text(vm);
+}
+
+std::string render_login_banner(const LoginViewModel& vm) {
+  return std::format("\n{} \"{}\" [{},{}] logged on.\nYou are {}.\n",
+                     vm.race_name, vm.gov_name, vm.race_id, vm.gov_id,
+                     vm.invisible ? "invisible" : "visible");
+}
+
+std::string render_login_status(const LoginViewModel& vm) {
+  return std::format(
+      "\nLast login      : {}\n"
+      "{}"
+      "     Morale: {}\n",
+      vm.last_login,
+      vm.gov_ship
+          ? std::format("Government Center #{} is active.\n", *vm.gov_ship)
+          : "You have no Governmental Center.  No action points will be "
+            "produced\nuntil you build one and designate a capital.\n",
+      vm.morale);
+}
+
+std::string render_login(const LoginViewModel& vm) {
+  return render_login_banner(vm) + render_login_status(vm);
+}
+
+std::string render_json_login(const LoginViewModel& vm) {
+  return render_json_envelope("login", vm);
+}
+
+std::string render_for_mode(UiMode mode, const LoginViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_login(vm) : render_login(vm);
+}
+
 }  // namespace GB::presentation

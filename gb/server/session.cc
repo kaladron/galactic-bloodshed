@@ -6,6 +6,7 @@
 module;
 
 import asio;
+import gb.presentation;
 import std;
 
 module session;
@@ -32,6 +33,36 @@ Session::Session(PrivateToken, asio::ip::tcp::socket socket, EntityManager& em,
 
 void Session::start() {
   do_read();
+}
+
+void Session::send(std::string_view message) {
+  if (ui_mode() != UiMode::JSON) {
+    out_buffer_.append(message);
+    return;
+  }
+
+  while (!message.empty()) {
+    const auto nl_pos = message.find('\n');
+    std::string_view line = (nl_pos == std::string_view::npos)
+                                ? message
+                                : message.substr(0, nl_pos);
+    if (!line.empty() && line.back() == '\r') {
+      line.remove_suffix(1);
+    }
+
+    if (line.starts_with("{\"type\":") && line.ends_with('}')) {
+      out_buffer_.append(line);
+      out_buffer_.push_back('\n');
+    } else {
+      out_buffer_.append(GB::presentation::render_json_text(
+          GB::presentation::TextViewModel{.message = std::string(line)}));
+    }
+
+    if (nl_pos == std::string_view::npos) {
+      break;
+    }
+    message.remove_prefix(nl_pos + 1);
+  }
 }
 
 void Session::do_read() {

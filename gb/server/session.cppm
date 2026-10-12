@@ -44,9 +44,7 @@ public:
   /// The ONLY output interface - buffered string output
   /// Commands write here; cross-player notifications write here.
   /// Buffer is flushed to network after each command batch.
-  void send(std::string_view message) {
-    out_buffer_.append(message);
-  }
+  void send(std::string_view message);
 
   /// Read-only view of buffered output awaiting flush to network
   [[nodiscard]] std::string_view pending_output() const noexcept {

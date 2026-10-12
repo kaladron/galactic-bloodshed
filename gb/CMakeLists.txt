@@ -259,7 +259,7 @@ target_sources(
   session
   PUBLIC FILE_SET CXX_MODULES FILES server/session.cppm
   PRIVATE server/session.cc)
-target_link_libraries(session PUBLIC gb_entities gb_services asio_module)
+target_link_libraries(session PUBLIC gb_entities gb_services gb_presentation asio_module)
 
 # Create notification compatibility library (re-exports gb.services)
 add_library(notification)
@@ -282,7 +282,7 @@ target_sources(
   auth
   PUBLIC FILE_SET CXX_MODULES FILES server/auth.cppm
   PRIVATE server/auth.cc)
-target_link_libraries(auth PUBLIC gb_turn gb_entities gb_services session commands)
+target_link_libraries(auth PUBLIC gb_turn gb_entities gb_services gb_presentation session commands)
 
 # Create server library (Server Layer)
 add_library(server)

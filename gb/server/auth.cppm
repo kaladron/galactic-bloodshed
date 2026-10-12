@@ -18,6 +18,7 @@ import session;
 export struct ConnectionPassword {
   std::string player;
   std::string governor;
+  UiMode ui_mode{UiMode::ASCII};
 };
 
 export command_t make_command_t(std::string_view message);

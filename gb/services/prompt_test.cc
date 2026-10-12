@@ -369,6 +369,57 @@ void test_prompt_nested_docked_ships() {
                   " ( [50] /Sol/Earth/#44/#43/#42/#41/#40 )\n");
 }
 
+void test_prompt_json_mode() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  ctx.em.mutate_universe(
+      [](universe_struct& u) { u.AP[player_t{1}] = ap_t{42}; });
+  ctx.em.mutate_star(1, [](Star& star) { star.AP(player_t{1}) = ap_t{17}; });
+
+  TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE, 10)
+      .owned_by(1, 1)
+      .in_planet_orbit(1, 1)
+      .build();
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, player_t{1}, governor_t{1});
+  g.set_ui_mode(UiMode::JSON);
+
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  std::string out = do_prompt(g);
+  test::expect_contains(out, "\"type\":\"prompt\"");
+  test::expect_contains(out, "\"ap\":42");
+  test::expect_contains(out, "\"level\":0");
+  test::expect_contains(out, "\"path\":\"/\"");
+
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(1);
+  out = do_prompt(g);
+  test::expect_contains(out, "\"ap\":17");
+  test::expect_contains(out, "\"level\":1");
+  test::expect_contains(out, "\"star\":\"Sol\"");
+  test::expect_contains(out, "\"path\":\"/Sol\"");
+
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_pnum(1);
+  out = do_prompt(g);
+  test::expect_contains(out, "\"level\":2");
+  test::expect_contains(out, "\"star\":\"Sol\"");
+  test::expect_contains(out, "\"planet\":\"Earth\"");
+  test::expect_contains(out, "\"path\":\"/Sol/Earth\"");
+
+  g.set_level(ScopeLevel::LEVEL_SHIP);
+  g.set_shipno(10);
+  out = do_prompt(g);
+  test::expect_contains(out, "\"level\":3");
+  test::expect_contains(out, "\"ship\":\"#10\"");
+  test::expect_contains(out, "\"path\":\"/Sol/Earth/#10\"");
+
+  ctx.verify_universe_invariants();
+}
+
 }  // namespace
 
 int main() {
@@ -377,6 +428,7 @@ int main() {
   test_prompt_planet_scope();
   test_prompt_ship_orbiting_scopes();
   test_prompt_nested_docked_ships();
+  test_prompt_json_mode();
 
   std::println(std::cout, "✓ prompt_test passed!");
   return 0;

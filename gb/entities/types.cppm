@@ -32,8 +32,10 @@ export using victory_score_t =
 // Semantic domain metric types
 export using armor_t =
     std::uint32_t;  ///< Armor defense rating absorbing combat damage
-export using damage_t = std::uint32_t;     ///< Hull damage percentage (0..100)
-export using speed_t = std::uint32_t;      ///< Tactical engine speed throttle
+export using damage_t = std::uint32_t;  ///< Hull damage percentage (0..100)
+export using speed_t =
+    Bounded<"speed", std::uint32_t, 0,
+            9>;  ///< Clamped tactical engine speed throttle [0..9]
 export using radiation_t = std::uint32_t;  ///< Accumulated radiation dose level
 export using gun_count_t =
     std::uint32_t;  ///< Number of gun mounts or battery power rating

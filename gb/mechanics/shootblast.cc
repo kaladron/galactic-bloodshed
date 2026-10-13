@@ -408,7 +408,7 @@ ship_disposition(const Ship& ship) {
   speed_t speed = 0;
   ship_size_t body = ship.size();
   if (ship.active() && !ship.docked() &&
-      (ship.whatdest() || ship.navigate().on)) {
+      (ship.has_destination() || ship.navigate().on)) {
     evade = ship.protect().evade;
     speed = ship.speed();
   }

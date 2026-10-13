@@ -416,14 +416,6 @@ void check_and_break_orbit(EntityManager& em, Ship& s) {
   }
 }
 
-[[nodiscard]] double
-compute_sublight_move_factor(const Ship& s, segments_t segments) noexcept {
-  return SHIP_MOVE_SCALE * (1.0 - 0.01 * static_cast<double>(s.rad())) *
-         (1.0 - 0.01 * static_cast<double>(s.damage())) *
-         SpeedConsts[s.speed()] * MoveConsts[s.whatorbits()] /
-         static_cast<double>(segments);
-}
-
 void execute_navigation_step(EntityManager& em, Ship& s, double fuse,
                              double mfactor) {
   const double heading = DEGREES_TO_RADIANS * s.navigate().bearing;
@@ -692,7 +684,10 @@ void execute_destination_step(EntityManager& em, Ship& s, double fuse,
 }
 
 [[nodiscard]] bool can_ship_move_sublight(const Ship& s) noexcept {
-  if (!s.speed() || s.docked() || !s.alive()) return false;
+  if (!s.speed() || s.docked() || !s.alive() ||
+      s.whatorbits() == ScopeLevel::LEVEL_SHIP) {
+    return false;
+  }
   return s.whatdest() != ScopeLevel::LEVEL_UNIV || s.navigate().on;
 }
 
@@ -722,7 +717,7 @@ void moveship(EntityManager& em, Ship& s, bool is_update, bool send_messages,
     return;
   }
 
-  const double mfactor = compute_sublight_move_factor(s, state->segments);
+  const double mfactor = s.sublight_move_factor(state->segments);
   if (s.navigate().on) {
     execute_navigation_step(em, s, fuse, mfactor);
   } else {

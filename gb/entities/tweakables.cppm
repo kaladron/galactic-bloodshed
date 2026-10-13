@@ -159,15 +159,6 @@ export constexpr double UNIVSIZE = 150000;
 export constexpr double SYSTEMSIZE = 2000;
 export constexpr double PLORBITSIZE = 50;
 
-/* amount to move for each dir level. I arrived on these #'s only after
-        hours of dilligent tweaking */
-// amount to move for each directory level
-export constexpr std::array<double, 3> MoveConsts = {600.0, 300.0, 50.0};
-// amnt to move for each ship speed level (ordered)
-export constexpr std::array<double, 10> SpeedConsts = {
-    0.0, 0.61, 1.26, 1.50, 1.73, 1.81, 1.90, 1.93, 1.96, 1.97};
-// amount of fuel it costs to move at speed level
-
 export constexpr char HYPER_DRIVE_READY_CHARGE = 1;
 export constexpr double HYPER_DRIVE_FUEL_USE = 5.0;
 export constexpr double HYPER_DIST_FACTOR = 200.0;

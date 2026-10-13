@@ -13,7 +13,7 @@ export import types;
 
 export using command_t = std::vector<std::string>;
 
-export enum ScopeLevel {
+export enum class ScopeLevel {
   LEVEL_UNIV,
   LEVEL_STAR,
   LEVEL_PLAN,

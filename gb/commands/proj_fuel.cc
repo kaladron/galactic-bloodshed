@@ -59,7 +59,7 @@ const Ship* validate_fuel_ship(const command_t& argv, GameObj& g) {
     g.out << "You do not own this ship.\n";
     return nullptr;
   }
-  if (ship->is_landed() && argv.size() == 2) {
+  if ((ship->is_landed() || ship->is_docked()) && argv.size() == 2) {
     g.out << "You must specify a destination for landed or docked ships...\n";
     return nullptr;
   }

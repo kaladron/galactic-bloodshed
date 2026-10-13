@@ -430,13 +430,13 @@ std::expected<OrderUpdate, OrderError> order_speed(const command_t& argv,
         .reason = OrderErrorReason::InvalidSpeed,
     });
   }
-  auto res = scn::scan<speed_t>(argv[3], "{}");
+  auto res = scn::scan<speed_t::value_type>(argv[3], "{}");
   if (!res) {
     return std::unexpected(OrderError{
         .reason = OrderErrorReason::InvalidSpeed,
     });
   }
-  ship.speed() = std::min(res->value(), ship.max_speed_capacity());
+  ship.speed() = std::min(speed_t{res->value()}, ship.max_speed_capacity());
   return OrderUpdate{};
 }
 

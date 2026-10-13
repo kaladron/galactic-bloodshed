@@ -174,18 +174,21 @@ public:
   }
 
   // VALUE CONSTRUCTORS
-  constexpr explicit Bounded(T v) noexcept : value(std::clamp(v, Min, Max)) {}
+  constexpr Bounded(T v) noexcept : value(std::clamp(v, Min, Max)) {}
 
-  template <typename U>
-    requires((std::integral<U> || std::floating_point<U>) &&
-             !std::same_as<U, T>)
+  template <std::integral U>
+    requires(!std::same_as<U, T>)
+  constexpr Bounded(U v) noexcept : value(clamp_value(v)) {}
+
+  template <std::floating_point U>
+    requires(!std::same_as<U, T>)
   constexpr explicit Bounded(U v) noexcept : value(clamp_value(v)) {}
 
   // CONVERSIONS & ACCESSORS
   [[nodiscard]] constexpr T get() const noexcept {
     return value;
   }
-  [[nodiscard]] explicit constexpr operator T() const noexcept {
+  [[nodiscard]] constexpr operator T() const noexcept {
     return value;
   }
   [[nodiscard]] constexpr T operator*() const noexcept {
@@ -245,17 +248,28 @@ public:
   }
 
   // NON-MUTATING BINARY OPERATORS
-  friend constexpr Bounded operator+(Bounded lhs, T rhs) noexcept {
-    lhs += rhs;
+  template <std::integral U>
+  friend constexpr Bounded operator+(Bounded lhs, U rhs) noexcept {
+    if (rhs < 0) {
+      lhs -= static_cast<T>(-rhs);
+    } else {
+      lhs += static_cast<T>(rhs);
+    }
     return lhs;
   }
-  friend constexpr Bounded operator+(T lhs, Bounded rhs) noexcept {
+  template <std::integral U>
+  friend constexpr Bounded operator+(U lhs, Bounded rhs) noexcept {
     Bounded b(lhs);
     b += rhs.value;
     return b;
   }
-  friend constexpr Bounded operator-(Bounded lhs, T rhs) noexcept {
-    lhs -= rhs;
+  template <std::integral U>
+  friend constexpr Bounded operator-(Bounded lhs, U rhs) noexcept {
+    if (rhs < 0) {
+      lhs += static_cast<T>(-rhs);
+    } else {
+      lhs -= static_cast<T>(rhs);
+    }
     return lhs;
   }
 
@@ -287,13 +301,17 @@ public:
   [[nodiscard]] auto operator<=>(const Bounded&) const = default;
   [[nodiscard]] friend constexpr bool operator==(const Bounded&,
                                                  const Bounded&) = default;
+  template <typename U>
+    requires(std::integral<U> || std::floating_point<U>)
   [[nodiscard]] friend constexpr auto operator<=>(const Bounded& b,
-                                                  T v) noexcept {
-    return b.value <=> v;
+                                                  U v) noexcept {
+    return static_cast<U>(b.value) <=> v;
   }
+  template <typename U>
+    requires(std::integral<U> || std::floating_point<U>)
   [[nodiscard]] friend constexpr bool operator==(const Bounded& b,
-                                                 T v) noexcept {
-    return b.value == v;
+                                                 U v) noexcept {
+    return static_cast<U>(b.value) == v;
   }
 
   // ADL SWAP

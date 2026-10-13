@@ -1989,6 +1989,29 @@ void test_orbital_and_destination_transitions() {
   s.undock_from_ship();
   test::expect_false(s.hyper_drive().on);
 
+  // Undocking directly from carrier scope restores enclosing orbital scope
+  s.dock_into_carrier(carrier);
+  test::expect_eq(s.whatorbits(), ScopeLevel::LEVEL_SHIP);
+  test::expect_eq(s.scope_move_distance(), 0.0);
+  s.undock_from_ship();
+  test::expect_eq(s.whatorbits(), ScopeLevel::LEVEL_STAR);
+  test::expect_eq(s.scope_move_distance(), 300.0);
+
+  s.enter_deep_space();
+  test::expect_eq(s.scope_move_distance(), 600.0);
+  s.enter_planet_orbit(7, 1);
+  test::expect_eq(s.scope_move_distance(), 50.0);
+  s.speed() = 0;
+  test::expect_eq(s.speed_multiplier(), 0.0);
+  s.speed() = 2;
+  test::expect_eq(s.speed_multiplier(), 1.26);
+  s.speed() = 9;
+  test::expect_eq(s.speed_multiplier(), 1.97);
+  s.speed() = 99;
+  test::expect_eq(s.speed(), speed_t{9});
+  test::expect_eq(s.speed_multiplier(), 1.97);
+  test::expect_true(s.sublight_move_factor(1) > 0.0);
+
   // Carrier lands on planet (7, 1) at sector (4, 5) and deploys carried craft
   carrier.set_coordinates({710.0, 810.0});
   carrier.land_on_planet(7, 1, {4, 5});

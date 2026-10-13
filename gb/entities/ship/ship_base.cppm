@@ -935,7 +935,78 @@ public:
                                      std::sqrt(static_cast<double>(mass()));
   }
 
-  /// Undocks the ship from a moored ship in space. Preserves whatorbits.
+  /// Returns the base sublight travel distance (in UniverseCoordinates units
+  /// per full turn before SHIP_MOVE_SCALE and speed_multiplier scaling) for
+  /// this ship's current gravitational scope:
+  /// - LEVEL_UNIV (600.0): fast interstellar cruise across UNIVSIZE (150,000).
+  /// - LEVEL_STAR (300.0): reduced interplanetary cruise inside a star system's
+  ///   gravity well (SYSTEMSIZE = 2,000).
+  /// - LEVEL_PLAN (50.0): fine orbital maneuvering within a planet's gravity
+  ///   well (matching PLORBITSIZE = 50) so ships do not overshoot orbit.
+  /// - LEVEL_SHIP (0.0): ships berthed inside a carrier cannot move on their
+  ///   own.
+  [[nodiscard]] constexpr double scope_move_distance() const noexcept {
+    switch (data_.whatorbits) {
+      case ScopeLevel::LEVEL_UNIV:
+        return 600.0;
+      case ScopeLevel::LEVEL_STAR:
+        return 300.0;
+      case ScopeLevel::LEVEL_PLAN:
+        return PLORBITSIZE;
+      case ScopeLevel::LEVEL_SHIP:
+        return 0.0;
+    }
+    std::unreachable();
+  }
+
+  /// Maps the ship's integer impulse throttle (speed_t 0..9, where 0 is
+  /// stationary and 9 is maximum sublight impulse) to its empirical velocity
+  /// multiplier. While fuel consumption scales linearly with the throttle
+  /// setting (speed * mass * FUEL_USE), sublight distance follows this
+  /// diminishing-returns curve (0.61 at speed 1 up to 1.97 at speed 9), making
+  /// low throttle settings fuel-efficient for long cruises and high throttle
+  /// settings expensive tactical sprints.
+  [[nodiscard]] constexpr double speed_multiplier() const {
+    switch (data_.speed.value) {
+      case 0:
+        return 0.0;
+      case 1:
+        return 0.61;
+      case 2:
+        return 1.26;
+      case 3:
+        return 1.50;
+      case 4:
+        return 1.73;
+      case 5:
+        return 1.81;
+      case 6:
+        return 1.90;
+      case 7:
+        return 1.93;
+      case 8:
+        return 1.96;
+      case 9:
+        return 1.97;
+      default:
+        throw std::out_of_range("Invalid ship speed");
+    }
+  }
+
+  /// Computes the sublight distance (in UniverseCoordinates units) traveled in
+  /// a single movement segment, scaling the orbital scope base distance by
+  /// SHIP_MOVE_SCALE (3.0), the engine throttle multiplier, radiation and hull
+  /// damage penalties, and 1 / segments.
+  [[nodiscard]] constexpr double
+  sublight_move_factor(segments_t segments) const {
+    return SHIP_MOVE_SCALE * (1.0 - 0.01 * static_cast<double>(data_.rad)) *
+           (1.0 - 0.01 * static_cast<double>(data_.damage)) *
+           speed_multiplier() * scope_move_distance() /
+           static_cast<double>(segments);
+  }
+
+  /// Undocks the ship from a moored or carrier ship into space, restoring the
+  /// enclosing orbital scope if docked inside a carrier.
   void undock_from_ship() noexcept {
     data_.dock_state = DockState::Spaceborne;
     data_.destshipno = std::nullopt;
@@ -943,6 +1014,12 @@ public:
     data_.deststar = std::nullopt;
     data_.destpnum = std::nullopt;
     data_.hyper_drive.on = false;
+    if (data_.whatorbits == ScopeLevel::LEVEL_SHIP) {
+      data_.whatorbits = data_.pnumorbits
+                             ? ScopeLevel::LEVEL_PLAN
+                             : (data_.storbits ? ScopeLevel::LEVEL_STAR
+                                               : ScopeLevel::LEVEL_UNIV);
+    }
   }
 
   /// Launches the ship into orbit or deep space, clearing any active

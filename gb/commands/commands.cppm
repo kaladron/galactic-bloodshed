@@ -35,6 +35,7 @@ export extern const CommandDescriptor shout_cmd;
 export extern const CommandDescriptor think_cmd;
 export bool arm(const command_t&, GameObj&);
 export extern const CommandDescriptor arm_cmd;
+export bool disarm(const command_t&, GameObj&);
 export extern const CommandDescriptor disarm_cmd;
 export bool autoreport(const command_t&, GameObj&);
 export extern const CommandDescriptor autoreport_cmd;

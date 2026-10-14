@@ -283,3 +283,133 @@ GroundAttackResult ground_attack(const GroundAttackParams& p) {
       .defender_mil_casualties = defender_mil_casualties,
   };
 }
+
+namespace {
+
+std::optional<MilitiaError>
+validate_militia_sector(EntityManager& em, starnum_t snum, planetnum_t pnum,
+                        Coordinates coords, player_t player) {
+  const auto& planet_peek = *em.peek_planet(snum, pnum);
+  if (planet_peek.is_enslaved_to_foreign(player)) {
+    return MilitiaError{.reason = MilitiaErrorReason::PlanetEnslaved};
+  }
+  if (!planet_peek.is_valid(coords)) {
+    return MilitiaError{.reason = MilitiaErrorReason::InvalidCoordinates};
+  }
+  const auto& smap_peek = *em.peek_sectormap(snum, pnum);
+  const auto& sect_peek = smap_peek.get(coords);
+  if (sect_peek.get_owner() != player) {
+    return MilitiaError{.reason = MilitiaErrorReason::SectorNotOwned};
+  }
+  return std::nullopt;
+}
+
+}  // namespace
+
+std::expected<ArmSectorResult, MilitiaError>
+arm_sector_militia(EntityManager& em, starnum_t snum, planetnum_t pnum,
+                   Coordinates coords,
+                   std::optional<population_t> requested_amount,
+                   player_t player, governor_t governor) {
+  if (auto err = validate_militia_sector(em, snum, pnum, coords, player)) {
+    return std::unexpected(*err);
+  }
+
+  const auto& planet_peek = *em.peek_planet(snum, pnum);
+  const auto& smap_peek = *em.peek_sectormap(snum, pnum);
+  const auto& sect_peek = smap_peek.get(coords);
+  const auto& race_peek = *em.peek_race(player);
+
+  const population_t max_allowed =
+      std::min(sect_peek.get_popn(),
+               static_cast<population_t>(planet_peek.info(player).destruct *
+                                         (sect_peek.get_mobilization() + 1)));
+  const population_t amount =
+      std::min(requested_amount.value_or(max_allowed), max_allowed);
+  if (!amount) {
+    return std::unexpected(
+        MilitiaError{.reason = MilitiaErrorReason::NoCiviliansToArm});
+  }
+
+  const money_t enlist_cost = race_peek.fighters * amount;
+  if (enlist_cost > race_peek.governor(governor).money) {
+    return std::unexpected(MilitiaError{
+        .reason = MilitiaErrorReason::InsufficientMoney,
+        .required_money = enlist_cost,
+        .requested_troops = amount,
+    });
+  }
+
+  em.mutate_race(player, [&](Race& race_mut) {
+    race_mut.governor(governor).money -= enlist_cost;
+  });
+
+  const resource_t cost = std::max(
+      1U,
+      static_cast<unsigned int>(amount / (sect_peek.get_mobilization() + 1)));
+  population_t final_popn = 0;
+  population_t final_troops = 0;
+
+  em.mutate_sectormap(snum, pnum, [&](SectorMap& smap) {
+    auto& sect = smap.get(coords);
+    sect.set_troops(sect.get_troops() + amount);
+    sect.subtract_popn(amount);
+    final_popn = sect.get_popn();
+    final_troops = sect.get_troops();
+  });
+
+  em.mutate_planet(snum, pnum, [&](Planet& planet) {
+    planet.popn() -= amount;
+    planet.info(player).popn -= amount;
+    planet.troops() += amount;
+    planet.info(player).troops += amount;
+    planet.info(player).destruct -= cost;
+  });
+
+  return ArmSectorResult{
+      .armed = amount,
+      .destruct_cost = cost,
+      .enlist_cost = enlist_cost,
+      .final_popn = final_popn,
+      .final_troops = final_troops,
+  };
+}
+
+std::expected<DisarmSectorResult, MilitiaError> disarm_sector_militia(
+    EntityManager& em, starnum_t snum, planetnum_t pnum, Coordinates coords,
+    std::optional<population_t> requested_amount, player_t player) {
+  if (auto err = validate_militia_sector(em, snum, pnum, coords, player)) {
+    return std::unexpected(*err);
+  }
+
+  const auto& smap_peek = *em.peek_sectormap(snum, pnum);
+  const auto& sect_peek = smap_peek.get(coords);
+
+  const population_t amount =
+      requested_amount ? std::min(sect_peek.get_troops(), *requested_amount)
+                       : sect_peek.get_troops();
+
+  population_t final_popn = 0;
+  population_t final_troops = 0;
+
+  em.mutate_sectormap(snum, pnum, [&](SectorMap& smap) {
+    auto& sect = smap.get(coords);
+    sect.add_popn(amount);
+    sect.set_troops(sect.get_troops() - amount);
+    final_popn = sect.get_popn();
+    final_troops = sect.get_troops();
+  });
+
+  em.mutate_planet(snum, pnum, [&](Planet& planet) {
+    planet.popn() += amount;
+    planet.troops() -= amount;
+    planet.info(player).popn += amount;
+    planet.info(player).troops -= amount;
+  });
+
+  return DisarmSectorResult{
+      .disarmed = amount,
+      .final_popn = final_popn,
+      .final_troops = final_troops,
+  };
+}

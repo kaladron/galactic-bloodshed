@@ -592,4 +592,52 @@ std::string render_for_mode(UiMode mode, const TacticalViewModel& vm) {
   return mode == UiMode::JSON ? render_json_tactical(vm) : render_tactical(vm);
 }
 
+std::string format_militia_error(const MilitiaError& err) {
+  switch (err.reason) {
+    case MilitiaErrorReason::PlanetEnslaved:
+      return "That planet has been enslaved!\n";
+    case MilitiaErrorReason::InvalidCoordinates:
+      return "Illegal coordinates.\n";
+    case MilitiaErrorReason::SectorNotOwned:
+      return "You don't own that sector.\n";
+    case MilitiaErrorReason::NoCiviliansToArm:
+      return "You can't arm any civilians now.\n";
+    case MilitiaErrorReason::InsufficientMoney:
+      return std::format("You need {} money to enlist {} troops.\n",
+                         err.required_money, err.requested_troops);
+  }
+  return "";
+}
+
+std::string render_arm_sector_result(const ArmSectorResult& vm) {
+  return std::format(
+      "{} population armed at a cost of {} (now {} civilians, {} military)\n"
+      "This mobilization cost {} money.\n",
+      vm.armed, vm.destruct_cost, vm.final_popn, vm.final_troops,
+      vm.enlist_cost);
+}
+
+std::string render_json_arm_sector_result(const ArmSectorResult& vm) {
+  return render_json_envelope("arm", vm);
+}
+
+std::string render_for_mode(UiMode mode, const ArmSectorResult& vm) {
+  return mode == UiMode::JSON ? render_json_arm_sector_result(vm)
+                              : render_arm_sector_result(vm);
+}
+
+std::string render_disarm_sector_result(const DisarmSectorResult& vm) {
+  return std::format("{} troops disarmed (now {} civilians, {} military)\n",
+                     vm.disarmed, vm.final_popn, vm.final_troops);
+}
+
+std::string render_json_disarm_sector_result(const DisarmSectorResult& vm) {
+  return render_json_envelope("disarm", vm);
+}
+
+std::string render_for_mode(UiMode mode, const DisarmSectorResult& vm) {
+  return mode == UiMode::JSON ? render_json_disarm_sector_result(vm)
+                              : render_disarm_sector_result(vm);
+}
+
 }  // namespace GB::presentation

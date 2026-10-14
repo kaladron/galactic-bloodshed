@@ -207,4 +207,30 @@ struct TacticalViewModel {
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const TacticalViewModel& vm);
 
+/// Formats a `MilitiaError` into its user-facing error message.
+[[nodiscard]] std::string format_militia_error(const MilitiaError& err);
+
+/// Formats an `ArmSectorResult` into its user-facing ASCII report.
+[[nodiscard]] std::string render_arm_sector_result(const ArmSectorResult& vm);
+
+/// Formats an `ArmSectorResult` into its JSON envelope string.
+[[nodiscard]] std::string
+render_json_arm_sector_result(const ArmSectorResult& vm);
+
+/// Open ADL dispatch for `ArmSectorResult`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const ArmSectorResult& vm);
+
+/// Formats a `DisarmSectorResult` into its user-facing ASCII report.
+[[nodiscard]] std::string
+render_disarm_sector_result(const DisarmSectorResult& vm);
+
+/// Formats a `DisarmSectorResult` into its JSON envelope string.
+[[nodiscard]] std::string
+render_json_disarm_sector_result(const DisarmSectorResult& vm);
+
+/// Open ADL dispatch for `DisarmSectorResult`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const DisarmSectorResult& vm);
+
 }  // namespace GB::presentation

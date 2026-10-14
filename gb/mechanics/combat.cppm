@@ -476,3 +476,43 @@ fire_single_ship(EntityManager& em, Ship& from, shipnum_t target_id,
 export std::expected<FireShipResult, FireError>
 cew_single_ship(EntityManager& em, Ship& from, shipnum_t target_id,
                 player_t player, bool god = false);
+
+export enum class MilitiaErrorReason {
+  PlanetEnslaved,
+  InvalidCoordinates,
+  SectorNotOwned,
+  NoCiviliansToArm,
+  InsufficientMoney,
+};
+
+export struct MilitiaError {
+  MilitiaErrorReason reason{MilitiaErrorReason::SectorNotOwned};
+  money_t required_money{0};
+  population_t requested_troops{0};
+};
+
+export struct ArmSectorResult {
+  population_t armed{0};
+  resource_t destruct_cost{0};
+  money_t enlist_cost{0};
+  population_t final_popn{0};
+  population_t final_troops{0};
+};
+
+export struct DisarmSectorResult {
+  population_t disarmed{0};
+  population_t final_popn{0};
+  population_t final_troops{0};
+};
+
+/// \brief Validates and executes sector civilian-to-militia mobilization.
+export std::expected<ArmSectorResult, MilitiaError>
+arm_sector_militia(EntityManager& em, starnum_t snum, planetnum_t pnum,
+                   Coordinates coords,
+                   std::optional<population_t> requested_amount,
+                   player_t player, governor_t governor);
+
+/// \brief Validates and executes sector militia-to-civilian demobilization.
+export std::expected<DisarmSectorResult, MilitiaError> disarm_sector_militia(
+    EntityManager& em, starnum_t snum, planetnum_t pnum, Coordinates coords,
+    std::optional<population_t> requested_amount, player_t player);

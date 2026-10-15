@@ -483,11 +483,10 @@ bool RacegenSession::modify_field(std::string_view field_name,
   } else if (field == "planet") {
     auto ptype = parse_planet_type(val_trimmed);
     if (!ptype) {
-      std::println(
-          out_,
-          "Error: Unknown planet type '{}'. Supported: Class M (Earth), "
-          "Forest, Desert, Waterball, Airless (Mars), Iceball, Jovian.",
-          val_trimmed);
+      std::println(out_,
+                   "Error: Unknown planet type '{}'. Supported: Earth, "
+                   "Forest, Desert, Waterball, Airless, Iceball, Jovian.",
+                   val_trimmed);
       return false;
     }
     spec_.home_planet_type = *ptype;
@@ -678,7 +677,7 @@ void RacegenSession::print_race() {
   std::println(out_, "  Password      : {}", spec_.password);
   std::println(out_, "  Address       : {}", spec_.address);
   std::println(out_, "  Home Planet   : {:<18} [Cost: {:>4}]",
-               to_string(spec_.home_planet_type), cost_.planet_cost);
+               spec_.home_planet_type, cost_.planet_cost);
   std::println(out_, "  Race Type     : {:<18} [Cost: {:>4}]",
                spec_.metamorph ? "Metamorph" : "Normal", cost_.race_type_cost);
   std::println(out_);
@@ -798,9 +797,9 @@ void RacegenSession::print_help(std::string_view topic) {
     std::println(out_, "    name        (empire/race name)");
     std::println(out_, "    password    (player password)");
     std::println(out_, "    address     (email or player address)");
-    std::println(
-        out_, "    planet      (Class M, Forest, Desert, Waterball, Airless, "
-              "Iceball, Jovian)");
+    std::println(out_,
+                 "    planet      (Earth, Forest, Desert, Waterball, Airless, "
+                 "Iceball, Jovian)");
     std::println(out_, "    race        (normal, metamorph)");
     std::println(out_, "    preferred   (preferred sector type)");
     std::println(out_, "  Sector Compatibilities (0% - 100%):");

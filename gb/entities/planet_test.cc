@@ -879,14 +879,17 @@ int main() {
     static_assert(planet_type_symbol(PlanetType::FOREST) == ')');
     static_assert(planet_type_symbol(PlanetType::DESERT) == '-');
 
-    static_assert(planet_type_name(PlanetType::EARTH) == "Class M");
-    static_assert(planet_type_name(PlanetType::ASTEROID) == "Asteroid");
-    static_assert(planet_type_name(PlanetType::MARS) == "Airless");
-    static_assert(planet_type_name(PlanetType::ICEBALL) == "Iceball");
-    static_assert(planet_type_name(PlanetType::GASGIANT) == "Jovian");
-    static_assert(planet_type_name(PlanetType::WATER) == "Waterball");
-    static_assert(planet_type_name(PlanetType::FOREST) == "Forest");
-    static_assert(planet_type_name(PlanetType::DESERT) == "Desert");
+    static_assert(to_string(PlanetType::EARTH) == "Earth");
+    static_assert(to_string(PlanetType::ASTEROID) == "Asteroid");
+    static_assert(to_string(PlanetType::MARS) == "Airless");
+    static_assert(to_string(PlanetType::ICEBALL) == "Iceball");
+    static_assert(to_string(PlanetType::GASGIANT) == "Jovian");
+    static_assert(to_string(PlanetType::WATER) == "Waterball");
+    static_assert(to_string(PlanetType::FOREST) == "Forest");
+    static_assert(to_string(PlanetType::DESERT) == "Desert");
+
+    test::expect_eq(std::format("{}", PlanetType::EARTH), "Earth");
+    test::expect_eq(std::format("{:d}", PlanetType::GASGIANT), "4");
 
     Planet planet{1, 1, PlanetType::GASGIANT, Coordinates{5, 5}};
     test::expect_eq(planet.type_symbol(), '~');

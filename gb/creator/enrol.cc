@@ -169,12 +169,15 @@ int main(int argc, char* argv[]) {
 
   do {
     std::print(
-        "\nLive on what type planet (default: {}):\n     (e)arth, (g)asgiant, "
-        "(m)ars, (i)ce, (w)ater, (d)esert, (f)orest? ",
-        planet_type_name(archetype.default_planet));
+        "\nLive on what type planet (default: {}):\n     (e)arth, (j)ovian, "
+        "(a)irless, (i)ceball, (w)aterball, (d)esert, (f)orest? ",
+        archetype.default_planet);
     std::string planet_line;
     std::getline(std::cin, planet_line);
-    char c = (!planet_line.empty()) ? planet_line[0] : '\0';
+    char c = (!planet_line.empty())
+                 ? static_cast<char>(
+                       std::tolower(static_cast<unsigned char>(planet_line[0])))
+                 : '\0';
 
     if (c == '\0') {
       ppref = archetype.default_planet;
@@ -186,9 +189,11 @@ int main(int argc, char* argv[]) {
         case 'e':
           ppref = PlanetType::EARTH;
           break;
+        case 'a':
         case 'm':
           ppref = PlanetType::MARS;
           break;
+        case 'j':
         case 'g':
           ppref = PlanetType::GASGIANT;
           break;
@@ -207,8 +212,7 @@ int main(int argc, char* argv[]) {
       }
     }
 
-    std::println(std::cout, "Looking for type {} planet...",
-                 planet_type_name(ppref));
+    std::println(std::cout, "Looking for type {} planet...", ppref);
 
     found = false;
     if (auto found_loc = service.find_suitable_planet(ppref)) {
@@ -260,7 +264,7 @@ int main(int argc, char* argv[]) {
     std::println(std::cout, "            Mass: {:.2f}", spec.mass);
     std::println(std::cout, " Number of sexes: {} (min req'd for colonization)",
                  spec.number_sexes);
-    std::println(std::cout, "     Home Planet: {}", planet_type_name(ppref));
+    std::println(std::cout, "     Home Planet: {}", ppref);
 
     std::print("  Sector Compats: ");
     bool first = true;

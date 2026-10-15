@@ -252,13 +252,12 @@ void test_archetypes_valid_and_within_budget() {
         std::format(
             "Archetype {} ({}) on default planet {} must spend at least "
             "900 points (spent: {})",
-            i + 1, arch.name, to_string(arch.default_planet),
-            default_cost.total_cost));
+            i + 1, arch.name, arch.default_planet, default_cost.total_cost));
     test::expect_ge(
         default_cost.points_remaining, 0,
         std::format("Archetype {} ({}) on default planet {} must not exceed "
                     "1400 points (remaining: {})",
-                    i + 1, arch.name, to_string(arch.default_planet),
+                    i + 1, arch.name, arch.default_planet,
                     default_cost.points_remaining));
 
     // 2. Worst-case maximum random roll (+max_rand on every attribute) on
@@ -285,13 +284,13 @@ void test_archetypes_valid_and_within_budget() {
         max_errors.empty(),
         std::format("Archetype {} ({}) max roll on default planet {} must "
                     "pass rigorous validation (rem: {})",
-                    i + 1, arch.name, to_string(arch.default_planet),
+                    i + 1, arch.name, arch.default_planet,
                     max_cost.points_remaining));
     test::expect_ge(
         max_cost.points_remaining, 0,
         std::format("Archetype {} ({}) max roll on default planet {} must not "
                     "exceed 1400 points (remaining: {})",
-                    i + 1, arch.name, to_string(arch.default_planet),
+                    i + 1, arch.name, arch.default_planet,
                     max_cost.points_remaining));
 
     // 3. Planet overrides across all habitable planet types (base and random)
@@ -305,15 +304,14 @@ void test_archetypes_valid_and_within_budget() {
       test::expect_true(errors.empty(),
                         std::format("Archetype {} ({}) base spec on {} must "
                                     "pass rigorous validation",
-                                    i + 1, arch.name, to_string(ptype)));
+                                    i + 1, arch.name, ptype));
 
       auto cost = engine.calculate_cost(base_spec);
       test::expect_ge(
           cost.points_remaining, 0,
           std::format("Archetype {} ({}) base spec on {} must not exceed 1400 "
                       "points (remaining: {})",
-                      i + 1, arch.name, to_string(ptype),
-                      cost.points_remaining));
+                      i + 1, arch.name, ptype, cost.points_remaining));
 
       for (int sample = 0; sample < 5; ++sample) {
         auto rand_spec = arch.to_enrollment_spec(ptype, /*randomize=*/true);
@@ -326,12 +324,12 @@ void test_archetypes_valid_and_within_budget() {
             rand_errors.empty(),
             std::format("Archetype {} ({}) random roll on {} must "
                         "pass rigorous validation",
-                        i + 1, arch.name, to_string(ptype)));
+                        i + 1, arch.name, ptype));
         auto rand_cost = engine.calculate_cost(rand_spec);
         test::expect_ge(rand_cost.points_remaining, 0,
                         std::format("Archetype {} ({}) random roll on {} must "
                                     "not exceed 1400 points",
-                                    i + 1, arch.name, to_string(ptype)));
+                                    i + 1, arch.name, ptype));
       }
     }
   }

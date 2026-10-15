@@ -43,33 +43,6 @@ export template <typename T>
   requires(!std::same_as<T, PlanetType>)
 constexpr char planet_type_symbol(T) = delete;
 
-/// Returns the human-readable classification name for a PlanetType.
-export constexpr std::string_view planet_type_name(PlanetType type) noexcept {
-  switch (type) {
-    case PlanetType::EARTH:
-      return "Class M";
-    case PlanetType::ASTEROID:
-      return "Asteroid";
-    case PlanetType::MARS:
-      return "Airless";
-    case PlanetType::ICEBALL:
-      return "Iceball";
-    case PlanetType::GASGIANT:
-      return "Jovian";
-    case PlanetType::WATER:
-      return "Waterball";
-    case PlanetType::FOREST:
-      return "Forest";
-    case PlanetType::DESERT:
-      return "Desert";
-  }
-  std::unreachable();
-}
-
-export template <typename T>
-  requires(!std::same_as<T, PlanetType>)
-constexpr std::string_view planet_type_name(T) = delete;
-
 /// Set of commodities selected for loading or unloading on a shipping route.
 export struct CommodityManifest {
   bool fuel{false};       ///< Fuel commodity
@@ -446,7 +419,7 @@ public:
   /// \brief Returns the human-readable classification name for this planet's
   /// type.
   [[nodiscard]] constexpr std::string_view type_name() const noexcept {
-    return planet_type_name(data_.type);
+    return to_string(data_.type);
   }
 
   /// \brief Returns whether a sector type is common (native) on this planet.

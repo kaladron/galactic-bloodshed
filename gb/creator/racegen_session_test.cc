@@ -177,7 +177,7 @@ void test_print_output() {
   const std::string text = out.str();
   test::expect_true(text.contains("=== Race Specification ==="),
                     "must contain header");
-  test::expect_true(text.contains("Class M"), "must show Class M planet");
+  test::expect_true(text.contains("Earth"), "must show Earth planet");
   test::expect_true(text.contains("=== Attributes ==="),
                     "must show Attributes");
   test::expect_true(text.contains("=== Sector Compatibilities ==="),

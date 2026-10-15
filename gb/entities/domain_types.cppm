@@ -114,7 +114,7 @@ struct PlanetValues {
 export constexpr std::string_view to_string(PlanetType type) noexcept {
   switch (type) {
     case PlanetType::EARTH:
-      return "Class M";
+      return "Earth";
     case PlanetType::ASTEROID:
       return "Asteroid";
     case PlanetType::MARS:

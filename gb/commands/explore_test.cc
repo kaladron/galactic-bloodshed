@@ -16,8 +16,7 @@ void setup_test_world(TestContext& ctx) {
       .add_race("Explorers", 60.0, false, player_t{1})
       .add_race("Aliens", 50.0, false, player_t{2});
 
-  ctx.em.mutate_universe(
-      [](universe_struct& univ) { univ.AP[player_t{1}] = 50; });
+  ctx.em.mutate_universe([](Universe& univ) { univ.set_AP(player_t{1}, 50); });
 
   // Star 1 (explored): Planet 1 (explored, inhabited, autorep, enslaved, toxic,
   // alien owner) and Planet 2 (unexplored)

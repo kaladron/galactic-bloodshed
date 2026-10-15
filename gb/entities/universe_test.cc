@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /// \file universe_test.cc
-/// \brief Unit tests for VnTargetRecord, universe_struct Action Points (AP),
+/// \brief Unit tests for VnTargetRecord, Universe Action Points (AP),
 /// Von Neumann (VN) tracking, and EntityManager persistence.
 
 import dallib;
@@ -59,18 +59,22 @@ void test_vn_target_record() {
 }
 
 void test_universe_AP_methods() {
-  std::println(std::cout, "Test: universe_struct AP (Action Points) methods");
+  std::println(std::cout, "Test: Universe AP (Action Points) methods");
 
-  universe_struct universe{};
+  Universe universe{};
   const auto& const_universe = universe;
 
   // Non-inserting const lookup returns 0
   test::expect_eq(const_universe.get_AP(1), 0);
-  test::expect_true(const_universe.AP.empty());
+  test::expect_false(const_universe.has_AP(1));
+  test::expect_false(const_universe.has_any_AP());
 
   // Set AP for player 1
   universe.set_AP(1, 1000);
+  test::expect_true(const_universe.has_AP(1));
+  test::expect_true(const_universe.has_any_AP());
   test::expect_eq(const_universe.get_AP(1), 1000);
+  test::expect_eq(const_universe.AP(1), 1000);
 
   // Deduct AP
   universe.deduct_AP(1, 300);
@@ -79,7 +83,7 @@ void test_universe_AP_methods() {
   // Deduct more than available (should clamp to 0 and erase sparse entry)
   universe.deduct_AP(1, 1000);
   test::expect_eq(const_universe.get_AP(1), 0);
-  test::expect_false(const_universe.AP.contains(1));
+  test::expect_false(const_universe.has_AP(1));
 
   // Add AP
   universe.add_AP(1, 500);
@@ -95,39 +99,47 @@ void test_universe_AP_methods() {
   // Invalid player ID 0 throws std::out_of_range
   test::expect_throws<std::out_of_range>(
       [&]() { (void)const_universe.get_AP(0); });
+  test::expect_throws<std::out_of_range>(
+      [&]() { (void)const_universe.has_AP(0); });
   test::expect_throws<std::out_of_range>([&]() { universe.set_AP(0, 999); });
 
   std::println(std::cout, "  ✓ AP methods work correctly");
 }
 
 void test_universe_VN_methods() {
-  std::println(std::cout,
-               "Test: universe_struct VN (Von Neumann) tracking methods");
+  std::println(std::cout, "Test: Universe VN (Von Neumann) tracking methods");
 
-  universe_struct universe{};
+  Universe universe{};
   const auto& const_universe = universe;
 
   // Non-inserting const lookup returns default record
   test::expect_eq(const_universe.vn_hits(1), 0U);
   test::expect_eq(const_universe.vn_target(1), VnTargetRecord{});
-  test::expect_true(const_universe.vn_targets.empty());
+  test::expect_false(const_universe.has_vn_target(1));
+  test::expect_false(const_universe.has_any_vn_targets());
 
   // Record VN kill in deep space (no star)
   universe.record_vn_kill(1, std::nullopt, false);
+  test::expect_true(const_universe.has_vn_target(1));
+  test::expect_true(const_universe.has_any_vn_targets());
   test::expect_eq(const_universe.vn_hits(1), 1U);
-  test::expect_eq(const_universe.vn_target(1).primary_star, std::nullopt);
-  test::expect_eq(const_universe.vn_target(1).secondary_star, std::nullopt);
+  test::expect_eq(const_universe.vn_primary_star(1), std::nullopt);
+  test::expect_eq(const_universe.vn_secondary_star(1), std::nullopt);
 
   // Record VN kills in star systems
   universe.record_vn_kill(1, starnum_t{42}, false);
   test::expect_eq(const_universe.vn_hits(1), 2U);
-  test::expect_eq(const_universe.vn_target(1).primary_star, starnum_t{42});
-  test::expect_eq(const_universe.vn_target(1).secondary_star, std::nullopt);
+  test::expect_eq(const_universe.vn_primary_star(1), starnum_t{42});
+  test::expect_eq(const_universe.vn_secondary_star(1), std::nullopt);
 
   universe.record_vn_kill(1, starnum_t{100}, false);
   test::expect_eq(const_universe.vn_hits(1), 3U);
-  test::expect_eq(const_universe.vn_target(1).primary_star, starnum_t{42});
-  test::expect_eq(const_universe.vn_target(1).secondary_star, starnum_t{100});
+  test::expect_eq(const_universe.vn_primary_star(1), starnum_t{42});
+  test::expect_eq(const_universe.vn_secondary_star(1), starnum_t{100});
+  test::expect_eq(const_universe.select_vn_retaliation_star(1, true),
+                  starnum_t{42});
+  test::expect_eq(const_universe.select_vn_retaliation_star(1, false),
+                  starnum_t{100});
 
   // Decrement VN hits
   universe.decrement_vn_hits(1);
@@ -137,7 +149,7 @@ void test_universe_VN_methods() {
   universe.decrement_vn_hits(2);
   test::expect_eq(const_universe.vn_hits(2), 0U);
 
-  universe.vn_target(2).hits = 1;
+  universe.set_vn_hits(2, 1);
   universe.decrement_vn_hits(2);
   test::expect_eq(const_universe.vn_hits(2), 0U);
   universe.decrement_vn_hits(2);
@@ -147,7 +159,12 @@ void test_universe_VN_methods() {
   test::expect_throws<std::out_of_range>(
       [&]() { (void)const_universe.vn_hits(0); });
   test::expect_throws<std::out_of_range>(
-      [&]() { (void)universe.vn_target(0); });
+      [&]() { (void)const_universe.has_vn_target(0); });
+  test::expect_throws<std::out_of_range>(
+      [&]() { (void)const_universe.vn_target(0); });
+  test::expect_throws<std::out_of_range>([&]() { universe.set_vn_hits(0, 1); });
+  test::expect_throws<std::out_of_range>(
+      [&]() { universe.set_vn_target(0, VnTargetRecord{}); });
   test::expect_throws<std::out_of_range>(
       [&]() { universe.record_vn_kill(0, starnum_t{1}, false); });
   test::expect_throws<std::out_of_range>(
@@ -169,12 +186,12 @@ void test_universe_persistence() {
     JsonStore store(db);
     UniverseRepository repo(store);
 
-    universe_struct u{};
+    Universe u{};
     u.set_AP(1, 1000);
     u.set_AP(2, 2000);
-    u.vn_target(1) = VnTargetRecord{.hits = 5,
-                                    .primary_star = starnum_t{3},
-                                    .secondary_star = starnum_t{7}};
+    u.set_vn_target(1, VnTargetRecord{.hits = 5,
+                                      .primary_star = starnum_t{3},
+                                      .secondary_star = starnum_t{7}});
 
     repo.save(u);
   }
@@ -186,11 +203,11 @@ void test_universe_persistence() {
   test::expect_eq(universe->get_AP(1), 1000);
   test::expect_eq(universe->get_AP(2), 2000);
   test::expect_eq(universe->vn_hits(1), 5U);
-  test::expect_eq(universe->vn_target(1).primary_star, starnum_t{3});
-  test::expect_eq(universe->vn_target(1).secondary_star, starnum_t{7});
+  test::expect_eq(universe->vn_primary_star(1), starnum_t{3});
+  test::expect_eq(universe->vn_secondary_star(1), starnum_t{7});
 
   // Modify via EntityManager
-  em.mutate_universe([](universe_struct& universe_mut) {
+  em.mutate_universe([](Universe& universe_mut) {
     universe_mut.set_AP(1, 1500);
     universe_mut.record_vn_kill(1, starnum_t{9}, true);
   });
@@ -204,8 +221,8 @@ void test_universe_persistence() {
   test::expect_eq(universe2->get_AP(1), 1500);
   test::expect_eq(universe2->get_AP(2), 2000);
   test::expect_eq(universe2->vn_hits(1), 6U);
-  test::expect_eq(universe2->vn_target(1).primary_star, starnum_t{9});
-  test::expect_eq(universe2->vn_target(1).secondary_star, starnum_t{7});
+  test::expect_eq(universe2->vn_primary_star(1), starnum_t{9});
+  test::expect_eq(universe2->vn_secondary_star(1), starnum_t{7});
 
   std::println(std::cout, "  ✓ Persistence with EntityManager works correctly");
 }

@@ -395,7 +395,7 @@ void test_enroll_with_service_success() {
   initialize_schema(db);
   JsonStore store(db);
 
-  universe_struct us{};
+  Universe us{};
   UniverseRepository(store).save(us);
 
   EntityManager em(db);

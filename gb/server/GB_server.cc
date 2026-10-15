@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
 
   // Verify universe is initialized (created by makeuniv)
   try {
-    entity_manager.with_universe([](const universe_struct&) {});
+    entity_manager.with_universe([](const Universe&) {});
   } catch (const EntityNotFoundError&) {
     std::println(stderr, "\nERROR: Universe not initialized!");
     std::println(stderr, "Please run 'makeuniv' to create the game universe.");

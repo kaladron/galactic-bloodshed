@@ -293,24 +293,24 @@ protected:
 // ============================================================================
 // UniverseRepository - Repository for global universe-wide statistics
 // ============================================================================
-export class UniverseRepository : public Repository<universe_struct> {
+export class UniverseRepository : public Repository<Universe> {
 public:
   explicit UniverseRepository(JsonStore& store)
-      : Repository<universe_struct>(store, "tbl_universe") {}
+      : Repository<Universe>(store, "tbl_universe") {}
 
   // Domain-specific methods
-  // Note: universe_struct is a singleton (id=1)
-  std::optional<universe_struct> get_global_data() {
+  // Note: Universe is a singleton (id=1)
+  std::optional<Universe> get_global_data() {
     return find(1);
   }
-  bool save(const universe_struct& universe) {
-    return Repository<universe_struct>::save(1, universe);
+  bool save(const Universe& universe) {
+    return Repository<Universe>::save(1, universe);
   }
 
 protected:
   [[nodiscard]] std::optional<std::string>
-  serialize(const universe_struct& universe) const override;
-  [[nodiscard]] std::optional<universe_struct>
+  serialize(const Universe& universe) const override;
+  [[nodiscard]] std::optional<Universe>
   deserialize(const std::string& json_str) const override;
 };
 

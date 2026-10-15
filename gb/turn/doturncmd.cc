@@ -570,7 +570,7 @@ ap_t compute_star_action_points(int num_ships, population_t popn,
 }
 
 void distribute_universe_action_points(EntityManager& entity_manager) {
-  entity_manager.mutate_universe([&](universe_struct& sdata) {
+  entity_manager.mutate_universe([&](Universe& sdata) {
     for (const Race& race : RaceList::readonly(entity_manager)) {
       const player_t player = race.Playernum;
       if (compute_governed_status(race, entity_manager)) {

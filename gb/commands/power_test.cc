@@ -20,9 +20,9 @@ void test_power_dispatch() {
   ctx.with_standard_universe();
   JsonStore store(ctx.db);
 
-  ctx.em.mutate_universe([](universe_struct& u) {
-    u.vn_target(1).hits = 3;
-    u.vn_target(2).hits = 7;
+  ctx.em.mutate_universe([](Universe& u) {
+    u.set_vn_hits(1, 3);
+    u.set_vn_hits(2, 7);
   });
 
   ctx.em.mutate_race(1, [](Race& r) {

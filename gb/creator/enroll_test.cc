@@ -44,7 +44,7 @@ void test_enroll_unbounded_players() {
   initialize_schema(db);
   JsonStore store(db);
 
-  universe_struct us{};
+  Universe us{};
   UniverseRepository univ_repo(store);
   univ_repo.save(us);
 
@@ -90,7 +90,7 @@ void test_enroll_no_free_planet_type() {
   initialize_schema(db);
   JsonStore store(db);
 
-  universe_struct us{};
+  Universe us{};
   UniverseRepository univ_repo(store);
   univ_repo.save(us);
 
@@ -124,7 +124,7 @@ void test_find_suitable_planet_deterministic_search() {
   initialize_schema(db);
   JsonStore store(db);
 
-  universe_struct us{};
+  Universe us{};
   UniverseRepository univ_repo(store);
   univ_repo.save(us);
 
@@ -236,7 +236,7 @@ void test_enroll_valid_race_success() {
   initialize_schema(db);
   JsonStore store(db);
 
-  universe_struct us{};
+  Universe us{};
   UniverseRepository univ_repo(store);
   univ_repo.save(us);
 

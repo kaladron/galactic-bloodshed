@@ -17,8 +17,8 @@ void test_prompt_universe_scope() {
   {
     JsonStore store(ctx.db);
     UniverseRepository universe_repo(store);
-    universe_struct u{};
-    u.AP[player_t{1}] = 100;
+    Universe u{};
+    u.set_AP(player_t{1}, 100);
     universe_repo.save(u);
   }
 
@@ -73,8 +73,8 @@ void test_prompt_ship_orbiting_scopes() {
     JsonStore store(ctx.db);
     PlanetRepository(store).save(Planet{1, 1});
     UniverseRepository universe_repo(store);
-    universe_struct u{};
-    u.AP[player_t{1}] = 100;
+    Universe u{};
+    u.set_AP(player_t{1}, 100);
     universe_repo.save(u);
 
     ShipRepository ship_repo(store);
@@ -140,8 +140,8 @@ void test_prompt_nested_docked_ships() {
     JsonStore store(ctx.db);
     PlanetRepository(store).save(Planet{1, 1});
     UniverseRepository universe_repo(store);
-    universe_struct u{};
-    u.AP[player_t{1}] = 100;
+    Universe u{};
+    u.set_AP(player_t{1}, 100);
     universe_repo.save(u);
 
     ShipRepository ship_repo(store);
@@ -373,8 +373,7 @@ void test_prompt_json_mode() {
   TestContext ctx;
   ctx.with_standard_universe();
 
-  ctx.em.mutate_universe(
-      [](universe_struct& u) { u.AP[player_t{1}] = ap_t{42}; });
+  ctx.em.mutate_universe([](Universe& u) { u.set_AP(player_t{1}, ap_t{42}); });
   ctx.em.mutate_star(1, [](Star& star) { star.AP(player_t{1}) = ap_t{17}; });
 
   TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE, 10)

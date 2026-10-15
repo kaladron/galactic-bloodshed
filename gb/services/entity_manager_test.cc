@@ -254,17 +254,17 @@ void test_entity_manager_singleton_universe() {
   initialize_schema(db);
   EntityManager em(db);
 
-  std::println(std::cout, "Test: EntityManager singleton (universe_struct)");
+  std::println(std::cout, "Test: EntityManager singleton (Universe)");
 
   test::expect_throws<EntityNotFoundError>([&]() { em.peek_universe(); });
   test::expect_throws<EntityNotFoundError>(
-      [&]() { em.mutate_universe([](universe_struct&) {}); });
+      [&]() { em.mutate_universe([](Universe&) {}); });
   std::println(
       std::cout,
       "  ✓ peek_universe and mutate_universe throw EntityNotFoundError "
       "when uninitialized");
 
-  universe_struct univ{};
+  Universe univ{};
   univ.set_AP(1, 50);
   JsonStore store(db);
   UniverseRepository univ_repo(store);
@@ -275,12 +275,12 @@ void test_entity_manager_singleton_universe() {
   test::expect_eq(u1, u2);
   test::expect_eq(u1->get_AP(1), 50);
 
-  em.mutate_universe([](universe_struct& u) { u.set_AP(1, 75); });
+  em.mutate_universe([](Universe& u) { u.set_AP(1, 75); });
 
   const auto* peek = em.peek_universe();
   test::expect_ne(peek, nullptr);
   test::expect_eq(peek->get_AP(1), 75);
-  std::println(std::cout, "  ✓ Singleton universe_struct works correctly");
+  std::println(std::cout, "  ✓ Singleton Universe works correctly");
 }
 
 void test_entity_manager_singleton_server_state() {
@@ -436,17 +436,17 @@ void test_entity_manager_kill_ship() {
   Ship vn_ship(vn_data);
   ships.save(vn_ship);
 
-  universe_struct univ_data{};
-  univ_data.vn_target(1).hits = 5;
+  Universe univ_data{};
+  univ_data.set_vn_hits(1, 5);
   UniverseRepository univ_repo(store);
   univ_repo.save(univ_data);
 
   em.kill_ship(2, vn_ship);
   std::println(std::cout, "  ✓ VN ship killed without errors");
 
-  em.with_universe([&](const universe_struct& univ) {
+  em.with_universe([&](const Universe& univ) {
     test::expect_eq(univ.vn_hits(2), 1U);
-    test::expect_eq(univ.vn_target(2).primary_star, starnum_t{5});
+    test::expect_eq(univ.vn_primary_star(2), starnum_t{5});
   });
   std::println(std::cout, "  ✓ VN tracking (vn_targets) updated correctly");
 
@@ -911,13 +911,13 @@ void test_entity_manager_with_scoped_peeks() {
   test::expect_eq(sect_owner, player_t{1});
 
   // 6. with_universe
-  universe_struct u{};
+  Universe u{};
   u.set_AP(1, 10);
   UniverseRepository u_repo(store);
   u_repo.save(u);
 
-  auto univ_ap = em.with_universe(
-      [](const universe_struct& univ) { return univ.get_AP(1); });
+  auto univ_ap =
+      em.with_universe([](const Universe& univ) { return univ.get_AP(1); });
   test::expect_eq(univ_ap, 10);
 
   // 7. with_server_state

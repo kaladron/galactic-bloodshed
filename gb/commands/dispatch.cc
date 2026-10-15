@@ -109,7 +109,7 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
           g.snum(), [&](Star& star) { star.AP(g.player()) -= desc.ap.amount; });
     } else if (desc.ap.model == APModel::FixedUniv) {
       g.entity_manager.mutate_universe(
-          [&](universe_struct& u) { u.deduct_AP(g.player(), desc.ap.amount); });
+          [&](Universe& u) { u.deduct_AP(g.player(), desc.ap.amount); });
     }
   }
 

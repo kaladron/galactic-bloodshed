@@ -242,7 +242,7 @@ void deduct_fire_ap(EntityManager& em, const Ship& from, player_t player,
     return;
   }
   if (from.whatorbits() == ScopeLevel::LEVEL_UNIV) {
-    em.mutate_universe([&](universe_struct& u) { u.deduct_AP(player, 1); });
+    em.mutate_universe([&](Universe& u) { u.deduct_AP(player, 1); });
     return;
   }
   em.mutate_star(from.storbits(), [&](Star& s) { s.AP(player) -= 1; });

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /// \file stardata_json_test.cc
-/// \brief Unit tests for universe_struct SQLite JSON serialization and
+/// \brief Unit tests for Universe SQLite JSON serialization and
 /// EntityManager integration.
 
 import dallib;
@@ -18,13 +18,15 @@ int main() {
   // Initialize database tables - this will create the tbl_universe table
   initialize_schema(db);
 
-  universe_struct test_stardata{};
+  Universe test_stardata{};
 
   // Initialize some basic fields for testing
   test_stardata.set_AP(1, 10);
   test_stardata.set_AP(2, 20);
-  test_stardata.vn_target(1) = VnTargetRecord{
-      .hits = 3, .primary_star = starnum_t{1}, .secondary_star = starnum_t{2}};
+  test_stardata.set_vn_target(1,
+                              VnTargetRecord{.hits = 3,
+                                             .primary_star = starnum_t{1},
+                                             .secondary_star = starnum_t{2}});
 
   // Test EntityManager - stores and retrieves universe data
   // First save using repository to create the database record
@@ -41,13 +43,13 @@ int main() {
   test::expect_eq(retrieved->get_AP(1), test_stardata.get_AP(1));
   test::expect_eq(retrieved->get_AP(2), test_stardata.get_AP(2));
   test::expect_eq(retrieved->vn_hits(1), test_stardata.vn_hits(1));
-  test::expect_eq(retrieved->vn_target(1).primary_star,
-                  test_stardata.vn_target(1).primary_star);
-  test::expect_eq(retrieved->vn_target(1).secondary_star,
-                  test_stardata.vn_target(1).secondary_star);
+  test::expect_eq(retrieved->vn_primary_star(1),
+                  test_stardata.vn_primary_star(1));
+  test::expect_eq(retrieved->vn_secondary_star(1),
+                  test_stardata.vn_secondary_star(1));
 
   // Database connection will be cleaned up automatically by Sql destructor
 
-  std::println(std::cout, "universe_struct SQLite JSON storage test passed!");
+  std::println(std::cout, "Universe SQLite JSON storage test passed!");
   return 0;
 }

@@ -43,7 +43,7 @@ void seed_standard_races(EntityManager& em) {
 
 TestContext::TestContext() : db(":memory:"), em(db) {
   initialize_schema(db);
-  universe_struct u{};
+  Universe u{};
   JsonStore store(db);
   UniverseRepository universe_repo(store);
   universe_repo.save(u);
@@ -329,14 +329,14 @@ TestContext& TestContext::with_standard_universe() {
   UniverseRepository univ_repo(store);
   auto u = univ_repo.find(1);
   if (!u) {
-    universe_struct new_u{};
+    Universe new_u{};
     for (player_t p = 1; p <= 4; ++p) {
-      new_u.AP[p] = 100;
+      new_u.set_AP(p, 100);
     }
     univ_repo.save(new_u);
   } else {
     for (player_t p = 1; p <= 4; ++p) {
-      u->AP[p] = 100;
+      u->set_AP(p, 100);
     }
     univ_repo.save(*u);
   }
@@ -419,7 +419,7 @@ TestContext::with_universe(std::optional<GB::creator::UniverseConfig> config) {
   auto u = univ_repo.find(1);
   if (u) {
     for (player_t p = 1; p <= 4; ++p) {
-      u->AP[p] = 100;
+      u->set_AP(p, 100);
     }
     univ_repo.save(*u);
   }

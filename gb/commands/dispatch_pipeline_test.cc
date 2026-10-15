@@ -271,8 +271,8 @@ void test_fixed_univ_ap_transactions() {
   JsonStore store(ctx.db);
   UniverseRepository universe_repo(store);
 
-  universe_struct u{};
-  u.AP[player_t{1}] = 10;
+  Universe u{};
+  u.set_AP(player_t{1}, 10);
   universe_repo.save(u);
 
   auto& registry = get_test_session_registry();
@@ -294,7 +294,7 @@ void test_fixed_univ_ap_transactions() {
   test::expect_eq(ctx.em.peek_universe()->get_AP(1), 10);
 
   // Set Univ AP to 20
-  ctx.em.mutate_universe([](universe_struct& u) { u.set_AP(1, 20); });
+  ctx.em.mutate_universe([](Universe& u) { u.set_AP(1, 20); });
 
   // Case 2: Handler returns false -> AP unchanged (still 20)
   GB::commands::CommandDescriptor fail_desc{

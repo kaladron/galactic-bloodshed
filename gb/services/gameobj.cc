@@ -26,7 +26,7 @@ bool GameObj::deduct_univ_ap(ap_t amount) {
     return false;
   }
   entity_manager.mutate_universe(
-      [&](universe_struct& u) { u.deduct_AP(player_, amount); });
+      [&](Universe& u) { u.deduct_AP(player_, amount); });
   return true;
 }
 

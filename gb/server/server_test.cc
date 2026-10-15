@@ -67,7 +67,7 @@ void setup_test_universe(TestContext& ctx) {
   races.save(race);
 
   UniverseRepository univ_repo(store);
-  universe_struct u{};
+  Universe u{};
   univ_repo.save(u);
 
   ctx.create_star("Sol", 1).with_position({300.0, 400.0}).build();

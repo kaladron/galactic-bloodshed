@@ -231,7 +231,7 @@ UniverseGenerationResult UniverseGenerator::generate(Database& db) {
   UniverseGenerationResult result{};
   result.num_stars = config_.num_stars;
 
-  universe_struct universe_data{};
+  Universe universe_data{};
 
   JsonStore store(db);
   UniverseRepository universe_repo(store);

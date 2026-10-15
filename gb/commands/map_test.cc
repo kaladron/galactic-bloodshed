@@ -18,7 +18,7 @@ void setup_test_world(TestContext& ctx) {
   JsonStore store(ctx.db);
 
   // Create universe
-  universe_struct us{};
+  Universe us{};
 
   UniverseRepository universe_repo(store);
   universe_repo.save(us);

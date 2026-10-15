@@ -332,13 +332,13 @@ void test_scrap_domain_errors() {
                        .with_crew(2, 0)
                        .build();
   g.set_level(ScopeLevel::LEVEL_UNIV);
-  ctx.em.mutate_universe([](universe_struct& u) { u.set_AP(player_t{1}, 0); });
+  ctx.em.mutate_universe([](Universe& u) { u.set_AP(player_t{1}, 0); });
   g.out.str("");
   ctx.assert_dispatch_rejected(g,
                                {"scrap", std::format("#{}", deep_ship.value)});
   test::expect_contains(g.out.str(), "You need 1 universe action point.");
 
-  ctx.em.mutate_universe([](universe_struct& u) { u.set_AP(player_t{1}, 2); });
+  ctx.em.mutate_universe([](Universe& u) { u.set_AP(player_t{1}, 2); });
   g.out.str("");
   g.set_ui_mode(GB::presentation::UiMode::JSON);
   ctx.assert_dispatch_success(g,

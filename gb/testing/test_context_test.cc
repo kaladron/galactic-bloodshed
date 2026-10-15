@@ -93,8 +93,8 @@ void test_test_context_dispatch_helpers() {
   {
     JsonStore store(ctx.db);
     UniverseRepository universe_repo(store);
-    universe_struct u{};
-    u.AP[player_t{1}] = 30;
+    Universe u{};
+    u.set_AP(player_t{1}, 30);
     universe_repo.save(u);
   }
 

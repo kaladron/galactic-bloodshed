@@ -363,8 +363,7 @@ scrap_single_ship(EntityManager& em, Ship& s, const Race& race) {
       if (univ->get_AP(race.Playernum) < 1) {
         return std::unexpected(ScrapError::InsufficientUniverseAp);
       }
-      em.mutate_universe(
-          [&](universe_struct& u) { u.deduct_AP(race.Playernum, 1); });
+      em.mutate_universe([&](Universe& u) { u.deduct_AP(race.Playernum, 1); });
     }
   } else {
     const auto* star = em.peek_star(s.storbits());

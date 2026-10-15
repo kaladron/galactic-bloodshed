@@ -144,20 +144,20 @@ PowerRepository::deserialize(const std::string& json_str) const {
 }
 
 std::optional<std::string>
-UniverseRepository::serialize(const universe_struct& universe) const {
-  auto result = glz::write_json(universe);
+UniverseRepository::serialize(const Universe& universe) const {
+  auto result = glz::write_json(universe.get_struct());
   if (result.has_value()) {
     return result.value();
   }
   return std::nullopt;
 }
 
-std::optional<universe_struct>
+std::optional<Universe>
 UniverseRepository::deserialize(const std::string& json_str) const {
-  universe_struct universe{};
-  auto result = glz::read_json(universe, json_str);
+  universe_struct data{};
+  auto result = glz::read_json(data, json_str);
   if (!result) {
-    return universe;
+    return Universe(data);
   }
   return std::nullopt;
 }

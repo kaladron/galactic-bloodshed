@@ -291,7 +291,7 @@ std::optional<AssaultError> deduct_assault_ap(EntityManager& em, const Ship& s,
           .reason = AssaultErrorReason::InsufficientUniverseAp,
       };
     }
-    em.mutate_universe([&](universe_struct& u) { u.deduct_AP(player, 1); });
+    em.mutate_universe([&](Universe& u) { u.deduct_AP(player, 1); });
     return std::nullopt;
   }
   if (em.peek_star(s.storbits())->AP(player) < 1) {

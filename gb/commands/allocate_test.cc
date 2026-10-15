@@ -15,7 +15,7 @@ int main() {
   TestWorldBuilder(ctx).add_race("Spenders").add_star("Sol", 20);
 
   // Setup Universe APs
-  ctx.em.mutate_universe([](universe_struct& u) { u.set_AP(1, 50); });
+  ctx.em.mutate_universe([](Universe& u) { u.set_AP(1, 50); });
 
   // Create GameObj
   auto& registry = get_test_session_registry();

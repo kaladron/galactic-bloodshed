@@ -25,7 +25,7 @@ void populate_base_entities(EntityManager& em, JsonStore& store) {
   }
 
   UniverseRepository universe_repo(store);
-  universe_struct ud{};
+  Universe ud{};
   universe_repo.save(ud);
 
   StarRepository star_repo(store);

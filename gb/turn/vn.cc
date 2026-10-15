@@ -83,7 +83,7 @@ void select_berserker_destination(EntityManager& em, AutonomousShip& ship,
   starnum_t dest_star_id = 1;
   if (target) {
     const auto chosen =
-        universe.vn_target(*target).select_retaliation_star(bool_rand());
+        universe.select_vn_retaliation_star(*target, bool_rand());
     dest_star_id = chosen.value_or(int_rand(1, numstars));
   } else {
     dest_star_id = int_rand(1, numstars);

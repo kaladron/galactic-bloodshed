@@ -99,7 +99,7 @@ int main() {
     // Star 2 at (10, 0) -> dist to Star 1 is 10
     // Star 3 at (25, 0) -> dist to Star 1 is 25
     // Star 4 at (100, 0) -> dist to Star 1 is 100
-    universe_struct udata{};
+    Universe udata{};
     universe_repo.save(udata);
 
     TestStarBuilder(em, db, "Star1", 1)
@@ -154,13 +154,13 @@ int main() {
     TurnStats stats{};
     stats.VN_brain.most_mad = player_t{2};
 
-    em.mutate_universe([](universe_struct& u) {
-      u.vn_target(2) = VnTargetRecord{.hits = 2,
-                                      .primary_star = starnum_t{2},
-                                      .secondary_star = starnum_t{2}};
-      u.vn_target(3) = VnTargetRecord{.hits = 2,
-                                      .primary_star = starnum_t{4},
-                                      .secondary_star = starnum_t{4}};
+    em.mutate_universe([](Universe& u) {
+      u.set_vn_target(2, VnTargetRecord{.hits = 2,
+                                        .primary_star = starnum_t{2},
+                                        .secondary_star = starnum_t{2}});
+      u.set_vn_target(3, VnTargetRecord{.hits = 2,
+                                        .primary_star = starnum_t{4},
+                                        .secondary_star = starnum_t{4}});
     });
 
     ship_struct bers_data{};
@@ -185,10 +185,10 @@ int main() {
     test::expect_eq(bers->hyper_drive().charge, HYPER_DRIVE_READY_CHARGE);
 
     // Test hitlist target routing when only primary_star is recorded
-    em.mutate_universe([](universe_struct& u) {
-      u.vn_target(3) = VnTargetRecord{.hits = 1,
-                                      .primary_star = starnum_t{4},
-                                      .secondary_star = std::nullopt};
+    em.mutate_universe([](Universe& u) {
+      u.set_vn_target(3, VnTargetRecord{.hits = 1,
+                                        .primary_star = starnum_t{4},
+                                        .secondary_star = std::nullopt});
     });
     stats.VN_brain.most_mad = player_t{3};
     for (int i = 0; i < 10; ++i) {
@@ -199,10 +199,10 @@ int main() {
     }
 
     // Test hitlist target routing when only secondary_star is recorded
-    em.mutate_universe([](universe_struct& u) {
-      u.vn_target(3) = VnTargetRecord{.hits = 1,
-                                      .primary_star = std::nullopt,
-                                      .secondary_star = starnum_t{2}};
+    em.mutate_universe([](Universe& u) {
+      u.set_vn_target(3, VnTargetRecord{.hits = 1,
+                                        .primary_star = std::nullopt,
+                                        .secondary_star = starnum_t{2}});
     });
     for (int i = 0; i < 10; ++i) {
       select_berserker_destination(em, *bers, stats);
@@ -213,10 +213,10 @@ int main() {
     // Test fallback to random valid star [1, num_stars] when offender only
     // killed VNs in deep space (both primary_star and secondary_star are
     // std::nullopt)
-    em.mutate_universe([](universe_struct& u) {
-      u.vn_target(3) = VnTargetRecord{.hits = 3,
-                                      .primary_star = std::nullopt,
-                                      .secondary_star = std::nullopt};
+    em.mutate_universe([](Universe& u) {
+      u.set_vn_target(3, VnTargetRecord{.hits = 3,
+                                        .primary_star = std::nullopt,
+                                        .secondary_star = std::nullopt});
     });
     select_berserker_destination(em, *bers, stats);
     test::expect_ge(bers->deststar(), starnum_t{1});

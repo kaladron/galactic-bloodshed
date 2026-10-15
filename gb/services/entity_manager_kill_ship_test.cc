@@ -40,7 +40,7 @@ int main() {
 
   // Create universe data for VN testing
   UniverseRepository universe_repo(store);
-  universe_struct u{};
+  Universe u{};
   universe_repo.save(u);
 
   // Now EntityManager can access it
@@ -88,8 +88,8 @@ int main() {
     const auto* universe_after = em.peek_universe();
     test::expect_ne(universe_after, nullptr);
     test::expect_eq(universe_after->vn_hits(1), 1U);
-    test::expect_eq(universe_after->vn_target(1).primary_star, std::nullopt);
-    test::expect_eq(universe_after->vn_target(1).secondary_star, std::nullopt);
+    test::expect_eq(universe_after->vn_primary_star(1), std::nullopt);
+    test::expect_eq(universe_after->vn_secondary_star(1), std::nullopt);
     std::println(std::cout, "✓ AutonomousShip who_killed tracking works");
   }
 
@@ -158,7 +158,7 @@ int main() {
     const auto* universe_after = em.peek_universe();
     test::expect_ne(universe_after, nullptr);
     test::expect_eq(universe_after->vn_hits(1), 2U);
-    test::expect_eq(universe_after->vn_target(1).primary_star, starnum_t{1});
+    test::expect_eq(universe_after->vn_primary_star(1), starnum_t{1});
     std::println(std::cout, "✓ VN hitlist tracking works");
   }
 

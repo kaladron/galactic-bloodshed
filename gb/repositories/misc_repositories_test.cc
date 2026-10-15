@@ -203,15 +203,17 @@ void test_universe_repository() {
   JsonStore store(db);
   UniverseRepository repo(store);
 
-  // Test data - universe_struct is typically a singleton
-  universe_struct sd{};
+  // Test data - Universe is typically a singleton
+  Universe sd{};
   for (player_t p : all_players()) {
     sd.set_AP(p, static_cast<ap_t>((p.value - 1) * 10));
   }
-  sd.vn_target(1) = VnTargetRecord{
-      .hits = 1, .primary_star = starnum_t{5}, .secondary_star = starnum_t{10}};
-  sd.vn_target(2) = VnTargetRecord{
-      .hits = 2, .primary_star = std::nullopt, .secondary_star = starnum_t{15}};
+  sd.set_vn_target(1, VnTargetRecord{.hits = 1,
+                                     .primary_star = starnum_t{5},
+                                     .secondary_star = starnum_t{10}});
+  sd.set_vn_target(2, VnTargetRecord{.hits = 2,
+                                     .primary_star = std::nullopt,
+                                     .secondary_star = starnum_t{15}});
 
   // Save and retrieve global data
   test::expect_true(repo.save(sd));
@@ -219,10 +221,10 @@ void test_universe_repository() {
   test::expect_true(retrieved.has_value());
   test::expect_eq(retrieved->get_AP(1), 0);
   test::expect_eq(retrieved->get_AP(6), 50);
-  test::expect_eq(retrieved->vn_target(1).primary_star, starnum_t{5});
+  test::expect_eq(retrieved->vn_primary_star(1), starnum_t{5});
 
   // Update global data
-  sd.vn_target(1).hits = 9;
+  sd.set_vn_hits(1, 9);
   test::expect_true(repo.save(sd));
   retrieved = repo.get_global_data();
   test::expect_true(retrieved.has_value());
@@ -236,10 +238,10 @@ void test_universe_repository() {
 
   // VN target records preserved
   test::expect_eq(retrieved->vn_hits(2), 2U);
-  test::expect_eq(retrieved->vn_target(1).primary_star, starnum_t{5});
-  test::expect_eq(retrieved->vn_target(2).primary_star, std::nullopt);
-  test::expect_eq(retrieved->vn_target(1).secondary_star, starnum_t{10});
-  test::expect_eq(retrieved->vn_target(2).secondary_star, starnum_t{15});
+  test::expect_eq(retrieved->vn_primary_star(1), starnum_t{5});
+  test::expect_eq(retrieved->vn_primary_star(2), std::nullopt);
+  test::expect_eq(retrieved->vn_secondary_star(1), starnum_t{10});
+  test::expect_eq(retrieved->vn_secondary_star(2), starnum_t{15});
 
   std::println(std::cout, "✓ All UniverseRepository tests passed");
 }

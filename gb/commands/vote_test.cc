@@ -80,7 +80,7 @@ void test_unanimous_vote_lifecycle() {
 
   {
     JsonStore store(ctx.db);
-    universe_struct u{};
+    Universe u{};
     UniverseRepository univs(store);
     univs.save(u);
 

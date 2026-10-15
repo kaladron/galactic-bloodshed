@@ -92,7 +92,7 @@ void test_give_dispatch() {
   // 5. Insufficient AP in universe
   const shipnum_t ship_no_uap =
       TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE).owned_by(1, 1).build();
-  ctx.em.mutate_universe([](universe_struct& u) { u.AP[player_t{1}] = 0; });
+  ctx.em.mutate_universe([](Universe& u) { u.set_AP(player_t{1}, 0); });
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"give", "Klingons", std::format("#{}", ship_no_uap.value)});
@@ -101,7 +101,7 @@ void test_give_dispatch() {
 
   // Restore AP for subsequent tests
   ctx.em.mutate_star(1, [](Star& s) { s.AP(player_t{1}) = 100; });
-  ctx.em.mutate_universe([](universe_struct& u) { u.AP[player_t{1}] = 100; });
+  ctx.em.mutate_universe([](Universe& u) { u.set_AP(player_t{1}, 100); });
 
   // 6. Non-existent recipient
   g.out.str("");

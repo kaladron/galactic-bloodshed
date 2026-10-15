@@ -87,7 +87,7 @@ void test_do_turn_segment_vs_update() {
   ServerStateRepository state_repo(store);
   state_repo.save(state);
 
-  universe_struct u{};
+  Universe u{};
   UniverseRepository univ_repo(store);
   univ_repo.save(u);
 
@@ -159,7 +159,7 @@ void test_do_turn_market_and_maintenance() {
   EntityManager em(db);
   JsonStore store(db);
 
-  universe_struct u{};
+  Universe u{};
   UniverseRepository univ_repo(store);
   univ_repo.save(u);
 
@@ -235,7 +235,7 @@ void test_do_turn_victory_scores_and_discoveries() {
   EntityManager em(db);
   JsonStore store(db);
 
-  universe_struct u{};
+  Universe u{};
   UniverseRepository univ_repo(store);
   univ_repo.save(u);
 
@@ -282,7 +282,7 @@ void test_do_turn_victory_scores_with_derelict_and_multiple_players() {
   EntityManager em(db);
   JsonStore store(db);
 
-  universe_struct u{};
+  Universe u{};
   UniverseRepository univ_repo(store);
   univ_repo.save(u);
 
@@ -530,7 +530,7 @@ void test_action_points_computation_and_distribution() {
   test::expect_gt(governed_ap, ungoverned_ap);
 
   // 3. Universe Action Point Distribution
-  universe_struct u{};
+  Universe u{};
   u.set_AP(1, 100);
   UniverseRepository univ_repo(store);
   univ_repo.save(u);
@@ -561,7 +561,7 @@ void test_output_ground_attacks() {
   StarRepository star_repo(store);
   star_repo.save(star);
 
-  universe_struct u{};
+  Universe u{};
   UniverseRepository univ_repo(store);
   univ_repo.save(u);
 
@@ -633,7 +633,7 @@ void test_update_von_neumann_target() {
   race_repo.save(race1);
   race_repo.save(race2);
 
-  universe_struct u{};
+  Universe u{};
   UniverseRepository univ_repo(store);
   univ_repo.save(u);
 
@@ -643,9 +643,9 @@ void test_update_von_neumann_target() {
   test::expect_eq(stats.VN_brain.total_mad, 0U);
   test::expect_eq(stats.VN_brain.most_mad, std::nullopt);
 
-  em.mutate_universe([](universe_struct& univ) {
-    univ.vn_target(1).hits = 10;
-    univ.vn_target(2).hits = 25;
+  em.mutate_universe([](Universe& univ) {
+    univ.set_vn_hits(1, 10);
+    univ.set_vn_hits(2, 25);
   });
   update_von_neumann_target(em, stats);
 
@@ -687,7 +687,7 @@ void test_calculate_victory_scores_isolated() {
   RaceRepository race_repo(store);
   race_repo.save(race1);
 
-  universe_struct u{};
+  Universe u{};
   UniverseRepository univ_repo(store);
   univ_repo.save(u);
 
@@ -723,7 +723,7 @@ void test_do_update_voting_reset_and_scheduling() {
   em.create_race(race1);
   em.create_race(race2);
 
-  universe_struct u{};
+  Universe u{};
   UniverseRepository univ_repo(store);
   univ_repo.save(u);
 

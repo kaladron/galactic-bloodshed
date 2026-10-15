@@ -61,7 +61,7 @@ void test_deduct_univ_ap() {
   JsonStore store(ctx.db);
   UniverseRepository universe_repo(store);
 
-  universe_struct u{};
+  Universe u{};
   u.set_AP(1, 25);  // Player 1 has 25 Univ AP
   universe_repo.save(u);
 

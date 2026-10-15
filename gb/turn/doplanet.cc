@@ -323,7 +323,7 @@ bool execute_berserker_bombardment(EntityManager& entity_manager, Ship& ship,
   if (const auto* mind_ship = ship.as<AutonomousShip>()) {
     if (const auto who = mind_ship->who_killed()) {
       entity_manager.mutate_universe(
-          [&](universe_struct& u) { u.decrement_vn_hits(*who); });
+          [&](Universe& u) { u.decrement_vn_hits(*who); });
     }
   }
   return true;

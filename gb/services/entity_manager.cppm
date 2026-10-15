@@ -180,8 +180,8 @@ export class EntityManager {
   std::unordered_map<player_t, std::unique_ptr<block>> block_cache;
   std::unordered_map<player_t, std::unique_ptr<power>> power_cache;
   std::unordered_map<ShipType, std::unique_ptr<ShipExam>> ship_exam_cache;
-  std::unique_ptr<universe_struct> global_universe_cache;  // Singleton
-  std::unique_ptr<ServerState> server_state_cache;         // Singleton
+  std::unique_ptr<Universe> global_universe_cache;  // Singleton
+  std::unique_ptr<ServerState> server_state_cache;  // Singleton
 
   // Reference counting for concurrent access
   std::unordered_map<player_t, int> race_refcount;
@@ -209,7 +209,7 @@ export class EntityManager {
   EntityHandle<Commod> get_commod(int id);
   EntityHandle<block> get_block(player_t id);
   EntityHandle<power> get_power(player_t id);
-  EntityHandle<universe_struct> get_universe();
+  EntityHandle<Universe> get_universe();
   EntityHandle<ServerState> get_server_state();
   EntityHandle<ShipExam> get_ship_exam(ShipType ship_type);
   EntityHandle<SectorMap> get_sectormap(starnum_t star, planetnum_t pnum);
@@ -229,7 +229,7 @@ public:
   const Commod* peek_commod(int id);
   const block* peek_block(player_t id);
   const power* peek_power(player_t id);
-  const universe_struct* peek_universe();
+  const Universe* peek_universe();
   [[nodiscard]] int count_non_asteroid_planets();
   const ServerState* peek_server_state();
   const ShipExam* peek_ship_exam(ShipType ship_type);

@@ -555,11 +555,11 @@ void EntityManager::release_power(player_t id) {
 }
 
 // Universe entity methods (singleton)
-EntityHandle<universe_struct> EntityManager::get_universe() {
+EntityHandle<Universe> EntityManager::get_universe() {
   if (global_universe_cache) {
     global_universe_refcount++;
     return {this, global_universe_cache.get(),
-            [this](const universe_struct& sd) {
+            [this](const Universe& sd) {
               if (!is_deferred_write()) {
                 storage_->universe_repo.save(sd);
               }
@@ -572,11 +572,11 @@ EntityHandle<universe_struct> EntityManager::get_universe() {
     throw EntityNotFoundError("Universe not found");
   }
 
-  global_universe_cache = std::make_unique<universe_struct>(*universe_opt);
+  global_universe_cache = std::make_unique<Universe>(*universe_opt);
   global_universe_refcount = 1;
 
   return {this, global_universe_cache.get(),
-          [this](const universe_struct& sd) {
+          [this](const Universe& sd) {
             if (!is_deferred_write()) {
               storage_->universe_repo.save(sd);
             }
@@ -584,7 +584,7 @@ EntityHandle<universe_struct> EntityManager::get_universe() {
           [this]() { release_universe(); }};
 }
 
-const universe_struct* EntityManager::peek_universe() {
+const Universe* EntityManager::peek_universe() {
   // Check if already cached
   if (global_universe_cache) {
     return global_universe_cache.get();
@@ -597,7 +597,7 @@ const universe_struct* EntityManager::peek_universe() {
   }
 
   // Cache the entity (but don't increment refcount - this is read-only)
-  global_universe_cache = std::make_unique<universe_struct>(*universe_opt);
+  global_universe_cache = std::make_unique<Universe>(*universe_opt);
   return global_universe_cache.get();
 }
 
@@ -940,7 +940,7 @@ void EntityManager::clear_cache() {
   clear_cache_impl<power>(power_cache, power_refcount);
   clear_cache_impl<ShipExam>(ship_exam_cache, ship_exam_refcount);
 
-  // Clear global universe_struct if no active handles
+  // Clear global Universe if no active handles
   if (global_universe_refcount == 0) {
     global_universe_cache.reset();
   }
@@ -1008,7 +1008,7 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
   }
 
   if (const auto* auto_ship = ship.as<AutonomousShip>()) {
-    mutate_universe([&](universe_struct& Sdata) {
+    mutate_universe([&](Universe& Sdata) {
       if (const auto killer = auto_ship->who_killed()) {
         Sdata.record_vn_kill(*killer, ship.orbited_star(), int_rand(0, 1) == 0);
       }

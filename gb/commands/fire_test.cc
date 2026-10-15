@@ -100,12 +100,12 @@ void test_fire_universe_ap_and_god_exemption() {
   // 3. A ship in deep space (LEVEL_UNIV) checks Universe AP first, and is
   // rejected as an illegal attack by shoot_ship_to_ship without deducting AP.
   ctx.em.mutate_ship(1, [](Ship& s1) { s1.enter_deep_space(); });
-  ctx.em.mutate_universe([](universe_struct& u) { u.set_AP(1, 0); });
+  ctx.em.mutate_universe([](Universe& u) { u.set_AP(1, 0); });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"fire", "#1", "#2", "10"});
   test::expect_contains(g.out.str(), "You need 1 universe action points.");
 
-  ctx.em.mutate_universe([](universe_struct& u) { u.set_AP(1, 50); });
+  ctx.em.mutate_universe([](Universe& u) { u.set_AP(1, 50); });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"fire", "#1", "#2", "10"});
   test::expect_contains(g.out.str(), "Illegal attack.");

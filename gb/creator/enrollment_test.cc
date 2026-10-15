@@ -17,7 +17,7 @@ void setup_test_universe(Database& db) {
   initialize_schema(db);
   JsonStore store(db);
 
-  universe_struct us{};
+  Universe us{};
   UniverseRepository univ_repo(store);
   univ_repo.save(us);
 

@@ -136,6 +136,22 @@ void test_tax_domain_errors() {
   test::expect_contains(g.out.str(), "Illegal value.");
   test::expect_eq(ctx.em.peek_planet(1, 1)->info(1).newtax, 10);
 
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"tax", "abc"});
+  test::expect_contains(g.out.str(), "Illegal value.");
+
+  // 3. JSON UI mode for status and set
+  g.set_ui_mode(UiMode::JSON);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"tax"});
+  test::expect_contains(g.out.str(), "\"type\":\"tax_status\"");
+  test::expect_contains(g.out.str(), "\"current_rate\":10");
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"tax", "35"});
+  test::expect_contains(g.out.str(), "\"type\":\"tax\"");
+  test::expect_contains(g.out.str(), "\"target_rate\":35");
+
   ctx.verify_universe_invariants();
 }
 

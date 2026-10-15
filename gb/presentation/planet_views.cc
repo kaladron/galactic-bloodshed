@@ -615,4 +615,84 @@ std::string render_for_mode(UiMode mode, const AnalysisViewModel& vm) {
   return mode == UiMode::JSON ? render_json_analysis(vm) : render_analysis(vm);
 }
 
+std::string render_mobilize_status(const MobilizeStatusViewModel& vm) {
+  return std::format("Current mobilization: {}    Quota: {}\n",
+                     vm.current_mobilization, vm.quota);
+}
+
+std::string render_json_mobilize_status(const MobilizeStatusViewModel& vm) {
+  return render_json_envelope("mobilize_status", vm);
+}
+
+std::string render_for_mode(UiMode mode, const MobilizeStatusViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_mobilize_status(vm)
+                              : render_mobilize_status(vm);
+}
+
+std::string render_mobilize_set_result(const MobilizeSetResult&) {
+  return "";
+}
+
+std::string render_json_mobilize_set_result(const MobilizeSetResult& vm) {
+  return render_json_envelope("mobilize", vm);
+}
+
+std::string render_for_mode(UiMode mode, const MobilizeSetResult& vm) {
+  return mode == UiMode::JSON ? render_json_mobilize_set_result(vm)
+                              : render_mobilize_set_result(vm);
+}
+
+std::string render_tax_status(const TaxStatusViewModel& vm) {
+  return std::format("Current tax rate: {}%    Target: {}%\n", vm.current_rate,
+                     vm.target_rate);
+}
+
+std::string render_json_tax_status(const TaxStatusViewModel& vm) {
+  return render_json_envelope("tax_status", vm);
+}
+
+std::string render_for_mode(UiMode mode, const TaxStatusViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_tax_status(vm)
+                              : render_tax_status(vm);
+}
+
+std::string render_tax_set_result(const TaxSetResult&) {
+  return "Set.\n";
+}
+
+std::string render_json_tax_set_result(const TaxSetResult& vm) {
+  return render_json_envelope("tax", vm);
+}
+
+std::string render_for_mode(UiMode mode, const TaxSetResult& vm) {
+  return mode == UiMode::JSON ? render_json_tax_set_result(vm)
+                              : render_tax_set_result(vm);
+}
+
+std::string render_toxicity_result(const ToxicityResult& vm) {
+  return std::format(" New threshold is: {}\n", vm.threshold);
+}
+
+std::string render_json_toxicity_result(const ToxicityResult& vm) {
+  return render_json_envelope("toxicity", vm);
+}
+
+std::string render_for_mode(UiMode mode, const ToxicityResult& vm) {
+  return mode == UiMode::JSON ? render_json_toxicity_result(vm)
+                              : render_toxicity_result(vm);
+}
+
+std::string render_allocate_result(const AllocateResult&) {
+  return "Allocated\n";
+}
+
+std::string render_json_allocate_result(const AllocateResult& vm) {
+  return render_json_envelope("allocate", vm);
+}
+
+std::string render_for_mode(UiMode mode, const AllocateResult& vm) {
+  return mode == UiMode::JSON ? render_json_allocate_result(vm)
+                              : render_allocate_result(vm);
+}
+
 }  // namespace GB::presentation

@@ -6,6 +6,7 @@
 module;
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import std;
 import scnlib;
@@ -24,9 +25,10 @@ bool tax(const command_t& argv, GameObj& g) {
 
   if (argv.size() < 2) {
     const auto& planet = *g.entity_manager.peek_planet(g.snum(), g.pnum());
-    g.out << std::format("Current tax rate: {}%    Target: {}%\n",
-                         planet.info(Playernum).tax,
-                         planet.info(Playernum).newtax);
+    g.present(GB::presentation::TaxStatusViewModel{
+        .current_rate = planet.info(Playernum).tax,
+        .target_rate = planet.info(Playernum).newtax,
+    });
     return true;
   }
 
@@ -35,11 +37,12 @@ bool tax(const command_t& argv, GameObj& g) {
     g.out << "Illegal value.\n";
     return false;
   }
+  const auto new_tax = static_cast<Percentage>(parsed_tax->value());
 
   g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
-    planet.info(Playernum).newtax = parsed_tax->value();
+    planet.info(Playernum).newtax = new_tax;
   });
-  g.out << "Set.\n";
+  g.present(GB::presentation::TaxSetResult{.target_rate = new_tax});
   return true;
 }
 

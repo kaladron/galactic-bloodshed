@@ -52,13 +52,40 @@ void test_mobilize_dispatch() {
   test::expect_eq(saved->info(player_t{1}).mob_set, 100);
   std::println(std::cout, "    ✓ Set mobilization to 100% succeeded");
 
-  // 4. Reject illegal value (>100)
+  // 4. Reject illegal values (>100, <0, non-numeric)
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"mobilize", "150"});
   test::expect_contains(g.out.str(), "Illegal value");
-  std::println(std::cout, "    ✓ Illegal value 150% rejected");
 
-  // 5. Reject invalid scope (universal level)
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"mobilize", "-10"});
+  test::expect_contains(g.out.str(), "Illegal value");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"mobilize", "abc"});
+  test::expect_contains(g.out.str(), "Illegal value");
+  std::println(std::cout, "    ✓ Illegal values rejected");
+
+  // 5. JSON UI mode for status and set
+  g.set_ui_mode(UiMode::JSON);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"mobilize"});
+  test::expect_contains(g.out.str(), "\"type\":\"mobilize_status\"");
+  test::expect_contains(g.out.str(), "\"quota\":100");
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"mobilize", "40"});
+  test::expect_contains(g.out.str(), "\"type\":\"mobilize\"");
+  test::expect_contains(g.out.str(), "\"quota\":40");
+  g.set_ui_mode(UiMode::ASCII);
+
+  // 6. Reject when star lacks AP
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(player_t{1}) = 0; });
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"mobilize", "50"});
+  test::expect_contains(g.out.str(), "You don't have 1 action points there.");
+
+  // 7. Reject invalid scope (universal level)
   g.set_level(ScopeLevel::LEVEL_UNIV);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"mobilize", "50"});

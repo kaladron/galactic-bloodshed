@@ -39,12 +39,22 @@ int main() {
   test::expect_contains(g.out.str(), "Syntax: allocate <action points>");
   std::println(std::cout, "    ✓ Missing argument syntax error verified");
 
-  // 3. Non-positive allocation rejection
+  // 3. Non-positive and non-numeric allocation rejection
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"allocate", "0"});
   test::expect_contains(
       g.out.str(), "You must specify a positive amount of APs to allocate.");
-  std::println(std::cout, "    ✓ Non-positive allocation rejected");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"allocate", "-5"});
+  test::expect_contains(
+      g.out.str(), "You must specify a positive amount of APs to allocate.");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"allocate", "abc"});
+  test::expect_contains(
+      g.out.str(), "You must specify a positive amount of APs to allocate.");
+  std::println(std::cout, "    ✓ Non-positive/invalid allocation rejected");
 
   // 4. Over-allocation rejection (more than universe has)
   g.out.str("");
@@ -65,7 +75,17 @@ int main() {
   }
   std::println(std::cout, "    ✓ Successful allocation verified");
 
-  // 6. Guest race rejection
+  // 6. JSON UI mode allocation
+  g.set_ui_mode(UiMode::JSON);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"allocate", "5"});
+  test::expect_contains(g.out.str(), "\"type\":\"allocate\"");
+  test::expect_contains(g.out.str(), "\"allocated\":5");
+  test::expect_contains(g.out.str(), "\"star_ap\":40");
+  test::expect_contains(g.out.str(), "\"global_ap\":30");
+  g.set_ui_mode(UiMode::ASCII);
+
+  // 7. Guest race rejection
   ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });
   ctx.setup_game_obj(g, player_t{1}, governor_t{1});
   g.out.str("");

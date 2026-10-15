@@ -12,6 +12,7 @@
 module;
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import scnlib;
 import std;
@@ -26,9 +27,10 @@ bool mobilize(const command_t& argv, GameObj& g) {
 
   if (argv.size() < 2) {
     g.entity_manager.with_planet(g.snum(), g.pnum(), [&](const Planet& planet) {
-      g.out << std::format("Current mobilization: {}    Quota: {}\n",
-                           planet.info(Playernum).comread,
-                           planet.info(Playernum).mob_set);
+      g.present(GB::presentation::MobilizeStatusViewModel{
+          .current_mobilization = planet.info(Playernum).comread,
+          .quota = planet.info(Playernum).mob_set,
+      });
     });
     return true;
   }
@@ -38,7 +40,7 @@ bool mobilize(const command_t& argv, GameObj& g) {
     g.out << "Illegal value.\n";
     return false;
   }
-  int sum_mob = scanned->value();
+  const auto sum_mob = static_cast<Percentage>(scanned->value());
 
   if (!g.deduct_ap(g.snum(), APcount)) {
     g.out << std::format("You don't have {} action points there.\n", APcount);
@@ -48,6 +50,7 @@ bool mobilize(const command_t& argv, GameObj& g) {
   g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
     planet.info(Playernum).mob_set = sum_mob;
   });
+  g.present(GB::presentation::MobilizeSetResult{.quota = sum_mob});
   return true;
 }
 

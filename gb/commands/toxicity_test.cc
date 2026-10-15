@@ -46,20 +46,36 @@ void test_toxicity_dispatch() {
   std::println(std::cout,
                "    ✓ Reset toxicity threshold to 0 (nullopt) succeeded");
 
-  // 2. Reject illegal value (>100)
+  // 2. Reject illegal values (>100, <0, non-numeric)
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"toxicity", "150"});
   test::expect_contains(g.out.str(), "Illegal value");
-  std::println(std::cout, "    ✓ Illegal value 150 rejected");
 
-  // 3. Reject missing arguments
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"toxicity", "-10"});
+  test::expect_contains(g.out.str(), "Illegal value");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"toxicity", "abc"});
+  test::expect_contains(g.out.str(), "Illegal value");
+  std::println(std::cout, "    ✓ Illegal values rejected");
+
+  // 3. JSON UI mode
+  g.set_ui_mode(UiMode::JSON);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"toxicity", "60"});
+  test::expect_contains(g.out.str(), "\"type\":\"toxicity\"");
+  test::expect_contains(g.out.str(), "\"threshold\":60");
+  g.set_ui_mode(UiMode::ASCII);
+
+  // 4. Reject missing arguments
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"toxicity"});
   test::expect_contains(g.out.str(), "Syntax: toxicity <threshold>");
   std::println(std::cout,
                "    ✓ Missing argument rejected by descriptor min_args");
 
-  // 4. Reject invalid scope (universal level)
+  // 5. Reject invalid scope (universal level)
   g.set_level(ScopeLevel::LEVEL_UNIV);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"toxicity", "50"});

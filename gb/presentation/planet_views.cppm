@@ -307,4 +307,71 @@ struct AnalysisViewModel {
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const AnalysisViewModel& vm);
 
+/// View model for querying current planetary mobilization (`mobilize`).
+struct MobilizeStatusViewModel {
+  Percentage current_mobilization{0};
+  Percentage quota{0};
+};
+
+/// Result of setting planetary mobilization quota (`mobilize <percentage>`).
+struct MobilizeSetResult {
+  Percentage quota{0};
+};
+
+/// View model for querying planetary tax rate (`tax`).
+struct TaxStatusViewModel {
+  Percentage current_rate{0};
+  Percentage target_rate{0};
+};
+
+/// Result of setting planetary tax rate (`tax <rate>`).
+struct TaxSetResult {
+  Percentage target_rate{0};
+};
+
+/// Result of setting planetary toxicity threshold (`toxicity <threshold>`).
+struct ToxicityResult {
+  Percentage threshold{0};
+};
+
+/// Result of allocating global action points to a star system (`allocate`).
+struct AllocateResult {
+  ap_t allocated{0};
+  ap_t star_ap{0};
+  ap_t global_ap{0};
+};
+
+[[nodiscard]] std::string
+render_mobilize_status(const MobilizeStatusViewModel& vm);
+[[nodiscard]] std::string
+render_json_mobilize_status(const MobilizeStatusViewModel& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const MobilizeStatusViewModel& vm);
+
+[[nodiscard]] std::string
+render_mobilize_set_result(const MobilizeSetResult& vm);
+[[nodiscard]] std::string
+render_json_mobilize_set_result(const MobilizeSetResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const MobilizeSetResult& vm);
+
+[[nodiscard]] std::string render_tax_status(const TaxStatusViewModel& vm);
+[[nodiscard]] std::string render_json_tax_status(const TaxStatusViewModel& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const TaxStatusViewModel& vm);
+
+[[nodiscard]] std::string render_tax_set_result(const TaxSetResult& vm);
+[[nodiscard]] std::string render_json_tax_set_result(const TaxSetResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode, const TaxSetResult& vm);
+
+[[nodiscard]] std::string render_toxicity_result(const ToxicityResult& vm);
+[[nodiscard]] std::string render_json_toxicity_result(const ToxicityResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const ToxicityResult& vm);
+
+[[nodiscard]] std::string render_allocate_result(const AllocateResult& vm);
+[[nodiscard]] std::string render_json_allocate_result(const AllocateResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const AllocateResult& vm);
+
 }  // namespace GB::presentation

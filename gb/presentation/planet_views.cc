@@ -695,4 +695,69 @@ std::string render_for_mode(UiMode mode, const AllocateResult& vm) {
                               : render_allocate_result(vm);
 }
 
+std::string render_repair_result(const RepairResult& vm) {
+  return std::format("{} sectors repaired at a cost of {} resources.\n",
+                     vm.sectors_repaired, vm.resource_cost);
+}
+
+std::string render_json_repair_result(const RepairResult& vm) {
+  return render_json_envelope("repair", vm);
+}
+
+std::string render_for_mode(UiMode mode, const RepairResult& vm) {
+  return mode == UiMode::JSON ? render_json_repair_result(vm)
+                              : render_repair_result(vm);
+}
+
+std::string render_enslave_result(const EnslaveResult& vm) {
+  std::string out = std::format(
+      "\nFor successful enslavement this ship and the other ships here\n"
+      "that are yours must have a weapons\n"
+      "capacity greater than twice that the enemy can muster, including\n"
+      "the planet and all ships orbiting it.\n"
+      "\nTotal forces bearing on {}:   {}\n",
+      vm.orbit_path, vm.attack_strength);
+  if (vm.enslaved) {
+    std::format_to(
+        std::back_inserter(out),
+        "\nEnslavement successful.  All material produced here will\n"
+        "be diverted to {}.\n"
+        "You must maintain a garrison of 0.1% the population of the\n"
+        "planet (at least {:.0f}); otherwise there is a 50% chance that\n"
+        "enslaved population will revolt.\n",
+        vm.enslaver_race_name, vm.required_garrison);
+  } else {
+    out += "Enslavement repulsed.\n"
+           "You needed more weapons bearing on the planet...\n";
+  }
+  return out;
+}
+
+std::string render_json_enslave_result(const EnslaveResult& vm) {
+  return render_json_envelope("enslave", vm);
+}
+
+std::string render_for_mode(UiMode mode, const EnslaveResult& vm) {
+  return mode == UiMode::JSON ? render_json_enslave_result(vm)
+                              : render_enslave_result(vm);
+}
+
+std::string render_enslave_telegram(std::string_view star_name,
+                                    std::string_view planet_name,
+                                    std::string_view ship_desc,
+                                    const EnslaveResult& vm) {
+  if (vm.enslaved) {
+    return std::format("ALERT!!!\n\nPlanet /{}/{} ENSLAVED by {}!!\n"
+                       "All material produced here will be\n"
+                       "diverted to {} coffers.",
+                       star_name, planet_name, ship_desc,
+                       vm.enslaver_race_name);
+  }
+  return std::format(
+      "ALERT!!!\n\nPlanet /{}/{} repulsed attempt at enslavement by {}!!\n"
+      "Enslavement repulsed, defense/attack Ratio : {} to {}.\n",
+      star_name, planet_name, ship_desc, vm.defense_strength,
+      vm.attack_strength);
+}
+
 }  // namespace GB::presentation

@@ -341,6 +341,23 @@ struct AllocateResult {
   ap_t global_ap{0};
 };
 
+/// Result of repairing wasted planetary sectors (`repair`).
+struct RepairResult {
+  int sectors_repaired{0};
+  resource_t resource_cost{0};
+};
+
+/// Result of attempting to enslave a planet with an Orbiting Assault Platform
+/// (`enslave <ship>`).
+struct EnslaveResult {
+  bool enslaved{false};
+  std::string orbit_path{};
+  std::string enslaver_race_name{};
+  resource_t attack_strength{0};
+  resource_t defense_strength{0};
+  double required_garrison{0.0};
+};
+
 [[nodiscard]] std::string
 render_mobilize_status(const MobilizeStatusViewModel& vm);
 [[nodiscard]] std::string
@@ -373,5 +390,17 @@ render_json_mobilize_set_result(const MobilizeSetResult& vm);
 [[nodiscard]] std::string render_json_allocate_result(const AllocateResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const AllocateResult& vm);
+
+[[nodiscard]] std::string render_repair_result(const RepairResult& vm);
+[[nodiscard]] std::string render_json_repair_result(const RepairResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode, const RepairResult& vm);
+
+[[nodiscard]] std::string render_enslave_result(const EnslaveResult& vm);
+[[nodiscard]] std::string render_json_enslave_result(const EnslaveResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode, const EnslaveResult& vm);
+[[nodiscard]] std::string render_enslave_telegram(std::string_view star_name,
+                                                  std::string_view planet_name,
+                                                  std::string_view ship_desc,
+                                                  const EnslaveResult& vm);
 
 }  // namespace GB::presentation

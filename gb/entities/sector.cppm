@@ -307,6 +307,10 @@ public:
   is_bombardable_by(player_t attacker_owner) const noexcept {
     return is_owned() && data_.owner != attacker_owner && !is_wasted();
   }
+  [[nodiscard]] constexpr bool
+  is_repairable_by(player_t player) const noexcept {
+    return is_wasted() && (!is_owned() || is_owned_by(player));
+  }
 
   // State modification methods
   /// Plate the sector - set efficiency to 100 and condition to SEC_PLATED
@@ -316,6 +320,13 @@ public:
     if (data_.condition != SectorType::SEC_GAS) {
       set_condition(SectorType::SEC_PLATED);
     }
+  }
+
+  /// \brief Repairs a wasted sector back to its underlying geological type and
+  /// increases fertility by 20 (capped at 100).
+  void repair() noexcept {
+    set_condition(data_.type);
+    set_fert(std::min(100, static_cast<int>(data_.fert) + 20));
   }
 
   /// \brief Clears all colony presence and infrastructure (owner,

@@ -662,4 +662,70 @@ std::string render_for_mode(UiMode mode, const LoginViewModel& vm) {
   return mode == UiMode::JSON ? render_json_login(vm) : render_login(vm);
 }
 
+std::string render_commodity_market(const CommodityMarketViewModel& vm) {
+  tabulate::Table table;
+  table.format().hide_border().column_separator("  ");
+
+  table.column(0).format().width(4).font_align(tabulate::FontAlign::right);
+  table.column(1).format().width(1).font_align(tabulate::FontAlign::center);
+  table.column(2).format().width(5).font_align(tabulate::FontAlign::right);
+  table.column(3).format().width(10).font_align(tabulate::FontAlign::left);
+  table.column(4).format().width(7).font_align(tabulate::FontAlign::right);
+  table.column(5).format().width(8).font_align(tabulate::FontAlign::right);
+  table.column(6).format().width(8).font_align(tabulate::FontAlign::right);
+  table.column(7).format().width(10).font_align(tabulate::FontAlign::right);
+  table.column(8).format().width(8).font_align(tabulate::FontAlign::right);
+  table.column(9).format().width(10).font_align(tabulate::FontAlign::left);
+
+  table.add_row({"Lot", "", "Stock", "Type", "Owner", "Bidder", "Amount",
+                 "Cost/Unit", "Ship", "Dest"});
+  table[0].format().font_style({tabulate::FontStyle::bold});
+
+  for (const auto& row : vm.rows) {
+    table.add_row({std::format("{}", row.lot), row.deliver ? "*" : "",
+                   std::format("{}", row.amount), std::format("{}", row.type),
+                   std::format("{}", row.owner), std::format("{}", row.bidder),
+                   std::format("{}", row.bid),
+                   std::format("{:.2f}", row.cost_per_unit),
+                   std::format("{}", row.shipping_cost), row.destination});
+  }
+
+  return std::format("+++ Galactic Bloodshed Commodities Market +++\n\n{}\n",
+                     table.str());
+}
+
+std::string render_json_commodity_market(const CommodityMarketViewModel& vm) {
+  return render_json_envelope("commodity_market", vm);
+}
+
+std::string render_for_mode(UiMode mode, const CommodityMarketViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_commodity_market(vm)
+                              : render_commodity_market(vm);
+}
+
+std::string render_bid_placed_result(const BidPlacedResult& vm) {
+  return std::format(
+      "There will be an additional {} charged to you for shipping costs.\n"
+      "Bid accepted.\n",
+      vm.shipping_cost);
+}
+
+std::string render_json_bid_placed_result(const BidPlacedResult& vm) {
+  return render_json_envelope("bid", vm);
+}
+
+std::string render_for_mode(UiMode mode, const BidPlacedResult& vm) {
+  return mode == UiMode::JSON ? render_json_bid_placed_result(vm)
+                              : render_bid_placed_result(vm);
+}
+
+std::string render_outbid_telegram(int lot, resource_t amount, CommodType type,
+                                   money_t new_bid,
+                                   std::string_view bidder_name,
+                                   player_t bidder) {
+  return std::format(
+      "The bid on lot #{} ({} {}) has been upped to {} by {} [{}].\n", lot,
+      amount, type, new_bid, bidder_name, bidder);
+}
+
 }  // namespace GB::presentation

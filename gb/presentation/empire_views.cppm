@@ -526,4 +526,49 @@ struct LoginViewModel {
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const LoginViewModel& vm);
 
+/// Single market lot row in a `bid` commodities market listing.
+struct CommodityLotRow {
+  int lot{0};
+  bool deliver{false};
+  resource_t amount{0};
+  CommodType type{CommodType::RESOURCE};
+  player_t owner{0};
+  player_t bidder{0};
+  money_t bid{0};
+  double cost_per_unit{0.0};
+  money_t shipping_cost{0};
+  std::string destination{};
+};
+
+/// View model for `bid` / `bid <type>` commodities market listing.
+struct CommodityMarketViewModel {
+  std::optional<CommodType> filter{std::nullopt};
+  std::vector<CommodityLotRow> rows{};
+};
+
+[[nodiscard]] std::string
+render_commodity_market(const CommodityMarketViewModel& vm);
+[[nodiscard]] std::string
+render_json_commodity_market(const CommodityMarketViewModel& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const CommodityMarketViewModel& vm);
+
+/// Result of placing a bid on a commodity lot (`bid <lot> <bid>`).
+struct BidPlacedResult {
+  int lot{0};
+  money_t bid{0};
+  money_t shipping_cost{0};
+};
+
+[[nodiscard]] std::string render_bid_placed_result(const BidPlacedResult& vm);
+[[nodiscard]] std::string
+render_json_bid_placed_result(const BidPlacedResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const BidPlacedResult& vm);
+[[nodiscard]] std::string render_outbid_telegram(int lot, resource_t amount,
+                                                 CommodType type,
+                                                 money_t new_bid,
+                                                 std::string_view bidder_name,
+                                                 player_t bidder);
+
 }  // namespace GB::presentation

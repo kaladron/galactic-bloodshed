@@ -3,125 +3,69 @@
 module;
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
-import std;
-import tabulate;
 import scnlib;
-#undef stdout
+import std;
 
 module commands;
 
 namespace GB::commands {
 namespace {
-// Helper function to create and configure the commodities table
-tabulate::Table create_commodity_table() {
-  tabulate::Table table;
-  table.format().hide_border().column_separator("  ");
 
-  // Configure column alignments and widths
-  table.column(0).format().width(4).font_align(
-      tabulate::FontAlign::right);  // Lot
-  table.column(1).format().width(1).font_align(
-      tabulate::FontAlign::center);  // Deliver marker
-  table.column(2).format().width(5).font_align(
-      tabulate::FontAlign::right);  // Stock
-  table.column(3).format().width(10).font_align(
-      tabulate::FontAlign::left);  // Type
-  table.column(4).format().width(7).font_align(
-      tabulate::FontAlign::right);  // Owner
-  table.column(5).format().width(8).font_align(
-      tabulate::FontAlign::right);  // Bidder
-  table.column(6).format().width(8).font_align(
-      tabulate::FontAlign::right);  // Amount
-  table.column(7).format().width(10).font_align(
-      tabulate::FontAlign::right);  // Cost/Unit
-  table.column(8).format().width(8).font_align(
-      tabulate::FontAlign::right);  // Ship
-  table.column(9).format().width(10).font_align(
-      tabulate::FontAlign::left);  // Dest
-
-  // Add header row
-  table.add_row({"Lot", "", "Stock", "Type", "Owner", "Bidder", "Amount",
-                 "Cost/Unit", "Ship", "Dest"});
-  table[0].format().font_style({tabulate::FontStyle::bold});
-
-  return table;
-}
-
-// Helper function to add commodity row to table
-void add_commodity_row(tabulate::Table& table, const Commod* c, GameObj& g) {
-  auto rate = c->cost_per_unit();
-  std::string player_details;
-  if (c->has_bid() && c->bidder() == g.player()) {
-    const auto* star_to = g.entity_manager.peek_star(*c->star_to());
-    player_details = std::format("{:4.4s}/{:<4.4s}", star_to->get_name(),
-                                 star_to->get_planet_name(*c->planet_to()));
-  }
-
-  money_t cost = 0;
-  if (g.level() == ScopeLevel::LEVEL_STAR ||
-      g.level() == ScopeLevel::LEVEL_PLAN) {
-    std::tie(cost, std::ignore) =
-        shipping_cost(g.entity_manager, c->star_from(), g.snum(), c->bid());
-  }
-
-  table.add_row({std::format("{}", c->id()), c->deliver() ? "*" : "",
-                 std::format("{}", c->amount()), std::format("{}", c->type()),
-                 std::format("{}", c->owner()),
-                 std::format("{}", c->bidder().value_or(0)),
-                 std::format("{}", c->bid()), std::format("{:.2f}", rate),
-                 std::format("{}", cost), player_details});
-}
-
-// List all commodities on the market
-void list_all_commodities(GameObj& g) {
-  g.out << "+++ Galactic Bloodshed Commodities Market +++\n\n";
-
-  tabulate::Table table = create_commodity_table();
-
-  for (const Commod& c : CommodList::readonly(g.entity_manager)) {
-    add_commodity_row(table, &c, g);
-  }
-
-  g.out << table << "\n";
-}
-
-// List commodities filtered by type
-bool list_commodities_by_type(const command_t& argv, GameObj& g) {
-  auto commod = argv[1][0];
-  CommodType item;
-  switch (commod) {
+std::optional<CommodType> parse_commod_type(std::string_view arg) {
+  if (arg.empty()) return std::nullopt;
+  switch (arg[0]) {
     case 'r':
-      item = CommodType::RESOURCE;
-      break;
+      return CommodType::RESOURCE;
     case 'd':
-      item = CommodType::DESTRUCT;
-      break;
+      return CommodType::DESTRUCT;
     case 'f':
-      item = CommodType::FUEL;
-      break;
+      return CommodType::FUEL;
     case 'x':
-      item = CommodType::CRYSTAL;
-      break;
+      return CommodType::CRYSTAL;
     default:
-      g.out << "No such type of commodity.\n";
-      return false;
+      return std::nullopt;
   }
-
-  g.out << "+++ Galactic Bloodshed Commodities Market +++\n\n";
-
-  tabulate::Table table = create_commodity_table();
-
-  for (const Commod& c : CommodList::readonly(g.entity_manager)) {
-    if (c.type() != item) continue;
-    add_commodity_row(table, &c, g);
-  }
-
-  g.out << table << "\n";
-  return true;
 }
 
-// Place a bid on a commodity lot
+void present_commodities(GameObj& g, std::optional<CommodType> filter) {
+  GB::presentation::CommodityMarketViewModel vm{.filter = filter};
+
+  for (const Commod& c : CommodList::readonly(g.entity_manager)) {
+    if (filter && c.type() != *filter) continue;
+
+    std::string destination;
+    if (c.has_bid() && c.bidder() == g.player()) {
+      const auto* star_to = g.entity_manager.peek_star(*c.star_to());
+      destination = std::format("{:4.4s}/{:<4.4s}", star_to->get_name(),
+                                star_to->get_planet_name(*c.planet_to()));
+    }
+
+    money_t ship_cost = 0;
+    if (g.level() == ScopeLevel::LEVEL_STAR ||
+        g.level() == ScopeLevel::LEVEL_PLAN) {
+      std::tie(ship_cost, std::ignore) =
+          shipping_cost(g.entity_manager, c.star_from(), g.snum(), c.bid());
+    }
+
+    vm.rows.push_back(GB::presentation::CommodityLotRow{
+        .lot = c.id(),
+        .deliver = c.deliver(),
+        .amount = c.amount(),
+        .type = c.type(),
+        .owner = c.owner(),
+        .bidder = c.bidder().value_or(player_t{0}),
+        .bid = c.bid(),
+        .cost_per_unit = c.cost_per_unit(),
+        .shipping_cost = ship_cost,
+        .destination = std::move(destination),
+    });
+  }
+
+  g.present(vm);
+}
+
 bool place_bid(const command_t& argv, GameObj& g) {
   if (g.level() != ScopeLevel::LEVEL_PLAN) {
     g.out << "You have to be in a planet scope to buy.\n";
@@ -142,15 +86,15 @@ bool place_bid(const command_t& argv, GameObj& g) {
     return false;
   }
   /* check to see if there is an undamaged gov center or space port here */
-  bool ok = false;
+  bool has_starport = false;
   for (const Ship& s : ShipList::readonly(g)) {
     if (s.alive() && (s.owner() == g.player()) && !s.damage() &&
         s.is_starport()) {
-      ok = true;
+      has_starport = true;
       break;
     }
   }
-  if (!ok) {
+  if (!has_starport) {
     g.out << "You don't have an undamaged space port or "
              "government center here.\n";
     return false;
@@ -163,21 +107,16 @@ bool place_bid(const command_t& argv, GameObj& g) {
     return false;
   }
   int lot = parsed_lot->value();
-  money_t bid0 = parsed_bid->value();
+  money_t bid_amount = parsed_bid->value();
   if ((lot <= 0) || lot > g.entity_manager.max_commod_id()) {
     g.out << "Illegal lot number.\n";
     return false;
   }
 
-  // First peek to validate the lot
   const Commod* c_peek = nullptr;
   try {
     c_peek = g.entity_manager.peek_commod(lot);
   } catch (const EntityNotFoundError&) {
-    g.out << "No such lot for sale.\n";
-    return false;
-  }
-  if (!c_peek) {
     g.out << "No such lot for sale.\n";
     return false;
   }
@@ -187,7 +126,7 @@ bool place_bid(const command_t& argv, GameObj& g) {
     return false;
   }
   money_t minbid = c_peek->min_next_bid();
-  if (bid0 < minbid) {
+  if (bid_amount <= 0 || bid_amount < minbid) {
     g.out << std::format("You have to bid more than {}.\n", minbid);
     return false;
   }
@@ -195,43 +134,47 @@ bool place_bid(const command_t& argv, GameObj& g) {
     g.out << "Guest races cannot bid.\n";
     return false;
   }
-  // Need to check money via g.current_governor()
-  if (bid0 > g.current_governor().money) {
+  if (bid_amount > g.current_governor().money) {
     g.out << "Sorry, no buying on credit allowed.\n";
     return false;
   }
 
   money_t shipping = 0;
   g.entity_manager.mutate_commod(lot, [&](Commod& c) {
-    /* notify the previous bidder that he was just outbidded */
     if (c.bidder()) {
-      std::string bid_message = std::format(
-          "The bid on lot #{} ({} {}) has been upped to {} by {} [{}].\n", lot,
-          c.amount(), c.type(), bid0, g.race->name, g.player());
+      std::string bid_message = GB::presentation::render_outbid_telegram(
+          lot, c.amount(), c.type(), bid_amount, g.race->name, g.player());
       warn_player(g.session_registry, g.entity_manager, *c.bidder(),
                   c.bidder_gov(), bid_message);
     }
-    c.place_bid(g.player(), g.governor(), bid0, snum, pnum);
+    c.place_bid(g.player(), g.governor(), bid_amount, snum, pnum);
     auto [ship_cost, dist] =
         shipping_cost(g.entity_manager, *c.star_to(), c.star_from(), c.bid());
     shipping = ship_cost;
   });
 
-  g.out << std::format(
-      "There will be an additional {} charged to you for shipping costs.\n",
-      shipping);
-  g.out << "Bid accepted.\n";
+  g.present(GB::presentation::BidPlacedResult{
+      .lot = lot,
+      .bid = bid_amount,
+      .shipping_cost = shipping,
+  });
   return true;
 }
 }  // namespace
 
 bool bid(const command_t& argv, GameObj& g) {
   if (argv.size() == 1) {
-    list_all_commodities(g);
+    present_commodities(g, std::nullopt);
     return true;
   }
   if (argv.size() == 2) {
-    return list_commodities_by_type(argv, g);
+    auto item = parse_commod_type(argv[1]);
+    if (!item) {
+      g.out << "No such type of commodity.\n";
+      return false;
+    }
+    present_commodities(g, item);
+    return true;
   }
   return place_bid(argv, g);
 }

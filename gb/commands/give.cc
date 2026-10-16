@@ -6,6 +6,7 @@
 module;
 
 import gb.entities;
+import gb.presentation;
 import gb.presentation.navigation;
 import gb.services;
 import std;
@@ -16,7 +17,7 @@ namespace GB::commands {
 bool give(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
   player_t who = get_player(g.entity_manager, argv[1]);
-  if (who.value == 0) {
+  if (who == player_t{0}) {
     g.out << "No such player.\n";
     return false;
   }
@@ -43,7 +44,7 @@ bool give(const command_t& argv, GameObj& g) {
 
       try {
         g.entity_manager.mutate_ship(*shipno, [&](Ship& ship) {
-          if (ship.owner() != Playernum || !ship.alive()) {
+          if (ship.owner() != Playernum) {
             g.out << std::format("You don't own ship #{}.\n", *shipno);
             return;
           }
@@ -70,11 +71,15 @@ bool give(const command_t& argv, GameObj& g) {
               g.out << "You don't have enough universe action points.\n";
               return;
             }
-          } else {
+          } else if (ship.whatorbits() == ScopeLevel::LEVEL_STAR ||
+                     ship.whatorbits() == ScopeLevel::LEVEL_PLAN) {
             if (!g.deduct_ap(ship.storbits(), 5)) {
               g.out << "You don't have enough action points in that system.\n";
               return;
             }
+          } else {
+            g.out << "Something wrong with this ship's scope.\n";
+            return;
           }
 
           ship.owner() = who;
@@ -82,42 +87,31 @@ bool give(const command_t& argv, GameObj& g) {
           g.present(capture_stuff(g.entity_manager, ship));
 
           /* set inhabited/explored bits */
-          switch (ship.whatorbits()) {
-            case ScopeLevel::LEVEL_UNIV:
-              break;
-            case ScopeLevel::LEVEL_STAR: {
-              g.entity_manager.mutate_star(ship.storbits(), [&](Star& star) {
-                star.mark_explored_by(who);
-              });
-              break;
-            }
-            case ScopeLevel::LEVEL_PLAN: {
-              g.entity_manager.mutate_star(ship.storbits(), [&](Star& star) {
-                star.mark_explored_by(who);
-              });
-
-              g.entity_manager.mutate_planet(
-                  ship.storbits(), ship.pnumorbits(),
-                  [&](Planet& planet) { planet.info(who).explored = 1; });
-              break;
-            }
-            default:
-              g.out << "Something wrong with this ship's scope.\n";
-              return;
+          if (ship.whatorbits() == ScopeLevel::LEVEL_STAR ||
+              ship.whatorbits() == ScopeLevel::LEVEL_PLAN) {
+            g.entity_manager.mutate_star(ship.storbits(), [&](Star& star) {
+              star.mark_explored_by(who);
+            });
+          }
+          if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN) {
+            g.entity_manager.mutate_planet(
+                ship.storbits(), ship.pnumorbits(),
+                [&](Planet& planet) { planet.info(who).explored = 1; });
           }
 
-          g.out << "Owner changed.\n";
-          std::string givemsg =
-              std::format("{} [{}] gave you {} at {}.\n", race.name, Playernum,
-                          ship, prin_ship_orbits(g.entity_manager, ship));
-          warn_player(g.session_registry, g.entity_manager, who,
-                      Race::leader_id, givemsg);
+          const auto result = presentation::make_give_result(
+              ship, who, alien.name, prin_ship_orbits(g.entity_manager, ship));
+          g.present(result);
+          warn_player(
+              g.session_registry, g.entity_manager, who, Race::leader_id,
+              presentation::render_give_recipient_telegram(
+                  race.name, Playernum, result.ship_desc, result.orbit_path));
 
           if (!race.God) {
-            std::string postmsg =
-                std::format("{} [{}] gives {} [{}] a ship.\n", race.name,
-                            Playernum, alien.name, who);
-            post(g.entity_manager, postmsg, NewsType::TRANSFER);
+            post(g.entity_manager,
+                 presentation::render_give_news(race.name, Playernum,
+                                                alien.name, who),
+                 NewsType::TRANSFER);
           }
           ok = true;
         });

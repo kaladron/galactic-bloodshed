@@ -779,4 +779,70 @@ std::string render_for_mode(UiMode mode, const TreasuryViewModel& vm) {
   return mode == UiMode::JSON ? render_json_treasury(vm) : render_treasury(vm);
 }
 
+GiveResult make_give_result(const Ship& ship, player_t recipient_id,
+                            std::string_view recipient_name,
+                            std::string_view orbit_path) {
+  return GiveResult{
+      .ship_number = ship.number(),
+      .ship_desc = std::format("{}", ship),
+      .recipient_id = recipient_id,
+      .recipient_name = std::string(recipient_name),
+      .orbit_path = std::string(orbit_path),
+  };
+}
+
+std::string render_give_result(const GiveResult& /*vm*/) {
+  return "Owner changed.\n";
+}
+
+std::string render_json_give_result(const GiveResult& vm) {
+  return render_json_envelope("give", vm);
+}
+
+std::string render_for_mode(UiMode mode, const GiveResult& vm) {
+  return mode == UiMode::JSON ? render_json_give_result(vm)
+                              : render_give_result(vm);
+}
+
+std::string render_give_recipient_telegram(std::string_view donor_name,
+                                           player_t donor_id,
+                                           std::string_view ship_desc,
+                                           std::string_view orbit_path) {
+  return std::format("{} [{}] gave you {} at {}.\n", donor_name, donor_id,
+                     ship_desc, orbit_path);
+}
+
+std::string render_give_news(std::string_view donor_name, player_t donor_id,
+                             std::string_view recipient_name,
+                             player_t recipient_id) {
+  return std::format("{} [{}] gives {} [{}] a ship.\n", donor_name, donor_id,
+                     recipient_name, recipient_id);
+}
+
+std::string render_pay_result(const PayResult& vm) {
+  return std::format("{} payed to {} [{}].\n", vm.amount, vm.recipient_name,
+                     vm.recipient_id);
+}
+
+std::string render_json_pay_result(const PayResult& vm) {
+  return render_json_envelope("pay", vm);
+}
+
+std::string render_for_mode(UiMode mode, const PayResult& vm) {
+  return mode == UiMode::JSON ? render_json_pay_result(vm)
+                              : render_pay_result(vm);
+}
+
+std::string render_pay_recipient_telegram(std::string_view payer_name,
+                                          player_t payer_id, money_t amount) {
+  return std::format("{} [{}] payed you {}.\n", payer_name, payer_id, amount);
+}
+
+std::string render_pay_news(std::string_view payer_name, player_t payer_id,
+                            std::string_view recipient_name,
+                            player_t recipient_id) {
+  return std::format("{} [{}] pays {} [{}].\n", payer_name, payer_id,
+                     recipient_name, recipient_id);
+}
+
 }  // namespace GB::presentation

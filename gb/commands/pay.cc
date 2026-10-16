@@ -6,6 +6,7 @@
 module;
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import std;
 import scnlib;
@@ -22,13 +23,13 @@ bool pay(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  auto parsed_amount = scn::scan<int>(argv[2], "{}");
+  auto parsed_amount = scn::scan<money_t>(argv[2], "{}");
   if (!parsed_amount) {
     g.out << "Invalid amount.\n";
     return false;
   }
-  int amount = parsed_amount->value();
-  if (amount < 0) {
+  money_t amount = parsed_amount->value();
+  if (amount <= 0) {
     g.out << "You have to give a player a positive amount of money.\n";
     return false;
   }
@@ -39,28 +40,26 @@ bool pay(const command_t& argv, GameObj& g) {
   }
 
   std::string alien_name;
-  try {
-    g.entity_manager.mutate_race(who, [&](Race& alien) {
-      alien.leader().money += amount;
-      alien_name = alien.name;
-    });
-  } catch (const EntityNotFoundError&) {
-    g.out << "Alien race not found.\n";
-    return false;
-  }
+  g.entity_manager.mutate_race(who, [&](Race& alien) {
+    alien.leader().money += amount;
+    alien_name = alien.name;
+  });
 
   g.entity_manager.mutate_race(Playernum, [&](Race& race) {
     race.governor(g.governor()).money -= amount;
   });
 
-  warn_player(
-      g.session_registry, g.entity_manager, who, Race::leader_id,
-      std::format("{} [{}] payed you {}.\n", g.race->name, Playernum, amount));
-  g.out << std::format("{} payed to {} [{}].\n", amount, alien_name, who);
+  warn_player(g.session_registry, g.entity_manager, who, Race::leader_id,
+              presentation::render_pay_recipient_telegram(g.race->name,
+                                                          Playernum, amount));
+  g.present(presentation::PayResult{
+      .amount = amount,
+      .recipient_id = who,
+      .recipient_name = alien_name,
+  });
 
   post(g.entity_manager,
-       std::format("{} [{}] pays {} [{}].\n", g.race->name, Playernum,
-                   alien_name, who),
+       presentation::render_pay_news(g.race->name, Playernum, alien_name, who),
        NewsType::TRANSFER);
   return true;
 }

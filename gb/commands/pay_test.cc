@@ -65,23 +65,36 @@ void test_pay_dispatch() {
   test::expect_contains(g.out.str(), "You don't have that much money to give!");
   std::println(std::cout, "    ✓ Insufficient funds rejection verified");
 
-  // 4. Negative amount rejection
+  // 4. Negative, zero, and non-numeric amount rejection
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"pay", "2", "-100"});
   test::expect_contains(
       g.out.str(), "You have to give a player a positive amount of money.");
-  std::println(std::cout, "    ✓ Negative amount rejection verified");
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"pay", "2", "0"});
+  test::expect_contains(
+      g.out.str(), "You have to give a player a positive amount of money.");
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"pay", "2", "abc"});
+  test::expect_contains(g.out.str(), "Invalid amount.");
+  std::println(
+      std::cout,
+      "    ✓ Negative, zero, and non-numeric amount rejection verified");
 
   // 5. Invalid player rejection
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"pay", "99", "100"});
-  test::expect_true(g.out.str().contains("No such player.") ||
-                    g.out.str().contains("Alien race not found."));
+  test::expect_contains(g.out.str(), "No such player.");
   std::println(std::cout, "    ✓ Invalid player rejection verified");
 
-  // 6. Cumulative transfer check
+  // 6. Cumulative transfer check (in UiMode::JSON)
+  g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"pay", "2", "1000"});
+  test::expect_contains(g.out.str(), "\"type\":\"pay\"");
+  test::expect_contains(g.out.str(), "\"amount\":1000");
+  test::expect_contains(g.out.str(), "\"recipient_id\":2");
+  test::expect_contains(g.out.str(), "\"recipient_name\":\"Payee\"");
   saved_payer = ctx.em.peek_race(1);
   saved_payee = ctx.em.peek_race(2);
   test::expect_ne(saved_payer, nullptr);

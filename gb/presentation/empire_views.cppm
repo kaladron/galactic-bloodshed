@@ -603,4 +603,48 @@ struct TreasuryViewModel {
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const TreasuryViewModel& vm);
 
+/// Result of transferring ship ownership to an ally (`give <race> <#ship>`).
+struct GiveResult {
+  shipnum_t ship_number{0};
+  std::string ship_desc{};
+  player_t recipient_id{0};
+  std::string recipient_name{};
+  std::string orbit_path{};
+};
+
+[[nodiscard]] GiveResult make_give_result(const Ship& ship,
+                                          player_t recipient_id,
+                                          std::string_view recipient_name,
+                                          std::string_view orbit_path);
+[[nodiscard]] std::string render_give_result(const GiveResult& vm);
+[[nodiscard]] std::string render_json_give_result(const GiveResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode, const GiveResult& vm);
+[[nodiscard]] std::string
+render_give_recipient_telegram(std::string_view donor_name, player_t donor_id,
+                               std::string_view ship_desc,
+                               std::string_view orbit_path);
+[[nodiscard]] std::string render_give_news(std::string_view donor_name,
+                                           player_t donor_id,
+                                           std::string_view recipient_name,
+                                           player_t recipient_id);
+
+/// Result of paying funds from treasury to another race (`pay <race>
+/// <amount>`).
+struct PayResult {
+  money_t amount{0};
+  player_t recipient_id{0};
+  std::string recipient_name{};
+};
+
+[[nodiscard]] std::string render_pay_result(const PayResult& vm);
+[[nodiscard]] std::string render_json_pay_result(const PayResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode, const PayResult& vm);
+[[nodiscard]] std::string
+render_pay_recipient_telegram(std::string_view payer_name, player_t payer_id,
+                              money_t amount);
+[[nodiscard]] std::string render_pay_news(std::string_view payer_name,
+                                          player_t payer_id,
+                                          std::string_view recipient_name,
+                                          player_t recipient_id);
+
 }  // namespace GB::presentation

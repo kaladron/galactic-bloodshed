@@ -116,13 +116,20 @@ void test_give_dispatch() {
   test::expect_contains(g.out.str(), "You can't give this player anything.");
   ctx.em.mutate_race(2, [](Race& r) { r.Guest = false; });
 
-  // 8. Not mutually allied
+  // 8. Not mutually allied (both directions)
   ctx.em.mutate_race(2, [](Race& r) { r.rescind_alliance_with(player_t{1}); });
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"give", "Klingons", std::format("#{}", ship_no_ap.value)});
   test::expect_contains(g.out.str(), "You two are not mutually allied.");
   ctx.em.mutate_race(2, [](Race& r) { r.declare_alliance_with(player_t{1}); });
+
+  ctx.em.mutate_race(1, [](Race& r) { r.rescind_alliance_with(player_t{2}); });
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"give", "Klingons", std::format("#{}", ship_no_ap.value)});
+  test::expect_contains(g.out.str(), "You two are not mutually allied.");
+  ctx.em.mutate_race(1, [](Race& r) { r.declare_alliance_with(player_t{2}); });
 
   // 9. Illegal ship number format
   g.out.str("");
@@ -168,21 +175,52 @@ void test_give_dispatch() {
       g, {"give", "Klingons", std::format("#{}", crewed_id.value)});
   test::expect_contains(g.out.str(), "crew/mil on board");
 
-  // 14. Carrier with loaded ships
+  // 14. Carrier with loaded ships & docked ship scope rejection
   const shipnum_t carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
                                    .owned_by(1, 1)
                                    .in_star_orbit(1)
                                    .build();
-  TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-      .owned_by(1, 1)
-      .docked_to(carrier_id, 1)
-      .build();
+  const shipnum_t fighter_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+                                   .owned_by(1, 1)
+                                   .docked_to(carrier_id, 1)
+                                   .build();
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"give", "Klingons", std::format("#{}", carrier_id.value)});
   test::expect_contains(g.out.str(), "loaded on it");
 
-  // 15. Command matrix validation (roles, guests, governor, scopes)
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"give", "Klingons", std::format("#{}", fighter_id.value)});
+  test::expect_contains(g.out.str(), "Something wrong with this ship's scope.");
+
+  // 15. Deity bypasses guest, alliance, crew, and loaded carrier restrictions
+  // (and emits UiMode::JSON output)
+  ctx.em.mutate_race(1, [](Race& r) {
+    r.God = true;
+    r.rescind_alliance_with(player_t{2});
+  });
+  ctx.em.mutate_race(2, [](Race& r) { r.Guest = true; });
+  g.set_ui_mode(UiMode::JSON);
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"give", "Klingons", std::format("#{}", crewed_id.value)});
+  test::expect_contains(g.out.str(), "\"type\":\"give\"");
+  test::expect_contains(g.out.str(), "\"recipient_name\":\"Klingons\"");
+
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"give", "Klingons", std::format("#{}", carrier_id.value)});
+  test::expect_contains(g.out.str(), "\"type\":\"give\"");
+
+  ctx.em.mutate_race(1, [](Race& r) {
+    r.God = false;
+    r.declare_alliance_with(player_t{2});
+  });
+  ctx.em.mutate_race(2, [](Race& r) { r.Guest = false; });
+  g.set_ui_mode(UiMode::ASCII);
+
+  // 16. Command matrix validation (roles, guests, governor, scopes)
   TestCommandMatrix(ctx, "give")
       .with_valid_argv(
           {"give", "Klingons", std::format("#{}", ship_no_ap.value)})

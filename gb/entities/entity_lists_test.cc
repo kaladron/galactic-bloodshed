@@ -47,50 +47,25 @@ void populate_base_entities(EntityManager& em, JsonStore& store) {
   }
 
   CommodRepository commod_repo(store);
-  {
-    Commod commod{};
-    commod.id = 1;
-    commod.owner = 1;
-    commod.governor = 1;
-    commod.type = CommodType::RESOURCE;
-    commod.amount = 100;
-    commod.star_from = 1;
-    commod.planet_from = 1;
-    commod_repo.save(commod);
-  }
-  {
-    Commod commod{};
-    commod.id = 2;
-    commod.owner = 1;
-    commod.governor = 1;
-    commod.type = CommodType::DESTRUCT;
-    commod.amount = 0;
-    commod.star_from = 1;
-    commod.planet_from = 1;
-    commod_repo.save(commod);
-  }
-  {
-    Commod commod{};
-    commod.id = 3;
-    commod.owner = 2;
-    commod.governor = 1;
-    commod.type = CommodType::FUEL;
-    commod.amount = 0;
-    commod.star_from = 1;
-    commod.planet_from = 1;
-    commod_repo.save(commod);
-  }
-  {
-    Commod commod{};
-    commod.id = 4;
-    commod.owner = 3;
-    commod.governor = 1;
-    commod.type = CommodType::CRYSTAL;
-    commod.amount = 400;
-    commod.star_from = 2;
-    commod.planet_from = 1;
-    commod_repo.save(commod);
-  }
+  commod_repo.save(Commod{{
+      .id = 1,
+      .owner = 1,
+      .governor = 1,
+      .type = CommodType::RESOURCE,
+      .amount = 100,
+      .star_from = 1,
+      .planet_from = 1,
+  }});
+  // IDs 2 and 3 intentionally absent to test sparse iteration
+  commod_repo.save(Commod{{
+      .id = 4,
+      .owner = 3,
+      .governor = 1,
+      .type = CommodType::CRYSTAL,
+      .amount = 400,
+      .star_from = 2,
+      .planet_from = 1,
+  }});
 
   em.clear_cache();
 }
@@ -248,10 +223,6 @@ void test_planet_list_shuffle(EntityManager& em) {
 void test_commod_list_readonly(EntityManager& em) {
   std::println(std::cout, "Testing CommodList...");
   test::expect_false(EntityListTraits<Commod>::is_valid(nullptr));
-  Commod unowned_commod{};
-  unowned_commod.owner = 0;
-  unowned_commod.amount = 250;
-  test::expect_false(EntityListTraits<Commod>::is_valid(&unowned_commod));
 
   int count = 0;
   std::uint64_t total_amount = 0;
@@ -262,10 +233,10 @@ void test_commod_list_readonly(EntityManager& em) {
                   "CommodList::readonly() should yield const Commod&");
 
     count++;
-    total_amount += commod.amount;
-    seen_ids.push_back(commod.id);
-    test::expect_ne(commod.owner.value, 0);
-    test::expect_ne(commod.amount, 0);
+    total_amount += commod.amount();
+    seen_ids.push_back(commod.id());
+    test::expect_ne(commod.owner().value, 0);
+    test::expect_ne(commod.amount(), 0);
   }
 
   test::expect_eq(count, 2);
@@ -277,7 +248,7 @@ void test_commod_list_readonly(EntityManager& em) {
   // Also exercise mutable CommodList and PlanetList iteration
   int mutable_commod_count = 0;
   for (auto commod_handle : CommodList(em)) {
-    test::expect_ne(commod_handle->amount, 0);
+    test::expect_ne(commod_handle->amount(), 0);
     mutable_commod_count++;
   }
   test::expect_eq(mutable_commod_count, 2);
@@ -468,27 +439,29 @@ void test_sparse_entity_lists() {
     StarRepository(store).save(Star{1, "Star1"});
     PlanetRepository(store).save(Planet{1, 1});
     CommodRepository commods(store);
-    Commod c1{};
-    c1.id = 1;
-    c1.owner = 1;
-    c1.amount = 50;
-    c1.type = CommodType::RESOURCE;
-    c1.star_from = 1;
-    c1.planet_from = 1;
+    Commod c1{{
+        .id = 1,
+        .owner = 1,
+        .type = CommodType::RESOURCE,
+        .amount = 50,
+        .star_from = 1,
+        .planet_from = 1,
+    }};
     commods.save(c1);
 
-    Commod c6{};
-    c6.id = 6;
-    c6.owner = 4;
-    c6.amount = 200;
-    c6.type = CommodType::CRYSTAL;
-    c6.star_from = 1;
-    c6.planet_from = 1;
+    Commod c6{{
+        .id = 6,
+        .owner = 4,
+        .type = CommodType::CRYSTAL,
+        .amount = 200,
+        .star_from = 1,
+        .planet_from = 1,
+    }};
     commods.save(c6);
 
     std::vector<int> visited_commods;
     for (const Commod& c : CommodList::readonly(em)) {
-      visited_commods.push_back(c.id);
+      visited_commods.push_back(c.id());
     }
     test::expect_eq(visited_commods.size(), 2);
     test::expect_eq(visited_commods[0], 1);

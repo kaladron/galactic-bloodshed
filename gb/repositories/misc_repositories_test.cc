@@ -22,44 +22,46 @@ void test_commod_repository() {
   CommodRepository repo(store);
 
   // Test data
-  Commod c1{};
-  c1.id = 1;
-  c1.owner = 1;
-  c1.governor = 2;
-  c1.type = CommodType::FUEL;
-  c1.amount = 100;
-  c1.deliver = true;
-  c1.bid = 75;
-  c1.bidder = 4;
-  c1.bidder_gov = 5;
-  c1.star_from = 1;
-  c1.planet_from = 1;
-  c1.star_to = 2;
-  c1.planet_to = 1;
+  Commod c1{{
+      .id = 1,
+      .owner = 1,
+      .governor = 2,
+      .type = CommodType::FUEL,
+      .amount = 100,
+      .deliver = true,
+      .bid = 75,
+      .bidder = 4,
+      .bidder_gov = 5,
+      .star_from = 1,
+      .planet_from = 1,
+      .star_to = 2,
+      .planet_to = 1,
+  }};
 
   // Save and retrieve
   test::expect_true(repo.save(c1));
   auto retrieved = repo.find_by_id(1);
   test::expect_true(retrieved.has_value());
-  test::expect_eq(retrieved->owner, 1);
-  test::expect_eq(retrieved->governor, 2);
-  test::expect_eq(retrieved->amount, 100);
-  test::expect_eq(retrieved->bid, 75);
+  test::expect_eq(retrieved->owner(), 1);
+  test::expect_eq(retrieved->governor(), 2);
+  test::expect_eq(retrieved->amount(), 100);
+  test::expect_eq(retrieved->bid(), 75);
 
   // Update
-  c1.amount = 200;
+  c1.set_amount(200);
   test::expect_true(repo.save(c1));
   retrieved = repo.find_by_id(1);
   test::expect_true(retrieved.has_value());
-  test::expect_eq(retrieved->amount, 200);
+  test::expect_eq(retrieved->amount(), 200);
 
   // Multiple commods
-  Commod c2{};
-  c2.id = 5;
-  c2.owner = 2;
-  c2.amount = 500;
-  c2.star_from = 3;
-  c2.planet_from = 1;
+  Commod c2{{
+      .id = 5,
+      .owner = 2,
+      .amount = 500,
+      .star_from = 3,
+      .planet_from = 1,
+  }};
   test::expect_true(repo.save(c2));
   test::expect_true(repo.find_by_id(1).has_value());
   test::expect_true(repo.find_by_id(5).has_value());

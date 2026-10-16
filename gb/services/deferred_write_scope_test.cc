@@ -230,14 +230,15 @@ void test_deferred_write_deletion_rollback_and_commit(TestContext& ctx) {
   ctx.em.mutate_ship(22, [](Ship& s) { s.protect().ship = 20; });
   ctx.em.mutate_race(5, [](Race& race) { race.Gov_ship = 20; });
 
-  Commod c{};
-  c.id = 10;
-  c.owner = 5;
-  c.governor = 1;
-  c.type = CommodType::RESOURCE;
-  c.amount = 250;
-  c.star_from = 2;
-  c.planet_from = 1;
+  Commod c{{
+      .id = 10,
+      .owner = 5,
+      .governor = 1,
+      .type = CommodType::RESOURCE,
+      .amount = 250,
+      .star_from = 2,
+      .planet_from = 1,
+  }};
   {
     JsonStore store(ctx.db);
     CommodRepository commod_repo(store);
@@ -281,7 +282,7 @@ void test_deferred_write_deletion_rollback_and_commit(TestContext& ctx) {
   test::expect_eq(ctx.em.peek_ship(22)->protect().ship, shipnum_t{20});
   const auto* restored_commod = ctx.em.peek_commod(10);
   test::expect_ne(restored_commod, nullptr);
-  test::expect_eq(restored_commod->amount, 250);
+  test::expect_eq(restored_commod->amount(), 250);
 
   // 2. Delete ship #20 and commod #10 inside DeferredWriteScope and commit
   {

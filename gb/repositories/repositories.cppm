@@ -231,7 +231,7 @@ public:
     return find(id);
   }
   bool save(const Commod& commod) {
-    return Repository<Commod>::save(commod.id, commod);
+    return Repository<Commod>::save(commod.id(), commod);
   }
   void delete_commod(int id) {
     store.remove(table_name, id);

@@ -648,38 +648,41 @@ void test_entity_manager_commods() {
   JsonStore store(db);
   CommodRepository repo(store);
 
-  Commod c{};
-  c.id = 1;
-  c.owner = 2;
-  c.governor = 1;
-  c.type = CommodType::FUEL;
-  c.amount = 500;
-  c.bid = 100;
-  c.bidder = 1;
-  c.star_from = 1;
-  c.planet_from = 1;
+  Commod c{{
+      .id = 1,
+      .owner = 2,
+      .governor = 1,
+      .type = CommodType::FUEL,
+      .amount = 500,
+      .bid = 100,
+      .bidder = 1,
+      .star_from = 1,
+      .planet_from = 1,
+      .star_to = 1,
+      .planet_to = 1,
+  }};
   repo.save(c);
 
   const auto* peek = em.peek_commod(1);
   test::expect_ne(peek, nullptr);
-  test::expect_eq(peek->amount, 500);
-  test::expect_eq(peek->bid, 100);
+  test::expect_eq(peek->amount(), 500);
+  test::expect_eq(peek->bid(), 100);
   std::println(std::cout, "  ✓ peek_commod works");
 
   auto amount_read =
-      em.with_commod(1, [](const Commod& cmd) { return cmd.amount; });
+      em.with_commod(1, [](const Commod& cmd) { return cmd.amount(); });
   test::expect_eq(amount_read, 500);
   std::println(std::cout, "  ✓ with_commod works");
 
   em.mutate_commod(1, [](Commod& cmd) {
-    cmd.amount = 800;
-    cmd.bid = 150;
+    cmd.set_amount(800);
+    cmd.set_bid(150);
   });
 
   auto updated = repo.find_by_id(1);
   test::expect_true(updated.has_value());
-  test::expect_eq(updated->amount, 800);
-  test::expect_eq(updated->bid, 150);
+  test::expect_eq(updated->amount(), 800);
+  test::expect_eq(updated->bid(), 150);
   std::println(std::cout, "  ✓ mutate_commod auto-save persisted changes");
 
   test::expect_throws<EntityNotFoundError>([&]() { em.peek_commod(999); });
@@ -1032,20 +1035,20 @@ void test_deletion_barrier() {
   // 4. Deferred commodity deletion
   int commod_id;
   {
-    Commod init_commod{};
-    init_commod.owner = 1;
-    init_commod.governor = 1;
-    init_commod.amount = 123;
-    init_commod.star_from = 1;
-    init_commod.planet_from = 1;
-    auto new_commod = em.create_commod(init_commod);
-    commod_id = new_commod->id;
+    auto new_commod = em.create_commod({
+        .owner = 1,
+        .governor = 1,
+        .amount = 123,
+        .star_from = 1,
+        .planet_from = 1,
+    });
+    commod_id = new_commod->id();
   }
   {
     auto barrier = em.create_deletion_barrier();
     const auto* peek1 = em.peek_commod(commod_id);
     test::expect_ne(peek1, nullptr);
-    test::expect_eq(peek1->amount, 123);
+    test::expect_eq(peek1->amount(), 123);
 
     em.delete_commod(commod_id);
 

@@ -189,17 +189,18 @@ void test_do_turn_market_and_maintenance() {
   sector_repo.save_map(smap2);
 
   // Post a commodity lot: Seller 1, Bidder 2
-  Commod commod{};
-  commod.id = 1;
-  commod.owner = player_t{1};
-  commod.governor = governor_t{1};
-  commod.type = CommodType::RESOURCE;
-  commod.amount = 100;
-  commod.star_from = starnum_t{1};
-  commod.planet_from = planetnum_t{1};
+  Commod commod{{
+      .id = 1,
+      .owner = player_t{1},
+      .governor = governor_t{1},
+      .type = CommodType::RESOURCE,
+      .amount = 100,
+      .deliver = false,
+      .star_from = starnum_t{1},
+      .planet_from = planetnum_t{1},
+  }};
   commod.place_bid(player_t{2}, governor_t{1}, 500, starnum_t{2},
                    planetnum_t{1});
-  commod.deliver = false;
   CommodRepository commod_repo(store);
   commod_repo.save(commod);
 
@@ -211,7 +212,7 @@ void test_do_turn_market_and_maintenance() {
   // First turn delivered lot
   const auto* c1 = em.peek_commod(1);
   test::expect_ne(c1, nullptr);
-  test::expect_true(c1->deliver);
+  test::expect_true(c1->deliver());
 
   // Second turn processes trade
   do_turn(em, session_registry, true);
@@ -388,36 +389,37 @@ void test_process_market_transactions_isolated() {
   CommodRepository commod_repo(store);
 
   // 1. Undelivered lot: delivery flag is updated to true on first pass
-  Commod lot1{};
-  lot1.id = 1;
-  lot1.owner = player_t{1};
-  lot1.governor = governor_t{1};
-  lot1.type = CommodType::FUEL;
-  lot1.amount = 50;
-  lot1.star_from = starnum_t{1};
-  lot1.planet_from = planetnum_t{1};
+  Commod lot1{{
+      .id = 1,
+      .owner = player_t{1},
+      .governor = governor_t{1},
+      .type = CommodType::FUEL,
+      .amount = 50,
+      .deliver = false,
+      .star_from = starnum_t{1},
+      .planet_from = planetnum_t{1},
+  }};
   lot1.place_bid(player_t{2}, governor_t{1}, 200, starnum_t{2}, planetnum_t{1});
-  lot1.deliver = false;
   commod_repo.save(lot1);
 
   process_market_transactions(em);
   const auto* lot1_after = em.peek_commod(1);
   test::expect_ne(lot1_after, nullptr);
-  test::expect_true(lot1_after->deliver);
+  test::expect_true(lot1_after->deliver());
 
   // 2. Insufficient buyer funds: bid exceeds money -> bid is cleared
   lot1_after = nullptr;
   em.mutate_commod(1, [](Commod& c) {
-    c.bid = 5000;  // Bidder only has 1000
+    c.set_bid(5000);  // Bidder only has 1000
   });
 
   process_market_transactions(em);
   const auto* lot1_cleared = em.peek_commod(1);
   test::expect_ne(lot1_cleared, nullptr);
-  test::expect_eq(lot1_cleared->bid, 0);
-  test::expect_eq(lot1_cleared->bidder, std::nullopt);
-  test::expect_eq(lot1_cleared->star_to, std::nullopt);
-  test::expect_eq(lot1_cleared->planet_to, std::nullopt);
+  test::expect_eq(lot1_cleared->bid(), 0);
+  test::expect_eq(lot1_cleared->bidder(), std::nullopt);
+  test::expect_eq(lot1_cleared->star_to(), std::nullopt);
+  test::expect_eq(lot1_cleared->planet_to(), std::nullopt);
 
   // 3. Successful transaction: Valid bid executed, money transferred, lot
   // deleted
@@ -1302,20 +1304,21 @@ void test_end_to_end_multi_turn_game_lifecycle() {
       .build();
 
   // 5. Post a market commodity lot from Player 1 with a bid from Player 2
-  Commod lot{};
-  lot.id = 1;
-  lot.owner = 1;
-  lot.governor = 1;
-  lot.type = CommodType::RESOURCE;
-  lot.amount = 200;
-  lot.deliver = false;
-  lot.bid = 300;
-  lot.bidder = 2;
-  lot.bidder_gov = 1;
-  lot.star_from = enrolled[0].star;
-  lot.planet_from = enrolled[0].pnum;
-  lot.star_to = enrolled[1].star;
-  lot.planet_to = enrolled[1].pnum;
+  Commod lot{{
+      .id = 1,
+      .owner = 1,
+      .governor = 1,
+      .type = CommodType::RESOURCE,
+      .amount = 200,
+      .deliver = false,
+      .bid = 300,
+      .bidder = 2,
+      .bidder_gov = 1,
+      .star_from = enrolled[0].star,
+      .planet_from = enrolled[0].pnum,
+      .star_to = enrolled[1].star,
+      .planet_to = enrolled[1].pnum,
+  }};
   CommodRepository(store).save(lot);
 
   em.clear_cache();
@@ -1330,7 +1333,7 @@ void test_end_to_end_multi_turn_game_lifecycle() {
   test::verify_universe_invariants(em);
 
   // Verify market lot marked ready for delivery on Turn 1
-  test::expect_true(em.peek_commod(1)->deliver);
+  test::expect_true(em.peek_commod(1)->deliver());
 
   // Verify all 5 races advanced to Turn 1 and Block 1 aggregated Players 1 & 2
   for (player_t pid = 1; pid <= 5; ++pid) {

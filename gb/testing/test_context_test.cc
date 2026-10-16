@@ -557,12 +557,13 @@ void test_universe_invariants() {
       .build();
 
   // Add a commodity
-  Commod commod{};
-  commod.id = 1;
-  commod.owner = player_t{1};
-  commod.amount = 500;
-  commod.star_from = 1;
-  commod.planet_from = 1;
+  Commod commod{{
+      .id = 1,
+      .owner = player_t{1},
+      .amount = 500,
+      .star_from = 1,
+      .planet_from = 1,
+  }};
   JsonStore store(ctx.db);
   CommodRepository(store).save(commod);
 

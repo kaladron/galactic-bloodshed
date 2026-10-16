@@ -67,19 +67,17 @@ int main() {
   // are nullopt)
   CommodRepository commod_repo(store);
   {
-    Commod commod{};
-    commod.id = 1;
-    commod.owner = 2;  // Player 2 is selling
-    commod.governor = 1;
-    commod.type = CommodType::RESOURCE;
-    commod.amount = 100;
-    commod.deliver = false;
-    commod.bid = 500;  // Minimum bid
-    commod.bidder = std::nullopt;
-    commod.star_from = 1;
-    commod.planet_from = 1;
-    commod.star_to = std::nullopt;
-    commod.planet_to = std::nullopt;
+    Commod commod{{
+        .id = 1,
+        .owner = 2,  // Player 2 is selling
+        .governor = 1,
+        .type = CommodType::RESOURCE,
+        .amount = 100,
+        .deliver = false,
+        .bid = 500,  // Minimum bid
+        .star_from = 1,
+        .planet_from = 1,
+    }};
     commod_repo.save(commod);
   }
 
@@ -124,8 +122,8 @@ int main() {
   std::println(std::cout, "Place initial bid on commodity");
   {
     const auto* c_before = ctx.em.peek_commod(1);
-    std::println(std::cout, "  Before: bid={}, bidder={}", c_before->bid,
-                 c_before->bidder.value_or(0));
+    std::println(std::cout, "  Before: bid={}, bidder={}", c_before->bid(),
+                 c_before->bidder().value_or(0));
 
     g.out.str("");
     ctx.assert_dispatch_success(g, {"bid", "1", "1000"});
@@ -133,20 +131,20 @@ int main() {
 
     ctx.em.clear_cache();
     const auto* c_after = ctx.em.peek_commod(1);
-    std::println(std::cout, "  After: bid={}, bidder={}", c_after->bid,
-                 c_after->bidder.value_or(0));
-    test::expect_eq(c_after->bid, 1000);
-    test::expect_eq(c_after->bidder, player_t{1});
-    test::expect_eq(c_after->bidder_gov, 1);
-    test::expect_eq(c_after->star_to, starnum_t{1});
-    test::expect_eq(c_after->planet_to, planetnum_t{1});
+    std::println(std::cout, "  After: bid={}, bidder={}", c_after->bid(),
+                 c_after->bidder().value_or(0));
+    test::expect_eq(c_after->bid(), 1000);
+    test::expect_eq(c_after->bidder(), player_t{1});
+    test::expect_eq(c_after->bidder_gov(), 1);
+    test::expect_eq(c_after->star_to(), starnum_t{1});
+    test::expect_eq(c_after->planet_to(), planetnum_t{1});
     std::println(std::cout, "✓ Initial bid placed successfully");
   }
 
   std::println(std::cout, "Raise existing bid");
   {
     const auto* c_before = ctx.em.peek_commod(1);
-    int previous_bid = c_before->bid;
+    int previous_bid = c_before->bid();
 
     // Need to bid at least (1 + UP_BID) times the current bid
     int new_bid = (int)((double)previous_bid * (1.0 + UP_BID)) + 10;
@@ -156,8 +154,8 @@ int main() {
 
     ctx.em.clear_cache();
     const auto* c_after = ctx.em.peek_commod(1);
-    test::expect_eq(c_after->bid, new_bid);
-    test::expect_eq(c_after->bidder, player_t{1});
+    test::expect_eq(c_after->bid(), new_bid);
+    test::expect_eq(c_after->bidder(), player_t{1});
     const auto outbid_teles = ctx.em.get_telegrams(1, 1);
     test::expect_false(outbid_teles.empty());
     test::expect_contains(outbid_teles.back().message,
@@ -168,7 +166,7 @@ int main() {
   std::println(std::cout, "Cannot bid less than minimum");
   {
     const auto* c_before = ctx.em.peek_commod(1);
-    int previous_bid = c_before->bid;
+    int previous_bid = c_before->bid();
 
     // Try to bid less than required
     g.out.str("");
@@ -177,7 +175,7 @@ int main() {
     // Bid should not change
     ctx.em.clear_cache();
     const auto* c_after = ctx.em.peek_commod(1);
-    test::expect_eq(c_after->bid, previous_bid);
+    test::expect_eq(c_after->bid(), previous_bid);
     std::println(std::cout, "✓ Low bid rejected");
   }
 
@@ -186,7 +184,7 @@ int main() {
     ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });
 
     const auto* c_before = ctx.em.peek_commod(1);
-    int previous_bid = c_before->bid;
+    int previous_bid = c_before->bid();
 
     auto& registry = get_test_session_registry();
     GameObj g2(ctx.em, registry);
@@ -202,7 +200,7 @@ int main() {
     // Bid should not change
     ctx.em.clear_cache();
     const auto* c_after = ctx.em.peek_commod(1);
-    test::expect_eq(c_after->bid, previous_bid);
+    test::expect_eq(c_after->bid(), previous_bid);
     std::println(std::cout, "✓ Guest race blocked from bidding");
   }
 

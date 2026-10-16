@@ -46,13 +46,7 @@ void do_revoke(Race& race, const governor_t src_gov, const governor_t tgt_gov,
 
   /*  Transfer commodity market lots and bids....  */
   for (auto commod_handle : CommodList(entity_manager)) {
-    auto& c = *commod_handle;
-    if (c.owner == race.Playernum && c.governor == src_gov) {
-      c.governor = tgt_gov;
-    }
-    if (c.bidder == race.Playernum && c.bidder_gov == src_gov) {
-      c.bidder_gov = tgt_gov;
-    }
+    commod_handle->transfer_governor(race.Playernum, src_gov, tgt_gov);
   }
 
   /*  And money too....  */

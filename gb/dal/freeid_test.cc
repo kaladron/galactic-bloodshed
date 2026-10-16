@@ -81,37 +81,40 @@ int main() {
   std::println(std::cout, "✓ Empty commod table returns ID 1");
 
   // Create some commods
-  Commod c1{};
-  c1.id = 1;
-  c1.owner = 1;
-  c1.governor = 1;
-  c1.type = CommodType::RESOURCE;
-  c1.amount = 100;
-  c1.deliver = true;
-  c1.star_from = 1;
-  c1.planet_from = 1;
+  Commod c1{{
+      .id = 1,
+      .owner = 1,
+      .governor = 1,
+      .type = CommodType::RESOURCE,
+      .amount = 100,
+      .deliver = true,
+      .star_from = 1,
+      .planet_from = 1,
+  }};
   commod_repo.save(c1);
 
-  Commod c2{};
-  c2.id = 2;
-  c2.owner = 1;
-  c2.governor = 1;
-  c2.type = CommodType::FUEL;
-  c2.amount = 200;
-  c2.deliver = true;
-  c2.star_from = 1;
-  c2.planet_from = 1;
+  Commod c2{{
+      .id = 2,
+      .owner = 1,
+      .governor = 1,
+      .type = CommodType::FUEL,
+      .amount = 200,
+      .deliver = true,
+      .star_from = 1,
+      .planet_from = 1,
+  }};
   commod_repo.save(c2);
 
-  Commod c4{};
-  c4.id = 4;
-  c4.owner = 1;
-  c4.governor = 1;
-  c4.type = CommodType::CRYSTAL;
-  c4.amount = 300;
-  c4.deliver = true;
-  c4.star_from = 1;
-  c4.planet_from = 1;
+  Commod c4{{
+      .id = 4,
+      .owner = 1,
+      .governor = 1,
+      .type = CommodType::CRYSTAL,
+      .amount = 300,
+      .deliver = true,
+      .star_from = 1,
+      .planet_from = 1,
+  }};
   commod_repo.save(c4);
 
   int cid2 = commod_repo.next_available_id();

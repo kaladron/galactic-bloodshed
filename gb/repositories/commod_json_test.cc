@@ -22,22 +22,21 @@ int main() {
   PlanetRepository(store).save(Planet{2, 3});
   CommodRepository commod_repo(store);
 
-  Commod test_commod{};
-
-  // Initialize some basic fields for testing
-  test_commod.id = 42;
-  test_commod.owner = 1;
-  test_commod.governor = 2;
-  test_commod.type = CommodType::RESOURCE;
-  test_commod.amount = 500;
-  test_commod.deliver = true;
-  test_commod.bid = 100;
-  test_commod.bidder = 3;
-  test_commod.bidder_gov = 4;
-  test_commod.star_from = 1;
-  test_commod.planet_from = 2;
-  test_commod.star_to = 2;
-  test_commod.planet_to = 3;
+  Commod test_commod{{
+      .id = 42,
+      .owner = 1,
+      .governor = 2,
+      .type = CommodType::RESOURCE,
+      .amount = 500,
+      .deliver = true,
+      .bid = 100,
+      .bidder = 3,
+      .bidder_gov = 4,
+      .star_from = 1,
+      .planet_from = 2,
+      .star_to = 2,
+      .planet_to = 3,
+  }};
 
   int commodnum = 42;
 
@@ -49,18 +48,18 @@ int main() {
   test::expect_ne(retrieved_commod, nullptr);
 
   // Verify key fields
-  test::expect_eq(retrieved_commod->owner, test_commod.owner);
-  test::expect_eq(retrieved_commod->governor, test_commod.governor);
-  test::expect_eq(retrieved_commod->type, test_commod.type);
-  test::expect_eq(retrieved_commod->amount, test_commod.amount);
-  test::expect_eq(retrieved_commod->deliver, test_commod.deliver);
-  test::expect_eq(retrieved_commod->bid, test_commod.bid);
-  test::expect_eq(retrieved_commod->bidder, test_commod.bidder);
-  test::expect_eq(retrieved_commod->bidder_gov, test_commod.bidder_gov);
-  test::expect_eq(retrieved_commod->star_from, test_commod.star_from);
-  test::expect_eq(retrieved_commod->planet_from, test_commod.planet_from);
-  test::expect_eq(retrieved_commod->star_to, test_commod.star_to);
-  test::expect_eq(retrieved_commod->planet_to, test_commod.planet_to);
+  test::expect_eq(retrieved_commod->owner(), test_commod.owner());
+  test::expect_eq(retrieved_commod->governor(), test_commod.governor());
+  test::expect_eq(retrieved_commod->type(), test_commod.type());
+  test::expect_eq(retrieved_commod->amount(), test_commod.amount());
+  test::expect_eq(retrieved_commod->deliver(), test_commod.deliver());
+  test::expect_eq(retrieved_commod->bid(), test_commod.bid());
+  test::expect_eq(retrieved_commod->bidder(), test_commod.bidder());
+  test::expect_eq(retrieved_commod->bidder_gov(), test_commod.bidder_gov());
+  test::expect_eq(retrieved_commod->star_from(), test_commod.star_from());
+  test::expect_eq(retrieved_commod->planet_from(), test_commod.planet_from());
+  test::expect_eq(retrieved_commod->star_to(), test_commod.star_to());
+  test::expect_eq(retrieved_commod->planet_to(), test_commod.planet_to());
 
   // Database connection will be cleaned up automatically by Sql destructor
 

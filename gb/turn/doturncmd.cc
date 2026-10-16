@@ -181,59 +181,56 @@ void process_market_transactions(EntityManager& entity_manager) {
   for (auto commod_handle : CommodList(entity_manager)) {
     auto& c = *commod_handle;
 
-    if (!c.deliver) {
-      c.deliver = true;
+    if (!c.deliver()) {
+      c.mark_ready_for_delivery();
       continue;
     }
 
-    if (c.owner != 0 && c.has_bid()) {
-      const player_t bidder = *c.bidder;
-      const starnum_t star_to = *c.star_to;
-      const planetnum_t planet_to = *c.planet_to;
+    if (c.has_bid()) {
+      const player_t bidder = *c.bidder();
+      const starnum_t star_to = *c.star_to();
+      const planetnum_t planet_to = *c.planet_to();
       const auto* bidder_race = entity_manager.peek_race(bidder);
-      const auto* owner_race = entity_manager.peek_race(c.owner);
+      const auto* owner_race = entity_manager.peek_race(c.owner());
 
       if (bidder_race && owner_race &&
-          (bidder_race->governor(c.bidder_gov).money >= c.bid)) {
+          (bidder_race->governor(c.bidder_gov()).money >= c.bid())) {
         auto [cost, dist] =
-            shipping_cost(entity_manager, star_to, c.star_from, c.bid);
+            shipping_cost(entity_manager, star_to, c.star_from(), c.bid());
 
         entity_manager.mutate_race(bidder, [&](Race& b_race) {
-          b_race.governor(c.bidder_gov).money -= c.bid;
-          b_race.governor(c.bidder_gov).cost_market += c.bid + cost;
-          b_race.deduct_maintenance(c.bidder_gov, cost);
+          b_race.governor(c.bidder_gov()).money -= c.bid();
+          b_race.governor(c.bidder_gov()).cost_market += c.bid() + cost;
+          b_race.deduct_maintenance(c.bidder_gov(), cost);
         });
-        entity_manager.mutate_race(c.owner, [&](Race& o_race) {
-          o_race.governor(c.governor).money += c.bid;
-          o_race.governor(c.governor).profit_market += c.bid;
+        entity_manager.mutate_race(c.owner(), [&](Race& o_race) {
+          o_race.governor(c.governor()).money += c.bid();
+          o_race.governor(c.governor()).profit_market += c.bid();
         });
 
         entity_manager.mutate_planet(star_to, planet_to, [&](Planet& planet) {
-          planet.deposit_commodity(c.type, c.amount, bidder);
+          planet.deposit_commodity(c.type(), c.amount(), bidder);
         });
 
         const auto* star = entity_manager.peek_star(star_to);
         std::string purchased_msg = std::format(
             "Lot {} purchased from {} [{}] at a cost of {}.\n   {} {} "
             "arrived at /{}/{}\n",
-            c.id, owner_race->name, c.owner, c.bid, c.amount, c.type,
+            c.id(), owner_race->name, c.owner(), c.bid(), c.amount(), c.type(),
             star ? star->get_name() : "unknown",
             star ? star->get_planet_name(planet_to) : "unknown");
-        push_telegram(entity_manager, bidder, c.bidder_gov, purchased_msg);
+        push_telegram(entity_manager, bidder, c.bidder_gov(), purchased_msg);
         std::string sold_msg = std::format(
-            "Lot {} ({} {}) sold to {} [{}] at a cost of {}.\n", c.id, c.amount,
-            c.type, bidder_race->name, bidder, c.bid);
-        push_telegram(entity_manager, c.owner, c.governor, sold_msg);
+            "Lot {} ({} {}) sold to {} [{}] at a cost of {}.\n", c.id(),
+            c.amount(), c.type(), bidder_race->name, bidder, c.bid());
+        push_telegram(entity_manager, c.owner(), c.governor(), sold_msg);
         c.clear_bid();
-        entity_manager.delete_commod(c.id);
+        entity_manager.delete_commod(c.id());
       } else {
         c.clear_bid();
       }
     } else {
       c.clear_bid();
-      if (c.owner == player_t{0}) {
-        entity_manager.delete_commod(c.id);
-      }
     }
   }
 }

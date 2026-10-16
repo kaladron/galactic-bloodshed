@@ -410,7 +410,7 @@ public:
   EntityHandle<Ship> create_ship(std::unique_ptr<Ship> ship);
   EntityHandle<Ship> create_ship(ShipType type, player_t owner = 1);
   void delete_ship(shipnum_t num);
-  EntityHandle<Commod> create_commod(const Commod& data = {});
+  EntityHandle<Commod> create_commod(commod_struct data);
   void delete_commod(int id);
   int next_available_commod_id();
   shipnum_t next_available_ship_number();

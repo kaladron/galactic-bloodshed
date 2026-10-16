@@ -185,19 +185,19 @@ void verify_universe_invariants(EntityManager& em, std::source_location loc) {
 
   // 4. Commodities have valid owner existing in RaceList and governor >= 1
   for (const Commod& commod : CommodList::readonly(em)) {
-    if (commod.owner.value > 0) {
-      expect_ne(em.peek_race(commod.owner), nullptr,
+    if (commod.owner().value > 0) {
+      expect_ne(em.peek_race(commod.owner()), nullptr,
                 std::format("Commodity #{} has non-existent owner {}",
-                            commod.id, commod.owner.value),
+                            commod.id(), commod.owner().value),
                 loc);
-      expect_ge(commod.governor.value, 1,
-                std::format("Commodity #{} has invalid governor {}", commod.id,
-                            commod.governor.value),
+      expect_ge(commod.governor().value, 1,
+                std::format("Commodity #{} has invalid governor {}",
+                            commod.id(), commod.governor().value),
                 loc);
-      if (commod.bidder.has_value()) {
-        expect_ge(commod.bidder_gov.value, 1,
+      if (commod.bidder().has_value()) {
+        expect_ge(commod.bidder_gov().value, 1,
                   std::format("Commodity #{} has invalid bidder_gov {}",
-                              commod.id, commod.bidder_gov.value),
+                              commod.id(), commod.bidder_gov().value),
                   loc);
       }
     }

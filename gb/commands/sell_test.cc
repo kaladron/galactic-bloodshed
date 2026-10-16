@@ -82,10 +82,10 @@ void test_sell_happy_paths() {
   test::expect_eq(p1->info(player_t{1}).resource, 900);
   const auto* lot1 = ctx.em.peek_commod(1);
   test::expect_ne(lot1, nullptr);
-  test::expect_eq(lot1->star_from, starnum_t{1});
-  test::expect_eq(lot1->planet_from, planetnum_t{1});
-  test::expect_eq(lot1->star_to, std::nullopt);
-  test::expect_eq(lot1->planet_to, std::nullopt);
+  test::expect_eq(lot1->star_from(), starnum_t{1});
+  test::expect_eq(lot1->planet_from(), planetnum_t{1});
+  test::expect_eq(lot1->star_to(), std::nullopt);
+  test::expect_eq(lot1->planet_to(), std::nullopt);
 
   // 2. Sell fuel (min(20, 50) = 20 AP)
   g.out.str("");

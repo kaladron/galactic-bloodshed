@@ -20,8 +20,8 @@ import std;
 namespace glz {
 
 template <>
-struct meta<Commod> {
-  using T = Commod;
+struct meta<commod_struct> {
+  using T = commod_struct;
   static constexpr auto value =
       object("id", &T::id, "owner", &T::owner, "governor", &T::governor, "type",
              &T::type, "amount", &T::amount, "deliver", &T::deliver, "bid",
@@ -90,7 +90,7 @@ struct meta<ShipExam> {
 
 std::optional<std::string>
 CommodRepository::serialize(const Commod& commod) const {
-  auto result = glz::write_json(commod);
+  auto result = glz::write_json(commod.get_struct());
   if (result.has_value()) {
     return result.value();
   }
@@ -99,10 +99,10 @@ CommodRepository::serialize(const Commod& commod) const {
 
 std::optional<Commod>
 CommodRepository::deserialize(const std::string& json_str) const {
-  Commod commod{};
-  auto result = glz::read_json(commod, json_str);
+  commod_struct data{};
+  auto result = glz::read_json(data, json_str);
   if (!result) {
-    return commod;
+    return Commod{data};
   }
   return std::nullopt;
 }

@@ -50,26 +50,26 @@ tabulate::Table create_commodity_table() {
 
 // Helper function to add commodity row to table
 void add_commodity_row(tabulate::Table& table, const Commod* c, GameObj& g) {
-  auto rate = static_cast<double>(c->bid) / static_cast<double>(c->amount);
+  auto rate = c->cost_per_unit();
   std::string player_details;
-  if (c->has_bid() && c->bidder == g.player()) {
-    const auto* star_to = g.entity_manager.peek_star(*c->star_to);
+  if (c->has_bid() && c->bidder() == g.player()) {
+    const auto* star_to = g.entity_manager.peek_star(*c->star_to());
     player_details = std::format("{:4.4s}/{:<4.4s}", star_to->get_name(),
-                                 star_to->get_planet_name(*c->planet_to));
+                                 star_to->get_planet_name(*c->planet_to()));
   }
 
   money_t cost = 0;
   if (g.level() == ScopeLevel::LEVEL_STAR ||
       g.level() == ScopeLevel::LEVEL_PLAN) {
     std::tie(cost, std::ignore) =
-        shipping_cost(g.entity_manager, c->star_from, g.snum(), c->bid);
+        shipping_cost(g.entity_manager, c->star_from(), g.snum(), c->bid());
   }
 
-  table.add_row({std::format("{}", c->id), c->deliver ? "*" : "",
-                 std::format("{}", c->amount), std::format("{}", c->type),
-                 std::format("{}", c->owner),
-                 std::format("{}", c->bidder.value_or(0)),
-                 std::format("{}", c->bid), std::format("{:.2f}", rate),
+  table.add_row({std::format("{}", c->id()), c->deliver() ? "*" : "",
+                 std::format("{}", c->amount()), std::format("{}", c->type()),
+                 std::format("{}", c->owner()),
+                 std::format("{}", c->bidder().value_or(0)),
+                 std::format("{}", c->bid()), std::format("{:.2f}", rate),
                  std::format("{}", cost), player_details});
 }
 
@@ -113,7 +113,7 @@ bool list_commodities_by_type(const command_t& argv, GameObj& g) {
   tabulate::Table table = create_commodity_table();
 
   for (const Commod& c : CommodList::readonly(g.entity_manager)) {
-    if (c.type != item) continue;
+    if (c.type() != item) continue;
     add_commodity_row(table, &c, g);
   }
 
@@ -177,18 +177,16 @@ bool place_bid(const command_t& argv, GameObj& g) {
     g.out << "No such lot for sale.\n";
     return false;
   }
-  if (!c_peek || c_peek->owner == 0) {
+  if (!c_peek) {
     g.out << "No such lot for sale.\n";
     return false;
   }
-  if (c_peek->owner == g.player() &&
-      (c_peek->star_from != g.snum() || c_peek->planet_from != g.pnum())) {
+  if (c_peek->owner() == g.player() && !c_peek->is_origin(g.snum(), g.pnum())) {
     g.out << "You can only set a minimum price for your "
              "lot from the location it was sold.\n";
     return false;
   }
-  money_t minbid =
-      static_cast<money_t>(static_cast<double>(c_peek->bid) * (1.0 + UP_BID));
+  money_t minbid = c_peek->min_next_bid();
   if (bid0 < minbid) {
     g.out << std::format("You have to bid more than {}.\n", minbid);
     return false;
@@ -206,16 +204,16 @@ bool place_bid(const command_t& argv, GameObj& g) {
   money_t shipping = 0;
   g.entity_manager.mutate_commod(lot, [&](Commod& c) {
     /* notify the previous bidder that he was just outbidded */
-    if (c.bidder) {
+    if (c.bidder()) {
       std::string bid_message = std::format(
           "The bid on lot #{} ({} {}) has been upped to {} by {} [{}].\n", lot,
-          c.amount, c.type, bid0, g.race->name, g.player());
-      warn_player(g.session_registry, g.entity_manager, *c.bidder, c.bidder_gov,
-                  bid_message);
+          c.amount(), c.type(), bid0, g.race->name, g.player());
+      warn_player(g.session_registry, g.entity_manager, *c.bidder(),
+                  c.bidder_gov(), bid_message);
     }
     c.place_bid(g.player(), g.governor(), bid0, snum, pnum);
     auto [ship_cost, dist] =
-        shipping_cost(g.entity_manager, *c.star_to, c.star_from, c.bid);
+        shipping_cost(g.entity_manager, *c.star_to(), c.star_from(), c.bid());
     shipping = ship_cost;
   });
 

@@ -169,23 +169,50 @@ int main() {
     test::expect_eq(route.dest_star, std::nullopt);
     test::expect_eq(route.dest_planet, std::nullopt);
 
-    Commod lot{};
+    Commod lot{{
+        .id = 1,
+        .owner = player_t{1},
+        .governor = governor_t{1},
+        .type = CommodType::RESOURCE,
+        .amount = 100,
+        .star_from = starnum_t{1},
+        .planet_from = planetnum_t{1},
+    }};
     test::expect_false(lot.has_bid());
+    test::expect_true(lot.is_origin(starnum_t{1}, planetnum_t{1}));
+    test::expect_false(lot.is_origin(starnum_t{2}, planetnum_t{1}));
     lot.place_bid(player_t{2}, governor_t{1}, 500, starnum_t{3},
                   planetnum_t{2});
     test::expect_true(lot.has_bid());
-    test::expect_eq(lot.bidder, player_t{2});
-    test::expect_eq(lot.bidder_gov, governor_t{1});
-    test::expect_eq(lot.bid, 500);
-    test::expect_eq(lot.star_to, starnum_t{3});
-    test::expect_eq(lot.planet_to, planetnum_t{2});
+    test::expect_eq(lot.bidder(), player_t{2});
+    test::expect_eq(lot.bidder_gov(), governor_t{1});
+    test::expect_eq(lot.bid(), 500);
+    test::expect_eq(lot.cost_per_unit(), 5.0);
+    test::expect_eq(lot.star_to(), starnum_t{3});
+    test::expect_eq(lot.planet_to(), planetnum_t{2});
     lot.clear_bid();
     test::expect_false(lot.has_bid());
-    test::expect_eq(lot.bidder, std::nullopt);
-    test::expect_eq(lot.bidder_gov, governor_t{1});
-    test::expect_eq(lot.bid, 0);
-    test::expect_eq(lot.star_to, std::nullopt);
-    test::expect_eq(lot.planet_to, std::nullopt);
+    test::expect_eq(lot.bidder(), std::nullopt);
+    test::expect_eq(lot.bidder_gov(), governor_t{1});
+    test::expect_eq(lot.bid(), 0);
+    test::expect_eq(lot.star_to(), std::nullopt);
+    test::expect_eq(lot.planet_to(), std::nullopt);
+
+    // Commod constructor invariant enforcement
+    test::expect_throws<std::invalid_argument>(
+        [] { Commod{{.id = 0, .owner = 1, .amount = 100}}; });
+    test::expect_throws<std::invalid_argument>(
+        [] { Commod{{.id = 1, .owner = 0, .amount = 100}}; });
+    test::expect_throws<std::invalid_argument>(
+        [] { Commod{{.id = 1, .owner = 1, .amount = 0}}; });
+    test::expect_throws<std::invalid_argument>([] {
+      Commod{{
+          .id = 1,
+          .owner = 1,
+          .amount = 100,
+          .bidder = player_t{2},
+      }};
+    });
   }
 
   // Test 6: Planet compatibility with race conditions

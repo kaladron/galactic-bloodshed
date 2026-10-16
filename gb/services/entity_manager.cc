@@ -343,21 +343,21 @@ void EntityManager::delete_commod(int id) {
   pending_commod_deletions_.push_back(id);
 }
 
-EntityHandle<Commod> EntityManager::create_commod(const Commod& init_data) {
+EntityHandle<Commod> EntityManager::create_commod(commod_struct init_data) {
   // Get next available commod ID
   int id = storage_->commods.next_available_id();
   std::erase(pending_commod_deletions_, id);
 
-  // Create Commod, copying from provided data but overriding id
-  Commod new_commod = init_data;
-  new_commod.id = id;
+  // Assign ID and construct validated Commod
+  init_data.id = id;
+  Commod new_commod{init_data};
 
   // Save through repository (DAL)
   storage_->commods.save(new_commod);
 
   // Cache it
   auto [iter, inserted] =
-      commod_cache.emplace(id, std::make_unique<Commod>(new_commod));
+      commod_cache.emplace(id, std::make_unique<Commod>(std::move(new_commod)));
   commod_refcount[id] = 1;
 
   return {this, iter->second.get(),
@@ -471,7 +471,7 @@ EntityHandle<Commod> EntityManager::get_commod(int id) {
         return storage_->commods.find_by_id(i);
       },
       [this](const Commod& c) {
-        if (!std::ranges::contains(pending_commod_deletions_, c.id)) {
+        if (!std::ranges::contains(pending_commod_deletions_, c.id())) {
           storage_->commods.save(c);
         }
       },
@@ -888,7 +888,7 @@ void EntityManager::flush_all() {
     storage_->sectors.save_map(sm);
   });
   flush_cache_impl<Commod>(commod_cache, [this](const Commod& c) {
-    if (!std::ranges::contains(pending_commod_deletions_, c.id)) {
+    if (!std::ranges::contains(pending_commod_deletions_, c.id())) {
       storage_->commods.save(c);
     }
   });

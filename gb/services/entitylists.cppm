@@ -128,7 +128,7 @@ struct EntityListTraits<Commod> {
   }
 
   static bool is_valid(const Commod* entity) {
-    return entity && entity->owner.value && entity->amount;
+    return entity != nullptr;
   }
 };
 

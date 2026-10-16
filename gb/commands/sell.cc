@@ -128,20 +128,16 @@ bool sell(const command_t& argv, GameObj& g) {
     g.session_registry.notify_race(race.Playernum, buf);
   }
 
-  Commod c{};
-  c.owner = Playernum;
-  c.governor = Governor;
-  c.type = item;
-  c.amount = amount;
-  c.deliver = false;
-  c.bid = 0;
-  c.bidder = std::nullopt;
-  c.star_from = snum;
-  c.planet_from = pnum;
-  c.star_to = std::nullopt;
-  c.planet_to = std::nullopt;
-
-  auto commod_handle = g.entity_manager.create_commod(c);
+  auto commod_handle = g.entity_manager.create_commod({
+      .owner = Playernum,
+      .governor = Governor,
+      .type = item,
+      .amount = amount,
+      .deliver = false,
+      .bid = 0,
+      .star_from = snum,
+      .planet_from = pnum,
+  });
   return true;
 }
 

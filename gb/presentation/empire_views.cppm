@@ -571,4 +571,36 @@ render_json_bid_placed_result(const BidPlacedResult& vm);
                                                  std::string_view bidder_name,
                                                  player_t bidder);
 
+/// Result of listing a commodity lot for sale (`sell <r|d|f|x> <amount>`).
+struct SellResult {
+  int lot{0};
+  resource_t amount{0};
+  CommodType type{CommodType::RESOURCE};
+};
+
+[[nodiscard]] std::string render_sell_result(const SellResult& vm);
+[[nodiscard]] std::string render_json_sell_result(const SellResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode, const SellResult& vm);
+[[nodiscard]] std::string render_sell_market_news(int lot, resource_t amount,
+                                                  CommodType type,
+                                                  std::string_view seller_name,
+                                                  player_t seller);
+
+/// View model for `treasury` command.
+struct TreasuryViewModel {
+  money_t total_income{0};
+  money_t total_costs{0};
+  money_t profit_market{0};
+  money_t cost_market{0};
+  money_t income_taxes{0};
+  money_t cost_tech{0};
+  money_t maintain{0};
+  money_t money{0};
+};
+
+[[nodiscard]] std::string render_treasury(const TreasuryViewModel& vm);
+[[nodiscard]] std::string render_json_treasury(const TreasuryViewModel& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const TreasuryViewModel& vm);
+
 }  // namespace GB::presentation

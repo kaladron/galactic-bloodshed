@@ -6,6 +6,7 @@
 module;
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import std;
 import scnlib;
@@ -24,13 +25,13 @@ bool sell(const command_t& argv, GameObj& g) {
   auto pnum = g.pnum();
 
   /* get information on sale */
-  auto commod = argv[1][0];
-  auto parsed_amount = scn::scan<int>(argv[2], "{}");
+  char commod = argv[1].empty() ? '\0' : argv[1][0];
+  auto parsed_amount = scn::scan<resource_t>(argv[2], "{}");
   if (!parsed_amount || parsed_amount->value() <= 0) {
     g.out << "Try using positive values.\n";
     return false;
   }
-  int amount = parsed_amount->value();
+  resource_t amount = parsed_amount->value();
 
   const auto& p_peek = *g.entity_manager.peek_planet(snum, pnum);
 
@@ -41,15 +42,15 @@ bool sell(const command_t& argv, GameObj& g) {
   }
 
   /* check to see if there is an undamaged gov center or space port here */
-  bool ok = false;
+  bool has_starport = false;
   for (const Ship& s : ShipList::readonly(g)) {
     if (s.alive() && (s.owner() == Playernum) && !s.damage() &&
         s.is_starport()) {
-      ok = true;
+      has_starport = true;
       break;
     }
   }
-  if (!ok) {
+  if (!has_starport) {
     g.out << "You don't have an undamaged space port or government center "
              "here.\n";
     return false;
@@ -62,7 +63,7 @@ bool sell(const command_t& argv, GameObj& g) {
         g.out << "You don't have any resources here to sell!\n";
         return false;
       }
-      amount = std::min<int>(amount, p_peek.info(Playernum).resource);
+      amount = std::min<resource_t>(amount, p_peek.info(Playernum).resource);
       item = CommodType::RESOURCE;
       break;
     case 'd':
@@ -70,7 +71,7 @@ bool sell(const command_t& argv, GameObj& g) {
         g.out << "You don't have any destruct here to sell!\n";
         return false;
       }
-      amount = std::min<int>(amount, p_peek.info(Playernum).destruct);
+      amount = std::min<resource_t>(amount, p_peek.info(Playernum).destruct);
       item = CommodType::DESTRUCT;
       break;
     case 'f':
@@ -78,7 +79,7 @@ bool sell(const command_t& argv, GameObj& g) {
         g.out << "You don't have any fuel here to sell!\n";
         return false;
       }
-      amount = std::min<int>(amount, p_peek.info(Playernum).fuel);
+      amount = std::min<resource_t>(amount, p_peek.info(Playernum).fuel);
       item = CommodType::FUEL;
       break;
     case 'x':
@@ -86,7 +87,7 @@ bool sell(const command_t& argv, GameObj& g) {
         g.out << "You don't have any crystals here to sell!\n";
         return false;
       }
-      amount = std::min<int>(amount, p_peek.info(Playernum).crystals);
+      amount = std::min<resource_t>(amount, p_peek.info(Playernum).crystals);
       item = CommodType::CRYSTAL;
       break;
     default:
@@ -94,7 +95,7 @@ bool sell(const command_t& argv, GameObj& g) {
       return false;
   }
 
-  ap_t APcount = std::min<ap_t>(20, amount);
+  ap_t APcount = std::min<ap_t>(20, static_cast<ap_t>(amount));
   if (!g.deduct_ap(snum, APcount)) {
     g.out << std::format("You don't have {} action points there.\n", APcount);
     return false;
@@ -117,17 +118,6 @@ bool sell(const command_t& argv, GameObj& g) {
     }
   });
 
-  int commodno = g.entity_manager.next_available_commod_id();
-  if (commodno == -1) commodno = g.entity_manager.max_commod_id() + 1;
-  g.out << std::format("Lot #{} - {} units of {}.\n", commodno, amount, item);
-  std::string buf =
-      std::format("Lot #{} - {} units of {} for sale by {} [{}].\n", commodno,
-                  amount, item, g.race->name, Playernum);
-  post(g.entity_manager, buf, NewsType::TRANSFER);
-  for (const Race& race : RaceList::readonly(g.entity_manager)) {
-    g.session_registry.notify_race(race.Playernum, buf);
-  }
-
   auto commod_handle = g.entity_manager.create_commod({
       .owner = Playernum,
       .governor = Governor,
@@ -138,6 +128,19 @@ bool sell(const command_t& argv, GameObj& g) {
       .star_from = snum,
       .planet_from = pnum,
   });
+  const int commodno = commod_handle->id();
+
+  g.present(GB::presentation::SellResult{
+      .lot = commodno,
+      .amount = amount,
+      .type = item,
+  });
+  std::string buf = GB::presentation::render_sell_market_news(
+      commodno, amount, item, g.race->name, Playernum);
+  post(g.entity_manager, buf, NewsType::TRANSFER);
+  for (const Race& race : RaceList::readonly(g.entity_manager)) {
+    g.session_registry.notify_race(race.Playernum, buf);
+  }
   return true;
 }
 

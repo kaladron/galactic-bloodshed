@@ -3,7 +3,6 @@
 /// \file treasury_test.cc
 /// \brief Unit tests for the treasury command.
 
-import dallib;
 import gb.entities;
 import gb.services;
 import test;
@@ -41,6 +40,14 @@ void test_treasury_dispatch() {
   test::expect_contains(g.out.str(), "1250");  // Total income: 1000 + 250
   test::expect_contains(g.out.str(), "500");   // Total costs: 300 + 150 + 50
   test::expect_contains(g.out.str(), "You have: 50000");
+
+  g.set_ui_mode(UiMode::JSON);
+  ctx.assert_dispatch_success(g, {"treasury"});
+  test::expect_contains(g.out.str(), "\"type\":\"treasury\"");
+  test::expect_contains(g.out.str(), "\"total_income\":1250");
+  test::expect_contains(g.out.str(), "\"total_costs\":500");
+  test::expect_contains(g.out.str(), "\"money\":50000");
+  g.set_ui_mode(UiMode::ASCII);
 
   ctx.verify_universe_invariants();
 }

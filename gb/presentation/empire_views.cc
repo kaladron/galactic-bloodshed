@@ -728,4 +728,55 @@ std::string render_outbid_telegram(int lot, resource_t amount, CommodType type,
       amount, type, new_bid, bidder_name, bidder);
 }
 
+std::string render_sell_result(const SellResult& vm) {
+  return std::format("Lot #{} - {} units of {}.\n", vm.lot, vm.amount, vm.type);
+}
+
+std::string render_json_sell_result(const SellResult& vm) {
+  return render_json_envelope("sell", vm);
+}
+
+std::string render_for_mode(UiMode mode, const SellResult& vm) {
+  return mode == UiMode::JSON ? render_json_sell_result(vm)
+                              : render_sell_result(vm);
+}
+
+std::string render_sell_market_news(int lot, resource_t amount, CommodType type,
+                                    std::string_view seller_name,
+                                    player_t seller) {
+  return std::format("Lot #{} - {} units of {} for sale by {} [{}].\n", lot,
+                     amount, type, seller_name, seller);
+}
+
+std::string render_treasury(const TreasuryViewModel& vm) {
+  tabulate::Table table;
+  table.format().hide_border().column_separator("  ");
+
+  table.column(0).format().width(12);
+  table.column(1).format().width(8).font_align(tabulate::FontAlign::right);
+  table.column(2).format().width(4);
+  table.column(3).format().width(12);
+  table.column(4).format().width(8).font_align(tabulate::FontAlign::right);
+
+  table.add_row({"Income", std::format("{}", vm.total_income), "", "Costs",
+                 std::format("{}", vm.total_costs)});
+  table[0].format().font_style({tabulate::FontStyle::bold});
+
+  table.add_row({"  Market:", std::format("{}", vm.profit_market), "",
+                 "  Market:", std::format("{}", vm.cost_market)});
+  table.add_row({"  Taxes:", std::format("{}", vm.income_taxes), "",
+                 "  Tech:", std::format("{}", vm.cost_tech)});
+  table.add_row({"", "", "", "  Maint:", std::format("{}", vm.maintain)});
+
+  return std::format("{}\nYou have: {}\n", table.str(), vm.money);
+}
+
+std::string render_json_treasury(const TreasuryViewModel& vm) {
+  return render_json_envelope("treasury", vm);
+}
+
+std::string render_for_mode(UiMode mode, const TreasuryViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_treasury(vm) : render_treasury(vm);
+}
+
 }  // namespace GB::presentation

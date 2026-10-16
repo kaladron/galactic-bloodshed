@@ -191,11 +191,11 @@ public:
     NewsValues<int> newspos{};    /* last-read news database IDs per NewsType */
     toggletype toggle{};
     money_t money{0};
-    unsigned long income{0};
+    money_t income{0};
     money_t maintain{0};
-    unsigned long cost_tech{0};
-    unsigned long cost_market{0};
-    unsigned long profit_market{0};
+    money_t cost_tech{0};
+    money_t cost_market{0};
+    money_t profit_market{0};
     std::time_t login{0}; /* last login for this governor */
   };
   /// Canonical governor ID of the race leader.

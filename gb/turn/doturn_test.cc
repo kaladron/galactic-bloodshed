@@ -592,10 +592,10 @@ void test_race_turn_accounting_and_maintenance() {
   test::expect_eq(race.controlled_planets, 0);
   test::expect_eq(race.planet_points, 0);
   test::expect_eq(race.leader().maintain, 0);
-  test::expect_eq(race.leader().income, 0UL);
-  test::expect_eq(race.leader().cost_market, 0UL);
-  test::expect_eq(race.leader().profit_market, 0UL);
-  test::expect_eq(race.leader().cost_tech, 0UL);
+  test::expect_eq(race.leader().income, 0);
+  test::expect_eq(race.leader().cost_market, 0);
+  test::expect_eq(race.leader().profit_market, 0);
+  test::expect_eq(race.leader().cost_tech, 0);
 
   // 2. Deduct maintenance with sufficient funds
   race.leader().money = 500;

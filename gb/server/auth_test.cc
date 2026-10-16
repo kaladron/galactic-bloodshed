@@ -206,7 +206,8 @@ void test_check_connect_json_mode() {
   test::expect_contains(output, "\"gov_name\":\"JsonGov\"");
   test::expect_contains(output, "\"morale\":85");
   test::expect_contains(output, "\"type\":\"time\"");
-  test::expect_contains(output, "You have: 10000");
+  test::expect_contains(output, "\"type\":\"treasury\"");
+  test::expect_contains(output, "\"money\":10000");
   test::expect_contains(
       output, "{\"type\":\"text\",\"data\":{\"message\":\"Broadcast alert\"}}");
 

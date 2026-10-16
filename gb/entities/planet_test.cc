@@ -437,7 +437,7 @@ int main() {
     const double tech_gain = info.invest_tech(race.leader(), race);
     test::expect_gt(tech_gain, 0.0);
     test::expect_eq(race.leader().money, 400);
-    test::expect_eq(race.leader().cost_tech, 100UL);
+    test::expect_eq(race.leader().cost_tech, 100);
     test::expect_gt(race.tech, 10.0);
     test::expect_eq(info.prod_tech, tech_gain);
 

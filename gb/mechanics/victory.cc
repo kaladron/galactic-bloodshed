@@ -35,7 +35,7 @@ void compute_power_blocks(EntityManager& entity_manager) {
   for (const Race& race_i : RaceList::readonly(entity_manager)) {
     const player_t i = race_i.Playernum;
 
-    entity_manager.mutate_block(i, [&](block& block_i) {
+    entity_manager.mutate_block(i, [&](Block& block_i) {
       block_i.clear_power_stats();
 
       for (const Race& race_j : RaceList::readonly(entity_manager)) {

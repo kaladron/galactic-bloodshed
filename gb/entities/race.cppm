@@ -559,7 +559,7 @@ private:
   power_struct data_{};
 };
 
-export struct block {
+export struct block_struct {
   player_t Playernum{0};
   std::string name;
   std::string motto;
@@ -575,26 +575,141 @@ export struct block {
   victory_score_t VPs{0};
   money_t money{0};
 
+  [[nodiscard]] constexpr bool
+  operator==(const block_struct&) const noexcept = default;
+};
+
+export class Block {
+public:
+  Block() = delete;
+
+  Block(const block_struct& in) : data_(in) {
+    validate(data_);
+  }
+
+  [[nodiscard]] player_t Playernum() const noexcept {
+    return data_.Playernum;
+  }
+
+  void set_Playernum(player_t p) {
+    if (p < 1) {
+      throw std::invalid_argument(
+          std::format("Block player ID must be >= 1 (got {})", p));
+    }
+    data_.Playernum = p;
+  }
+
+  [[nodiscard]] const std::string& name() const noexcept {
+    return data_.name;
+  }
+  [[nodiscard]] std::string& name() noexcept {
+    return data_.name;
+  }
+
+  [[nodiscard]] const std::string& motto() const noexcept {
+    return data_.motto;
+  }
+  [[nodiscard]] std::string& motto() noexcept {
+    return data_.motto;
+  }
+
+  [[nodiscard]] const std::flat_set<player_t>& invited() const noexcept {
+    return data_.invited;
+  }
+  [[nodiscard]] std::flat_set<player_t>& invited() noexcept {
+    return data_.invited;
+  }
+
+  [[nodiscard]] const std::flat_set<player_t>& pledged() const noexcept {
+    return data_.pledged;
+  }
+  [[nodiscard]] std::flat_set<player_t>& pledged() noexcept {
+    return data_.pledged;
+  }
+
+  [[nodiscard]] std::uint32_t members() const noexcept {
+    return data_.members;
+  }
+  [[nodiscard]] std::uint32_t& members() noexcept {
+    return data_.members;
+  }
+
+  [[nodiscard]] population_t popn() const noexcept {
+    return data_.popn;
+  }
+  [[nodiscard]] population_t& popn() noexcept {
+    return data_.popn;
+  }
+
+  [[nodiscard]] resource_t resource() const noexcept {
+    return data_.resource;
+  }
+  [[nodiscard]] resource_t& resource() noexcept {
+    return data_.resource;
+  }
+
+  [[nodiscard]] resource_t fuel() const noexcept {
+    return data_.fuel;
+  }
+  [[nodiscard]] resource_t& fuel() noexcept {
+    return data_.fuel;
+  }
+
+  [[nodiscard]] resource_t destruct() const noexcept {
+    return data_.destruct;
+  }
+  [[nodiscard]] resource_t& destruct() noexcept {
+    return data_.destruct;
+  }
+
+  [[nodiscard]] std::uint32_t ships_owned() const noexcept {
+    return data_.ships_owned;
+  }
+  [[nodiscard]] std::uint32_t& ships_owned() noexcept {
+    return data_.ships_owned;
+  }
+
+  [[nodiscard]] planet_count_t systems_owned() const noexcept {
+    return data_.systems_owned;
+  }
+  [[nodiscard]] planet_count_t& systems_owned() noexcept {
+    return data_.systems_owned;
+  }
+
+  [[nodiscard]] victory_score_t VPs() const noexcept {
+    return data_.VPs;
+  }
+  [[nodiscard]] victory_score_t& VPs() noexcept {
+    return data_.VPs;
+  }
+
+  [[nodiscard]] money_t money() const noexcept {
+    return data_.money;
+  }
+  [[nodiscard]] money_t& money() noexcept {
+    return data_.money;
+  }
+
   /// Resets aggregated member power statistics prior to recomputation.
   void clear_power_stats() noexcept {
-    members = 0;
-    popn = 0;
-    resource = 0;
-    fuel = 0;
-    destruct = 0;
-    ships_owned = 0;
-    money = 0;
+    data_.members = 0;
+    data_.popn = 0;
+    data_.resource = 0;
+    data_.fuel = 0;
+    data_.destruct = 0;
+    data_.ships_owned = 0;
+    data_.money = 0;
   }
 
   /// Accumulates a member race's power report into this bloc's totals.
   void accumulate_member_power(const Power& p) noexcept {
-    members += 1;
-    popn += p.popn();
-    resource += p.resource();
-    fuel += p.fuel();
-    destruct += p.destruct();
-    ships_owned += p.ships_owned();
-    money += p.money();
+    data_.members += 1;
+    data_.popn += p.popn();
+    data_.resource += p.resource();
+    data_.fuel += p.fuel();
+    data_.destruct += p.destruct();
+    data_.ships_owned += p.ships_owned();
+    data_.money += p.money();
   }
 
   /// Adds a player as a full member (both invited and pledged).
@@ -611,7 +726,7 @@ export struct block {
   /// pledged).
   [[nodiscard]] std::flat_set<player_t> active_members() const {
     std::flat_set<player_t> result;
-    std::ranges::set_intersection(invited, pledged,
+    std::ranges::set_intersection(data_.invited, data_.pledged,
                                   std::inserter(result, result.end()));
     return result;
   }
@@ -633,6 +748,23 @@ export struct block {
 
   /// Unpledges the given player from this bloc.
   void unpledge(player_t p) noexcept;
+
+  [[nodiscard]] const block_struct& get_struct() const noexcept {
+    return data_;
+  }
+
+  [[nodiscard]] constexpr bool
+  operator==(const Block&) const noexcept = default;
+
+private:
+  static void validate(const block_struct& data) {
+    if (data.Playernum < 1) {
+      throw std::invalid_argument(
+          std::format("Block player ID must be >= 1 (got {})", data.Playernum));
+    }
+  }
+
+  block_struct data_{};
 };
 
 export constexpr double TECH_HYPER_DRIVE = 50.0;

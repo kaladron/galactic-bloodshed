@@ -90,7 +90,7 @@ bool send_to_alliance_block(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  const block* block_target = nullptr;
+  const Block* block_target = nullptr;
   try {
     block_target = g.entity_manager.peek_block(who);
   } catch (const EntityNotFoundError&) {
@@ -107,13 +107,13 @@ bool send_to_alliance_block(const command_t& argv, GameObj& g) {
   const std::string sender_tag =
       format_sender_tag(*g.race, playernum, g.governor());
   const std::string msg =
-      std::format("{} to {} [{}]: {}", sender_tag, block_target->name, who,
+      std::format("{} to {} [{}]: {}", sender_tag, block_target->name(), who,
                   join_message_tokens(argv, 3));
   const std::string notice = std::format(
       "{} has sent you a telegram. Use `read' to read it.\n", sender_tag);
   const std::string block_msg =
       std::format("{} sends a message to {} [{}] alliance block.\n", sender_tag,
-                  block_target->name, who);
+                  block_target->name(), who);
 
   for (const Race& race : RaceList::readonly(g.entity_manager)) {
     const player_t i = race.Playernum;

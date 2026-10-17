@@ -22,7 +22,7 @@ bool motto(const command_t& argv, GameObj& g) {
 
   try {
     g.entity_manager.mutate_block(g.player(),
-                                  [&](struct block& b) { b.motto = message; });
+                                  [&](Block& b) { b.motto() = message; });
   } catch (const EntityNotFoundError&) {
     g.out << "Block not found.\n";
     return false;

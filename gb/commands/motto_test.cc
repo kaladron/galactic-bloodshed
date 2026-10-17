@@ -17,10 +17,11 @@ void test_motto_database_persistence() {
   TestContext ctx;
 
   // Setup: Create a block with initial empty motto
-  block b{};
-  b.Playernum = 1;
-  b.name = "Test Alliance";
-  b.motto = "";  // Initially empty
+  Block b{{
+      .Playernum = 1,
+      .name = "Test Alliance",
+      .motto = "",  // Initially empty
+  }};
 
   JsonStore store(ctx.db);
   BlockRepository blocks(store);
@@ -46,9 +47,9 @@ void test_motto_database_persistence() {
     // Verify database: motto should be set
     auto saved = blocks.find_by_id(1);
     test::expect_true(saved.has_value());
-    std::string saved_motto = saved->motto;
+    std::string saved_motto = saved->motto();
     test::expect_contains(saved_motto, "For the Empire!");
-    std::println(std::cout, "    ✓ Database: motto = '{}'", saved->motto);
+    std::println(std::cout, "    ✓ Database: motto = '{}'", saved->motto());
   }
 
   // TEST 2: Change the motto
@@ -59,9 +60,9 @@ void test_motto_database_persistence() {
     // Verify database: motto should be changed
     auto saved = blocks.find_by_id(1);
     test::expect_true(saved.has_value());
-    std::string saved_motto = saved->motto;
+    std::string saved_motto = saved->motto();
     test::expect_contains(saved_motto, "Victory or Death");
-    std::println(std::cout, "    ✓ Database: motto = '{}'", saved->motto);
+    std::println(std::cout, "    ✓ Database: motto = '{}'", saved->motto());
   }
 
   // TEST 3: Set empty motto
@@ -71,7 +72,7 @@ void test_motto_database_persistence() {
 
     auto saved = blocks.find_by_id(1);
     test::expect_true(saved.has_value());
-    std::println(std::cout, "    ✓ Database: motto = '{}'", saved->motto);
+    std::println(std::cout, "    ✓ Database: motto = '{}'", saved->motto());
   }
 
   // TEST 4: Non-governor should be rejected

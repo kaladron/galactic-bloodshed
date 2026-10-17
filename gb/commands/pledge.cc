@@ -26,24 +26,24 @@ bool pledge(const command_t& argv, GameObj& g) {
   }
 
   try {
-    g.entity_manager.mutate_block(n, [&](auto& b) {
+    g.entity_manager.mutate_block(n, [&](Block& b) {
       b.pledge(Playernum);
       warn_race(g.session_registry, g.entity_manager, n,
                 std::format("{} [{}] has pledged {}.\n", g.race->name,
-                            Playernum, b.name));
+                            Playernum, b.name()));
       warn_race(g.session_registry, g.entity_manager, Playernum,
-                std::format("You have pledged allegiance to {}.\n", b.name));
+                std::format("You have pledged allegiance to {}.\n", b.name()));
 
       std::string msg;
       switch (int_rand(1, 20)) {
         case 1:
           msg = std::format("{} [{}] joins the band wagon and pledges "
                             "allegiance to {} [{}]!\n",
-                            g.race->name, Playernum, b.name, n);
+                            g.race->name, Playernum, b.name(), n);
           break;
         default:
           msg = std::format("{} [{}] pledges allegiance to {} [{}].\n",
-                            g.race->name, Playernum, b.name, n);
+                            g.race->name, Playernum, b.name(), n);
           break;
       }
 

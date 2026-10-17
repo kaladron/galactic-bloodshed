@@ -42,15 +42,15 @@ bool block(const command_t& argv, GameObj& g) {
         .player = p,
         .race_name = r->name,
     };
-    for (const auto& block_i : BlockList::readonly(g.entity_manager)) {
+    for (const Block& block_i : BlockList::readonly(g.entity_manager)) {
       if (block_i.is_member(p)) {
-        report.member_blocks.push_back(block_i.Playernum);
+        report.member_blocks.push_back(block_i.Playernum());
       }
       if (!block_i.is_pledged(p) && block_i.is_invited(p)) {
-        report.invited_blocks.push_back(block_i.Playernum);
+        report.invited_blocks.push_back(block_i.Playernum());
       }
       if (block_i.is_pledged(p) && !block_i.is_invited(p)) {
-        report.pledged_blocks.push_back(block_i.Playernum);
+        report.pledged_blocks.push_back(block_i.Playernum());
       }
     }
     vm.player_report = std::move(report);
@@ -60,7 +60,7 @@ bool block(const command_t& argv, GameObj& g) {
       g.out << "No such player,\n";
       return false;
     }
-    const struct block* block_p = nullptr;
+    const Block* block_p = nullptr;
     try {
       block_p = g.entity_manager.peek_block(p);
     } catch (const EntityNotFoundError&) {
@@ -69,8 +69,8 @@ bool block(const command_t& argv, GameObj& g) {
     }
 
     BlockDetailReport report{
-        .block_name = block_p->name,
-        .motto = block_p->motto,
+        .block_name = block_p->name(),
+        .motto = block_p->motto(),
     };
     for (const Race& r : RaceList::readonly(g.entity_manager)) {
       if (!block_p->is_member(r.Playernum) || r.dissolved) continue;
@@ -102,22 +102,22 @@ bool block(const command_t& argv, GameObj& g) {
     BlockListReport report{
         .update_time = format_timestamp(update_time),
     };
-    for (const auto& block_i : BlockList::readonly(g.entity_manager)) {
-      player_t i = block_i.Playernum;
-      if (block_i.members == 0) continue;
+    for (const Block& block_i : BlockList::readonly(g.entity_manager)) {
+      player_t i = block_i.Playernum();
+      if (block_i.members() == 0) continue;
 
       report.blocks.push_back(BlockSummaryRow{
           .player = i,
-          .name = block_i.name,
-          .members = block_i.members,
-          .money = race->estimate(block_i.money, i),
-          .popn = race->estimate(block_i.popn, i),
-          .ships = race->estimate(block_i.ships_owned, i),
-          .systems = race->estimate(block_i.systems_owned, i),
-          .resource = race->estimate(block_i.resource, i),
-          .fuel = race->estimate(block_i.fuel, i),
-          .destruct = race->estimate(block_i.destruct, i),
-          .vps = race->estimate(block_i.VPs, i),
+          .name = block_i.name(),
+          .members = block_i.members(),
+          .money = race->estimate(block_i.money(), i),
+          .popn = race->estimate(block_i.popn(), i),
+          .ships = race->estimate(block_i.ships_owned(), i),
+          .systems = race->estimate(block_i.systems_owned(), i),
+          .resource = race->estimate(block_i.resource(), i),
+          .fuel = race->estimate(block_i.fuel(), i),
+          .destruct = race->estimate(block_i.destruct(), i),
+          .vps = race->estimate(block_i.VPs(), i),
           .know = race->translation_for(i),
       });
     }

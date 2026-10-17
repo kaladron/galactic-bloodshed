@@ -46,8 +46,8 @@ struct meta<universe_struct> {
 };
 
 template <>
-struct meta<block> {
-  using T = block;
+struct meta<block_struct> {
+  using T = block_struct;
   static constexpr auto value = object(
       "Playernum", &T::Playernum, "name", &T::name, "motto", &T::motto,
       "invited", &T::invited, "pledged", &T::pledged, "members", &T::members,
@@ -107,20 +107,20 @@ CommodRepository::deserialize(const std::string& json_str) const {
   return std::nullopt;
 }
 
-std::optional<std::string> BlockRepository::serialize(const block& b) const {
-  auto result = glz::write_json(b);
+std::optional<std::string> BlockRepository::serialize(const Block& b) const {
+  auto result = glz::write_json(b.get_struct());
   if (result.has_value()) {
     return result.value();
   }
   return std::nullopt;
 }
 
-std::optional<block>
+std::optional<Block>
 BlockRepository::deserialize(const std::string& json_str) const {
-  block b{};
-  auto result = glz::read_json(b, json_str);
+  block_struct data{};
+  auto result = glz::read_json(data, json_str);
   if (!result) {
-    return b;
+    return Block{data};
   }
   return std::nullopt;
 }

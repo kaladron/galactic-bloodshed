@@ -33,14 +33,13 @@ void setup_test_world(TestContext& ctx) {
     s.mark_inhabited_by(player_t{2});
   });
 
-  block b{};
-  b.Playernum = 1;
-  b.name = "Federation";
-  b.motto = "Peace";
-  b.invite(player_t{1});
-  b.invite(player_t{2});
-  b.pledge(player_t{1});
-  b.pledge(player_t{2});
+  Block b{{
+      .Playernum = 1,
+      .name = "Federation",
+      .motto = "Peace",
+      .invited = {player_t{1}, player_t{2}},
+      .pledged = {player_t{1}, player_t{2}},
+  }};
   JsonStore store(ctx.db);
   BlockRepository blocks(store);
   blocks.save(b);

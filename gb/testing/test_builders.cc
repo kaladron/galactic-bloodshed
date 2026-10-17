@@ -397,10 +397,7 @@ TestWorldBuilder::add_race(std::string_view name, double tech, bool guest,
   RaceRepository(store_).save(race);
   BlockRepository blocks(store_);
   if (!blocks.find_by_id(id)) {
-    block b{};
-    b.Playernum = id;
-    b.name = std::string(name);
-    blocks.save(b);
+    blocks.save(Block{{.Playernum = id, .name = std::string(name)}});
   }
   PowerRepository powers(store_);
   if (!powers.find_by_id(id)) {

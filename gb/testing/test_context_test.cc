@@ -617,8 +617,8 @@ void test_standard_universe_fixture() {
 
     const auto* blk = ctx.em.peek_block(pid);
     test::expect_true(blk != nullptr, "Auto-seeded block must exist");
-    test::expect_eq(blk->Playernum, pid);
-    test::expect_eq(blk->name, name);
+    test::expect_eq(blk->Playernum(), pid);
+    test::expect_eq(blk->name(), name);
 
     const auto* pwr = ctx.em.peek_power(pid);
     test::expect_true(pwr != nullptr, "Auto-seeded power must exist");

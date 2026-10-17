@@ -302,9 +302,7 @@ void test_name_block() {
   Race race{};
   race.Playernum = 1;
 
-  block bdata{};
-  bdata.Playernum = 1;
-  bdata.name = "Old Alliance";
+  Block bdata{{.Playernum = 1, .name = "Old Alliance"}};
 
   JsonStore store(ctx.db);
   RaceRepository races(store);
@@ -328,7 +326,7 @@ void test_name_block() {
     // Verify block name updated in database
     const auto* saved = ctx.em.peek_block(1);
     test::expect_ne(saved, nullptr);
-    test::expect_eq(saved->name, "United Federation");
+    test::expect_eq(saved->name(), "United Federation");
   }
 
   // TEST: Non-leader governor (governor 2) is rejected

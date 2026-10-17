@@ -53,7 +53,7 @@ void test_block_dispatch() {
   }});
 
   // Create blocks for each player using designated initializers
-  const block block1{
+  const Block block1{{
       .Playernum = 1,
       .name = "ZeroVPBlock",
       .motto = "We have no VPs yet",
@@ -64,10 +64,10 @@ void test_block_dispatch() {
       .ships_owned = 5,
       .VPs = 0,
       .money = 1000,
-  };
+  }};
 
   // Block 2: Has VPs and members, plus player 1 invited-only
-  const block block2{
+  const Block block2{{
       .Playernum = 2,
       .name = "HasVPsBlock",
       .motto = "We are winning",
@@ -79,10 +79,10 @@ void test_block_dispatch() {
       .systems_owned = 5,
       .VPs = 100,
       .money = 5000,
-  };
+  }};
 
   // Block 3: Has VPs but NO members, plus player 1 pledged-only
-  const block block3{
+  const Block block3{{
       .Playernum = 3,
       .name = "EmptyBlock",
       .motto = "Nobody home",
@@ -91,7 +91,7 @@ void test_block_dispatch() {
       .systems_owned = 1,
       .VPs = 50,
       .money = 500,
-  };
+  }};
 
   BlockRepository blocks(store);
   blocks.save(block1);

@@ -195,7 +195,7 @@ void test_enroll_first_race_god_success() {
   // Verify Block and Power entities created on race enrollment
   const auto* blk = em.peek_block(1);
   test::expect_true(blk != nullptr);
-  test::expect_eq(blk->name, std::string("Terrans"));
+  test::expect_eq(blk->name(), std::string("Terrans"));
   const auto* pwr = em.peek_power(1);
   test::expect_true(pwr != nullptr);
 

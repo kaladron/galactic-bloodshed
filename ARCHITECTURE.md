@@ -78,7 +78,7 @@ Galactic Bloodshed uses **C++26 modules** to enforce architectural boundaries. S
 ### Core Subsystem Modules (7-Tier Module DAG)
 
 - **Tier 1: `gb.entities`** (Domain Model) - `gb/entities/entities.cppm` (`gb_entities` target)
-  - Pure in-memory domain entities (`Race`, `Star`, `Planet`, `Ship`, `Sector`, `SectorMap`, `Universe`, `Commod`, `Power`) with zero database, Glaze, or service dependencies
+  - Pure in-memory domain entities (`Race`, `Star`, `Planet`, `Ship`, `Sector`, `SectorMap`, `Universe`, `Commod`, `Power`, `Block`) with zero database, Glaze, or service dependencies
   - Polymorphic specialized ship hierarchy (`gb/entities/ship/`) with compile-time checked downcasting via `Ship::as<T>()`, `ShipFactory` deserialization, and encapsulated typed members (eliminating raw variant unpacking):
     - Base: `Ship` (`ship_base.cppm`)
     - Autonomous / Replicating: `AutonomousShip` $\to$ (`VonNeumannShip`, `BerserkerShip`) (`ship_subclasses.cppm`)

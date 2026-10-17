@@ -95,10 +95,11 @@ void test_do_turn_segment_vs_update() {
   race.tech = 10.0;
   race.turn = 1;
   em.create_race(race);
-  em.mutate_block(1, [](block& b) {
+  em.mutate_block(1, [](Block& b) {
     b.invite(1);
     b.pledge(1);
-    b.systems_owned = 99;  // Should be reset to 0 and recounted to 1 on update
+    b.systems_owned() =
+        99;  // Should be reset to 0 and recounted to 1 on update
   });
 
   Star star = createTestStar(1);
@@ -147,9 +148,9 @@ void test_do_turn_segment_vs_update() {
   // converted to 10 VPs, and aggregated current-turn power stats
   const auto* block_after_update = em.peek_block(1);
   test::expect_ne(block_after_update, nullptr);
-  test::expect_eq(block_after_update->systems_owned, 1U);
-  test::expect_eq(block_after_update->VPs, 10U);
-  test::expect_gt(block_after_update->popn, 0U);
+  test::expect_eq(block_after_update->systems_owned(), 1U);
+  test::expect_eq(block_after_update->VPs(), 10U);
+  test::expect_gt(block_after_update->popn(), 0U);
 }
 
 void test_do_turn_market_and_maintenance() {
@@ -1135,7 +1136,7 @@ void test_sync_power_ratings() {
   stats.mutable_power_stats(player_t{1}).planets_owned = 1;
 
   ctx.em.mutate_race(player_t{1}, [](Race& r) { r.leader().money = 12'345; });
-  ctx.em.mutate_block(1, [](block& b) {
+  ctx.em.mutate_block(1, [](Block& b) {
     b.invite(1);
     b.pledge(1);
   });
@@ -1155,9 +1156,9 @@ void test_sync_power_ratings() {
   // data)
   const auto* blk = ctx.em.peek_block(1);
   test::expect_ne(blk, nullptr);
-  test::expect_eq(blk->members, 1U);
-  test::expect_eq(blk->popn, 5000U);
-  test::expect_eq(blk->money, 12'345U);
+  test::expect_eq(blk->members(), 1U);
+  test::expect_eq(blk->popn(), 5000U);
+  test::expect_eq(blk->money(), 12'345U);
 }
 
 void test_finalize_turn_update_integration() {
@@ -1271,7 +1272,7 @@ void test_end_to_end_multi_turn_game_lifecycle() {
   }
 
   // 3. Form an alliance block on Block 1 with Players 1 and 2
-  em.mutate_block(1, [](block& b) {
+  em.mutate_block(1, [](Block& b) {
     b.invite(1);
     b.pledge(1);
     b.invite(2);
@@ -1343,10 +1344,10 @@ void test_end_to_end_multi_turn_game_lifecycle() {
     test::expect_gt(em.peek_power(pid)->popn(), 0U);
   }
   const auto* blk1 = em.peek_block(1);
-  test::expect_eq(blk1->members, 2U);
-  test::expect_eq(blk1->popn,
+  test::expect_eq(blk1->members(), 2U);
+  test::expect_eq(blk1->popn(),
                   em.peek_power(1)->popn() + em.peek_power(2)->popn());
-  test::expect_gt(blk1->VPs, 0U);
+  test::expect_gt(blk1->VPs(), 0U);
 
   // 7. Simulate mid-game combat ship destruction (destroying carrier and
   // Player 3's government ship) and verify FK scrubbing + Turn 2 update

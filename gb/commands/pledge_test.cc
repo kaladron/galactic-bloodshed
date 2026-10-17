@@ -34,9 +34,10 @@ void test_pledge_and_unpledge_dispatch() {
   races.save(race2);
 
   // Setup block for player 2
-  block block2{};
-  block2.Playernum = 2;
-  block2.name = "GalacticCoalition";
+  Block block2{{
+      .Playernum = 2,
+      .name = "GalacticCoalition",
+  }};
   BlockRepository blocks(store);
   blocks.save(block2);
 

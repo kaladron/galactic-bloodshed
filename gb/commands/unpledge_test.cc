@@ -32,13 +32,12 @@ void test_unpledge_dispatch() {
   ctx.em.create_race(race2);
 
   // Setup alliance block for player 2 with player 1 already pledged
-  block block2{};
-  block2.Playernum = 2;
-  block2.name = "LeaderBlock";
-  block2.invite(player_t{1});
-  block2.invite(player_t{2});
-  block2.pledge(player_t{1});
-  block2.pledge(player_t{2});
+  Block block2{{
+      .Playernum = 2,
+      .name = "LeaderBlock",
+      .invited = {player_t{1}, player_t{2}},
+      .pledged = {player_t{1}, player_t{2}},
+  }};
   BlockRepository blocks(store);
   blocks.save(block2);
 

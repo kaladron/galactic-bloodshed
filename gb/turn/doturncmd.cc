@@ -155,7 +155,7 @@ static void process_races(TurnState& state, bool update) {
     for (auto race_handle : RaceList(state.entity_manager)) {
       race_handle->reset_turn_accounting();
       state.entity_manager.mutate_block(
-          race_handle->Playernum, [](struct block& b) { b.systems_owned = 0; });
+          race_handle->Playernum, [](Block& b) { b.systems_owned() = 0; });
     }
   }
 }
@@ -351,7 +351,7 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
                 return block_player->is_member(occupant);
               })) {
             state.entity_manager.mutate_block(
-                player, [](struct block& b) { b.systems_owned++; });
+                player, [](Block& b) { b.systems_owned()++; });
           }
         }
       }
@@ -479,7 +479,7 @@ bool check_language_translation_unlock(player_t player, int controlled_planets,
 
 void update_alliance_block_vps(player_t player, EntityManager& entity_manager) {
   entity_manager.mutate_block(
-      player, [](struct block& b) { b.VPs = 10L * b.systems_owned; });
+      player, [](Block& b) { b.VPs() = 10L * b.systems_owned(); });
 }
 
 void sync_power_ratings(EntityManager& entity_manager, TurnStats& stats) {

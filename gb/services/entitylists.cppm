@@ -133,7 +133,7 @@ struct EntityListTraits<Commod> {
 };
 
 export template <>
-struct EntityListTraits<block> {
+struct EntityListTraits<Block> {
   using index_type = player_t;
 
   static index_type count(EntityManager& em) {
@@ -153,15 +153,15 @@ struct EntityListTraits<block> {
     return current;
   }
 
-  static EntityHandle<block> get(EntityManager& em, index_type index) {
+  static EntityHandle<Block> get(EntityManager& em, index_type index) {
     return em.get_block(index);
   }
 
-  static const block* peek(EntityManager& em, index_type index) {
+  static const Block* peek(EntityManager& em, index_type index) {
     return em.peek_block(index);
   }
 
-  static bool is_valid(const block* entity) {
+  static bool is_valid(const Block* entity) {
     return entity != nullptr;
   }
 };
@@ -667,12 +667,12 @@ public:
 
 /**
  * Iterator class for alliance blocks (1-indexed, 1..max_block_id).
- * Returns EntityHandle<block> for RAII auto-save behavior.
+ * Returns EntityHandle<Block> for RAII auto-save behavior.
  * Skips empty slots (sparse iteration).
  */
-export class BlockList : public SimpleEntityList<block, BlockList> {
+export class BlockList : public SimpleEntityList<Block, BlockList> {
 public:
-  using Base = SimpleEntityList<block, BlockList>;
+  using Base = SimpleEntityList<Block, BlockList>;
   using Iterator = typename Base::Iterator;
   using ConstIterator = typename Base::ConstIterator;
 

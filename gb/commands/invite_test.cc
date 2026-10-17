@@ -30,12 +30,13 @@ int main() {
   races.save(race2);
 
   // Create block for player 1
-  block b1{};
-  b1.Playernum = 1;
-  b1.name = "TheAlliance";
-  b1.motto = "United We Stand";
-  b1.money = 0;
-  b1.VPs = 0;
+  Block b1{{
+      .Playernum = 1,
+      .name = "TheAlliance",
+      .motto = "United We Stand",
+      .VPs = 0,
+      .money = 0,
+  }};
 
   BlockRepository blocks(store);
   blocks.save(b1);

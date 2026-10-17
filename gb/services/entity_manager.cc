@@ -195,13 +195,11 @@ EntityHandle<Race> EntityManager::create_race(const Race& race_data) {
   // Auto-seed baseline block if not existing (or update name if uncustomized)
   if (auto existing_block = storage_->blocks.find_by_id(player);
       !existing_block) {
-    block b{};
-    b.Playernum = player;
-    b.name = new_race.name;
-    storage_->blocks.save(b);
-  } else if (existing_block->motto.empty() && existing_block->invited.empty() &&
-             existing_block->pledged.empty()) {
-    existing_block->name = new_race.name;
+    storage_->blocks.save(Block{{.Playernum = player, .name = new_race.name}});
+  } else if (existing_block->motto().empty() &&
+             existing_block->invited().empty() &&
+             existing_block->pledged().empty()) {
+    existing_block->name() = new_race.name;
     storage_->blocks.save(*existing_block);
   }
 
@@ -499,11 +497,11 @@ void EntityManager::release_commod(int id) {
 }
 
 // Block entity methods
-EntityHandle<block> EntityManager::get_block(player_t id) {
-  auto handle = get_entity_impl<block>(
+EntityHandle<Block> EntityManager::get_block(player_t id) {
+  auto handle = get_entity_impl<Block>(
       this, id, block_cache, block_refcount,
       [this](player_t i) { return storage_->blocks.find_by_id(i); },
-      [this](const block& b) { storage_->blocks.save(b); },
+      [this](const Block& b) { storage_->blocks.save(b); },
       [this](player_t i) { release_block(i); });
   if (!handle.get()) {
     throw EntityNotFoundError(std::format("Block not found: id={}", id));
@@ -511,8 +509,8 @@ EntityHandle<block> EntityManager::get_block(player_t id) {
   return handle;
 }
 
-const block* EntityManager::peek_block(player_t id) {
-  const auto* b = peek_entity_impl<block>(id, block_cache, [this](player_t i) {
+const Block* EntityManager::peek_block(player_t id) {
+  const auto* b = peek_entity_impl<Block>(id, block_cache, [this](player_t i) {
     return storage_->blocks.find_by_id(i);
   });
   if (!b) {
@@ -522,7 +520,7 @@ const block* EntityManager::peek_block(player_t id) {
 }
 
 void EntityManager::release_block(player_t id) {
-  release_entity_impl<block>(id, block_cache, block_refcount);
+  release_entity_impl<Block>(id, block_cache, block_refcount);
 }
 
 // Power entity methods
@@ -890,8 +888,8 @@ void EntityManager::flush_all() {
       storage_->commods.save(c);
     }
   });
-  flush_cache_impl<block>(block_cache,
-                          [this](const block& b) { storage_->blocks.save(b); });
+  flush_cache_impl<Block>(block_cache,
+                          [this](const Block& b) { storage_->blocks.save(b); });
   flush_cache_impl<Power>(power_cache,
                           [this](const Power& p) { storage_->powers.save(p); });
   flush_cache_impl<ShipExam>(ship_exam_cache, [this](const ShipExam& e) {
@@ -934,7 +932,7 @@ void EntityManager::clear_cache() {
   clear_cache_impl<Star>(star_cache, star_refcount);
   clear_cache_impl<SectorMap>(sectormap_cache, sectormap_refcount);
   clear_cache_impl<Commod>(commod_cache, commod_refcount);
-  clear_cache_impl<block>(block_cache, block_refcount);
+  clear_cache_impl<Block>(block_cache, block_refcount);
   clear_cache_impl<Power>(power_cache, power_refcount);
   clear_cache_impl<ShipExam>(ship_exam_cache, ship_exam_refcount);
 

@@ -184,12 +184,8 @@ void test_initialize_block_data() {
     races.save(race2);
 
     BlockRepository blocks(store);
-    block b1{};
-    b1.Playernum = 1;
-    blocks.save(b1);
-    block b2{};
-    b2.Playernum = 2;
-    blocks.save(b2);
+    blocks.save(Block{{.Playernum = 1}});
+    blocks.save(Block{{.Playernum = 2}});
   }
 
   initialize_block_data(ctx.em);

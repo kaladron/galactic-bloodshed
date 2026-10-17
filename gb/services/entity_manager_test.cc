@@ -705,32 +705,33 @@ void test_entity_manager_blocks() {
   JsonStore store(db);
   BlockRepository repo(store);
 
-  block b{};
-  b.Playernum = 1;
-  b.name = "Test Alliance";
-  b.VPs = 500;
+  Block b{{
+      .Playernum = 1,
+      .name = "Test Alliance",
+      .VPs = 500,
+  }};
   repo.save(b);
 
   const auto* peek = em.peek_block(1);
   test::expect_ne(peek, nullptr);
-  test::expect_eq(peek->name, "Test Alliance");
-  test::expect_eq(peek->VPs, 500);
+  test::expect_eq(peek->name(), "Test Alliance");
+  test::expect_eq(peek->VPs(), 500);
   std::println(std::cout, "  ✓ peek_block works");
 
-  auto vps_read = em.with_block(1, [](const block& blk) { return blk.VPs; });
+  auto vps_read = em.with_block(1, [](const Block& blk) { return blk.VPs(); });
   test::expect_eq(vps_read, 500);
   std::println(std::cout, "  ✓ with_block works");
 
-  em.mutate_block(1, [](block& blk) { blk.VPs = 1000; });
+  em.mutate_block(1, [](Block& blk) { blk.VPs() = 1000; });
 
   auto updated = repo.find_by_id(1);
   test::expect_true(updated.has_value());
-  test::expect_eq(updated->VPs, 1000);
+  test::expect_eq(updated->VPs(), 1000);
   std::println(std::cout, "  ✓ mutate_block auto-save persisted changes");
 
   test::expect_throws<EntityNotFoundError>([&]() { em.peek_block(999); });
   test::expect_throws<EntityNotFoundError>(
-      [&]() { em.mutate_block(999, [](block&) {}); });
+      [&]() { em.mutate_block(999, [](Block&) {}); });
   std::println(std::cout,
                "  ✓ peek_block and mutate_block throw EntityNotFoundError for "
                "missing block");
@@ -1152,8 +1153,8 @@ void test_entity_manager_create_race() {
     test::expect_ne(r, nullptr);
     const auto* b = ctx.em.peek_block(pid);
     test::expect_ne(b, nullptr);
-    test::expect_eq(b->Playernum, pid);
-    test::expect_eq(b->name, r->name);
+    test::expect_eq(b->Playernum(), pid);
+    test::expect_eq(b->name(), r->name);
     const auto* p = ctx.em.peek_power(pid);
     test::expect_ne(p, nullptr);
     test::expect_eq(p->id(), pid);
@@ -1175,8 +1176,8 @@ void test_entity_manager_create_race() {
   // Auto-seeded block and power checks in cache
   const auto* created_block = ctx.em.peek_block(p5);
   test::expect_ne(created_block, nullptr);
-  test::expect_eq(created_block->Playernum, p5);
-  test::expect_eq(created_block->name, "Martians");
+  test::expect_eq(created_block->Playernum(), p5);
+  test::expect_eq(created_block->name(), "Martians");
 
   const auto* created_power = ctx.em.peek_power(p5);
   test::expect_ne(created_power, nullptr);
@@ -1191,8 +1192,8 @@ void test_entity_manager_create_race() {
 
   const auto* persisted_block = ctx.em.peek_block(p5);
   test::expect_ne(persisted_block, nullptr);
-  test::expect_eq(persisted_block->Playernum, p5);
-  test::expect_eq(persisted_block->name, "Martians");
+  test::expect_eq(persisted_block->Playernum(), p5);
+  test::expect_eq(persisted_block->name(), "Martians");
 
   const auto* persisted_power = ctx.em.peek_power(p5);
   test::expect_ne(persisted_power, nullptr);

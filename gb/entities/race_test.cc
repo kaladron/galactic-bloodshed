@@ -60,9 +60,7 @@ int main() {
   // block invitation and pledge methods
   std::println(std::cout, "block invitation and pledge methods...");
   {
-    block b{};
-    b.Playernum = 1;
-    b.name = "Federation";
+    Block b{{.Playernum = 1, .name = "Federation"}};
 
     test::expect_false(b.is_invited(player_t{2}));
     test::expect_false(b.is_pledged(player_t{2}));

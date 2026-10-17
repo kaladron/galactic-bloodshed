@@ -53,7 +53,7 @@ bool page(const command_t& argv, GameObj& g) {
                   g.race->name, g.current_governor().name, star.get_name());
 
   if (to_block) {
-    const struct block* block_player = nullptr;
+    const Block* block_player = nullptr;
     try {
       block_player = g.entity_manager.peek_block(Playernum);
     } catch (const EntityNotFoundError&) {

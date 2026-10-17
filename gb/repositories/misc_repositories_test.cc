@@ -92,39 +92,41 @@ void test_block_repository() {
   BlockRepository repo(store);
 
   // Test data
-  block b1{};
-  b1.Playernum = 1;
-  b1.name = "Alliance Alpha";
-  b1.motto = "United we stand";
-  b1.invited = {player_t{1}};
-  b1.pledged = {player_t{1}};
-  b1.systems_owned = 10;
-  b1.VPs = 1000;
-  b1.money = 5000;
+  Block b1{{
+      .Playernum = 1,
+      .name = "Alliance Alpha",
+      .motto = "United we stand",
+      .invited = {player_t{1}},
+      .pledged = {player_t{1}},
+      .systems_owned = 10,
+      .VPs = 1000,
+      .money = 5000,
+  }};
 
   // Save and retrieve
   test::expect_true(repo.save(b1));
   auto retrieved = repo.find_by_id(1);
   test::expect_true(retrieved.has_value());
-  test::expect_eq(retrieved->Playernum, 1);
-  test::expect_eq(retrieved->name, "Alliance Alpha");
-  test::expect_eq(retrieved->systems_owned, 10);
-  test::expect_eq(retrieved->VPs, 1000);
+  test::expect_eq(retrieved->Playernum(), 1);
+  test::expect_eq(retrieved->name(), "Alliance Alpha");
+  test::expect_eq(retrieved->systems_owned(), 10);
+  test::expect_eq(retrieved->VPs(), 1000);
 
   // Update
-  b1.VPs = 2000;
-  b1.money = 10000;
+  b1.VPs() = 2000;
+  b1.money() = 10000;
   test::expect_true(repo.save(b1));
   retrieved = repo.find_by_id(1);
   test::expect_true(retrieved.has_value());
-  test::expect_eq(retrieved->VPs, 2000);
-  test::expect_eq(retrieved->money, 10000);
+  test::expect_eq(retrieved->VPs(), 2000);
+  test::expect_eq(retrieved->money(), 10000);
 
   // Multiple blocks
-  block b2{};
-  b2.Playernum = 3;
-  b2.name = "Beta Coalition";
-  b2.VPs = 500;
+  Block b2{{
+      .Playernum = 3,
+      .name = "Beta Coalition",
+      .VPs = 500,
+  }};
   test::expect_true(repo.save(b2));
   test::expect_true(repo.find_by_id(1).has_value());
   test::expect_true(repo.find_by_id(3).has_value());

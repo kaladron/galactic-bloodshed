@@ -29,30 +29,30 @@ void Race::make_peace_with(player_t p) noexcept {
   atwar.erase(p);
 }
 
-bool block::is_member(player_t p) const noexcept {
+bool Block::is_member(player_t p) const noexcept {
   return is_pledged(p) && is_invited(p);
 }
 
-bool block::is_invited(player_t p) const noexcept {
-  return invited.contains(p);
+bool Block::is_invited(player_t p) const noexcept {
+  return data_.invited.contains(p);
 }
 
-void block::invite(player_t p) noexcept {
-  invited.insert(p);
+void Block::invite(player_t p) noexcept {
+  data_.invited.insert(p);
 }
 
-void block::uninvite(player_t p) noexcept {
-  invited.erase(p);
+void Block::uninvite(player_t p) noexcept {
+  data_.invited.erase(p);
 }
 
-bool block::is_pledged(player_t p) const noexcept {
-  return pledged.contains(p);
+bool Block::is_pledged(player_t p) const noexcept {
+  return data_.pledged.contains(p);
 }
 
-void block::pledge(player_t p) noexcept {
-  pledged.insert(p);
+void Block::pledge(player_t p) noexcept {
+  data_.pledged.insert(p);
 }
 
-void block::unpledge(player_t p) noexcept {
-  pledged.erase(p);
+void Block::unpledge(player_t p) noexcept {
+  data_.pledged.erase(p);
 }

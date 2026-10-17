@@ -247,23 +247,23 @@ protected:
 // ============================================================================
 // BlockRepository - Repository for alliance block data
 // ============================================================================
-export class BlockRepository : public Repository<block> {
+export class BlockRepository : public Repository<Block> {
 public:
   explicit BlockRepository(JsonStore& store)
-      : Repository<block>(store, "tbl_block") {}
+      : Repository<Block>(store, "tbl_block") {}
 
   // Domain-specific methods
-  std::optional<block> find_by_id(player_t id) {
+  std::optional<Block> find_by_id(player_t id) {
     return find(id);
   }
-  bool save(const block& b) {
-    return Repository<block>::save(b.Playernum, b);
+  bool save(const Block& b) {
+    return Repository<Block>::save(b.Playernum(), b);
   }
 
 protected:
   [[nodiscard]] std::optional<std::string>
-  serialize(const block& b) const override;
-  [[nodiscard]] std::optional<block>
+  serialize(const Block& b) const override;
+  [[nodiscard]] std::optional<Block>
   deserialize(const std::string& json_str) const override;
 };
 

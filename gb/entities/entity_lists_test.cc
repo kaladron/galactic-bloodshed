@@ -473,23 +473,25 @@ void test_sparse_entity_lists() {
 void test_block_list(EntityManager& em, JsonStore& store) {
   BlockRepository repo(store);
   {
-    block b1{};
-    b1.Playernum = player_t{1};
-    b1.name = "Federation";
-    b1.VPs = 100;
+    Block b1{{
+        .Playernum = player_t{1},
+        .name = "Federation",
+        .VPs = 100,
+    }};
     repo.save(b1);
 
-    block b3{};
-    b3.Playernum = player_t{3};
-    b3.name = "Empire";
-    b3.VPs = 250;
+    Block b3{{
+        .Playernum = player_t{3},
+        .name = "Empire",
+        .VPs = 250,
+    }};
     repo.save(b3);
   }
 
   // Readonly iteration (sparse: blocks 1 and 3, skipping 2)
   std::vector<std::string> names;
-  for (const block& b : BlockList::readonly(em)) {
-    names.push_back(b.name);
+  for (const Block& b : BlockList::readonly(em)) {
+    names.push_back(b.name());
   }
   test::expect_eq(names.size(), 2);
   test::expect_eq(names[0], "Federation");
@@ -498,17 +500,17 @@ void test_block_list(EntityManager& em, JsonStore& store) {
 
   // Mutable iteration with auto-save
   for (auto block_handle : BlockList(em)) {
-    block_handle->VPs += 50;
+    block_handle->VPs() += 50;
   }
 
   em.clear_cache();
   const auto* b1_peek = em.peek_block(1);
   test::expect_true(b1_peek != nullptr);
-  test::expect_eq(b1_peek->VPs, 150);
+  test::expect_eq(b1_peek->VPs(), 150);
 
   const auto* b3_peek = em.peek_block(3);
   test::expect_true(b3_peek != nullptr);
-  test::expect_eq(b3_peek->VPs, 300);
+  test::expect_eq(b3_peek->VPs(), 300);
   std::println(std::cout, "  ✓ Mutable BlockList auto-save passed");
 }
 

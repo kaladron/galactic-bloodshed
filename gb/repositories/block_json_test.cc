@@ -19,9 +19,9 @@ int main() {
   // Initialize database tables - this will create the tbl_block table
   initialize_schema(db);
 
-  std::flat_map<player_t, block> test_blocks;
+  std::flat_map<player_t, block_struct> test_blocks;
   for (player_t p : all_players()) {
-    test_blocks[p] = block{.Playernum = p};
+    test_blocks[p] = block_struct{.Playernum = p};
   }
 
   // Initialize some test data for a few players
@@ -52,16 +52,16 @@ int main() {
     Race r{};
     r.Playernum = p;
     race_repo.save(r);
-    block_repo.save(test_blocks[p]);
+    block_repo.save(Block{test_blocks[p]});
   }
 
   // Now use EntityManager to retrieve and verify
   EntityManager em(db);
-  std::flat_map<player_t, block> retrieved_blocks;
+  std::flat_map<player_t, block_struct> retrieved_blocks;
   for (player_t p : all_players()) {
     const auto* block_ptr = em.peek_block(p);
     test::expect_ne(block_ptr, nullptr);  // Should exist now
-    retrieved_blocks[p] = *block_ptr;
+    retrieved_blocks[p] = block_ptr->get_struct();
   }
 
   // Verify key fields for first player

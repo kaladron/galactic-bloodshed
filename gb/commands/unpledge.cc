@@ -26,13 +26,13 @@ bool unpledge(const command_t& argv, GameObj& g) {
   }
 
   try {
-    g.entity_manager.mutate_block(n, [&](auto& b) {
+    g.entity_manager.mutate_block(n, [&](Block& b) {
       b.unpledge(Playernum);
       std::string quit_notification = std::format(
-          "{} [{}] has quit {} [{}].\n", g.race->name, Playernum, b.name, n);
+          "{} [{}] has quit {} [{}].\n", g.race->name, Playernum, b.name(), n);
       warn_race(g.session_registry, g.entity_manager, n, quit_notification);
       std::string player_notification =
-          std::format("You have quit {}\n", b.name);
+          std::format("You have quit {}\n", b.name());
       warn_race(g.session_registry, g.entity_manager, Playernum,
                 player_notification);
 
@@ -40,14 +40,14 @@ bool unpledge(const command_t& argv, GameObj& g) {
         case 1: {
           std::string taunt_postmsg =
               std::format("{} [{}] calls {} [{}] a bunch of geeks and QUITS!\n",
-                          g.race->name, Playernum, b.name, n);
+                          g.race->name, Playernum, b.name(), n);
           post(g.entity_manager, taunt_postmsg, NewsType::DECLARATION);
           break;
         }
         default: {
           std::string quit_postmsg =
               std::format("{} [{}] has QUIT {} [{}]!\n", g.race->name,
-                          Playernum, b.name, n);
+                          Playernum, b.name(), n);
           post(g.entity_manager, quit_postmsg, NewsType::DECLARATION);
           break;
         }

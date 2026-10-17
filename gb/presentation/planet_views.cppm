@@ -403,4 +403,49 @@ render_json_mobilize_set_result(const MobilizeSetResult& vm);
                                                   std::string_view ship_desc,
                                                   const EnslaveResult& vm);
 
+/// Result of transferring planetary stockpiles to another race (`transfer`).
+struct TransferResult {
+  std::string star_name{};
+  std::string planet_name{};
+  CommodType type{CommodType::RESOURCE};
+  resource_t amount{0};
+  player_t sender{0};
+  player_t recipient{0};
+};
+
+[[nodiscard]] std::string render_transfer_result(const TransferResult& vm);
+[[nodiscard]] std::string render_json_transfer_result(const TransferResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const TransferResult& vm);
+
+/// Result of financing a planetary insurgency (`insurgency <race> <money>`).
+struct InsurgencyResult {
+  std::string star_name{};
+  std::string planet_name{};
+  player_t instigator_id{0};
+  std::string instigator_name{};
+  player_t target_id{0};
+  std::string target_name{};
+  population_t instigator_system_pop{0};
+  population_t target_system_pop{0};
+  long instigator_morale{0};
+  long target_morale{0};
+  money_t money{0};
+  population_t target_planet_pop{0};
+  int target_tax_rate{0};
+  double raw_factor{0.0};
+  int success_chance{0};
+  bool succeeded{false};
+  int sectors_changed{0};
+};
+
+[[nodiscard]] std::string render_insurgency_result(const InsurgencyResult& vm);
+[[nodiscard]] std::string
+render_json_insurgency_result(const InsurgencyResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const InsurgencyResult& vm);
+[[nodiscard]] std::string
+render_insurgency_telegram(const InsurgencyResult& vm);
+[[nodiscard]] std::string render_insurgency_news(const InsurgencyResult& vm);
+
 }  // namespace GB::presentation

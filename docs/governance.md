@@ -179,33 +179,44 @@ $$\text{Effective Attack Strength} = \min(\text{Requested Strength}, \text{Avail
 
 ## 8. Covert Operations: Planetary Insurgency (`insurgency`)
 
-Governors can fund clandestine rebel movements to overthrow enemy colonies and incite planetary uprisings using the `insurgency` command (`insurgency <player> <planet> <amount>`, costing $1$ Star Action Point).
+Governors can fund clandestine rebel movements to overthrow enemy colonies and incite planetary uprisings using the `insurgency` command (`insurgency <race> <money>` at planet scope, costing $10$ Star Action Points).
 
 ```mermaid
 flowchart TD
     Fund["Fund Rebellion\n(Governor Deducts Treasury Amount)"] --> Check{"Prerequisites Met?\nTarget on Planet & Instigator in Star System"}
     Check -->|No| Reject["Operation Aborted\n(Treasury Untouched)"]
-    Check -->|Yes| Roll["Evaluate Success Probability\nTax Burden, Population Density & Morale Differential"]
+    Check -->|Yes| Roll["Evaluate Success Probability\nTax Burden, Population, Morale & Troop Differentials"]
     Roll --> Outcome{"Random Roll <= Success Chance"}
-    Outcome -->|Success| Win["Colony Liberated!\nTarget Sectors Transfer to Instigator\nInherit Target Tax Rate\nCombat News Dispatched"]
+    Outcome -->|Success| Win["Planetary Revolt Triggered!\nEligible Sectors Roll Against Garrison\nInherit Target Tax Rate\nDeclaration News Dispatched"]
     Outcome -->|Failure| Lose["Insurgency Suppressed\nFunds Forfeited\nTarget Retains Control"]
 ```
 
 ### Insurgency Mechanics and Probability
 To fund an insurgency:
-1. The target player must occupy sectors on the designated planet.
-2. The instigating player must maintain at least one colonized sector in the host star system.
-3. The instigating governor must have sufficient funds in their local star system treasury.
+1. The command must be executed at planet scope (`LEVEL_PLAN`) by the governor controlling the star system.
+2. The target player must occupy sectors on the designated planet ($\text{Pop}_{\text{target, planet}} > 0$).
+3. The instigating player must maintain civilian population in the host star system ($\text{Pop}_{\text{instigator, system}} > 0$).
+4. The instigating governor must spend a positive amount of money available in their treasury.
 
-The probability of sparking a successful planetary revolution is determined by:
+Each comparative modifier uses the arctangent morale normalization curve centered at $0.5$ (ranging over $(0.0, 1.0)$):
 
-$$P(\text{Success}) = \text{Amount} \times \left(\frac{\text{Target Tax Rate}}{\text{Target Population}}\right) \times \left(1.0 + \frac{\text{Target Morale} - \text{Instigator Morale}}{100.0}\right) \times \frac{1}{50.0}$$
+$$\text{morale\_factor}(\Delta) = \frac{\arctan(\Delta / 10000)}{\pi} + 0.5$$
 
-- **High Tax Vulnerability**: Oppressive planetary tax rates dramatically increase citizen unrest, making heavily taxed colonies vulnerable to low-cost insurgencies.
-- **Population Resistance**: Dense populations dilute rebel funding per capita, requiring larger financial backing to incite revolt.
-- **Morale Influence**: A demoralized target population is more susceptible to external agitation.
-- **Victory Outcomes**: Upon success, **all sectors owned by the target player on the planet are transferred to the instigator**, and the instigator inherits the target's active tax rate. A news bulletin is automatically posted to the galactic **Combat** desk.
-- **Failed Revolts**: If the revolt fails, the funds are forfeit and the colony remains under enemy control.
+Raw insurgency strength $x$ combines per-capita rebel funding with three `morale_factor` multipliers and is normalized by `INSURGENCY_ODDS_DIVISOR` ($50.0$):
+
+$$x = \left(\text{INSURG\_FACTOR} \times \frac{\text{Money} \times \text{Tax}_{\text{target}}}{\text{Pop}_{\text{target, planet}}}\right) \times \frac{M_{\text{morale}} \times M_{\text{pop}} \times M_{\text{troops}}}{50.0}$$
+
+where:
+- **Empire Morale Differential ($M_{\text{morale}}$)**: $\text{morale\_factor}(\text{Morale}_{\text{instigator}} - \text{Morale}_{\text{target}})$.
+- **System Population Differential ($M_{\text{pop}}$, `POPULATION_DIFF_SCALE = 50.0`)**: $\text{morale\_factor}\!\left(\frac{\text{Pop}_{\text{instigator, system}} - \text{Pop}_{\text{target, system}}}{50.0}\right)$, so a $500{,}000$-civilian advantage across the star system equals $+10{,}000$ morale ($\text{morale\_factor} = 0.75$).
+- **Planetary Troop Strength Differential ($M_{\text{troops}}$, `TROOP_STRENGTH_SCALE = 10.0`)**: $\text{morale\_factor}\!\left(10.0 \times (\text{Fighters}_{\text{instigator}} \cdot \text{Troops}_{\text{instigator}} - \text{Fighters}_{\text{target}} \cdot \text{Troops}_{\text{target}})\right)$, so a $1{,}000$-unit effective troop advantage on the planet equals $+10{,}000$ morale.
+
+Finally, `ATAN_TO_PERCENT_SCALE` ($200.0 / \pi$) maps $\arctan(x) \in [0, \pi/2)$ onto a percentage in $[0\%, 100\%)$:
+
+$$P(\text{Success}) = \text{round\_rand}\!\left(\frac{200.0 \cdot \arctan(x)}{\pi}\right)\%$$
+
+- **Victory Outcomes**: When the overall insurgency roll succeeds, each populated sector owned by the target player rolls individually for revolt (`Planet::revolt()`, see [Covert Operations](covert_ops.md)). Revolting sectors transfer to the instigator, the instigator inherits the target's active planetary tax rate, and a news bulletin is posted to the galactic **Declaration** desk.
+- **Failed Revolts**: If the revolt fails, the funds are forfeit, the colony remains under enemy control, and a failed-insurgency declaration is posted.
 
 ---
 

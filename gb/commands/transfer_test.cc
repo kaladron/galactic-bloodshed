@@ -152,31 +152,46 @@ int main() {
     std::println(std::cout, "✓ Destruct transferred");
   }
 
-  std::println(std::cout, "Transfer crystals");
+  std::println(std::cout, "Transfer crystals ('x' and '&' in JSON mode)");
   {
     const auto* p_before = ctx.em.peek_planet(1, 1);
     int p1_crystals_before = p_before->info(player_t{1}).crystals;
     int p2_crystals_before = p_before->info(player_t{2}).crystals;
 
     ctx.assert_dispatch_success(g, {"transfer", "Receiver", "x", "10"}, 1);
+    g.set_ui_mode(UiMode::JSON);
+    g.out.str("");
+    ctx.assert_dispatch_success(g, {"transfer", "Receiver", "&", "5"}, 1);
+    test::expect_contains(g.out.str(), "\"type\":\"transfer\"");
+    test::expect_contains(g.out.str(), "\"amount\":5");
+    g.set_ui_mode(UiMode::ASCII);
 
     ctx.em.clear_cache();
     const auto* p_after = ctx.em.peek_planet(1, 1);
     test::expect_eq(p_after->info(player_t{1}).crystals,
-                    p1_crystals_before - 10);
+                    p1_crystals_before - 15);
     test::expect_eq(p_after->info(player_t{2}).crystals,
-                    p2_crystals_before + 10);
+                    p2_crystals_before + 15);
     std::println(std::cout, "✓ Crystals transferred");
   }
 
-  std::println(std::cout, "Cannot transfer more than available");
+  std::println(std::cout,
+               "Cannot transfer more than available or invalid args");
   {
     const auto* p_before = ctx.em.peek_planet(1, 1);
     int p1_resource_before = p_before->info(player_t{1}).resource;
     int p2_resource_before = p_before->info(player_t{2}).resource;
 
-    // Try to transfer more resources than player has
     ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "r", "10000"});
+    ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "f", "10000"});
+    ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "d", "10000"});
+    ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "x", "10000"});
+    ctx.assert_dispatch_rejected(g, {"transfer", "NoSuchRace", "r", "10"});
+    ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "", "10"});
+    ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "z", "10"});
+    ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "r", "-10"});
+    ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "r", "0"});
+    ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "r", "abc"});
 
     // Should not have changed (command fails with error message)
     ctx.em.clear_cache();

@@ -760,4 +760,97 @@ std::string render_enslave_telegram(std::string_view star_name,
       vm.attack_strength);
 }
 
+std::string render_transfer_result(const TransferResult& vm) {
+  std::string_view label = "resources";
+  switch (vm.type) {
+    case CommodType::RESOURCE:
+      label = "resources";
+      break;
+    case CommodType::CRYSTAL:
+      label = "crystal(s)";
+      break;
+    case CommodType::FUEL:
+      label = "fuel";
+      break;
+    case CommodType::DESTRUCT:
+      label = "destruct";
+      break;
+  }
+  return std::format("{}/{}: {} {} transferred from player {} to player #{}\n",
+                     vm.star_name, vm.planet_name, vm.amount, label, vm.sender,
+                     vm.recipient);
+}
+
+std::string render_json_transfer_result(const TransferResult& vm) {
+  return render_json_envelope("transfer", vm);
+}
+
+std::string render_for_mode(UiMode mode, const TransferResult& vm) {
+  return mode == UiMode::JSON ? render_json_transfer_result(vm)
+                              : render_transfer_result(vm);
+}
+
+namespace {
+
+std::string format_insurgency_summary(const InsurgencyResult& vm) {
+  return std::format(
+      "{}/{}: {} [{}] tries insurgency vs {} [{}]\n\t{}: {} total civs [{}]  "
+      "opposing {} total civs [{}]\n\t\t {} morale [{}] vs {} morale "
+      "[{}]\n\t\t {} money against {} population at tax rate {}%\nSuccess "
+      "chance is {}%\n",
+      vm.star_name, vm.planet_name, vm.instigator_name, vm.instigator_id,
+      vm.target_name, vm.target_id, vm.star_name, vm.instigator_system_pop,
+      vm.instigator_id, vm.target_system_pop, vm.target_id,
+      vm.instigator_morale, vm.instigator_id, vm.target_morale, vm.target_id,
+      vm.money, vm.target_planet_pop, vm.target_tax_rate, vm.success_chance);
+}
+
+}  // namespace
+
+std::string render_insurgency_result(const InsurgencyResult& vm) {
+  std::string out =
+      std::format("x = {}\n{}", vm.raw_factor, format_insurgency_summary(vm));
+  if (vm.succeeded) {
+    std::format_to(std::back_inserter(out),
+                   "Success!  You liberate {} sector{}.\n", vm.sectors_changed,
+                   (vm.sectors_changed == 1) ? "" : "s");
+  } else {
+    out += "The insurgency failed!\n";
+  }
+  return out;
+}
+
+std::string render_json_insurgency_result(const InsurgencyResult& vm) {
+  return render_json_envelope("insurgency", vm);
+}
+
+std::string render_for_mode(UiMode mode, const InsurgencyResult& vm) {
+  return mode == UiMode::JSON ? render_json_insurgency_result(vm)
+                              : render_insurgency_result(vm);
+}
+
+std::string render_insurgency_telegram(const InsurgencyResult& vm) {
+  std::string out = format_insurgency_summary(vm);
+  if (vm.succeeded) {
+    std::format_to(
+        std::back_inserter(out),
+        "A revolt on /{}/{} instigated by {} [{}] costs you {} sector{}\n",
+        vm.star_name, vm.planet_name, vm.instigator_name, vm.instigator_id,
+        vm.sectors_changed, (vm.sectors_changed == 1) ? "" : "s");
+  } else {
+    std::format_to(std::back_inserter(out),
+                   "A revolt on /{}/{} instigated by {} [{}] fails\n",
+                   vm.star_name, vm.planet_name, vm.instigator_name,
+                   vm.instigator_id);
+  }
+  return out;
+}
+
+std::string render_insurgency_news(const InsurgencyResult& vm) {
+  return std::format("/{}/{}: {} insurgency by {} [{}] against {} [{}]\n",
+                     vm.star_name, vm.planet_name,
+                     vm.succeeded ? "Successful" : "Failed", vm.instigator_name,
+                     vm.instigator_id, vm.target_name, vm.target_id);
+}
+
 }  // namespace GB::presentation

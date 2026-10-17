@@ -203,18 +203,32 @@ void test_insurgency_domain_errors() {
   ctx.em.mutate_planet(1, 1,
                        [](Planet& p) { p.info(player_t{2}).popn = 1000; });
 
-  // 7. Negative money amount
+  // 7. Negative, zero, and non-numeric money amount
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"insurgency", "2", "-100"});
+  test::expect_contains(g.out.str(), "positive amount of money");
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"insurgency", "2", "0"});
+  test::expect_contains(g.out.str(), "positive amount of money");
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"insurgency", "2", "abc"});
   test::expect_contains(g.out.str(), "positive amount of money");
 
   // 8. Not enough money in treasury
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"insurgency", "2", "2000000"});
   test::expect_contains(g.out.str(), "Nice try");
+
+  // 9. UiMode::JSON verification
+  g.set_ui_mode(UiMode::JSON);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"insurgency", "2", "100"}, 10);
+  test::expect_contains(g.out.str(), "\"type\":\"insurgency\"");
+  test::expect_contains(g.out.str(), "\"money\":100");
+  g.set_ui_mode(UiMode::ASCII);
   std::println(std::cout, "    ✓ Domain error rejections verified");
 
-  // 9. Command matrix validation (roles, guests, governor, scopes)
+  // 10. Command matrix validation (roles, guests, governor, scopes)
   TestCommandMatrix(ctx, "insurgency")
       .with_valid_argv({"insurgency", "2", "100"})
       .with_invalid_argv({"insurgency", "99", "100"})

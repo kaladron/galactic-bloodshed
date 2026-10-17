@@ -6,10 +6,10 @@
 module;
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import scnlib;
 import std;
-#undef stdout
 
 module commands;
 
@@ -18,10 +18,11 @@ bool transfer(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
   char commod = 0;
 
-  std::string starplanet;
+  std::string star_name;
+  std::string planet_name;
   g.entity_manager.with_star(g.snum(), [&](const Star& star) {
-    starplanet =
-        std::format("{}/{}:", star.get_name(), star.get_planet_name(g.pnum()));
+    star_name = star.get_name();
+    planet_name = star.get_planet_name(g.pnum());
   });
 
   auto player = get_player(g.entity_manager, argv[1]);
@@ -36,10 +37,16 @@ bool transfer(const command_t& argv, GameObj& g) {
     return false;
   }
   commod = scan_result->value();
-  // TODO(jeffbailey): May throw an exception on a negative number.
-  resource_t give = std::stoul(argv[3]);
+
+  auto parsed_give = scn::scan<resource_t>(argv[3], "{}");
+  if (!parsed_give || parsed_give->value() <= 0) {
+    g.out << "You must give a positive amount.\n";
+    return false;
+  }
+  resource_t give = parsed_give->value();
 
   bool ok = false;
+  CommodType type = CommodType::RESOURCE;
   g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
     switch (commod) {
       case 'r': {
@@ -49,11 +56,7 @@ bool transfer(const command_t& argv, GameObj& g) {
         }
         planet.info(Playernum).resource -= give;
         planet.info(player).resource += give;
-        std::string message = std::format(
-            "{} {} resources transferred from player {} to player #{}\n",
-            starplanet, give, Playernum, player);
-        g.out << message;
-        warn_race(g.session_registry, g.entity_manager, player, message);
+        type = CommodType::RESOURCE;
       } break;
       case 'x':
       case '&': {
@@ -63,11 +66,7 @@ bool transfer(const command_t& argv, GameObj& g) {
         }
         planet.info(Playernum).crystals -= give;
         planet.info(player).crystals += give;
-        std::string message = std::format(
-            "{} {} crystal(s) transferred from player {} to player #{}\n",
-            starplanet, give, Playernum, player);
-        g.out << message;
-        warn_race(g.session_registry, g.entity_manager, player, message);
+        type = CommodType::CRYSTAL;
       } break;
       case 'f': {
         if (give > planet.info(Playernum).fuel) {
@@ -77,11 +76,7 @@ bool transfer(const command_t& argv, GameObj& g) {
         }
         planet.info(Playernum).fuel -= give;
         planet.info(player).fuel += give;
-        std::string message =
-            std::format("{} {} fuel transferred from player {} to player #{}\n",
-                        starplanet, give, Playernum, player);
-        g.out << message;
-        warn_race(g.session_registry, g.entity_manager, player, message);
+        type = CommodType::FUEL;
       } break;
       case 'd': {
         if (give > planet.info(Playernum).destruct) {
@@ -91,11 +86,7 @@ bool transfer(const command_t& argv, GameObj& g) {
         }
         planet.info(Playernum).destruct -= give;
         planet.info(player).destruct += give;
-        std::string message = std::format(
-            "{} {} destruct transferred from player {} to player #{}\n",
-            starplanet, give, Playernum, player);
-        g.out << message;
-        warn_race(g.session_registry, g.entity_manager, player, message);
+        type = CommodType::DESTRUCT;
       } break;
       default:
         g.out << "What?\n";
@@ -103,6 +94,20 @@ bool transfer(const command_t& argv, GameObj& g) {
     }
     ok = true;
   });
+
+  if (ok) {
+    const presentation::TransferResult result{
+        .star_name = star_name,
+        .planet_name = planet_name,
+        .type = type,
+        .amount = give,
+        .sender = Playernum,
+        .recipient = player,
+    };
+    g.present(result);
+    warn_race(g.session_registry, g.entity_manager, player,
+              presentation::render_transfer_result(result));
+  }
 
   return ok;
 }

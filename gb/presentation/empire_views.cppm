@@ -647,4 +647,73 @@ render_pay_recipient_telegram(std::string_view payer_name, player_t payer_id,
                                           std::string_view recipient_name,
                                           player_t recipient_id);
 
+/// Single active governor row in a `governors` table.
+struct GovernorRow {
+  governor_t governor{0};
+  std::string name{};
+  money_t money{0};
+  std::string last_login{};
+  std::optional<std::string> password{std::nullopt};
+};
+
+/// View model for `governors` command table.
+struct GovernorsViewModel {
+  bool is_leader{false};
+  std::vector<GovernorRow> rows{};
+};
+
+[[nodiscard]] std::string render_governors(const GovernorsViewModel& vm);
+[[nodiscard]] std::string render_json_governors(const GovernorsViewModel& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const GovernorsViewModel& vm);
+
+/// Result of changing a governor's password (`governors <gov> password <pw>`).
+struct GovernorPasswordChangedResult {
+  governor_t governor{0};
+};
+
+[[nodiscard]] std::string render_governor_password_changed_result(
+    const GovernorPasswordChangedResult& vm);
+[[nodiscard]] std::string render_json_governor_password_changed_result(
+    const GovernorPasswordChangedResult& vm);
+[[nodiscard]] std::string
+render_for_mode(UiMode mode, const GovernorPasswordChangedResult& vm);
+
+/// Result of appointing a governor (`appoint [<gov>] <password>`).
+struct GovernorAppointedResult {
+  governor_t governor{0};
+  bool auto_assigned{false};
+};
+
+[[nodiscard]] std::string
+render_governor_appointed_result(const GovernorAppointedResult& vm);
+[[nodiscard]] std::string
+render_json_governor_appointed_result(const GovernorAppointedResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const GovernorAppointedResult& vm);
+
+/// Result of revoking a governor (`revoke <gov> <password> [<target>]`).
+struct GovernorRevokedResult {
+  governor_t revoked_governor{0};
+  governor_t target_governor{0};
+  money_t money_transferred{0};
+};
+
+[[nodiscard]] std::string
+render_governor_revoked_result(const GovernorRevokedResult& vm);
+[[nodiscard]] std::string
+render_json_governor_revoked_result(const GovernorRevokedResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const GovernorRevokedResult& vm);
+[[nodiscard]] std::string render_revoke_header_telegram(player_t player,
+                                                        governor_t src_gov,
+                                                        governor_t tgt_gov);
+[[nodiscard]] std::string
+render_revoke_star_telegram(std::string_view star_name);
+[[nodiscard]] std::string render_revoke_ship_telegram(char ship_type_letter,
+                                                      shipnum_t ship_number);
+[[nodiscard]] std::string render_revoke_money_telegram(money_t transferred);
+[[nodiscard]] std::string render_revoke_footer_telegram(player_t player,
+                                                        governor_t src_gov);
+
 }  // namespace GB::presentation

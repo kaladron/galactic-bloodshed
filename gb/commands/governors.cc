@@ -6,57 +6,53 @@
 module;
 
 import gb.entities;
+import gb.presentation.empire_views;
 import gb.services;
+import scnlib;
 import std;
-import tabulate;
 
 module commands;
 
 namespace {
-void do_revoke(Race& race, const governor_t src_gov, const governor_t tgt_gov,
-               EntityManager& entity_manager) {
-  std::string outmsg =
-      std::format("*** Transferring [{0},{1}]'s ownings to [{2},{3}] ***\n\n",
-                  race.Playernum, src_gov, race.Playernum, tgt_gov);
-  push_telegram(entity_manager, race.Playernum, Race::leader_id, outmsg);
+money_t do_revoke(Race& race, const governor_t src_gov,
+                  const governor_t tgt_gov, EntityManager& entity_manager) {
+  push_telegram(entity_manager, race.Playernum, Race::leader_id,
+                GB::presentation::render_revoke_header_telegram(
+                    race.Playernum, src_gov, tgt_gov));
 
-  /*  First do stars....  */
   for (auto star_handle : StarList(entity_manager)) {
     auto& star = *star_handle;
     if (star.governor(race.Playernum) == src_gov) {
       star.set_governor(race.Playernum, tgt_gov);
-      outmsg = std::format("Changed juridiction of /{0}...\n", star.get_name());
-      push_telegram(entity_manager, race.Playernum, Race::leader_id, outmsg);
+      push_telegram(
+          entity_manager, race.Playernum, Race::leader_id,
+          GB::presentation::render_revoke_star_telegram(star.get_name()));
     }
   }
 
-  /*  Now do ships....  */
-  auto num_ships = entity_manager.num_ships();
-  for (shipnum_t i = 1; i <= num_ships; i++) {
-    entity_manager.mutate_ship(i, [&](Ship& ship) {
-      if (ship.alive() && (ship.owner() == race.Playernum) &&
-          (ship.governor() == src_gov)) {
-        ship.governor() = tgt_gov;
-        outmsg = std::format("Changed ownership of {0}{1}...\n",
-                             ship.type_letter(), i);
-        push_telegram(entity_manager, race.Playernum, Race::leader_id, outmsg);
-      }
-    });
+  for (auto ship_handle :
+       ShipList(entity_manager, ShipList::IterationType::AllAlive)) {
+    const auto& ship_ro = ship_handle.peek();
+    if (ship_ro.owner() == race.Playernum && ship_ro.governor() == src_gov) {
+      auto& ship = *ship_handle;
+      ship.governor() = tgt_gov;
+      push_telegram(entity_manager, race.Playernum, Race::leader_id,
+                    GB::presentation::render_revoke_ship_telegram(
+                        ship.type_letter(), ship.number()));
+    }
   }
 
-  /*  Transfer commodity market lots and bids....  */
   for (auto commod_handle : CommodList(entity_manager)) {
     commod_handle->transfer_governor(race.Playernum, src_gov, tgt_gov);
   }
 
-  /*  And money too....  */
   const money_t transferred = race.revoke_governor(src_gov, tgt_gov);
-  outmsg = std::format("Transferring {0} money...\n", transferred);
-  push_telegram(entity_manager, race.Playernum, Race::leader_id, outmsg);
-  outmsg =
-      std::format("\n*** Governor [{0},{1}]'s powers have been REVOKED ***\n",
-                  race.Playernum, src_gov);
-  push_telegram(entity_manager, race.Playernum, Race::leader_id, outmsg);
+  push_telegram(entity_manager, race.Playernum, Race::leader_id,
+                GB::presentation::render_revoke_money_telegram(transferred));
+  push_telegram(
+      entity_manager, race.Playernum, Race::leader_id,
+      GB::presentation::render_revoke_footer_telegram(race.Playernum, src_gov));
+  return transferred;
 }
 }  // namespace
 
@@ -68,18 +64,12 @@ bool governors(const command_t& argv, GameObj& g) {
 
   if (argv[0] == "governors") {
     if (argv.size() >= 4 && argv[2] == "password") {
-      int raw_gov = 0;
-      try {
-        raw_gov = std::stoi(argv[1]);
-      } catch (...) {
+      const auto parsed_gov = scn::scan<governor_t::value_type>(argv[1], "{}");
+      if (!parsed_gov || parsed_gov->value() < 1) {
         g.out << "No such governor.\n";
         return false;
       }
-      if (raw_gov < 1) {
-        g.out << "No such governor.\n";
-        return false;
-      }
-      governor_t gov{static_cast<governor_t::value_type>(raw_gov)};
+      const governor_t gov{parsed_gov->value()};
       if (!g.is_leader() && Governor != gov) {
         g.out << "You can only change your own password.\n";
         return false;
@@ -95,47 +85,34 @@ bool governors(const command_t& argv, GameObj& g) {
           return;
         }
         race.governor(gov).password = argv[3];
-        g.out << "Password changed.\n";
         success = true;
       });
+      if (success) {
+        g.present(
+            GB::presentation::GovernorPasswordChangedResult{.governor = gov});
+      }
       return success;
     }
 
-    // Default: render governors table
+    GB::presentation::GovernorsViewModel vm{.is_leader = g.is_leader()};
     g.entity_manager.with_race(Playernum, [&](const Race& race) {
-      tabulate::Table table;
-      table.format().hide_border().column_separator("  ");
-
-      // Configure columns - password at end, only shown to leader
-      table.column(0).format().width(2).font_align(tabulate::FontAlign::right);
-      table.column(1).format().width(15);
-      table.column(2).format().width(10).font_align(tabulate::FontAlign::right);
-      table.column(3).format().width(24);
-      if (g.is_leader()) {
-        table.column(4).format().width(10);
-        table.add_row({"#", "Name", "Money", "Last Login", "Password"});
-      } else {
-        table.add_row({"#", "Name", "Money", "Last Login"});
-      }
-      table[0].format().font_style({tabulate::FontStyle::bold});
-
       for (auto [i, g_entry] : race.active_governors()) {
         std::string login_time = std::ctime(&g_entry.login);
-        // Remove trailing newline from ctime
         if (!login_time.empty() && login_time.back() == '\n') {
           login_time.pop_back();
         }
-
-        std::vector<std::string> row = {
-            std::format("{}", i.value), std::string(g_entry.name),
-            std::format("{}", g_entry.money), login_time};
-        if (g.is_leader()) {
-          row.emplace_back(g_entry.password);
-        }
-        table.add_row(tabulate::Table::Row_t(row.begin(), row.end()));
+        vm.rows.push_back(GB::presentation::GovernorRow{
+            .governor = i,
+            .name = std::string(g_entry.name),
+            .money = g_entry.money,
+            .last_login = std::move(login_time),
+            .password = g.is_leader()
+                            ? std::optional<std::string>{g_entry.password}
+                            : std::nullopt,
+        });
       }
-      g.out << table << "\n";
     });
+    g.present(vm);
     return true;
   }
 
@@ -149,36 +126,38 @@ bool governors(const command_t& argv, GameObj& g) {
       return false;
     }
     if (argv.size() == 2) {
+      governor_t gov{0};
       g.entity_manager.mutate_race(Playernum, [&](Race& race) {
-        const governor_t gov = race.appoint_governor({.password = argv[1]});
-        g.out << std::format("Governor {} activated.\n", gov);
+        gov = race.appoint_governor({.password = argv[1]});
+      });
+      g.present(GB::presentation::GovernorAppointedResult{
+          .governor = gov,
+          .auto_assigned = true,
       });
       return true;
     }
-    int raw_gov = 0;
-    try {
-      raw_gov = std::stoi(argv[1]);
-    } catch (...) {
+    const auto parsed_gov = scn::scan<governor_t::value_type>(argv[1], "{}");
+    if (!parsed_gov || parsed_gov->value() < 1) {
       g.out << "No such governor.\n";
       return false;
     }
-    if (raw_gov < 1) {
-      g.out << "No such governor.\n";
-      return false;
-    }
-    governor_t gov{static_cast<governor_t::value_type>(raw_gov)};
+    const governor_t gov{parsed_gov->value()};
 
-    /* Syntax: 'appoint <gov> <password>' */
     bool success = false;
     g.entity_manager.mutate_race(Playernum, [&](Race& race) {
-      if (race.has_governor(gov)) {
+      if (Race::is_leader(gov) || race.has_governor(gov)) {
         g.out << "That governor is already appointed.\n";
         return;
       }
       race.appoint_governor(gov, {.password = argv[2]});
-      g.out << "Governor activated.\n";
       success = true;
     });
+    if (success) {
+      g.present(GB::presentation::GovernorAppointedResult{
+          .governor = gov,
+          .auto_assigned = false,
+      });
+    }
     return success;
   }
 
@@ -191,18 +170,12 @@ bool governors(const command_t& argv, GameObj& g) {
       g.out << "Syntax: revoke <gov> <password> [<target>]\n";
       return false;
     }
-    int raw_gov = 0;
-    try {
-      raw_gov = std::stoi(argv[1]);
-    } catch (...) {
+    const auto parsed_gov = scn::scan<governor_t::value_type>(argv[1], "{}");
+    if (!parsed_gov || parsed_gov->value() < 1) {
       g.out << "No such governor.\n";
       return false;
     }
-    if (raw_gov < 1) {
-      g.out << "No such governor.\n";
-      return false;
-    }
-    governor_t gov{static_cast<governor_t::value_type>(raw_gov)};
+    const governor_t gov{parsed_gov->value()};
 
     if (Race::is_leader(gov)) {
       g.out << "You can't revoke your leadership!\n";
@@ -210,19 +183,15 @@ bool governors(const command_t& argv, GameObj& g) {
     }
     governor_t j = Race::leader_id;
     if (argv.size() >= 4) {
-      try {
-        int raw_j = std::stoi(argv[3]);
-        if (raw_j < 1) {
-          g.out << "You can't give stuff to that governor!\n";
-          return false;
-        }
-        j = governor_t{static_cast<governor_t::value_type>(raw_j)};
-      } catch (...) {
+      const auto parsed_j = scn::scan<governor_t::value_type>(argv[3], "{}");
+      if (!parsed_j || parsed_j->value() < 1) {
         g.out << "You can't give stuff to that governor!\n";
         return false;
       }
+      j = governor_t{parsed_j->value()};
     }
     bool success = false;
+    money_t transferred = 0;
     g.entity_manager.mutate_race(Playernum, [&](Race& race) {
       if (!race.has_governor(gov)) {
         g.out << "That governor is not active.\n";
@@ -236,10 +205,16 @@ bool governors(const command_t& argv, GameObj& g) {
         g.out << "Bad target governor.\n";
         return;
       }
-      do_revoke(race, gov, j, g.entity_manager);
-      g.out << "Done.\n";
+      transferred = do_revoke(race, gov, j, g.entity_manager);
       success = true;
     });
+    if (success) {
+      g.present(GB::presentation::GovernorRevokedResult{
+          .revoked_governor = gov,
+          .target_governor = j,
+          .money_transferred = transferred,
+      });
+    }
     return success;
   }
 

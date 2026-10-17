@@ -845,4 +845,114 @@ std::string render_pay_news(std::string_view payer_name, player_t payer_id,
                      recipient_name, recipient_id);
 }
 
+std::string render_governors(const GovernorsViewModel& vm) {
+  tabulate::Table table;
+  table.format().hide_border().column_separator("  ");
+
+  table.column(0).format().width(2).font_align(tabulate::FontAlign::right);
+  table.column(1).format().width(15);
+  table.column(2).format().width(10).font_align(tabulate::FontAlign::right);
+  table.column(3).format().width(24);
+  if (vm.is_leader) {
+    table.column(4).format().width(10);
+    table.add_row({"#", "Name", "Money", "Last Login", "Password"});
+  } else {
+    table.add_row({"#", "Name", "Money", "Last Login"});
+  }
+  table[0].format().font_style({tabulate::FontStyle::bold});
+
+  for (const auto& r : vm.rows) {
+    tabulate::Table::Row_t row = {std::format("{}", r.governor), r.name,
+                                  std::format("{}", r.money), r.last_login};
+    if (vm.is_leader) {
+      row.emplace_back(r.password.value_or(""));
+    }
+    table.add_row(row);
+  }
+  return std::format("{}\n", table.str());
+}
+
+std::string render_json_governors(const GovernorsViewModel& vm) {
+  return render_json_envelope("governors", vm);
+}
+
+std::string render_for_mode(UiMode mode, const GovernorsViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_governors(vm)
+                              : render_governors(vm);
+}
+
+std::string render_governor_password_changed_result(
+    const GovernorPasswordChangedResult& /*vm*/) {
+  return "Password changed.\n";
+}
+
+std::string render_json_governor_password_changed_result(
+    const GovernorPasswordChangedResult& vm) {
+  return render_json_envelope("governor_password_changed", vm);
+}
+
+std::string render_for_mode(UiMode mode,
+                            const GovernorPasswordChangedResult& vm) {
+  return mode == UiMode::JSON ? render_json_governor_password_changed_result(vm)
+                              : render_governor_password_changed_result(vm);
+}
+
+std::string
+render_governor_appointed_result(const GovernorAppointedResult& vm) {
+  if (vm.auto_assigned) {
+    return std::format("Governor {} activated.\n", vm.governor);
+  }
+  return "Governor activated.\n";
+}
+
+std::string
+render_json_governor_appointed_result(const GovernorAppointedResult& vm) {
+  return render_json_envelope("appoint", vm);
+}
+
+std::string render_for_mode(UiMode mode, const GovernorAppointedResult& vm) {
+  return mode == UiMode::JSON ? render_json_governor_appointed_result(vm)
+                              : render_governor_appointed_result(vm);
+}
+
+std::string
+render_governor_revoked_result(const GovernorRevokedResult& /*vm*/) {
+  return "Done.\n";
+}
+
+std::string
+render_json_governor_revoked_result(const GovernorRevokedResult& vm) {
+  return render_json_envelope("revoke", vm);
+}
+
+std::string render_for_mode(UiMode mode, const GovernorRevokedResult& vm) {
+  return mode == UiMode::JSON ? render_json_governor_revoked_result(vm)
+                              : render_governor_revoked_result(vm);
+}
+
+std::string render_revoke_header_telegram(player_t player, governor_t src_gov,
+                                          governor_t tgt_gov) {
+  return std::format("*** Transferring [{},{}]'s ownings to [{},{}] ***\n\n",
+                     player, src_gov, player, tgt_gov);
+}
+
+std::string render_revoke_star_telegram(std::string_view star_name) {
+  return std::format("Changed juridiction of /{}...\n", star_name);
+}
+
+std::string render_revoke_ship_telegram(char ship_type_letter,
+                                        shipnum_t ship_number) {
+  return std::format("Changed ownership of {}{}...\n", ship_type_letter,
+                     ship_number);
+}
+
+std::string render_revoke_money_telegram(money_t transferred) {
+  return std::format("Transferring {} money...\n", transferred);
+}
+
+std::string render_revoke_footer_telegram(player_t player, governor_t src_gov) {
+  return std::format("\n*** Governor [{},{}]'s powers have been REVOKED ***\n",
+                     player, src_gov);
+}
+
 }  // namespace GB::presentation

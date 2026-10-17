@@ -38,4 +38,45 @@ render_initialized_ship_report(const InitializedShipReport& report);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const InitializedShipReport& vm);
 
+/// Formats a `FactoryMakeError` into its user-facing error diagnostic string.
+[[nodiscard]] std::string format_factory_make_error(FactoryMakeError err);
+
+/// Formats a `FactoryModifyError` into its user-facing error diagnostic string.
+[[nodiscard]] std::string format_factory_modify_error(FactoryModifyError err);
+
+/// Formats a `FactorySpecsViewModel` into its ASCII specification table.
+[[nodiscard]] std::string render_factory_specs(const FactorySpecsViewModel& vm);
+
+/// Formats a `FactorySpecsViewModel` into its JSON envelope.
+[[nodiscard]] std::string
+render_json_factory_specs(const FactorySpecsViewModel& vm);
+
+/// Formats a `FactoryMakeResult` into its ASCII presentation string.
+[[nodiscard]] std::string
+render_factory_make_result(const FactoryMakeResult& vm);
+
+/// Formats a `FactoryMakeResult` into its JSON envelope.
+[[nodiscard]] std::string
+render_json_factory_make_result(const FactoryMakeResult& vm);
+
+/// Formats a `FactoryModifyResult` into its ASCII presentation string.
+[[nodiscard]] std::string
+render_factory_modify_result(const FactoryModifyResult& vm);
+
+/// Formats a `FactoryModifyResult` into its JSON envelope.
+[[nodiscard]] std::string
+render_json_factory_modify_result(const FactoryModifyResult& vm);
+
+/// Open ADL dispatch for `FactorySpecsViewModel`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const FactorySpecsViewModel& vm);
+
+/// Open ADL dispatch for `FactoryMakeResult`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const FactoryMakeResult& vm);
+
+/// Open ADL dispatch for `FactoryModifyResult`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const FactoryModifyResult& vm);
+
 }  // namespace GB::presentation

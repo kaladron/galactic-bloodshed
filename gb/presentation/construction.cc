@@ -10,8 +10,38 @@ import glaze.core;
 import glaze.json;
 import gb.repositories.glaze;
 import strong_id;
+import tabulate;
 
 namespace GB::presentation {
+
+namespace {
+
+std::string format_factory_guns(const FactorySpecsViewModel& vm) {
+  std::string guns = "Guns:";
+  if (vm.has_primary && vm.primary_battery.has_guns()) {
+    guns += std::format("{:3}{:c}", vm.primary_battery.count,
+                        caliber_char(vm.primary_battery.caliber));
+  }
+  if (vm.has_secondary && vm.secondary_battery.has_guns()) {
+    guns += std::format("/{:}{:c}", vm.secondary_battery.count,
+                        caliber_char(vm.secondary_battery.caliber));
+  }
+  return guns;
+}
+
+std::string render_factory_design_stats(const FactoryDesignStats& stats) {
+  std::string out;
+  std::format_to(std::back_inserter(out),
+                 "The current cost of the ship is {} resources.\n"
+                 "The current base mass of the ship is {:.1f} - size is {}.\n"
+                 "Ship complexity is {:.1f} (you have {:.1f} engineering "
+                 "technology).\n",
+                 stats.build_cost, stats.base_mass, stats.design_size,
+                 stats.complexity, stats.race_tech);
+  return out;
+}
+
+}  // namespace
 
 std::string format_planet_build_error(const PlanetBuildError& err) {
   std::string out;
@@ -129,6 +159,153 @@ std::string render_for_mode(UiMode mode, const InitializedShipReport& vm) {
     return render_json_envelope("initialized_ship", vm);
   }
   return render_initialized_ship_report(vm);
+}
+
+std::string format_factory_make_error(FactoryMakeError err) {
+  switch (err) {
+    case FactoryMakeError::IllegalShipLetter:
+      return "Illegal ship letter.\n";
+    case FactoryMakeError::GodOnlyShip:
+      return "Nice try!\n";
+    case FactoryMakeError::DoesNotRequireFactory:
+      return "This kind of ship does not require a factory to construct.\n";
+    case FactoryMakeError::MaxCostExceeded:
+      return "Woah!! YOU CHEATER!!!  The max cost allowed "
+             "is 65535!!! I'm Telllllllling!!!\n";
+  }
+  std::unreachable();
+}
+
+std::string format_factory_modify_error(FactoryModifyError err) {
+  switch (err) {
+    case FactoryModifyError::NoShipDesignSpecified:
+      return "No ship design specified. Use 'make <ship type>' first.\n";
+    case FactoryModifyError::NoCharacteristicSpecified:
+      return "You have to specify the characteristic you wish to modify.\n";
+    case FactoryModifyError::OnlyHyperdriveModifiable:
+      return "You may only modify hyperdrive installation on this kind of "
+             "ship.\n";
+    case FactoryModifyError::CannotModifyShip:
+      return "Sorry, but you can't modify this ship right now.\n";
+    case FactoryModifyError::InvalidGunCharacteristic:
+      return "No such gun characteristic.\n";
+    case FactoryModifyError::RidiculousSetting:
+      return "That's a ridiculous setting.\n";
+    case FactoryModifyError::InvalidCaliber:
+      return "No such caliber.\n";
+    case FactoryModifyError::NoCewDiscovery:
+      return "Your race does not understand confined energy weapons.\n";
+    case FactoryModifyError::InvalidCewOption:
+      return "No such option for CEWs.\n";
+    case FactoryModifyError::NoLaserDiscovery:
+      return "Your race does not understand lasers yet.\n";
+    case FactoryModifyError::InvalidCharacteristic:
+      return "That characteristic either doesn't exist or can't be modified.\n";
+    case FactoryModifyError::MaxCostExceeded:
+      return "Woah!! YOU CHEATER!!!  The max cost allowed "
+             "is 65535!!! I'm Telllllllling!!!\n";
+  }
+  std::unreachable();
+}
+
+std::string render_factory_specs(const FactorySpecsViewModel& vm) {
+  std::ostringstream ss;
+  ss << "  --- Current Production Specifications ---\n";
+
+  tabulate::Table table;
+  table.format().hide_border().column_separator("    ");
+
+  table.add_row({vm.is_online ? "Online" : "Offline",
+                 std::format("Armor:    {:4}", vm.armor),
+                 format_factory_guns(vm)});
+  table.add_row({std::format("Ship:  {}", vm.ship_name),
+                 std::format("Crew:     {:4}", vm.max_crew),
+                 vm.can_mount
+                     ? std::format("Xtal Mount: {}", vm.mount ? "yes" : "no")
+                     : ""});
+  table.add_row({std::format("Class: {}", vm.ship_class),
+                 std::format("Fuel:     {:4}", vm.max_fuel),
+                 vm.can_hyperjump ? std::format("Hyperdrive: {}",
+                                                vm.hyperdrive ? "yes" : "no")
+                                  : ""});
+  table.add_row({std::format("Cost:  {} r", vm.build_cost),
+                 std::format("Cargo:    {:4}", vm.max_resource),
+                 vm.can_mount_laser
+                     ? std::format("Combat Lasers: {}", vm.laser ? "yes" : "no")
+                     : ""});
+  table.add_row(
+      {std::format("Mass:  {:.1f}", vm.base_mass),
+       std::format("Hanger:   {:4}", vm.max_hanger),
+       vm.has_cew ? std::format("CEW: {}", vm.cew ? "yes" : "no") : ""});
+  table.add_row({std::format("Size:  {}", vm.design_size),
+                 std::format("Destruct: {:4}", vm.max_destruct),
+                 (vm.has_cew && vm.cew)
+                     ? std::format("   Opt Range: {:4}", vm.cew_range)
+                     : ""});
+  table.add_row(
+      {std::format("Tech:  {:.1f} ({:.1f})", vm.complexity, vm.race_tech),
+       std::format("Speed:    {:4}", vm.max_speed),
+       (vm.has_cew && vm.cew) ? std::format("   Energy:    {:4d}", vm.cew)
+                              : ""});
+
+  ss << table << "\n";
+
+  if (vm.race_tech < vm.complexity) {
+    ss << "Your engineering capability is not "
+          "advanced enough to produce this "
+          "design.\n";
+  }
+  return ss.str();
+}
+
+std::string render_json_factory_specs(const FactorySpecsViewModel& vm) {
+  return render_json_envelope("factory_specs", vm);
+}
+
+std::string render_factory_make_result(const FactoryMakeResult& vm) {
+  std::string out;
+  std::format_to(std::back_inserter(out),
+                 "Factory designated to produce {}s.\n"
+                 "Design complexity {:.1f} ({:.1f}).\n",
+                 vm.ship_name, vm.stats.complexity, vm.stats.race_tech);
+  if (vm.stats.complexity > vm.stats.race_tech) {
+    out += "You can't produce this design yet!\n";
+  }
+  out += render_factory_design_stats(vm.stats);
+  return out;
+}
+
+std::string render_json_factory_make_result(const FactoryMakeResult& vm) {
+  return render_json_envelope("factory_make", vm);
+}
+
+std::string render_factory_modify_result(const FactoryModifyResult& vm) {
+  return render_factory_design_stats(vm.stats);
+}
+
+std::string render_json_factory_modify_result(const FactoryModifyResult& vm) {
+  return render_json_envelope("factory_modify", vm);
+}
+
+std::string render_for_mode(UiMode mode, const FactorySpecsViewModel& vm) {
+  if (mode == UiMode::JSON) {
+    return render_json_factory_specs(vm);
+  }
+  return render_factory_specs(vm);
+}
+
+std::string render_for_mode(UiMode mode, const FactoryMakeResult& vm) {
+  if (mode == UiMode::JSON) {
+    return render_json_factory_make_result(vm);
+  }
+  return render_factory_make_result(vm);
+}
+
+std::string render_for_mode(UiMode mode, const FactoryModifyResult& vm) {
+  if (mode == UiMode::JSON) {
+    return render_json_factory_modify_result(vm);
+  }
+  return render_factory_modify_result(vm);
 }
 
 }  // namespace GB::presentation

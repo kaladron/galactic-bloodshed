@@ -6,6 +6,7 @@
 
 module;
 
+import scnlib;
 import std;
 
 module gb.mechanics;
@@ -504,4 +505,298 @@ scrap_single_ship(EntityManager& em, Ship& s, const Race& race) {
   }
 
   return result;
+}
+
+namespace {
+
+constexpr double MAX_FACTORY_SHIP_COST = 65535.0;
+constexpr armor_t MAX_FACTORY_ARMOR = 100;
+constexpr int MAX_FACTORY_CAPACITY = 10000;
+constexpr speed_t MIN_FACTORY_SPEED = 1;
+constexpr speed_t MAX_FACTORY_SPEED = 9;
+
+std::optional<int> parse_non_negative_int(std::string_view arg) {
+  auto res = scn::scan<int>(arg, "{}");
+  if (!res || res->value() < 0) {
+    return std::nullopt;
+  }
+  return res->value();
+}
+
+std::expected<void, FactoryModifyError>
+modify_battery(Ship& dirship, const command_t& argv, bool is_primary) {
+  if (argv.size() < 4) {
+    return std::unexpected(FactoryModifyError::InvalidGunCharacteristic);
+  }
+  if (argv[2] == "strength") {
+    auto strength = parse_non_negative_int(argv[3]);
+    if (!strength) {
+      return std::unexpected(FactoryModifyError::RidiculousSetting);
+    }
+    if (is_primary) {
+      dirship.set_primary_battery(*strength, dirship.primary_battery().caliber);
+    } else {
+      dirship.set_secondary_battery(*strength,
+                                    dirship.secondary_battery().caliber);
+    }
+    return {};
+  }
+  if (argv[2] == "caliber") {
+    auto new_caliber = parse_caliber_name(argv[3]);
+    if (!new_caliber) {
+      return std::unexpected(FactoryModifyError::InvalidCaliber);
+    }
+    if (is_primary) {
+      dirship.set_primary_battery(
+          dirship.primary_battery().count,
+          std::min(shipdata_primary(dirship.build_type()), *new_caliber));
+    } else {
+      dirship.set_secondary_battery(
+          dirship.secondary_battery().count,
+          std::min(shipdata_secondary(dirship.build_type()), *new_caliber));
+    }
+    return {};
+  }
+  return std::unexpected(FactoryModifyError::InvalidGunCharacteristic);
+}
+
+std::expected<void, FactoryModifyError>
+modify_cew(Ship& dirship, const Race& race, const command_t& argv) {
+  if (!race.discoveries.cew) {
+    return std::unexpected(FactoryModifyError::NoCewDiscovery);
+  }
+  if (argv.size() < 4) {
+    return std::unexpected(FactoryModifyError::InvalidCewOption);
+  }
+  auto value = parse_non_negative_int(argv[3]);
+  if (!value) {
+    return std::unexpected(FactoryModifyError::RidiculousSetting);
+  }
+  if (argv[2] == "strength") {
+    dirship.cew() = *value;
+    return {};
+  }
+  if (argv[2] == "range") {
+    dirship.cew_range() = *value;
+    return {};
+  }
+  return std::unexpected(FactoryModifyError::InvalidCewOption);
+}
+
+std::expected<void, FactoryModifyError>
+modify_simple_attribute(Ship& dirship, const Race& race,
+                        const ShipTemplate& btmpl, const command_t& argv) {
+  std::string_view attr = argv[1];
+  if (attr == "mount" && btmpl.can_mount && race.discoveries.crystal) {
+    dirship.mount() = !dirship.mount();
+    return {};
+  }
+  if (attr == "hyperdrive" && btmpl.can_hyperjump &&
+      race.discoveries.hyperdrive) {
+    dirship.hyper_drive().has = !dirship.hyper_drive().has;
+    return {};
+  }
+  if (attr == "laser" && btmpl.can_mount_laser) {
+    if (!race.discoveries.laser) {
+      return std::unexpected(FactoryModifyError::NoLaserDiscovery);
+    }
+    dirship.laser() = !dirship.laser();
+    return {};
+  }
+
+  int value = 0;
+  if (argv.size() >= 3) {
+    auto parsed = parse_non_negative_int(argv[2]);
+    if (!parsed) {
+      return std::unexpected(FactoryModifyError::RidiculousSetting);
+    }
+    value = *parsed;
+  }
+
+  if (attr == "armor") {
+    dirship.armor() = std::min<armor_t>(value, MAX_FACTORY_ARMOR);
+    return {};
+  }
+  if (attr == "crew" && btmpl.max_crew) {
+    dirship.max_crew() = std::min<population_t>(value, MAX_FACTORY_CAPACITY);
+    return {};
+  }
+  if ((attr == "cargo" || attr == "resource") && btmpl.max_resource) {
+    dirship.max_resource() = std::min<resource_t>(value, MAX_FACTORY_CAPACITY);
+    return {};
+  }
+  if (attr == "hanger" && btmpl.max_hangar) {
+    dirship.max_hanger() = std::min<hangar_t>(value, MAX_FACTORY_CAPACITY);
+    return {};
+  }
+  if (attr == "fuel" && btmpl.max_fuel) {
+    dirship.max_fuel() = std::min<fuel_t>(value, MAX_FACTORY_CAPACITY);
+    return {};
+  }
+  if (attr == "destruct" && btmpl.max_destruct) {
+    dirship.max_destruct() = std::min<resource_t>(value, MAX_FACTORY_CAPACITY);
+    return {};
+  }
+  if (attr == "speed" && btmpl.base_speed) {
+    dirship.max_speed() =
+        std::clamp<speed_t>(value, MIN_FACTORY_SPEED, MAX_FACTORY_SPEED);
+    return {};
+  }
+
+  return std::unexpected(FactoryModifyError::InvalidCharacteristic);
+}
+
+std::expected<void, FactoryModifyError>
+apply_factory_modification(Ship& dirship, const Race& race,
+                           const command_t& argv) {
+  if (!dirship.has_factory_design()) {
+    return std::unexpected(FactoryModifyError::NoShipDesignSpecified);
+  }
+  if (argv.size() < 2) {
+    return std::unexpected(FactoryModifyError::NoCharacteristicSpecified);
+  }
+
+  const auto& btmpl = ship_template(dirship.build_type());
+  if (!btmpl.can_modify) {
+    if (race.discoveries.hyperdrive) {
+      if (argv[1] == "hyperdrive") {
+        dirship.hyper_drive().has = !dirship.hyper_drive().has;
+        return {};
+      }
+      return std::unexpected(FactoryModifyError::OnlyHyperdriveModifiable);
+    }
+    return std::unexpected(FactoryModifyError::CannotModifyShip);
+  }
+
+  if (argv[1] == "primary" && btmpl.has_primary()) {
+    return modify_battery(dirship, argv, true);
+  }
+  if (argv[1] == "secondary" && btmpl.has_secondary()) {
+    return modify_battery(dirship, argv, false);
+  }
+  if (argv[1] == "cew" && btmpl.has_cew) {
+    return modify_cew(dirship, race, argv);
+  }
+  return modify_simple_attribute(dirship, race, btmpl, argv);
+}
+
+std::optional<FactoryDesignStats>
+finalize_factory_design_stats(Ship& dirship, const Race& race,
+                              const ship_struct& original_state) {
+  const double cost0 = cost(dirship);
+  if (cost0 > MAX_FACTORY_SHIP_COST) {
+    dirship.to_struct() = original_state;
+    return std::nullopt;
+  }
+
+  dirship.build_cost() = race.God ? 0 : static_cast<resource_t>(cost0);
+  dirship.size() = dirship.calculate_size();
+  const ship_size_t design_size = dirship.size();
+  const double base_mass = dirship.base_mass();
+  dirship.complexity() = complexity(dirship);
+
+  dirship.size() = original_state.size;
+  return FactoryDesignStats{
+      .build_cost = dirship.build_cost(),
+      .base_mass = base_mass,
+      .design_size = design_size,
+      .complexity = dirship.complexity(),
+      .race_tech = race.tech,
+  };
+}
+
+}  // namespace
+
+std::optional<FactorySpecsViewModel> inspect_factory_specs(Ship& dirship,
+                                                           const Race& race) {
+  if (!dirship.has_factory_design()) {
+    return std::nullopt;
+  }
+
+  const ship_size_t original_size = dirship.size();
+  dirship.size() = dirship.calculate_size();
+  const ship_size_t design_size = dirship.size();
+  const double base_mass = dirship.base_mass();
+  dirship.size() = original_size;
+
+  const auto& btmpl = ship_template(dirship.build_type());
+  return FactorySpecsViewModel{
+      .is_online = dirship.on(),
+      .ship_name = std::string(btmpl.name),
+      .ship_class = dirship.shipclass(),
+      .build_cost = dirship.build_cost(),
+      .base_mass = base_mass,
+      .design_size = design_size,
+      .complexity = dirship.complexity(),
+      .race_tech = race.tech,
+      .armor = dirship.armor(),
+      .max_crew = dirship.max_crew(),
+      .max_fuel = dirship.max_fuel(),
+      .max_resource = dirship.max_resource(),
+      .max_hanger = dirship.max_hanger(),
+      .max_destruct = dirship.max_destruct(),
+      .max_speed = dirship.max_speed(),
+      .has_primary = btmpl.has_primary(),
+      .primary_battery = dirship.primary_battery(),
+      .has_secondary = btmpl.has_secondary(),
+      .secondary_battery = dirship.secondary_battery(),
+      .can_mount = btmpl.can_mount,
+      .mount = dirship.mount(),
+      .can_hyperjump = btmpl.can_hyperjump,
+      .hyperdrive = dirship.hyper_drive().has,
+      .can_mount_laser = btmpl.can_mount_laser,
+      .laser = dirship.laser(),
+      .has_cew = btmpl.has_cew,
+      .cew = dirship.cew(),
+      .cew_range = dirship.cew_range(),
+  };
+}
+
+std::expected<FactoryMakeResult, FactoryMakeError>
+configure_factory_blueprint(Ship& dirship, const Race& race,
+                            shipnum_t factory_shipno, char shipc) {
+  auto i = get_build_type(shipc);
+  if ((!i) || ((*i == ShipType::STYPE_POD) && (!race.pods))) {
+    return std::unexpected(FactoryMakeError::IllegalShipLetter);
+  }
+  const auto& itmpl = ship_template(*i);
+  if (itmpl.is_god_only && !race.God) {
+    return std::unexpected(FactoryMakeError::GodOnlyShip);
+  }
+  if (!itmpl.can_be_built_by(ship_template(ShipType::OTYPE_FACTORY))) {
+    return std::unexpected(FactoryMakeError::DoesNotRequireFactory);
+  }
+
+  const ship_struct original_state = dirship.to_struct();
+  dirship.set_factory_blueprint(*i, &race);
+  dirship.shipclass() = std::format("mod {}", factory_shipno);
+
+  auto stats = finalize_factory_design_stats(dirship, race, original_state);
+  if (!stats) {
+    return std::unexpected(FactoryMakeError::MaxCostExceeded);
+  }
+
+  return FactoryMakeResult{
+      .ship_name = std::string(itmpl.name),
+      .stats = *stats,
+  };
+}
+
+std::expected<FactoryModifyResult, FactoryModifyError>
+modify_factory_attribute(Ship& dirship, const Race& race,
+                         const command_t& argv) {
+  const ship_struct original_state = dirship.to_struct();
+  dirship.size() = dirship.calculate_size();
+
+  if (auto mod_ok = apply_factory_modification(dirship, race, argv); !mod_ok) {
+    dirship.to_struct() = original_state;
+    return std::unexpected(mod_ok.error());
+  }
+
+  auto stats = finalize_factory_design_stats(dirship, race, original_state);
+  if (!stats) {
+    return std::unexpected(FactoryModifyError::MaxCostExceeded);
+  }
+
+  return FactoryModifyResult{.stats = *stats};
 }

@@ -135,3 +135,84 @@ export struct ScrapShipResult {
 
 export std::expected<ScrapShipResult, ScrapError>
 scrap_single_ship(EntityManager& entity_manager, Ship& s, const Race& race);
+
+export struct FactoryDesignStats {
+  resource_t build_cost{0};
+  double base_mass{0.0};
+  ship_size_t design_size{0};
+  double complexity{0.0};
+  double race_tech{0.0};
+};
+
+export struct FactorySpecsViewModel {
+  bool is_online{false};
+  std::string ship_name{};
+  std::string ship_class{};
+  resource_t build_cost{0};
+  double base_mass{0.0};
+  ship_size_t design_size{0};
+  double complexity{0.0};
+  double race_tech{0.0};
+  armor_t armor{0};
+  population_t max_crew{0};
+  fuel_t max_fuel{0.0};
+  resource_t max_resource{0};
+  hangar_t max_hanger{0};
+  resource_t max_destruct{0};
+  speed_t max_speed{0};
+  bool has_primary{false};
+  GunBattery primary_battery{};
+  bool has_secondary{false};
+  GunBattery secondary_battery{};
+  bool can_mount{false};
+  bool mount{false};
+  bool can_hyperjump{false};
+  bool hyperdrive{false};
+  bool can_mount_laser{false};
+  bool laser{false};
+  bool has_cew{false};
+  weapon_power_t cew{0};
+  weapon_range_t cew_range{0};
+};
+
+export enum class FactoryMakeError {
+  IllegalShipLetter,
+  GodOnlyShip,
+  DoesNotRequireFactory,
+  MaxCostExceeded,
+};
+
+export struct FactoryMakeResult {
+  std::string ship_name{};
+  FactoryDesignStats stats{};
+};
+
+export enum class FactoryModifyError {
+  NoShipDesignSpecified,
+  NoCharacteristicSpecified,
+  OnlyHyperdriveModifiable,
+  CannotModifyShip,
+  InvalidGunCharacteristic,
+  RidiculousSetting,
+  InvalidCaliber,
+  NoCewDiscovery,
+  InvalidCewOption,
+  NoLaserDiscovery,
+  InvalidCharacteristic,
+  MaxCostExceeded,
+};
+
+export struct FactoryModifyResult {
+  FactoryDesignStats stats{};
+};
+
+export [[nodiscard]] std::optional<FactorySpecsViewModel>
+inspect_factory_specs(Ship& dirship, const Race& race);
+
+export [[nodiscard]] std::expected<FactoryMakeResult, FactoryMakeError>
+configure_factory_blueprint(Ship& dirship, const Race& race,
+                            shipnum_t factory_shipno, char shipc);
+
+export [[nodiscard]] std::expected<FactoryModifyResult, FactoryModifyError>
+modify_factory_attribute(Ship& dirship, const Race& race,
+                         const command_t& argv);

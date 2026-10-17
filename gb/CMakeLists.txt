@@ -349,9 +349,10 @@ target_sources(
           commands/land.cc
           commands/launch.cc
           commands/load.cc
-          commands/make_mod.cc
+          commands/make.cc
           commands/map.cc
           commands/mobilize.cc
+          commands/modify.cc
           commands/motto.cc
           commands/mount.cc
           commands/move_popn.cc
@@ -525,13 +526,14 @@ gb_add_test(json_store_test SOURCES dal/json_store_test.cc)
 gb_add_test(land_test SOURCES commands/land_test.cc)
 gb_add_test(launch_test SOURCES commands/launch_test.cc)
 gb_add_test(load_test SOURCES commands/load_test.cc)
-gb_add_test(make_mod_test SOURCES commands/make_mod_test.cc)
+gb_add_test(make_test SOURCES commands/make_test.cc)
 gb_add_test(makeplanet_test SOURCES creator/makeplanet_test.cc EXTRA_LIBS gb_creator)
 gb_add_test(makeuniv_test SOURCES creator/makeuniv_test.cc EXTRA_LIBS gb_creator)
 gb_add_test(map_test SOURCES commands/map_test.cc)
 gb_add_test(misc_repositories_test SOURCES repositories/misc_repositories_test.cc)
 gb_add_test(misc_test SOURCES entities/misc_test.cc)
 gb_add_test(mobilize_test SOURCES commands/mobilize_test.cc)
+gb_add_test(modify_test SOURCES commands/modify_test.cc)
 gb_add_test(motto_test SOURCES commands/motto_test.cc)
 gb_add_test(mount_test SOURCES commands/mount_test.cc)
 gb_add_test(move_popn_test SOURCES commands/move_popn_test.cc)

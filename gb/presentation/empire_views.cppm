@@ -716,4 +716,39 @@ render_revoke_star_telegram(std::string_view star_name);
 [[nodiscard]] std::string render_revoke_footer_telegram(player_t player,
                                                         governor_t src_gov);
 
+/// Result of inviting a race to join an alliance block (`invite <race>`).
+struct InviteResult {
+  player_t host_id{0};
+  std::string host_name{};
+  std::string block_name{};
+  player_t target_id{0};
+  std::string target_name{};
+};
+
+[[nodiscard]] std::string render_invite_result(const InviteResult& vm);
+[[nodiscard]] std::string render_json_invite_result(const InviteResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode, const InviteResult& vm);
+[[nodiscard]] std::string
+render_invite_target_notification(const InviteResult& vm);
+[[nodiscard]] std::string
+render_invite_declaration_news(const InviteResult& vm);
+
+/// Result of blackballing/uninviting a race from an alliance block (`uninvite
+/// <race>`).
+struct UninviteResult {
+  player_t host_id{0};
+  std::string block_name{};
+  player_t target_id{0};
+  std::string target_name{};
+};
+
+[[nodiscard]] std::string render_uninvite_result(const UninviteResult& vm);
+[[nodiscard]] std::string render_json_uninvite_result(const UninviteResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const UninviteResult& vm);
+[[nodiscard]] std::string
+render_uninvite_target_notification(const UninviteResult& vm);
+[[nodiscard]] std::string
+render_uninvite_declaration_news(const UninviteResult& vm);
+
 }  // namespace GB::presentation

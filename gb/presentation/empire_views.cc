@@ -955,4 +955,50 @@ std::string render_revoke_footer_telegram(player_t player, governor_t src_gov) {
                      player, src_gov);
 }
 
+std::string render_invite_result(const InviteResult& /*vm*/) {
+  return "";
+}
+
+std::string render_json_invite_result(const InviteResult& vm) {
+  return render_json_envelope("invite", vm);
+}
+
+std::string render_for_mode(UiMode mode, const InviteResult& vm) {
+  return mode == UiMode::JSON ? render_json_invite_result(vm)
+                              : render_invite_result(vm);
+}
+
+std::string render_invite_target_notification(const InviteResult& vm) {
+  return std::format("{} [{}] has invited you to join {}\n", vm.host_name,
+                     vm.host_id, vm.block_name);
+}
+
+std::string render_invite_declaration_news(const InviteResult& vm) {
+  return std::format("{} [{}] has been invited to join {} [{}]\n",
+                     vm.target_name, vm.target_id, vm.block_name, vm.host_id);
+}
+
+std::string render_uninvite_result(const UninviteResult& /*vm*/) {
+  return "";
+}
+
+std::string render_json_uninvite_result(const UninviteResult& vm) {
+  return render_json_envelope("uninvite", vm);
+}
+
+std::string render_for_mode(UiMode mode, const UninviteResult& vm) {
+  return mode == UiMode::JSON ? render_json_uninvite_result(vm)
+                              : render_uninvite_result(vm);
+}
+
+std::string render_uninvite_target_notification(const UninviteResult& vm) {
+  return std::format("You have been blackballed from {} [{}]\n", vm.block_name,
+                     vm.host_id);
+}
+
+std::string render_uninvite_declaration_news(const UninviteResult& vm) {
+  return std::format("{} [{}] has been blackballed from {} [{}]\n",
+                     vm.target_name, vm.target_id, vm.block_name, vm.host_id);
+}
+
 }  // namespace GB::presentation

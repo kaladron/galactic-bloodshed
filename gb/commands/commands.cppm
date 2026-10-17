@@ -103,6 +103,7 @@ export bool insurgency(const command_t&, GameObj&);
 export extern const CommandDescriptor insurgency_cmd;
 export bool invite(const command_t&, GameObj&);
 export extern const CommandDescriptor invite_cmd;
+export bool uninvite(const command_t&, GameObj&);
 export extern const CommandDescriptor uninvite_cmd;
 export bool jettison(const command_t&, GameObj&);
 export extern const CommandDescriptor jettison_cmd;

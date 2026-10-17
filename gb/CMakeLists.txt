@@ -391,6 +391,7 @@ target_sources(
           commands/toxicity.cc
           commands/transfer.cc
           commands/treasury.cc
+          commands/uninvite.cc
           commands/unpledge.cc
           commands/update.cc
           commands/upgrade.cc
@@ -611,6 +612,7 @@ gb_add_test(transfer_test SOURCES commands/transfer_test.cc)
 gb_add_test(treasury_test SOURCES commands/treasury_test.cc)
 gb_add_test(turnstats_test SOURCES turn/turnstats_test.cc)
 gb_add_test(universe_test SOURCES entities/universe_test.cc)
+gb_add_test(uninvite_test SOURCES commands/uninvite_test.cc)
 gb_add_test(unpledge_test SOURCES commands/unpledge_test.cc)
 gb_add_test(update_test SOURCES commands/update_test.cc)
 gb_add_test(upgrade_test SOURCES commands/upgrade_test.cc)

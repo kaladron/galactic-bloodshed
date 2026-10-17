@@ -751,4 +751,43 @@ render_uninvite_target_notification(const UninviteResult& vm);
 [[nodiscard]] std::string
 render_uninvite_declaration_news(const UninviteResult& vm);
 
+/// Result of pledging allegiance to an alliance block (`pledge <race>`).
+struct PledgeResult {
+  player_t pledger_id{0};
+  std::string pledger_name{};
+  player_t block_id{0};
+  std::string block_name{};
+  bool bandwagon{false};
+};
+
+[[nodiscard]] std::string render_pledge_result(const PledgeResult& vm);
+[[nodiscard]] std::string render_json_pledge_result(const PledgeResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode, const PledgeResult& vm);
+[[nodiscard]] std::string
+render_pledge_block_notification(const PledgeResult& vm);
+[[nodiscard]] std::string
+render_pledge_self_notification(const PledgeResult& vm);
+[[nodiscard]] std::string
+render_pledge_declaration_news(const PledgeResult& vm);
+
+/// Result of withdrawing pledge from an alliance block (`unpledge <race>`).
+struct UnpledgeResult {
+  player_t pledger_id{0};
+  std::string pledger_name{};
+  player_t block_id{0};
+  std::string block_name{};
+  bool taunt{false};
+};
+
+[[nodiscard]] std::string render_unpledge_result(const UnpledgeResult& vm);
+[[nodiscard]] std::string render_json_unpledge_result(const UnpledgeResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const UnpledgeResult& vm);
+[[nodiscard]] std::string
+render_unpledge_block_notification(const UnpledgeResult& vm);
+[[nodiscard]] std::string
+render_unpledge_self_notification(const UnpledgeResult& vm);
+[[nodiscard]] std::string
+render_unpledge_declaration_news(const UnpledgeResult& vm);
+
 }  // namespace GB::presentation

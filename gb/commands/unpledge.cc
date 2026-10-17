@@ -7,6 +7,7 @@ module;
 
 import std;
 import gb.entities;
+import gb.presentation;
 import gb.services;
 
 module commands;
@@ -15,8 +16,8 @@ namespace GB::commands {
 /* declare that you wish to withdraw from the alliance block */
 bool unpledge(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player();
-  auto n = get_player(g.entity_manager, argv[1]);
-  if (n == 0) {
+  player_t n = get_player(g.entity_manager, argv[1]);
+  if (n == player_t{0}) {
     g.out << "No such player.\n";
     return false;
   }
@@ -25,39 +26,28 @@ bool unpledge(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  try {
-    g.entity_manager.mutate_block(n, [&](Block& b) {
-      b.unpledge(Playernum);
-      std::string quit_notification = std::format(
-          "{} [{}] has quit {} [{}].\n", g.race->name, Playernum, b.name(), n);
-      warn_race(g.session_registry, g.entity_manager, n, quit_notification);
-      std::string player_notification =
-          std::format("You have quit {}\n", b.name());
-      warn_race(g.session_registry, g.entity_manager, Playernum,
-                player_notification);
+  GB::presentation::UnpledgeResult result{
+      .pledger_id = Playernum,
+      .pledger_name = g.race->name,
+      .block_id = n,
+      .taunt = (int_rand(1, 20) == 1),
+  };
 
-      switch (int_rand(1, 20)) {
-        case 1: {
-          std::string taunt_postmsg =
-              std::format("{} [{}] calls {} [{}] a bunch of geeks and QUITS!\n",
-                          g.race->name, Playernum, b.name(), n);
-          post(g.entity_manager, taunt_postmsg, NewsType::DECLARATION);
-          break;
-        }
-        default: {
-          std::string quit_postmsg =
-              std::format("{} [{}] has QUIT {} [{}]!\n", g.race->name,
-                          Playernum, b.name(), n);
-          post(g.entity_manager, quit_postmsg, NewsType::DECLARATION);
-          break;
-        }
-      }
-    });
-    compute_power_blocks(g.entity_manager);
-  } catch (const EntityNotFoundError&) {
-    g.out << "Block not found.\n";
-    return false;
-  }
+  g.entity_manager.mutate_block(n, [&](Block& b) {
+    b.unpledge(Playernum);
+    result.block_name = b.name();
+  });
+
+  warn_race(g.session_registry, g.entity_manager, n,
+            GB::presentation::render_unpledge_block_notification(result));
+  warn_race(g.session_registry, g.entity_manager, Playernum,
+            GB::presentation::render_unpledge_self_notification(result));
+  post(g.entity_manager,
+       GB::presentation::render_unpledge_declaration_news(result),
+       NewsType::DECLARATION);
+  compute_power_blocks(g.entity_manager);
+
+  g.present(result);
   return true;
 }
 

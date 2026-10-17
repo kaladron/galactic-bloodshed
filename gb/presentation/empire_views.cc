@@ -1001,4 +1001,69 @@ std::string render_uninvite_declaration_news(const UninviteResult& vm) {
                      vm.target_name, vm.target_id, vm.block_name, vm.host_id);
 }
 
+std::string render_pledge_result(const PledgeResult& /*vm*/) {
+  return "";
+}
+
+std::string render_json_pledge_result(const PledgeResult& vm) {
+  return render_json_envelope("pledge", vm);
+}
+
+std::string render_for_mode(UiMode mode, const PledgeResult& vm) {
+  return mode == UiMode::JSON ? render_json_pledge_result(vm)
+                              : render_pledge_result(vm);
+}
+
+std::string render_pledge_block_notification(const PledgeResult& vm) {
+  return std::format("{} [{}] has pledged {}.\n", vm.pledger_name,
+                     vm.pledger_id, vm.block_name);
+}
+
+std::string render_pledge_self_notification(const PledgeResult& vm) {
+  return std::format("You have pledged allegiance to {}.\n", vm.block_name);
+}
+
+std::string render_pledge_declaration_news(const PledgeResult& vm) {
+  if (vm.bandwagon) {
+    return std::format(
+        "{} [{}] joins the band wagon and pledges allegiance to {} [{}]!\n",
+        vm.pledger_name, vm.pledger_id, vm.block_name, vm.block_id);
+  }
+  return std::format("{} [{}] pledges allegiance to {} [{}].\n",
+                     vm.pledger_name, vm.pledger_id, vm.block_name,
+                     vm.block_id);
+}
+
+std::string render_unpledge_result(const UnpledgeResult& /*vm*/) {
+  return "";
+}
+
+std::string render_json_unpledge_result(const UnpledgeResult& vm) {
+  return render_json_envelope("unpledge", vm);
+}
+
+std::string render_for_mode(UiMode mode, const UnpledgeResult& vm) {
+  return mode == UiMode::JSON ? render_json_unpledge_result(vm)
+                              : render_unpledge_result(vm);
+}
+
+std::string render_unpledge_block_notification(const UnpledgeResult& vm) {
+  return std::format("{} [{}] has quit {} [{}].\n", vm.pledger_name,
+                     vm.pledger_id, vm.block_name, vm.block_id);
+}
+
+std::string render_unpledge_self_notification(const UnpledgeResult& vm) {
+  return std::format("You have quit {}\n", vm.block_name);
+}
+
+std::string render_unpledge_declaration_news(const UnpledgeResult& vm) {
+  if (vm.taunt) {
+    return std::format("{} [{}] calls {} [{}] a bunch of geeks and QUITS!\n",
+                       vm.pledger_name, vm.pledger_id, vm.block_name,
+                       vm.block_id);
+  }
+  return std::format("{} [{}] has QUIT {} [{}]!\n", vm.pledger_name,
+                     vm.pledger_id, vm.block_name, vm.block_id);
+}
+
 }  // namespace GB::presentation

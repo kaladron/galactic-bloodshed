@@ -7,6 +7,7 @@ module;
 
 import std;
 import gb.entities;
+import gb.presentation;
 import gb.services;
 
 module commands;
@@ -25,35 +26,28 @@ bool pledge(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  try {
-    g.entity_manager.mutate_block(n, [&](Block& b) {
-      b.pledge(Playernum);
-      warn_race(g.session_registry, g.entity_manager, n,
-                std::format("{} [{}] has pledged {}.\n", g.race->name,
-                            Playernum, b.name()));
-      warn_race(g.session_registry, g.entity_manager, Playernum,
-                std::format("You have pledged allegiance to {}.\n", b.name()));
+  GB::presentation::PledgeResult result{
+      .pledger_id = Playernum,
+      .pledger_name = g.race->name,
+      .block_id = n,
+      .bandwagon = (int_rand(1, 20) == 1),
+  };
 
-      std::string msg;
-      switch (int_rand(1, 20)) {
-        case 1:
-          msg = std::format("{} [{}] joins the band wagon and pledges "
-                            "allegiance to {} [{}]!\n",
-                            g.race->name, Playernum, b.name(), n);
-          break;
-        default:
-          msg = std::format("{} [{}] pledges allegiance to {} [{}].\n",
-                            g.race->name, Playernum, b.name(), n);
-          break;
-      }
+  g.entity_manager.mutate_block(n, [&](Block& b) {
+    b.pledge(Playernum);
+    result.block_name = b.name();
+  });
 
-      post(g.entity_manager, msg, NewsType::DECLARATION);
-    });
-    compute_power_blocks(g.entity_manager);
-  } catch (const EntityNotFoundError&) {
-    g.out << "Block not found.\n";
-    return false;
-  }
+  warn_race(g.session_registry, g.entity_manager, n,
+            GB::presentation::render_pledge_block_notification(result));
+  warn_race(g.session_registry, g.entity_manager, Playernum,
+            GB::presentation::render_pledge_self_notification(result));
+  post(g.entity_manager,
+       GB::presentation::render_pledge_declaration_news(result),
+       NewsType::DECLARATION);
+  compute_power_blocks(g.entity_manager);
+
+  g.present(result);
   return true;
 }
 

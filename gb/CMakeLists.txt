@@ -307,6 +307,7 @@ target_sources(
   PRIVATE commands/allocate.cc
           commands/analysis.cc
           commands/announce.cc
+          commands/appoint.cc
           commands/arm.cc
           commands/assault.cc
           commands/autoreport.cc
@@ -371,6 +372,7 @@ target_sources(
           commands/registry.cc
           commands/relation.cc
           commands/repair.cc
+          commands/revoke.cc
           commands/route.cc
           commands/rst.cc
           commands/segment.cc
@@ -450,6 +452,7 @@ gb_add_test(scnlib_test SOURCES third_party/scnlib_test.cc EXTRA_LIBS scnlib_mod
 gb_add_test(allocate_test SOURCES commands/allocate_test.cc)
 gb_add_test(analysis_test SOURCES commands/analysis_test.cc)
 gb_add_test(announce_test SOURCES commands/announce_test.cc EXTRA_LIBS session notification)
+gb_add_test(appoint_test SOURCES commands/appoint_test.cc)
 gb_add_test(arm_test SOURCES commands/arm_test.cc)
 gb_add_test(assault_test SOURCES commands/assault_test.cc)
 gb_add_test(auth_test SOURCES server/auth_test.cc EXTRA_LIBS session auth)
@@ -561,6 +564,7 @@ gb_add_test(rand_test SOURCES entities/rand_test.cc)
 gb_add_test(read_messages_test SOURCES commands/read_messages_test.cc)
 gb_add_test(relation_test SOURCES commands/relation_test.cc)
 gb_add_test(repair_test SOURCES commands/repair_test.cc)
+gb_add_test(revoke_test SOURCES commands/revoke_test.cc)
 gb_add_test(route_test SOURCES commands/route_test.cc)
 gb_add_test(rst_test SOURCES commands/rst_test.cc)
 gb_add_test(schedule_test SOURCES commands/schedule_test.cc)

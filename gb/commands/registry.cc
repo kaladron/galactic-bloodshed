@@ -88,6 +88,8 @@ build_registry() {
         reg(bless_cmd);
         reg(capital_cmd);
         reg(governors_cmd);
+        reg(appoint_cmd);
+        reg(revoke_cmd);
         reg(help_cmd);
         reg(quit_cmd);
         reg(tax_cmd);

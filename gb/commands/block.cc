@@ -75,18 +75,18 @@ bool block(const command_t& argv, GameObj& g) {
     for (const Race& r : RaceList::readonly(g.entity_manager)) {
       if (!block_p->is_member(r.Playernum) || r.dissolved) continue;
       try {
-        g.entity_manager.with_power(r.Playernum, [&](const auto& p_info) {
+        g.entity_manager.with_power(r.Playernum, [&](const Power& p_info) {
           report.members.push_back(BlockMemberRow{
               .player = r.Playernum,
               .name = r.name,
-              .troops = race->estimate(p_info.troops, r),
-              .pop = race->estimate(p_info.popn, r),
-              .money = race->estimate(p_info.money, r),
-              .ships = race->estimate(p_info.ships_owned, r),
-              .planets = race->estimate(p_info.planets_owned, r),
-              .resource = race->estimate(p_info.resource, r),
-              .fuel = race->estimate(p_info.fuel, r),
-              .destruct = race->estimate(p_info.destruct, r),
+              .troops = race->estimate(p_info.troops(), r),
+              .pop = race->estimate(p_info.popn(), r),
+              .money = race->estimate(p_info.money(), r),
+              .ships = race->estimate(p_info.ships_owned(), r),
+              .planets = race->estimate(p_info.planets_owned(), r),
+              .resource = race->estimate(p_info.resource(), r),
+              .fuel = race->estimate(p_info.fuel(), r),
+              .destruct = race->estimate(p_info.destruct(), r),
               .know = race->translation_for(r),
           });
         });

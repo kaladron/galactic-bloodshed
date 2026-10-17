@@ -88,7 +88,7 @@ bool tech_status(const command_t& argv, GameObj& g) {
 
   try {
     if (const auto* power_ptr = g.entity_manager.peek_power(Playernum)) {
-      vm.total_popn = power_ptr->popn;
+      vm.total_popn = power_ptr->popn();
     }
   } catch (const EntityNotFoundError&) {
   }

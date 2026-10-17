@@ -1148,8 +1148,8 @@ void test_sync_power_ratings() {
   // Verified persisted power record
   const auto* power = ctx.em.peek_power(1);
   test::expect_ne(power, nullptr);
-  test::expect_eq(power->money, 12'345);
-  test::expect_eq(power->popn, 5000);
+  test::expect_eq(power->money(), 12'345);
+  test::expect_eq(power->popn(), 5000);
 
   // Verified alliance block aggregated this turn's power record (not stale
   // data)
@@ -1340,11 +1340,12 @@ void test_end_to_end_multi_turn_game_lifecycle() {
     const auto* r = em.peek_race(pid);
     test::expect_ne(r, nullptr);
     test::expect_eq(r->turn, 1);
-    test::expect_gt(em.peek_power(pid)->popn, 0U);
+    test::expect_gt(em.peek_power(pid)->popn(), 0U);
   }
   const auto* blk1 = em.peek_block(1);
   test::expect_eq(blk1->members, 2U);
-  test::expect_eq(blk1->popn, em.peek_power(1)->popn + em.peek_power(2)->popn);
+  test::expect_eq(blk1->popn,
+                  em.peek_power(1)->popn() + em.peek_power(2)->popn());
   test::expect_gt(blk1->VPs, 0U);
 
   // 7. Simulate mid-game combat ship destruction (destroying carrier and

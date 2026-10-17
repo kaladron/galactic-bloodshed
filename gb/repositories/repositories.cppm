@@ -270,23 +270,23 @@ protected:
 // ============================================================================
 // PowerRepository - Repository for player power statistics
 // ============================================================================
-export class PowerRepository : public Repository<power> {
+export class PowerRepository : public Repository<Power> {
 public:
   explicit PowerRepository(JsonStore& store)
-      : Repository<power>(store, "tbl_power") {}
+      : Repository<Power>(store, "tbl_power") {}
 
   // Domain-specific methods
-  std::optional<power> find_by_id(player_t id) {
+  std::optional<Power> find_by_id(player_t id) {
     return find(id);
   }
-  bool save(const power& p) {
-    return Repository<power>::save(p.id, p);
+  bool save(const Power& p) {
+    return Repository<Power>::save(p.id(), p);
   }
 
 protected:
   [[nodiscard]] std::optional<std::string>
-  serialize(const power& p) const override;
-  [[nodiscard]] std::optional<power>
+  serialize(const Power& p) const override;
+  [[nodiscard]] std::optional<Power>
   deserialize(const std::string& json_str) const override;
 };
 

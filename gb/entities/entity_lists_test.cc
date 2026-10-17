@@ -515,25 +515,27 @@ void test_block_list(EntityManager& em, JsonStore& store) {
 void test_power_list(EntityManager& em, JsonStore& store) {
   PowerRepository repo(store);
   {
-    power p1{};
-    p1.id = 1;
-    p1.troops = 1000;
-    p1.popn = 50000;
-    p1.money = 20000;
+    Power p1{{
+        .id = 1,
+        .troops = 1000,
+        .popn = 50000,
+        .money = 20000,
+    }};
     repo.save(p1);
 
-    power p2{};
-    p2.id = 2;
-    p2.troops = 2000;
-    p2.popn = 80000;
-    p2.money = 40000;
+    Power p2{{
+        .id = 2,
+        .troops = 2000,
+        .popn = 80000,
+        .money = 40000,
+    }};
     repo.save(p2);
   }
 
   // Readonly iteration
   std::vector<population_t> troops;
-  for (const power& p : PowerList::readonly(em)) {
-    troops.push_back(p.troops);
+  for (const Power& p : PowerList::readonly(em)) {
+    troops.push_back(p.troops());
   }
   test::expect_eq(troops.size(), 2);
   test::expect_eq(troops[0], 1000);
@@ -542,17 +544,17 @@ void test_power_list(EntityManager& em, JsonStore& store) {
 
   // Mutable iteration with auto-save
   for (auto power_handle : PowerList(em)) {
-    power_handle->troops += 500;
+    power_handle->troops() += 500;
   }
 
   em.clear_cache();
   const auto* p1_peek = em.peek_power(1);
   test::expect_true(p1_peek != nullptr);
-  test::expect_eq(p1_peek->troops, 1500);
+  test::expect_eq(p1_peek->troops(), 1500);
 
   const auto* p2_peek = em.peek_power(2);
   test::expect_true(p2_peek != nullptr);
-  test::expect_eq(p2_peek->troops, 2500);
+  test::expect_eq(p2_peek->troops(), 2500);
   std::println(std::cout, "  ✓ Mutable PowerList auto-save passed");
 }
 

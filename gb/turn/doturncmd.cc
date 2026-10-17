@@ -494,9 +494,10 @@ void sync_power_ratings(EntityManager& entity_manager, TurnStats& stats) {
   // Save power data via EntityManager before aggregating alliance blocks
   for (const Race& race : RaceList::readonly(entity_manager)) {
     const player_t i = race.Playernum;
-    entity_manager.mutate_power(i, [&](struct power& p) {
-      p = stats.power_stats(i);
-      p.id = i;
+    entity_manager.mutate_power(i, [&](Power& p) {
+      auto ps = stats.power_stats(i);
+      ps.id = i;
+      p = Power{ps};
     });
   }
   compute_power_blocks(entity_manager);

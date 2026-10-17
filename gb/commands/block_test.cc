@@ -43,14 +43,14 @@ void test_block_dispatch() {
   races.save(race3);
   races.save(race4);
 
-  PowerRepository(store).save(power{
+  PowerRepository(store).save(Power{{
       .id = 1,
       .troops = 100,
       .popn = 1000,
       .ships_owned = 5,
       .planets_owned = 2,
       .money = 500,
-  });
+  }});
 
   // Create blocks for each player using designated initializers
   const block block1{

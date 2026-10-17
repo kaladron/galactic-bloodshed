@@ -167,7 +167,7 @@ struct EntityListTraits<block> {
 };
 
 export template <>
-struct EntityListTraits<power> {
+struct EntityListTraits<Power> {
   using index_type = player_t;
 
   static index_type count(EntityManager& em) {
@@ -187,15 +187,15 @@ struct EntityListTraits<power> {
     return current;
   }
 
-  static EntityHandle<power> get(EntityManager& em, index_type index) {
+  static EntityHandle<Power> get(EntityManager& em, index_type index) {
     return em.get_power(index);
   }
 
-  static const power* peek(EntityManager& em, index_type index) {
+  static const Power* peek(EntityManager& em, index_type index) {
     return em.peek_power(index);
   }
 
-  static bool is_valid(const power* entity) {
+  static bool is_valid(const Power* entity) {
     return entity != nullptr;
   }
 };
@@ -681,12 +681,12 @@ public:
 
 /**
  * Iterator class for player power statistics (1-indexed, 1..max_power_id).
- * Returns EntityHandle<power> for RAII auto-save behavior.
+ * Returns EntityHandle<Power> for RAII auto-save behavior.
  * Skips empty slots (sparse iteration).
  */
-export class PowerList : public SimpleEntityList<power, PowerList> {
+export class PowerList : public SimpleEntityList<Power, PowerList> {
 public:
-  using Base = SimpleEntityList<power, PowerList>;
+  using Base = SimpleEntityList<Power, PowerList>;
   using Iterator = typename Base::Iterator;
   using ConstIterator = typename Base::ConstIterator;
 

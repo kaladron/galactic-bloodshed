@@ -622,7 +622,7 @@ void test_standard_universe_fixture() {
 
     const auto* pwr = ctx.em.peek_power(pid);
     test::expect_true(pwr != nullptr, "Auto-seeded power must exist");
-    test::expect_eq(pwr->id, pid);
+    test::expect_eq(pwr->id(), pid);
   }
 
   // 2. Verify Star 1 (Sol)

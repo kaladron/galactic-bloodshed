@@ -207,9 +207,7 @@ EntityHandle<Race> EntityManager::create_race(const Race& race_data) {
 
   // Auto-seed baseline power if not existing
   if (!storage_->powers.find_by_id(player)) {
-    power p{};
-    p.id = player;
-    storage_->powers.save(p);
+    storage_->powers.save(Power{{.id = player}});
   }
 
   // Cache it
@@ -528,11 +526,11 @@ void EntityManager::release_block(player_t id) {
 }
 
 // Power entity methods
-EntityHandle<power> EntityManager::get_power(player_t id) {
-  auto handle = get_entity_impl<power>(
+EntityHandle<Power> EntityManager::get_power(player_t id) {
+  auto handle = get_entity_impl<Power>(
       this, id, power_cache, power_refcount,
       [this](player_t i) { return storage_->powers.find_by_id(i); },
-      [this](const power& p) { storage_->powers.save(p); },
+      [this](const Power& p) { storage_->powers.save(p); },
       [this](player_t i) { release_power(i); });
   if (!handle.get()) {
     throw EntityNotFoundError(std::format("Power not found: id={}", id));
@@ -540,8 +538,8 @@ EntityHandle<power> EntityManager::get_power(player_t id) {
   return handle;
 }
 
-const power* EntityManager::peek_power(player_t id) {
-  const auto* p = peek_entity_impl<power>(id, power_cache, [this](player_t i) {
+const Power* EntityManager::peek_power(player_t id) {
+  const auto* p = peek_entity_impl<Power>(id, power_cache, [this](player_t i) {
     return storage_->powers.find_by_id(i);
   });
   if (!p) {
@@ -551,7 +549,7 @@ const power* EntityManager::peek_power(player_t id) {
 }
 
 void EntityManager::release_power(player_t id) {
-  release_entity_impl<power>(id, power_cache, power_refcount);
+  release_entity_impl<Power>(id, power_cache, power_refcount);
 }
 
 // Universe entity methods (singleton)
@@ -894,8 +892,8 @@ void EntityManager::flush_all() {
   });
   flush_cache_impl<block>(block_cache,
                           [this](const block& b) { storage_->blocks.save(b); });
-  flush_cache_impl<power>(power_cache,
-                          [this](const power& p) { storage_->powers.save(p); });
+  flush_cache_impl<Power>(power_cache,
+                          [this](const Power& p) { storage_->powers.save(p); });
   flush_cache_impl<ShipExam>(ship_exam_cache, [this](const ShipExam& e) {
     storage_->ship_exams.save(e);
   });
@@ -937,7 +935,7 @@ void EntityManager::clear_cache() {
   clear_cache_impl<SectorMap>(sectormap_cache, sectormap_refcount);
   clear_cache_impl<Commod>(commod_cache, commod_refcount);
   clear_cache_impl<block>(block_cache, block_refcount);
-  clear_cache_impl<power>(power_cache, power_refcount);
+  clear_cache_impl<Power>(power_cache, power_refcount);
   clear_cache_impl<ShipExam>(ship_exam_cache, ship_exam_refcount);
 
   // Clear global Universe if no active handles

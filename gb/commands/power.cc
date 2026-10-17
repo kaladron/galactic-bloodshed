@@ -25,7 +25,7 @@ void add_power_row(PowerViewModel& vm, EntityManager& em, const Race& race,
                             : r.is_at_war_with(race.Playernum) ? "-"
                                                                : " ";
 
-  const power* power_ptr = nullptr;
+  const Power* power_ptr = nullptr;
   try {
     power_ptr = em.peek_power(i);
   } catch (const EntityNotFoundError&) {
@@ -46,14 +46,14 @@ void add_power_row(PowerViewModel& vm, EntityManager& em, const Race& race,
       .alliance = alliance_them + alliance_us,
       .name = std::string(r.name),
       .vp = race.estimate(r.victory_score, i),
-      .mil = race.estimate(power_ptr->troops, i),
-      .civ = race.estimate(power_ptr->popn, i),
-      .cash = race.estimate(power_ptr->money, i),
-      .ships = race.estimate(power_ptr->ships_owned, i),
-      .planets = race.estimate(power_ptr->planets_owned, i),
-      .resource = race.estimate(power_ptr->resource, i),
-      .fuel = race.estimate(power_ptr->fuel, i),
-      .destruct = race.estimate(power_ptr->destruct, i),
+      .mil = race.estimate(power_ptr->troops(), i),
+      .civ = race.estimate(power_ptr->popn(), i),
+      .cash = race.estimate(power_ptr->money(), i),
+      .ships = race.estimate(power_ptr->ships_owned(), i),
+      .planets = race.estimate(power_ptr->planets_owned(), i),
+      .resource = race.estimate(power_ptr->resource(), i),
+      .fuel = race.estimate(power_ptr->fuel(), i),
+      .destruct = race.estimate(power_ptr->destruct(), i),
       .morale = race.estimate(r.morale, i),
       .know_or_vns = std::move(know_col),
   });

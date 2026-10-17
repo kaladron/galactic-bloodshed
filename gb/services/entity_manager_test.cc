@@ -747,33 +747,34 @@ void test_entity_manager_powers() {
   JsonStore store(db);
   PowerRepository repo(store);
 
-  power p{};
-  p.id = 1;
-  p.troops = 1000;
-  p.popn = 50000;
+  Power p{{
+      .id = 1,
+      .troops = 1000,
+      .popn = 50000,
+  }};
   repo.save(p);
 
   const auto* peek = em.peek_power(1);
   test::expect_ne(peek, nullptr);
-  test::expect_eq(peek->troops, 1000);
-  test::expect_eq(peek->popn, 50000);
+  test::expect_eq(peek->troops(), 1000);
+  test::expect_eq(peek->popn(), 50000);
   std::println(std::cout, "  ✓ peek_power works");
 
   auto troops_read =
-      em.with_power(1, [](const power& pwr) { return pwr.troops; });
+      em.with_power(1, [](const Power& pwr) { return pwr.troops(); });
   test::expect_eq(troops_read, 1000);
   std::println(std::cout, "  ✓ with_power works");
 
-  em.mutate_power(1, [](power& pwr) { pwr.troops = 2500; });
+  em.mutate_power(1, [](Power& pwr) { pwr.troops() = 2500; });
 
   auto updated = repo.find_by_id(1);
   test::expect_true(updated.has_value());
-  test::expect_eq(updated->troops, 2500);
+  test::expect_eq(updated->troops(), 2500);
   std::println(std::cout, "  ✓ mutate_power auto-save persisted changes");
 
   test::expect_throws<EntityNotFoundError>([&]() { em.peek_power(999); });
   test::expect_throws<EntityNotFoundError>(
-      [&]() { em.mutate_power(999, [](power&) {}); });
+      [&]() { em.mutate_power(999, [](Power&) {}); });
   std::println(std::cout,
                "  ✓ peek_power and mutate_power throw EntityNotFoundError for "
                "missing power");
@@ -1155,7 +1156,7 @@ void test_entity_manager_create_race() {
     test::expect_eq(b->name, r->name);
     const auto* p = ctx.em.peek_power(pid);
     test::expect_ne(p, nullptr);
-    test::expect_eq(p->id, pid);
+    test::expect_eq(p->id(), pid);
   }
 
   // Create an additional race (Player 5)
@@ -1179,7 +1180,7 @@ void test_entity_manager_create_race() {
 
   const auto* created_power = ctx.em.peek_power(p5);
   test::expect_ne(created_power, nullptr);
-  test::expect_eq(created_power->id, p5);
+  test::expect_eq(created_power->id(), p5);
 
   // Persistence check across cache flush/clear
   ctx.em.clear_cache();
@@ -1195,7 +1196,7 @@ void test_entity_manager_create_race() {
 
   const auto* persisted_power = ctx.em.peek_power(p5);
   test::expect_ne(persisted_power, nullptr);
-  test::expect_eq(persisted_power->id, p5);
+  test::expect_eq(persisted_power->id(), p5);
 
   std::println(
       std::cout,

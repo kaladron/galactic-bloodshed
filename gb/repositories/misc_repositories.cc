@@ -57,8 +57,8 @@ struct meta<block> {
 };
 
 template <>
-struct meta<power> {
-  using T = power;
+struct meta<power_struct> {
+  using T = power_struct;
   static constexpr auto value = object(
       "id", &T::id, "troops", &T::troops, "popn", &T::popn, "resource",
       &T::resource, "fuel", &T::fuel, "destruct", &T::destruct, "ships_owned",
@@ -125,20 +125,20 @@ BlockRepository::deserialize(const std::string& json_str) const {
   return std::nullopt;
 }
 
-std::optional<std::string> PowerRepository::serialize(const power& p) const {
-  auto result = glz::write_json(p);
+std::optional<std::string> PowerRepository::serialize(const Power& p) const {
+  auto result = glz::write_json(p.get_struct());
   if (result.has_value()) {
     return result.value();
   }
   return std::nullopt;
 }
 
-std::optional<power>
+std::optional<Power>
 PowerRepository::deserialize(const std::string& json_str) const {
-  power p{};
-  auto result = glz::read_json(p, json_str);
+  power_struct data{};
+  auto result = glz::read_json(data, json_str);
   if (!result) {
-    return p;
+    return Power{data};
   }
   return std::nullopt;
 }

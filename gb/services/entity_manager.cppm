@@ -178,7 +178,7 @@ export class EntityManager {
       sectormap_cache;
   std::unordered_map<int, std::unique_ptr<Commod>> commod_cache;
   std::unordered_map<player_t, std::unique_ptr<block>> block_cache;
-  std::unordered_map<player_t, std::unique_ptr<power>> power_cache;
+  std::unordered_map<player_t, std::unique_ptr<Power>> power_cache;
   std::unordered_map<ShipType, std::unique_ptr<ShipExam>> ship_exam_cache;
   std::unique_ptr<Universe> global_universe_cache;  // Singleton
   std::unique_ptr<ServerState> server_state_cache;  // Singleton
@@ -208,7 +208,7 @@ export class EntityManager {
   EntityHandle<Star> get_star(starnum_t num);
   EntityHandle<Commod> get_commod(int id);
   EntityHandle<block> get_block(player_t id);
-  EntityHandle<power> get_power(player_t id);
+  EntityHandle<Power> get_power(player_t id);
   EntityHandle<Universe> get_universe();
   EntityHandle<ServerState> get_server_state();
   EntityHandle<ShipExam> get_ship_exam(ShipType ship_type);
@@ -228,7 +228,7 @@ public:
   const Star* peek_star(starnum_t num);
   const Commod* peek_commod(int id);
   const block* peek_block(player_t id);
-  const power* peek_power(player_t id);
+  const Power* peek_power(player_t id);
   const Universe* peek_universe();
   [[nodiscard]] int count_non_asteroid_planets();
   const ServerState* peek_server_state();

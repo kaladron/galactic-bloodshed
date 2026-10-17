@@ -149,9 +149,9 @@ export struct TurnStats {
   // --- Per-Player Power & Per-Planet Production / Mobilization / Compatibility
   // ---
 
-  [[nodiscard]] const power& power_stats(player_t p) const {
+  [[nodiscard]] const power_struct& power_stats(player_t p) const {
     check_player_bounds(p);
-    static constexpr power default_power{};
+    static constexpr power_struct default_power{};
     if (const auto it = power_.find(p); it != power_.end()) {
       return it->second;
     }
@@ -160,7 +160,7 @@ export struct TurnStats {
 
   /// \brief Returns a mutable reference to a player's accumulated power entry,
   /// inserting a default entry if none exists.
-  [[nodiscard]] power& mutable_power_stats(player_t p) {
+  [[nodiscard]] power_struct& mutable_power_stats(player_t p) {
     check_player_bounds(p);
     return power_[p];
   }
@@ -279,7 +279,7 @@ private:
       star_player_stats_{};
   std::map<std::pair<starnum_t, planetnum_t>, PlanetTurnInfo>
       planet_turn_info_{};
-  std::flat_map<player_t, power> power_{};
+  std::flat_map<player_t, power_struct> power_{};
   std::flat_map<player_t, Stockpile> prod_{};
   std::flat_map<player_t, std::uint32_t> total_mob_points_{};
   std::flat_map<player_t, double> compat_{};

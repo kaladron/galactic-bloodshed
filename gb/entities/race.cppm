@@ -446,16 +446,117 @@ public:
   }
 };
 
-export struct power {
-  player_t id{0};               // Player ID for database persistence
-  population_t troops{0};       /* total troops */
-  population_t popn{0};         /* total population */
-  resource_t resource{0};       /* total resource in stock */
-  resource_t fuel{0};           /* total fuel in stock */
-  resource_t destruct{0};       /* total dest in stock */
-  std::uint32_t ships_owned{0}; /* # of ships owned */
+/// \brief Serialization and designated-initializer data structure for a
+/// player's power report.
+export struct power_struct {
+  player_t id{0};
+  population_t troops{0};
+  population_t popn{0};
+  resource_t resource{0};
+  resource_t fuel{0};
+  resource_t destruct{0};
+  std::uint32_t ships_owned{0};
   planet_count_t planets_owned{0};
   money_t money{0};
+
+  [[nodiscard]] constexpr bool
+  operator==(const power_struct&) const noexcept = default;
+};
+
+/// \brief Domain entity representing a player's aggregated empire power
+/// statistics.
+export class Power {
+public:
+  Power() = delete;
+
+  Power(const power_struct& in) : data_(in) {
+    validate(data_);
+  }
+
+  [[nodiscard]] player_t id() const noexcept {
+    return data_.id;
+  }
+
+  void set_id(player_t id) {
+    if (id < 1) {
+      throw std::invalid_argument(
+          std::format("Power player ID must be >= 1 (got {})", id));
+    }
+    data_.id = id;
+  }
+
+  [[nodiscard]] population_t troops() const noexcept {
+    return data_.troops;
+  }
+  [[nodiscard]] population_t& troops() noexcept {
+    return data_.troops;
+  }
+
+  [[nodiscard]] population_t popn() const noexcept {
+    return data_.popn;
+  }
+  [[nodiscard]] population_t& popn() noexcept {
+    return data_.popn;
+  }
+
+  [[nodiscard]] resource_t resource() const noexcept {
+    return data_.resource;
+  }
+  [[nodiscard]] resource_t& resource() noexcept {
+    return data_.resource;
+  }
+
+  [[nodiscard]] resource_t fuel() const noexcept {
+    return data_.fuel;
+  }
+  [[nodiscard]] resource_t& fuel() noexcept {
+    return data_.fuel;
+  }
+
+  [[nodiscard]] resource_t destruct() const noexcept {
+    return data_.destruct;
+  }
+  [[nodiscard]] resource_t& destruct() noexcept {
+    return data_.destruct;
+  }
+
+  [[nodiscard]] std::uint32_t ships_owned() const noexcept {
+    return data_.ships_owned;
+  }
+  [[nodiscard]] std::uint32_t& ships_owned() noexcept {
+    return data_.ships_owned;
+  }
+
+  [[nodiscard]] planet_count_t planets_owned() const noexcept {
+    return data_.planets_owned;
+  }
+  [[nodiscard]] planet_count_t& planets_owned() noexcept {
+    return data_.planets_owned;
+  }
+
+  [[nodiscard]] money_t money() const noexcept {
+    return data_.money;
+  }
+  [[nodiscard]] money_t& money() noexcept {
+    return data_.money;
+  }
+
+  [[nodiscard]] const power_struct& get_struct() const noexcept {
+    return data_;
+  }
+
+  [[nodiscard]] constexpr bool
+  operator==(const Power&) const noexcept = default;
+
+private:
+  static void validate(const power_struct& data) {
+    if (data.id < 1) {
+      throw std::invalid_argument(
+          std::format("Power player ID must be >= 1 (got {})", data.id));
+    }
+  }
+
+  power_struct data_{};
 };
 
 export struct block {
@@ -486,14 +587,14 @@ export struct block {
   }
 
   /// Accumulates a member race's power report into this bloc's totals.
-  void accumulate_member_power(const power& p) noexcept {
+  void accumulate_member_power(const Power& p) noexcept {
     members += 1;
-    popn += p.popn;
-    resource += p.resource;
-    fuel += p.fuel;
-    destruct += p.destruct;
-    ships_owned += p.ships_owned;
-    money += p.money;
+    popn += p.popn();
+    resource += p.resource();
+    fuel += p.fuel();
+    destruct += p.destruct();
+    ships_owned += p.ships_owned();
+    money += p.money();
   }
 
   /// Adds a player as a full member (both invited and pledged).

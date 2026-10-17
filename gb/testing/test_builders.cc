@@ -404,9 +404,7 @@ TestWorldBuilder::add_race(std::string_view name, double tech, bool guest,
   }
   PowerRepository powers(store_);
   if (!powers.find_by_id(id)) {
-    power p{};
-    p.id = id;
-    powers.save(p);
+    powers.save(Power{{.id = id}});
   }
   registered_races_.push_back(id);
   return *this;

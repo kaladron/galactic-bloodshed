@@ -19,9 +19,9 @@ int main() {
   // Initialize database tables - this will create the tbl_power table
   initialize_schema(db);
 
-  std::flat_map<player_t, power> test_power;
+  std::flat_map<player_t, power_struct> test_power;
   for (player_t p : all_players()) {
-    test_power[p] = power{.id = p};
+    test_power[p] = power_struct{.id = p};
   }
 
   // Initialize some test data for a few players
@@ -54,18 +54,18 @@ int main() {
     Race r{};
     r.Playernum = p;
     race_repo.save(r);
-    power_repo.save(test_power[p]);
+    power_repo.save(Power{test_power[p]});
   }
 
   // Now use EntityManager to retrieve
   EntityManager em(db);
-  std::flat_map<player_t, power> loaded_power;
+  std::flat_map<player_t, power_struct> loaded_power;
 
   // Retrieve from EntityManager
   for (player_t p : all_players()) {
     const auto* power_ptr = em.peek_power(p);
     test::expect_ne(power_ptr, nullptr);  // Should exist now
-    loaded_power[p] = *power_ptr;
+    loaded_power[p] = power_ptr->get_struct();
   }
 
   // Verify the data matches

@@ -44,22 +44,22 @@ void test_power_dispatch() {
   ctx.em.mutate_race(4, [](Race& r) { r.dissolved = true; });
 
   PowerRepository powers(store);
-  powers.save(power{
+  powers.save(Power{{
       .id = 1,
       .troops = 200,
       .popn = 5000,
       .ships_owned = 10,
       .planets_owned = 2,
       .money = 1000,
-  });
-  powers.save(power{
+  }});
+  powers.save(Power{{
       .id = 2,
       .troops = 400,
       .popn = 8000,
       .ships_owned = 15,
       .planets_owned = 3,
       .money = 2000,
-  });
+  }});
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);

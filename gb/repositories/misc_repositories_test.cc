@@ -150,47 +150,49 @@ void test_power_repository() {
   PowerRepository repo(store);
 
   // Test data
-  power p1{};
-  p1.troops = 1000;
-  p1.popn = 5000;
-  p1.resource = 2000;
-  p1.fuel = 500;
-  p1.destruct = 100;
-  p1.ships_owned = 25;
-  p1.planets_owned = 5;
-  p1.money = 10000;
-  p1.id = 1;
+  Power p1{{
+      .id = 1,
+      .troops = 1000,
+      .popn = 5000,
+      .resource = 2000,
+      .fuel = 500,
+      .destruct = 100,
+      .ships_owned = 25,
+      .planets_owned = 5,
+      .money = 10000,
+  }};
 
   // Save and retrieve
   test::expect_true(repo.save(p1));
   auto retrieved = repo.find_by_id(1);
   test::expect_true(retrieved.has_value());
-  test::expect_eq(retrieved->troops, 1000);
-  test::expect_eq(retrieved->popn, 5000);
-  test::expect_eq(retrieved->ships_owned, 25);
-  test::expect_eq(retrieved->money, 10000);
+  test::expect_eq(retrieved->troops(), 1000);
+  test::expect_eq(retrieved->popn(), 5000);
+  test::expect_eq(retrieved->ships_owned(), 25);
+  test::expect_eq(retrieved->money(), 10000);
 
   // Update
-  p1.troops = 2000;
-  p1.ships_owned = 30;
+  p1.troops() = 2000;
+  p1.ships_owned() = 30;
   test::expect_true(repo.save(p1));
   retrieved = repo.find_by_id(1);
   test::expect_true(retrieved.has_value());
-  test::expect_eq(retrieved->troops, 2000);
-  test::expect_eq(retrieved->ships_owned, 30);
+  test::expect_eq(retrieved->troops(), 2000);
+  test::expect_eq(retrieved->ships_owned(), 30);
 
   // Multiple power entries (one per player)
-  power p2{};
-  p2.id = 2;
-  p2.troops = 500;
-  p2.popn = 2000;
-  p2.ships_owned = 10;
+  Power p2{{
+      .id = 2,
+      .troops = 500,
+      .popn = 2000,
+      .ships_owned = 10,
+  }};
   test::expect_true(repo.save(p2));
   test::expect_true(repo.find_by_id(1).has_value());
   test::expect_true(repo.find_by_id(2).has_value());
 
   // Monotonic next available ID
-  p1.id = 5;
+  p1.set_id(5);
   test::expect_true(repo.save(p1));
   int next_id = repo.next_available_id();
   test::expect_eq(next_id, 6);  // Should return max + 1 (6)

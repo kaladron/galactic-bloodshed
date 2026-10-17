@@ -15,10 +15,10 @@ namespace {
 void setup_test_world(TestContext& ctx) {
   ctx.with_standard_universe();
   JsonStore store(ctx.db);
-  PowerRepository(store).save(power{
+  PowerRepository(store).save(Power{{
       .id = 1,
       .popn = 1000,
-  });
+  }});
 
   ctx.em.mutate_planet(1, 1, [](Planet& pl) {
     pl.info(player_t{1}).autorep = 1;

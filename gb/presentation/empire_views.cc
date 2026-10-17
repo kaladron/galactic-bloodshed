@@ -1162,4 +1162,78 @@ std::string render_for_mode(UiMode mode, const CapitalResult& vm) {
                               : render_capital_result(vm);
 }
 
+std::string render_vote(const VoteViewModel& vm) {
+  std::string out;
+  switch (vm.viewer_role) {
+    case VoteViewerRole::God:
+      out += "Your vote doesn't count, however, here is the count.\n";
+      break;
+    case VoteViewerRole::Guest:
+      out += "You are not allowed to vote, but, here is the count.\n";
+      break;
+    case VoteViewerRole::Mortal:
+      std::format_to(std::back_inserter(out), "Your vote on updates is {}\n",
+                     vm.own_vote_go ? "go" : "wait");
+      break;
+  }
+  for (const auto& entry : vm.details) {
+    std::format_to(std::back_inserter(out), "  {} voted {}.\n", entry.race_name,
+                   entry.vote_go ? "go" : "wait");
+  }
+  std::format_to(std::back_inserter(out),
+                 "  Total votes = {}, Go = {}, Wait = {}.\n", vm.total_votes,
+                 vm.yays, vm.nays);
+  return out;
+}
+
+std::string render_json_vote(const VoteViewModel& vm) {
+  return render_json_envelope("vote", vm);
+}
+
+std::string render_for_mode(UiMode mode, const VoteViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_vote(vm) : render_vote(vm);
+}
+
+std::string render_vote_cast_result(const VoteCastResult& /*vm*/) {
+  return "";
+}
+
+std::string render_json_vote_cast_result(const VoteCastResult& vm) {
+  return render_json_envelope("vote_cast", vm);
+}
+
+std::string render_for_mode(UiMode mode, const VoteCastResult& vm) {
+  return mode == UiMode::JSON ? render_json_vote_cast_result(vm)
+                              : render_vote_cast_result(vm);
+}
+
+std::string render_dissolve_result(const DissolveResult& vm) {
+  std::string out = "WARNING!! WARNING!! WARNING!!\n"
+                    "-------------------------------\n"
+                    "Entering self destruct sequence!\n";
+  for (const shipnum_t shipno : vm.destroyed_ships) {
+    std::format_to(std::back_inserter(out), "Ship #{}, self-destruct enabled\n",
+                   shipno);
+  }
+  return out;
+}
+
+std::string render_json_dissolve_result(const DissolveResult& vm) {
+  return render_json_envelope("dissolve", vm);
+}
+
+std::string render_for_mode(UiMode mode, const DissolveResult& vm) {
+  return mode == UiMode::JSON ? render_json_dissolve_result(vm)
+                              : render_dissolve_result(vm);
+}
+
+std::string render_dissolve_leader_warning(governor_t attempting_governor) {
+  return std::format("Governor #{} has attempted to dissolve this race.\n",
+                     attempting_governor);
+}
+
+std::string render_dissolve_declaration_news(const DissolveResult& vm) {
+  return std::format("{} [{}] has dissolved.\n", vm.race_name, vm.player);
+}
+
 }  // namespace GB::presentation

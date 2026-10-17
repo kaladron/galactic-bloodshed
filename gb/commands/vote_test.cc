@@ -51,15 +51,34 @@ void test_vote_dispatch() {
   ctx.assert_dispatch_rejected(g, {"vote", "update", "maybe"});
   test::expect_contains(g.out.str(), "No such update choice");
 
-  // 6. Deity vote message
+  // 6. Deity vote message (with both 'wait' and 'go' votes)
   g.set_god(true);
+  g.out.str("");
   ctx.assert_dispatch_success(g, {"vote"});
   test::expect_contains(g.out.str(),
                         "Your vote doesn't count, however, here is the count.");
+  test::expect_contains(g.out.str(), "Democracy voted wait.");
+
+  ctx.em.mutate_race(1, [](Race& r) { r.votes = true; });
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"vote"});
+  test::expect_contains(g.out.str(), "Democracy voted go.");
   g.set_god(false);
 
-  // 7. Guest vote message
+  // 7. JSON mode for query and vote cast
+  g.set_ui_mode(UiMode::JSON);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"vote"});
+  test::expect_contains(g.out.str(), R"("type":"vote")");
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"vote", "update", "go"});
+  test::expect_contains(g.out.str(), R"("type":"vote_cast")");
+  test::expect_contains(g.out.str(), R"("unanimous":true)");
+  g.set_ui_mode(UiMode::ASCII);
+
+  // 8. Guest vote message (and total_votes == 0 when only Guest race exists)
   ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });
+  g.out.str("");
   ctx.assert_dispatch_success(g, {"vote"});
   test::expect_contains(g.out.str(),
                         "You are not allowed to vote, but, here is the count.");

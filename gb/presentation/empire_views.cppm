@@ -847,4 +847,61 @@ struct CapitalResult {
 [[nodiscard]] std::string render_json_capital_result(const CapitalResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode, const CapitalResult& vm);
 
+/// Voter role classification when inspecting update votes (`vote`).
+enum class VoteViewerRole : std::uint8_t {
+  Mortal,
+  God,
+  Guest,
+};
+
+/// Single race's vote entry visible to deities in `vote`.
+struct RaceVoteEntry {
+  std::string race_name{};
+  bool vote_go{false};
+};
+
+/// View model for `vote` query output.
+struct VoteViewModel {
+  VoteViewerRole viewer_role{VoteViewerRole::Mortal};
+  bool own_vote_go{false};
+  int total_votes{0};
+  int yays{0};
+  int nays{0};
+  std::vector<RaceVoteEntry> details{};
+};
+
+[[nodiscard]] std::string render_vote(const VoteViewModel& vm);
+[[nodiscard]] std::string render_json_vote(const VoteViewModel& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode, const VoteViewModel& vm);
+
+/// Result of casting an update vote (`vote update <go|wait>`).
+struct VoteCastResult {
+  player_t player{0};
+  bool vote_go{false};
+  bool unanimous{false};
+};
+
+[[nodiscard]] std::string render_vote_cast_result(const VoteCastResult& vm);
+[[nodiscard]] std::string
+render_json_vote_cast_result(const VoteCastResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const VoteCastResult& vm);
+
+/// Result of dissolving an empire (`dissolve <race_pw> <leader_pw> [waste]`).
+struct DissolveResult {
+  player_t player{0};
+  std::string race_name{};
+  bool waste{false};
+  std::vector<shipnum_t> destroyed_ships{};
+};
+
+[[nodiscard]] std::string render_dissolve_result(const DissolveResult& vm);
+[[nodiscard]] std::string render_json_dissolve_result(const DissolveResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const DissolveResult& vm);
+[[nodiscard]] std::string
+render_dissolve_leader_warning(governor_t attempting_governor);
+[[nodiscard]] std::string
+render_dissolve_declaration_news(const DissolveResult& vm);
+
 }  // namespace GB::presentation

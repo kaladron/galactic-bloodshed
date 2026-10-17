@@ -178,12 +178,53 @@ void test_dissolve_domain_errors() {
   test::expect_false(ctx.em.peek_race(1)->dissolved);
 }
 
+void test_dissolve_without_waste_and_json() {
+  // 1. 3-arg dissolve without waste (argv.size() == 3)
+  {
+    TestContext ctx;
+    setup_test_world(ctx);
+
+    auto& registry = get_test_session_registry();
+    GameObj g(ctx.em, registry);
+    ctx.setup_game_obj(g, 1, 1);
+    g.set_level(ScopeLevel::LEVEL_UNIV);
+
+    const auto orig_cond =
+        ctx.em.peek_sectormap(1, 1)->get({0, 0}).get_condition();
+    ctx.assert_dispatch_success(g, {"dissolve", "testpass", "govpass"});
+    ctx.em.clear_cache();
+    test::expect_true(ctx.em.peek_race(1)->dissolved);
+    test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({0, 0}).get_condition(),
+                    orig_cond);
+    ctx.verify_universe_invariants();
+  }
+
+  // 2. 4-arg dissolve with non-'w' option in UiMode::JSON
+  {
+    TestContext ctx;
+    setup_test_world(ctx);
+
+    auto& registry = get_test_session_registry();
+    GameObj g(ctx.em, registry);
+    ctx.setup_game_obj(g, 1, 1);
+    g.set_level(ScopeLevel::LEVEL_UNIV);
+    g.set_ui_mode(UiMode::JSON);
+
+    ctx.assert_dispatch_success(g, {"dissolve", "testpass", "govpass", "keep"});
+    test::expect_contains(g.out.str(), R"("type":"dissolve")");
+    test::expect_contains(g.out.str(), R"("waste":false)");
+    test::expect_contains(g.out.str(), R"("destroyed_ships":[1])");
+    ctx.verify_universe_invariants();
+  }
+}
+
 }  // namespace
 
 int main() {
   test_dissolve_happy_path();
   test_dissolve_role_rejections();
   test_dissolve_domain_errors();
+  test_dissolve_without_waste_and_json();
 
   std::println(std::cout, "\n✅ All dissolve tests passed!");
   return 0;

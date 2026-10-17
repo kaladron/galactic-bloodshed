@@ -7,6 +7,7 @@ module;
 
 import std;
 import gb.entities;
+import gb.presentation;
 import gb.services;
 
 module commands;
@@ -16,16 +17,18 @@ namespace {
 /**
  * @brief Destroy all living ships owned by the dissolving player.
  */
-void destroy_empire_ships(GameObj& g, player_t playernum) {
+std::vector<shipnum_t> destroy_empire_ships(GameObj& g, player_t playernum) {
+  std::vector<shipnum_t> destroyed;
   for (auto ship_handle :
        ShipList(g.entity_manager, ShipList::IterationType::AllAlive)) {
     Ship& ship = *ship_handle;
     if (ship.owner() != playernum) {
       continue;
     }
+    destroyed.push_back(ship.number());
     g.entity_manager.kill_ship(playernum, ship);
-    g.out << std::format("Ship #{}, self-destruct enabled\n", ship.number());
   }
+  return destroyed;
 }
 
 /**
@@ -90,10 +93,9 @@ bool dissolve(const command_t& argv, GameObj& g) {
     g.out << "Only the leader may dissolve the race. The "
              "leader has been notified of your "
              "attempt!!!\n";
-    warn_player(
-        g.session_registry, g.entity_manager, playernum, Race::leader_id,
-        std::format("Governor #{} has attempted to dissolve this race.\n",
-                    governor));
+    warn_player(g.session_registry, g.entity_manager, playernum,
+                Race::leader_id,
+                GB::presentation::render_dissolve_leader_warning(governor));
     return false;
   }
 
@@ -104,9 +106,6 @@ bool dissolve(const command_t& argv, GameObj& g) {
     g.out << "self-destruct sequence.\n";
     return false;
   }
-  g.out << "WARNING!! WARNING!! WARNING!!\n";
-  g.out << "-------------------------------\n";
-  g.out << "Entering self destruct sequence!\n";
 
   const bool waste = (argv.size() > 3 && argv[3].starts_with('w'));
   const auto [auth_player, auth_gov] =
@@ -116,16 +115,22 @@ bool dissolve(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  destroy_empire_ships(g, playernum);
+  GB::presentation::DissolveResult result{
+      .player = playernum,
+      .waste = waste,
+      .destroyed_ships = destroy_empire_ships(g, playernum),
+  };
   dissolve_empire_colonies(g, playernum, waste);
 
   g.entity_manager.mutate_race(playernum, [&](Race& race) {
     race.dissolved = true;
+    result.race_name = race.name;
     post(g.entity_manager,
-         std::format("{} [{}] has dissolved.\n", race.name, playernum),
+         GB::presentation::render_dissolve_declaration_news(result),
          NewsType::DECLARATION);
   });
 
+  g.present(result);
   return true;
 }
 

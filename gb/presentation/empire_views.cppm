@@ -790,4 +790,61 @@ render_unpledge_self_notification(const UnpledgeResult& vm);
 [[nodiscard]] std::string
 render_unpledge_declaration_news(const UnpledgeResult& vm);
 
+/// Diplomatic stance declared via `declare <race> <alliance|neutral|war>`.
+enum class DiplomaticRelation : std::uint8_t {
+  Alliance,
+  Neutral,
+  War,
+};
+
+/// News bulletin flavor variant when declaring war (`declare <race> war`).
+enum class WarDeclarationNewsVariant : std::uint8_t {
+  Standard,
+  HadEnough,
+  TimeToDeclare,
+  NoChoice,
+  ScrewIt,
+};
+
+inline constexpr std::array all_war_declaration_news_variants = {
+    WarDeclarationNewsVariant::Standard,
+    WarDeclarationNewsVariant::HadEnough,
+    WarDeclarationNewsVariant::TimeToDeclare,
+    WarDeclarationNewsVariant::NoChoice,
+    WarDeclarationNewsVariant::ScrewIt,
+};
+
+/// Result of declaring diplomatic relations (`declare <race>
+/// <alliance|neutral|war> [<mod>]`).
+struct DeclareResult {
+  player_t declarer_id{0};
+  std::string declarer_name{};
+  player_t target_id{0};
+  std::string target_name{};
+  DiplomaticRelation relation{DiplomaticRelation::Neutral};
+  bool rare_quip{false};
+  WarDeclarationNewsVariant news_variant{WarDeclarationNewsVariant::Standard};
+  int translation_modifier{30};
+};
+
+[[nodiscard]] std::string render_declare_result(const DeclareResult& vm);
+[[nodiscard]] std::string render_json_declare_result(const DeclareResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode, const DeclareResult& vm);
+[[nodiscard]] std::string
+render_declare_target_notification(const DeclareResult& vm);
+[[nodiscard]] std::string
+render_declare_declaration_news(const DeclareResult& vm);
+
+/// Result of querying or designating a governmental center (`capital
+/// [<ship>]`).
+struct CapitalResult {
+  shipnum_t shipno{0};
+  bool designated{false};
+  double efficiency{0.0};
+};
+
+[[nodiscard]] std::string render_capital_result(const CapitalResult& vm);
+[[nodiscard]] std::string render_json_capital_result(const CapitalResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode, const CapitalResult& vm);
+
 }  // namespace GB::presentation

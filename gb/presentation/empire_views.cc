@@ -1066,4 +1066,100 @@ std::string render_unpledge_declaration_news(const UnpledgeResult& vm) {
                      vm.pledger_id, vm.block_name, vm.block_id);
 }
 
+std::string render_declare_result(const DeclareResult& vm) {
+  switch (vm.relation) {
+    case DiplomaticRelation::Alliance:
+      if (vm.rare_quip) {
+        return "But would you want your sister to marry one?\n";
+      }
+      return "Good for you.\n";
+    case DiplomaticRelation::War:
+      if (vm.rare_quip) {
+        return "Your enemies flaunt their secondary male reproductive "
+               "glands in your\ngeneral direction.\n";
+      }
+      return "Give 'em hell!\n";
+    case DiplomaticRelation::Neutral:
+      return "Done.\n";
+  }
+  std::unreachable();
+}
+
+std::string render_json_declare_result(const DeclareResult& vm) {
+  return render_json_envelope("declare", vm);
+}
+
+std::string render_for_mode(UiMode mode, const DeclareResult& vm) {
+  return mode == UiMode::JSON ? render_json_declare_result(vm)
+                              : render_declare_result(vm);
+}
+
+std::string render_declare_target_notification(const DeclareResult& vm) {
+  switch (vm.relation) {
+    case DiplomaticRelation::Alliance:
+      return std::format(
+          " Player #{} ({}) has declared an alliance with you!\n",
+          vm.declarer_id, vm.declarer_name);
+    case DiplomaticRelation::War:
+      return std::format(" Player #{} ({}) has declared war against you!\n",
+                         vm.declarer_id, vm.declarer_name);
+    case DiplomaticRelation::Neutral:
+      return std::format(" Player #{} ({}) has declared neutrality with you!\n",
+                         vm.declarer_id, vm.declarer_name);
+  }
+  std::unreachable();
+}
+
+std::string render_declare_declaration_news(const DeclareResult& vm) {
+  switch (vm.relation) {
+    case DiplomaticRelation::Alliance:
+      return std::format("{} [{}] declares ALLIANCE with {} [{}].\n",
+                         vm.declarer_name, vm.declarer_id, vm.target_name,
+                         vm.target_id);
+    case DiplomaticRelation::War:
+      switch (vm.news_variant) {
+        case WarDeclarationNewsVariant::Standard:
+          return std::format("{} [{}] declares WAR on {} [{}].\n",
+                             vm.declarer_name, vm.declarer_id, vm.target_name,
+                             vm.target_id);
+        case WarDeclarationNewsVariant::HadEnough:
+          return std::format(
+              "{} [{}] has had enough of {} [{}] and declares WAR!\n",
+              vm.declarer_name, vm.declarer_id, vm.target_name, vm.target_id);
+        case WarDeclarationNewsVariant::TimeToDeclare:
+          return std::format(
+              "{} [{}] decided that it is time to declare WAR on {} [{}]!\n",
+              vm.declarer_name, vm.declarer_id, vm.target_name, vm.target_id);
+        case WarDeclarationNewsVariant::NoChoice:
+          return std::format(
+              "{} [{}] had no choice but to declare WAR against {} [{}]!\n",
+              vm.declarer_name, vm.declarer_id, vm.target_name, vm.target_id);
+        case WarDeclarationNewsVariant::ScrewIt:
+          return std::format(
+              "{} [{}] says 'screw it!' and declares WAR on {} [{}]!\n",
+              vm.declarer_name, vm.declarer_id, vm.target_name, vm.target_id);
+      }
+      std::unreachable();
+    case DiplomaticRelation::Neutral:
+      return std::format(
+          "{} [{}] declares a state of neutrality with {} [{}].\n",
+          vm.declarer_name, vm.declarer_id, vm.target_name, vm.target_id);
+  }
+  std::unreachable();
+}
+
+std::string render_capital_result(const CapitalResult& vm) {
+  return std::format("Efficiency of governmental center: {:.0f}%.\n",
+                     vm.efficiency);
+}
+
+std::string render_json_capital_result(const CapitalResult& vm) {
+  return render_json_envelope("capital", vm);
+}
+
+std::string render_for_mode(UiMode mode, const CapitalResult& vm) {
+  return mode == UiMode::JSON ? render_json_capital_result(vm)
+                              : render_capital_result(vm);
+}
+
 }  // namespace GB::presentation

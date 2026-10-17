@@ -6,6 +6,7 @@
 module;
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import std;
 
@@ -14,7 +15,7 @@ module commands;
 namespace GB::commands {
 
 bool capital(const command_t& argv, GameObj& g) {
-  const ap_t kAPCost = 50;
+  constexpr ap_t CAPITAL_AP_COST = 50;
 
   std::optional<shipnum_t> shipno;
   if (argv.size() != 2) {
@@ -51,9 +52,9 @@ bool capital(const command_t& argv, GameObj& g) {
           return false;
         }
 
-        if (!g.deduct_ap(snum, kAPCost)) {
+        if (!g.deduct_ap(snum, CAPITAL_AP_COST)) {
           g.out << std::format("You don't have {} action points there.\n",
-                               kAPCost);
+                               CAPITAL_AP_COST);
           return false;
         }
 
@@ -61,9 +62,14 @@ bool capital(const command_t& argv, GameObj& g) {
             g.player(), [&](Race& race) { race.Gov_ship = shipno; });
       }
 
-      g.out << std::format("Efficiency of governmental center: {:.0f}%.\n",
-                           ((double)s.popn() / (double)s.max_crew_capacity()) *
-                               (100 - (double)s.damage()));
+      const double efficiency = (static_cast<double>(s.popn()) /
+                                 static_cast<double>(s.max_crew_capacity())) *
+                                (100.0 - static_cast<double>(s.damage()));
+      g.present(GB::presentation::CapitalResult{
+          .shipno = *shipno,
+          .designated = (argv.size() == 2),
+          .efficiency = efficiency,
+      });
       return true;
     });
   } catch (const EntityNotFoundError&) {

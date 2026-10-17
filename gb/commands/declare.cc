@@ -7,6 +7,7 @@ module;
 
 import std;
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import scnlib;
 
@@ -16,7 +17,7 @@ namespace GB::commands {
 bool declare(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player();
   player_t n = get_player(g.entity_manager, argv[1]);
-  if (n.value == 0) {
+  if (n == player_t{0}) {
     g.out << "No such player.\n";
     return false;
   }
@@ -27,109 +28,71 @@ bool declare(const command_t& argv, GameObj& g) {
   }
 
   const auto& alien = *g.entity_manager.peek_race(n);
-  const std::string alien_name = alien.name;
 
-  int d_mod = 30;
-  std::string news_msg;
+  GB::presentation::DeclareResult result{
+      .declarer_id = Playernum,
+      .declarer_name = g.race->name,
+      .target_id = n,
+      .target_name = alien.name,
+  };
+
+  switch (argv[2][0]) {
+    case 'a':
+      result.relation = GB::presentation::DiplomaticRelation::Alliance;
+      result.rare_quip = success(5);
+      if (argv.size() > 3) {
+        if (auto parsed = scn::scan<int>(argv[3], "{}")) {
+          result.translation_modifier = std::max(parsed->value(), 30);
+        }
+      }
+      break;
+    case 'n':
+      result.relation = GB::presentation::DiplomaticRelation::Neutral;
+      break;
+    case 'w': {
+      result.relation = GB::presentation::DiplomaticRelation::War;
+      result.rare_quip = success(4);
+      const auto& variants =
+          GB::presentation::all_war_declaration_news_variants;
+      result.news_variant =
+          variants[int_rand(0, static_cast<int>(variants.size()) - 1)];
+      break;
+    }
+    default:
+      g.out << "I don't understand.\n";
+      return false;
+  }
 
   g.entity_manager.mutate_race(Playernum, [&](Race& race) {
-    switch (argv[2][0]) {
-      case 'a':
+    switch (result.relation) {
+      case GB::presentation::DiplomaticRelation::Alliance:
         race.declare_alliance_with(n);
         race.make_peace_with(n);
-        if (success(5)) {
-          g.out << "But would you want your sister to marry one?\n";
-        } else {
-          g.out << "Good for you.\n";
-        }
-        warn_race(
-            g.session_registry, g.entity_manager, n,
-            std::format(" Player #{} ({}) has declared an alliance with you!\n",
-                        Playernum, race.name));
-        news_msg = std::format("{} [{}] declares ALLIANCE with {} [{}].\n",
-                               race.name, Playernum, alien_name, n);
-        d_mod = 30;
-        if (argv.size() > 3) {
-          auto parsed = scn::scan<int>(argv[3], "{}");
-          if (parsed) {
-            d_mod = std::max(parsed->value(), 30);
-          }
-        }
         break;
-      case 'n':
+      case GB::presentation::DiplomaticRelation::Neutral:
         race.rescind_alliance_with(n);
         race.make_peace_with(n);
-        g.out << "Done.\n";
-
-        warn_race(
-            g.session_registry, g.entity_manager, n,
-            std::format(" Player #{} ({}) has declared neutrality with you!\n",
-                        Playernum, race.name));
-        news_msg = std::format(
-            "{} [{}] declares a state of neutrality with {} [{}].\n", race.name,
-            Playernum, alien_name, n);
-        d_mod = 30;
         break;
-      case 'w':
+      case GB::presentation::DiplomaticRelation::War:
         race.declare_war_on(n);
         race.rescind_alliance_with(n);
-        if (success(4)) {
-          g.out << "Your enemies flaunt their secondary male reproductive "
-                   "glands in your\ngeneral direction.\n";
-        } else {
-          g.out << "Give 'em hell!\n";
-        }
-        warn_race(
-            g.session_registry, g.entity_manager, n,
-            std::format(" Player #{} ({}) has declared war against you!\n",
-                        Playernum, race.name));
-        switch (int_rand(1, 5)) {
-          case 1:
-            news_msg = std::format("{} [{}] declares WAR on {} [{}].\n",
-                                   race.name, Playernum, alien_name, n);
-            break;
-          case 2:
-            news_msg = std::format(
-                "{} [{}] has had enough of {} [{}] and declares WAR!\n",
-                race.name, Playernum, alien_name, n);
-            break;
-          case 3:
-            news_msg = std::format(
-                "{} [{}] decided that it is time to declare WAR on {} [{}]!\n",
-                race.name, Playernum, alien_name, n);
-            break;
-          case 4:
-            news_msg = std::format(
-                "{} [{}] had no choice but to declare WAR against {} [{}]!\n",
-                race.name, Playernum, alien_name, n);
-            break;
-          case 5:
-            news_msg = std::format(
-                "{} [{}] says 'screw it!' and declares WAR on {} [{}]!\n",
-                race.name, Playernum, alien_name, n);
-            break;
-          default:
-            break;
-        }
-        d_mod = 30;
         break;
-      default:
-        g.out << "I don't understand.\n";
-        return;
     }
   });
 
-  if (news_msg.empty()) {
-    return false;
-  }
-
-  g.entity_manager.mutate_race(n, [&](Race& alien) {
+  g.entity_manager.mutate_race(n, [&](Race& target_race) {
     /* They, of course, learn more about you */
-    alien.increase_translation(Playernum, d_mod);
+    target_race.increase_translation(Playernum, result.translation_modifier);
   });
 
+  warn_race(g.session_registry, g.entity_manager, n,
+            GB::presentation::render_declare_target_notification(result));
+  const std::string news_msg =
+      GB::presentation::render_declare_declaration_news(result);
   post(g.entity_manager, news_msg, NewsType::DECLARATION);
   warn_race(g.session_registry, g.entity_manager, Playernum, news_msg);
+
+  g.present(result);
   return true;
 }
 

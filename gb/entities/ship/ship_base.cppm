@@ -1055,7 +1055,7 @@ public:
   /// \brief Returns true if a craft of the given physical size can fit inside
   /// this ship's remaining hangar space.
   [[nodiscard]] bool can_fit_in_hangar(ship_size_t craft_size) const noexcept {
-    return data_.hanger + craft_size <= data_.max_hanger;
+    return craft_size >= 0 && data_.hanger + craft_size <= data_.max_hanger;
   }
 
   /// \brief Returns true if the given child craft can fit inside this ship's
@@ -1067,7 +1067,7 @@ public:
   /// \brief Embeds a child craft into this carrier's hangar, updating occupied
   /// hangar space and aggregate mass.
   void load_docked_craft(ship_size_t craft_size, double craft_mass) noexcept {
-    data_.hanger += craft_size;
+    data_.hanger += std::max<ship_size_t>(0, craft_size);
     data_.mass += craft_mass;
   }
 
@@ -1080,7 +1080,8 @@ public:
   /// \brief Removes a child craft from this carrier's hangar, updating occupied
   /// hangar space (clamped to 0) and aggregate mass.
   void unload_docked_craft(ship_size_t craft_size, double craft_mass) noexcept {
-    data_.hanger = (data_.hanger > craft_size) ? data_.hanger - craft_size : 0;
+    data_.hanger = std::max<hangar_t>(
+        0, data_.hanger - std::max<ship_size_t>(0, craft_size));
     data_.mass -= craft_mass;
     if (data_.mass < base_mass()) {
       data_.mass = base_mass();
@@ -1127,7 +1128,7 @@ public:
             : std::min(static_cast<weapon_power_t>(popn()), battery->count);
 
     avail = std::min(retaliate(), avail);
-    return std::min(destruct_power(), avail);
+    return std::max<weapon_power_t>(0, std::min(destruct_power(), avail));
   }
 
   /// \brief Computes effective defensive or offensive weapon strength (armed
@@ -1135,9 +1136,10 @@ public:
   [[nodiscard]] weapon_power_t check_retal_strength() const noexcept {
     if (!active() || !alive()) return 0;
     if (is_laser_on()) {
-      return std::min(fire_laser(),
+      return std::max<weapon_power_t>(
+          0, std::min(fire_laser(),
                       static_cast<weapon_power_t>(
-                          fuel() / ENERGY_WEAPON_FUEL_PER_STRENGTH));
+                          fuel() / ENERGY_WEAPON_FUEL_PER_STRENGTH)));
     }
     return retal_strength();
   }
@@ -1159,7 +1161,8 @@ public:
   [[nodiscard]] weapon_power_t bombardment_strength() const noexcept {
     const auto effective_guns = static_cast<weapon_power_t>(
         static_cast<double>(max_guns_capacity()) * hull_efficiency());
-    return std::min(effective_guns, destruct_power());
+    return std::max<weapon_power_t>(0,
+                                    std::min(effective_guns, destruct_power()));
   }
 
   /// Whether hyperspace jump drive has accumulated sufficient charge to jump.
@@ -1218,13 +1221,12 @@ public:
 
   /// Structural body size excluding maximum hangar bay space.
   [[nodiscard]] ship_size_t shipbody() const noexcept {
-    return data_.size > data_.max_hanger ? data_.size - data_.max_hanger : 0;
+    return std::max<ship_size_t>(0, data_.size - data_.max_hanger);
   }
 
   /// Remaining available hangar space for docking smaller craft.
   [[nodiscard]] hangar_t hanger_space() const noexcept {
-    return data_.max_hanger > data_.hanger ? data_.max_hanger - data_.hanger
-                                           : 0;
+    return std::max<hangar_t>(0, data_.max_hanger - data_.hanger);
   }
 
   /// Available civilian crew capacity accounting for military troops on board.
@@ -1387,28 +1389,12 @@ public:
 
   /// \brief Deity override: sets hull damage clamped to [0, 100]%.
   void admin_override_damage(damage_t amt) noexcept {
-    data_.damage = std::min<damage_t>(amt, 100);
-  }
-
-  /// \brief Deity override: sets hull damage clamped to [0, 100]%, guarding
-  /// against negative values.
-  template <std::signed_integral T>
-  void admin_override_damage(T amt) noexcept {
-    data_.damage = static_cast<damage_t>(
-        std::clamp<std::int64_t>(static_cast<std::int64_t>(amt), 0, 100));
+    data_.damage = std::clamp<damage_t>(amt, 0, 100);
   }
 
   /// \brief Deity override: sets radiation dosage clamped to [0, 100]%.
   void admin_override_radiation(radiation_t amt) noexcept {
-    data_.rad = std::min<radiation_t>(amt, 100);
-  }
-
-  /// \brief Deity override: sets radiation dosage clamped to [0, 100]%,
-  /// guarding against negative values.
-  template <std::signed_integral T>
-  void admin_override_radiation(T amt) noexcept {
-    data_.rad = static_cast<radiation_t>(
-        std::clamp<std::int64_t>(static_cast<std::int64_t>(amt), 0, 100));
+    data_.rad = std::clamp<radiation_t>(amt, 0, 100);
   }
 
   /// \brief Deity override: sets fuel clamped to capacity and synchronizes
@@ -1551,7 +1537,7 @@ public:
 
   /// \brief Increases hull damage by the specified amount, clamped to 100%.
   ///
-  /// Protected against unsigned overflow and underflow. Returns a DamageResult
+  /// Protected against overflow and negative values. Returns a DamageResult
   /// indicating actual damage added, new damage level, and whether the ship was
   /// destroyed.
   [[nodiscard]] DamageResult apply_damage(damage_t amt) noexcept {
@@ -1561,6 +1547,13 @@ public:
           .damage_applied = 0,
           .new_damage = 100,
           .destroyed = true,
+      };
+    }
+    if (amt <= 0) {
+      return {
+          .damage_applied = 0,
+          .new_damage = data_.damage,
+          .destroyed = false,
       };
     }
     const damage_t prev = data_.damage;
@@ -1574,20 +1567,6 @@ public:
         .new_damage = data_.damage,
         .destroyed = (data_.damage >= 100),
     };
-  }
-
-  /// \brief Increases hull damage by a signed amount, guarding against negative
-  /// values.
-  template <std::signed_integral T>
-  [[nodiscard]] DamageResult apply_damage(T amt) noexcept {
-    if (amt <= 0) {
-      return {
-          .damage_applied = 0,
-          .new_damage = data_.damage,
-          .destroyed = (data_.damage >= 100),
-      };
-    }
-    return apply_damage(static_cast<damage_t>(amt));
   }
 
   /// \brief Increases hull damage by a floating-point amount, rounding and
@@ -1606,43 +1585,22 @@ public:
 
   /// \brief Repairs hull damage by the specified amount, clamped to 0%.
   void repair_damage(damage_t amt) noexcept {
-    data_.damage = (amt >= data_.damage) ? 0 : data_.damage - amt;
-  }
-
-  /// \brief Repairs hull damage by a signed amount, guarding against negative
-  /// values.
-  template <std::signed_integral T>
-  void repair_damage(T amt) noexcept {
     if (amt <= 0) return;
-    repair_damage(static_cast<damage_t>(amt));
+    data_.damage = std::max<damage_t>(0, data_.damage - amt);
   }
 
   /// \brief Applies radiation dosage following peak-dose semantics, clamped to
   /// [0, 100]%.
   void apply_radiation(radiation_t dosage) noexcept {
+    if (dosage <= 0) return;
     const auto clamped_dose = std::min<radiation_t>(dosage, 100);
     data_.rad = std::max(data_.rad, clamped_dose);
   }
 
-  /// \brief Applies radiation dosage by a signed amount, guarding against
-  /// negative values.
-  template <std::signed_integral T>
-  void apply_radiation(T dosage) noexcept {
-    if (dosage <= 0) return;
-    apply_radiation(static_cast<radiation_t>(dosage));
-  }
-
   /// \brief Reduces accumulated radiation dose, clamped to 0.
   void repair_radiation(radiation_t amt) noexcept {
-    data_.rad = (amt >= data_.rad) ? 0 : data_.rad - amt;
-  }
-
-  /// \brief Reduces accumulated radiation dose by a signed amount, guarding
-  /// against negative values.
-  template <std::signed_integral T>
-  void repair_radiation(T amt) noexcept {
     if (amt <= 0) return;
-    repair_radiation(static_cast<radiation_t>(amt));
+    data_.rad = std::max<radiation_t>(0, data_.rad - amt);
   }
 
   /// \brief Consumes fuel and decrements ship mass accordingly, clamped to 0.

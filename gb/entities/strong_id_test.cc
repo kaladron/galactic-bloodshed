@@ -69,12 +69,12 @@ int main() {
     bounded_damage_t d_negative{-10};
     bounded_damage_t d_overflow{150};
 
-    test::expect_eq(d_normal.value, 50u);
-    test::expect_eq(d_underflow.value, 0u);
-    test::expect_eq(d_negative.value, 0u);
-    test::expect_eq(d_overflow.value, 100u);
-    test::expect_eq(bounded_damage_t::min(), 0u);
-    test::expect_eq(bounded_damage_t::max(), 100u);
+    test::expect_eq(d_normal.value, 50);
+    test::expect_eq(d_underflow.value, 0);
+    test::expect_eq(d_negative.value, 0);
+    test::expect_eq(d_overflow.value, 100);
+    test::expect_eq(bounded_damage_t::min(), 0);
+    test::expect_eq(bounded_damage_t::max(), 100);
 
     // Signed bounded test
     morale_t m_normal{25};
@@ -87,29 +87,29 @@ int main() {
     // Mutating arithmetic clamping
     bounded_damage_t d{90};
     d += 20;
-    test::expect_eq(d.value, 100u);  // Clamped at 100
+    test::expect_eq(d.value, 100);  // Clamped at 100
     d -= 150;
-    test::expect_eq(d.value, 0u);  // Clamped at 0
+    test::expect_eq(d.value, 0);  // Clamped at 0
     d += 10;
     d *= 5;
-    test::expect_eq(d.value, 50u);
+    test::expect_eq(d.value, 50);
     d /= 2;
-    test::expect_eq(d.value, 25u);
+    test::expect_eq(d.value, 25);
 
     // Increment / Decrement
     bounded_speed_t sp{8};
     ++sp;
-    test::expect_eq(sp.value, 9u);
+    test::expect_eq(sp.value, 9);
     ++sp;  // Saturated at Max (9)
-    test::expect_eq(sp.value, 9u);
+    test::expect_eq(sp.value, 9);
     --sp;
-    test::expect_eq(sp.value, 8u);
+    test::expect_eq(sp.value, 8);
 
     // Binary operators
     bounded_damage_t d2 = d + 30;
-    test::expect_eq(d2.value, 55u);
+    test::expect_eq(d2.value, 55);
     bounded_damage_t d3 = d - 100;
-    test::expect_eq(d3.value, 0u);
+    test::expect_eq(d3.value, 0);
 
     // Formatting & streaming
     std::string d_str = std::format("Damage: {}", d2);
@@ -122,8 +122,8 @@ int main() {
     test::expect_eq(eff_map[efficiency_t{80}], "High");
 
     // Numeric limits
-    test::expect_eq(std::numeric_limits<bounded_damage_t>::min().value, 0u);
-    test::expect_eq(std::numeric_limits<bounded_damage_t>::max().value, 100u);
+    test::expect_eq(std::numeric_limits<bounded_damage_t>::min().value, 0);
+    test::expect_eq(std::numeric_limits<bounded_damage_t>::max().value, 100);
   }
 
   // ---------------------------------------------------------------------------
@@ -135,26 +135,28 @@ int main() {
     modular_bearing_t b180{180};
     modular_bearing_t b360{360};
     modular_bearing_t b725{725};
+    modular_bearing_t b_neg{-10};
 
-    test::expect_eq(b0.value, 0u);
-    test::expect_eq(b180.value, 180u);
-    test::expect_eq(b360.value, 0u);  // 360 % 360 = 0
-    test::expect_eq(b725.value, 5u);  // 725 % 360 = 5
-    test::expect_eq(modular_bearing_t::modulus(), 360u);
+    test::expect_eq(b0.value, 0);
+    test::expect_eq(b180.value, 180);
+    test::expect_eq(b360.value, 0);     // 360 % 360 = 0
+    test::expect_eq(b725.value, 5);     // 725 % 360 = 5
+    test::expect_eq(b_neg.value, 350);  // (-10 + 360) % 360 = 350
+    test::expect_eq(modular_bearing_t::modulus(), 360);
 
     // Mutating arithmetic wrapping
     modular_bearing_t b{350};
     b += 20;
-    test::expect_eq(b.value, 10u);  // (350 + 20) % 360 = 10
+    test::expect_eq(b.value, 10);  // (350 + 20) % 360 = 10
     b -= 30;
-    test::expect_eq(b.value, 340u);  // (10 - 30 + 360) % 360 = 340
+    test::expect_eq(b.value, 340);  // (10 - 30 + 360) % 360 = 340
 
     // Increment / Decrement
     modular_bearing_t b_edge{359};
     ++b_edge;
-    test::expect_eq(b_edge.value, 0u);  // Wrapped from 359 to 0
+    test::expect_eq(b_edge.value, 0);  // Wrapped from 359 to 0
     --b_edge;
-    test::expect_eq(b_edge.value, 359u);  // Wrapped from 0 to 359
+    test::expect_eq(b_edge.value, 359);  // Wrapped from 0 to 359
 
     // Formatting & streaming
     std::string b_str = std::format("Bearing: {} deg", b);

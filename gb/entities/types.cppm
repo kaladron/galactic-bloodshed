@@ -16,11 +16,11 @@ export using planetnum_t = ID<"planet", std::uint32_t>;
 export using player_t = ID<"player">;
 export using governor_t = ID<"governor">;
 
-export using segments_t = std::uint32_t;
-export using turn_t = std::uint32_t;  ///< Full update turn counter
-export using ap_t = std::uint32_t;
+export using segments_t = std::int32_t;
+export using turn_t = std::int32_t;  ///< Full update turn counter
+export using ap_t = std::int32_t;
 export using planet_count_t =
-    std::uint32_t;  ///< Cardinality / tally of planets or star systems
+    std::int32_t;  ///< Cardinality / tally of planets or star systems
 export using resource_t = std::int64_t;
 export using money_t = std::int64_t;
 export using population_t = std::int64_t;
@@ -31,62 +31,62 @@ export using victory_score_t =
 
 // Semantic domain metric types
 export using armor_t =
-    std::uint32_t;  ///< Armor defense rating absorbing combat damage
-export using damage_t = std::uint32_t;  ///< Hull damage percentage (0..100)
+    std::int32_t;  ///< Armor defense rating absorbing combat damage
+export using damage_t = std::int32_t;  ///< Hull damage percentage (0..100)
 export using speed_t =
-    Bounded<"speed", std::uint32_t, 0,
+    Bounded<"speed", std::int32_t, 0,
             9>;  ///< Clamped tactical engine speed throttle [0..9]
-export using radiation_t = std::uint32_t;  ///< Accumulated radiation dose level
+export using radiation_t = std::int32_t;  ///< Accumulated radiation dose level
 export using gun_count_t =
-    std::uint32_t;  ///< Number of gun mounts or battery power rating
+    std::int32_t;  ///< Number of gun mounts or battery power rating
 export using bearing_t =
-    std::uint32_t;  ///< Course navigation heading angle in degrees (0..359)
-export using hangar_t = std::uint32_t;  ///< Internal carried ship hangar space
-export using ship_size_t = std::uint32_t;  ///< Ship physical size / volume
+    std::int32_t;  ///< Course navigation heading angle in degrees (0..359)
+export using hangar_t = std::int32_t;  ///< Internal carried ship hangar space
+export using ship_size_t = std::int32_t;  ///< Ship physical size / volume
 export using weapon_power_t =
-    std::uint32_t;  ///< Concentrated energy weapon / laser power setting
+    std::int32_t;  ///< Concentrated energy weapon / laser power setting
 export using weapon_range_t =
-    std::uint32_t;  ///< Tactical weapon or mine proximity trigger range
+    std::int32_t;  ///< Tactical weapon or mine proximity trigger range
 export using hit_count_t =
-    std::uint32_t;  ///< Number of successful weapon hits or penetrations
+    std::int32_t;  ///< Number of successful weapon hits or penetrations
 export using hit_odds_t =
-    std::uint32_t;  ///< Weapon hit probability percentage (0..100)
+    std::int32_t;  ///< Weapon hit probability percentage (0..100)
 export using sector_count_t =
-    std::uint32_t;  ///< Cardinality / tally of planetary sectors
+    std::int32_t;  ///< Cardinality / tally of planetary sectors
 export using temp_delta_t =
-    int;  ///< Thermal adjustment applied to planet temperature
+    std::int32_t;  ///< Thermal adjustment applied to planet temperature
 
 // Race biological and societal metric types
 export using iq_t = std::int32_t;  ///< Race intelligence rating
 export using fighters_t =
-    std::uint32_t;  ///< Race military combat capability rating
-export using sexes_t = std::uint32_t;  ///< Number of reproductive sexes
-export using birthrate_t = double;     ///< Natural reproduction rate multiplier
-export using mass_t = double;          ///< Biological mass per colonist unit
-export using metabolism_t = double;    ///< Resource and food consumption rate
+    std::int32_t;  ///< Race military combat capability rating
+export using sexes_t = std::int32_t;  ///< Number of reproductive sexes
+export using birthrate_t = double;    ///< Natural reproduction rate multiplier
+export using mass_t = double;         ///< Biological mass per colonist unit
+export using metabolism_t = double;   ///< Resource and food consumption rate
 export using adventurism_t =
     double;  ///< Planetary colonization expansion drive
 
 // Bounded and modular domain smart types
 export using bounded_damage_t =
-    Bounded<"damage", std::uint32_t, 0,
+    Bounded<"damage", std::int32_t, 0,
             100>;  ///< Clamped hull damage percentage [0..100]
 export using efficiency_t =
-    Bounded<"efficiency", std::uint32_t, 0,
+    Bounded<"efficiency", std::int32_t, 0,
             100>;  ///< Clamped sector industrial efficiency [0..100]
 export using fertility_t =
-    Bounded<"fertility", std::uint32_t, 0,
+    Bounded<"fertility", std::int32_t, 0,
             100>;  ///< Clamped sector agricultural fertility [0..100]
 export using mobilization_t =
-    Bounded<"mobilization", std::uint32_t, 0,
+    Bounded<"mobilization", std::int32_t, 0,
             100>;  ///< Clamped planetary defense mobilization [0..100]
-export using tax_t = Bounded<"tax", std::uint32_t, 0,
+export using tax_t = Bounded<"tax", std::int32_t, 0,
                              100>;  ///< Clamped colony tax rate [0..100]
 export using morale_t = Bounded<"morale", std::int32_t, 0,
                                 100>;  ///< Clamped race morale level [0..100]
 export using bounded_speed_t =
-    Bounded<"speed", std::uint32_t, 0,
+    Bounded<"speed", std::int32_t, 0,
             9>;  ///< Clamped tactical speed throttle [0..9]
 export using modular_bearing_t =
-    Modular<"bearing", std::uint32_t,
+    Modular<"bearing", std::int32_t,
             360>;  ///< Modular course navigation bearing [0..359 deg]

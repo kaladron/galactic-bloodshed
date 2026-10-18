@@ -177,7 +177,7 @@ export struct plinfo {      // planetary stockpiles
   double prod_tech = 0;
 
   money_t tech_invest = 0;
-  std::uint32_t numsectsowned = 0;
+  sector_count_t numsectsowned = 0;
 
   Percentage comread{0};  // combat readiness (mobilization)
   Percentage mob_set{0};  // mobilization target
@@ -186,9 +186,9 @@ export struct plinfo {      // planetary stockpiles
 
   bool explored = false;
   std::uint32_t autorep = 0;
-  Percentage tax{0};       // tax rate
-  Percentage newtax{0};    // new tax rate (after update)
-  std::uint32_t guns = 0;  // number of planet guns (mob/5)
+  Percentage tax{0};     // tax rate
+  Percentage newtax{0};  // new tax rate (after update)
+  gun_count_t guns = 0;  // number of planet guns (mob/5)
 
   /* merchant shipping parameters */
   std::array<plroute, MAX_ROUTES> route{};

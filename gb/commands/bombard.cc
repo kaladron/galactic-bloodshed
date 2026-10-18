@@ -165,7 +165,7 @@ bool bombard_from_ship(const command_t& argv, GameObj& g, Ship& from) {
   auto strength = maxstrength;
   if (argv.size() > 3) {
     auto parsed = scn::scan<weapon_power_t>(argv[3], "{}");
-    if (!parsed) {
+    if (!parsed || parsed->value() < 0) {
       g.out << "No attack.\n";
       return false;
     }

@@ -162,11 +162,11 @@ struct TacticalShipTargetRow {
   char type_letter{' '};
   std::string name{};
   double distance{0.0};
-  unsigned int range_50_pct{0};
+  weapon_range_t range_50_pct{0};
   ship_size_t size{0};
   speed_t speed{0};
   bool evade{false};
-  unsigned int hit_prob{0};
+  hit_odds_t hit_prob{0};
   damage_t damage{0};
   std::optional<Coordinates> landed_coords{std::nullopt};
   bool active{false};

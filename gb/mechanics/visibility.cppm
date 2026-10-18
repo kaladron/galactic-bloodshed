@@ -35,7 +35,7 @@ export struct PlanetMapViewModel {
   sector_count_t sectors_owned{0};
   bool aliens_unknown{false};
   std::vector<PlanetAlienPresence> aliens;
-  std::uint32_t guns{0};
+  gun_count_t guns{0};
   std::uint32_t mob_points{0};
   Percentage comread{0};
   Percentage mob_set{0};
@@ -47,7 +47,7 @@ export struct PlanetMapViewModel {
   population_t player_popn{0};
   population_t total_popn{0};
   population_t effective_maxpopn{0};
-  resource_t crystals{0};
+  crystal_t crystals{0};
   population_t player_troops{0};
   population_t total_troops{0};
   resource_t total_resources{0};

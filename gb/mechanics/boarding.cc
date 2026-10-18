@@ -271,7 +271,7 @@ validate_assault_target(const Ship& s, const Ship& s2, PopulationType what,
   }
   const population_t boarders =
       compute_boarders(s, s2, what, requested_boarders);
-  if (s2.max_crew() && boarders <= 0) {
+  if (boarders < 0 || (s2.max_crew() > 0 && boarders <= 0)) {
     return AssaultError{
         .reason = AssaultErrorReason::IllegalBoarderCount,
         .boarders = boarders,

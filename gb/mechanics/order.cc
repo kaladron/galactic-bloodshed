@@ -389,7 +389,7 @@ std::expected<OrderUpdate, OrderError> order_laser(const command_t& argv,
   if (argv.size() > 3 && argv[3] == "on") {
     if (argv.size() > 4) {
       auto res = scn::scan<weapon_power_t>(argv[4], "{}");
-      ship.fire_laser() = res ? res->value() : 0;
+      ship.fire_laser() = (res && res->value() > 0) ? res->value() : 0;
     } else {
       ship.fire_laser() = 0;
     }
@@ -431,7 +431,7 @@ std::expected<OrderUpdate, OrderError> order_speed(const command_t& argv,
     });
   }
   auto res = scn::scan<speed_t::value_type>(argv[3], "{}");
-  if (!res) {
+  if (!res || res->value() < 0) {
     return std::unexpected(OrderError{
         .reason = OrderErrorReason::InvalidSpeed,
     });
@@ -453,7 +453,7 @@ std::expected<OrderUpdate, OrderError> order_salvo(const command_t& argv,
     });
   }
   auto res = scn::scan<gun_count_t>(argv[3], "{}");
-  if (!res) {
+  if (!res || res->value() < 0) {
     return std::unexpected(OrderError{
         .reason = OrderErrorReason::InvalidSalvoGunCount,
     });
@@ -479,7 +479,7 @@ order_battery(const command_t& argv, Ship& ship, ActiveBattery mode) {
     return OrderUpdate{};
   }
   auto res = scn::scan<gun_count_t>(argv[3], "{}");
-  if (!res) {
+  if (!res || res->value() < 0) {
     return std::unexpected(OrderError{
         .reason = OrderErrorReason::InvalidBatteryGunCount,
     });
@@ -582,7 +582,7 @@ std::expected<OrderUpdate, OrderError> order_trigger(const command_t& argv,
     return OrderUpdate{};
   }
   auto res = scn::scan<weapon_range_t>(argv[3], "{}");
-  mine->set_trigger_radius(res ? res->value() : 0);
+  mine->set_trigger_radius((res && res->value() > 0) ? res->value() : 0);
   return OrderUpdate{};
 }
 

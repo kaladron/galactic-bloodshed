@@ -389,7 +389,7 @@ public:
     if constexpr (std::unsigned_integral<T>) {
       value = (value + (delta % Mod)) % Mod;
     } else {
-      value = normalize(value + delta);
+      value = normalize(value + normalize(delta));
     }
     return *this;
   }
@@ -397,7 +397,7 @@ public:
     if constexpr (std::unsigned_integral<T>) {
       value = (value + Mod - (delta % Mod)) % Mod;
     } else {
-      value = normalize(value - delta);
+      value = normalize(value - normalize(delta));
     }
     return *this;
   }

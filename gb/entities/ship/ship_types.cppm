@@ -127,7 +127,7 @@ export struct GunBattery {
   /// NONE.
   [[nodiscard]] static constexpr GunBattery create(gun_count_t count,
                                                    guntype_t caliber) noexcept {
-    if (count == 0 || caliber == guntype_t::NONE) {
+    if (count <= 0 || caliber == guntype_t::NONE) {
       return {.count = 0, .caliber = guntype_t::NONE};
     }
     return {.count = count, .caliber = caliber};
@@ -158,7 +158,7 @@ export struct GunBattery {
 
   /// \brief Atomically sets count and caliber, maintaining domain invariants.
   constexpr void set(gun_count_t new_count, guntype_t new_caliber) noexcept {
-    if (new_count == 0 || new_caliber == guntype_t::NONE) {
+    if (new_count <= 0 || new_caliber == guntype_t::NONE) {
       count = 0;
       caliber = guntype_t::NONE;
     } else {
@@ -172,9 +172,13 @@ export struct GunBattery {
   /// \return The actual number of guns destroyed (clamped to available count).
   /// If all guns are destroyed, the caliber is automatically cleared to NONE.
   constexpr gun_count_t damage(gun_count_t hits) noexcept {
+    if (hits <= 0) {
+      return 0;
+    }
     const gun_count_t lost = std::min(hits, count);
     count -= lost;
-    if (count == 0) {
+    if (count <= 0) {
+      count = 0;
       caliber = guntype_t::NONE;
     }
     return lost;

@@ -40,10 +40,10 @@ bool schedule(const command_t&, GameObj& g) {
       .segments = state->segments,
       .current_time = format_timestamp(clk),
       .next_segment_number = state->nsegments_done == state->segments
-                                 ? 1U
-                                 : state->nsegments_done + 1U,
+                                 ? 1
+                                 : state->nsegments_done + 1,
       .next_segment_time = format_timestamp(state->next_segment_time),
-      .next_update_number = state->nupdates_done + 1U,
+      .next_update_number = state->nupdates_done + 1,
       .next_update_time = format_timestamp(state->next_update_time),
   };
   g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);

@@ -326,7 +326,7 @@ arm_sector_militia(EntityManager& em, starnum_t snum, planetnum_t pnum,
                                          (sect_peek.get_mobilization() + 1)));
   const population_t amount =
       std::min(requested_amount.value_or(max_allowed), max_allowed);
-  if (!amount) {
+  if (amount <= 0) {
     return std::unexpected(
         MilitiaError{.reason = MilitiaErrorReason::NoCiviliansToArm});
   }
@@ -385,9 +385,9 @@ std::expected<DisarmSectorResult, MilitiaError> disarm_sector_militia(
   const auto& smap_peek = *em.peek_sectormap(snum, pnum);
   const auto& sect_peek = smap_peek.get(coords);
 
-  const population_t amount =
-      requested_amount ? std::min(sect_peek.get_troops(), *requested_amount)
-                       : sect_peek.get_troops();
+  const population_t amount = std::max<population_t>(
+      0, requested_amount ? std::min(sect_peek.get_troops(), *requested_amount)
+                          : sect_peek.get_troops());
 
   population_t final_popn = 0;
   population_t final_troops = 0;

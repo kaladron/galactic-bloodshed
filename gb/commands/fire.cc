@@ -93,7 +93,7 @@ bool fire(const command_t& argv, GameObj& g) {
   std::optional<weapon_power_t> requested_strength;
   if (argv.size() >= 4) {
     auto parsed = scn::scan<weapon_power_t>(argv[3], "{}");
-    if (!parsed) {
+    if (!parsed || parsed->value() < 0) {
       g.out << "No attack.\n";
       return false;
     }

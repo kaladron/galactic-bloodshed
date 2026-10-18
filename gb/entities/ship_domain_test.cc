@@ -2096,6 +2096,31 @@ void test_subclass_special_data_clamping() {
   test::expect_eq(terra.index(), 0);
   terra.set_index(3);
   test::expect_eq(terra.index(), 3);
+
+  // 5. MineShip trigger radius clamped to >= 0
+  MineShip mine{};
+  mine.set_trigger_radius(-15);
+  test::expect_eq(mine.trigger_radius(), 0);
+  mine.set_trigger_radius(25);
+  test::expect_eq(mine.trigger_radius(), 25);
+
+  // 6. GunBattery negative count and damage hits guarded
+  auto neg_battery = GunBattery::create(-5, guntype_t::LIGHT);
+  test::expect_eq(neg_battery.count, 0);
+  test::expect_true(neg_battery.caliber == guntype_t::NONE);
+
+  auto battery = GunBattery::create(4, guntype_t::MEDIUM);
+  test::expect_eq(battery.damage(-3), 0);
+  test::expect_eq(battery.count, 4);
+  battery.set(-2, guntype_t::HEAVY);
+  test::expect_eq(battery.count, 0);
+  test::expect_true(battery.caliber == guntype_t::NONE);
+
+  // 7. Ship::can_fit_in_hangar rejects negative craft_size
+  Ship carrier{};
+  carrier.max_hanger() = 20;
+  carrier.hanger() = 5;
+  test::expect_false(carrier.can_fit_in_hangar(-5));
 }
 
 }  // namespace

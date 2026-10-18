@@ -9,6 +9,7 @@ import std;
 import gb.entities;
 import gb.presentation.navigation;
 import gb.services;
+import scnlib;
 
 module commands;
 
@@ -149,18 +150,16 @@ bool capture(const command_t& argv, GameObj& g) {
             (what == PopulationType::CIV) ? sect.get_popn() : sect.get_troops();
       });
 
-  population_t boarders;
-  if (argv.size() < 3) {
-    boarders = available_boarders;
-  } else
-    boarders = std::stoul(argv[2]);
+  population_t boarders = available_boarders;
+  if (argv.size() >= 3) {
+    auto parsed = scn::scan<population_t>(argv[2], "{}");
+    boarders = parsed ? std::min(parsed->value(), available_boarders) : 0;
+  }
 
-  if (boarders == 0) {
+  if (boarders <= 0) {
     g.out << "Illegal number of boarders.\n";
     return false;
   }
-
-  boarders = std::min(boarders, available_boarders);
 
   const auto* race_ptr =
       g.race ? g.race : g.entity_manager.peek_race(Playernum);

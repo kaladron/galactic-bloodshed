@@ -419,7 +419,7 @@ static SalvoHitRoll roll_cew_hits(double dist, weapon_power_t cew_strength,
                                   weapon_range_t cew_range) {
   const hit_odds_t prob = cew_hit_odds(dist, cew_range);
   return {
-      .hits = success(prob) ? cew_strength : 0u,
+      .hits = success(prob) ? cew_strength : 0,
       .probability = prob,
   };
 }

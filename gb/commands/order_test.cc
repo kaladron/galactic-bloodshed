@@ -654,8 +654,24 @@ void test_navigation_and_combat_order_mcdc_and_json() {
   test::expect_contains(g.out.str(), "Specify a positive speed.");
 
   g.out.str("");
+  ctx.assert_dispatch_success(g, {"order", "#1", "speed", "-1"});
+  test::expect_contains(g.out.str(), "Specify a positive speed.");
+
+  g.out.str("");
   ctx.assert_dispatch_success(g, {"order", "#1", "salvo"});
   test::expect_contains(g.out.str(), "Specify a positive number of guns.");
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"order", "#1", "salvo", "-5"});
+  test::expect_contains(g.out.str(), "Specify a positive number of guns.");
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"order", "#1", "primary", "-2"});
+  test::expect_contains(g.out.str(), "Specify a nonnegative number of guns.");
+
+  ctx.assert_dispatch_success(g, {"order", "#1", "laser", "on", "-5"});
+  ctx.em.clear_cache();
+  test::expect_eq(ctx.em.peek_ship(1)->fire_laser(), 0);
 
   const auto omcl_id = TestShipBuilder(ctx.em, ShipType::OTYPE_OMCL, 72)
                            .owned_by(1, 1)

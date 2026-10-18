@@ -348,7 +348,7 @@ public:
     return trigger().radius;
   }
   void set_trigger_radius(weapon_range_t radius) noexcept {
-    trigger().radius = radius;
+    trigger().radius = std::max<weapon_range_t>(0, radius);
   }
   [[nodiscard]] bool is_radiative() const noexcept {
     return data_.mode;

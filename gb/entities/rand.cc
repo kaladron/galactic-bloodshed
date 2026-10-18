@@ -35,25 +35,19 @@ double double_rand() {
 
 /* double double_rand(low, hi) - returns a random double between low and hi */
 double double_rand(double low, double high) {
-  if (high <= low) return low;
-  std::uniform_real_distribution<double> dist(low, high);
-  return dist(get_rng());
+  return uniform_rand(low, high);
 }
 
 /* int int_rand(low,hi) - this returns an integer random number
  * between hi and low, inclusive. */
 long long_rand(long low, long hi) {
-  if (hi <= low) return low;
-  std::uniform_int_distribution<long> dist(low, hi);
-  return dist(get_rng());
+  return uniform_rand(low, hi);
 }
 
 /* int int_rand(low,hi) - this returns an integer random number
  * between hi and low, inclusive. */
 int int_rand(int low, int hi) {
-  if (hi <= low) return low;
-  std::uniform_int_distribution<int> dist(low, hi);
-  return dist(get_rng());
+  return uniform_rand(low, hi);
 }
 
 bool success(int x) {

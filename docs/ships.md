@@ -94,18 +94,24 @@ Active starships that support field modification (`modifiable` template trait, e
   $$\text{Retrofit Cost} = \max\Big(1,\; 2 \times (\text{Cost}_{\text{upgraded}} - \text{Cost}_{\text{current}})\Big)$$
 - **Carrier Hangar & Displacement Synchronization**: Expanding crew berths, cargo bays, fuel tanks, munitions magazines, or hangar volume increases the vessel's physical size ($\text{Size}_{\text{ship}}$) and structural base mass ($\text{Base Mass}$). If the vessel is berthed inside a carrier or station hangar, the retrofit is rejected if the expanded hull size would exceed the host carrier's remaining hangar capacity; otherwise, the host carrier's occupied hangar volume and total operational mass are updated synchronously.
 
-### Inter-Ship Cargo and Personnel Logistics (`load`)
-Moored vessels and carrier-berthed craft can transfer raw materials, propellant, munitions, and living populations using shipboard cargo gantries and transporter beams:
+### Cargo and Personnel Logistics (`load` and `unload`)
+Landed vessels, moored vessels, and carrier-berthed craft transfer raw materials (`r`), propellant (`f`), munitions (`d`), warp crystals (`x`), civilian crew (`c`), and military troops (`m`) using `load` and `unload`:
 
 $$\text{Transferred Amount} = \min\Big(\text{Requested Amount},\; \text{Available Source Stock},\; \text{Destination Remaining Capacity}\Big)$$
 
-- **Atomic Mass Conservation**: Transferring commodities decrements mass from the donor vessel and increments mass on the recipient vessel instantaneously by the exact physical displacement of the transferred commodity:
+- **Symmetric Transfer Semantics**: `unload` is the exact directional inverse of `load`. Omitting the numeric amount on either command automatically transfers the maximum stock allowed by the source inventory and destination capacity.
+- **Planetary Surface Logistics**:
+  - **Colony Stockpiles vs. Surface Sectors**: Minerals, propellant, munitions, and crystals are exchanged with the empire's planetary stockpile (`plinfo`), whereas civilian crew and military troops embark from and disembark onto the specific surface sector $[x, y]$ where the ship is landed.
+  - **Colonization & Sector Abandonment**: Unloading crew or troops onto an unowned sector claims the sector for the ship's empire. Loading the last remaining civilian and troop off an owned sector automatically abandons the sector back to unowned status.
+  - **Hostile Sector Disembarkation**: Unloading crew or troops onto a sector owned by a foreign empire triggers an immediate amphibious ground assault; see [Orbital Disembarkation Assaults](combat.md) for combat resolution and capture rules.
+- **Atomic Mass Conservation**: Transferring commodities decrements mass from the donor and increments mass on the recipient instantaneously by the exact physical displacement of the transferred commodity:
   - **Refined Minerals**: $\pm 0.10 \text{ mass units per unit}$
   - **Destructive Munitions**: $\pm 0.15 \text{ mass units per unit}$
   - **Liquid Propellant**: $\pm 0.05 \text{ mass units per unit}$
   - **Living Crew & Troops**: $\pm M_{\text{race}} \text{ mass units per individual}$
   - **Warp Crystals**: $0.0 \text{ mass units}$
-- **Berthing & Cargo Clamping**: Transfers strictly respect the recipient ship's physical volume limits (`max_resource`, `max_fuel`, `max_destruct`, and `max_crew`). Any excess requested beyond available capacity remains on the source vessel, preventing commodity destruction or silent cargo loss.
+- **Berthing & Cargo Clamping**: Transfers strictly respect the recipient ship's physical volume limits (`max_resource`, `max_fuel`, `max_destruct`, and `max_crew`). Any excess requested beyond available capacity remains at the source, preventing commodity destruction or silent cargo loss.
+- **Automatic Crystal Mounting and Disarming**: Loading warp crystals (`x`) onto a hyperdrive-capable vessel that does not yet have a crystal mounted automatically mounts the first crystal into the drive core (`mounted = true`). Conversely, unloading crystals beyond the vessel's unmounted crystal reserves automatically disarms the mounted crystal (`mounted = false`) and deactivates any active hyperdrive or combat laser.
 - **Shuttle Hull-Strapping**: Light personnel shuttles (`s`) operating outside carrier hangars can strap mineral resources directly to their external hull beyond their internal cargo bay (`25` resource units). An overloaded shuttle cannot launch or land inside a carrier until excess cargo is jettisoned or unloaded.
 - **Audio-Vibratory-Physio-Molecular Transporters (`[`)**: Landed, operational transporter devices automatically beam all loaded cargo (minerals, fuel, destruct, crystals, civilian crew, and military troops) instantaneously to their configured receiving transporter, notifying foreign recipients via imperial telegram.
 

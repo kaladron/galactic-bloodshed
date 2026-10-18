@@ -64,6 +64,37 @@ int main() {
     test::expect_true(r == 2 || r == 3, "round_rand(2.4) must be 2 or 3");
   }
 
+  // 8. uniform_rand deduced and explicit types with consteval range checks
+  test::expect_eq(uniform_rand(7, 7), 7);
+  test::expect_eq(uniform_rand(10, 3), 10);
+  for (int i = 0; i < 100; ++i) {
+    auto r_int = uniform_rand(1, 6);
+    static_assert(std::same_as<decltype(r_int), int>);
+    test::expect_true(r_int >= 1 && r_int <= 6,
+                      "uniform_rand(1, 6) must be in [1, 6]");
+
+    population_t max_pop = 500;
+    auto r_pop = uniform_rand(0, max_pop);
+    static_assert(std::same_as<decltype(r_pop), population_t>);
+    test::expect_true(r_pop >= 0 && r_pop <= 500,
+                      "uniform_rand(0, max_pop) must be in [0, 500]");
+
+    constexpr double REPAIR_RATE_BOUND = 25.0;
+    auto r_rad = uniform_rand<radiation_t>(0, REPAIR_RATE_BOUND);
+    static_assert(std::same_as<decltype(r_rad), radiation_t>);
+    test::expect_true(r_rad >= 0 && r_rad <= 25,
+                      "uniform_rand<radiation_t>(0, 25.0) must be in [0, 25]");
+
+    auto r_u8 = uniform_rand<std::uint8_t>(0, 10);
+    static_assert(std::same_as<decltype(r_u8), std::uint8_t>);
+    test::expect_true(r_u8 <= 10, "uniform_rand<uint8_t>(0, 10) must be <= 10");
+
+    auto r_dbl = uniform_rand(-2.5, 2.5);
+    static_assert(std::same_as<decltype(r_dbl), double>);
+    test::expect_true(r_dbl >= -2.5 && r_dbl < 2.5,
+                      "uniform_rand(-2.5, 2.5) must be in [-2.5, 2.5)");
+  }
+
   std::println(std::cout, "✓ All Random Number Generator tests passed!");
   return 0;
 }

@@ -108,29 +108,28 @@ void merchant_load_cargo(Ship& s, plinfo& pinfo, const auto& load,
 
   telegram << "\t\t";
   if (load.fuel) {
-    const resource_t amount =
-        std::min<resource_t>(s.available_fuel_capacity(), pinfo.fuel);
+    const resource_t amount = std::min(s.available_fuel_capacity(), pinfo.fuel);
     pinfo.fuel -= amount;
     s.add_fuel(amount);
     telegram << std::format("{}f ", amount);
   }
   if (load.resources) {
     const resource_t amount =
-        std::min<resource_t>(s.available_resource_capacity(), pinfo.resource);
+        std::min(s.available_resource_capacity(), pinfo.resource);
     pinfo.resource -= amount;
     s.add_resource(amount);
     telegram << std::format("{}r ", amount);
   }
   if (load.crystals) {
     const resource_t amount =
-        std::min<resource_t>(s.available_crystals_capacity(), pinfo.crystals);
+        std::min(s.available_crystals_capacity(), pinfo.crystals);
     pinfo.crystals -= amount;
     s.add_crystals(amount);
     telegram << std::format("{}x ", amount);
   }
   if (load.destruct) {
     const resource_t amount =
-        std::min<resource_t>(s.available_destruct_capacity(), pinfo.destruct);
+        std::min(s.available_destruct_capacity(), pinfo.destruct);
     pinfo.destruct -= amount;
     s.add_destruct(amount);
     telegram << std::format("{}d ", amount);
@@ -931,30 +930,27 @@ compute_planet_transfer_limits(EntityManager& em, const Ship& s,
     case ShipCargoType::Crew:
       em.with_sectormap(snum, pnum, [&](const SectorMap& smap) {
         const auto& sect = smap.get(s.land_coords());
-        lim.uplim = std::min<std::int64_t>(sect.get_popn(),
-                                           s.available_crew_capacity());
+        lim.uplim = std::min(sect.get_popn(), s.available_crew_capacity());
         lim.lolim = -s.popn();
       });
       break;
     case ShipCargoType::Troops:
       em.with_sectormap(snum, pnum, [&](const SectorMap& smap) {
         const auto& sect = smap.get(s.land_coords());
-        lim.uplim = std::min<std::int64_t>(sect.get_troops(),
-                                           s.available_crew_capacity());
+        lim.uplim = std::min(sect.get_troops(), s.available_crew_capacity());
         lim.lolim = -s.troops();
       });
       break;
     case ShipCargoType::Destruct:
       em.with_planet(snum, pnum, [&](const Planet& p) {
-        lim.uplim = std::min<std::int64_t>(p.info(player).destruct,
-                                           s.available_destruct_capacity());
+        lim.uplim =
+            std::min(p.info(player).destruct, s.available_destruct_capacity());
         lim.lolim = -s.destruct();
       });
       break;
     case ShipCargoType::Fuel:
       em.with_planet(snum, pnum, [&](const Planet& p) {
-        lim.uplim = std::min<std::int64_t>(p.info(player).fuel,
-                                           s.available_fuel_capacity());
+        lim.uplim = std::min(p.info(player).fuel, s.available_fuel_capacity());
         lim.lolim = -s.fuel_units();
       });
       break;
@@ -963,8 +959,8 @@ compute_planet_transfer_limits(EntityManager& em, const Ship& s,
         if (s.can_strap_cargo_to_hull()) {
           lim.uplim = p.info(player).resource;
         } else {
-          lim.uplim = std::min<std::int64_t>(p.info(player).resource,
-                                             s.available_resource_capacity());
+          lim.uplim = std::min(p.info(player).resource,
+                               s.available_resource_capacity());
         }
         lim.lolim = -s.resource();
       });
@@ -1270,56 +1266,41 @@ CargoTransferLimits compute_ship_transfer_limits(const Ship& s, const Ship& s2,
   CargoTransferLimits lim{};
   switch (cargo) {
     case ShipCargoType::Crystal:
-      lim.uplim = diff ? 0
-                       : std::min<std::int64_t>(
-                             s2.crystals(), s.available_crystals_capacity());
-      lim.lolim = diff ? 0
-                       : -std::min<std::int64_t>(
-                             s.crystals(), s2.available_crystals_capacity());
+      lim.uplim =
+          diff ? 0 : std::min(s2.crystals(), s.available_crystals_capacity());
+      lim.lolim =
+          diff ? 0 : -std::min(s.crystals(), s2.available_crystals_capacity());
       break;
     case ShipCargoType::Crew:
-      lim.uplim =
-          diff ? 0
-               : std::min<std::int64_t>(s2.popn(), s.available_crew_capacity());
-      lim.lolim = diff ? 0
-                       : -std::min<std::int64_t>(s.popn(),
-                                                 s2.available_crew_capacity());
+      lim.uplim = diff ? 0 : std::min(s2.popn(), s.available_crew_capacity());
+      lim.lolim = diff ? 0 : -std::min(s.popn(), s2.available_crew_capacity());
       break;
     case ShipCargoType::Troops:
-      lim.uplim = diff ? 0
-                       : std::min<std::int64_t>(s2.troops(),
-                                                s.available_crew_capacity());
-      lim.lolim = diff ? 0
-                       : -std::min<std::int64_t>(s.troops(),
-                                                 s2.available_crew_capacity());
+      lim.uplim = diff ? 0 : std::min(s2.troops(), s.available_crew_capacity());
+      lim.lolim =
+          diff ? 0 : -std::min(s.troops(), s2.available_crew_capacity());
       break;
     case ShipCargoType::Destruct:
-      lim.uplim = diff ? 0
-                       : std::min<std::int64_t>(
-                             s2.destruct(), s.available_destruct_capacity());
-      lim.lolim = -std::min<std::int64_t>(s.destruct(),
-                                          s2.available_destruct_capacity());
+      lim.uplim =
+          diff ? 0 : std::min(s2.destruct(), s.available_destruct_capacity());
+      lim.lolim = -std::min(s.destruct(), s2.available_destruct_capacity());
       break;
     case ShipCargoType::Fuel:
-      lim.uplim = diff ? 0
-                       : std::min<std::int64_t>(s2.fuel_units(),
-                                                s.available_fuel_capacity());
-      lim.lolim =
-          -std::min<std::int64_t>(s.fuel_units(), s2.available_fuel_capacity());
+      lim.uplim =
+          diff ? 0 : std::min(s2.fuel_units(), s.available_fuel_capacity());
+      lim.lolim = -std::min(s.fuel_units(), s2.available_fuel_capacity());
       break;
     case ShipCargoType::Resource:
       if (s.can_strap_cargo_to_hull()) {
         lim.uplim = diff ? 0 : s2.resource();
       } else {
-        lim.uplim = diff ? 0
-                         : std::min<std::int64_t>(
-                               s2.resource(), s.available_resource_capacity());
+        lim.uplim =
+            diff ? 0 : std::min(s2.resource(), s.available_resource_capacity());
       }
       if (s2.can_strap_cargo_to_hull()) {
         lim.lolim = -s.resource();
       } else {
-        lim.lolim = -std::min<std::int64_t>(s.resource(),
-                                            s2.available_resource_capacity());
+        lim.lolim = -std::min(s.resource(), s2.available_resource_capacity());
       }
       break;
   }

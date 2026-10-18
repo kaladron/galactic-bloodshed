@@ -301,9 +301,10 @@ static std::pair<radiation_t, radiation_t> do_radiation(Ship& ship, double tech,
     if (double_rand() <= r) penetrate += 1;
   }
 
-  radiation_t dosage = std::max(
-      0, round_rand(40. * static_cast<double>(penetrate) / (double)body));
-  dosage = std::min<radiation_t>(100, dosage);
+  const radiation_t dosage =
+      std::clamp(round_rand(40.0 * static_cast<double>(penetrate) /
+                            static_cast<double>(body)),
+                 0, 100);
 
   ship.apply_radiation(dosage);
   if (success(ship.rad())) ship.active() = false;

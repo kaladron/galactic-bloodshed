@@ -358,8 +358,8 @@ bool Ship::process_radiation(bool update) {
     auto new_troops = round_rand(static_cast<double>(troops()) * 0.80);
     apply_casualties(popn() - new_popn, troops() - new_troops);
     auto repair_amt = (rad() >= REPAIR_RATE)
-                          ? int_rand(0, static_cast<int>(REPAIR_RATE))
-                          : int_rand(0, rad());
+                          ? uniform_rand<radiation_t>(0, REPAIR_RATE)
+                          : uniform_rand(0, rad());
     repair_radiation(repair_amt);
   }
   return is_mobile;

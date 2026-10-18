@@ -111,7 +111,7 @@ Launching a vessel from a planetary surface into low orbit requires expending es
 $$\text{Launch Fuel Cost} = \text{Gravity} \times \text{Mass}_{\text{total}} \times 0.18$$
 
 - **Pre-Launch Fuel & AP Verification**: Fuel sufficiency ($\text{Fuel}_{\text{ship}} \ge \text{Launch Fuel Cost}$) is verified before deducting $1\text{ Star AP}$ or altering the vessel's surface coordinates. A vessel without sufficient escape propellant remains safely grounded on its sector with its action points intact.
-- **Orbital Insertion Jitter**: Upon liftoff, the vessel ascends into low planetary orbit (`LEVEL_PLAN`) with a randomized coordinate offset $\Delta x, \Delta y \in [-2, +2]$ ($\pm D_{\text{land}} / 4$) relative to the planet's center and marks the planet as explored.
+- **Orbital Insertion Jitter**: Upon liftoff, the vessel ascends into low planetary orbit (`LEVEL_PLAN`) with a continuous randomized coordinate offset $\Delta x, \Delta y \in [-2.5, +2.5)$ ($\pm D_{\text{land}} / 4$, where $D_{\text{land}} = 10.0$) relative to the planet's center and marks the planet as explored.
 - **Atmospheric Canister Deployment**: Launching a **Dust Canister** (`g`) or **Greenhouse Gas Canister** (`h`) resets its internal dissipation timer to $0$ and disperses climate-altering aerosols or greenhouse gases into the planet's upper atmosphere.
 
 ### Planetary Landing Operations
@@ -202,7 +202,7 @@ A starship can execute FTL jumps only if it satisfies all of the following requi
 4. **Pre-Charged Drive**: The hyperdrive must be pre-charged and primed before jump initiation.
 
 ### Jump Propellant Calculation and Drive Charging
-The fuel required to open a hyperspace conduit scales with the Euclidean distance to the destination star ($`D_{\text{jump}}`$), the vessel's technology-scaled jump distance factor ($D_{\text{fac}} = 250 \times (\text{Tech} + 100)$), and the square root of total vessel mass:
+The fuel required to open a hyperspace conduit scales with the Euclidean distance to the destination star ($`D_{\text{jump}}`$), the vessel's technology-scaled jump distance factor ($D_{\text{fac}} = 200 \times (\text{Tech} + 100)$), and the square root of total vessel mass:
 
 $$D_{\text{jump}} = \sqrt{(X_{\text{dest}} - X_{\text{origin}})^2 + (Y_{\text{dest}} - Y_{\text{origin}})^2}$$
 
@@ -214,7 +214,7 @@ $$\text{Jump Fuel Cost} = 5.0 \times \sqrt{\text{Mass}_{\text{total}}} \times \l
 
 $$\text{Jump Fuel Cost} = 5.0 \times \sqrt{\text{Mass}_{\text{total}}} \times \left(\frac{D_{\text{jump}}}{D_{\text{fac}}}\right)^2$$
 
-- **Capacitor Charge Cycle**: Unmounted hyperdrives accumulate $+1$ charge per movement segment up to the readiness threshold of $5$, whereas crystal-mounted hyperdrives reach full charge ($5$) in a single movement segment.
+- **Capacitor Charge Cycle**: Hyperspace jumps execute during full turn updates once the drive capacitor reaches the readiness threshold of $1$. Engaging jump orders (`order <ship> jump on`) on a crystal-mounted vessel immediately sets its capacitor charge to $1$ so it jumps on the next full turn update; an unmounted hyperdrive starts at $0$ charge, accumulates $+1$ charge on the first turn update, and jumps on the following turn update.
 
 ---
 

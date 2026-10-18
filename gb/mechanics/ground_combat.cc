@@ -186,7 +186,7 @@ PeopleAttackMechResult people_attack_mech(EntityManager& em, Ship& ship,
   const double astrength =
       calculate_garrison_combat_strength(civ, mil, race, alien, sect);
   const auto raw_ammo = static_cast<int>(std::log10(astrength + 1.0)) - 1;
-  const auto ammo = std::min(strength, std::max(0, raw_ammo));
+  const auto ammo = std::clamp(raw_ammo, 0, strength);
   ship.consume_destruct(ammo);
   const double damage_ceiling =
       (dstrength > 0.0) ? std::min(1e6, 100.0 * astrength / dstrength)
@@ -342,9 +342,8 @@ arm_sector_militia(EntityManager& em, starnum_t snum, planetnum_t pnum,
     race_mut.governor(governor).money -= enlist_cost;
   });
 
-  const resource_t cost = std::max(
-      1U,
-      static_cast<unsigned int>(amount / (sect_peek.get_mobilization() + 1)));
+  const resource_t cost =
+      std::max<resource_t>(1, amount / (sect_peek.get_mobilization() + 1));
   population_t final_popn = 0;
   population_t final_troops = 0;
 
@@ -383,9 +382,10 @@ std::expected<DisarmSectorResult, MilitiaError> disarm_sector_militia(
   const auto& smap_peek = *em.peek_sectormap(snum, pnum);
   const auto& sect_peek = smap_peek.get(coords);
 
-  const population_t amount = std::max<population_t>(
-      0, requested_amount ? std::min(sect_peek.get_troops(), *requested_amount)
-                          : sect_peek.get_troops());
+  const population_t amount =
+      requested_amount ? std::clamp<population_t>(*requested_amount, 0,
+                                                  sect_peek.get_troops())
+                       : sect_peek.get_troops();
 
   population_t final_popn = 0;
   population_t final_troops = 0;

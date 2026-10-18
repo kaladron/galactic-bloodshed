@@ -25,19 +25,34 @@ export using planetnum_t = ID<"planet", std::uint32_t>; // 1-based (1..numplanet
 export using shipnum_t   = ID<"ship", std::uint64_t>;   // 1-based (>= 1)
 export using commodnum_t = ID<"commod", std::int64_t>;  // 1-based (>= 1)
 
-// Semantic Metric Aliases:
-export using turn_t         = std::uint32_t;  ///< Full update turn counter
-export using planet_count_t = std::uint32_t;  ///< Cardinality / tally of planets or star systems
-export using armor_t        = std::uint32_t;  ///< Armor rating absorbing combat damage
-export using damage_t       = std::uint32_t;  ///< Hull damage percentage (0..100)
-export using speed_t        = std::uint32_t;  ///< Tactical engine speed setting
-export using radiation_t    = std::uint32_t;  ///< Accumulated radiation dose level
-export using gun_count_t    = std::uint32_t;  ///< Number of gun mounts or battery power rating
-export using bearing_t      = std::uint32_t;  ///< Course navigation heading angle (0..359)
-export using hangar_t       = std::uint32_t;  ///< Internal carried ship hangar capacity/space
-export using ship_size_t    = std::uint32_t;  ///< Ship physical size / volume
-export using weapon_power_t = std::uint32_t;  ///< Concentrated energy weapon / laser power setting
-export using weapon_range_t = std::uint32_t;  ///< Tactical weapon or mine proximity trigger range
+// Semantic Metric Aliases (signed int32_t / int64_t):
+export using segments_t     = std::int32_t;
+export using turn_t         = std::int32_t;  ///< Full update turn counter
+export using ap_t           = std::int32_t;
+export using planet_count_t = std::int32_t;  ///< Cardinality / tally of planets or star systems
+export using resource_t     = std::int64_t;
+export using money_t        = std::int64_t;
+export using population_t   = std::int64_t;
+export using victory_score_t = std::int64_t;
+export using armor_t        = std::int32_t;  ///< Armor rating absorbing combat damage
+export using damage_t       = std::int32_t;  ///< Hull damage percentage (0..100)
+export using speed_t        = Bounded<"speed", std::int32_t, 0, 9>;
+export using radiation_t    = std::int32_t;  ///< Accumulated radiation dose level
+export using gun_count_t    = std::int32_t;  ///< Number of gun mounts or battery power rating
+export using gun_caliber_t  = std::int32_t;  ///< Gun battery caliber multiplier (0..3)
+export using charge_t       = std::int32_t;  ///< Faster-than-light hyperdrive charge accumulator
+export using bearing_t      = std::int32_t;  ///< Course navigation heading angle (0..359)
+export using hangar_t       = std::int32_t;  ///< Internal carried ship hangar capacity/space
+export using ship_size_t    = std::int32_t;  ///< Ship physical size / volume
+export using weapon_power_t = std::int32_t;  ///< Concentrated energy weapon / laser power setting
+export using weapon_range_t = std::int32_t;  ///< Tactical weapon or mine proximity trigger range
+export using hit_count_t    = std::int32_t;  ///< Number of successful weapon hits or penetrations
+export using hit_odds_t     = std::int32_t;  ///< Weapon hit probability percentage (0..100)
+export using sector_count_t = std::int32_t;  ///< Cardinality / tally of planetary sectors
+export using temp_delta_t   = std::int32_t;  ///< Thermal adjustment applied to planet temperature
+export using iq_t           = std::int32_t;  ///< Race intelligence rating
+export using fighters_t     = std::int32_t;  ///< Race military combat capability rating
+export using sexes_t        = std::int32_t;  ///< Number of reproductive sexes
 ```
 
 All entity and governor identifiers (`player_t`, `governor_t`, `starnum_t`, `planetnum_t`, `shipnum_t`, `commodnum_t`) are uniformly **1-based (`>= 1`)**; `0` is never a valid entity or governor ID. Any nullable foreign key reference MUST be wrapped in `std::optional<ID>` so that absent references serialize as JSON `null` and SQL `NULL`. Sector `(x, y)` grid coordinates are 0-based.

@@ -15,6 +15,67 @@ export int int_rand(int low, int high);
 export long long_rand(long low, long high);
 export std::mt19937& game_rng();
 
+export template <typename Target>
+  requires((std::integral<Target> || std::floating_point<Target>) &&
+           !std::same_as<Target, bool>)
+struct RandBound {
+  Target value;
+
+  template <typename U>
+    requires(std::convertible_to<U, Target> && requires(U u) { Target{u}; })
+  constexpr RandBound(U v) : value(static_cast<Target>(v)) {}
+
+  template <typename U>
+    requires((std::integral<U> || std::floating_point<U>) &&
+             !requires(U u) { Target{u}; })
+  consteval RandBound(U v) : value(checked_cast(v)) {}
+
+private:
+  template <typename U>
+  static consteval Target checked_cast(U v) {
+    if constexpr (std::integral<Target> && std::integral<U>) {
+      if (!std::in_range<Target>(v)) {
+        throw "uniform_rand bound is out of range for target integer type";
+      }
+    } else if constexpr (std::integral<Target> && std::floating_point<U>) {
+      constexpr auto min_v = static_cast<U>(std::numeric_limits<Target>::min());
+      constexpr auto max_v = static_cast<U>(std::numeric_limits<Target>::max());
+      if (v < min_v || v > max_v ||
+          static_cast<U>(static_cast<Target>(v)) != v) {
+        throw "uniform_rand floating-point bound is out of range or not an "
+              "exact integer";
+      }
+    }
+    return static_cast<Target>(v);
+  }
+};
+
+export template <typename T>
+  requires((std::integral<T> || std::floating_point<T>) &&
+           !std::same_as<T, bool>)
+T uniform_rand(std::type_identity_t<RandBound<T>> low,
+               std::type_identity_t<RandBound<T>> high) {
+  if (high.value <= low.value) return low.value;
+  if constexpr (std::integral<T>) {
+    using DistType = std::conditional_t<
+        sizeof(T) < sizeof(int),
+        std::conditional_t<std::is_signed_v<T>, int, unsigned int>, T>;
+    std::uniform_int_distribution<DistType> dist(
+        static_cast<DistType>(low.value), static_cast<DistType>(high.value));
+    return static_cast<T>(dist(game_rng()));
+  } else {
+    std::uniform_real_distribution<T> dist(low.value, high.value);
+    return dist(game_rng());
+  }
+}
+
+export template <int = 0, typename T>
+  requires((std::integral<T> || std::floating_point<T>) &&
+           !std::same_as<T, bool>)
+T uniform_rand(std::type_identity_t<RandBound<T>> low, T high) {
+  return uniform_rand<T>(low, RandBound<T>{high});
+}
+
 export template <std::integral Result = int>
 Result round_rand(std::floating_point auto x) {
   const auto d = static_cast<double>(x);

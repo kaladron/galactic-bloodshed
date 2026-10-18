@@ -308,4 +308,176 @@ std::string render_for_mode(UiMode mode, const FactoryModifyResult& vm) {
   return render_factory_modify_result(vm);
 }
 
+namespace {
+
+std::array<ShipType, NUMSTYPES> get_sorted_ship_types() {
+  std::array<ShipType, NUMSTYPES> result{};
+  for (int i = 0; i < NUMSTYPES; ++i) {
+    result[i] = static_cast<ShipType>(i);
+  }
+  std::ranges::sort(result, [](ShipType a, ShipType b) {
+    return complexity(a) < complexity(b);
+  });
+  return result;
+}
+
+tabulate::Table create_ship_spec_table() {
+  tabulate::Table table;
+  table.format().hide_border().column_separator("  ");
+
+  table.column(0).format().width(1);   // Letter
+  table.column(1).format().width(15);  // Name
+  table.column(2).format().width(5).font_align(tabulate::FontAlign::right);
+  table.column(3).format().width(5).font_align(tabulate::FontAlign::right);
+  table.column(4).format().width(3).font_align(tabulate::FontAlign::right);
+  table.column(5).format().width(4).font_align(tabulate::FontAlign::right);
+  table.column(6).format().width(3).font_align(tabulate::FontAlign::right);
+  table.column(7).format().width(3).font_align(tabulate::FontAlign::right);
+  table.column(8).format().width(3).font_align(tabulate::FontAlign::right);
+  table.column(9).format().width(4).font_align(tabulate::FontAlign::right);
+  table.column(10).format().width(4).font_align(tabulate::FontAlign::right);
+  table.column(11).format().width(2).font_align(tabulate::FontAlign::right);
+  table.column(12).format().width(4).font_align(tabulate::FontAlign::right);
+  table.column(13).format().width(4).font_align(tabulate::FontAlign::right);
+
+  table.add_row({"?", "name", "cargo", "hang", "arm", "dest", "gun", "pri",
+                 "sec", "fuel", "crew", "sp", "tech", "cost"});
+  table[0].format().font_style({tabulate::FontStyle::bold});
+
+  return table;
+}
+
+void add_ship_spec_row(tabulate::Table& table, const ShipSpecRow& row) {
+  table.add_row(
+      {row.letter, row.name, std::format("{}", row.max_resource),
+       std::format("{}", row.max_hangar), std::format("{}", row.base_armor),
+       std::format("{}", row.max_destruct), std::format("{}", row.max_guns),
+       row.primary_caliber, row.secondary_caliber,
+       std::format("{}", row.max_fuel), std::format("{}", row.max_crew),
+       std::format("{}", row.base_speed), std::format("{:.0f}", row.base_tech),
+       std::format("{}", row.cost)});
+}
+
+}  // namespace
+
+ShipSpecRow build_ship_spec_row(ShipType type, const Race& race) {
+  const auto& tmpl = ship_template(type);
+  return ShipSpecRow{
+      .letter = std::string(1, tmpl.letter),
+      .name = std::string(tmpl.name),
+      .max_resource = tmpl.max_resource,
+      .max_hangar = tmpl.max_hangar,
+      .base_armor = tmpl.base_armor,
+      .max_destruct = tmpl.max_destruct,
+      .max_guns = tmpl.max_guns,
+      .primary_caliber =
+          std::format("{}", gun_caliber(tmpl.max_primary_caliber)),
+      .secondary_caliber =
+          std::format("{}", gun_caliber(tmpl.max_secondary_caliber)),
+      .max_fuel = tmpl.max_fuel,
+      .max_crew = tmpl.max_crew,
+      .base_speed = tmpl.base_speed,
+      .base_tech = tmpl.base_tech,
+      .cost = Shipcost(type, race),
+  };
+}
+
+ShipSpecsTableViewModel build_ship_specs_table_vm(const Race& race) {
+  ShipSpecsTableViewModel vm;
+  const auto sorted_ships = get_sorted_ship_types();
+  for (ShipType i : sorted_ships) {
+    const auto& tmpl = ship_template(i);
+    if ((!tmpl.is_god_only || race.God) &&
+        (race.pods || i != ShipType::STYPE_POD) && tmpl.is_programmed) {
+      vm.rows.push_back(build_ship_spec_row(i, race));
+    }
+  }
+  return vm;
+}
+
+ShipSpecDetailViewModel
+build_ship_spec_detail_vm(ShipType type, const Race& race,
+                          std::optional<std::string_view> description) {
+  const auto& tmpl = ship_template(type);
+  ShipSpecDetailViewModel vm{
+      .description = (description && !description->empty())
+                         ? std::optional<std::string>{*description}
+                         : std::nullopt,
+      .can_build_on_planet = tmpl.can_build_on_planet(),
+      .spec = build_ship_spec_row(type, race),
+  };
+  for (int j = 0; j < NUMSTYPES; ++j) {
+    const auto& builder_tmpl = ship_template(ShipType{j});
+    if (tmpl.can_be_built_by(builder_tmpl)) {
+      vm.builder_letters.emplace_back(1, builder_tmpl.letter);
+    }
+  }
+  return vm;
+}
+
+std::string render_ship_specs_table(const ShipSpecsTableViewModel& vm) {
+  std::ostringstream ss;
+  ss << "     - Default ship parameters -\n";
+  auto table = create_ship_spec_table();
+  for (const auto& row : vm.rows) {
+    add_ship_spec_row(table, row);
+  }
+  ss << table << "\n";
+  return ss.str();
+}
+
+std::string render_json_ship_specs_table(const ShipSpecsTableViewModel& vm) {
+  return render_json_envelope("ship_specs_table", vm);
+}
+
+std::string render_ship_spec_detail(const ShipSpecDetailViewModel& vm) {
+  std::ostringstream ss;
+  if (vm.description && !vm.description->empty()) {
+    ss << "\n" << *vm.description;
+    if (!vm.description->ends_with('\n')) {
+      ss << "\n";
+    }
+  }
+  if (vm.can_build_on_planet) {
+    ss << "\nCan be constructed on planet.";
+  }
+  const std::size_t n = vm.builder_letters.size();
+  if (n > 0) {
+    ss << "\nCan be built by ";
+    for (std::size_t m = 0; m < n; ++m) {
+      const std::size_t remaining = n - (m + 1);
+      if (remaining > 1) {
+        ss << std::format("{}, ", vm.builder_letters[m]);
+      } else if (remaining == 1) {
+        ss << std::format("{} and ", vm.builder_letters[m]);
+      } else {
+        ss << std::format("{} ", vm.builder_letters[m]);
+      }
+    }
+    ss << "type ships.\n";
+  }
+  auto table = create_ship_spec_table();
+  add_ship_spec_row(table, vm.spec);
+  ss << table << "\n";
+  return ss.str();
+}
+
+std::string render_json_ship_spec_detail(const ShipSpecDetailViewModel& vm) {
+  return render_json_envelope("ship_spec_detail", vm);
+}
+
+std::string render_for_mode(UiMode mode, const ShipSpecsTableViewModel& vm) {
+  if (mode == UiMode::JSON) {
+    return render_json_ship_specs_table(vm);
+  }
+  return render_ship_specs_table(vm);
+}
+
+std::string render_for_mode(UiMode mode, const ShipSpecDetailViewModel& vm) {
+  if (mode == UiMode::JSON) {
+    return render_json_ship_spec_detail(vm);
+  }
+  return render_ship_spec_detail(vm);
+}
+
 }  // namespace GB::presentation

@@ -79,4 +79,71 @@ render_json_factory_modify_result(const FactoryModifyResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const FactoryModifyResult& vm);
 
+/// Row in the default ship parameters table (`build ?` / `build ? <type>`).
+struct ShipSpecRow {
+  std::string letter{};
+  std::string name{};
+  resource_t max_resource{0};
+  hangar_t max_hangar{0};
+  armor_t base_armor{0};
+  resource_t max_destruct{0};
+  gun_count_t max_guns{0};
+  std::string primary_caliber{};
+  std::string secondary_caliber{};
+  fuel_t max_fuel{0.0};
+  population_t max_crew{0};
+  speed_t base_speed{0};
+  double base_tech{0.0};
+  resource_t cost{0};
+};
+
+/// View model for the full ship specifications table (`build ?`).
+struct ShipSpecsTableViewModel {
+  std::vector<ShipSpecRow> rows{};
+};
+
+/// View model for a specific ship type specification (`build ? <type>`).
+struct ShipSpecDetailViewModel {
+  std::optional<std::string> description{std::nullopt};
+  bool can_build_on_planet{false};
+  std::vector<std::string> builder_letters{};
+  ShipSpecRow spec{};
+};
+
+/// Builds a `ShipSpecRow` for a single ship template and race.
+[[nodiscard]] ShipSpecRow build_ship_spec_row(ShipType type, const Race& race);
+
+/// Builds a `ShipSpecsTableViewModel` for all ship types available to `race`.
+[[nodiscard]] ShipSpecsTableViewModel
+build_ship_specs_table_vm(const Race& race);
+
+/// Builds a `ShipSpecDetailViewModel` for a specific ship type and race.
+[[nodiscard]] ShipSpecDetailViewModel build_ship_spec_detail_vm(
+    ShipType type, const Race& race,
+    std::optional<std::string_view> description = std::nullopt);
+
+/// Formats a `ShipSpecsTableViewModel` into its ASCII specification table.
+[[nodiscard]] std::string
+render_ship_specs_table(const ShipSpecsTableViewModel& vm);
+
+/// Formats a `ShipSpecsTableViewModel` into its JSON envelope.
+[[nodiscard]] std::string
+render_json_ship_specs_table(const ShipSpecsTableViewModel& vm);
+
+/// Formats a `ShipSpecDetailViewModel` into its ASCII presentation string.
+[[nodiscard]] std::string
+render_ship_spec_detail(const ShipSpecDetailViewModel& vm);
+
+/// Formats a `ShipSpecDetailViewModel` into its JSON envelope.
+[[nodiscard]] std::string
+render_json_ship_spec_detail(const ShipSpecDetailViewModel& vm);
+
+/// Open ADL dispatch for `ShipSpecsTableViewModel`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const ShipSpecsTableViewModel& vm);
+
+/// Open ADL dispatch for `ShipSpecDetailViewModel`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const ShipSpecDetailViewModel& vm);
+
 }  // namespace GB::presentation

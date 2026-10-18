@@ -59,10 +59,16 @@ can_build_on_sector(EntityManager& entity_manager, const ShipType what,
 }
 
 // Used for optional parameters.  If the element requested exists, use
-// it.  If the number is negative, return zero instead.
+// it.  If the number is negative or non-numeric, return zero instead.
 int getcount(const command_t& argv, const std::size_t elem) {
-  int count = argv.size() > elem ? std::stoi(argv[elem]) : 1;
-  return std::max(count, 0);
+  if (argv.size() <= elem) {
+    return 1;
+  }
+  auto res = scn::scan<int>(argv[elem], "{}");
+  if (!res) {
+    return 0;
+  }
+  return std::max(res->value(), 0);
 }
 
 std::expected<void, PlanetBuildError>

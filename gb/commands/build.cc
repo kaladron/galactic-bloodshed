@@ -9,112 +9,18 @@ import gb.entities;
 import gb.mechanics;
 import gb.presentation.construction;
 import gb.services;
-import scnlib;
 import std;
-import tabulate;
 
 module commands;
 
 namespace {
-// Get ship types sorted by complexity (simplest first)
-std::array<ShipType, NUMSTYPES> get_sorted_ship_types() {
-  std::array<ShipType, NUMSTYPES> result;
-  for (int i = 0; i < NUMSTYPES; i++) {
-    result[i] = static_cast<ShipType>(i);
+
+bool handle_build_info_query(const command_t& argv, GameObj& g) {
+  if (argv.size() == 2) {
+    g.present(GB::presentation::build_ship_specs_table_vm(*g.race));
+    return true;
   }
-  std::ranges::sort(result, [](ShipType a, ShipType b) {
-    return complexity(a) < complexity(b);
-  });
-  return result;
-}
-
-// Create a tabulate table for ship specifications
-tabulate::Table create_ship_spec_table() {
-  tabulate::Table table;
-  table.format().hide_border().column_separator("  ");
-
-  table.column(0).format().width(1);   // Letter
-  table.column(1).format().width(15);  // Name
-  table.column(2).format().width(5).font_align(tabulate::FontAlign::right);
-  table.column(3).format().width(5).font_align(tabulate::FontAlign::right);
-  table.column(4).format().width(3).font_align(tabulate::FontAlign::right);
-  table.column(5).format().width(4).font_align(tabulate::FontAlign::right);
-  table.column(6).format().width(3).font_align(tabulate::FontAlign::right);
-  table.column(7).format().width(3).font_align(tabulate::FontAlign::right);
-  table.column(8).format().width(3).font_align(tabulate::FontAlign::right);
-  table.column(9).format().width(4).font_align(tabulate::FontAlign::right);
-  table.column(10).format().width(4).font_align(tabulate::FontAlign::right);
-  table.column(11).format().width(2).font_align(tabulate::FontAlign::right);
-  table.column(12).format().width(4).font_align(tabulate::FontAlign::right);
-  table.column(13).format().width(4).font_align(tabulate::FontAlign::right);
-
-  table.add_row({"?", "name", "cargo", "hang", "arm", "dest", "gun", "pri",
-                 "sec", "fuel", "crew", "sp", "tech", "cost"});
-  table[0].format().font_style({tabulate::FontStyle::bold});
-
-  return table;
-}
-
-void add_ship_spec_row(tabulate::Table& table, ShipType i, const Race& race) {
-  const auto& tmpl = ship_template(i);
-  table.add_row(
-      {std::string(1, tmpl.letter), std::string(tmpl.name),
-       std::format("{}", tmpl.max_resource), std::format("{}", tmpl.max_hangar),
-       std::format("{}", tmpl.base_armor), std::format("{}", tmpl.max_destruct),
-       std::format("{}", tmpl.max_guns),
-       std::format("{}", gun_caliber(tmpl.max_primary_caliber)),
-       std::format("{}", gun_caliber(tmpl.max_secondary_caliber)),
-       std::format("{}", tmpl.max_fuel), std::format("{}", tmpl.max_crew),
-       std::format("{}", tmpl.base_speed),
-       std::format("{:.0f}", tmpl.base_tech),
-       std::format("{}", Shipcost(i, race))});
-}
-
-void print_all_ship_specs(GameObj& g, const Race& race) {
-  g.out << "     - Default ship parameters -\n";
-  auto table = create_ship_spec_table();
-  auto sorted_ships = get_sorted_ship_types();
-  for (ShipType i : sorted_ships) {
-    const auto& tmpl = ship_template(i);
-    if ((!tmpl.is_god_only) || race.God) {
-      if (race.pods || (i != ShipType::STYPE_POD)) {
-        if (tmpl.is_programmed) {
-          add_ship_spec_row(table, i, race);
-        }
-      }
-    }
-  }
-  g.out << table << "\n";
-}
-
-void format_ship_builders(GameObj& g, const ShipTemplate& tmpl) {
-  if (tmpl.can_build_on_planet()) {
-    g.out << "\nCan be constructed on planet.";
-  }
-  int n = 0;
-  for (int j = 0; j < NUMSTYPES; j++) {
-    if (tmpl.can_be_built_by(ship_template(ShipType{j}))) n++;
-  }
-  if (n > 0) {
-    int m = 0;
-    g.out << "\nCan be built by ";
-    for (int j = 0; j < NUMSTYPES; j++) {
-      if (tmpl.can_be_built_by(ship_template(ShipType{j}))) {
-        m++;
-        if (n - m > 1)
-          g.out << std::format("{}, ", ship_template(ShipType{j}).letter);
-        else if (n - m > 0)
-          g.out << std::format("{} and ", ship_template(ShipType{j}).letter);
-        else
-          g.out << std::format("{} ", ship_template(ShipType{j}).letter);
-      }
-    }
-    g.out << "type ships.\n";
-  }
-}
-
-bool print_specific_ship_spec(GameObj& g, char type_char, const Race& race) {
-  auto ship_type = get_build_type(type_char);
+  const auto ship_type = get_build_type(argv[2][0]);
   if (!ship_type) {
     g.out << "No such ship type.\n";
     return false;
@@ -125,26 +31,11 @@ bool print_specific_ship_spec(GameObj& g, char type_char, const Race& race) {
     return false;
   }
   const auto* exam = g.entity_manager.peek_ship_exam(*ship_type);
-  if (exam && !exam->description.empty()) {
-    g.out << "\n" << exam->description;
-    if (!exam->description.ends_with('\n')) {
-      g.out << "\n";
-    }
-  }
-  format_ship_builders(g, tmpl);
-  auto table = create_ship_spec_table();
-  add_ship_spec_row(table, *ship_type, race);
-  g.out << table << "\n";
+  const std::optional<std::string_view> desc =
+      exam ? std::optional<std::string_view>{exam->description} : std::nullopt;
+  g.present(
+      GB::presentation::build_ship_spec_detail_vm(*ship_type, *g.race, desc));
   return true;
-}
-
-bool handle_build_info_query(const command_t& argv, GameObj& g) {
-  const auto& race = *g.race;
-  if (argv.size() == 2) {
-    print_all_ship_specs(g, race);
-    return true;
-  }
-  return print_specific_ship_spec(g, argv[2][0], race);
 }
 
 int parse_ship_build_count(const command_t& argv, bool is_factory) {
@@ -293,10 +184,11 @@ struct ShipBuildPlan {
   bool outside;
 };
 
-std::optional<ShipBuildPlan>
-validate_factory_ship_build(const command_t& argv, GameObj& g,
-                            const Ship& builder, starnum_t snum,
-                            planetnum_t pnum, ScopeLevel build_level) {
+std::optional<ShipBuildPlan> validate_factory_ship_build(const command_t& argv,
+                                                         GameObj& g,
+                                                         const Ship& builder,
+                                                         starnum_t snum,
+                                                         planetnum_t pnum) {
   const auto& race = *g.race;
   int count = parse_ship_build_count(argv, true);
   if (!count) {
@@ -305,10 +197,6 @@ validate_factory_ship_build(const command_t& argv, GameObj& g,
   }
   if (!builder.has_factory_design()) {
     g.out << "This factory has not been designated to build a ship type.\n";
-    return std::nullopt;
-  }
-  if (!builder.is_landed()) {
-    g.out << "Factories can only build when landed on a planet.\n";
     return std::nullopt;
   }
   double tech = complexity(builder);
@@ -321,24 +209,22 @@ validate_factory_ship_build(const command_t& argv, GameObj& g,
   }
   Coordinates bcoords = builder.land_coords();
   ShipType what = builder.build_type();
-  if (build_level == ScopeLevel::LEVEL_PLAN) {
-    const auto& planet = *g.entity_manager.peek_planet(snum, pnum);
-    const auto& star = *g.entity_manager.peek_star(snum);
-    if (const auto res =
-            can_build_at_planet(g.player(), g.governor(), star, planet);
-        !res) {
-      g.out << GB::presentation::format_planet_build_error(res.error());
-      g.out << "You can't build that here.\n";
-      return std::nullopt;
-    }
-    const auto& sectormap = *g.entity_manager.peek_sectormap(snum, pnum);
-    const auto& sector = sectormap.get(bcoords);
-    auto result = can_build_on_sector(g.entity_manager, what, race, planet,
-                                      sector, bcoords);
-    if (!result) {
-      g.out << result.error();
-      return std::nullopt;
-    }
+  const auto& planet = *g.entity_manager.peek_planet(snum, pnum);
+  const auto& star = *g.entity_manager.peek_star(snum);
+  if (const auto res =
+          can_build_at_planet(g.player(), g.governor(), star, planet);
+      !res) {
+    g.out << GB::presentation::format_planet_build_error(res.error());
+    g.out << "You can't build that here.\n";
+    return std::nullopt;
+  }
+  const auto& sectormap = *g.entity_manager.peek_sectormap(snum, pnum);
+  const auto& sector = sectormap.get(bcoords);
+  auto result = can_build_on_sector(g.entity_manager, what, race, planet,
+                                    sector, bcoords);
+  if (!result) {
+    g.out << result.error();
+    return std::nullopt;
   }
   return ShipBuildPlan{
       .what = what, .land_coords = bcoords, .count = count, .outside = true};
@@ -472,6 +358,9 @@ bool execute_single_non_factory_ship_build(GameObj& g, Ship& builder,
 
   g.present(
       initialize_new_ship(race, Governor, *newship, load_fuel, load_crew));
+  if (!plan.outside) {
+    builder.load_docked_craft(*newship);
+  }
   g.entity_manager.create_ship(std::move(newship));
   g.entity_manager.mutate_ship(builder.number(),
                                [&](Ship& b) { b = Ship(builder.to_struct()); });
@@ -492,8 +381,7 @@ bool execute_ship_build_command(const command_t& argv, GameObj& g) {
 
   std::optional<ShipBuildPlan> plan;
   if (builder.type() == ShipType::OTYPE_FACTORY) {
-    plan =
-        validate_factory_ship_build(argv, g, builder, snum, pnum, build_level);
+    plan = validate_factory_ship_build(argv, g, builder, snum, pnum);
   } else {
     plan = validate_non_factory_ship_build(argv, g, builder);
   }

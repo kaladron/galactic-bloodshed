@@ -3,7 +3,6 @@
 /// \file upgrade_test.cc
 /// \brief Unit tests for upgrade command and AP deduction.
 
-import dallib;
 import gb.entities;
 import gb.services;
 import test;
@@ -13,32 +12,10 @@ import std;
 namespace {
 
 void test_upgrade_command() {
-  // Create test context
   TestContext ctx;
-
-  // Create test race with enough tech for upgrades
-  Race race{};
-  race.Playernum = 1;
-  race.name = "TestRace";
-  race.mass = 1.0;
-  race.fighters = 1.0;
-  race.tech = 500.0;  // High tech to allow upgrades
-  race.morale = 100;
-  race.God = false;
-
-  // Save race via repository
-  JsonStore store(ctx.db);
-  RaceRepository races(store);
-  races.save(race);
-
-  // Create a test star
-  Star star{1, "TestStar", {100.0, 200.0}};
-  star.mark_explored_by(1);
-  star.AP(1) = 10;
-
-  // Save star via repository
-  StarRepository stars_repo(store);
-  stars_repo.save(star);
+  ctx.with_standard_universe();
+  ctx.em.mutate_race(1, [](Race& r) { r.tech = 500.0; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 10; });
 
   const auto type = ShipType::STYPE_FIGHTER;
   TestShipBuilder(ctx.em, type, 1)
@@ -188,24 +165,8 @@ void test_upgrade_command() {
 void test_upgrade_numeric_attributes_and_validations() {
   std::println(std::cout, "\nTest upgrade numeric attributes and validations");
   TestContext ctx;
-  JsonStore store(ctx.db);
-  RaceRepository races(store);
-  StarRepository stars_repo(store);
-
-  Race race{};
-  race.Playernum = 1;
-  race.name = "BuilderRace";
-  race.mass = 1.0;
-  race.fighters = 1.0;
-  race.tech = 500.0;
-  race.morale = 100;
-  race.God = false;
-  races.save(race);
-
-  Star star{1, "TestStar"};
-  star.mark_explored_by(1);
-  star.AP(1) = 50;
-  stars_repo.save(star);
+  ctx.with_standard_universe();
+  ctx.em.mutate_race(1, [](Race& r) { r.tech = 500.0; });
 
   // Cruiser supports crew, cargo, hanger, fuel, destruct, primary, secondary,
   // cew, laser, jump, mount.
@@ -289,24 +250,8 @@ void test_upgrade_numeric_attributes_and_validations() {
 void test_upgrade_weapons_and_systems() {
   std::println(std::cout, "\nTest upgrade weapons and boolean systems");
   TestContext ctx;
-  JsonStore store(ctx.db);
-  RaceRepository races(store);
-  StarRepository stars_repo(store);
-
-  Race race{};
-  race.Playernum = 1;
-  race.name = "WeaponRace";
-  race.mass = 1.0;
-  race.fighters = 1.0;
-  race.tech = 25000.0;
-  race.morale = 100;
-  race.God = false;
-  races.save(race);
-
-  Star star{1, "TestStar"};
-  star.mark_explored_by(1);
-  star.AP(1) = 50;
-  stars_repo.save(star);
+  ctx.with_standard_universe();
+  ctx.em.mutate_race(1, [](Race& r) { r.tech = 25000.0; });
 
   const auto type = ShipType::STYPE_CRUISER;
   TestShipBuilder(ctx.em, type, 1)
@@ -435,24 +380,8 @@ void test_upgrade_preconditions_and_carrier_hangar() {
   std::println(std::cout,
                "\nTest upgrade preconditions and carrier hangar capacity");
   TestContext ctx;
-  JsonStore store(ctx.db);
-  RaceRepository races(store);
-  StarRepository stars_repo(store);
-
-  Race race{};
-  race.Playernum = 1;
-  race.name = "CarrierRace";
-  race.mass = 1.0;
-  race.fighters = 1.0;
-  race.tech = 25000.0;
-  race.morale = 100;
-  race.God = false;
-  races.save(race);
-
-  Star star{1, "TestStar"};
-  star.mark_explored_by(1);
-  star.AP(1) = 50;
-  stars_repo.save(star);
+  ctx.with_standard_universe();
+  ctx.em.mutate_race(1, [](Race& r) { r.tech = 25000.0; });
 
   // Ship 1: Carrier in star orbit
   TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER, 1)
@@ -567,6 +496,157 @@ void test_upgrade_preconditions_and_carrier_hangar() {
                           "synchronization verified");
 }
 
+void test_upgrade_json_god_mode_and_edge_cases() {
+  std::println(std::cout,
+               "\nTest upgrade JSON output, God mode, and edge cases");
+  TestContext ctx;
+  ctx.with_standard_universe();
+  ctx.em.mutate_race(1, [](Race& r) {
+    r.tech = 25000.0;
+    r.discoveries.cew = true;
+  });
+
+  // Ship 1: Unarmed Cruiser owned by player 1
+  const auto ctype = ShipType::STYPE_CRUISER;
+  TestShipBuilder(ctx.em, ctype, 1)
+      .owned_by(1, 1)
+      .named("UnarmedCruiser")
+      .in_star_orbit(1, 100.0, 200.0)
+      .with_resource(5000)
+      .with_armor(ship_template(ctype).base_armor)
+      .build();
+
+  ctx.em.mutate_ship(1, [](Ship& s) {
+    s.max_resource() = 5000;
+    s.set_primary_battery({.count = 0, .caliber = guntype_t::NONE});
+    s.set_secondary_battery({.count = 0, .caliber = guntype_t::NONE});
+    s.active_battery() = ActiveBattery::NONE;
+    s.build_cost() = static_cast<resource_t>(cost(s));
+    s.size() = s.calculate_size();
+    s.to_struct().base_mass = s.base_mass();
+    s.set_mass(s.base_mass() + s.resource() * MASS_RESOURCE);
+  });
+
+  // Ship 2: Cruiser owned by player 2 (non-commandable by player 1)
+  TestShipBuilder(ctx.em, ctype, 2)
+      .owned_by(2, 1)
+      .named("EnemyCruiser")
+      .in_star_orbit(1, 100.0, 200.0)
+      .with_resource(5000)
+      .build();
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g);
+
+  // Direct handler call at non-SHIP scope
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(1);
+  g.out.str("");
+  test::expect_false(GB::commands::upgrade({"upgrade", "armor", "5"}, g));
+  test::expect_contains(
+      g.out.str(), "You have to change scope to the ship you wish to upgrade.");
+
+  // Non-commandable ship rejection (owned by player 2)
+  g.set_level(ScopeLevel::LEVEL_SHIP);
+  g.set_shipno(2);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "5"});
+  test::expect_contains(g.out.str(), "You don't own ship #2.");
+
+  // Switch to Ship 1
+  g.set_shipno(1);
+
+  // 1. NoCaliberDefined when upgrading battery strength with NONE caliber
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"upgrade", "primary", "strength", "2"});
+  test::expect_contains(g.out.str(), "No caliber defined.");
+
+  // 2. InvalidGunCharacteristic when 3rd arg is unknown
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"upgrade", "primary", "range", "5"});
+  test::expect_contains(g.out.str(), "No such gun characteristic.");
+
+  // 3. InvalidCewOption (< 4 args and unknown sub-option) & RidiculousSetting
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"upgrade", "cew", "strength"});
+  test::expect_contains(g.out.str(), "No such option for CEWs.");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"upgrade", "cew", "caliber", "10"});
+  test::expect_contains(g.out.str(), "No such option for CEWs.");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"upgrade", "cew", "strength", "-5"});
+  test::expect_contains(g.out.str(), "That's a ridiculous setting.");
+
+  // 4. Upgrading secondary battery when active_battery is NONE activates
+  // SECONDARY
+  ctx.em.mutate_ship(1, [](Ship& s) {
+    s.set_secondary_battery({.count = 1, .caliber = guntype_t::LIGHT});
+    s.active_battery() = ActiveBattery::NONE;
+    s.build_cost() = static_cast<resource_t>(cost(s));
+  });
+  ctx.assert_dispatch_success(g, {"upgrade", "secondary", "caliber", "medium"},
+                              1);
+  ctx.assert_dispatch_success(g, {"upgrade", "secondary", "strength", "2"}, 1);
+  test::expect_eq(ctx.em.peek_ship(1)->active_battery(),
+                  ActiveBattery::SECONDARY);
+
+  // Reset to primary-only with active_battery NONE and verify PRIMARY
+  // activation
+  ctx.em.mutate_ship(1, [](Ship& s) {
+    s.set_primary_battery({.count = 1, .caliber = guntype_t::LIGHT});
+    s.set_secondary_battery({.count = 0, .caliber = guntype_t::NONE});
+    s.active_battery() = ActiveBattery::NONE;
+    s.size() = s.calculate_size();
+    s.to_struct().base_mass = s.base_mass();
+    s.build_cost() = static_cast<resource_t>(cost(s));
+  });
+  const double base_mass_before = ctx.em.peek_ship(1)->to_struct().base_mass;
+  ctx.assert_dispatch_success(g, {"upgrade", "primary", "caliber", "medium"},
+                              1);
+  ctx.assert_dispatch_success(g, {"upgrade", "primary", "strength", "2"}, 1);
+  test::expect_eq(ctx.em.peek_ship(1)->active_battery(),
+                  ActiveBattery::PRIMARY);
+  test::expect_gt(ctx.em.peek_ship(1)->to_struct().base_mass, base_mass_before);
+
+  // 5. "resource" alias for "cargo" and 2-arg no-op upgrade (net_cost = 1)
+  const auto cur_res_cap = ctx.em.peek_ship(1)->max_resource();
+  ctx.assert_dispatch_success(
+      g, {"upgrade", "resource", std::to_string(cur_res_cap + 10)}, 1);
+  test::expect_eq(ctx.em.peek_ship(1)->max_resource(), cur_res_cap + 10);
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"upgrade", "armor"}, 1);
+  test::expect_contains(g.out.str(),
+                        "Characteristic modified at a cost of 1 resources.");
+
+  // 6. God mode + UiMode::JSON: deity upgrades for free even with 0 tech
+  ctx.em.mutate_race(1, [](Race& r) {
+    r.God = true;
+    r.tech = 0.0;
+  });
+  ctx.setup_game_obj(g);
+  g.set_level(ScopeLevel::LEVEL_SHIP);
+  g.set_shipno(1);
+  g.set_snum(1);
+  g.set_ui_mode(UiMode::JSON);
+  g.out.str("");
+  const auto res_before_god = ctx.em.peek_ship(1)->resource();
+  ctx.assert_dispatch_success(g, {"upgrade", "armor", "50"}, 1);
+  test::expect_contains(g.out.str(), "\"type\":\"ship_upgrade\"");
+  test::expect_contains(g.out.str(), "\"old_cost\":0");
+  test::expect_contains(g.out.str(), "\"new_cost\":0");
+  test::expect_contains(g.out.str(), "\"net_cost\":0");
+  test::expect_eq(ctx.em.peek_ship(1)->armor(), 50);
+  test::expect_eq(ctx.em.peek_ship(1)->resource(), res_before_god);
+
+  std::println(std::cout,
+               "    ✓ JSON output, God mode, battery activation, and edge "
+               "cases verified");
+}
+
 }  // namespace
 
 int main() {
@@ -574,6 +654,7 @@ int main() {
   test_upgrade_numeric_attributes_and_validations();
   test_upgrade_weapons_and_systems();
   test_upgrade_preconditions_and_carrier_hangar();
+  test_upgrade_json_god_mode_and_edge_cases();
   std::println(std::cout, "\n✅ All upgrade tests passed!");
   return 0;
 }

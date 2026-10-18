@@ -216,3 +216,43 @@ configure_factory_blueprint(Ship& dirship, const Race& race,
 export [[nodiscard]] std::expected<FactoryModifyResult, FactoryModifyError>
 modify_factory_attribute(Ship& dirship, const Race& race,
                          const command_t& argv);
+
+export enum class UpgradeErrorReason {
+  ShipDamaged,
+  CannotUpgradeFactory,
+  CannotUpgradeShip,
+  InvalidGunCharacteristic,
+  NoCaliberDefined,
+  RidiculousSetting,
+  InvalidCaliber,
+  NoCewDiscovery,
+  InvalidCewOption,
+  NoCrystalDiscovery,
+  NoLaserDiscovery,
+  InvalidCharacteristic,
+  InsufficientTech,
+  InsufficientCarrierHangar,
+  CannotDowngrade,
+  InsufficientResources,
+};
+
+export struct UpgradeError {
+  UpgradeErrorReason reason{UpgradeErrorReason::InvalidCharacteristic};
+  double required_tech{0.0};
+  char carrier_letter{' '};
+  shipnum_t carrier_shipno{0};
+  long more_hangar_needed{0};
+  resource_t old_cost{0};
+  resource_t new_cost{0};
+  resource_t net_cost{0};
+};
+
+export struct UpgradeShipResult {
+  resource_t old_cost{0};
+  resource_t new_cost{0};
+  resource_t net_cost{0};
+};
+
+export [[nodiscard]] std::expected<UpgradeShipResult, UpgradeError>
+upgrade_single_ship(EntityManager& entity_manager, Ship& dirship,
+                    const Race& race, const command_t& argv);

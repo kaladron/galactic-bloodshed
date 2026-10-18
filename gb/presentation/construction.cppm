@@ -146,4 +146,19 @@ render_json_ship_spec_detail(const ShipSpecDetailViewModel& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const ShipSpecDetailViewModel& vm);
 
+/// Formats an `UpgradeError` into its user-facing error diagnostic string.
+[[nodiscard]] std::string format_upgrade_error(const UpgradeError& err);
+
+/// Formats an `UpgradeShipResult` into its ASCII presentation string.
+[[nodiscard]] std::string
+render_upgrade_ship_result(const UpgradeShipResult& vm);
+
+/// Formats an `UpgradeShipResult` into its JSON envelope.
+[[nodiscard]] std::string
+render_json_upgrade_ship_result(const UpgradeShipResult& vm);
+
+/// Open ADL dispatch for `UpgradeShipResult`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const UpgradeShipResult& vm);
+
 }  // namespace GB::presentation

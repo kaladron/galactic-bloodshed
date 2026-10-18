@@ -480,4 +480,67 @@ std::string render_for_mode(UiMode mode, const ShipSpecDetailViewModel& vm) {
   return render_ship_spec_detail(vm);
 }
 
+std::string format_upgrade_error(const UpgradeError& err) {
+  switch (err.reason) {
+    case UpgradeErrorReason::ShipDamaged:
+      return "You cannot upgrade damaged ships.\n";
+    case UpgradeErrorReason::CannotUpgradeFactory:
+      return "You can't upgrade factories.\n";
+    case UpgradeErrorReason::CannotUpgradeShip:
+      return "This ship cannot be upgraded.\n";
+    case UpgradeErrorReason::InvalidGunCharacteristic:
+      return "No such gun characteristic.\n";
+    case UpgradeErrorReason::NoCaliberDefined:
+      return "No caliber defined.\n";
+    case UpgradeErrorReason::RidiculousSetting:
+      return "That's a ridiculous setting.\n";
+    case UpgradeErrorReason::InvalidCaliber:
+      return "No such caliber.\n";
+    case UpgradeErrorReason::NoCewDiscovery:
+      return "Your race cannot build confined energy weapons.\n";
+    case UpgradeErrorReason::InvalidCewOption:
+      return "No such option for CEWs.\n";
+    case UpgradeErrorReason::NoCrystalDiscovery:
+      return "Your race does not now how to utilize crystal power yet.\n";
+    case UpgradeErrorReason::NoLaserDiscovery:
+      return "Your race cannot build lasers.\n";
+    case UpgradeErrorReason::InvalidCharacteristic:
+      return "That characteristic either doesn't exist or can't be modified.\n";
+    case UpgradeErrorReason::InsufficientTech:
+      return std::format(
+          "This upgrade requires an engineering technology of {:.1f}.\n",
+          err.required_tech);
+    case UpgradeErrorReason::InsufficientCarrierHangar:
+      return std::format("Not enough free hanger space on {}{}.\n"
+                         "{} more needed.\n",
+                         err.carrier_letter, err.carrier_shipno,
+                         err.more_hangar_needed);
+    case UpgradeErrorReason::CannotDowngrade:
+      return "You cannot downgrade ships!\n";
+    case UpgradeErrorReason::InsufficientResources:
+      return std::format(
+          "Old value {}r   New value {}r\n"
+          "You need {} resources on board to make this modification.\n",
+          err.old_cost, err.new_cost, err.net_cost);
+  }
+  std::unreachable();
+}
+
+std::string render_upgrade_ship_result(const UpgradeShipResult& vm) {
+  return std::format("Old value {}r   New value {}r\n"
+                     "Characteristic modified at a cost of {} resources.\n",
+                     vm.old_cost, vm.new_cost, vm.net_cost);
+}
+
+std::string render_json_upgrade_ship_result(const UpgradeShipResult& vm) {
+  return render_json_envelope("ship_upgrade", vm);
+}
+
+std::string render_for_mode(UiMode mode, const UpgradeShipResult& vm) {
+  if (mode == UiMode::JSON) {
+    return render_json_upgrade_ship_result(vm);
+  }
+  return render_upgrade_ship_result(vm);
+}
+
 }  // namespace GB::presentation

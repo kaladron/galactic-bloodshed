@@ -806,3 +806,327 @@ modify_factory_attribute(Ship& dirship, const Race& race,
 
   return FactoryModifyResult{.stats = *stats};
 }
+
+namespace {
+
+std::expected<void, UpgradeError> upgrade_battery(Ship& ship,
+                                                  const Ship& dirship,
+                                                  const command_t& argv,
+                                                  bool is_primary) {
+  if (argv.size() < 4) {
+    return std::unexpected(
+        UpgradeError{.reason = UpgradeErrorReason::InvalidGunCharacteristic});
+  }
+  const auto current_battery =
+      is_primary ? dirship.primary_battery() : dirship.secondary_battery();
+
+  if (argv[2] == "strength") {
+    if (current_battery.caliber == guntype_t::NONE) {
+      return std::unexpected(
+          UpgradeError{.reason = UpgradeErrorReason::NoCaliberDefined});
+    }
+    auto parsed = parse_non_negative_int(argv[3]);
+    if (!parsed) {
+      return std::unexpected(
+          UpgradeError{.reason = UpgradeErrorReason::RidiculousSetting});
+    }
+    const auto count =
+        std::max(static_cast<gun_count_t>(*parsed), current_battery.count);
+    if (is_primary) {
+      ship.set_primary_battery(count, current_battery.caliber);
+    } else {
+      ship.set_secondary_battery(count, current_battery.caliber);
+    }
+    return {};
+  }
+
+  if (argv[2] == "caliber") {
+    auto requested = parse_caliber_name(argv[3]);
+    if (!requested) {
+      return std::unexpected(
+          UpgradeError{.reason = UpgradeErrorReason::InvalidCaliber});
+    }
+    const auto max_caliber = is_primary
+                                 ? shipdata_primary(dirship.build_type())
+                                 : shipdata_secondary(dirship.build_type());
+    const auto new_caliber =
+        std::min(max_caliber, std::max(*requested, current_battery.caliber));
+    if (is_primary) {
+      ship.set_primary_battery(current_battery.count, new_caliber);
+    } else {
+      ship.set_secondary_battery(current_battery.count, new_caliber);
+    }
+    return {};
+  }
+
+  return std::unexpected(
+      UpgradeError{.reason = UpgradeErrorReason::InvalidGunCharacteristic});
+}
+
+std::expected<void, UpgradeError> upgrade_cew(Ship& ship, const Ship& dirship,
+                                              const Race& race,
+                                              const command_t& argv) {
+  if (!race.discoveries.cew) {
+    return std::unexpected(
+        UpgradeError{.reason = UpgradeErrorReason::NoCewDiscovery});
+  }
+  if (argv.size() < 4) {
+    return std::unexpected(
+        UpgradeError{.reason = UpgradeErrorReason::InvalidCewOption});
+  }
+  auto parsed = parse_non_negative_int(argv[3]);
+  if (!parsed) {
+    return std::unexpected(
+        UpgradeError{.reason = UpgradeErrorReason::RidiculousSetting});
+  }
+  if (argv[2] == "strength") {
+    ship.cew() = std::max(dirship.cew(), static_cast<weapon_power_t>(*parsed));
+    return {};
+  }
+  if (argv[2] == "range") {
+    ship.cew_range() =
+        std::max(dirship.cew_range(), static_cast<weapon_range_t>(*parsed));
+    return {};
+  }
+  return std::unexpected(
+      UpgradeError{.reason = UpgradeErrorReason::InvalidCewOption});
+}
+
+std::expected<void, UpgradeError>
+upgrade_simple_attribute(Ship& ship, const Ship& dirship, const Race& race,
+                         const ShipTemplate& btmpl, const command_t& argv) {
+  const std::string_view attr = argv[1];
+  if (attr == "mount" && btmpl.can_mount && !dirship.mount()) {
+    if (!race.discoveries.crystal) {
+      return std::unexpected(
+          UpgradeError{.reason = UpgradeErrorReason::NoCrystalDiscovery});
+    }
+    ship.mount() = true;
+    return {};
+  }
+  if (attr == "hyperdrive" && btmpl.can_hyperjump &&
+      !dirship.hyper_drive().has && race.discoveries.hyperdrive) {
+    ship.hyper_drive().has = true;
+    return {};
+  }
+  if (attr == "laser" && btmpl.can_mount_laser) {
+    if (!race.discoveries.laser) {
+      return std::unexpected(
+          UpgradeError{.reason = UpgradeErrorReason::NoLaserDiscovery});
+    }
+    ship.laser() = true;
+    return {};
+  }
+
+  int value = 0;
+  if (argv.size() == 3) {
+    auto parsed = parse_non_negative_int(argv[2]);
+    if (!parsed) {
+      return std::unexpected(
+          UpgradeError{.reason = UpgradeErrorReason::RidiculousSetting});
+    }
+    value = *parsed;
+  }
+
+  if (attr == "armor") {
+    ship.armor() =
+        std::max(dirship.armor(), std::min<armor_t>(value, MAX_FACTORY_ARMOR));
+    return {};
+  }
+  if (attr == "crew" && btmpl.max_crew) {
+    ship.max_crew() =
+        std::max(dirship.max_crew(),
+                 std::min<population_t>(value, MAX_FACTORY_CAPACITY));
+    return {};
+  }
+  if ((attr == "cargo" || attr == "resource") && btmpl.max_resource) {
+    ship.max_resource() =
+        std::max(dirship.max_resource(),
+                 std::min<resource_t>(value, MAX_FACTORY_CAPACITY));
+    return {};
+  }
+  if (attr == "hanger" && btmpl.max_hangar) {
+    ship.max_hanger() = std::max(
+        dirship.max_hanger(), std::min<hangar_t>(value, MAX_FACTORY_CAPACITY));
+    return {};
+  }
+  if (attr == "fuel" && btmpl.max_fuel) {
+    ship.max_fuel() = std::max(dirship.max_fuel(),
+                               std::min<fuel_t>(value, MAX_FACTORY_CAPACITY));
+    return {};
+  }
+  if (attr == "destruct" && btmpl.max_destruct) {
+    ship.max_destruct() =
+        std::max(dirship.max_destruct(),
+                 std::min<resource_t>(value, MAX_FACTORY_CAPACITY));
+    return {};
+  }
+  if (attr == "speed" && btmpl.base_speed) {
+    ship.max_speed() = std::max(
+        dirship.max_speed(),
+        std::clamp<speed_t>(value, MIN_FACTORY_SPEED, MAX_FACTORY_SPEED));
+    return {};
+  }
+
+  return std::unexpected(
+      UpgradeError{.reason = UpgradeErrorReason::InvalidCharacteristic});
+}
+
+std::expected<void, UpgradeError>
+apply_upgrade_characteristic(Ship& ship, const Ship& dirship, const Race& race,
+                             const ShipTemplate& btmpl, const command_t& argv) {
+  const std::string_view attr = argv[1];
+  if (attr == "primary" && btmpl.has_primary()) {
+    return upgrade_battery(ship, dirship, argv, true);
+  }
+  if (attr == "secondary" && btmpl.has_secondary()) {
+    return upgrade_battery(ship, dirship, argv, false);
+  }
+  if (attr == "cew" && btmpl.has_cew) {
+    return upgrade_cew(ship, dirship, race, argv);
+  }
+  return upgrade_simple_attribute(ship, dirship, race, btmpl, argv);
+}
+
+std::expected<void, UpgradeError>
+check_carrier_hangar_capacity(EntityManager& entity_manager,
+                              const Ship& dirship, const Ship& candidate) {
+  if (dirship.whatorbits() != ScopeLevel::LEVEL_SHIP || !dirship.destshipno()) {
+    return {};
+  }
+  std::optional<UpgradeError> err;
+  entity_manager.with_ship(*dirship.destshipno(), [&](const Ship& carrier) {
+    const long available_space = static_cast<long>(carrier.max_hanger()) -
+                                 (static_cast<long>(carrier.hanger()) -
+                                  static_cast<long>(dirship.size()));
+    const long needed_size = static_cast<long>(candidate.calculate_size());
+    if (available_space < needed_size) {
+      err = UpgradeError{
+          .reason = UpgradeErrorReason::InsufficientCarrierHangar,
+          .carrier_letter = carrier.type_letter(),
+          .carrier_shipno = *dirship.destshipno(),
+          .more_hangar_needed = needed_size - available_space,
+      };
+    }
+  });
+  if (err) {
+    return std::unexpected(*err);
+  }
+  return {};
+}
+
+void commit_ship_upgrade(EntityManager& entity_manager, Ship& dirship,
+                         const Ship& candidate, const Race& race,
+                         resource_t netcost) {
+  const ship_size_t old_size = dirship.size();
+  const double old_mass = dirship.mass();
+  const double old_base_mass = dirship.base_mass();
+
+  dirship.armor() = candidate.armor();
+  dirship.max_crew() = candidate.max_crew();
+  dirship.max_resource() = candidate.max_resource();
+  dirship.max_hanger() = candidate.max_hanger();
+  dirship.max_fuel() = candidate.max_fuel();
+  dirship.mount() = candidate.mount();
+  dirship.max_destruct() = candidate.max_destruct();
+  dirship.max_speed() = candidate.max_speed();
+  dirship.hyper_drive() = candidate.hyper_drive();
+  dirship.set_primary_battery(candidate.primary_battery());
+  dirship.set_secondary_battery(candidate.secondary_battery());
+  if (dirship.active_battery() == ActiveBattery::NONE) {
+    if (dirship.primary_battery().has_guns()) {
+      dirship.active_battery() = ActiveBattery::PRIMARY;
+    } else if (dirship.secondary_battery().has_guns()) {
+      dirship.active_battery() = ActiveBattery::SECONDARY;
+    }
+  }
+  dirship.cew() = candidate.cew();
+  dirship.cew_range() = candidate.cew_range();
+  dirship.laser() = candidate.laser();
+
+  dirship.size() = dirship.calculate_size();
+  const double new_base_mass = dirship.base_mass();
+  dirship.to_struct().base_mass = new_base_mass;
+  dirship.set_mass(dirship.mass() + (new_base_mass - old_base_mass));
+  dirship.consume_resource(netcost);
+  dirship.build_cost() = race.God ? 0 : static_cast<resource_t>(cost(dirship));
+  dirship.complexity() = complexity(dirship);
+
+  if (dirship.whatorbits() == ScopeLevel::LEVEL_SHIP && dirship.destshipno()) {
+    entity_manager.mutate_ship(*dirship.destshipno(), [&](Ship& carrier) {
+      carrier.unload_docked_craft(old_size, old_mass);
+      carrier.load_docked_craft(dirship);
+    });
+  }
+}
+
+}  // namespace
+
+std::expected<UpgradeShipResult, UpgradeError>
+upgrade_single_ship(EntityManager& entity_manager, Ship& dirship,
+                    const Race& race, const command_t& argv) {
+  if (dirship.damage()) {
+    return std::unexpected(
+        UpgradeError{.reason = UpgradeErrorReason::ShipDamaged});
+  }
+  if (dirship.type() == ShipType::OTYPE_FACTORY) {
+    return std::unexpected(
+        UpgradeError{.reason = UpgradeErrorReason::CannotUpgradeFactory});
+  }
+
+  const auto& btmpl = ship_template(dirship.build_type());
+  if (!btmpl.can_modify) {
+    return std::unexpected(
+        UpgradeError{.reason = UpgradeErrorReason::CannotUpgradeShip});
+  }
+
+  Ship candidate(dirship.get_struct());
+  if (const auto ok =
+          apply_upgrade_characteristic(candidate, dirship, race, btmpl, argv);
+      !ok) {
+    return std::unexpected(ok.error());
+  }
+
+  const double complex = complexity(candidate);
+  if (complex > race.tech && !race.God) {
+    return std::unexpected(UpgradeError{
+        .reason = UpgradeErrorReason::InsufficientTech,
+        .required_tech = complex,
+    });
+  }
+
+  if (const auto hangar_ok =
+          check_carrier_hangar_capacity(entity_manager, dirship, candidate);
+      !hangar_ok) {
+    return std::unexpected(hangar_ok.error());
+  }
+
+  const resource_t newcost =
+      race.God ? 0 : static_cast<resource_t>(cost(candidate));
+  const resource_t oldcost = race.God ? 0 : dirship.build_cost();
+  if (newcost < oldcost) {
+    return std::unexpected(
+        UpgradeError{.reason = UpgradeErrorReason::CannotDowngrade});
+  }
+
+  resource_t netcost = race.God ? 0 : 2 * (newcost - oldcost);
+  if (!race.God && netcost == 0) {
+    netcost = 1;
+  }
+
+  if (netcost > dirship.resource()) {
+    return std::unexpected(UpgradeError{
+        .reason = UpgradeErrorReason::InsufficientResources,
+        .old_cost = oldcost,
+        .new_cost = newcost,
+        .net_cost = netcost,
+    });
+  }
+
+  commit_ship_upgrade(entity_manager, dirship, candidate, race, netcost);
+  return UpgradeShipResult{
+      .old_cost = oldcost,
+      .new_cost = newcost,
+      .net_cost = netcost,
+  };
+}

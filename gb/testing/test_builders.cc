@@ -276,7 +276,7 @@ TestShipBuilder& TestShipBuilder::with_max_destruct(resource_t max_destruct) {
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_crystals(crystal_t crystals) {
+TestShipBuilder& TestShipBuilder::with_crystals(resource_t crystals) {
   ship_.crystals = crystals;
   return *this;
 }
@@ -690,7 +690,7 @@ TestPlanetBuilder& TestPlanetBuilder::with_tax(player_t player, int tax,
 }
 
 TestPlanetBuilder& TestPlanetBuilder::with_crystals(player_t player,
-                                                    crystal_t crystals) {
+                                                    resource_t crystals) {
   planet_.info(player).crystals = crystals;
   return *this;
 }

@@ -603,7 +603,7 @@ public:
   TestShipBuilder& with_max_resource(resource_t max_res);
   TestShipBuilder& with_destruct(resource_t destruct);
   TestShipBuilder& with_max_destruct(resource_t max_destruct);
-  TestShipBuilder& with_crystals(crystal_t crystals);
+  TestShipBuilder& with_crystals(resource_t crystals);
   TestShipBuilder& with_mount(unsigned char mount = 1);
   TestShipBuilder& with_damage(damage_t damage);
   TestShipBuilder& with_radiation(radiation_t rad);
@@ -691,7 +691,7 @@ public:
   TestPlanetBuilder& with_enslaved_to(player_t master);
   TestPlanetBuilder& with_tax(player_t player, int tax,
                               std::optional<int> newtax = std::nullopt);
-  TestPlanetBuilder& with_crystals(player_t player, crystal_t crystals);
+  TestPlanetBuilder& with_crystals(player_t player, resource_t crystals);
   TestPlanetBuilder& with_route(player_t player, int route_index,
                                 starnum_t dest_star, planetnum_t dest_planet,
                                 CommodityManifest load = {},

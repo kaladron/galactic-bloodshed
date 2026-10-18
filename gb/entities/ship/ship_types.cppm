@@ -609,7 +609,7 @@ export struct ship_struct {
   resource_t resource{0};  ///< Current carried resource cargo
   population_t popn{0};    ///< Current carried colonists / crew
   population_t troops{0};  ///< Current carried military troops
-  crystal_t crystals{0};   ///< Current carried warp crystal charge
+  resource_t crystals{0};  ///< Current carried warp crystal charge
 
   mutable SpecialData special;  ///< Ship-type-specific payload / mode data
 

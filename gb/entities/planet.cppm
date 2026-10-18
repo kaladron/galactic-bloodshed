@@ -117,7 +117,7 @@ export struct Stockpile {
   resource_t resources{0};
   resource_t destruct{0};
   resource_t fuel{0};
-  crystal_t crystals{0};
+  resource_t crystals{0};
 
   [[nodiscard]] constexpr bool empty() const noexcept {
     return resources == 0 && destruct == 0 && fuel == 0 && crystals == 0;
@@ -154,7 +154,7 @@ export struct Stockpile {
         .resources = round_rand<resource_t>(resources, shares),
         .destruct = round_rand<resource_t>(destruct, shares),
         .fuel = round_rand<resource_t>(fuel, shares),
-        .crystals = round_rand<crystal_t>(crystals, shares),
+        .crystals = round_rand<resource_t>(crystals, shares),
     };
   }
 
@@ -167,12 +167,12 @@ export struct plinfo {      // planetary stockpiles
   resource_t resource = 0;  // resources in storage
   population_t popn = 0;
   population_t troops = 0;
-  crystal_t crystals = 0;
+  resource_t crystals = 0;
 
   resource_t prod_res = 0;  // shows last update production
   resource_t prod_fuel = 0;
   resource_t prod_dest = 0;
-  crystal_t prod_crystals = 0;
+  resource_t prod_crystals = 0;
   money_t prod_money = 0;
   double prod_tech = 0;
 

@@ -264,7 +264,7 @@ struct ColonyRow {
   sector_count_t sectors_owned{0};
   money_t tech_invest{0};
   population_t popn{0};
-  crystal_t crystals{0};
+  resource_t crystals{0};
   resource_t resource{0};
   resource_t destruct{0};
   resource_t fuel{0};

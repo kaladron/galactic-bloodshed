@@ -122,8 +122,8 @@ void merchant_load_cargo(Ship& s, plinfo& pinfo, const auto& load,
     telegram << std::format("{}r ", amount);
   }
   if (load.crystals) {
-    const crystal_t amount =
-        std::min<crystal_t>(s.available_crystals_capacity(), pinfo.crystals);
+    const resource_t amount =
+        std::min<resource_t>(s.available_crystals_capacity(), pinfo.crystals);
     pinfo.crystals -= amount;
     s.add_crystals(amount);
     telegram << std::format("{}x ", amount);
@@ -156,7 +156,7 @@ void merchant_unload_cargo(Ship& s, plinfo& pinfo, const auto& unload,
     s.consume_resource(amount);
   }
   if (unload.crystals) {
-    const crystal_t amount = s.crystals();
+    const resource_t amount = s.crystals();
     pinfo.crystals += amount;
     telegram << std::format("{}x ", amount);
     s.consume_crystals(amount);

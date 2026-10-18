@@ -76,7 +76,7 @@ export struct sector_struct {
   Percentage eff{0};          /* efficiency (0-100) */
   Percentage fert{0};         /* max popn is proportional to this */
   Percentage mobilization{0}; /* percent popn is mobilized for war */
-  crystal_t crystals{0};
+  resource_t crystals{0};
   resource_t resource{0};
 
   population_t popn{0};
@@ -96,7 +96,7 @@ public:
   explicit Sector(const sector_struct& s) : data_(s) {}
 
   Sector(Coordinates coords_, Percentage eff_, Percentage fert_,
-         Percentage mobilization_, crystal_t crystals_, resource_t resource_,
+         Percentage mobilization_, resource_t crystals_, resource_t resource_,
          population_t popn_, population_t troops_,
          std::optional<player_t> owner_, SectorType type_,
          SectorType condition_)
@@ -135,7 +135,7 @@ public:
   [[nodiscard]] Percentage get_mobilization() const noexcept {
     return data_.mobilization;
   }
-  [[nodiscard]] crystal_t get_crystals() const noexcept {
+  [[nodiscard]] resource_t get_crystals() const noexcept {
     return data_.crystals;
   }
   [[nodiscard]] resource_t get_resource() const noexcept {
@@ -188,8 +188,8 @@ public:
     data_.coords = val;
   }
   void set_fert(int val) noexcept;
-  void set_crystals(crystal_t val) noexcept {
-    data_.crystals = std::max<crystal_t>(0, val);
+  void set_crystals(resource_t val) noexcept {
+    data_.crystals = std::max<resource_t>(0, val);
   }
   void set_resource(resource_t val) noexcept {
     data_.resource = val;

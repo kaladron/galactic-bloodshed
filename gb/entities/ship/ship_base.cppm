@@ -286,7 +286,7 @@ public:
     return data_.troops;
   }
 
-  [[nodiscard]] crystal_t crystals() const noexcept {
+  [[nodiscard]] resource_t crystals() const noexcept {
     return data_.crystals;
   }
 
@@ -1295,7 +1295,7 @@ public:
   }
 
   /// Maximum alien power crystal storage capacity.
-  [[nodiscard]] crystal_t max_crystals_capacity() const noexcept {
+  [[nodiscard]] resource_t max_crystals_capacity() const noexcept {
     return MAX_CRYSTALS;
   }
 
@@ -1369,8 +1369,8 @@ public:
   }
 
   /// \brief Available cargo capacity remaining for warp crystals.
-  [[nodiscard]] crystal_t available_crystals_capacity() const noexcept {
-    return std::max<crystal_t>(0, max_crystals_capacity() - data_.crystals);
+  [[nodiscard]] resource_t available_crystals_capacity() const noexcept {
+    return std::max<resource_t>(0, max_crystals_capacity() - data_.crystals);
   }
 
   /// \brief Returns carried destructive munitions expressed as weapon power
@@ -1421,8 +1421,8 @@ public:
   }
 
   /// \brief Deity override: sets warp crystal charges clamped to capacity.
-  void admin_override_crystals(crystal_t count) noexcept {
-    data_.crystals = std::clamp<crystal_t>(count, 0, max_crystals_capacity());
+  void admin_override_crystals(resource_t count) noexcept {
+    data_.crystals = std::clamp<resource_t>(count, 0, max_crystals_capacity());
   }
 
   /// \brief Deity override: sets maximum fuel tank capacity.
@@ -1449,21 +1449,22 @@ public:
 
   /// \brief Consumes crystals clamped to available stock; returns actual
   /// consumed.
-  crystal_t consume_crystals(crystal_t amt) noexcept {
+  resource_t consume_crystals(resource_t amt) noexcept {
     if (amt <= 0) return 0;
-    const auto actual = std::min<crystal_t>(data_.crystals, amt);
+    const auto actual = std::min<resource_t>(data_.crystals, amt);
     data_.crystals -= actual;
     return actual;
   }
 
   /// \brief Adds crystals clamped to max capacity. Negative values delegate to
   /// consume_crystals(-amt).
-  void add_crystals(crystal_t amt) noexcept {
+  void add_crystals(resource_t amt) noexcept {
     if (amt < 0) {
       consume_crystals(-amt);
       return;
     }
-    const auto actual = std::min<crystal_t>(amt, available_crystals_capacity());
+    const auto actual =
+        std::min<resource_t>(amt, available_crystals_capacity());
     data_.crystals += actual;
   }
 

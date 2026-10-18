@@ -100,7 +100,7 @@ struct RstStockRow {
   char type_letter{' '};
   bool active{false};
   std::string name{};
-  crystal_t crystals{0};
+  resource_t crystals{0};
   hangar_t hanger{0};
   hangar_t max_hanger{0};
   resource_t resource{0};

@@ -47,7 +47,7 @@ export struct PlanetMapViewModel {
   population_t player_popn{0};
   population_t total_popn{0};
   population_t effective_maxpopn{0};
-  crystal_t crystals{0};
+  resource_t crystals{0};
   population_t player_troops{0};
   population_t total_troops{0};
   resource_t total_resources{0};

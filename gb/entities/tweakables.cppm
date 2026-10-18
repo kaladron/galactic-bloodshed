@@ -159,7 +159,7 @@ export constexpr double UNIVSIZE = 150000;
 export constexpr double SYSTEMSIZE = 2000;
 export constexpr double PLORBITSIZE = 50;
 
-export constexpr char HYPER_DRIVE_READY_CHARGE = 1;
+export constexpr charge_t HYPER_DRIVE_READY_CHARGE = 1;
 export constexpr double HYPER_DRIVE_FUEL_USE = 5.0;
 export constexpr double HYPER_DIST_FACTOR = 200.0;
 

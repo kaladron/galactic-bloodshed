@@ -157,8 +157,7 @@ int main() {
   // Verify HyperDriveData and computed is_ready() integrity
   test::expect_true(retrieved->hyper_drive().has);
   test::expect_true(retrieved->hyper_drive().on);
-  test::expect_eq(retrieved->hyper_drive().charge,
-                  static_cast<std::uint32_t>(HYPER_DRIVE_READY_CHARGE));
+  test::expect_eq(retrieved->hyper_drive().charge, HYPER_DRIVE_READY_CHARGE);
   test::expect_true(retrieved->hyper_drive().is_ready());
 
   std::println(std::cout, "  ✓ All fields match original");

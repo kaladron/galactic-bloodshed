@@ -85,8 +85,7 @@ export struct RaceArchetype {
     return std::clamp(base_birthrate + 0.01 * int_rand(-10, 10), 0.20, 1.00);
   }
   [[nodiscard]] fighters_t sample_fighters() const {
-    int val = static_cast<int>(base_fighters) + int_rand(-1, 1);
-    return static_cast<fighters_t>(std::clamp(val, 1, 20));
+    return std::clamp(base_fighters + int_rand(-1, 1), 1, 20);
   }
   [[nodiscard]] iq_t sample_iq() const {
     if (is_metamorphic) {
@@ -106,9 +105,8 @@ export struct RaceArchetype {
     return std::clamp(base_adventurism + 0.01 * int_rand(-10, 10), 0.05, 0.99);
   }
   [[nodiscard]] sexes_t sample_sexes() const {
-    int max_val =
-        int_rand(static_cast<int>(min_sexes), static_cast<int>(max_sexes));
-    return static_cast<sexes_t>(int_rand(static_cast<int>(min_sexes), max_val));
+    int max_val = int_rand(min_sexes, max_sexes);
+    return int_rand(min_sexes, max_val);
   }
   [[nodiscard]] metabolism_t sample_metabolism() const {
     return std::clamp(base_metabolism + 0.01 * int_rand(-15, 15), 0.10, 4.00);
@@ -470,45 +468,45 @@ export constexpr std::size_t num_race_attributes = 11;
 
 /// Itemized cost breakdown resulting from race point calculations.
 export struct RaceCostBreakdown {
-  std::array<double, num_race_attributes> attribute_costs{};
-  SectorCompatibilities sector_costs{.plated = 0.0};
+  std::array<int, num_race_attributes> attribute_costs{};
+  SectorValues<int> sector_costs{.plated = 0};
   int planet_cost{0};
   int race_type_cost{0};
   int sector_count_cost{0};
   int total_cost{0};
   int points_remaining{STARTING_POINTS};
 
-  [[nodiscard]] double adventurism() const noexcept {
+  [[nodiscard]] int adventurism() const noexcept {
     return attribute_costs[0];
   }
-  [[nodiscard]] double absorb() const noexcept {
+  [[nodiscard]] int absorb() const noexcept {
     return attribute_costs[1];
   }
-  [[nodiscard]] double birthrate() const noexcept {
+  [[nodiscard]] int birthrate() const noexcept {
     return attribute_costs[2];
   }
-  [[nodiscard]] double collective_iq() const noexcept {
+  [[nodiscard]] int collective_iq() const noexcept {
     return attribute_costs[3];
   }
-  [[nodiscard]] double fertilize() const noexcept {
+  [[nodiscard]] int fertilize() const noexcept {
     return attribute_costs[4];
   }
-  [[nodiscard]] double iq() const noexcept {
+  [[nodiscard]] int iq() const noexcept {
     return attribute_costs[5];
   }
-  [[nodiscard]] double fight() const noexcept {
+  [[nodiscard]] int fight() const noexcept {
     return attribute_costs[6];
   }
-  [[nodiscard]] double pods() const noexcept {
+  [[nodiscard]] int pods() const noexcept {
     return attribute_costs[7];
   }
-  [[nodiscard]] double mass() const noexcept {
+  [[nodiscard]] int mass() const noexcept {
     return attribute_costs[8];
   }
-  [[nodiscard]] double sexes() const noexcept {
+  [[nodiscard]] int sexes() const noexcept {
     return attribute_costs[9];
   }
-  [[nodiscard]] double metabolism() const noexcept {
+  [[nodiscard]] int metabolism() const noexcept {
     return attribute_costs[10];
   }
 };

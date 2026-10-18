@@ -1036,7 +1036,7 @@ unload_onto_alien_sector(EntityManager& em, Planet& planet, SectorMap& smap,
           .attacker_type = what,
           .defender_civ = initial_defender_civ,
           .defender_mil = initial_defender_mil,
-          .attacker_defense_bonus = static_cast<int>(ship.armor()),
+          .attacker_defense_bonus = ship.armor(),
           .defender_defense_bonus = sect.defense_bonus(),
           .attacker_compatibility =
               percent_to_fraction(100.0 - static_cast<double>(ship.damage())),
@@ -1069,7 +1069,7 @@ unload_onto_alien_sector(EntityManager& em, Planet& planet, SectorMap& smap,
         }
         if (!sect.is_empty()) {
           sect.set_owner(attacker_player);
-          race.adjust_morale(alien, static_cast<int>(alien.fighters));
+          race.adjust_morale(alien, alien.fighters);
         } else {
           sect.clear_owner();
         }
@@ -1086,7 +1086,7 @@ unload_onto_alien_sector(EntityManager& em, Planet& planet, SectorMap& smap,
         } else {
           ship.add_troops(surviving, race.mass);
         }
-        alien.adjust_morale(race, static_cast<int>(race.fighters));
+        alien.adjust_morale(race, race.fighters);
       }
 
       res.attacker_won = (sect.get_owner() == attacker_player);

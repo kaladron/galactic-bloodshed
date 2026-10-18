@@ -20,7 +20,7 @@ export enum class guntype_t : std::uint8_t {
 
 /// \brief Returns the integer caliber multiplier for combat and mass
 /// calculations.
-export [[nodiscard]] constexpr unsigned int
+export [[nodiscard]] constexpr gun_caliber_t
 gun_caliber(guntype_t caliber) noexcept {
   switch (caliber) {
     case guntype_t::LIGHT:
@@ -145,8 +145,8 @@ export struct GunBattery {
 
   /// \brief Returns the integer caliber multiplier for mass and combat
   /// calculations (0 for empty/NONE, 1 for LIGHT, 2 for MEDIUM, 3 for HEAVY).
-  [[nodiscard]] constexpr unsigned int caliber_multiplier() const noexcept {
-    return has_guns() ? gun_caliber(caliber) : 0u;
+  [[nodiscard]] constexpr gun_caliber_t caliber_multiplier() const noexcept {
+    return has_guns() ? gun_caliber(caliber) : 0;
   }
 
   /// \brief Returns the mass contribution of this battery (count * caliber
@@ -562,8 +562,7 @@ export struct ProtectData {
 
 /// Faster-than-light hyperdrive parameters.
 export struct HyperDriveData {
-  std::uint32_t charge{
-      0};           ///< Charge accumulator (0..HYPER_DRIVE_READY_CHARGE)
+  charge_t charge{0};  ///< Charge accumulator (0..HYPER_DRIVE_READY_CHARGE)
   bool on{false};   ///< Whether hyperdrive charging / jump sequence is engaged
   bool has{false};  ///< Whether ship is equipped with a functional hyperdrive
 

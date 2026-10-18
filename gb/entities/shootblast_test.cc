@@ -366,8 +366,7 @@ void test_shoot_ship_to_ship_and_cew_caliber() {
   auto rad_res = shoot_ship_to_ship(ctx.em, attacker, target, 10, 0, true);
   test::expect_true(rad_res.has_value());
   test::expect_eq(rad_res->weapon, ShipShotWeaponKind::Radiation);
-  test::expect_eq(rad_res->damage,
-                  static_cast<damage_t>(rad_res->radiation_dosage));
+  test::expect_eq(rad_res->damage, rad_res->radiation_dosage);
 
   std::println(std::cout,
                "  ✓ shoot_ship_to_ship guard clauses and CEW caliber passed");

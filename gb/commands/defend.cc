@@ -97,12 +97,11 @@ bool defend(const command_t& argv, GameObj& g) {
 
   if (argv.size() >= 4) {
     int parsed_strength = std::stoi(argv[3]);
-    strength =
-        parsed_strength > 0 ? static_cast<weapon_power_t>(parsed_strength) : 0;
+    strength = parsed_strength > 0 ? parsed_strength : 0;
   } else {
     strength =
         g.entity_manager.with_planet(g.snum(), g.pnum(), [&](const Planet& p) {
-          return static_cast<weapon_power_t>(p.info(Playernum).guns);
+          return p.info(Playernum).guns;
         });
   }
 
@@ -111,8 +110,7 @@ bool defend(const command_t& argv, GameObj& g) {
         strength =
             std::min(strength, static_cast<weapon_power_t>(std::max<resource_t>(
                                    0, p.info(Playernum).destruct)));
-        strength = std::min(
-            strength, static_cast<weapon_power_t>(p.info(Playernum).guns));
+        strength = std::min(strength, p.info(Playernum).guns);
         if (strength <= 0) {
           g.out << std::format("No attack - {} guns, {}d\n",
                                p.info(Playernum).guns,

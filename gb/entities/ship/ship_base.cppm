@@ -1210,7 +1210,7 @@ public:
   [[nodiscard]] constexpr armor_t effective_armor() const noexcept {
     return (data_.type == ShipType::OTYPE_FACTORY)
                ? get_template().base_armor
-               : static_cast<armor_t>(data_.armor * (100 - data_.damage) / 100);
+               : (data_.armor * (100 - data_.damage) / 100);
   }
 
   /// Active weapon battery strength based on selected gun mode.
@@ -1232,15 +1232,14 @@ public:
   /// Available civilian crew capacity accounting for military troops on board.
   [[nodiscard]] population_t available_crew() const noexcept {
     return (data_.type == ShipType::OTYPE_FACTORY)
-               ? static_cast<population_t>(get_template().max_crew -
-                                           data_.troops)
+               ? (get_template().max_crew - data_.troops)
                : (data_.max_crew - data_.troops);
   }
 
   /// Available military troop capacity accounting for civilian crew on board.
   [[nodiscard]] population_t available_mil() const noexcept {
     return (data_.type == ShipType::OTYPE_FACTORY)
-               ? static_cast<population_t>(get_template().max_crew - data_.popn)
+               ? (get_template().max_crew - data_.popn)
                : (data_.max_crew - data_.popn);
   }
 

@@ -38,6 +38,11 @@ export using speed_t =
 export using radiation_t = std::int32_t;  ///< Accumulated radiation dose level
 export using gun_count_t =
     std::int32_t;  ///< Number of gun mounts or battery power rating
+export using gun_caliber_t =
+    std::int32_t;  ///< Gun battery caliber multiplier (0=none, 1=light,
+                   ///< 2=medium, 3=heavy)
+export using charge_t =
+    std::int32_t;  ///< Faster-than-light hyperdrive charge accumulator
 export using bearing_t =
     std::int32_t;  ///< Course navigation heading angle in degrees (0..359)
 export using hangar_t = std::int32_t;  ///< Internal carried ship hangar space

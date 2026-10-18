@@ -830,8 +830,7 @@ std::expected<void, UpgradeError> upgrade_battery(Ship& ship,
       return std::unexpected(
           UpgradeError{.reason = UpgradeErrorReason::RidiculousSetting});
     }
-    const auto count =
-        std::max(static_cast<gun_count_t>(*parsed), current_battery.count);
+    const auto count = std::max(*parsed, current_battery.count);
     if (is_primary) {
       ship.set_primary_battery(count, current_battery.caliber);
     } else {
@@ -880,12 +879,11 @@ std::expected<void, UpgradeError> upgrade_cew(Ship& ship, const Ship& dirship,
         UpgradeError{.reason = UpgradeErrorReason::RidiculousSetting});
   }
   if (argv[2] == "strength") {
-    ship.cew() = std::max(dirship.cew(), static_cast<weapon_power_t>(*parsed));
+    ship.cew() = std::max(dirship.cew(), *parsed);
     return {};
   }
   if (argv[2] == "range") {
-    ship.cew_range() =
-        std::max(dirship.cew_range(), static_cast<weapon_range_t>(*parsed));
+    ship.cew_range() = std::max(dirship.cew_range(), *parsed);
     return {};
   }
   return std::unexpected(

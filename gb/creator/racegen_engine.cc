@@ -450,8 +450,8 @@ RacegenEngine::calculate_cost(const RaceEnrollmentSpec& spec) const noexcept {
       }
     }
     cost += p.l_fudge;
-    breakdown.attribute_costs[i] = std::round(cost);
-    sum += static_cast<int>(breakdown.attribute_costs[i]);
+    breakdown.attribute_costs[i] = static_cast<int>(std::lround(cost));
+    sum += breakdown.attribute_costs[i];
   }
 
   // 2. Planet and race type costs
@@ -461,14 +461,14 @@ RacegenEngine::calculate_cost(const RaceEnrollmentSpec& spec) const noexcept {
   sum += breakdown.race_type_cost;
 
   // 3. Sector compatibility costs
+  SectorCompatibilities raw_sector_costs{.plated = 0.0};
   std::size_t sector_types_count = 0;
   for (SectorType st : settleable_sector_types) {
     const double compat_pct = spec.sector_compatibilities[st] * 100.0;
     if (compat_pct > 0.0) {
       ++sector_types_count;
     }
-    breakdown.sector_costs[st] =
-        compat_pct * 0.5 + 10.8 * std::log(1.0 + compat_pct);
+    raw_sector_costs[st] = compat_pct * 0.5 + 10.8 * std::log(1.0 + compat_pct);
   }
 
   for (SectorType st_i : settleable_sector_types) {
@@ -478,8 +478,8 @@ RacegenEngine::calculate_cost(const RaceEnrollmentSpec& spec) const noexcept {
       if (cov != 0.0) {
         const double compat_i = spec.sector_compatibilities[st_i] * 100.0;
         const double compat_j = spec.sector_compatibilities[st_j] * 100.0;
-        breakdown.sector_costs[st_i] *= (1.0 + cov * compat_j);
-        breakdown.sector_costs[st_j] *= (1.0 + cov * compat_i);
+        raw_sector_costs[st_i] *= (1.0 + cov * compat_j);
+        raw_sector_costs[st_j] *= (1.0 + cov * compat_i);
       }
     }
   }
@@ -488,15 +488,16 @@ RacegenEngine::calculate_cost(const RaceEnrollmentSpec& spec) const noexcept {
     const double multiplier =
         planet_compat_cov_multiplier(spec.home_planet_type, st);
     if (multiplier > 1.01) {
-      breakdown.sector_costs[st] *= multiplier;
+      raw_sector_costs[st] *= multiplier;
     }
   }
 
   for (SectorType st : settleable_sector_types) {
-    breakdown.sector_costs[st] = std::round(breakdown.sector_costs[st]);
-    sum += static_cast<int>(breakdown.sector_costs[st]);
+    breakdown.sector_costs[st] =
+        static_cast<int>(std::lround(raw_sector_costs[st]));
+    sum += breakdown.sector_costs[st];
   }
-  breakdown.sector_costs.wasted = 0.0;
+  breakdown.sector_costs.wasted = 0;
 
   breakdown.sector_count_cost = sector_count_costs[std::min(
       sector_types_count, sector_count_costs.size() - 1)];

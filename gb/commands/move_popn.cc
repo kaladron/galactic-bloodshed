@@ -252,7 +252,7 @@ bool move_popn(const command_t& argv, GameObj& g) {
                 sect2.set_popn_exact(absorbed);
                 sect2.set_troops(people);
               }
-              race.adjust_morale(alien, static_cast<int>(alien.fighters));
+              race.adjust_morale(alien, alien.fighters);
             } else { /* retreat */
               absorbed = 0;
               if (alien.absorb) {
@@ -269,7 +269,7 @@ bool move_popn(const command_t& argv, GameObj& g) {
                 sect.add_popn(people);
               else if (what == PopulationType::MIL)
                 sect.set_troops(sect.get_troops() + people);
-              alien.adjust_morale(race, static_cast<int>(race.fighters));
+              alien.adjust_morale(race, race.fighters);
             }
 
             std::string telegram = std::format(

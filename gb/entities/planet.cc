@@ -95,7 +95,7 @@ void plinfo::update_combat_readiness(std::uint32_t total_mob_points) noexcept {
   } else {
     comread = 0;
   }
-  guns = static_cast<std::uint32_t>(planet_guns(mob_points));
+  guns = planet_guns(mob_points);
 }
 
 UniverseCoordinates

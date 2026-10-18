@@ -139,8 +139,7 @@ MechAttackPeopleResult mech_attack_people(EntityManager& em, Ship& ship,
 
   if (ignore) {
     const auto raw_ammo = static_cast<int>(std::log10(dstrength + 1.0)) - 1;
-    const auto ammo =
-        std::min(static_cast<weapon_power_t>(std::max(raw_ammo, 0)), strength);
+    const auto ammo = std::clamp(raw_ammo, 0, strength);
     ship.consume_destruct(ammo);
   } else {
     ship.consume_destruct(strength);
@@ -187,14 +186,13 @@ PeopleAttackMechResult people_attack_mech(EntityManager& em, Ship& ship,
   const double astrength =
       calculate_garrison_combat_strength(civ, mil, race, alien, sect);
   const auto raw_ammo = static_cast<int>(std::log10(astrength + 1.0)) - 1;
-  const auto ammo =
-      std::min(strength, static_cast<weapon_power_t>(std::max(0, raw_ammo)));
+  const auto ammo = std::min(strength, std::max(0, raw_ammo));
   ship.consume_destruct(ammo);
   const double damage_ceiling =
       (dstrength > 0.0) ? std::min(1e6, 100.0 * astrength / dstrength)
                         : (astrength > 0.0 ? 100.0 : 0.0);
-  auto damage = static_cast<damage_t>(
-      std::min(100, int_rand(0, round_rand(damage_ceiling))));
+  const damage_t damage =
+      std::min(100, int_rand(0, round_rand(damage_ceiling)));
   if (ship.apply_damage(damage).destroyed) {
     em.kill_ship(race.Playernum, ship);
   }

@@ -47,7 +47,7 @@ void do_repair(Ship& ship, EntityManager& entity_manager) {
     int drep = static_cast<int>(maxrep * (static_cast<double>(ship.resource()) /
                                           static_cast<double>(cost)));
     ship.consume_resource(ship.resource());
-    ship.repair_damage(static_cast<damage_t>(drep));
+    ship.repair_damage(drep);
   }
 }
 

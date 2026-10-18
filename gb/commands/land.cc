@@ -159,8 +159,8 @@ void resolve_planetary_defense_fire(GameObj& g, Ship& s, const Star& star,
     if (!alien_race.is_at_war_with(s.owner())) continue;
 
     g.entity_manager.mutate_race(i, [&](Race& alien) {
-      const int strength = std::min(static_cast<int>(p.info(i).guns),
-                                    static_cast<int>(p.info(i).destruct));
+      const weapon_power_t strength = std::min(
+          p.info(i).guns, static_cast<weapon_power_t>(p.info(i).destruct));
       if (strength <= 0) return;
 
       if (auto p2s_opt =

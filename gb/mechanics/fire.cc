@@ -430,7 +430,7 @@ cew_single_ship(EntityManager& em, Ship& from, shipnum_t target_id,
   FireShipResult result{
       .cew_strength = from.cew(),
   };
-  const auto initial_strength = static_cast<weapon_power_t>(from.cew() / 2);
+  const weapon_power_t initial_strength = from.cew() / 2;
   if (auto attack_err = execute_ship_attack(
           em, from, target_id, initial_strength, true, player, god, result)) {
     return std::unexpected(FireError{

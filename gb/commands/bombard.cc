@@ -75,9 +75,8 @@ void resolve_planetary_retaliation(GameObj& g, Ship& from, Planet& p,
 
   for (player_t i : result.nuked_players) {
     g.entity_manager.mutate_race(i, [&](Race& alien) {
-      const auto retal_strength =
-          std::min(static_cast<weapon_power_t>(p.info(i).destruct),
-                   static_cast<weapon_power_t>(p.info(i).guns));
+      const weapon_power_t retal_strength = std::min(
+          static_cast<weapon_power_t>(p.info(i).destruct), p.info(i).guns);
       p.info(i).destruct -= retal_strength;
 
       if (auto p2s_opt = shoot_planet_to_ship(g.entity_manager, alien, from,

@@ -71,9 +71,9 @@ void apply_boarding_casualties(EntityManager& em, Ship& s, Ship& s2,
                                    (b2strength + 1.0) / (bstrength + 1.0)))));
     report.surviving_boarders -= report.attacker_casualties;
 
-    report.attacker_damage = static_cast<damage_t>(
-        std::min(100, int_rand(0, round_rand(25.0 * (b2strength + 1.0) /
-                                             (bstrength + 1.0)))));
+    report.attacker_damage = std::min(
+        100,
+        int_rand(0, round_rand(25.0 * (b2strength + 1.0) / (bstrength + 1.0))));
     if (s.apply_damage(report.attacker_damage).destroyed) {
       em.kill_ship(attacker_player, s);
     }
@@ -90,9 +90,9 @@ void apply_boarding_casualties(EntityManager& em, Ship& s, Ship& s2,
     s2.remove_popn(report.defender_civ_casualties, alien.mass);
     s2.remove_troops(report.defender_mil_casualties, alien.mass);
 
-    report.defender_damage = static_cast<damage_t>(
-        std::min(100, int_rand(0, round_rand(25.0 * (bstrength + 1.0) /
-                                             (b2strength + 1.0)))));
+    report.defender_damage = std::min(
+        100,
+        int_rand(0, round_rand(25.0 * (bstrength + 1.0) / (b2strength + 1.0))));
     if (s2.apply_damage(report.defender_damage).destroyed) {
       em.kill_ship(attacker_player, s2);
     }
@@ -132,7 +132,7 @@ void finalize_boarding_ownership_and_morale(EntityManager& em, Ship& s,
     if (s.alive()) {
       add_ship_boarders(s, what, report.surviving_boarders, race.mass);
     }
-    alien.adjust_morale(race, static_cast<int>(race.fighters));
+    alien.adjust_morale(race, race.fighters);
   }
 
   alien.increase_translation(attacker_player);

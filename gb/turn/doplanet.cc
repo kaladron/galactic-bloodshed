@@ -112,8 +112,8 @@ execute_terraforming(Ship& ship, Planet& planet, SectorMap& smap,
     return std::unexpected(GroundActionError::IncompatibleSector);
   }
 
-  const int chance = (100 - static_cast<int>(ship.damage())) * ship.popn() /
-                     ship.max_crew_capacity();
+  const int chance =
+      (100 - ship.damage()) * ship.popn() / ship.max_crew_capacity();
   if (success(chance)) {
     /* only condition can be terraformed, type doesn't change */
     s.terraform(race.likesbest);

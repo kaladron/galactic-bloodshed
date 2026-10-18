@@ -417,10 +417,10 @@ void test_dynamic_base_mass() {
 void test_gun_caliber_domain() {
   std::println(std::cout, "Testing guntype_t and gun_caliber()...");
 
-  test::expect_eq(gun_caliber(guntype_t::NONE), 0u);
-  test::expect_eq(gun_caliber(guntype_t::LIGHT), 1u);
-  test::expect_eq(gun_caliber(guntype_t::MEDIUM), 2u);
-  test::expect_eq(gun_caliber(guntype_t::HEAVY), 3u);
+  test::expect_eq(gun_caliber(guntype_t::NONE), 0);
+  test::expect_eq(gun_caliber(guntype_t::LIGHT), 1);
+  test::expect_eq(gun_caliber(guntype_t::MEDIUM), 2);
+  test::expect_eq(gun_caliber(guntype_t::HEAVY), 3);
 
   test::expect_eq(caliber_char(guntype_t::NONE), ' ');
   test::expect_eq(caliber_char(guntype_t::LIGHT), 'L');
@@ -1545,8 +1545,7 @@ void test_moveship_and_followable() {
     s1.hyper_drive().charge = 0;
     s1.mounted() = true;
     moveship(ctx.em, s1, true, true, false);
-    test::expect_eq(static_cast<int>(s1.hyper_drive().charge),
-                    static_cast<int>(HYPER_DRIVE_READY_CHARGE));
+    test::expect_eq(s1.hyper_drive().charge, HYPER_DRIVE_READY_CHARGE);
 
     // Insufficient fuel disables hyperdrive (with send_messages false and true)
     s1.admin_override_fuel(0.0);

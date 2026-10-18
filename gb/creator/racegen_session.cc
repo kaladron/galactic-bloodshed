@@ -598,7 +598,7 @@ bool RacegenSession::modify_field(std::string_view field_name,
     }
   } else if (field == "fighters" || field == "fight") {
     if (auto num = parse_number<int>(val_trimmed)) {
-      spec_.fighters = static_cast<fighters_t>(*num);
+      spec_.fighters = *num;
     } else {
       std::println(out_, "Error: Invalid integer '{}' for fighters.",
                    val_trimmed);
@@ -621,7 +621,7 @@ bool RacegenSession::modify_field(std::string_view field_name,
     }
   } else if (field == "sexes" || field == "sex") {
     if (auto num = parse_number<int>(val_trimmed)) {
-      spec_.number_sexes = static_cast<sexes_t>(*num);
+      spec_.number_sexes = *num;
     } else {
       std::println(out_, "Error: Invalid integer '{}' for sexes.", val_trimmed);
       return false;
@@ -688,17 +688,14 @@ void RacegenSession::print_race() {
   std::println(out_,
                "  {:<14}: {:>7.2f}  [Cost: {:>4}]    {:<14}: {:>7}  [Cost: "
                "{:>4}]",
-               "Adventurism", spec_.adventurism,
-               static_cast<int>(cost_.adventurism()), "Absorb",
-               fmt_bool(spec_.absorb), static_cast<int>(cost_.absorb()));
+               "Adventurism", spec_.adventurism, cost_.adventurism(), "Absorb",
+               fmt_bool(spec_.absorb), cost_.absorb());
 
   std::println(out_,
                "  {:<14}: {:>7.2f}  [Cost: {:>4}]    {:<14}: {:>7}  [Cost: "
                "{:>4}]",
-               "Birthrate", spec_.birthrate,
-               static_cast<int>(cost_.birthrate()), "Collective IQ",
-               fmt_bool(spec_.collective_iq),
-               static_cast<int>(cost_.collective_iq()));
+               "Birthrate", spec_.birthrate, cost_.birthrate(), "Collective IQ",
+               fmt_bool(spec_.collective_iq), cost_.collective_iq());
 
   std::string iq_name = spec_.collective_iq ? "IQ Limit" : "IQ";
   int iq_val = spec_.collective_iq ? spec_.iq_limit : spec_.iq;
@@ -706,25 +703,22 @@ void RacegenSession::print_race() {
                "  {:<14}: {:>6}%   [Cost: {:>4}]    {:<14}: {:>7}  [Cost: "
                "{:>4}]",
                "Fertilize", static_cast<int>(spec_.fertilize),
-               static_cast<int>(cost_.fertilize()), iq_name, iq_val,
-               static_cast<int>(cost_.iq()));
+               cost_.fertilize(), iq_name, iq_val, cost_.iq());
 
   std::println(out_,
                "  {:<14}: {:>7}   [Cost: {:>4}]    {:<14}: {:>7}  [Cost: "
                "{:>4}]",
-               "Fighters", static_cast<int>(spec_.fighters),
-               static_cast<int>(cost_.fight()), "Pods", fmt_bool(spec_.pods),
-               static_cast<int>(cost_.pods()));
+               "Fighters", spec_.fighters, cost_.fight(), "Pods",
+               fmt_bool(spec_.pods), cost_.pods());
 
   std::println(out_,
                "  {:<14}: {:>7.2f}  [Cost: {:>4}]    {:<14}: {:>7}  [Cost: "
                "{:>4}]",
-               "Mass", spec_.mass, static_cast<int>(cost_.mass()), "Sexes",
-               static_cast<int>(spec_.number_sexes),
-               static_cast<int>(cost_.sexes()));
+               "Mass", spec_.mass, cost_.mass(), "Sexes", spec_.number_sexes,
+               cost_.sexes());
 
   std::println(out_, "  {:<14}: {:>7.2f}  [Cost: {:>4}]", "Metabolism",
-               spec_.metabolism, static_cast<int>(cost_.metabolism()));
+               spec_.metabolism, cost_.metabolism());
   std::println(out_);
 
   std::println(out_, "=== Sector Compatibilities ===");
@@ -738,35 +732,33 @@ void RacegenSession::print_race() {
   std::println(
       out_, "  {:<14}: {:>5}  [Cost: {:>4}]    {:<14}: {:>5}  [Cost: {:>4}]",
       capitalize(to_string(SectorType::SEC_SEA)), fmt_sec(SectorType::SEC_SEA),
-      static_cast<int>(cost_.sector_costs[SectorType::SEC_SEA]),
+      cost_.sector_costs[SectorType::SEC_SEA],
       capitalize(to_string(SectorType::SEC_LAND)),
-      fmt_sec(SectorType::SEC_LAND),
-      static_cast<int>(cost_.sector_costs[SectorType::SEC_LAND]));
+      fmt_sec(SectorType::SEC_LAND), cost_.sector_costs[SectorType::SEC_LAND]);
 
   std::println(
       out_, "  {:<14}: {:>5}  [Cost: {:>4}]    {:<14}: {:>5}  [Cost: {:>4}]",
       capitalize(to_string(SectorType::SEC_MOUNT)),
-      fmt_sec(SectorType::SEC_MOUNT),
-      static_cast<int>(cost_.sector_costs[SectorType::SEC_MOUNT]),
+      fmt_sec(SectorType::SEC_MOUNT), cost_.sector_costs[SectorType::SEC_MOUNT],
       capitalize(to_string(SectorType::SEC_GAS)), fmt_sec(SectorType::SEC_GAS),
-      static_cast<int>(cost_.sector_costs[SectorType::SEC_GAS]));
+      cost_.sector_costs[SectorType::SEC_GAS]);
 
   std::println(
       out_, "  {:<14}: {:>5}  [Cost: {:>4}]    {:<14}: {:>5}  [Cost: {:>4}]",
       capitalize(to_string(SectorType::SEC_ICE)), fmt_sec(SectorType::SEC_ICE),
-      static_cast<int>(cost_.sector_costs[SectorType::SEC_ICE]),
+      cost_.sector_costs[SectorType::SEC_ICE],
       capitalize(to_string(SectorType::SEC_FOREST)),
       fmt_sec(SectorType::SEC_FOREST),
-      static_cast<int>(cost_.sector_costs[SectorType::SEC_FOREST]));
+      cost_.sector_costs[SectorType::SEC_FOREST]);
 
   std::println(out_,
                "  {:<14}: {:>5}  [Cost: {:>4}]    {:<14}: {:>5}  [Cost: {:>4}]",
                capitalize(to_string(SectorType::SEC_DESERT)),
                fmt_sec(SectorType::SEC_DESERT),
-               static_cast<int>(cost_.sector_costs[SectorType::SEC_DESERT]),
+               cost_.sector_costs[SectorType::SEC_DESERT],
                capitalize(to_string(SectorType::SEC_PLATED)),
                fmt_sec(SectorType::SEC_PLATED),
-               static_cast<int>(cost_.sector_costs[SectorType::SEC_PLATED]));
+               cost_.sector_costs[SectorType::SEC_PLATED]);
 
   std::println(out_, "  Sector Count Penalty:             [Cost: {:>4}]",
                cost_.sector_count_cost);

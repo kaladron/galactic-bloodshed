@@ -804,7 +804,7 @@ ScheduleCalculation compute_segment_schedule(const ServerState& state,
     result.next_segment_time =
         current_time + (state.update_time_minutes * 60) / segs;
     if (target_segment > 0) {
-      result.nsegments_done = static_cast<segments_t>(target_segment);
+      result.nsegments_done = target_segment;
       result.next_update_time =
           current_time +
           (state.update_time_minutes * 60 * (segs - target_segment + 1)) / segs;

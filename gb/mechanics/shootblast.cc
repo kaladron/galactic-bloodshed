@@ -102,7 +102,7 @@ shoot_ship_to_ship(EntityManager& em, const Ship& attacker, Ship& target,
         .range = dist,
         .hits = hits,
         .hit_probability = hit_probability,
-        .damage = static_cast<damage_t>(dosage),
+        .damage = dosage,
         .total_damage = target.damage(),
         .radiation_dosage = dosage,
         .total_radiation = total_rad,
@@ -287,8 +287,7 @@ static std::pair<radiation_t, radiation_t> do_radiation(Ship& ship, double tech,
                                                         hit_count_t hits) {
   const double fac = p_factor(tech, ship.tech());
 
-  const auto armor_reduction =
-      static_cast<armor_t>(hits / HITS_PER_ARMOR_PENETRATION);
+  const armor_t armor_reduction = hits / HITS_PER_ARMOR_PENETRATION;
   const armor_t arm = ship.effective_armor() > armor_reduction
                           ? ship.effective_armor() - armor_reduction
                           : 0;
@@ -302,8 +301,8 @@ static std::pair<radiation_t, radiation_t> do_radiation(Ship& ship, double tech,
     if (double_rand() <= r) penetrate += 1;
   }
 
-  auto dosage = static_cast<radiation_t>(std::max(
-      0, round_rand(40. * static_cast<double>(penetrate) / (double)body)));
+  radiation_t dosage = std::max(
+      0, round_rand(40. * static_cast<double>(penetrate) / (double)body));
   dosage = std::min<radiation_t>(100, dosage);
 
   ship.apply_radiation(dosage);
@@ -344,9 +343,9 @@ do_damage(EntityManager& em, ShipShotAttackerKind attacker_kind, player_t who,
     if (double_rand() <= r) penetrate += 1;
   }
 
-  auto damage = static_cast<damage_t>(std::max(
+  damage_t damage = std::max(
       0, round_rand(SHIP_DAMAGE * static_cast<double>(gun_caliber(caliber)) *
-                    static_cast<double>(penetrate) / body)));
+                    static_cast<double>(penetrate) / body));
 
   const auto crit = do_critical_hits(penetrate, ship, caliber);
 
@@ -514,12 +513,12 @@ static CriticalHitResult do_critical_hits(hit_count_t penetrate, Ship& ship,
                                           guntype_t caliber) {
   hit_count_t crithits = 0;
   damage_t critdam = 0;
-  const unsigned int caliber_val = std::max(1u, gun_caliber(caliber));
+  const int caliber_val = std::max(1, gun_caliber(caliber));
   const auto eff_size = std::max<ship_size_t>(1, ship.shipbody() / caliber_val);
   for (auto _ : std::views::iota(hit_count_t{0}, penetrate)) {
-    if (!int_rand(0, static_cast<int>(eff_size) - 1)) {
+    if (!int_rand(0, eff_size - 1)) {
       crithits += 1;
-      const auto dam = static_cast<damage_t>(int_rand(0, 100));
+      const damage_t dam = int_rand(0, 100);
       critdam += dam;
     }
   }

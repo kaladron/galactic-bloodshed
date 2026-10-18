@@ -18,7 +18,7 @@ void test_default_race_costs() {
 
   // All baseline attributes must cost exactly 0
   for (std::size_t i = 0; i < GB::creator::num_race_attributes; ++i) {
-    test::expect_eq(breakdown.attribute_costs[i], 0.0,
+    test::expect_eq(breakdown.attribute_costs[i], 0,
                     "default attribute cost must be 0");
   }
 
@@ -26,7 +26,7 @@ void test_default_race_costs() {
   test::expect_eq(breakdown.planet_cost, 75, "Earth planet cost must be 75");
 
   // Sector costs: Plated (100%) = 100
-  test::expect_eq(breakdown.sector_costs.plated, 100.0,
+  test::expect_eq(breakdown.sector_costs.plated, 100,
                   "100% plated sector cost must be 100");
 
   // Sector count penalty: 1 type = 0
@@ -74,7 +74,7 @@ void test_normal_vs_metamorph_covariances() {
 
   // Baseline default attributes cost 0 in normal race
   auto normal_cost = engine.calculate_cost(normal_spec);
-  test::expect_eq(normal_cost.iq(), 0.0);
+  test::expect_eq(normal_cost.iq(), 0);
 
   // In Metamorphs, pod, absorb, and collective IQ are enabled
   test::expect_true(morph_spec.metamorph,
@@ -114,13 +114,13 @@ void test_sector_compatibility_costs() {
 
   // Water on Water planet has planet_compat_cov == 1.00 (not > 1.01), so no
   // penalty multiplier
-  test::expect_eq(breakdown.sector_costs.sea, 100.0,
+  test::expect_eq(breakdown.sector_costs.sea, 100,
                   "100% sea cost on water planet must be 100");
 
   // Desert on Water planet has planet_compat_cov == 3.00, costing 3x as much!
   spec.sector_compatibilities.desert = 0.5;
   auto desert_breakdown = engine.calculate_cost(spec);
-  test::expect_true(desert_breakdown.sector_costs.desert > 100.0,
+  test::expect_true(desert_breakdown.sector_costs.desert > 100,
                     "desert on water world must be heavily penalized by planet "
                     "compatibility covariance");
 }
@@ -265,8 +265,7 @@ void test_archetypes_valid_and_within_budget() {
     auto max_spec = default_spec;
     max_spec.mass = std::clamp(arch.base_mass + 0.025, 0.10, 3.00);
     max_spec.birthrate = std::clamp(arch.base_birthrate + 0.10, 0.20, 1.00);
-    max_spec.fighters = static_cast<fighters_t>(
-        std::clamp(static_cast<int>(arch.base_fighters) + 1, 1, 20));
+    max_spec.fighters = std::clamp(arch.base_fighters + 1, 1, 20);
     if (arch.is_metamorphic) {
       max_spec.iq_limit = static_cast<iq_t>(
           std::clamp(static_cast<int>(arch.base_iq_limit) + 10, 50, 220));

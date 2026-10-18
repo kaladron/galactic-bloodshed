@@ -351,4 +351,174 @@ std::string render_for_mode(UiMode mode, const ProjFuelViewModel& vm) {
                               : render_proj_fuel(vm);
 }
 
+std::string
+render_alien_sector_assault(const AlienSectorAssaultResult& assault) {
+  std::string out = "That sector is already occupied by another player!\n";
+  if (assault.requires_unload) {
+    out += "You have to unload to assault alien sectors.\n";
+    return out;
+  }
+
+  const std::string_view pop_label =
+      (assault.attacker_type == PopulationType::CIV) ? "civ" : "mil";
+  std::format_to(std::back_inserter(out), "{} {} unloaded...\n",
+                 assault.unloaded_people, pop_label);
+  std::format_to(std::back_inserter(out), "Crew compliment {} civ  {} mil\n",
+                 assault.ship_civ_after_unload, assault.ship_mil_after_unload);
+  std::format_to(std::back_inserter(out), "{} {} assault {} civ/{} mil\n",
+                 assault.unloaded_people, pop_label,
+                 assault.initial_defender_civ, assault.initial_defender_mil);
+  std::format_to(std::back_inserter(out), "Attack: {:.2f}   Defense: {:.2f}.\n",
+                 assault.attack_strength, assault.defense_strength);
+
+  if (assault.defender_wiped_out) {
+    if (assault.attacker_absorbed_bodies) {
+      std::format_to(std::back_inserter(out), "{} alien bodies absorbed.\n",
+                     assault.absorbed_bodies);
+    }
+  } else {
+    if (assault.defender_absorbed_bodies) {
+      std::format_to(std::back_inserter(out),
+                     "Metamorphs have absorbed {} bodies!!!\n",
+                     assault.absorbed_bodies);
+    }
+    std::format_to(std::back_inserter(out), "Loading {} {}\n",
+                   assault.surviving_attackers, pop_label);
+  }
+
+  if (assault.attacker_won) {
+    out += "VICTORY! The sector is yours!\n";
+    if (assault.surviving_attackers > 0) {
+      std::format_to(std::back_inserter(out), "{} {} move in.\n",
+                     assault.surviving_attackers,
+                     assault.attacker_type == PopulationType::CIV ? "civilians"
+                                                                  : "troops");
+    }
+  } else {
+    out += "DEFEAT!  Your assault was repulsed.\n";
+  }
+
+  std::format_to(std::back_inserter(out),
+                 "Crew casualties: Yours: {} {}    Theirs: {} mil/{} civ\n",
+                 assault.attacker_casualties, pop_label,
+                 assault.defender_mil_casualties,
+                 assault.defender_civ_casualties);
+  return out;
+}
+
+std::optional<std::string> render_alien_assault_absorption_telegram(
+    const AlienSectorAssaultResult& assault) {
+  if (assault.requires_unload) {
+    return std::nullopt;
+  }
+  if (assault.defender_wiped_out && assault.attacker_absorbed_bodies) {
+    return std::format("Metamorphs have absorbed {} bodies!!!\n",
+                       assault.absorbed_bodies);
+  }
+  if (!assault.defender_wiped_out && assault.defender_absorbed_bodies) {
+    return std::format("{} alien bodies absorbed.\n", assault.absorbed_bodies);
+  }
+  return std::nullopt;
+}
+
+std::string render_alien_assault_defender_telegram(
+    const AlienSectorAssaultResult& assault) {
+  std::string telegram = std::format(
+      "/{}/{}: {} [{}] {} assaults {} [{}] {}({}) {}\n", assault.star_name,
+      assault.planet_name, assault.attacker_race_name, assault.attacker_player,
+      assault.ship_display, assault.defender_race_name, assault.defender_player,
+      assault.sector_condition_symbol, assault.sector_coords,
+      assault.attacker_won ? "VICTORY" : "DEFEAT");
+  if (assault.attacker_won) {
+    telegram += "Sector CAPTURED!\n";
+  } else {
+    telegram += "Assault repulsed!\n";
+  }
+  telegram +=
+      std::format("Casualties: Yours: {} mil/{} civ    Theirs: {} {}\n",
+                  assault.defender_mil_casualties,
+                  assault.defender_civ_casualties, assault.attacker_casualties,
+                  assault.attacker_type == PopulationType::MIL ? "mil" : "civ");
+  return telegram;
+}
+
+std::string render_alien_assault_news(const AlienSectorAssaultResult& assault) {
+  return std::format("/{}/{}: {} [{}] {} {} by {} [{}] on sector {}.\n",
+                     assault.star_name, assault.planet_name,
+                     assault.attacker_race_name, assault.attacker_player,
+                     assault.ship_display,
+                     assault.attacker_won ? "CAPTURED" : "failed to capture",
+                     assault.defender_race_name, assault.defender_player,
+                     assault.sector_coords);
+}
+
+std::string render_planet_cargo_transfer(const PlanetCargoTransferResult& res) {
+  if (res.assault.has_value()) {
+    return render_alien_sector_assault(*res.assault);
+  }
+
+  std::string out;
+  switch (res.sector_event) {
+    case PlanetSectorEvent::None:
+      break;
+    case PlanetSectorEvent::Colonized:
+      std::format_to(std::back_inserter(out), "sector {} COLONIZED.\n",
+                     res.sector_coords);
+      break;
+    case PlanetSectorEvent::Occupied:
+      std::format_to(std::back_inserter(out), "sector {} OCCUPIED.\n",
+                     res.sector_coords);
+      break;
+    case PlanetSectorEvent::Evacuated:
+      std::format_to(std::back_inserter(out), "sector {} evacuated.\n",
+                     res.sector_coords);
+      break;
+  }
+
+  switch (res.commodity) {
+    case ShipCargoType::Crew:
+      std::format_to(std::back_inserter(out),
+                     "crew complement of {} is now {}.\n", res.ship_display,
+                     res.resulting_popn);
+      break;
+    case ShipCargoType::Troops:
+      std::format_to(std::back_inserter(out),
+                     "troop complement of {} is now {}.\n", res.ship_display,
+                     res.resulting_troops);
+      break;
+    case ShipCargoType::Destruct:
+      std::format_to(std::back_inserter(out), "{} destruct transferred.\n",
+                     res.amount);
+      if (res.check_boobytrap) {
+        std::format_to(std::back_inserter(out), "\n{} {}\n", res.ship_display,
+                       res.is_boobytrapped ? "now boobytrapped."
+                                           : "no longer boobytrapped.");
+      }
+      break;
+    case ShipCargoType::Crystal:
+      std::format_to(std::back_inserter(out), "{} crystal(s) transferred.\n",
+                     res.amount);
+      break;
+    case ShipCargoType::Fuel:
+      std::format_to(std::back_inserter(out), "{} fuel transferred.\n",
+                     res.amount);
+      break;
+    case ShipCargoType::Resource:
+      std::format_to(std::back_inserter(out), "{} resources transferred.\n",
+                     res.amount);
+      break;
+  }
+  return out;
+}
+
+std::string
+render_json_planet_cargo_transfer(const PlanetCargoTransferResult& res) {
+  return render_json_envelope("planet_cargo_transfer", res);
+}
+
+std::string render_for_mode(UiMode mode, const PlanetCargoTransferResult& vm) {
+  return mode == UiMode::JSON ? render_json_planet_cargo_transfer(vm)
+                              : render_planet_cargo_transfer(vm);
+}
+
 }  // namespace GB::presentation

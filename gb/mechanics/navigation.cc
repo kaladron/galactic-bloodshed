@@ -914,3 +914,278 @@ GrantShipResult grant_ship_governor(EntityManager& em, Ship& ship,
       .recipient_governor_name = std::string(recipient_gov_name),
   };
 }
+
+CargoTransferLimits
+compute_planet_transfer_limits(EntityManager& em, const Ship& s,
+                               player_t player, ShipCargoType cargo,
+                               starnum_t snum, planetnum_t pnum) {
+  CargoTransferLimits lim{};
+  switch (cargo) {
+    case ShipCargoType::Crystal:
+      em.with_planet(snum, pnum, [&](const Planet& p) {
+        lim.uplim = std::min<std::int64_t>(p.info(player).crystals,
+                                           s.available_crystals_capacity());
+        lim.lolim = -s.crystals();
+      });
+      break;
+    case ShipCargoType::Crew:
+      em.with_sectormap(snum, pnum, [&](const SectorMap& smap) {
+        const auto& sect = smap.get(s.land_coords());
+        lim.uplim = std::min<std::int64_t>(sect.get_popn(),
+                                           s.available_crew_capacity());
+        lim.lolim = -s.popn();
+      });
+      break;
+    case ShipCargoType::Troops:
+      em.with_sectormap(snum, pnum, [&](const SectorMap& smap) {
+        const auto& sect = smap.get(s.land_coords());
+        lim.uplim = std::min<std::int64_t>(sect.get_troops(),
+                                           s.available_crew_capacity());
+        lim.lolim = -s.troops();
+      });
+      break;
+    case ShipCargoType::Destruct:
+      em.with_planet(snum, pnum, [&](const Planet& p) {
+        lim.uplim = std::min<std::int64_t>(p.info(player).destruct,
+                                           s.available_destruct_capacity());
+        lim.lolim = -s.destruct();
+      });
+      break;
+    case ShipCargoType::Fuel:
+      em.with_planet(snum, pnum, [&](const Planet& p) {
+        lim.uplim = std::min<std::int64_t>(p.info(player).fuel,
+                                           s.available_fuel_capacity());
+        lim.lolim = -s.fuel_units();
+      });
+      break;
+    case ShipCargoType::Resource:
+      em.with_planet(snum, pnum, [&](const Planet& p) {
+        if (s.can_strap_cargo_to_hull()) {
+          lim.uplim = p.info(player).resource;
+        } else {
+          lim.uplim = std::min<std::int64_t>(p.info(player).resource,
+                                             s.available_resource_capacity());
+        }
+        lim.lolim = -s.resource();
+      });
+      break;
+  }
+  return lim;
+}
+
+namespace {
+
+AlienSectorAssaultResult
+unload_onto_alien_sector(EntityManager& em, Planet& planet, SectorMap& smap,
+                         Ship& ship, Sector& sect, PopulationType what,
+                         population_t people, player_t attacker_player,
+                         governor_t attacker_gov, starnum_t snum,
+                         planetnum_t pnum) {
+  AlienSectorAssaultResult res{
+      .attacker_type = what,
+      .attacker_player = attacker_player,
+      .attacker_governor = attacker_gov,
+      .ship_display = std::format("{}", ship),
+      .sector_coords = ship.land_coords(),
+      .sector_condition_symbol = sect.condition_symbol(),
+  };
+
+  if (people <= 0) {
+    res.requires_unload = true;
+    return res;
+  }
+
+  const player_t defender_owner = sect.get_owner();
+  res.defender_player = defender_owner;
+  res.unloaded_people = people;
+
+  em.mutate_race(attacker_player, [&](Race& race) {
+    em.mutate_race(defender_owner, [&](Race& alien) {
+      em.mutate_star(snum,
+                     [&](Star& s) { s.record_ground_assault(race, alien); });
+
+      alien.increase_translation(attacker_player);
+      race.increase_translation(defender_owner);
+
+      const auto& star = *em.peek_star(snum);
+      const governor_t defender_gov = star.governor(defender_owner);
+      res.defender_governor = defender_gov;
+      res.attacker_race_name = race.name;
+      res.defender_race_name = alien.name;
+      res.star_name = star.get_name();
+      res.planet_name = star.get_planet_name(pnum);
+
+      if (what == PopulationType::CIV) {
+        ship.remove_popn(people, race.mass);
+      } else {
+        ship.remove_troops(people, race.mass);
+      }
+      res.ship_civ_after_unload = ship.popn();
+      res.ship_mil_after_unload = ship.troops();
+
+      const population_t initial_attacker_popn = people;
+      const population_t initial_defender_civ = sect.get_popn();
+      const population_t initial_defender_mil = sect.get_troops();
+      res.initial_defender_civ = initial_defender_civ;
+      res.initial_defender_mil = initial_defender_mil;
+
+      const auto outcome = ground_attack({
+          .attacker = race,
+          .defender = alien,
+          .attacker_force = people,
+          .attacker_type = what,
+          .defender_civ = initial_defender_civ,
+          .defender_mil = initial_defender_mil,
+          .attacker_defense_bonus = static_cast<int>(ship.armor()),
+          .defender_defense_bonus = sect.defense_bonus(),
+          .attacker_compatibility =
+              percent_to_fraction(100.0 - static_cast<double>(ship.damage())),
+          .defender_compatibility = alien.sector_compatibility(sect),
+      });
+      const population_t surviving = outcome.surviving_attackers;
+      sect.set_popn_exact(outcome.surviving_defender_civ);
+      sect.set_troops(outcome.surviving_defender_mil);
+
+      res.attack_strength = outcome.attack_strength;
+      res.defense_strength = outcome.defense_strength;
+      res.surviving_attackers = surviving;
+      res.attacker_casualties = outcome.attacker_casualties;
+      res.defender_civ_casualties = outcome.defender_civ_casualties;
+      res.defender_mil_casualties = outcome.defender_mil_casualties;
+
+      if (sect.is_empty()) {
+        res.defender_wiped_out = true;
+        int absorbed = 0;
+        if (race.absorb) {
+          res.attacker_absorbed_bodies = true;
+          absorbed = int_rand(0, initial_defender_civ + initial_defender_mil);
+          res.absorbed_bodies = absorbed;
+        }
+        if (what == PopulationType::CIV) {
+          sect.set_popn_exact(surviving + absorbed);
+        } else {
+          sect.set_popn_exact(absorbed);
+          sect.set_troops(surviving);
+        }
+        if (!sect.is_empty()) {
+          sect.set_owner(attacker_player);
+          race.adjust_morale(alien, static_cast<int>(alien.fighters));
+        } else {
+          sect.clear_owner();
+        }
+      } else {
+        res.defender_wiped_out = false;
+        if (alien.absorb) {
+          res.defender_absorbed_bodies = true;
+          const int absorbed = int_rand(0, initial_attacker_popn - surviving);
+          res.absorbed_bodies = absorbed;
+          sect.add_popn(absorbed);
+        }
+        if (what == PopulationType::CIV) {
+          ship.add_popn(surviving, race.mass);
+        } else {
+          ship.add_troops(surviving, race.mass);
+        }
+        alien.adjust_morale(race, static_cast<int>(race.fighters));
+      }
+
+      res.attacker_won = (sect.get_owner() == attacker_player);
+    });
+  });
+
+  planet.sync_demographics(smap);
+  return res;
+}
+
+}  // namespace
+
+PlanetCargoTransferResult
+execute_planet_cargo_transfer(EntityManager& em, Ship& s, player_t player,
+                              governor_t governor, starnum_t snum,
+                              planetnum_t pnum, ShipCargoType cargo,
+                              std::int64_t amt, double race_mass) {
+  PlanetCargoTransferResult result{
+      .commodity = cargo,
+      .amount = amt,
+      .ship_display = std::format("{}", s),
+      .sector_coords = s.land_coords(),
+  };
+
+  em.mutate_planet_and_sectors(snum, pnum, [&](Planet& p, SectorMap& smap) {
+    auto& sect = smap.get(s.land_coords());
+    switch (cargo) {
+      case ShipCargoType::Crew:
+      case ShipCargoType::Troops: {
+        const PopulationType what = (cargo == ShipCargoType::Crew)
+                                        ? PopulationType::CIV
+                                        : PopulationType::MIL;
+        if (sect.get_owner() != 0 && sect.get_owner() != player) {
+          result.assault = unload_onto_alien_sector(
+              em, p, smap, s, sect, what, -amt, player, governor, snum, pnum);
+          return;
+        }
+        const bool was_empty = sect.is_empty();
+        const population_t civ_delta =
+            (cargo == ShipCargoType::Crew) ? -amt : 0;
+        const population_t mil_delta =
+            (cargo == ShipCargoType::Troops) ? -amt : 0;
+        p.adjust_sector_population(sect, player, civ_delta, mil_delta);
+        const bool is_now_empty = sect.is_empty();
+
+        if (was_empty && !is_now_empty && amt < 0) {
+          result.sector_event = (cargo == ShipCargoType::Crew)
+                                    ? PlanetSectorEvent::Colonized
+                                    : PlanetSectorEvent::Occupied;
+        } else if (!was_empty && is_now_empty) {
+          result.sector_event = PlanetSectorEvent::Evacuated;
+        }
+        break;
+      }
+      case ShipCargoType::Destruct:
+        p.info(player).destruct -= amt;
+        break;
+      case ShipCargoType::Crystal:
+        p.info(player).crystals -= amt;
+        break;
+      case ShipCargoType::Fuel:
+        p.info(player).fuel -= amt;
+        break;
+      case ShipCargoType::Resource:
+        p.info(player).resource -= amt;
+        break;
+    }
+  });
+
+  if (result.assault.has_value()) {
+    result.resulting_popn = s.popn();
+    result.resulting_troops = s.troops();
+    return result;
+  }
+
+  switch (cargo) {
+    case ShipCargoType::Crew:
+      s.add_popn(amt, race_mass);
+      break;
+    case ShipCargoType::Troops:
+      s.add_troops(amt, race_mass);
+      break;
+    case ShipCargoType::Destruct:
+      s.add_destruct(amt);
+      break;
+    case ShipCargoType::Crystal:
+      s.add_crystals(amt);
+      break;
+    case ShipCargoType::Fuel:
+      s.add_fuel(static_cast<double>(amt));
+      break;
+    case ShipCargoType::Resource:
+      s.add_resource(amt);
+      break;
+  }
+
+  result.resulting_popn = s.popn();
+  result.resulting_troops = s.troops();
+  result.check_boobytrap = !s.max_crew_capacity();
+  result.is_boobytrapped = s.destruct() > 0;
+  return result;
+}

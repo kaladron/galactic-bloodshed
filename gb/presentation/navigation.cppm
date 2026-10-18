@@ -73,4 +73,34 @@ struct ProjFuelViewModel {
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const ProjFuelViewModel& vm);
 
+/// Formats an `AlienSectorAssaultResult` into its caller-facing ASCII report.
+[[nodiscard]] std::string
+render_alien_sector_assault(const AlienSectorAssaultResult& assault);
+
+/// Formats the optional Metamorph body-absorption telegram to the defender.
+[[nodiscard]] std::optional<std::string>
+render_alien_assault_absorption_telegram(
+    const AlienSectorAssaultResult& assault);
+
+/// Formats the defender's ground-assault summary telegram.
+[[nodiscard]] std::string
+render_alien_assault_defender_telegram(const AlienSectorAssaultResult& assault);
+
+/// Formats the galactic combat news bulletin for an alien sector assault.
+[[nodiscard]] std::string
+render_alien_assault_news(const AlienSectorAssaultResult& assault);
+
+/// Formats a `PlanetCargoTransferResult` into its ASCII presentation string.
+[[nodiscard]] std::string
+render_planet_cargo_transfer(const PlanetCargoTransferResult& res);
+
+/// Serializes a `PlanetCargoTransferResult` into a newline-delimited Glaze JSON
+/// envelope (`{"type":"planet_cargo_transfer","data":{...}}\n`).
+[[nodiscard]] std::string
+render_json_planet_cargo_transfer(const PlanetCargoTransferResult& res);
+
+/// Open ADL dispatch for `PlanetCargoTransferResult`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const PlanetCargoTransferResult& vm);
+
 }  // namespace GB::presentation

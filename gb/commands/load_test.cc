@@ -6,6 +6,8 @@
 import commands;
 import dallib;
 import gb.entities;
+import gb.mechanics;
+import gb.presentation;
 import gb.services;
 import test;
 import std;
@@ -512,6 +514,43 @@ void test_planet_crew_load_and_unload() {
   test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({5, 5}).get_troops(), 0);
   test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({5, 5}).get_owner(), 0);
   ctx.verify_universe_invariants();
+
+  // 5. Joint crew capacity: ship has 50 popn + 20 troops (30 berths left out of
+  // 100). Loading civilians from a sector with 50 popn must cap at 30 so 20
+  // civilians remain on the sector instead of vanishing.
+  ctx.em.mutate_planet_and_sectors(1, 1, [](Planet& p, SectorMap& map) {
+    auto& sect = map.get({5, 5});
+    sect.set_owner(1);
+    sect.set_popn_exact(50);
+    sect.set_troops(0);
+    p.sync_demographics(map);
+  });
+  g.set_ui_mode(UiMode::JSON);
+  g.out.str("");
+  ctx.assert_dispatch_success(g,
+                              {"load", std::format("#{}", ship_id.value), "c"});
+  test::expect_contains(g.out.str(), "\"type\":\"planet_cargo_transfer\"");
+  test::expect_eq(ctx.em.peek_ship(ship_id)->popn(), 80);
+  test::expect_eq(ctx.em.peek_ship(ship_id)->troops(), 20);
+  test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({5, 5}).get_popn(), 20);
+  ctx.verify_universe_invariants();
+
+  for (const auto ev : all_planet_sector_events) {
+    const PlanetCargoTransferResult sample{
+        .commodity = ShipCargoType::Crew,
+        .amount = 10,
+        .ship_display = "c1ColonyShip [1]",
+        .sector_coords = {5, 5},
+        .sector_event = ev,
+        .resulting_popn = 80,
+    };
+    test::expect_false(
+        GB::presentation::render_for_mode(UiMode::ASCII, sample).empty());
+    test::expect_contains(
+        GB::presentation::render_for_mode(UiMode::JSON, sample),
+        "\"type\":\"planet_cargo_transfer\"");
+  }
+
   std::println(std::cout,
                "✓ Planetary crew colonization and evacuation verified");
 }

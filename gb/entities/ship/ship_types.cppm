@@ -89,18 +89,18 @@ export enum class ShipCargoType : std::uint8_t {
 export constexpr std::optional<ShipCargoType>
 char_to_ship_cargo(char c) noexcept {
   switch (c) {
-    case 'r':
+    case 'r':  // Resources
       return ShipCargoType::Resource;
-    case 'd':
+    case 'd':  // Destruct (munitions)
       return ShipCargoType::Destruct;
-    case 'f':
+    case 'f':  // Fuel
       return ShipCargoType::Fuel;
-    case 'x':
+    case 'x':  // Crystals ('x' or legacy '&')
     case '&':
       return ShipCargoType::Crystal;
-    case 'c':
+    case 'c':  // Civilian crew
       return ShipCargoType::Crew;
-    case 'm':
+    case 'm':  // Military troops
       return ShipCargoType::Troops;
     default:
       return std::nullopt;

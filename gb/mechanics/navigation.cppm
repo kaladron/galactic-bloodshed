@@ -262,3 +262,78 @@ export GrantShipResult grant_ship_governor(EntityManager& em, Ship& ship,
                                            governor_t new_gov,
                                            std::string_view donor_gov_name,
                                            std::string_view recipient_gov_name);
+
+export struct CargoTransferLimits {
+  std::int64_t lolim{0};
+  std::int64_t uplim{0};
+};
+
+export CargoTransferLimits
+compute_planet_transfer_limits(EntityManager& em, const Ship& s,
+                               player_t player, ShipCargoType cargo,
+                               starnum_t snum, planetnum_t pnum);
+
+export enum class PlanetSectorEvent {
+  None,
+  Colonized,
+  Occupied,
+  Evacuated,
+};
+
+export inline constexpr std::array all_planet_sector_events = {
+    PlanetSectorEvent::None,
+    PlanetSectorEvent::Colonized,
+    PlanetSectorEvent::Occupied,
+    PlanetSectorEvent::Evacuated,
+};
+
+export struct AlienSectorAssaultResult {
+  bool requires_unload{false};
+  PopulationType attacker_type{PopulationType::CIV};
+  player_t attacker_player{0};
+  governor_t attacker_governor{0};
+  std::string attacker_race_name{};
+  player_t defender_player{0};
+  governor_t defender_governor{0};
+  std::string defender_race_name{};
+  std::string star_name{};
+  std::string planet_name{};
+  std::string ship_display{};
+  Coordinates sector_coords{};
+  char sector_condition_symbol{' '};
+  population_t unloaded_people{0};
+  population_t ship_civ_after_unload{0};
+  population_t ship_mil_after_unload{0};
+  population_t initial_defender_civ{0};
+  population_t initial_defender_mil{0};
+  double attack_strength{0.0};
+  double defense_strength{0.0};
+  bool defender_wiped_out{false};
+  bool attacker_won{false};
+  bool attacker_absorbed_bodies{false};
+  bool defender_absorbed_bodies{false};
+  int absorbed_bodies{0};
+  population_t surviving_attackers{0};
+  population_t attacker_casualties{0};
+  population_t defender_civ_casualties{0};
+  population_t defender_mil_casualties{0};
+};
+
+export struct PlanetCargoTransferResult {
+  ShipCargoType commodity{ShipCargoType::Resource};
+  std::int64_t amount{0};
+  std::string ship_display{};
+  Coordinates sector_coords{};
+  PlanetSectorEvent sector_event{PlanetSectorEvent::None};
+  population_t resulting_popn{0};
+  population_t resulting_troops{0};
+  bool check_boobytrap{false};
+  bool is_boobytrapped{false};
+  std::optional<AlienSectorAssaultResult> assault{std::nullopt};
+};
+
+export PlanetCargoTransferResult
+execute_planet_cargo_transfer(EntityManager& em, Ship& s, player_t player,
+                              governor_t governor, starnum_t snum,
+                              planetnum_t pnum, ShipCargoType cargo,
+                              std::int64_t amt, double race_mass);

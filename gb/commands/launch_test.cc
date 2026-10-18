@@ -6,6 +6,8 @@
 import commands;
 import dallib;
 import gb.entities;
+import gb.mechanics;
+import gb.presentation.navigation;
 import gb.services;
 import test;
 import std;
@@ -316,6 +318,113 @@ void test_launch_planet_fuel_precheck_preserves_ap_and_coords() {
   test::expect_contains(g.out.str(), "not designed to be launched");
 }
 
+void test_launch_mcdc_undock_observers_and_json() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 1);
+  g.set_level(ScopeLevel::LEVEL_SHIP);
+  g.set_snum(1);
+  g.set_pnum(1);
+
+  // 1. Offline factory berthed inside a carrier (s.type() == OTYPE_FACTORY &&
+  // !s.on(), and !s.max_speed_capacity() && !s.is_landed()) launches cleanly
+  const auto carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
+                              .owned_by(1, 1)
+                              .named("MotherCarrier")
+                              .landed_on(1, 1, {5, 5})
+                              .with_max_hanger(100)
+                              .build();
+  const auto off_fac_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
+                              .owned_by(1, 1)
+                              .with_on(false)
+                              .with_max_speed(0)
+                              .build();
+  ctx.em.mutate_ship(off_fac_id,
+                     [&](Ship& f) { f.dock_into_carrier(carrier_id); });
+  ctx.assert_dispatch_success(
+      g, {"launch", std::format("#{}", off_fac_id.value)}, 0);
+  test::expect_contains(g.out.str(), "Landed on Sol/Earth.");
+
+  // 2. Undocking a moored ship in LEVEL_UNIV (insufficient Univ AP, then
+  // sufficient Univ AP) and in LEVEL_PLAN (insufficient Star AP)
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  const auto univ_s1 = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)
+                           .owned_by(1, 1)
+                           .named("UnivAlpha")
+                           .in_deep_space()
+                           .build();
+  const auto univ_s2 = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)
+                           .owned_by(1, 1)
+                           .named("UnivBeta")
+                           .in_deep_space()
+                           .build();
+  ctx.em.mutate_ship(univ_s1, [&](Ship& s1) {
+    ctx.em.mutate_ship(univ_s2, [&](Ship& s2) { s1.moor_together(s2); });
+  });
+
+  ctx.em.mutate_universe([](Universe& u) { u.set_AP(1, 0); });
+  ctx.assert_dispatch_rejected(g,
+                               {"undock", std::format("#{}", univ_s1.value)});
+  test::expect_contains(g.out.str(), "You need 1 universe action point.");
+
+  ctx.em.mutate_universe([](Universe& u) { u.set_AP(1, 5); });
+  ctx.assert_dispatch_success(g, {"undock", std::format("#{}", univ_s1.value)},
+                              0, 1);
+  test::expect_contains(g.out.str(), "undocked from");
+
+  // Insufficient Star AP when undocking moored ship in LEVEL_PLAN
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  const auto plan_s2 = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                           .owned_by(1, 1)
+                           .in_planet_orbit(1, 1)
+                           .build();
+  ctx.em.mutate_ship(1, [&](Ship& s1) {
+    s1.enter_planet_orbit(1, 1);
+    ctx.em.mutate_ship(plan_s2, [&](Ship& s2) { s1.moor_together(s2); });
+  });
+  ctx.em.mutate_star(1, [](Star& st) { st.AP(1) = 0; });
+  ctx.assert_dispatch_rejected(g, {"undock", "#1"});
+  test::expect_contains(g.out.str(), "You don't have 1 action points there.");
+
+  // 3. Foreign player with sectors on planet receives launch observation
+  // telegram, and UiMode::JSON renders launch_ship envelope
+  ctx.em.mutate_star(1, [](Star& st) { st.AP(1) = 10; });
+  (void)ctx.em.unmoor_ships(1);
+  ctx.em.mutate_ship(1, [](Ship& s1) {
+    s1.land_on_planet(1, 1, {5, 5});
+    s1.add_fuel(100.0);
+  });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(2).numsectsowned = 3; });
+
+  g.set_ui_mode(UiMode::JSON);
+  ctx.assert_dispatch_success(g, {"launch", "#1"}, 1);
+  test::expect_contains(g.out.str(), "\"type\":\"launch_ship\"");
+  test::expect_contains(g.out.str(), "\"star_name\":\"Sol\"");
+  g.set_ui_mode(UiMode::ASCII);
+
+  const auto p2_telegrams = ctx.em.get_telegrams(2, 1);
+  test::expect_false(p2_telegrams.empty());
+  test::expect_contains(p2_telegrams.back().message,
+                        "observed launching from planet /Sol/Earth.");
+
+  // 5. Exhaustive format_launch_error coverage
+  for (const auto reason : all_launch_error_reasons) {
+    const LaunchError err{
+        .reason = reason,
+        .ship_display = "Shuttle #1",
+        .target_ship_display = "Carrier #2",
+        .star_name = "Sol",
+        .planet_name = "Earth",
+        .planet_gravity = 1.0,
+        .required_fuel = 12.5,
+    };
+    test::expect_false(GB::presentation::format_launch_error(err).empty());
+  }
+}
+
 }  // namespace
 
 int main() {
@@ -325,6 +434,7 @@ int main() {
   test_launch_domain_errors();
   test_launch_from_carrier_all_scopes();
   test_launch_planet_fuel_precheck_preserves_ap_and_coords();
+  test_launch_mcdc_undock_observers_and_json();
 
   std::println(std::cout, "✓ launch_test passed!");
   return 0;

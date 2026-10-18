@@ -582,7 +582,7 @@ void handle_planet_arrival(EntityManager& em, Ship& s, starnum_t deststar,
   s.enter_planet_orbit(destpnum);
 
   std::stringstream telegram;
-  if (dist <= static_cast<double>(DIST_TO_LAND)) {
+  if (dist <= DIST_TO_LAND) {
     handle_planet_landing_distance(em, s, deststar, destpnum, checking_fuel,
                                    telegram);
   } else {
@@ -1420,4 +1420,213 @@ execute_transporter_transfer(EntityManager& em, TransporterShip& s,
     outcome = std::move(res);
   });
   return *outcome;
+}
+
+namespace {
+
+std::expected<LaunchShipResult, LaunchError>
+launch_from_carrier(EntityManager& em, Ship& s) {
+  if (s.type() == ShipType::OTYPE_FACTORY && s.on()) {
+    return std::unexpected(LaunchError{
+        .reason = LaunchErrorReason::OnlineFactoryCannotLaunch,
+    });
+  }
+
+  std::optional<std::expected<LaunchShipResult, LaunchError>> outcome;
+  em.mutate_ship(*s.destshipno(), [&](Ship& s2) {
+    if (s2.whatorbits() == ScopeLevel::LEVEL_SHIP) {
+      outcome = std::unexpected(LaunchError{
+          .reason = LaunchErrorReason::MothershipBerthed,
+          .ship_display = std::format("{}", s),
+          .target_ship_display = std::format("{}", s2),
+      });
+      return;
+    }
+
+    if (s2.is_landed()) {
+      const auto& star = *em.peek_star(s2.storbits());
+      s.land_on_planet(s2);
+      s2.unload_docked_craft(s);
+      outcome = LaunchShipResult{
+          .mode = LaunchMode::DeployedFromLandedCarrier,
+          .ship_display = std::format("{}", s),
+          .target_ship_display = std::format("{}", s2),
+          .orbit_scope = ScopeLevel::LEVEL_PLAN,
+          .star_name = star.get_name(),
+          .planet_name = star.get_planet_name(s.pnumorbits()),
+      };
+      return;
+    }
+
+    LaunchShipResult res{
+        .mode = LaunchMode::LaunchedFromOrbitingCarrier,
+        .ship_display = std::format("{}", s),
+        .target_ship_display = std::format("{}", s2),
+        .orbit_scope = s2.whatorbits(),
+    };
+    s.launch_from_carrier_to_orbit(s2);
+    s2.unload_docked_craft(s);
+
+    if (s2.whatorbits() == ScopeLevel::LEVEL_PLAN) {
+      const auto& star = *em.peek_star(s2.storbits());
+      res.star_name = star.get_name();
+      res.planet_name = star.get_planet_name(s.pnumorbits());
+    } else if (s2.whatorbits() == ScopeLevel::LEVEL_STAR) {
+      const auto& star = *em.peek_star(s2.storbits());
+      res.star_name = star.get_name();
+    }
+    outcome = std::move(res);
+  });
+
+  return *outcome;
+}
+
+std::expected<LaunchShipResult, LaunchError>
+undock_moored_ship(EntityManager& em, Ship& s, player_t player, bool god) {
+  const auto* s2_peek = em.peek_ship(*s.destshipno());
+
+  const bool use_univ_ap = (s2_peek->whatorbits() == ScopeLevel::LEVEL_UNIV);
+  if (use_univ_ap) {
+    if (!god && em.peek_universe()->get_AP(player) < 1) {
+      return std::unexpected(LaunchError{
+          .reason = LaunchErrorReason::InsufficientUniverseAp,
+      });
+    }
+  } else {
+    if (!god && em.peek_star(s.storbits())->AP(player) < 1) {
+      return std::unexpected(LaunchError{
+          .reason = LaunchErrorReason::InsufficientStarAp,
+      });
+    }
+  }
+
+  const std::string s_str = std::format("{}", s);
+  const std::string s2_str = std::format("{}", *s2_peek);
+  (void)em.unmoor_ships(s.number());
+
+  if (!god) {
+    if (use_univ_ap) {
+      em.mutate_universe([&](Universe& u) { u.deduct_AP(player, 1); });
+    } else {
+      em.mutate_star(s.storbits(), [&](Star& st) { st.AP(player) -= 1; });
+    }
+  }
+
+  return LaunchShipResult{
+      .mode = LaunchMode::UndockedFromShip,
+      .ship_display = s_str,
+      .target_ship_display = s2_str,
+  };
+}
+
+std::expected<LaunchShipResult, LaunchError>
+launch_from_planet(EntityManager& em, Ship& s, player_t player, bool god) {
+  const auto& star = *em.peek_star(s.storbits());
+  const std::string star_name = star.get_name();
+  const std::string planet_name = star.get_planet_name(s.pnumorbits());
+
+  std::optional<std::expected<LaunchShipResult, LaunchError>> outcome;
+  em.mutate_planet(s.storbits(), s.pnumorbits(), [&](Planet& p) {
+    const double gravity = p.gravity();
+    const double fuel = gravity * s.mass() * LAUNCH_GRAV_MASS_FACTOR;
+    if (s.fuel() < fuel) {
+      outcome = std::unexpected(LaunchError{
+          .reason = LaunchErrorReason::InsufficientFuel,
+          .ship_display = std::format("{}", s),
+          .star_name = star_name,
+          .planet_name = planet_name,
+          .planet_gravity = gravity,
+          .required_fuel = fuel,
+      });
+      return;
+    }
+
+    if (!god && star.AP(player) < 1) {
+      outcome = std::unexpected(LaunchError{
+          .reason = LaunchErrorReason::InsufficientStarAp,
+          .star_name = star_name,
+          .planet_name = planet_name,
+          .planet_gravity = gravity,
+      });
+      return;
+    }
+
+    if (!god) {
+      em.mutate_star(s.storbits(), [&](Star& st) { st.AP(player) -= 1; });
+    }
+
+    const SystemCoordinates launch_offset{
+        double_rand(-DIST_TO_LAND / 4.0, DIST_TO_LAND / 4.0),
+        double_rand(-DIST_TO_LAND / 4.0, DIST_TO_LAND / 4.0)};
+    s.set_coordinates(p.absolute_coordinates(star) + launch_offset);
+
+    s.consume_fuel(fuel);
+    s.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
+    const bool is_canister = (s.as<CanisterShip>() != nullptr);
+    if (auto* canist = s.as<CanisterShip>()) {
+      canist->reset_timer();
+    }
+    s.notified() = 0;
+    if (!p.explored()) {
+      p.explored() = 1;
+    }
+
+    LaunchShipResult res{
+        .mode = LaunchMode::LaunchedFromPlanet,
+        .ship_display = std::format("{}", s),
+        .orbit_scope = ScopeLevel::LEVEL_PLAN,
+        .star_name = star_name,
+        .planet_name = planet_name,
+        .planet_gravity = gravity,
+        .fuel_used = fuel,
+        .ship_type = s.type(),
+        .is_canister = is_canister,
+    };
+
+    for (const Race& race : RaceList::readonly(em)) {
+      const player_t i = race.Playernum;
+      if (p.info(i).numsectsowned && i != player) {
+        res.observers.push_back(LaunchObserverTarget{
+            .player = i,
+            .governor = star.governor(i),
+        });
+      }
+    }
+
+    outcome = std::move(res);
+  });
+
+  return *outcome;
+}
+
+}  // namespace
+
+std::expected<LaunchShipResult, LaunchError>
+launch_single_ship(EntityManager& em, Ship& s, player_t player, bool god) {
+  if (!s.max_speed_capacity() && s.is_landed()) {
+    return std::unexpected(LaunchError{
+        .reason = LaunchErrorReason::NotDesignedToLaunch,
+    });
+  }
+
+  if (!s.docked() && s.whatorbits() != ScopeLevel::LEVEL_SHIP) {
+    return std::unexpected(LaunchError{
+        .reason = LaunchErrorReason::NotLandedOrDocked,
+        .ship_display = std::format("{}", s),
+    });
+  }
+  if (s.is_landed() && s.resource() > s.max_resource_capacity()) {
+    return std::unexpected(LaunchError{
+        .reason = LaunchErrorReason::Overloaded,
+        .ship_display = std::format("{}", s),
+    });
+  }
+
+  if (s.whatorbits() == ScopeLevel::LEVEL_SHIP) {
+    return launch_from_carrier(em, s);
+  }
+  if (s.whatdest() == ScopeLevel::LEVEL_SHIP) {
+    return undock_moored_ship(em, s, player, god);
+  }
+  return launch_from_planet(em, s, player, god);
 }

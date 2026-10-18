@@ -725,4 +725,105 @@ render_transporter_telegram(const TransporterTransferResult& res) {
                      tele_lines);
 }
 
+std::string format_launch_error(const LaunchError& err) {
+  std::string out;
+  if (err.planet_gravity.has_value()) {
+    std::format_to(std::back_inserter(out),
+                   "Planet /{}/{} has gravity field of {:.2f}\n", err.star_name,
+                   err.planet_name, *err.planet_gravity);
+  }
+  switch (err.reason) {
+    case LaunchErrorReason::NotDesignedToLaunch:
+      out += "That ship is not designed to be launched.\n";
+      break;
+    case LaunchErrorReason::NotLandedOrDocked:
+      std::format_to(std::back_inserter(out), "{} is not landed or docked.\n",
+                     err.ship_display);
+      break;
+    case LaunchErrorReason::Overloaded:
+      std::format_to(std::back_inserter(out),
+                     "{} is too overloaded to launch.\n", err.ship_display);
+      break;
+    case LaunchErrorReason::OnlineFactoryCannotLaunch:
+      out += "Factories cannot be launched once turned on.\n"
+             "Consider using 'scrap'.\n";
+      break;
+    case LaunchErrorReason::MothershipBerthed:
+      std::format_to(
+          std::back_inserter(out),
+          "{}'s mothership is currently berthed inside another vessel; "
+          "launch {} first.\n",
+          err.ship_display, err.target_ship_display);
+      break;
+    case LaunchErrorReason::InsufficientUniverseAp:
+      out += "You need 1 universe action point.\n";
+      break;
+    case LaunchErrorReason::InsufficientStarAp:
+      out += "You don't have 1 action points there.\n";
+      break;
+    case LaunchErrorReason::InsufficientFuel:
+      std::format_to(std::back_inserter(out),
+                     "{} does not have enough fuel! ({:.1f})\n",
+                     err.ship_display, err.required_fuel);
+      break;
+  }
+  return out;
+}
+
+std::string render_launch_ship_result(const LaunchShipResult& res) {
+  switch (res.mode) {
+    case LaunchMode::DeployedFromLandedCarrier:
+      return std::format("Landed on {}/{}.\n", res.star_name, res.planet_name);
+    case LaunchMode::LaunchedFromOrbitingCarrier: {
+      std::string out = std::format("{} launched from {}.\n", res.ship_display,
+                                    res.target_ship_display);
+      if (res.orbit_scope == ScopeLevel::LEVEL_PLAN) {
+        std::format_to(std::back_inserter(out), "Orbiting {}/{}.\n",
+                       res.star_name, res.planet_name);
+      } else if (res.orbit_scope == ScopeLevel::LEVEL_STAR) {
+        std::format_to(std::back_inserter(out), "Orbiting {}.\n",
+                       res.star_name);
+      } else {
+        out += "Universe level.\n";
+      }
+      return out;
+    }
+    case LaunchMode::UndockedFromShip:
+      return std::format("{} undocked from {}.\n", res.ship_display,
+                         res.target_ship_display);
+    case LaunchMode::LaunchedFromPlanet: {
+      std::string out =
+          std::format("Planet /{}/{} has gravity field of {:.2f}\n"
+                      "{} launched from planet, using {:.1f} fuel.\n",
+                      res.star_name, res.planet_name, res.planet_gravity,
+                      res.ship_display, res.fuel_used);
+      if (res.is_canister) {
+        if (res.ship_type == ShipType::OTYPE_CANIST) {
+          out += "A cloud of dust envelopes your planet.\n";
+        } else if (res.ship_type == ShipType::OTYPE_GREEN) {
+          out += "Greenhouse gases surround the planet.\n";
+        }
+      }
+      return out;
+    }
+  }
+  return {};
+}
+
+std::string render_json_launch_ship_result(const LaunchShipResult& res) {
+  return render_json_envelope("launch_ship", res);
+}
+
+std::string render_for_mode(UiMode mode, const LaunchShipResult& vm) {
+  if (mode == UiMode::JSON) {
+    return render_json_launch_ship_result(vm);
+  }
+  return render_launch_ship_result(vm);
+}
+
+std::string render_launch_observed_telegram(const LaunchShipResult& res) {
+  return std::format("{} observed launching from planet /{}/{}.\n",
+                     res.ship_display, res.star_name, res.planet_name);
+}
+
 }  // namespace GB::presentation

@@ -437,3 +437,64 @@ export std::expected<TransporterTransferResult, TransporterError>
 execute_transporter_transfer(EntityManager& em, TransporterShip& s,
                              starnum_t snum, planetnum_t pnum, double race_mass,
                              bool is_metamorph);
+
+export enum class LaunchErrorReason {
+  NotDesignedToLaunch,
+  NotLandedOrDocked,
+  Overloaded,
+  OnlineFactoryCannotLaunch,
+  MothershipBerthed,
+  InsufficientUniverseAp,
+  InsufficientStarAp,
+  InsufficientFuel,
+};
+
+export inline constexpr std::array all_launch_error_reasons = {
+    LaunchErrorReason::NotDesignedToLaunch,
+    LaunchErrorReason::NotLandedOrDocked,
+    LaunchErrorReason::Overloaded,
+    LaunchErrorReason::OnlineFactoryCannotLaunch,
+    LaunchErrorReason::MothershipBerthed,
+    LaunchErrorReason::InsufficientUniverseAp,
+    LaunchErrorReason::InsufficientStarAp,
+    LaunchErrorReason::InsufficientFuel,
+};
+
+export struct LaunchError {
+  LaunchErrorReason reason{LaunchErrorReason::NotDesignedToLaunch};
+  std::string ship_display{};
+  std::string target_ship_display{};
+  std::string star_name{};
+  std::string planet_name{};
+  std::optional<double> planet_gravity{std::nullopt};
+  double required_fuel{0.0};
+};
+
+export enum class LaunchMode {
+  DeployedFromLandedCarrier,
+  LaunchedFromOrbitingCarrier,
+  UndockedFromShip,
+  LaunchedFromPlanet,
+};
+
+export struct LaunchObserverTarget {
+  player_t player{0};
+  governor_t governor{0};
+};
+
+export struct LaunchShipResult {
+  LaunchMode mode{LaunchMode::LaunchedFromPlanet};
+  std::string ship_display{};
+  std::string target_ship_display{};
+  ScopeLevel orbit_scope{ScopeLevel::LEVEL_PLAN};
+  std::string star_name{};
+  std::string planet_name{};
+  double planet_gravity{0.0};
+  double fuel_used{0.0};
+  ShipType ship_type{ShipType::STYPE_SHUTTLE};
+  bool is_canister{false};
+  std::vector<LaunchObserverTarget> observers{};
+};
+
+export std::expected<LaunchShipResult, LaunchError>
+launch_single_ship(EntityManager& em, Ship& s, player_t player, bool god);

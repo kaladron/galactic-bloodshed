@@ -159,4 +159,25 @@ render_json_transporter_transfer(const TransporterTransferResult& res);
 [[nodiscard]] std::optional<std::string>
 render_transporter_telegram(const TransporterTransferResult& res);
 
+/// Formats a `LaunchError` into its user-facing error diagnostic string.
+[[nodiscard]] std::string format_launch_error(const LaunchError& err);
+
+/// Formats a `LaunchShipResult` into its ASCII presentation string.
+[[nodiscard]] std::string
+render_launch_ship_result(const LaunchShipResult& res);
+
+/// Serializes a `LaunchShipResult` into a newline-delimited Glaze JSON
+/// envelope (`{"type":"launch_ship","data":{...}}\n`).
+[[nodiscard]] std::string
+render_json_launch_ship_result(const LaunchShipResult& res);
+
+/// Open ADL dispatch for `LaunchShipResult`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const LaunchShipResult& vm);
+
+/// Formats the observer telegram sent to foreign races on a planet when a ship
+/// launches into orbit.
+[[nodiscard]] std::string
+render_launch_observed_telegram(const LaunchShipResult& res);
+
 }  // namespace GB::presentation

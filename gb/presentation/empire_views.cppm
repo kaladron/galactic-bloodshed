@@ -904,4 +904,45 @@ render_dissolve_leader_warning(governor_t attempting_governor);
 [[nodiscard]] std::string
 render_dissolve_declaration_news(const DissolveResult& vm);
 
+/// Entity category targeted by deity `fix` command.
+enum class FixTarget : std::uint8_t {
+  Planet,
+  Ship,
+};
+
+/// Result of inspecting or overriding a planet or ship property via `fix`.
+struct FixResult {
+  FixTarget target{FixTarget::Planet};
+  std::string property{};
+  std::string display_property{};
+  double value{0.0};
+  bool ship_destroyed{false};
+  std::string ship_label{};
+};
+
+[[nodiscard]] std::string render_fix_result(const FixResult& vm);
+[[nodiscard]] std::string render_json_fix_result(const FixResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode, const FixResult& vm);
+
+/// Entity category targeted by `name` command.
+enum class NameTarget : std::uint8_t {
+  Ship,
+  Class,
+  Block,
+  Star,
+  Planet,
+  Race,
+  Governor,
+};
+
+/// Result of naming or renaming an entity via `name`.
+struct NameResult {
+  NameTarget target{NameTarget::Ship};
+  std::string name{};
+};
+
+[[nodiscard]] std::string render_name_result(const NameResult& vm);
+[[nodiscard]] std::string render_json_name_result(const NameResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode, const NameResult& vm);
+
 }  // namespace GB::presentation

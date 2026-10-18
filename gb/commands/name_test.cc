@@ -3,7 +3,6 @@
 /// \file name_test.cc
 /// \brief Test name command database persistence and validation rules
 
-import dallib;
 import gb.entities;
 import gb.services;
 import test;
@@ -13,48 +12,29 @@ import std;
 void test_name_ship_persistence() {
   std::println(std::cout, "Test: name command - ship naming");
 
-  // Create in-memory database
   TestContext ctx;
+  ctx.with_standard_universe();
 
-  // Setup: Create a ship
-  Ship ship{};
-  ship.number() = 1;
-  ship.owner() = 1;
-  ship.name() = "Old Ship Name";
+  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 1)
+      .owned_by(1, 1)
+      .named("Old Ship Name")
+      .build();
 
-  // Setup: Create a race for player 1
-  Race race{};
-  race.Playernum = 1;
-  race.name = "Test Race";
-
-  JsonStore store(ctx.db);
-  ShipRepository ships(store);
-  RaceRepository races(store);
-  races.save(race);
-  ships.save(ship);
-
-  // Create GameObj for command execution
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_shipno(1);
-  g.race =
-      ctx.em.peek_race(g.player());  // Set race pointer like production does
 
-  // TEST: Rename ship
   std::println(std::cout, "  Testing: Rename ship to 'USS Enterprise'");
   {
     ctx.assert_dispatch_success(g, {"name", "ship", "USS", "Enterprise"});
-
-    // Verify output message
-    std::string out_str = g.out.str();
-    test::expect_contains(out_str, "Name set.");
+    test::expect_contains(g.out.str(), "Name set.");
     std::println(std::cout, "    ✓ Output message correct");
 
-    // Verify database
-    auto saved = ships.find_by_number(1);
-    test::expect_true(saved.has_value());
+    ctx.em.clear_cache();
+    const auto* saved = ctx.em.peek_ship(1);
+    test::expect_ne(saved, nullptr);
     test::expect_eq(saved->name(), "USS Enterprise");
     std::println(std::cout, "    ✓ Database: ship name = '{}'", saved->name());
   }
@@ -65,35 +45,22 @@ void test_name_ship_persistence() {
 void test_name_race_persistence() {
   std::println(std::cout, "Test: name command - race naming");
 
-  // Create in-memory database
   TestContext ctx;
+  ctx.with_standard_universe();
 
-  // Setup: Create a race
-  Race race{};
-  race.Playernum = 1;
-  race.name = "Old Race Name";
-
-  JsonStore store(ctx.db);
-  RaceRepository races(store);
-  races.save(race);
-
-  // Create GameObj for command execution (leader, not governor)
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   g.set_governor(1);  // Must be leader (governor 1)
   g.set_level(ScopeLevel::LEVEL_UNIV);
-  g.race =
-      ctx.em.peek_race(g.player());  // Set race pointer like production does
 
-  // TEST: Rename race
   std::println(std::cout, "  Testing: Rename race to 'Klingons'");
   {
     ctx.assert_dispatch_success(g, {"name", "race", "Klingons"});
 
-    // Verify database
-    auto saved = races.find_by_player(1);
-    test::expect_true(saved.has_value());
+    ctx.em.clear_cache();
+    const auto* saved = ctx.em.peek_race(1);
+    test::expect_ne(saved, nullptr);
     test::expect_eq(saved->name, "Klingons");
     std::println(std::cout, "    ✓ Database: race name = '{}'", saved->name);
   }
@@ -104,45 +71,24 @@ void test_name_race_persistence() {
 void test_name_star_persistence() {
   std::println(std::cout, "Test: name command - star naming");
 
-  // Create in-memory database
   TestContext ctx;
+  ctx.with_standard_universe();
+  ctx.em.mutate_race(1, [](Race& r) { r.God = true; });
 
-  // Setup: Create a race (God)
-  Race race{};
-  race.Playernum = 1;
-  race.God = 1;  // Must be deity
-
-  JsonStore store(ctx.db);
-  RaceRepository races(store);
-  races.save(race);
-
-  // Setup: Create a star
-  star_struct star_data{};
-  star_data.star_id = 1;
-  star_data.name = "Old Star Name";
-  Star star{star_data};
-
-  StarRepository stars_repo(store);
-  stars_repo.save(star);
-
-  // Create GameObj for command execution
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
   g.set_god(true);
-  g.race =
-      ctx.em.peek_race(g.player());  // Set race pointer like production does
 
-  // TEST: Rename star
   std::println(std::cout, "  Testing: Rename star to 'Alpha Centauri'");
   {
     ctx.assert_dispatch_success(g, {"name", "star", "Alpha", "Centauri"});
 
-    // Verify database
-    auto saved = stars_repo.find_by_number(1);
-    test::expect_true(saved.has_value());
+    ctx.em.clear_cache();
+    const auto* saved = ctx.em.peek_star(1);
+    test::expect_ne(saved, nullptr);
     test::expect_eq(saved->get_name(), "Alpha Centauri");
     std::println(std::cout, "    ✓ Database: star name = '{}'",
                  saved->get_name());
@@ -154,29 +100,10 @@ void test_name_star_persistence() {
 void test_name_planet_persistence() {
   std::println(std::cout, "Test: name command - planet naming");
 
-  // Create in-memory database
   TestContext ctx;
+  ctx.with_standard_universe();
+  ctx.em.mutate_race(1, [](Race& r) { r.God = true; });
 
-  // Setup: Create a race (God)
-  Race race{};
-  race.Playernum = 1;
-  race.God = 1;  // Must be deity
-
-  JsonStore store(ctx.db);
-  RaceRepository races(store);
-  races.save(race);
-
-  // Setup: Create a star with planets
-  star_struct star_data{};
-  star_data.star_id = 1;
-  star_data.name = "Test Star";
-  star_data.pnames.push_back("Old Planet Name");
-  Star star{star_data};
-
-  StarRepository stars_repo(store);
-  stars_repo.save(star);
-
-  // Create GameObj for command execution
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
@@ -184,17 +111,14 @@ void test_name_planet_persistence() {
   g.set_snum(1);
   g.set_pnum(1);
   g.set_god(true);
-  g.race =
-      ctx.em.peek_race(g.player());  // Set race pointer like production does
 
-  // TEST: Rename planet
   std::println(std::cout, "  Testing: Rename planet to 'New Earth'");
   {
     ctx.assert_dispatch_success(g, {"name", "planet", "New", "Earth"});
 
-    // Verify database
-    auto saved = stars_repo.find_by_number(1);
-    test::expect_true(saved.has_value());
+    ctx.em.clear_cache();
+    const auto* saved = ctx.em.peek_star(1);
+    test::expect_ne(saved, nullptr);
     test::expect_eq(saved->get_planet_name(1), "New Earth");
     std::println(std::cout, "    ✓ Database: planet name = '{}'",
                  saved->get_planet_name(1));
@@ -206,27 +130,24 @@ void test_name_planet_persistence() {
 void test_name_invalid_formats() {
   std::println(std::cout, "Test: name command - invalid input formats");
 
-  // Create in-memory database
   TestContext ctx;
-
-  // Setup: Create a race
-  Race race{};
-  race.Playernum = 1;
-
-  JsonStore store(ctx.db);
-  RaceRepository races(store);
-  races.save(race);
+  ctx.with_standard_universe();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
-  g.race = ctx.em.peek_race(g.player());
 
-  // TEST: Less than 3 arguments -> "Not enough arguments." / "Illegal name
-  // format."
+  // TEST: Less than 3 arguments
   {
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "ship"});
+  }
+
+  // TEST: Empty string in argv[2] -> "Illegal name format."
+  {
+    g.out.str("");
+    ctx.assert_dispatch_rejected(g, {"name", "ship", ""});
+    test::expect_contains(g.out.str(), "Illegal name format.");
   }
 
   // TEST: First char of name not alphanumeric -> "Illegal name format."
@@ -258,23 +179,13 @@ void test_name_invalid_formats() {
 void test_name_governor() {
   std::println(std::cout, "Test: name command - governor naming");
 
-  // Create in-memory database
   TestContext ctx;
-
-  // Setup: Create a race with initial governor name
-  Race race{};
-  race.Playernum = 1;
-  race.leader().name = "Old Gov";
-
-  JsonStore store(ctx.db);
-  RaceRepository races(store);
-  races.save(race);
+  ctx.with_standard_universe();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   g.set_governor(1);
-  g.race = ctx.em.peek_race(g.player());
 
   // TEST: Rename governor 1 to 'Grand Moff'
   {
@@ -282,9 +193,9 @@ void test_name_governor() {
     ctx.assert_dispatch_success(g, {"name", "governor", "Grand", "Moff"});
     test::expect_contains(g.out.str(), "Name changed to `Grand Moff'.");
 
-    // Verify database update
-    auto saved = races.find_by_player(1);
-    test::expect_true(saved.has_value());
+    ctx.em.clear_cache();
+    const auto* saved = ctx.em.peek_race(1);
+    test::expect_ne(saved, nullptr);
     test::expect_eq(saved->leader().name, "Grand Moff");
   }
 
@@ -295,26 +206,12 @@ void test_name_block() {
   std::println(std::cout,
                "Test: name command - block naming and authorization");
 
-  // Create in-memory database
   TestContext ctx;
-
-  // Setup: Create a race and alliance block
-  Race race{};
-  race.Playernum = 1;
-
-  Block bdata{{.Playernum = 1, .name = "Old Alliance"}};
-
-  JsonStore store(ctx.db);
-  RaceRepository races(store);
-  races.save(race);
-
-  BlockRepository block_repo(store);
-  block_repo.save(bdata);
+  ctx.with_standard_universe();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
-  g.race = ctx.em.peek_race(g.player());
 
   // TEST: Leader (governor 1) can rename alliance block
   {
@@ -323,10 +220,20 @@ void test_name_block() {
     ctx.assert_dispatch_success(g, {"name", "block", "United", "Federation"});
     test::expect_contains(g.out.str(), "Done.");
 
-    // Verify block name updated in database
     const auto* saved = ctx.em.peek_block(1);
     test::expect_ne(saved, nullptr);
     test::expect_eq(saved->name(), "United Federation");
+  }
+
+  // TEST: Missing block throws EntityNotFoundError -> "Block not found."
+  {
+    g.set_player(99);
+    g.set_governor(1);
+    g.out.str("");
+    test::expect_false(
+        GB::commands::name({"name", "block", "Missing", "Block"}, g));
+    test::expect_contains(g.out.str(), "Block not found.");
+    g.set_player(1);
   }
 
   // TEST: Non-leader governor (governor 2) is rejected
@@ -343,37 +250,21 @@ void test_name_block() {
 void test_name_factory_class() {
   std::println(std::cout, "Test: name command - factory ship class naming");
 
-  // Create in-memory database
   TestContext ctx;
+  ctx.with_standard_universe();
 
-  // Setup: Create race and ships (factory off-line and fighter)
-  Race race{};
-  race.Playernum = 1;
+  TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY, 1).owned_by(1, 1).build();
+  ctx.em.mutate_ship(1, [](Ship& f) {
+    f.on() = false;
+    f.shipclass() = "Basic";
+  });
 
-  Ship factory{};
-  factory.number() = 1;
-  factory.owner() = 1;
-  factory.type() = ShipType::OTYPE_FACTORY;
-  factory.on() = false;
-  factory.shipclass() = "Basic";
-
-  Ship fighter{};
-  fighter.number() = 2;
-  fighter.owner() = 1;
-  fighter.type() = ShipType::STYPE_FIGHTER;
-
-  JsonStore store(ctx.db);
-  RaceRepository races(store);
-  ShipRepository ships(store);
-  races.save(race);
-  ships.save(factory);
-  ships.save(fighter);
+  TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER, 2).owned_by(1, 1).build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.race = ctx.em.peek_race(g.player());
 
   // TEST: Name class at factory off-line -> success
   {
@@ -382,8 +273,9 @@ void test_name_factory_class() {
     ctx.assert_dispatch_success(g, {"name", "class", "Battleship"});
     test::expect_contains(g.out.str(), "Class set.");
 
-    auto saved = ships.find_by_number(1);
-    test::expect_true(saved.has_value());
+    ctx.em.clear_cache();
+    const auto* saved = ctx.em.peek_ship(1);
+    test::expect_ne(saved, nullptr);
     test::expect_eq(saved->shipclass(), "Battleship");
   }
 
@@ -404,36 +296,30 @@ void test_name_factory_class() {
     test::expect_contains(g.out.str(), "You are not at a factory!");
   }
 
+  // TEST: Name class when not at ship scope -> error
+  {
+    g.set_level(ScopeLevel::LEVEL_UNIV);
+    g.out.str("");
+    ctx.assert_dispatch_rejected(g, {"name", "class", "Destroyer"});
+    test::expect_contains(
+        g.out.str(), "You have to 'cs' to a factory to name the ship class.");
+  }
+
   std::println(std::cout, "  ✅ Factory class naming test passed!");
 }
 
-void test_name_permissions_and_scope() {
-  std::println(std::cout, "Test: name command - permissions and scope checks");
+void test_name_permissions_scope_and_json() {
+  std::println(std::cout,
+               "Test: name command - permissions, scope checks, and JSON");
 
-  // Create in-memory database
   TestContext ctx;
+  ctx.with_standard_universe();
 
-  // Setup: Create non-god race and star with planet
-  Race race{};
-  race.Playernum = 1;
-  race.God = 0;  // Non-god race
-
-  star_struct star_data{};
-  star_data.star_id = 1;
-  star_data.name = "Star 1";
-  star_data.pnames.push_back("Planet 1");
-  Star star{star_data};
-
-  JsonStore store(ctx.db);
-  RaceRepository races(store);
-  StarRepository stars(store);
-  races.save(race);
-  stars.save(star);
+  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 1).owned_by(1, 1).build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
-  g.race = ctx.em.peek_race(g.player());
 
   // TEST: Non-god naming star -> rejected
   {
@@ -442,6 +328,15 @@ void test_name_permissions_and_scope() {
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "star", "Forbidden"});
     test::expect_contains(g.out.str(), "Only dieties may name a star.");
+  }
+
+  // TEST: Naming star when not at star scope -> rejected
+  {
+    g.set_level(ScopeLevel::LEVEL_UNIV);
+    g.out.str("");
+    ctx.assert_dispatch_rejected(g, {"name", "star", "Forbidden"});
+    test::expect_contains(g.out.str(),
+                          "You have to 'cs' to a star to name it.");
   }
 
   // TEST: Non-god naming planet -> rejected
@@ -454,6 +349,24 @@ void test_name_permissions_and_scope() {
     test::expect_contains(g.out.str(), "Only deity can rename planets.");
   }
 
+  // TEST: Naming planet when not at planet scope -> rejected
+  {
+    g.set_level(ScopeLevel::LEVEL_UNIV);
+    g.out.str("");
+    ctx.assert_dispatch_rejected(g, {"name", "planet", "Forbidden"});
+    test::expect_contains(g.out.str(),
+                          "You have to 'cs' to a planet to name it.");
+  }
+
+  // TEST: Non-leader naming race -> rejected
+  {
+    g.set_governor(2);
+    g.out.str("");
+    ctx.assert_dispatch_rejected(g, {"name", "race", "Forbidden"});
+    test::expect_contains(g.out.str(), "You are not authorized to do this.");
+    g.set_governor(1);
+  }
+
   // TEST: Naming ship when not at ship level -> wrong scope message
   {
     g.set_level(ScopeLevel::LEVEL_UNIV);
@@ -463,7 +376,26 @@ void test_name_permissions_and_scope() {
                           "You have to 'cs' to a ship to name it.");
   }
 
-  std::println(std::cout, "  ✅ Permissions and scope test passed!");
+  // TEST: Unknown target -> "I don't know what you mean."
+  {
+    g.out.str("");
+    ctx.assert_dispatch_rejected(g, {"name", "sector", "Alpha"});
+    test::expect_contains(g.out.str(), "I don't know what you mean.");
+  }
+
+  // TEST: JSON mode output
+  {
+    g.set_ui_mode(UiMode::JSON);
+    g.set_level(ScopeLevel::LEVEL_SHIP);
+    g.set_shipno(1);
+    g.out.str("");
+    ctx.assert_dispatch_success(g, {"name", "ship", "Defiant"});
+    test::expect_contains(g.out.str(), "\"type\":\"name\"");
+    test::expect_contains(g.out.str(), "\"name\":\"Defiant\"");
+  }
+
+  std::println(std::cout,
+               "  ✅ Permissions, scope, and JSON mode test passed!");
 }
 
 int main() {
@@ -475,7 +407,7 @@ int main() {
   test_name_governor();
   test_name_block();
   test_name_factory_class();
-  test_name_permissions_and_scope();
+  test_name_permissions_scope_and_json();
 
   std::println(std::cout, "\n✅ All name tests passed!");
   return 0;

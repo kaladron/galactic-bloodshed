@@ -4,7 +4,6 @@
 /// \brief Unit tests for fix command (deity utilities)
 
 import commands;
-import dallib;
 import gb.entities;
 import gb.services;
 import test;
@@ -12,21 +11,15 @@ import std;
 
 // Database persistence for fixing ship fuel
 void test_fix_ship_fuel_persistence() {
-  // 1. Create in-memory database
   TestContext ctx;
+  ctx.with_standard_universe();
 
-  // 2. Create test entities via Repository
-  JsonStore store(ctx.db);
-  ShipRepository ships(store);
-
-  // Create a ship with low fuel
   TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 1)
       .owned_by(1, 1)
       .with_max_fuel(200.0)
       .with_fuel(50.0)
       .build();
 
-  // 3. Verify initial state via EntityManager
   ctx.em.clear_cache();
   {
     const auto* s = ctx.em.peek_ship(1);
@@ -34,10 +27,8 @@ void test_fix_ship_fuel_persistence() {
     test::expect_eq(s->fuel(), 50.0);
   }
 
-  // 4. Simulate fixing fuel via EntityManager
   ctx.em.mutate_ship(1, [](Ship& s) { s.admin_override_fuel(200.0); });
 
-  // 5. Verify changes persisted after cache clear
   ctx.em.clear_cache();
   const auto* final_ship = ctx.em.peek_ship(1);
   test::expect_ne(final_ship, nullptr);
@@ -48,24 +39,14 @@ void test_fix_ship_fuel_persistence() {
 
 // Database persistence for fixing ship damage
 void test_fix_ship_damage_persistence() {
-  // 1. Create in-memory database
   TestContext ctx;
+  ctx.with_standard_universe();
 
-  // 2. Create test entities via Repository
-  JsonStore store(ctx.db);
-  ShipRepository ships(store);
+  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 1)
+      .owned_by(1, 1)
+      .with_damage(75)
+      .build();
 
-  // Create a damaged ship
-  Ship ship{};
-  ship.number() = 1;
-  ship.owner() = 1;
-  ship.governor() = 1;
-  ship.type() = ShipType::STYPE_SHUTTLE;
-  ship.alive() = true;
-  ship.admin_override_damage(75);
-  ships.save(ship);
-
-  // 3. Verify initial state via EntityManager
   ctx.em.clear_cache();
   {
     const auto* s = ctx.em.peek_ship(1);
@@ -73,10 +54,8 @@ void test_fix_ship_damage_persistence() {
     test::expect_eq(s->damage(), 75);
   }
 
-  // 4. Simulate fixing damage via EntityManager
   ctx.em.mutate_ship(1, [](Ship& s) { s.admin_override_damage(0); });
 
-  // 5. Verify changes persisted after cache clear
   ctx.em.clear_cache();
   const auto* final_ship = ctx.em.peek_ship(1);
   test::expect_ne(final_ship, nullptr);
@@ -87,30 +66,11 @@ void test_fix_ship_damage_persistence() {
 
 // Database persistence for fixing ship dead status (hard-deletes ship)
 void test_fix_ship_dead_persistence() {
-  // 1. Create in-memory database
   TestContext ctx;
+  ctx.with_standard_universe();
 
-  // 2. Create test entities via Repository
-  JsonStore store(ctx.db);
-  RaceRepository races(store);
-  ShipRepository ships(store);
+  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 1).owned_by(1, 1).build();
 
-  Race race{};
-  race.Playernum = 1;
-  race.name = "Tester";
-  races.save(race);
-
-  // Create a living ship
-  Ship ship{};
-  ship.number() = 1;
-  ship.owner() = 1;
-  ship.governor() = 1;
-  ship.type() = ShipType::STYPE_SHUTTLE;
-  ship.alive() = true;
-  ship.admin_override_damage(0);
-  ships.save(ship);
-
-  // 3. Verify initial state via EntityManager
   ctx.em.clear_cache();
   {
     const auto* s = ctx.em.peek_ship(1);
@@ -119,13 +79,11 @@ void test_fix_ship_dead_persistence() {
     test::expect_eq(s->damage(), 0);
   }
 
-  // 4. Simulate destroying ship via EntityManager
   ctx.em.mutate_ship(1, [&](Ship& s) {
     s.admin_destroy();
     ctx.em.kill_ship(1, s);
   });
 
-  // 5. Verify ship was hard-deleted from database
   ctx.em.clear_cache();
   test::expect_throws<EntityNotFoundError>([&]() { ctx.em.peek_ship(1); });
 
@@ -134,20 +92,10 @@ void test_fix_ship_dead_persistence() {
 
 // Database persistence for fixing planet temperature
 void test_fix_planet_temp_persistence() {
-  // 1. Create in-memory database
   TestContext ctx;
+  ctx.with_standard_universe();
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.temp() = 50; });
 
-  // 2. Create test entities via Repository
-  JsonStore store(ctx.db);
-  StarRepository(store).save(Star{1, "TestStar"});
-  PlanetRepository planets(store);
-
-  // Create planet
-  Planet planet{1, 1};
-  planet.temp() = 50;  // Initial temperature
-  planets.save(planet);
-
-  // 3. Verify initial state via EntityManager
   ctx.em.clear_cache();
   {
     const auto* p = ctx.em.peek_planet(1, 1);
@@ -155,10 +103,8 @@ void test_fix_planet_temp_persistence() {
     test::expect_eq(p->temp(), 50);
   }
 
-  // 4. Simulate fixing temperature via EntityManager
   ctx.em.mutate_planet(1, 1, [](Planet& p) { p.temp() = 100; });
 
-  // 5. Verify changes persisted after cache clear
   ctx.em.clear_cache();
   const auto* final_planet = ctx.em.peek_planet(1, 1);
   test::expect_ne(final_planet, nullptr);
@@ -169,20 +115,10 @@ void test_fix_planet_temp_persistence() {
 
 // Database persistence for fixing planet oxygen
 void test_fix_planet_oxygen_persistence() {
-  // 1. Create in-memory database
   TestContext ctx;
+  ctx.with_standard_universe();
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.conditions().oxygen = 10; });
 
-  // 2. Create test entities via Repository
-  JsonStore store(ctx.db);
-  StarRepository(store).save(Star{1, "TestStar"});
-  PlanetRepository planets(store);
-
-  // Create planet
-  Planet planet{1, 1};
-  planet.conditions().oxygen = 10;  // Initial oxygen
-  planets.save(planet);
-
-  // 3. Verify initial state via EntityManager
   ctx.em.clear_cache();
   {
     const auto* p = ctx.em.peek_planet(1, 1);
@@ -190,10 +126,8 @@ void test_fix_planet_oxygen_persistence() {
     test::expect_eq(p->conditions(OXYGEN), 10);
   }
 
-  // 4. Simulate fixing oxygen via EntityManager
   ctx.em.mutate_planet(1, 1, [](Planet& p) { p.conditions().oxygen = 50; });
 
-  // 5. Verify changes persisted after cache clear
   ctx.em.clear_cache();
   const auto* final_planet = ctx.em.peek_planet(1, 1);
   test::expect_ne(final_planet, nullptr);
@@ -204,20 +138,11 @@ void test_fix_planet_oxygen_persistence() {
 
 // Database persistence for fixing planet position
 void test_fix_planet_position_persistence() {
-  // 1. Create in-memory database
   TestContext ctx;
+  ctx.with_standard_universe();
+  ctx.em.mutate_planet(
+      1, 1, [](Planet& p) { p.set_system_coordinates({100.0, 200.0}); });
 
-  // 2. Create test entities via Repository
-  JsonStore store(ctx.db);
-  StarRepository(store).save(Star{1, "TestStar"});
-  PlanetRepository planets(store);
-
-  // Create planet
-  Planet planet{1, 1};
-  planet.set_system_coordinates({100.0, 200.0});
-  planets.save(planet);
-
-  // 3. Verify initial state via EntityManager
   ctx.em.clear_cache();
   {
     const auto* p = ctx.em.peek_planet(1, 1);
@@ -225,11 +150,9 @@ void test_fix_planet_position_persistence() {
     test::expect_eq(p->system_coordinates(), SystemCoordinates{100.0, 200.0});
   }
 
-  // 4. Simulate fixing position via EntityManager
   ctx.em.mutate_planet(
       1, 1, [](Planet& p) { p.set_system_coordinates({500.0, 600.0}); });
 
-  // 5. Verify changes persisted after cache clear
   ctx.em.clear_cache();
   const auto* final_planet = ctx.em.peek_planet(1, 1);
   test::expect_ne(final_planet, nullptr);
@@ -241,35 +164,9 @@ void test_fix_planet_position_persistence() {
 
 void test_fix_command_dispatch() {
   TestContext ctx;
-  JsonStore store(ctx.db);
-
-  // Create deity race (player 1, deity = true)
-  Race deity_race{};
-  deity_race.Playernum = 1;
-  deity_race.name = "Gods";
-  deity_race.God = true;
-  deity_race.Guest = false;
-
-  // Create mortal race (player 2, deity = false)
-  Race mortal_race{};
-  mortal_race.Playernum = 2;
-  mortal_race.name = "Mortals";
-  mortal_race.God = false;
-  mortal_race.Guest = false;
-
-  RaceRepository races(store);
-  races.save(deity_race);
-  races.save(mortal_race);
-
-  // Create star and planet
-  Star star{1, "GodStar"};
-  StarRepository stars(store);
-  stars.save(star);
-
-  Planet planet{1, 1};
-  planet.temp() = 50;
-  PlanetRepository planets(store);
-  planets.save(planet);
+  ctx.with_standard_universe();
+  ctx.em.mutate_race(1, [](Race& r) { r.God = true; });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.temp() = 50; });
 
   // Create ship
   TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 1)
@@ -281,12 +178,12 @@ void test_fix_command_dispatch() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
 
-  // 1. Mortal rejection
+  // 1. Mortal rejection (Player 2 is non-deity in standard universe)
   ctx.setup_game_obj(g, 2, 1);
   ctx.assert_dispatch_rejected(g, {"fix", "planet", "temperature", "100"});
   test::expect_contains(g.out.str(), "Only deity can use this command");
 
-  // 2. Deity happy path - planet fix
+  // 2. Deity happy path - planet fix and read-only inspection
   ctx.setup_game_obj(g, 1, 1);
   g.set_god(true);
   g.set_level(ScopeLevel::LEVEL_PLAN);
@@ -295,12 +192,16 @@ void test_fix_command_dispatch() {
   g.out.str("");
   ctx.assert_dispatch_success(g, {"fix", "planet", "temperature", "100"});
   test::expect_contains(g.out.str(), "temperature = 100");
+  ctx.assert_dispatch_success(g, {"fix", "planet", "temperature"});
+  test::expect_contains(g.out.str(), "temperature = 100");
 
-  // 3. Deity happy path - ship fix
+  // 3. Deity happy path - ship fix and read-only inspection
   g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_shipno(1);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"fix", "ship", "fuel", "200"});
+  test::expect_contains(g.out.str(), "fuel = 200");
+  ctx.assert_dispatch_success(g, {"fix", "ship", "fuel"});
   test::expect_contains(g.out.str(), "fuel = 200");
 
   // 4. Min args check (< 3 args)
@@ -332,14 +233,25 @@ void test_fix_command_dispatch() {
   ctx.assert_dispatch_rejected(g, {"fix", "planet", "nonexistent", "10"});
   test::expect_contains(g.out.str(), "No such option for 'fix planet'.");
 
-  // Exercise xpos, ypos, rtemp, toxic, and all atmosphere conditions
+  // Exercise xpos, ypos, rtemp, toxic (both set and read-only)
   ctx.assert_dispatch_success(g, {"fix", "planet", "xpos", "250"});
   test::expect_contains(g.out.str(), "xpos = 250");
+  ctx.assert_dispatch_success(g, {"fix", "planet", "xpos"});
+  test::expect_contains(g.out.str(), "xpos = 250");
+
   ctx.assert_dispatch_success(g, {"fix", "planet", "ypos", "-125"});
   test::expect_contains(g.out.str(), "ypos = -125");
+  ctx.assert_dispatch_success(g, {"fix", "planet", "ypos"});
+  test::expect_contains(g.out.str(), "ypos = -125");
+
   ctx.assert_dispatch_success(g, {"fix", "planet", "rtemp", "42"});
   test::expect_contains(g.out.str(), "rtemp = 42");
+  ctx.assert_dispatch_success(g, {"fix", "planet", "rtemp"});
+  test::expect_contains(g.out.str(), "rtemp = 42");
+
   ctx.assert_dispatch_success(g, {"fix", "planet", "toxic", "35"});
+  test::expect_contains(g.out.str(), "toxic = 35");
+  ctx.assert_dispatch_success(g, {"fix", "planet", "toxic"});
   test::expect_contains(g.out.str(), "toxic = 35");
 
   for (AtmosphereConditions cond : all_atmosphere_conditions) {
@@ -376,23 +288,48 @@ void test_fix_command_dispatch() {
   g.out.str("");
   ctx.assert_dispatch_success(g, {"fix", "ship", "max_fuel", "350"});
   test::expect_contains(g.out.str(), "fuel = 350");
+  ctx.assert_dispatch_success(g, {"fix", "ship", "max_fuel"});
+  test::expect_contains(g.out.str(), "fuel = 350");
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"fix", "ship", "destruct", "2"});
+  test::expect_contains(g.out.str(), "destruct = 2");
+  ctx.assert_dispatch_success(g, {"fix", "ship", "destruct"});
   test::expect_contains(g.out.str(), "destruct = 2");
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"fix", "ship", "resource", "20"});
   test::expect_contains(g.out.str(), "resource = 20");
+  ctx.assert_dispatch_success(g, {"fix", "ship", "resource"});
+  test::expect_contains(g.out.str(), "resource = 20");
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"fix", "ship", "damage", "35"});
   test::expect_contains(g.out.str(), "damage = 35");
+  ctx.assert_dispatch_success(g, {"fix", "ship", "damage"});
+  test::expect_contains(g.out.str(), "damage = 35");
+
+  // 8. JSON mode for property inspection and ship destruction
+  g.set_ui_mode(UiMode::JSON);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"fix", "ship", "damage", "10"});
+  test::expect_contains(g.out.str(), "\"type\":\"fix\"");
+  test::expect_contains(g.out.str(), "\"property\":\"damage\"");
+  test::expect_contains(g.out.str(), "\"value\":10");
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"fix", "ship", "dead"});
-  test::expect_contains(g.out.str(), "destroyed");
+  test::expect_contains(g.out.str(), "\"type\":\"fix\"");
+  test::expect_contains(g.out.str(), "\"ship_destroyed\":true");
   test::expect_throws<EntityNotFoundError>([&]() { ctx.em.peek_ship(1); });
+
+  // Also verify ASCII "destroyed" output on a second ship
+  g.set_ui_mode(UiMode::ASCII);
+  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 2).owned_by(1, 1).build();
+  g.set_shipno(2);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"fix", "ship", "dead"});
+  test::expect_contains(g.out.str(), "destroyed");
 }
 
 int main() {

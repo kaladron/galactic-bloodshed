@@ -1236,4 +1236,47 @@ std::string render_dissolve_declaration_news(const DissolveResult& vm) {
   return std::format("{} [{}] has dissolved.\n", vm.race_name, vm.player);
 }
 
+std::string render_fix_result(const FixResult& vm) {
+  if (vm.ship_destroyed) {
+    return std::format("{} destroyed\n", vm.ship_label);
+  }
+  return std::format("{} = {}\n", vm.display_property, vm.value);
+}
+
+std::string render_json_fix_result(const FixResult& vm) {
+  return render_json_envelope("fix", vm);
+}
+
+std::string render_for_mode(UiMode mode, const FixResult& vm) {
+  return mode == UiMode::JSON ? render_json_fix_result(vm)
+                              : render_fix_result(vm);
+}
+
+std::string render_name_result(const NameResult& vm) {
+  switch (vm.target) {
+    case NameTarget::Ship:
+      return "Name set.\n";
+    case NameTarget::Class:
+      return "Class set.\n";
+    case NameTarget::Block:
+      return "Done.\n";
+    case NameTarget::Star:
+    case NameTarget::Planet:
+      return "";
+    case NameTarget::Race:
+    case NameTarget::Governor:
+      return std::format("Name changed to `{}'.\n", vm.name);
+  }
+  return "";
+}
+
+std::string render_json_name_result(const NameResult& vm) {
+  return render_json_envelope("name", vm);
+}
+
+std::string render_for_mode(UiMode mode, const NameResult& vm) {
+  return mode == UiMode::JSON ? render_json_name_result(vm)
+                              : render_name_result(vm);
+}
+
 }  // namespace GB::presentation

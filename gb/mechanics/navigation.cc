@@ -1189,3 +1189,248 @@ execute_planet_cargo_transfer(EntityManager& em, Ship& s, player_t player,
   result.is_boobytrapped = s.destruct() > 0;
   return result;
 }
+
+std::expected<ShipDockingStatus, ShipDockingError>
+validate_ship_docking(EntityManager& em, Ship& s, player_t player,
+                      ScopeLevel scope_level, starnum_t snum,
+                      planetnum_t pnum) {
+  if (!s.active()) {
+    return std::unexpected(ShipDockingError{
+        .reason = ShipDockingErrorReason::Inactive,
+        .ship_display = std::format("{}", s),
+    });
+  }
+  if (!s.docked()) {
+    return std::unexpected(ShipDockingError{
+        .reason = ShipDockingErrorReason::NotLandedOrDocked,
+        .ship_display = std::format("{}", s),
+    });
+  }
+
+  if (s.whatdest() == ScopeLevel::LEVEL_PLAN) {
+    if (scope_level != ScopeLevel::LEVEL_PLAN || s.storbits() != snum ||
+        s.pnumorbits() != pnum) {
+      return std::unexpected(ShipDockingError{
+          .reason = ShipDockingErrorReason::WrongPlanetScope,
+          .ship_display = std::format("{}", s),
+          .land_coords = s.land_coords(),
+      });
+    }
+    return ShipDockingStatus{
+        .is_docked_to_ship = false,
+        .is_different_owner = false,
+        .ship_display = std::format("{}", s),
+        .land_coords = s.land_coords(),
+    };
+  }
+
+  if (!s.destshipno()) {
+    return std::unexpected(ShipDockingError{
+        .reason = ShipDockingErrorReason::NotDocked,
+        .ship_display = std::format("{}", s),
+    });
+  }
+
+  std::optional<std::expected<ShipDockingStatus, ShipDockingError>> outcome;
+  try {
+    em.with_ship(*s.destshipno(), [&](const Ship& s2) {
+      const bool mutually_docked = (s.whatorbits() == ScopeLevel::LEVEL_SHIP ||
+                                    s2.destshipno() == s.number());
+      if (!s2.alive() || !mutually_docked) {
+        s.launch_to_orbit(s.whatorbits());
+        outcome = std::unexpected(ShipDockingError{
+            .reason = ShipDockingErrorReason::TargetNotDocked,
+            .ship_display = std::format("{}", s),
+            .target_ship_display = std::format("{}", s2),
+        });
+        return;
+      }
+      if (s2.is_overloaded() && s2.whatorbits() == ScopeLevel::LEVEL_SHIP) {
+        outcome = std::unexpected(ShipDockingError{
+            .reason = ShipDockingErrorReason::TargetOverloaded,
+            .ship_display = std::format("{}", s),
+            .target_ship_display = std::format("{}", s2),
+        });
+        return;
+      }
+      const bool diff = (s2.owner() != player);
+      outcome = ShipDockingStatus{
+          .is_docked_to_ship = true,
+          .is_different_owner = diff,
+          .ship_display = std::format("{}", s),
+          .target_ship_display = std::format("{}", s2),
+          .target_owner = s2.owner(),
+      };
+    });
+  } catch (const EntityNotFoundError&) {
+    return std::unexpected(ShipDockingError{
+        .reason = ShipDockingErrorReason::DestinationBogus,
+        .ship_display = std::format("{}", s),
+    });
+  }
+  return *outcome;
+}
+
+CargoTransferLimits compute_ship_transfer_limits(const Ship& s, const Ship& s2,
+                                                 ShipCargoType cargo,
+                                                 bool diff) {
+  CargoTransferLimits lim{};
+  switch (cargo) {
+    case ShipCargoType::Crystal:
+      lim.uplim = diff ? 0
+                       : std::min<std::int64_t>(
+                             s2.crystals(), s.available_crystals_capacity());
+      lim.lolim = diff ? 0
+                       : -std::min<std::int64_t>(
+                             s.crystals(), s2.available_crystals_capacity());
+      break;
+    case ShipCargoType::Crew:
+      lim.uplim =
+          diff ? 0
+               : std::min<std::int64_t>(s2.popn(), s.available_crew_capacity());
+      lim.lolim = diff ? 0
+                       : -std::min<std::int64_t>(s.popn(),
+                                                 s2.available_crew_capacity());
+      break;
+    case ShipCargoType::Troops:
+      lim.uplim = diff ? 0
+                       : std::min<std::int64_t>(s2.troops(),
+                                                s.available_crew_capacity());
+      lim.lolim = diff ? 0
+                       : -std::min<std::int64_t>(s.troops(),
+                                                 s2.available_crew_capacity());
+      break;
+    case ShipCargoType::Destruct:
+      lim.uplim = diff ? 0
+                       : std::min<std::int64_t>(
+                             s2.destruct(), s.available_destruct_capacity());
+      lim.lolim = -std::min<std::int64_t>(s.destruct(),
+                                          s2.available_destruct_capacity());
+      break;
+    case ShipCargoType::Fuel:
+      lim.uplim = diff ? 0
+                       : std::min<std::int64_t>(s2.fuel_units(),
+                                                s.available_fuel_capacity());
+      lim.lolim =
+          -std::min<std::int64_t>(s.fuel_units(), s2.available_fuel_capacity());
+      break;
+    case ShipCargoType::Resource:
+      if (s.can_strap_cargo_to_hull()) {
+        lim.uplim = diff ? 0 : s2.resource();
+      } else {
+        lim.uplim = diff ? 0
+                         : std::min<std::int64_t>(
+                               s2.resource(), s.available_resource_capacity());
+      }
+      if (s2.can_strap_cargo_to_hull()) {
+        lim.lolim = -s.resource();
+      } else {
+        lim.lolim = -std::min<std::int64_t>(s.resource(),
+                                            s2.available_resource_capacity());
+      }
+      break;
+  }
+  return lim;
+}
+
+ShipCargoTransferResult
+execute_ship_to_ship_cargo_transfer(EntityManager& em, Ship& s,
+                                    ShipCargoType cargo, std::int64_t amt,
+                                    double race_mass, bool is_metamorph) {
+  ShipCargoTransferResult result{
+      .commodity = cargo,
+      .amount = amt,
+      .ship_display = std::format("{}", s),
+      .is_metamorph = is_metamorph,
+  };
+
+  if (s.destshipno()) {
+    em.mutate_ship(*s.destshipno(), [&](Ship& s2) {
+      if (amt > 0) {
+        s2.transfer_cargo_to(s, cargo, amt, race_mass);
+      } else {
+        s.transfer_cargo_to(s2, cargo, -amt, race_mass);
+      }
+      result.target_ship_display = std::format("{}", s2);
+      result.target_owner = s2.owner();
+      result.target_governor = s2.governor();
+      result.notify_target_owner = (s2.owner() != s.owner() && amt < 0);
+    });
+  }
+
+  result.resulting_popn = s.popn();
+  result.resulting_troops = s.troops();
+  result.check_boobytrap = !s.max_crew_capacity();
+  result.is_boobytrapped = s.destruct() > 0;
+  return result;
+}
+
+std::expected<TransporterTransferResult, TransporterError>
+execute_transporter_transfer(EntityManager& em, TransporterShip& s,
+                             starnum_t snum, planetnum_t pnum, double race_mass,
+                             bool is_metamorph) {
+  if (!s.is_landed()) {
+    return std::unexpected(TransporterError::OriginNotLanded);
+  }
+  if (s.storbits() != snum || s.pnumorbits() != pnum) {
+    return std::unexpected(TransporterError::WrongPlanetScope);
+  }
+  if (s.damage()) {
+    return std::unexpected(TransporterError::OriginDamaged);
+  }
+  if (!s.target_ship()) {
+    return std::unexpected(TransporterError::HopperBlocked);
+  }
+
+  std::optional<std::expected<TransporterTransferResult, TransporterError>>
+      outcome;
+  try {
+    em.mutate_ship(*s.target_ship(), [&](Ship& s2) {
+      if (!s2.alive() || s2.type() != ShipType::OTYPE_TRANSDEV || !s2.on()) {
+        outcome = std::unexpected(TransporterError::TargetNotReceiving);
+        return;
+      }
+      if (!s2.is_landed()) {
+        outcome = std::unexpected(TransporterError::TargetNotLanded);
+        return;
+      }
+      if (s2.damage()) {
+        outcome = std::unexpected(TransporterError::TargetDamaged);
+        return;
+      }
+
+      TransporterTransferResult res{
+          .sender_ship_display = std::format("{}", static_cast<const Ship&>(s)),
+          .receiver_ship_display = std::format("{}", s2),
+          .receiver_owner = s2.owner(),
+          .receiver_governor = s2.governor(),
+          .notify_receiver = (s2.owner() != s.owner()),
+          .is_metamorph = is_metamorph,
+      };
+
+      const auto try_beam = [&](ShipCargoType type, std::int64_t amount,
+                                double mass) {
+        if (amount <= 0) return;
+        const auto transferred = s.transfer_cargo_to(s2, type, amount, mass);
+        if (transferred > 0) {
+          res.transfers.push_back(TransporterCommodityTransfer{
+              .commodity = type,
+              .amount = transferred,
+          });
+        }
+      };
+
+      try_beam(ShipCargoType::Resource, s.resource(), 0.0);
+      try_beam(ShipCargoType::Fuel, s.fuel_units(), 0.0);
+      try_beam(ShipCargoType::Destruct, s.destruct(), 0.0);
+      try_beam(ShipCargoType::Crew, s.popn(), race_mass);
+      try_beam(ShipCargoType::Troops, s.troops(), race_mass);
+      try_beam(ShipCargoType::Crystal, s.crystals(), 0.0);
+
+      outcome = std::move(res);
+    });
+  } catch (const EntityNotFoundError&) {
+    return std::unexpected(TransporterError::HopperBlocked);
+  }
+  return *outcome;
+}

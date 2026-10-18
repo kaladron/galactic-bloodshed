@@ -441,6 +441,26 @@ void test_load_ship_to_ship() {
   test::expect_contains(g.out.str(), "10 resources transferred");
   test::expect_eq(ctx.em.peek_ship(s1_id)->resource(), 50);
   test::expect_eq(ctx.em.peek_ship(alien_id)->resource(), 110);
+
+  // D. Joint crew+troops berth capacity in ship-to-ship transfer + UiMode::JSON
+  ctx.em.mutate_ship(s1_id, [&](Ship& s1) {
+    s1.dock_with_ship(s2_id);
+    s1.popn() = 10;
+    s1.troops() = 5;
+  });
+  ctx.em.mutate_ship(s2_id, [&](Ship& s2) {
+    s2.dock_with_ship(s1_id);
+    s2.popn() = 20;
+    s2.troops() = 0;
+  });
+  g.set_ui_mode(UiMode::JSON);
+  g.out.str("");
+  ctx.assert_dispatch_success(g,
+                              {"load", std::format("#{}", s1_id.value), "c"});
+  test::expect_contains(g.out.str(), "\"type\":\"ship_docking_status\"");
+  test::expect_contains(g.out.str(), "\"type\":\"ship_cargo_transfer\"");
+  test::expect_eq(
+      ctx.em.peek_ship(s1_id)->popn() + ctx.em.peek_ship(s2_id)->popn(), 30);
   std::println(std::cout, "✓ Alien ship transfer constraints enforced");
 }
 
@@ -794,6 +814,21 @@ void test_transporter_edge_cases() {
   test::expect_eq(ctx.em.peek_ship(recv_id)->crystals(), 5);
   test::expect_eq(ctx.em.peek_ship(recv_id)->popn(), 4);
   test::expect_eq(ctx.em.peek_ship(recv_id)->troops(), 2);
+
+  g.set_ui_mode(UiMode::JSON);
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"load", std::format("#{}", send_id.value), "r", "5"});
+  test::expect_contains(g.out.str(), "\"type\":\"transporter_transfer\"");
+
+  for (const auto err : all_transporter_errors) {
+    test::expect_false(GB::presentation::format_transporter_error(err).empty());
+  }
+  for (const auto reason : all_ship_docking_error_reasons) {
+    test::expect_false(GB::presentation::format_ship_docking_error(
+                           ShipDockingError{.reason = reason})
+                           .empty());
+  }
   std::println(std::cout,
                "✓ Transporter edge cases and cross-player telegrams verified");
 }

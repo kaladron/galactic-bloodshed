@@ -103,4 +103,60 @@ render_json_planet_cargo_transfer(const PlanetCargoTransferResult& res);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const PlanetCargoTransferResult& vm);
 
+/// Formats a `ShipDockingError` into its user-facing error diagnostic string.
+[[nodiscard]] std::string
+format_ship_docking_error(const ShipDockingError& err);
+
+/// Formats a `ShipDockingStatus` into its ASCII presentation string.
+[[nodiscard]] std::string
+render_ship_docking_status(const ShipDockingStatus& status);
+
+/// Serializes a `ShipDockingStatus` into a newline-delimited Glaze JSON
+/// envelope (`{"type":"ship_docking_status","data":{...}}\n`).
+[[nodiscard]] std::string
+render_json_ship_docking_status(const ShipDockingStatus& status);
+
+/// Open ADL dispatch for `ShipDockingStatus`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const ShipDockingStatus& vm);
+
+/// Formats a `ShipCargoTransferResult` into its ASCII presentation string.
+[[nodiscard]] std::string
+render_ship_cargo_transfer(const ShipCargoTransferResult& res);
+
+/// Serializes a `ShipCargoTransferResult` into a newline-delimited Glaze JSON
+/// envelope (`{"type":"ship_cargo_transfer","data":{...}}\n`).
+[[nodiscard]] std::string
+render_json_ship_cargo_transfer(const ShipCargoTransferResult& res);
+
+/// Open ADL dispatch for `ShipCargoTransferResult`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const ShipCargoTransferResult& vm);
+
+/// Formats the optional cross-player telegram when unloading cargo to another
+/// player's docked ship.
+[[nodiscard]] std::optional<std::string>
+render_ship_cargo_transfer_telegram(const ShipCargoTransferResult& res);
+
+/// Formats a `TransporterError` into its user-facing error diagnostic string.
+[[nodiscard]] std::string format_transporter_error(TransporterError err);
+
+/// Formats a `TransporterTransferResult` into its ASCII presentation string.
+[[nodiscard]] std::string
+render_transporter_transfer(const TransporterTransferResult& res);
+
+/// Serializes a `TransporterTransferResult` into a newline-delimited Glaze JSON
+/// envelope (`{"type":"transporter_transfer","data":{...}}\n`).
+[[nodiscard]] std::string
+render_json_transporter_transfer(const TransporterTransferResult& res);
+
+/// Open ADL dispatch for `TransporterTransferResult`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const TransporterTransferResult& vm);
+
+/// Formats the optional cross-player telegram when beaming cargo via a
+/// transporter device to another player's receiver.
+[[nodiscard]] std::optional<std::string>
+render_transporter_telegram(const TransporterTransferResult& res);
+
 }  // namespace GB::presentation

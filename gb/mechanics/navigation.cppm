@@ -337,3 +337,105 @@ execute_planet_cargo_transfer(EntityManager& em, Ship& s, player_t player,
                               governor_t governor, starnum_t snum,
                               planetnum_t pnum, ShipCargoType cargo,
                               std::int64_t amt, double race_mass);
+
+export enum class ShipDockingErrorReason {
+  Inactive,
+  NotLandedOrDocked,
+  WrongPlanetScope,
+  NotDocked,
+  TargetNotDocked,
+  TargetOverloaded,
+  DestinationBogus,
+};
+
+export inline constexpr std::array all_ship_docking_error_reasons = {
+    ShipDockingErrorReason::Inactive,
+    ShipDockingErrorReason::NotLandedOrDocked,
+    ShipDockingErrorReason::WrongPlanetScope,
+    ShipDockingErrorReason::NotDocked,
+    ShipDockingErrorReason::TargetNotDocked,
+    ShipDockingErrorReason::TargetOverloaded,
+    ShipDockingErrorReason::DestinationBogus,
+};
+
+export struct ShipDockingError {
+  ShipDockingErrorReason reason{ShipDockingErrorReason::Inactive};
+  std::string ship_display{};
+  std::string target_ship_display{};
+  Coordinates land_coords{};
+};
+
+export struct ShipDockingStatus {
+  bool is_docked_to_ship{false};
+  bool is_different_owner{false};
+  std::string ship_display{};
+  std::string target_ship_display{};
+  Coordinates land_coords{};
+  player_t target_owner{0};
+};
+
+export std::expected<ShipDockingStatus, ShipDockingError>
+validate_ship_docking(EntityManager& em, Ship& s, player_t player,
+                      ScopeLevel scope_level, starnum_t snum, planetnum_t pnum);
+
+export CargoTransferLimits compute_ship_transfer_limits(const Ship& s,
+                                                        const Ship& s2,
+                                                        ShipCargoType cargo,
+                                                        bool diff);
+
+export struct ShipCargoTransferResult {
+  ShipCargoType commodity{ShipCargoType::Resource};
+  std::int64_t amount{0};
+  std::string ship_display{};
+  std::string target_ship_display{};
+  player_t target_owner{0};
+  governor_t target_governor{0};
+  bool notify_target_owner{false};
+  bool is_metamorph{false};
+  population_t resulting_popn{0};
+  population_t resulting_troops{0};
+  bool check_boobytrap{false};
+  bool is_boobytrapped{false};
+};
+
+export ShipCargoTransferResult
+execute_ship_to_ship_cargo_transfer(EntityManager& em, Ship& s,
+                                    ShipCargoType cargo, std::int64_t amt,
+                                    double race_mass, bool is_metamorph);
+
+export enum class TransporterError {
+  OriginNotLanded,
+  WrongPlanetScope,
+  OriginDamaged,
+  HopperBlocked,
+  TargetNotReceiving,
+  TargetNotLanded,
+  TargetDamaged,
+};
+
+export inline constexpr std::array all_transporter_errors = {
+    TransporterError::OriginNotLanded,    TransporterError::WrongPlanetScope,
+    TransporterError::OriginDamaged,      TransporterError::HopperBlocked,
+    TransporterError::TargetNotReceiving, TransporterError::TargetNotLanded,
+    TransporterError::TargetDamaged,
+};
+
+export struct TransporterCommodityTransfer {
+  ShipCargoType commodity{ShipCargoType::Resource};
+  std::int64_t amount{0};
+};
+
+export struct TransporterTransferResult {
+  std::string sender_ship_display{};
+  std::string receiver_ship_display{};
+  player_t receiver_owner{0};
+  governor_t receiver_governor{0};
+  bool notify_receiver{false};
+  bool is_metamorph{false};
+  std::vector<TransporterCommodityTransfer> transfers{};
+};
+
+export std::expected<TransporterTransferResult, TransporterError>
+execute_transporter_transfer(EntityManager& em, TransporterShip& s,
+                             starnum_t snum, planetnum_t pnum, double race_mass,
+                             bool is_metamorph);

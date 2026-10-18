@@ -452,6 +452,50 @@ std::string render_alien_assault_news(const AlienSectorAssaultResult& assault) {
                      assault.sector_coords);
 }
 
+namespace {
+
+void append_cargo_transfer_summary(std::string& out, ShipCargoType commodity,
+                                   std::int64_t amount,
+                                   std::string_view ship_display,
+                                   population_t resulting_popn,
+                                   population_t resulting_troops,
+                                   bool check_boobytrap, bool is_boobytrapped) {
+  switch (commodity) {
+    case ShipCargoType::Crew:
+      std::format_to(std::back_inserter(out),
+                     "crew complement of {} is now {}.\n", ship_display,
+                     resulting_popn);
+      break;
+    case ShipCargoType::Troops:
+      std::format_to(std::back_inserter(out),
+                     "troop complement of {} is now {}.\n", ship_display,
+                     resulting_troops);
+      break;
+    case ShipCargoType::Destruct:
+      std::format_to(std::back_inserter(out), "{} destruct transferred.\n",
+                     amount);
+      if (check_boobytrap) {
+        std::format_to(std::back_inserter(out), "\n{} {}\n", ship_display,
+                       is_boobytrapped ? "now boobytrapped."
+                                       : "no longer boobytrapped.");
+      }
+      break;
+    case ShipCargoType::Crystal:
+      std::format_to(std::back_inserter(out), "{} crystal(s) transferred.\n",
+                     amount);
+      break;
+    case ShipCargoType::Fuel:
+      std::format_to(std::back_inserter(out), "{} fuel transferred.\n", amount);
+      break;
+    case ShipCargoType::Resource:
+      std::format_to(std::back_inserter(out), "{} resources transferred.\n",
+                     amount);
+      break;
+  }
+}
+
+}  // namespace
+
 std::string render_planet_cargo_transfer(const PlanetCargoTransferResult& res) {
   if (res.assault.has_value()) {
     return render_alien_sector_assault(*res.assault);
@@ -475,39 +519,9 @@ std::string render_planet_cargo_transfer(const PlanetCargoTransferResult& res) {
       break;
   }
 
-  switch (res.commodity) {
-    case ShipCargoType::Crew:
-      std::format_to(std::back_inserter(out),
-                     "crew complement of {} is now {}.\n", res.ship_display,
-                     res.resulting_popn);
-      break;
-    case ShipCargoType::Troops:
-      std::format_to(std::back_inserter(out),
-                     "troop complement of {} is now {}.\n", res.ship_display,
-                     res.resulting_troops);
-      break;
-    case ShipCargoType::Destruct:
-      std::format_to(std::back_inserter(out), "{} destruct transferred.\n",
-                     res.amount);
-      if (res.check_boobytrap) {
-        std::format_to(std::back_inserter(out), "\n{} {}\n", res.ship_display,
-                       res.is_boobytrapped ? "now boobytrapped."
-                                           : "no longer boobytrapped.");
-      }
-      break;
-    case ShipCargoType::Crystal:
-      std::format_to(std::back_inserter(out), "{} crystal(s) transferred.\n",
-                     res.amount);
-      break;
-    case ShipCargoType::Fuel:
-      std::format_to(std::back_inserter(out), "{} fuel transferred.\n",
-                     res.amount);
-      break;
-    case ShipCargoType::Resource:
-      std::format_to(std::back_inserter(out), "{} resources transferred.\n",
-                     res.amount);
-      break;
-  }
+  append_cargo_transfer_summary(
+      out, res.commodity, res.amount, res.ship_display, res.resulting_popn,
+      res.resulting_troops, res.check_boobytrap, res.is_boobytrapped);
   return out;
 }
 
@@ -519,6 +533,198 @@ render_json_planet_cargo_transfer(const PlanetCargoTransferResult& res) {
 std::string render_for_mode(UiMode mode, const PlanetCargoTransferResult& vm) {
   return mode == UiMode::JSON ? render_json_planet_cargo_transfer(vm)
                               : render_planet_cargo_transfer(vm);
+}
+
+std::string format_ship_docking_error(const ShipDockingError& err) {
+  switch (err.reason) {
+    case ShipDockingErrorReason::Inactive:
+      return std::format("{} is irradiated and inactive.\n", err.ship_display);
+    case ShipDockingErrorReason::NotLandedOrDocked:
+      return std::format("{} is not landed or docked.\n", err.ship_display);
+    case ShipDockingErrorReason::WrongPlanetScope:
+      return std::format(
+          "{} at {}\nChange scope to the planet this ship is landed on.\n",
+          err.ship_display, err.land_coords);
+    case ShipDockingErrorReason::NotDocked:
+      return std::format("{} is not docked.\n", err.ship_display);
+    case ShipDockingErrorReason::TargetNotDocked:
+      return std::format("{} is not docked.\n", err.target_ship_display);
+    case ShipDockingErrorReason::TargetOverloaded:
+      return std::format("{} is overloaded!\n", err.target_ship_display);
+    case ShipDockingErrorReason::DestinationBogus:
+      return "Destination ship is bogus.\n";
+  }
+  std::unreachable();
+}
+
+std::string render_ship_docking_status(const ShipDockingStatus& status) {
+  if (!status.is_docked_to_ship) {
+    return std::format("{} at {}\n", status.ship_display, status.land_coords);
+  }
+  std::string out = std::format("{} docked with {}\n", status.ship_display,
+                                status.target_ship_display);
+  if (status.is_different_owner) {
+    std::format_to(std::back_inserter(out), "Player {} owns that ship.\n",
+                   status.target_owner);
+  }
+  return out;
+}
+
+std::string render_json_ship_docking_status(const ShipDockingStatus& status) {
+  return render_json_envelope("ship_docking_status", status);
+}
+
+std::string render_for_mode(UiMode mode, const ShipDockingStatus& vm) {
+  return mode == UiMode::JSON ? render_json_ship_docking_status(vm)
+                              : render_ship_docking_status(vm);
+}
+
+std::string render_ship_cargo_transfer(const ShipCargoTransferResult& res) {
+  std::string out;
+  append_cargo_transfer_summary(
+      out, res.commodity, res.amount, res.ship_display, res.resulting_popn,
+      res.resulting_troops, res.check_boobytrap, res.is_boobytrapped);
+  return out;
+}
+
+std::string
+render_json_ship_cargo_transfer(const ShipCargoTransferResult& res) {
+  return render_json_envelope("ship_cargo_transfer", res);
+}
+
+std::string render_for_mode(UiMode mode, const ShipCargoTransferResult& vm) {
+  return mode == UiMode::JSON ? render_json_ship_cargo_transfer(vm)
+                              : render_ship_cargo_transfer(vm);
+}
+
+std::optional<std::string>
+render_ship_cargo_transfer_telegram(const ShipCargoTransferResult& res) {
+  if (!res.notify_target_owner) {
+    return std::nullopt;
+  }
+  std::string tele_lines;
+  const auto abs_amt = std::abs(res.amount);
+  switch (res.commodity) {
+    case ShipCargoType::Resource:
+      tele_lines = std::format("{} Resources\n", abs_amt);
+      break;
+    case ShipCargoType::Fuel:
+      tele_lines = std::format("{} Fuel\n", abs_amt);
+      break;
+    case ShipCargoType::Destruct:
+      tele_lines = std::format("{} Destruct\n", abs_amt);
+      break;
+    case ShipCargoType::Crystal:
+      tele_lines = std::format("{} Crystal(s)\n", abs_amt);
+      break;
+    case ShipCargoType::Crew:
+    case ShipCargoType::Troops:
+      tele_lines =
+          std::format("{} {}\n", abs_amt,
+                      res.is_metamorph ? "tons of biomass" : "population");
+      break;
+  }
+  return std::format(
+      "Audio-vibatory-physio-molecular transport device #{} gave "
+      "your ship {} the following:\n{}",
+      res.ship_display, res.target_ship_display, tele_lines);
+}
+
+std::string format_transporter_error(TransporterError err) {
+  switch (err) {
+    case TransporterError::OriginNotLanded:
+      return "Origin ship not landed.\n";
+    case TransporterError::WrongPlanetScope:
+      return "Change scope to the planet the ship is landed on!\n";
+    case TransporterError::OriginDamaged:
+      return "Origin device is damaged.\n";
+    case TransporterError::HopperBlocked:
+      return "The hopper seems to be blocked.\n";
+    case TransporterError::TargetNotReceiving:
+      return "The target device is not receiving.\n";
+    case TransporterError::TargetNotLanded:
+      return "Target ship not landed.\n";
+    case TransporterError::TargetDamaged:
+      return "Target device is damaged.\n";
+  }
+  std::unreachable();
+}
+
+std::string render_transporter_transfer(const TransporterTransferResult& res) {
+  std::string out = "Zap\07!\n";
+  for (const auto& item : res.transfers) {
+    std::string_view label;
+    switch (item.commodity) {
+      case ShipCargoType::Resource:
+        label = "resources";
+        break;
+      case ShipCargoType::Fuel:
+        label = "fuel";
+        break;
+      case ShipCargoType::Destruct:
+        label = "destruct";
+        break;
+      case ShipCargoType::Crew:
+        label = "population";
+        break;
+      case ShipCargoType::Troops:
+        label = "troops";
+        break;
+      case ShipCargoType::Crystal:
+        label = "crystal(s)";
+        break;
+    }
+    std::format_to(std::back_inserter(out), "{} {} transferred.\n", item.amount,
+                   label);
+  }
+  return out;
+}
+
+std::string
+render_json_transporter_transfer(const TransporterTransferResult& res) {
+  return render_json_envelope("transporter_transfer", res);
+}
+
+std::string render_for_mode(UiMode mode, const TransporterTransferResult& vm) {
+  return mode == UiMode::JSON ? render_json_transporter_transfer(vm)
+                              : render_transporter_transfer(vm);
+}
+
+std::optional<std::string>
+render_transporter_telegram(const TransporterTransferResult& res) {
+  if (!res.notify_receiver) {
+    return std::nullopt;
+  }
+  std::string tele_lines;
+  for (const auto& item : res.transfers) {
+    std::string_view tele_label;
+    switch (item.commodity) {
+      case ShipCargoType::Resource:
+        tele_label = "Resources";
+        break;
+      case ShipCargoType::Fuel:
+        tele_label = "Fuel";
+        break;
+      case ShipCargoType::Destruct:
+        tele_label = "Destruct";
+        break;
+      case ShipCargoType::Crew:
+        tele_label = res.is_metamorph ? "tons of biomass" : "population";
+        break;
+      case ShipCargoType::Troops:
+        tele_label = "troops";
+        break;
+      case ShipCargoType::Crystal:
+        tele_label = "crystal(s)";
+        break;
+    }
+    std::format_to(std::back_inserter(tele_lines), "{} {}\n", item.amount,
+                   tele_label);
+  }
+  return std::format("Audio-vibatory-physio-molecular transport device #{} "
+                     "gave your ship {} the following:\n{}",
+                     res.sender_ship_display, res.receiver_ship_display,
+                     tele_lines);
 }
 
 }  // namespace GB::presentation

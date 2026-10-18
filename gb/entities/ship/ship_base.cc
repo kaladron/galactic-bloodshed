@@ -141,7 +141,7 @@ compute_cargo_transfer_amount(const Ship& src, const Ship& dst,
                                   dst.max_crystals_capacity());
     case ShipCargoType::Crew:
       return clamp_cargo_transfer(amount, src.popn(), dst.popn(),
-                                  dst.max_crew_capacity());
+                                  dst.available_crew());
     case ShipCargoType::Troops:
       return clamp_cargo_transfer(amount, src.troops(), dst.troops(),
                                   dst.available_mil());

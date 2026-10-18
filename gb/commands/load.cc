@@ -74,16 +74,14 @@ bool dispatch_planet_transfer(Ship& s, ShipCargoType cargo, std::int64_t amt,
   return false;
 }
 
-bool process_ship_load(Ship& s, std::string_view filter, char commod,
-                       std::int64_t requested_amt, bool is_unload, GameObj& g,
-                       bool& should_return_early) {
-  player_t Playernum = g.player();
-  governor_t Governor = g.governor();
+}  // namespace
 
-  if (!GB::ship_matches_filter(filter, s) || !s.is_authorized_for(Governor) ||
-      s.owner() != Playernum || !s.alive()) {
-    return false;
-  }
+namespace GB::commands {
+
+bool dispatch_cargo_transfer(Ship& s, char commod, std::int64_t amt,
+                             bool default_to_lower_limit, GameObj& g,
+                             bool& should_return_early) {
+  const player_t Playernum = g.player();
 
   const auto dock_ctx = validate_ship_docking(g.entity_manager, s, Playernum,
                                               g.level(), g.snum(), g.pnum());
@@ -93,7 +91,6 @@ bool process_ship_load(Ship& s, std::string_view filter, char commod,
   }
   g.present(*dock_ctx);
 
-  std::int64_t amt = is_unload ? -requested_amt : requested_amt;
   if (amt < 0 && s.type() == ShipType::OTYPE_VN) {
     g.out << "You can't unload VNs.\n";
     return false;
@@ -107,7 +104,7 @@ bool process_ship_load(Ship& s, std::string_view filter, char commod,
   const ShipCargoType cargo = *cargo_opt;
 
   CargoTransferLimits lim{};
-  if (dock_ctx->is_docked_to_ship && s.destshipno()) {
+  if (dock_ctx->is_docked_to_ship) {
     g.entity_manager.with_ship(*s.destshipno(), [&](const Ship& s2) {
       lim = compute_ship_transfer_limits(s, s2, cargo,
                                          dock_ctx->is_different_owner);
@@ -124,17 +121,15 @@ bool process_ship_load(Ship& s, std::string_view filter, char commod,
   }
 
   if (amt == 0) {
-    amt = is_unload ? lim.lolim : lim.uplim;
+    amt = default_to_lower_limit ? lim.lolim : lim.uplim;
   }
 
   const auto& race = *g.race;
   if (dock_ctx->is_docked_to_ship) {
     dispatch_ship_to_ship_transfer(s, cargo, amt, race, g);
-  } else {
-    if (dispatch_planet_transfer(s, cargo, amt, race, g)) {
-      should_return_early = true;
-      return true;
-    }
+  } else if (dispatch_planet_transfer(s, cargo, amt, race, g)) {
+    should_return_early = true;
+    return true;
   }
 
   if (auto* trans = s.as<TransporterShip>()) {
@@ -145,16 +140,9 @@ bool process_ship_load(Ship& s, std::string_view filter, char commod,
   return true;
 }
 
-}  // namespace
-
-namespace GB::commands {
-
 bool load(const command_t& argv, GameObj& g) {
-  bool is_unload = (argv[0] == "unload");
-  bool success = false;
-
   if (argv[2].empty()) {
-    g.out << (is_unload ? "Unload what?\n" : "Load what?\n");
+    g.out << "Load what?\n";
     return false;
   }
 
@@ -168,12 +156,12 @@ bool load(const command_t& argv, GameObj& g) {
     requested_amt = parsed_amt->value();
   }
 
-  char commod = argv[2][0];
-
+  const char commod = argv[2][0];
+  bool success = false;
   for (auto ship_handle : ScopedCommandableShips(g, argv[1])) {
     bool should_return_early = false;
-    if (process_ship_load(*ship_handle, argv[1], commod, requested_amt,
-                          is_unload, g, should_return_early)) {
+    if (dispatch_cargo_transfer(*ship_handle, commod, requested_amt, false, g,
+                                should_return_early)) {
       success = true;
       if (should_return_early) {
         return true;
@@ -191,17 +179,6 @@ const CommandDescriptor load_cmd{
     .min_args = 3,
     .syntax = "load <ship> <commodity> [<amount>]",
     .description = "Load commodities onto a ship",
-    .handler = &load,
-};
-
-const CommandDescriptor unload_cmd{
-    .name = "unload",
-    .roles = {},
-    .scopes = AllowedScopes::any(),
-    .ap = APCost::free(),
-    .min_args = 3,
-    .syntax = "unload <ship> <commodity> [<amount>]",
-    .description = "Unload commodities from a ship",
     .handler = &load,
 };
 

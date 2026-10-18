@@ -345,7 +345,6 @@ export enum class ShipDockingErrorReason {
   NotDocked,
   TargetNotDocked,
   TargetOverloaded,
-  DestinationBogus,
 };
 
 export inline constexpr std::array all_ship_docking_error_reasons = {
@@ -355,7 +354,6 @@ export inline constexpr std::array all_ship_docking_error_reasons = {
     ShipDockingErrorReason::NotDocked,
     ShipDockingErrorReason::TargetNotDocked,
     ShipDockingErrorReason::TargetOverloaded,
-    ShipDockingErrorReason::DestinationBogus,
 };
 
 export struct ShipDockingError {

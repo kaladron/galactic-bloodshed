@@ -551,8 +551,6 @@ std::string format_ship_docking_error(const ShipDockingError& err) {
       return std::format("{} is not docked.\n", err.target_ship_display);
     case ShipDockingErrorReason::TargetOverloaded:
       return std::format("{} is overloaded!\n", err.target_ship_display);
-    case ShipDockingErrorReason::DestinationBogus:
-      return "Destination ship is bogus.\n";
   }
   std::unreachable();
 }

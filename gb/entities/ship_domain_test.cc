@@ -165,9 +165,11 @@ void test_admin_overrides() {
 
   // admin_override_crystals
   ship.admin_override_crystals(50);
-  test::expect_eq(ship.crystals(), 50U);
+  test::expect_eq(ship.crystals(), 50);
   ship.admin_override_crystals(200);
-  test::expect_eq(ship.crystals(), 127U);
+  test::expect_eq(ship.crystals(), 127);
+  ship.admin_override_crystals(-10);
+  test::expect_eq(ship.crystals(), 0);
 
   // admin_override_max_fuel
   ship.admin_override_max_fuel(500.0);
@@ -592,42 +594,42 @@ void test_crystals_domain() {
   ship_struct sdata{};
   Ship ship{sdata};
 
-  test::expect_eq(ship.crystals(), 0U);
+  test::expect_eq(ship.crystals(), 0);
   test::expect_eq(ship.max_crystals_capacity(), 127);
 
   // admin_override_crystals with clamping
   ship.admin_override_crystals(50);
-  test::expect_eq(ship.crystals(), 50U);
+  test::expect_eq(ship.crystals(), 50);
   ship.admin_override_crystals(200);
-  test::expect_eq(ship.crystals(), 127U);
+  test::expect_eq(ship.crystals(), 127);
 
   // consume_crystals
   ship.admin_override_crystals(10);
   auto consumed = ship.consume_crystals(4);
-  test::expect_eq(consumed, 4U);
-  test::expect_eq(ship.crystals(), 6U);
+  test::expect_eq(consumed, 4);
+  test::expect_eq(ship.crystals(), 6);
 
   // consume more than available clamps to available
   consumed = ship.consume_crystals(20);
-  test::expect_eq(consumed, 6U);
-  test::expect_eq(ship.crystals(), 0U);
+  test::expect_eq(consumed, 6);
+  test::expect_eq(ship.crystals(), 0);
 
   // negative or zero consume is no-op
   consumed = ship.consume_crystals(-5);
-  test::expect_eq(consumed, 0U);
-  test::expect_eq(ship.crystals(), 0U);
+  test::expect_eq(consumed, 0);
+  test::expect_eq(ship.crystals(), 0);
 
   // add_crystals
   ship.add_crystals(15);
-  test::expect_eq(ship.crystals(), 15U);
+  test::expect_eq(ship.crystals(), 15);
 
   // add_crystals clamps at max capacity
   ship.add_crystals(200);
-  test::expect_eq(ship.crystals(), 127U);
+  test::expect_eq(ship.crystals(), 127);
 
   // add_crystals with negative delegates to consume
   ship.add_crystals(-27);
-  test::expect_eq(ship.crystals(), 100U);
+  test::expect_eq(ship.crystals(), 100);
 }
 
 void test_local_mass_and_set_mass() {

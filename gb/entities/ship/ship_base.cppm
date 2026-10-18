@@ -1368,8 +1368,7 @@ public:
 
   /// \brief Available cargo capacity remaining for warp crystals.
   [[nodiscard]] crystal_t available_crystals_capacity() const noexcept {
-    const auto cap = max_crystals_capacity();
-    return cap > data_.crystals ? cap - data_.crystals : 0;
+    return std::max<crystal_t>(0, max_crystals_capacity() - data_.crystals);
   }
 
   /// \brief Returns carried destructive munitions expressed as weapon power
@@ -1437,7 +1436,7 @@ public:
 
   /// \brief Deity override: sets warp crystal charges clamped to capacity.
   void admin_override_crystals(crystal_t count) noexcept {
-    data_.crystals = std::min(count, max_crystals_capacity());
+    data_.crystals = std::clamp<crystal_t>(count, 0, max_crystals_capacity());
   }
 
   /// \brief Deity override: sets maximum fuel tank capacity.
@@ -1464,25 +1463,21 @@ public:
 
   /// \brief Consumes crystals clamped to available stock; returns actual
   /// consumed.
-  crystal_t consume_crystals(std::int64_t amt) noexcept {
+  crystal_t consume_crystals(crystal_t amt) noexcept {
     if (amt <= 0) return 0;
-    const auto actual =
-        std::min<crystal_t>(data_.crystals, static_cast<crystal_t>(amt));
+    const auto actual = std::min<crystal_t>(data_.crystals, amt);
     data_.crystals -= actual;
     return actual;
   }
 
   /// \brief Adds crystals clamped to max capacity. Negative values delegate to
   /// consume_crystals(-amt).
-  void add_crystals(std::int64_t amt) noexcept {
+  void add_crystals(crystal_t amt) noexcept {
     if (amt < 0) {
       consume_crystals(-amt);
       return;
     }
-    const auto max_cap = max_crystals_capacity();
-    if (data_.crystals >= max_cap) return;
-    const auto actual = std::min<crystal_t>(static_cast<crystal_t>(amt),
-                                            max_cap - data_.crystals);
+    const auto actual = std::min<crystal_t>(amt, available_crystals_capacity());
     data_.crystals += actual;
   }
 

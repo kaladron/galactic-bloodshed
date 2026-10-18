@@ -290,8 +290,8 @@ std::int64_t Ship::transfer_cargo_to(Ship& destination, ShipCargoType cargo,
       destination.add_fuel(static_cast<double>(to_transfer));
       break;
     case ShipCargoType::Crystal:
-      consume_crystals(static_cast<crystal_t>(to_transfer));
-      destination.add_crystals(static_cast<crystal_t>(to_transfer));
+      consume_crystals(to_transfer);
+      destination.add_crystals(to_transfer);
       break;
     case ShipCargoType::Crew:
       remove_popn(to_transfer, race_mass);

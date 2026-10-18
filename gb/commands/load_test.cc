@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /// \file load_test.cc
-/// \brief Unit tests for load and unload commands
+/// \brief Unit tests for the load command.
 
 import commands;
-import dallib;
 import gb.entities;
 import gb.mechanics;
 import gb.presentation;
@@ -15,45 +14,14 @@ import std;
 namespace {
 
 void setup_test_world(TestContext& ctx) {
-  JsonStore store(ctx.db);
+  ctx.with_standard_universe();
 
-  // Create test race
-  Race race{};
-  race.Playernum = 1;
-  race.name = "LoadTester";
-  race.Guest = false;
-  race.mass = 1.0;
-  race.absorb = false;
-  race.Metamorph = false;
-
-  RaceRepository races(store);
-  races.save(race);
-
-  // Create test star
-  star_struct ss{};
-  ss.star_id = 1;
-  ss.name = "LoadStar";
-  ss.coordinates = {100.0, 200.0};
-  ss.pnames.emplace_back("LoadPlanet");
-  Star star(ss);
-
-  StarRepository stars_repo(store);
-  stars_repo.save(star);
-
-  // Create test planet with resources
-  planet_struct ps{};
-  ps.star_id = 1;
-  ps.planet_order = 1;
-  ps.type = PlanetType::EARTH;
-  ps.dimensions = {10, 10};
-  ps.info[player_t{1}].fuel = 1000;
-  ps.info[player_t{1}].resource = 500;
-  ps.info[player_t{1}].destruct = 200;
-  ps.info[player_t{1}].crystals = 50;
-  Planet planet(ps);
-
-  PlanetRepository planets_repo(store);
-  planets_repo.save(planet);
+  ctx.em.mutate_planet(1, 1, [](Planet& p) {
+    p.info(player_t{1}).fuel = 1000;
+    p.info(player_t{1}).resource = 500;
+    p.info(player_t{1}).destruct = 200;
+    p.info(player_t{1}).crystals = 50;
+  });
 
   // Create a landed ship to load cargo onto
   TestShipBuilder(ctx.em, ShipType::STYPE_CARGO, 1)
@@ -162,27 +130,6 @@ void test_load_happy_path() {
   }
 }
 
-void test_unload_happy_path() {
-  TestContext ctx;
-  setup_test_world(ctx);
-
-  auto& registry = get_test_session_registry();
-  GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
-
-  // First load resources, then unload
-  ctx.assert_dispatch_success(g, {"load", "#1", "r", "200"});
-  test::expect_eq(ctx.em.peek_ship(1)->resource(), 200);
-
-  ctx.assert_dispatch_success(g, {"unload", "#1", "r", "50"});
-  test::expect_eq(ctx.em.peek_ship(1)->resource(), 150);
-  test::expect_eq(ctx.em.peek_planet(1, 1)->info(player_t{1}).resource, 350);
-  std::println(std::cout, "✓ Resources unloaded from ship to planet");
-}
-
 void test_load_syntax_and_errors() {
   TestContext ctx;
   setup_test_world(ctx);
@@ -198,11 +145,6 @@ void test_load_syntax_and_errors() {
   ctx.assert_dispatch_rejected(g, {"load"});
   test::expect_contains(g.out.str(),
                         "Syntax: load <ship> <commodity> [<amount>]");
-
-  g.out.str("");
-  ctx.assert_dispatch_rejected(g, {"unload", "#1"});
-  test::expect_contains(g.out.str(),
-                        "Syntax: unload <ship> <commodity> [<amount>]");
 
   // 2. Unknown commodity
   g.out.str("");
@@ -575,39 +517,26 @@ void test_planet_crew_load_and_unload() {
                "✓ Planetary crew colonization and evacuation verified");
 }
 
-void test_unload_onto_alien_sector() {
+void test_load_from_alien_sector_rejected() {
   TestContext ctx;
   ctx.with_standard_universe();
 
-  // Setup Player 1 (attacker) and Player 2 (defender)
-  ctx.em.mutate_race(1, [](Race& r) {
-    r.fighters = 10;
-    r.absorb = true;  // Metamorph body absorption test on victory
-  });
-  ctx.em.mutate_race(2, [](Race& r) {
-    r.fighters = 1;
-    r.absorb = false;
-  });
+  const shipnum_t assault_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
+                                   .owned_by(1, 1)
+                                   .named("DropShip")
+                                   .landed_on(1, 1, {2, 2})
+                                   .with_crew(50, 50)
+                                   .with_max_crew(200)
+                                   .build();
 
-  // Create assault transport for Player 1 landed at (2, 2)
-  shipnum_t assault_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                             .owned_by(1, 1)
-                             .named("DropShip")
-                             .landed_on(1, 1, {2, 2})
-                             .with_crew(100, 100)
-                             .with_max_crew(200)
-                             .build();
-
-  // Populate sector (2, 2) with weak Player 2 forces
   ctx.em.mutate_planet_and_sectors(1, 1, [](Planet& p, SectorMap& map) {
     auto& sect = map.get({2, 2});
     sect.set_condition(SectorType::SEC_LAND);
     sect.set_owner(2);
-    sect.set_popn_exact(2);
-    sect.set_troops(1);
+    sect.set_popn_exact(10);
+    sect.set_troops(5);
     p.sync_demographics(map);
   });
-  ctx.verify_universe_invariants();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -616,83 +545,11 @@ void test_unload_onto_alien_sector() {
   g.set_snum(1);
   g.set_pnum(1);
 
-  // 1. Victory assault with troops (and metamorph body absorption)
-  g.out.str("");
-  ctx.assert_dispatch_success(
-      g, {"unload", std::format("#{}", assault_id.value), "m", "50"});
-  test::expect_contains(g.out.str(),
-                        "That sector is already occupied by another player!");
-  test::expect_contains(g.out.str(), "VICTORY! The sector is yours!");
-  test::expect_contains(g.out.str(), "alien bodies absorbed");
-  test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({2, 2}).get_owner(), 1);
-  // Verify planet demographics were synced after ground assault casualties
-  ctx.verify_universe_invariants();
-
-  // 2. Defeat assault with military: Player 2 has overwhelming defense and
-  // metamorph absorption
-  ctx.em.mutate_race(1, [](Race& r) {
-    r.fighters = 1;
-    r.absorb = false;
-  });
-  ctx.em.mutate_race(2, [](Race& r) {
-    r.fighters = 15;
-    r.absorb = true;
-  });
-  ctx.em.mutate_planet_and_sectors(1, 1, [](Planet& p, SectorMap& map) {
-    auto& sect = map.get({2, 2});
-    sect.set_owner(2);
-    sect.set_popn_exact(100);
-    sect.set_troops(500);
-    p.sync_demographics(map);
-  });
-  ctx.verify_universe_invariants();
-
-  g.out.str("");
-  ctx.assert_dispatch_success(
-      g, {"unload", std::format("#{}", assault_id.value), "m", "5"});
-  test::expect_contains(g.out.str(), "DEFEAT!  Your assault was repulsed.");
-  test::expect_contains(g.out.str(), "Metamorphs have absorbed");
-  test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({2, 2}).get_owner(), 2);
-  ctx.verify_universe_invariants();
-
-  // Also test civilian defeat branch
-  g.out.str("");
-  ctx.assert_dispatch_success(
-      g, {"unload", std::format("#{}", assault_id.value), "c", "5"});
-  test::expect_contains(g.out.str(), "DEFEAT!  Your assault was repulsed.");
-  ctx.verify_universe_invariants();
-
-  // 3. Attempting to load (instead of unload) from an alien-occupied sector
-  g.out.str("");
   ctx.assert_dispatch_success(
       g, {"load", std::format("#{}", assault_id.value), "c", "5"});
   test::expect_contains(g.out.str(),
                         "You have to unload to assault alien sectors.");
-
-  // 4. Victory assault with civilians
-  ctx.em.mutate_race(1, [](Race& r) {
-    r.fighters = 15;
-    r.absorb = true;
-  });
-  ctx.em.mutate_race(2, [](Race& r) {
-    r.fighters = 1;
-    r.absorb = false;
-  });
-  ctx.em.mutate_planet_and_sectors(1, 1, [](Planet& p, SectorMap& map) {
-    auto& sect = map.get({2, 2});
-    sect.set_owner(2);
-    sect.set_popn_exact(1);
-    sect.set_troops(0);
-    p.sync_demographics(map);
-  });
-  g.out.str("");
-  ctx.assert_dispatch_success(
-      g, {"unload", std::format("#{}", assault_id.value), "c", "50"});
-  test::expect_contains(g.out.str(), "VICTORY! The sector is yours!");
-  test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({2, 2}).get_owner(), 1);
-  ctx.verify_universe_invariants();
-  std::println(std::cout, "✓ Amphibious alien sector assaults (victory, "
-                          "defeat, metamorph) verified");
+  std::println(std::cout, "✓ Load from alien-occupied sector rejected");
 }
 
 void test_transporter_edge_cases() {
@@ -705,13 +562,6 @@ void test_transporter_edge_cases() {
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
-
-  // Target receiver transporter owned by Player 2
-  JsonStore store(ctx.db);
-  Race r2{};
-  r2.Playernum = 2;
-  r2.name = "ReceiverRace";
-  RaceRepository(store).save(r2);
 
   const auto recv_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV, 10)
                            .owned_by(2, 1)
@@ -870,7 +720,7 @@ void test_docking_and_validation_edge_cases() {
   g.set_level(ScopeLevel::LEVEL_PLAN);
 
   // 3. Wrong planet scope rejection (attempting to load landed ship from star
-  // scope)
+  // scope, wrong star, and wrong planet)
   shipnum_t wrong_plan_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
                                 .owned_by(1, 1)
                                 .named("OtherPlanetShip")
@@ -884,7 +734,7 @@ void test_docking_and_validation_edge_cases() {
                         "Change scope to the planet this ship is landed on");
   g.set_level(ScopeLevel::LEVEL_PLAN);
 
-  // 4. Von Neumann machine unload rejection
+  // 4. Negative load on Von Neumann machine rejection
   shipnum_t vn_id = TestShipBuilder(ctx.em, ShipType::OTYPE_VN)
                         .owned_by(1, 1)
                         .named("VNProbe")
@@ -893,7 +743,7 @@ void test_docking_and_validation_edge_cases() {
                         .build();
   g.out.str("");
   ctx.assert_dispatch_rejected(
-      g, {"unload", std::format("#{}", vn_id.value), "r", "10"});
+      g, {"load", std::format("#{}", vn_id.value), "r", "-10"});
   test::expect_contains(g.out.str(), "You can't unload VNs");
 
   // 5. Invalid non-numeric amount argument and empty commodity
@@ -913,14 +763,18 @@ void test_docking_and_validation_edge_cases() {
       g, {"load", std::format("#{}", cargo_id.value), ""});
   test::expect_contains(g.out.str(), "Load what?");
 
-  // 6. Out of bounds amount argument
+  // 6. Out of bounds amount argument (both > uplim and < lolim)
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"load", std::format("#{}", cargo_id.value), "r", "999999"});
   test::expect_contains(g.out.str(), "you can only transfer between");
 
-  // 7. Boobytrap message when loading/unloading destruct on robot ship
-  // (max_crew == 0)
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"load", std::format("#{}", cargo_id.value), "r", "-999999"});
+  test::expect_contains(g.out.str(), "you can only transfer between");
+
+  // 7. Boobytrap message when loading destruct on robot ship (max_crew == 0)
   shipnum_t robot_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
                            .owned_by(1, 1)
                            .named("MineShip")
@@ -935,11 +789,6 @@ void test_docking_and_validation_edge_cases() {
   ctx.assert_dispatch_success(
       g, {"load", std::format("#{}", robot_id.value), "d", "10"});
   test::expect_contains(g.out.str(), "now boobytrapped");
-
-  g.out.str("");
-  ctx.assert_dispatch_success(
-      g, {"unload", std::format("#{}", robot_id.value), "d", "10"});
-  test::expect_contains(g.out.str(), "no longer boobytrapped");
 
   // 8. Shuttle ship-to-ship resource load/unload (external hull strapping
   // beyond standard internal max_resource = 25)
@@ -968,24 +817,12 @@ void test_docking_and_validation_edge_cases() {
   test::expect_eq(ctx.em.peek_ship(shuttle_id)->resource(), 60);
 
   g.out.str("");
-  ctx.assert_dispatch_success(
-      g, {"unload", std::format("#{}", shuttle_id.value), "r", "30"});
-  test::expect_eq(ctx.em.peek_ship(shuttle_id)->resource(), 30);
-
-  // Also test unloading from carrier to shuttle (lolim branch) and invalid
-  // ship-to-ship commodity
-  g.out.str("");
-  ctx.assert_dispatch_success(
-      g, {"unload", std::format("#{}", carrier_id.value), "r", "10"});
-  test::expect_eq(ctx.em.peek_ship(shuttle_id)->resource(), 40);
-
-  g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"load", std::format("#{}", shuttle_id.value), "z", "10"});
   test::expect_contains(g.out.str(), "No such commodity");
 
-  // 9. Overloaded destination ship, missing destshipno, and un-docked
-  // destination ship
+  // 9. Overloaded destination ship, missing destshipno, bogus destshipno, and
+  // un-docked destination ship
   ctx.em.mutate_ship(shuttle_id,
                      [&](Ship& s) { s.dock_into_carrier(carrier_id); });
   g.out.str("");
@@ -1017,12 +854,11 @@ void test_docking_and_validation_edge_cases() {
 
 int main() {
   test_load_happy_path();
-  test_unload_happy_path();
   test_load_ship_to_ship();
   test_load_transporter();
   test_load_syntax_and_errors();
   test_planet_crew_load_and_unload();
-  test_unload_onto_alien_sector();
+  test_load_from_alien_sector_rejected();
   test_transporter_edge_cases();
   test_docking_and_validation_edge_cases();
 

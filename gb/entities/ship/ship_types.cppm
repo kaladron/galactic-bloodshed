@@ -85,6 +85,11 @@ export enum class ShipCargoType : std::uint8_t {
   Troops,
 };
 
+export inline constexpr std::array all_ship_cargo_types = {
+    ShipCargoType::Resource, ShipCargoType::Destruct, ShipCargoType::Fuel,
+    ShipCargoType::Crystal,  ShipCargoType::Crew,     ShipCargoType::Troops,
+};
+
 /// \brief Converts single-character commodity abbreviation to ShipCargoType.
 export constexpr std::optional<ShipCargoType>
 char_to_ship_cargo(char c) noexcept {

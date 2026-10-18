@@ -113,6 +113,7 @@ export bool launch(const command_t&, GameObj&);
 export extern const CommandDescriptor launch_cmd;
 export bool load(const command_t&, GameObj&);
 export extern const CommandDescriptor load_cmd;
+export bool unload(const command_t&, GameObj&);
 export extern const CommandDescriptor unload_cmd;
 export bool make(const command_t&, GameObj&);
 export extern const CommandDescriptor make_cmd;
@@ -225,4 +226,7 @@ void notify_reactor_overload(EntityManager& em,
 void notify_ship_combat_exchange(GameObj& g, const ShipCombatExchange& exchange,
                                  player_t other_owner,
                                  governor_t other_governor);
+bool dispatch_cargo_transfer(Ship& s, char commod, std::int64_t amt,
+                             bool default_to_lower_limit, GameObj& g,
+                             bool& should_return_early);
 }  // namespace GB::commands

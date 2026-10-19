@@ -386,3 +386,129 @@ std::expected<DisarmSectorResult, MilitiaError> disarm_sector_militia(
       .final_troops = final_troops,
   };
 }
+
+SectorGroundAssaultResult
+execute_sector_ground_assault(EntityManager& em, starnum_t snum,
+                              planetnum_t pnum, player_t attacker_player,
+                              Coordinates from_coords, Coordinates to_coords,
+                              population_t people, PopulationType what) {
+  const auto& star = *em.peek_star(snum);
+  const auto& smap_peek = *em.peek_sectormap(snum, pnum);
+  const player_t defender_player = smap_peek.get(to_coords).get_owner();
+
+  Race race = *em.peek_race(attacker_player);
+  Race alien = *em.peek_race(defender_player);
+
+  em.mutate_star(snum, [&](Star& s) { s.record_ground_assault(race, alien); });
+
+  alien.increase_translation(attacker_player);
+  race.increase_translation(defender_player);
+
+  SectorGroundAssaultResult res{
+      .star_name = star.get_name(),
+      .planet_name = star.get_planet_name(pnum),
+      .attacker_player = attacker_player,
+      .attacker_race_name = race.name,
+      .defender_player = defender_player,
+      .defender_governor = star.governor(defender_player),
+      .defender_race_name = alien.name,
+      .from_coords = from_coords,
+      .to_coords = to_coords,
+      .attacker_type = what,
+      .initial_attacker_popn = people,
+  };
+
+  em.mutate_planet_and_sectors(
+      snum, pnum, [&](Planet& planet, SectorMap& smap) {
+        auto& sect = smap.get(from_coords);
+        auto& sect2 = smap.get(to_coords);
+
+        res.from_condition_symbol = sect.condition_symbol();
+        res.to_condition_symbol = sect2.condition_symbol();
+        res.initial_defender_civ = sect2.get_popn();
+        res.initial_defender_mil = sect2.get_troops();
+
+        if (what == PopulationType::CIV) {
+          sect.subtract_popn(people);
+        } else {
+          sect.subtract_troops(people);
+        }
+
+        const auto outcome = ground_attack({
+            .attacker = race,
+            .defender = alien,
+            .attacker_force = people,
+            .attacker_type = what,
+            .defender_civ = res.initial_defender_civ,
+            .defender_mil = res.initial_defender_mil,
+            .attacker_defense_bonus = sect.defense_bonus(),
+            .defender_defense_bonus = sect2.defense_bonus(),
+            .attacker_compatibility = race.sector_compatibility(sect),
+            .defender_compatibility = alien.sector_compatibility(sect2),
+        });
+        const population_t surviving = outcome.surviving_attackers;
+        res.surviving_attackers = surviving;
+        res.attack_strength = outcome.attack_strength;
+        res.defense_strength = outcome.defense_strength;
+        res.attacker_casualties = outcome.attacker_casualties;
+        res.defender_civ_casualties = outcome.defender_civ_casualties;
+        res.defender_mil_casualties = outcome.defender_mil_casualties;
+
+        sect2.set_popn_exact(outcome.surviving_defender_civ);
+        sect2.set_troops(outcome.surviving_defender_mil);
+
+        if (sect2.is_empty()) {
+          population_t absorbed = 0;
+          if (race.absorb) {
+            res.attacker_absorbed_bodies = true;
+            absorbed = uniform_rand(0, res.initial_defender_civ +
+                                           res.initial_defender_mil);
+            res.absorbed_bodies = absorbed;
+          }
+          if (what == PopulationType::CIV) {
+            sect2.set_popn_exact(surviving + absorbed);
+          } else {
+            sect2.set_popn_exact(absorbed);
+            sect2.set_troops(surviving);
+          }
+          if (!sect2.is_empty()) {
+            sect2.claim(attacker_player);
+            race.adjust_morale(alien, alien.fighters);
+          } else {
+            sect2.clear_owner();
+          }
+        } else {
+          if (alien.absorb) {
+            res.defender_absorbed_bodies = true;
+            const population_t absorbed =
+                uniform_rand(0, res.initial_attacker_popn - surviving);
+            res.absorbed_bodies = absorbed;
+            sect2.add_popn(absorbed);
+          }
+          if (what == PopulationType::CIV) {
+            sect.add_popn(surviving);
+          } else {
+            sect.add_troops(surviving);
+          }
+          alien.adjust_morale(race, race.fighters);
+        }
+
+        res.attacker_won = (sect2.get_owner() == attacker_player);
+        res.all_origin_forces_wiped =
+            (sect.get_popn() + sect.get_troops() + surviving == 0);
+        if (res.all_origin_forces_wiped) {
+          race.increase_translation(defender_player);
+        }
+        if (surviving == 0) {
+          alien.increase_translation(attacker_player);
+        }
+
+        sect.clear_owner_if_empty();
+        res.stop_movement = (!res.attacker_won || sect2.is_empty());
+        planet.sync_demographics(smap);
+      });
+
+  em.mutate_race(attacker_player, [&](Race& r) { r = race; });
+  em.mutate_race(defender_player, [&](Race& a) { a = alien; });
+  return res;
+}

@@ -21,24 +21,11 @@ bool move_popn(const command_t& argv, GameObj& g) {
       (argv[0] == "move") ? PopulationType::CIV : PopulationType::MIL;
   int Assault;
   int APcost; /* unfriendly movement */
-  population_t casualties;
-  population_t casualties2;
-  population_t casualties3;
-
   population_t people;
-  population_t oldpopn;
-  population_t old2popn;
-  population_t old3popn;
-  player_t old2owner;
-  governor_t old2gov;
-  population_t absorbed;
   int n;
   int done;
-  double astrength;
-  double dstrength;
   bool any_moved = false;
 
-  const auto& star = *g.entity_manager.peek_star(g.snum());
   const auto& planet_peek = *g.entity_manager.peek_planet(g.snum(), g.pnum());
 
   if (planet_peek.is_enslaved_to_foreign(Playernum)) {
@@ -172,162 +159,25 @@ bool move_popn(const command_t& argv, GameObj& g) {
     }
 
     if (Assault) {
-      old2owner = sect2_peek.get_owner();
-      old2gov = star.governor(old2owner);
-
-      const auto* alien_peek = g.entity_manager.peek_race(old2owner);
-      if (!alien_peek) {
-        continue;
+      const auto assault = execute_sector_ground_assault(
+          g.entity_manager, g.snum(), g.pnum(), Playernum, curr_coords,
+          next_coords, people, what);
+      people = assault.surviving_attackers;
+      if (auto absorb_warn =
+              GB::presentation::render_sector_ground_assault_absorb_warning(
+                  assault)) {
+        warn_player(g.session_registry, g.entity_manager,
+                    assault.defender_player, assault.defender_governor,
+                    *absorb_warn);
       }
-      Race alien = *alien_peek;
-      Race race = *g.race;
-
-      g.entity_manager.mutate_star(
-          g.snum(), [&](Star& s) { s.record_ground_assault(race, alien); });
-
-      /* races find out about each other */
-      alien.increase_translation(Playernum);
-      race.increase_translation(old2owner);
-
-      g.entity_manager.mutate_planet_and_sectors(
-          g.snum(), g.pnum(), [&](Planet& planet, SectorMap& smap) {
-            auto& sect = smap.get(curr_coords);
-            auto& sect2 = smap.get(next_coords);
-
-            if (what == PopulationType::CIV)
-              sect.subtract_popn(people);
-            else if (what == PopulationType::MIL)
-              sect.set_troops(std::max(0L, sect.get_troops() - people));
-
-            if (what == PopulationType::CIV)
-              g.out << std::format("{} civ assault {} civ/{} mil\n", people,
-                                   sect2.get_popn(), sect2.get_troops());
-            else if (what == PopulationType::MIL)
-              g.out << std::format("{} mil assault {} civ/{} mil\n", people,
-                                   sect2.get_popn(), sect2.get_troops());
-            oldpopn = people;
-            old2popn = sect2.get_popn();
-            old3popn = sect2.get_troops();
-
-            const auto outcome = ground_attack({
-                .attacker = race,
-                .defender = alien,
-                .attacker_force = people,
-                .attacker_type = what,
-                .defender_civ = sect2.get_popn(),
-                .defender_mil = sect2.get_troops(),
-                .attacker_defense_bonus = sect.defense_bonus(),
-                .defender_defense_bonus = sect2.defense_bonus(),
-                .attacker_compatibility = race.sector_compatibility(sect),
-                .defender_compatibility = alien.sector_compatibility(sect2),
-            });
-            people = outcome.surviving_attackers;
-            astrength = outcome.attack_strength;
-            dstrength = outcome.defense_strength;
-            casualties = outcome.attacker_casualties;
-            casualties2 = outcome.defender_civ_casualties;
-            casualties3 = outcome.defender_mil_casualties;
-
-            sect2.set_popn_exact(outcome.surviving_defender_civ);
-            sect2.set_troops(outcome.surviving_defender_mil);
-
-            g.out << std::format("Attack: {:.2f}   Defense: {:.2f}.\n",
-                                 astrength, dstrength);
-
-            if (sect2.is_empty()) { /* we got 'em */
-              sect2.claim(Playernum);
-              /* mesomorphs absorb the bodies of their victims */
-              absorbed = 0;
-              if (race.absorb) {
-                absorbed = uniform_rand(0, old2popn + old3popn);
-                g.out << std::format("{} alien bodies absorbed.\n", absorbed);
-                warn_player(
-                    g.session_registry, g.entity_manager, old2owner, old2gov,
-                    std::format("Metamorphs have absorbed {} bodies!!!\n",
-                                absorbed));
-              }
-              if (what == PopulationType::CIV)
-                sect2.set_popn_exact(people + absorbed);
-              else if (what == PopulationType::MIL) {
-                sect2.set_popn_exact(absorbed);
-                sect2.set_troops(people);
-              }
-              race.adjust_morale(alien, alien.fighters);
-            } else { /* retreat */
-              absorbed = 0;
-              if (alien.absorb) {
-                absorbed = uniform_rand(0, oldpopn - people);
-                warn_player(
-                    g.session_registry, g.entity_manager, old2owner, old2gov,
-                    std::format("Metamorphs have absorbed {} bodies!!!\n",
-                                absorbed));
-                g.out << std::format("Metamorphs have absorbed {} bodies!!!\n",
-                                     absorbed);
-                sect2.add_popn(absorbed);
-              }
-              if (what == PopulationType::CIV)
-                sect.add_popn(people);
-              else if (what == PopulationType::MIL)
-                sect.set_troops(sect.get_troops() + people);
-              alien.adjust_morale(race, race.fighters);
-            }
-
-            std::string telegram = std::format(
-                "/{}/{}: {} [{}] {}{} assaults {} [{}] {} {}\n",
-                star.get_name(), star.get_planet_name(g.pnum()), race.name,
-                Playernum, sect.condition_symbol(), curr_coords, alien.name,
-                alien.Playernum, sect2.condition_symbol(), next_coords,
-                (sect2.get_owner() == Playernum ? "VICTORY" : "DEFEAT"));
-
-            if (sect2.get_owner() == Playernum) {
-              g.out << std::format("VICTORY! The sector is yours!\n");
-              telegram += "Sector CAPTURED!\n";
-              if (people) {
-                g.out << std::format("{} {} move in.\n", people,
-                                     what == PopulationType::CIV ? "civilians"
-                                                                 : "troops");
-              }
-            } else {
-              g.out << std::format("The invasion was repulsed; try again.\n");
-              telegram += "You fought them off!\n";
-              done = 1; /* end loop */
-            }
-
-            if (!(sect.get_popn() + sect.get_troops() + people)) {
-              telegram += "You killed all of them!\n";
-              /* increase modifier */
-              race.increase_translation(old2owner);
-            }
-            if (!people) {
-              g.out << std::format(
-                  "Oh no! They killed your party to the last man!\n");
-              /* increase modifier */
-              alien.increase_translation(Playernum);
-            }
-
-            telegram +=
-                std::format("Casualties: You: {} civ/{} mil, Them: {} {}\n",
-                            casualties2, casualties3, casualties,
-                            what == PopulationType::CIV ? "civ" : "mil");
-            warn_player(g.session_registry, g.entity_manager, old2owner,
-                        old2gov, telegram);
-            g.out << std::format(
-                "Casualties: You: {} {}, Them: {} civ/{} mil\n", casualties,
-                what == PopulationType::CIV ? "civ" : "mil", casualties2,
-                casualties3);
-
-            sect.clear_owner_if_empty();
-
-            if (sect2.is_empty()) {
-              sect2.clear_owner();
-              done = 1;
-            }
-
-            planet.sync_demographics(smap);
-          });
-
-      g.entity_manager.mutate_race(Playernum, [&](Race& r) { r = race; });
-      g.entity_manager.mutate_race(old2owner, [&](Race& a) { a = alien; });
+      warn_player(
+          g.session_registry, g.entity_manager, assault.defender_player,
+          assault.defender_governor,
+          GB::presentation::render_sector_ground_assault_telegram(assault));
+      g.out << GB::presentation::render_sector_ground_assault(assault);
+      if (assault.stop_movement) {
+        done = 1;
+      }
     } else {
       g.entity_manager.mutate_planet_and_sectors(
           g.snum(), g.pnum(), [&](Planet& planet, SectorMap& smap) {

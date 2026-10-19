@@ -640,4 +640,74 @@ std::string render_for_mode(UiMode mode, const DisarmSectorResult& vm) {
                               : render_disarm_sector_result(vm);
 }
 
+std::string render_sector_ground_assault(const SectorGroundAssaultResult& res) {
+  const std::string_view unit_short =
+      res.attacker_type == PopulationType::CIV ? "civ" : "mil";
+  std::string out = std::format(
+      "{} {} assault {} civ/{} mil\n"
+      "Attack: {:.2f}   Defense: {:.2f}.\n",
+      res.initial_attacker_popn, unit_short, res.initial_defender_civ,
+      res.initial_defender_mil, res.attack_strength, res.defense_strength);
+
+  if (res.attacker_absorbed_bodies) {
+    std::format_to(std::back_inserter(out), "{} alien bodies absorbed.\n",
+                   res.absorbed_bodies);
+  } else if (res.defender_absorbed_bodies) {
+    std::format_to(std::back_inserter(out),
+                   "Metamorphs have absorbed {} bodies!!!\n",
+                   res.absorbed_bodies);
+  }
+
+  if (res.attacker_won) {
+    out += "VICTORY! The sector is yours!\n";
+    if (res.surviving_attackers > 0) {
+      std::format_to(
+          std::back_inserter(out), "{} {} move in.\n", res.surviving_attackers,
+          res.attacker_type == PopulationType::CIV ? "civilians" : "troops");
+    }
+  } else {
+    out += "The invasion was repulsed; try again.\n";
+  }
+
+  if (res.surviving_attackers == 0) {
+    out += "Oh no! They killed your party to the last man!\n";
+  }
+
+  std::format_to(std::back_inserter(out),
+                 "Casualties: You: {} {}, Them: {} civ/{} mil\n",
+                 res.attacker_casualties, unit_short,
+                 res.defender_civ_casualties, res.defender_mil_casualties);
+  return out;
+}
+
+std::optional<std::string> render_sector_ground_assault_absorb_warning(
+    const SectorGroundAssaultResult& res) {
+  if (!res.attacker_absorbed_bodies && !res.defender_absorbed_bodies) {
+    return std::nullopt;
+  }
+  return std::format("Metamorphs have absorbed {} bodies!!!\n",
+                     res.absorbed_bodies);
+}
+
+std::string
+render_sector_ground_assault_telegram(const SectorGroundAssaultResult& res) {
+  std::string telegram = std::format(
+      "/{}/{}: {} [{}] {}{} assaults {} [{}] {} {}\n", res.star_name,
+      res.planet_name, res.attacker_race_name, res.attacker_player,
+      res.from_condition_symbol, res.from_coords, res.defender_race_name,
+      res.defender_player, res.to_condition_symbol, res.to_coords,
+      res.attacker_won ? "VICTORY" : "DEFEAT");
+  telegram +=
+      res.attacker_won ? "Sector CAPTURED!\n" : "You fought them off!\n";
+  if (res.all_origin_forces_wiped) {
+    telegram += "You killed all of them!\n";
+  }
+  std::format_to(std::back_inserter(telegram),
+                 "Casualties: You: {} civ/{} mil, Them: {} {}\n",
+                 res.defender_civ_casualties, res.defender_mil_casualties,
+                 res.attacker_casualties,
+                 res.attacker_type == PopulationType::CIV ? "civ" : "mil");
+  return telegram;
+}
+
 }  // namespace GB::presentation

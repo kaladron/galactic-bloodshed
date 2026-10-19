@@ -233,4 +233,19 @@ render_json_disarm_sector_result(const DisarmSectorResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const DisarmSectorResult& vm);
 
+/// Formats a `SectorGroundAssaultResult` into the attacker's ASCII battle
+/// report.
+[[nodiscard]] std::string
+render_sector_ground_assault(const SectorGroundAssaultResult& res);
+
+/// Formats the optional Metamorph body-absorption warning telegram for the
+/// defender.
+[[nodiscard]] std::optional<std::string>
+render_sector_ground_assault_absorb_warning(
+    const SectorGroundAssaultResult& res);
+
+/// Formats the defender's battle summary telegram for a sector ground assault.
+[[nodiscard]] std::string
+render_sector_ground_assault_telegram(const SectorGroundAssaultResult& res);
+
 }  // namespace GB::presentation

@@ -453,3 +453,41 @@ arm_sector_militia(EntityManager& em, starnum_t snum, planetnum_t pnum,
 export std::expected<DisarmSectorResult, MilitiaError> disarm_sector_militia(
     EntityManager& em, starnum_t snum, planetnum_t pnum, Coordinates coords,
     std::optional<population_t> requested_amount, player_t player);
+
+export struct SectorGroundAssaultResult {
+  std::string star_name{};
+  std::string planet_name{};
+  player_t attacker_player{0};
+  std::string attacker_race_name{};
+  player_t defender_player{0};
+  governor_t defender_governor{0};
+  std::string defender_race_name{};
+  Coordinates from_coords{};
+  char from_condition_symbol{' '};
+  Coordinates to_coords{};
+  char to_condition_symbol{' '};
+  PopulationType attacker_type{PopulationType::CIV};
+  population_t initial_attacker_popn{0};
+  population_t initial_defender_civ{0};
+  population_t initial_defender_mil{0};
+  double attack_strength{0.0};
+  double defense_strength{0.0};
+  population_t surviving_attackers{0};
+  population_t attacker_casualties{0};
+  population_t defender_civ_casualties{0};
+  population_t defender_mil_casualties{0};
+  bool attacker_absorbed_bodies{false};
+  bool defender_absorbed_bodies{false};
+  population_t absorbed_bodies{0};
+  bool attacker_won{false};
+  bool all_origin_forces_wiped{false};
+  bool stop_movement{false};
+};
+
+/// \brief Resolves a sector-to-sector planetary ground assault during move or
+/// deploy.
+export SectorGroundAssaultResult
+execute_sector_ground_assault(EntityManager& em, starnum_t snum,
+                              planetnum_t pnum, player_t attacker_player,
+                              Coordinates from_coords, Coordinates to_coords,
+                              population_t people, PopulationType what);

@@ -126,11 +126,11 @@ void Server::check_turn_events(std::time_t current_time) {
   if (state && go_time_ == 0) {
     if (current_time >= state->next_update_time) {
       go_time_ = current_time +
-                 (int_rand(0, DEFAULT_RANDOM_UPDATE_RANGE.count()) * 60);
+                 (uniform_rand(0, DEFAULT_RANDOM_UPDATE_RANGE.count()) * 60);
     } else if (current_time >= state->next_segment_time &&
                state->nsegments_done < state->segments) {
       go_time_ = current_time +
-                 (int_rand(0, DEFAULT_RANDOM_SEGMENT_RANGE.count()) * 60);
+                 (uniform_rand(0, DEFAULT_RANDOM_SEGMENT_RANGE.count()) * 60);
     }
   }
   if (pending_turn_ || (go_time_ > 0 && current_time >= go_time_)) {

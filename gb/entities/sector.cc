@@ -210,7 +210,7 @@ void Sector::apply_supernova(int stage) noexcept {
 
 void Sector::recover_fertility(const Race& race) noexcept {
   if (!is_wasted() && race.fertilize > 0 && data_.fert < 100 &&
-      int_rand(0, 100) < race.fertilize) {
+      uniform_rand(0, 100) < race.fertilize) {
     ++data_.fert;
   }
 
@@ -245,7 +245,7 @@ Stockpile Sector::produce_resources(const Race& race) noexcept {
   }
 
   const double eff_scale =
-      double_rand(1.0, std::max(1.0, static_cast<double>(data_.eff)));
+      uniform_rand(1.0, std::max(1.0, static_cast<double>(data_.eff)));
   resource_t prod = round_rand<resource_t>(race.metabolism * eff_scale);
   prod = std::clamp(prod, resource_t{0}, data_.resource);
   if (prod == 0) return {};
@@ -310,5 +310,5 @@ population_t calculate_population_change(const Race& race, const Sector& s,
       (diff > std::numeric_limits<population_t>::max() / 2)
           ? popn
           : std::min(2 * diff, popn);
-  return -long_rand(0, max_die_off);
+  return -uniform_rand(0, max_die_off);
 }

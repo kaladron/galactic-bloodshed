@@ -30,7 +30,7 @@ bool unpledge(const command_t& argv, GameObj& g) {
       .pledger_id = Playernum,
       .pledger_name = g.race->name,
       .block_id = n,
-      .taunt = (int_rand(1, 20) == 1),
+      .taunt = (uniform_rand(1, 20) == 1),
   };
 
   g.entity_manager.mutate_block(n, [&](Block& b) {

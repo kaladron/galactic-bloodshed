@@ -27,31 +27,8 @@ void seed_rand(unsigned int seed) {
   srandom(seed);
 }
 
-/* double double_rand() this returns a random number between 0 and 1 */
-double double_rand() {
-  std::uniform_real_distribution<double> dist(0.0, 1.0);
-  return dist(get_rng());
-}
-
-/* double double_rand(low, hi) - returns a random double between low and hi */
-double double_rand(double low, double high) {
-  return uniform_rand(low, high);
-}
-
-/* int int_rand(low,hi) - this returns an integer random number
- * between hi and low, inclusive. */
-long long_rand(long low, long hi) {
-  return uniform_rand(low, hi);
-}
-
-/* int int_rand(low,hi) - this returns an integer random number
- * between hi and low, inclusive. */
-int int_rand(int low, int hi) {
-  return uniform_rand(low, hi);
-}
-
 bool success(int x) {
-  return int_rand(1, 100) <= (x);
+  return uniform_rand(1, 100) <= (x);
 }
 
 bool bool_rand(double p) {

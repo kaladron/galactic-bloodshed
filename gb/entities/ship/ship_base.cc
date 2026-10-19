@@ -263,7 +263,7 @@ Ship::roll_landing_crash(const double required_fuel) const noexcept {
   if (fuel() < required_fuel) return {true, 0};
 
   // Damaged ships stand of chance of crash landing.
-  if (auto roll = int_rand(1, 100); roll <= damage()) return {true, roll};
+  if (auto roll = uniform_rand(1, 100); roll <= damage()) return {true, roll};
 
   // No crash.
   return {false, 0};

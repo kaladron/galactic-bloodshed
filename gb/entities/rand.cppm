@@ -9,10 +9,6 @@ import std;
 export void seed_rand(unsigned int seed);
 export bool success(int x);
 export bool bool_rand(double p = 0.5);
-export double double_rand();
-export double double_rand(double low, double high);
-export int int_rand(int low, int high);
-export long long_rand(long low, long high);
 export std::mt19937& game_rng();
 
 export template <typename Target>
@@ -76,12 +72,16 @@ T uniform_rand(std::type_identity_t<RandBound<T>> low, T high) {
   return uniform_rand<T>(low, RandBound<T>{high});
 }
 
+export inline double uniform_rand() {
+  return uniform_rand(0.0, 1.0);
+}
+
 export template <std::integral Result = int>
 Result round_rand(std::floating_point auto x) {
   const auto d = static_cast<double>(x);
   const auto floor_x = std::floor(d);
   const auto rounded =
-      (double_rand() > (d - floor_x)) ? floor_x : (floor_x + 1.0);
+      (uniform_rand() > (d - floor_x)) ? floor_x : (floor_x + 1.0);
   return static_cast<Result>(rounded);
 }
 

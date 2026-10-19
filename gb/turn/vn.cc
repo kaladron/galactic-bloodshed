@@ -76,7 +76,7 @@ void select_berserker_destination(EntityManager& em, AutonomousShip& ship,
   const auto target = ship.target();
 
   const auto& universe = *em.peek_universe();
-  const int numstars = static_cast<int>(em.num_stars().value);
+  const auto numstars = em.num_stars().value;
 
   // Route toward the offending player if valid, flipping a coin between
   // primary and secondary target stars recorded in the universe index.
@@ -84,9 +84,9 @@ void select_berserker_destination(EntityManager& em, AutonomousShip& ship,
   if (target) {
     const auto chosen =
         universe.select_vn_retaliation_star(*target, bool_rand());
-    dest_star_id = chosen.value_or(int_rand(1, numstars));
+    dest_star_id = chosen.value_or(uniform_rand(1, numstars));
   } else {
-    dest_star_id = int_rand(1, numstars);
+    dest_star_id = uniform_rand(1, numstars);
   }
 
   const auto& star = *em.peek_star(dest_star_id);
@@ -119,7 +119,7 @@ void select_vn_destination(EntityManager& em, AutonomousShip& ship) {
   starnum_t dest_star_id = closest;
   if (star_min.is_inhabited_by(player_t{1})) {
     if (star_min2.is_inhabited_by(player_t{1})) {
-      dest_star_id = int_rand(1, static_cast<int>(em.num_stars().value));
+      dest_star_id = uniform_rand(1, em.num_stars().value);
     } else {
       dest_star_id = second_closest;
     }
@@ -206,8 +206,8 @@ bool try_launch_unassigned_vn(EntityManager& em, AutonomousShip& ship) {
   const auto& planet = *em.peek_planet(ship.storbits(), ship.pnumorbits());
   // Disperse newly launched probes within a +/-10.0 unit orbital departure box
   // so multiple machines do not stack identically at the planet's center.
-  const SystemCoordinates launch_offset{double_rand(-10.0, 10.0),
-                                        double_rand(-10.0, 10.0)};
+  const SystemCoordinates launch_offset{uniform_rand(-10.0, 10.0),
+                                        uniform_rand(-10.0, 10.0)};
   ship.set_coordinates(planet.absolute_coordinates(star) + launch_offset);
   ship.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
   return true;

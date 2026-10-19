@@ -20,8 +20,8 @@ constexpr double PLANET_DIST_MAX = 1900.0;
 constexpr double PLANET_DIST_MIN = 100.0;
 
 PlanetType roll_planet_type(int temperature) {
-  int roll = int_rand(1, 100);
-  if ((int_rand(1, 100) <= 10) || (temperature > 400)) {
+  int roll = uniform_rand(1, 100);
+  if ((uniform_rand(1, 100) <= 10) || (temperature > 400)) {
     return PlanetType::ASTEROID;
   } else if ((temperature > 100) && (temperature <= 400)) {
     return (roll <= 60) ? PlanetType::MARS : PlanetType::DESERT;
@@ -123,8 +123,8 @@ void UniverseGenerator::place_star(star_struct& star) {
   };
 
   while (true) {
-    const UniverseCoordinates pos{double_rand(-UNIVSIZE, UNIVSIZE),
-                                  double_rand(-UNIVSIZE, UNIVSIZE)};
+    const UniverseCoordinates pos{uniform_rand(-UNIVSIZE, UNIVSIZE),
+                                  uniform_rand(-UNIVSIZE, UNIVSIZE)};
     const std::size_t i = to_grid_bin(pos.x);
     const std::size_t j = to_grid_bin(pos.y);
     if (!star_grid_occupancy_[i][j]) {
@@ -139,8 +139,8 @@ Star UniverseGenerator::make_star_system(Database& db, starnum_t snum,
                                          UniverseGenerationResult& result) {
   star_struct star{};
   star.star_id = snum;
-  star.gravity = int_rand(0, int_rand(0, 300)) + int_rand(0, 300) +
-                 int_rand(100, 400) + int_rand(0, 9) / 10.0;
+  star.gravity = uniform_rand(0, uniform_rand(0, 300)) + uniform_rand(0, 300) +
+                 uniform_rand(100, 400) + uniform_rand(0, 9) / 10.0;
   star.temperature = round_rand(star.gravity / 100.0);
   star.name = next_star_name(snum);
   place_star(star);
@@ -150,9 +150,9 @@ Star UniverseGenerator::make_star_system(Database& db, starnum_t snum,
                  star.gravity, static_cast<int>(star.temperature));
   }
 
-  int num_planets = int_rand(config_.min_planets, config_.max_planets);
+  int num_planets = uniform_rand(config_.min_planets, config_.max_planets);
   if (config_.planetless_chance_percent > 0 &&
-      int_rand(1, 100) <= config_.planetless_chance_percent) {
+      uniform_rand(1, 100) <= config_.planetless_chance_percent) {
     num_planets = 0;
   }
   star.pnames.reserve(num_planets);
@@ -170,12 +170,12 @@ Star UniverseGenerator::make_star_system(Database& db, starnum_t snum,
         (PLANET_DIST_MAX - distmin) /
         static_cast<double>(num_planets - static_cast<int>(pnum.value) + 1);
     double distmax = distmin + distsep;
-    double dist = distmin + double_rand() * (distmax - distmin);
+    double dist = uniform_rand(distmin, distmax);
     distmin = dist;
 
     int temperature =
         calculate_temperature(dist, static_cast<int>(star.temperature));
-    double angle = 2.0 * std::numbers::pi * double_rand();
+    double angle = uniform_rand(0.0, 2.0 * std::numbers::pi);
     const SystemCoordinates sys_pos{dist * std::sin(angle),
                                     dist * std::cos(angle)};
 

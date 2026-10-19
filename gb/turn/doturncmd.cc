@@ -598,7 +598,7 @@ void fix_stability(EntityManager& em, Star& s) {
     } else
       s.nova_stage()++;
   } else if (s.stability() > 20) {
-    a = int_rand(-1, 3);
+    a = uniform_rand(-1, 3);
     /* nova just starting; notify everyone */
     if ((s.stability() + a) > 100) {
       s.stability() = 100;
@@ -612,7 +612,7 @@ void fix_stability(EntityManager& em, Star& s) {
     } else
       s.stability() += a;
   } else {
-    a = int_rand(-1, 1);
+    a = uniform_rand(-1, 1);
     s.stability() = std::max(0, s.stability() + a);
   }
 }

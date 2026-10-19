@@ -48,7 +48,7 @@ check_overload(EntityManager& entity_manager, Ship& ship, int cew,
   }
 
   // Check to see if the ship blows up
-  if (int_rand(0, strength) >
+  if (uniform_rand(0, strength) >
       static_cast<int>((1.0 - .01 * ship.damage()) * ship.tech() / 2.0)) {
     ReactorOverloadEvent event{
         .outcome = ReactorOverloadOutcome::ShipExploded,
@@ -62,7 +62,7 @@ check_overload(EntityManager& entity_manager, Ship& ship, int cew,
     entity_manager.kill_ship(ship.owner(), ship);
     return {0, event};
   }
-  if (int_rand(0, strength) >
+  if (uniform_rand(0, strength) >
       static_cast<int>((1.0 - .01 * ship.damage()) * ship.tech() / 4.0)) {
     ship.fire_laser() = 0;
     ship.mounted() = 0;

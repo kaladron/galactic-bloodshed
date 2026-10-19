@@ -203,20 +203,23 @@ bool capture(const command_t& argv, GameObj& g) {
                 astrength, dstrength);
             casualty_scale = std::min(boarders, ship.popn() + ship.troops());
             if (astrength > 0.0)
-              casualties = int_rand(
-                  0, round_rand((double)casualty_scale * (dstrength + 1.0) /
-                                (astrength + 1.0)));
+              casualties =
+                  uniform_rand(0, round_rand<population_t>(
+                                      static_cast<double>(casualty_scale) *
+                                      (dstrength + 1.0) / (astrength + 1.0)));
 
             if (dstrength > 0.0) {
-              casualties1 = int_rand(
-                  0, round_rand((double)casualty_scale * (astrength + 1.0) /
-                                (dstrength + 1.0)));
-              casualties2 = int_rand(
-                  0, round_rand((double)casualty_scale * (astrength + 1.0) /
-                                (dstrength + 1.0)));
-              shipdam = int_rand(0, round_rand(MAX_BOARDING_COLLATERAL_DAMAGE *
-                                               (astrength + 1.0) /
-                                               (dstrength + 1.0)));
+              casualties1 =
+                  uniform_rand(0, round_rand<population_t>(
+                                      static_cast<double>(casualty_scale) *
+                                      (astrength + 1.0) / (dstrength + 1.0)));
+              casualties2 =
+                  uniform_rand(0, round_rand<population_t>(
+                                      static_cast<double>(casualty_scale) *
+                                      (astrength + 1.0) / (dstrength + 1.0)));
+              shipdam = uniform_rand(
+                  0, round_rand(MAX_BOARDING_COLLATERAL_DAMAGE *
+                                (astrength + 1.0) / (dstrength + 1.0)));
               if (ship.apply_damage(shipdam).destroyed) {
                 g.entity_manager.kill_ship(Playernum, ship);
               }
@@ -232,11 +235,11 @@ bool capture(const command_t& argv, GameObj& g) {
             ship.remove_troops(casualties2, alien->mass);
 
           } else if (ship.destruct()) { /* booby trapped robot ships */
-            booby = int_rand(0, 10 * ship.destruct());
+            booby = uniform_rand(0, 10 * ship.destruct());
             booby = std::min(100, booby);
             casualties = casualties2 = 0;
             for (unsigned long i = 0; i < boarders; i++)
-              casualties += (int_rand(1, 100) < booby);
+              casualties += (uniform_rand(1, 100) < booby);
             boarders -= casualties;
             shipdam += booby;
             if (ship.apply_damage(booby).destroyed) {

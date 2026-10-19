@@ -54,8 +54,7 @@ bool declare(const command_t& argv, GameObj& g) {
       result.rare_quip = success(4);
       const auto& variants =
           GB::presentation::all_war_declaration_news_variants;
-      result.news_variant =
-          variants[int_rand(0, static_cast<int>(variants.size()) - 1)];
+      result.news_variant = variants[uniform_rand(0, variants.size() - 1)];
       break;
     }
     default:

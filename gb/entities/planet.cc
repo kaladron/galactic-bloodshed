@@ -56,11 +56,11 @@ Coordinates Planet::random_adjacent_coordinates(Coordinates from) const {
   if (neighbors.empty()) {
     return from;
   }
-  return neighbors[int_rand(0, neighbors.size() - 1)];
+  return neighbors[uniform_rand(0, neighbors.size() - 1)];
 }
 
 void Planet::update_climate(int temp_variance) noexcept {
-  data_.temp = data_.rtemp + temp_variance + int_rand(-5, 5);
+  data_.temp = data_.rtemp + temp_variance + uniform_rand(-5, 5);
 }
 
 money_t plinfo::collect_tax(Race::gov& gov, const Race& race) noexcept {
@@ -224,7 +224,7 @@ int Planet::revolt(SectorMap& smap, const Race& victim_race,
     // Revolt rate is a function of tax rate.
     if (!success(info(victim).tax)) continue;
 
-    if (long_rand(1, s.get_popn()) <=
+    if (uniform_rand(1, s.get_popn()) <=
         10L * victim_race.fighters * s.get_troops()) {
       continue;
     }
@@ -232,7 +232,7 @@ int Planet::revolt(SectorMap& smap, const Race& victim_race,
     // Revolt successful: sector transfers to agent, some civilians die, and
     // defending troops are eliminated.
     s.set_owner(agent);
-    s.subtract_popn(long_rand(0, s.get_popn() - 1));
+    s.subtract_popn(uniform_rand(0, s.get_popn() - 1));
     s.set_troops(0);
     revolted_sectors++;
   }

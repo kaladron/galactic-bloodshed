@@ -249,7 +249,7 @@ strip_mine_quarry(Ship& ship, Planet& planet, SectorMap& smap,
 
   const int prod = round_rand(race.metabolism * ship.crew_ratio());
   stats.record_production(ship.owner(), {.resources = prod});
-  const int tox = int_rand(0, int_rand(0, prod));
+  const int tox = uniform_rand(0, uniform_rand(0, prod));
   planet.toxic() += tox;
   if (s.get_fert() >= prod) {
     s.set_fert(s.get_fert() - prod);

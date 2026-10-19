@@ -31,7 +31,7 @@ bool move_popn(const command_t& argv, GameObj& g) {
   population_t old3popn;
   player_t old2owner;
   governor_t old2gov;
-  int absorbed;
+  population_t absorbed;
   int n;
   int done;
   double astrength;
@@ -239,7 +239,7 @@ bool move_popn(const command_t& argv, GameObj& g) {
               /* mesomorphs absorb the bodies of their victims */
               absorbed = 0;
               if (race.absorb) {
-                absorbed = int_rand(0, old2popn + old3popn);
+                absorbed = uniform_rand(0, old2popn + old3popn);
                 g.out << std::format("{} alien bodies absorbed.\n", absorbed);
                 warn_player(
                     g.session_registry, g.entity_manager, old2owner, old2gov,
@@ -256,7 +256,7 @@ bool move_popn(const command_t& argv, GameObj& g) {
             } else { /* retreat */
               absorbed = 0;
               if (alien.absorb) {
-                absorbed = int_rand(0, oldpopn - people);
+                absorbed = uniform_rand(0, oldpopn - people);
                 warn_player(
                     g.session_registry, g.entity_manager, old2owner, old2gov,
                     std::format("Metamorphs have absorbed {} bodies!!!\n",

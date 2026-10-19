@@ -90,7 +90,7 @@ void do_meta_infect(player_t who, starnum_t star, planetnum_t pnum, Planet& p,
       const auto& owner_race = *entity_manager.peek_race(s.get_owner());
       double fighters = owner_race.fighters;
       double troops = s.get_troops() * fighters / 50.0;
-      if (int_rand(1, 100) <= 100.0 * (1.0 - std::exp(-troops))) {
+      if (uniform_rand(1, 100) <= 100.0 * (1.0 - std::exp(-troops))) {
         return;  // Failed to infect - defenders won
       }
     }
@@ -250,7 +250,7 @@ void do_mirror(SpaceMirrorShip& ship, EntityManager& entity_manager,
           auto max_dmg = round_rand((2.0 / static_cast<double>(body)) *
                                     static_cast<double>(ship.intensity()) /
                                     (range / PLORBITSIZE + 1.0));
-          auto i = int_rand(0, max_dmg);
+          auto i = uniform_rand(0, max_dmg);
           std::stringstream telegram_buf;
           telegram_buf << std::format("{} aimed at {}\n", ship, target);
           const auto dmg_res = target.apply_damage(i);
@@ -299,7 +299,7 @@ void do_mirror(SpaceMirrorShip& ship, EntityManager& entity_manager,
       if (ship.whatorbits() > ScopeLevel::LEVEL_UNIV &&
           ship.aimed_star() == ship.storbits()) {
         entity_manager.mutate_star(ship.storbits(), [&](Star& star) {
-          star.stability() += int_rand(0, 1);
+          star.stability() += uniform_rand(0, 1);
         });
       }
       break;

@@ -46,9 +46,10 @@ void add_ship_boarders(Ship& s, PopulationType what, population_t count,
 
 bool maneuver_ship_to_target(Ship& s, const Ship& s2, double fuel) {
   s.consume_fuel(fuel);
-  s.set_coordinates(s2.coordinates() +
-                    SystemCoordinates{static_cast<double>(int_rand(-1, 1)),
-                                      static_cast<double>(int_rand(-1, 1))});
+  s.set_coordinates(
+      s2.coordinates() +
+      SystemCoordinates{static_cast<double>(uniform_rand(-1, 1)),
+                        static_cast<double>(uniform_rand(-1, 1))});
   if (s.hyper_drive().on) {
     s.hyper_drive().on = 0;
     return true;
@@ -66,33 +67,33 @@ void apply_boarding_casualties(EntityManager& em, Ship& s, Ship& s2,
   if (b2strength > 0.0) {
     report.attacker_casualties =
         std::min(report.surviving_boarders,
-                 static_cast<population_t>(int_rand(
+                 uniform_rand<population_t>(
                      0, round_rand(static_cast<double>(casualty_scale) *
-                                   (b2strength + 1.0) / (bstrength + 1.0)))));
+                                   (b2strength + 1.0) / (bstrength + 1.0))));
     report.surviving_boarders -= report.attacker_casualties;
 
-    report.attacker_damage = std::min(
-        100,
-        int_rand(0, round_rand(25.0 * (b2strength + 1.0) / (bstrength + 1.0))));
+    report.attacker_damage =
+        std::min(100, uniform_rand(0, round_rand(25.0 * (b2strength + 1.0) /
+                                                 (bstrength + 1.0))));
     if (s.apply_damage(report.attacker_damage).destroyed) {
       em.kill_ship(attacker_player, s);
     }
 
     report.defender_civ_casualties = std::min(
-        s2.popn(), static_cast<population_t>(int_rand(
+        s2.popn(), uniform_rand<population_t>(
                        0, round_rand(static_cast<double>(casualty_scale) *
-                                     (bstrength + 1.0) / (b2strength + 1.0)))));
+                                     (bstrength + 1.0) / (b2strength + 1.0))));
     report.defender_mil_casualties =
         std::min(s2.troops(),
-                 static_cast<population_t>(int_rand(
+                 uniform_rand<population_t>(
                      0, round_rand(static_cast<double>(casualty_scale) *
-                                   (bstrength + 1.0) / (b2strength + 1.0)))));
+                                   (bstrength + 1.0) / (b2strength + 1.0))));
     s2.remove_popn(report.defender_civ_casualties, alien.mass);
     s2.remove_troops(report.defender_mil_casualties, alien.mass);
 
-    report.defender_damage = std::min(
-        100,
-        int_rand(0, round_rand(25.0 * (bstrength + 1.0) / (b2strength + 1.0))));
+    report.defender_damage =
+        std::min(100, uniform_rand(0, round_rand(25.0 * (bstrength + 1.0) /
+                                                 (b2strength + 1.0))));
     if (s2.apply_damage(report.defender_damage).destroyed) {
       em.kill_ship(attacker_player, s2);
     }
@@ -102,7 +103,7 @@ void apply_boarding_casualties(EntityManager& em, Ship& s, Ship& s2,
   s2.clear_crew(alien.mass);
   if (report.boobytrap_triggered) {
     report.booby_damage = static_cast<damage_t>(
-        std::min<std::int64_t>(100, long_rand(0, 10 * s2.destruct())));
+        std::min<resource_t>(100, uniform_rand(0, 10 * s2.destruct())));
     report.attacker_damage += report.booby_damage;
     if (s.apply_damage(report.booby_damage).destroyed) {
       em.kill_ship(attacker_player, s);

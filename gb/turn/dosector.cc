@@ -153,7 +153,8 @@ void spread(EntityManager& entity_manager, const Planet& pl, Sector& s,
     int check =
         round_rand(6.0 * race.adventurism); /* more rounds for high advent */
     while (people > 0 && check > 0) {
-      const auto target_coords = neighbors[int_rand(0, neighbors.size() - 1)];
+      const auto target_coords =
+          neighbors[uniform_rand(0, neighbors.size() - 1)];
       const population_t moved = attempt_colonist_migration(
           entity_manager, pl, s, target_coords, people, smap, stats);
       people -= moved;

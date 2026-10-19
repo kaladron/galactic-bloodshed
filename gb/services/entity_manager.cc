@@ -1006,7 +1006,8 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
   if (const auto* auto_ship = ship.as<AutonomousShip>()) {
     mutate_universe([&](Universe& Sdata) {
       if (const auto killer = auto_ship->who_killed()) {
-        Sdata.record_vn_kill(*killer, ship.orbited_star(), int_rand(0, 1) == 0);
+        Sdata.record_vn_kill(*killer, ship.orbited_star(),
+                             uniform_rand(0, 1) == 0);
       }
     });
   }

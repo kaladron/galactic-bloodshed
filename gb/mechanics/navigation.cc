@@ -1051,10 +1051,11 @@ unload_onto_alien_sector(EntityManager& em, Planet& planet, SectorMap& smap,
 
       if (sect.is_empty()) {
         res.defender_wiped_out = true;
-        int absorbed = 0;
+        population_t absorbed = 0;
         if (race.absorb) {
           res.attacker_absorbed_bodies = true;
-          absorbed = int_rand(0, initial_defender_civ + initial_defender_mil);
+          absorbed =
+              uniform_rand(0, initial_defender_civ + initial_defender_mil);
           res.absorbed_bodies = absorbed;
         }
         if (what == PopulationType::CIV) {
@@ -1073,7 +1074,8 @@ unload_onto_alien_sector(EntityManager& em, Planet& planet, SectorMap& smap,
         res.defender_wiped_out = false;
         if (alien.absorb) {
           res.defender_absorbed_bodies = true;
-          const int absorbed = int_rand(0, initial_attacker_popn - surviving);
+          const population_t absorbed =
+              uniform_rand(0, initial_attacker_popn - surviving);
           res.absorbed_bodies = absorbed;
           sect.add_popn(absorbed);
         }
@@ -1537,8 +1539,8 @@ launch_from_planet(EntityManager& em, Ship& s, player_t player, bool god) {
     }
 
     const SystemCoordinates launch_offset{
-        double_rand(-DIST_TO_LAND / 4.0, DIST_TO_LAND / 4.0),
-        double_rand(-DIST_TO_LAND / 4.0, DIST_TO_LAND / 4.0)};
+        uniform_rand(-DIST_TO_LAND / 4.0, DIST_TO_LAND / 4.0),
+        uniform_rand(-DIST_TO_LAND / 4.0, DIST_TO_LAND / 4.0)};
     s.set_coordinates(p.absolute_coordinates(star) + launch_offset);
 
     s.consume_fuel(fuel);

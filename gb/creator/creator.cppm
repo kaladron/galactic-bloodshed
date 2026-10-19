@@ -79,37 +79,38 @@ export struct RaceArchetype {
   metabolism_t base_metabolism{1.0};
 
   [[nodiscard]] mass_t sample_mass() const {
-    return std::clamp(base_mass + 0.001 * int_rand(-25, 25), 0.10, 3.00);
+    return std::clamp(base_mass + 0.001 * uniform_rand(-25, 25), 0.10, 3.00);
   }
   [[nodiscard]] birthrate_t sample_birthrate() const {
-    return std::clamp(base_birthrate + 0.01 * int_rand(-10, 10), 0.20, 1.00);
+    return std::clamp(base_birthrate + 0.01 * uniform_rand(-10, 10), 0.20,
+                      1.00);
   }
   [[nodiscard]] fighters_t sample_fighters() const {
-    return std::clamp(base_fighters + int_rand(-1, 1), 1, 20);
+    return std::clamp(base_fighters + uniform_rand(-1, 1), 1, 20);
   }
   [[nodiscard]] iq_t sample_iq() const {
     if (is_metamorphic) {
       return 0;
     }
-    int val = static_cast<int>(base_iq) + int_rand(-10, 10);
-    return static_cast<iq_t>(std::clamp(val, 50, 220));
+    return std::clamp(base_iq + uniform_rand(-10, 10), 50, 220);
   }
   [[nodiscard]] iq_t sample_iq_limit() const {
     if (!is_metamorphic) {
       return 0;
     }
-    int val = static_cast<int>(base_iq_limit) + int_rand(-10, 10);
-    return static_cast<iq_t>(std::clamp(val, 50, 220));
+    return std::clamp(base_iq_limit + uniform_rand(-10, 10), 50, 220);
   }
   [[nodiscard]] adventurism_t sample_adventurism() const {
-    return std::clamp(base_adventurism + 0.01 * int_rand(-10, 10), 0.05, 0.99);
+    return std::clamp(base_adventurism + 0.01 * uniform_rand(-10, 10), 0.05,
+                      0.99);
   }
   [[nodiscard]] sexes_t sample_sexes() const {
-    int max_val = int_rand(min_sexes, max_sexes);
-    return int_rand(min_sexes, max_val);
+    sexes_t max_val = uniform_rand(min_sexes, max_sexes);
+    return uniform_rand(min_sexes, max_val);
   }
   [[nodiscard]] metabolism_t sample_metabolism() const {
-    return std::clamp(base_metabolism + 0.01 * int_rand(-15, 15), 0.10, 4.00);
+    return std::clamp(base_metabolism + 0.01 * uniform_rand(-15, 15), 0.10,
+                      4.00);
   }
 
   /// Generates a complete RaceEnrollmentSpec with pre-rolled sector

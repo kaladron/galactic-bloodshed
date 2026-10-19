@@ -204,7 +204,7 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
       if (sector_owner != 0) {
         population_t kills = 0;
         if (s.get_popn()) {
-          kills = int_rand(0, (static_cast<int>(fac / 10.0) * s.get_popn())) /
+          kills = uniform_rand(0, static_cast<int>(fac / 10.0) * s.get_popn()) /
                   (1 + s.is_plated());
           if (kills > s.get_popn())
             s.clear_popn();
@@ -216,8 +216,9 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
         if (s.get_troops() &&
             (fac > TROOP_BOMBARD_FORTIFICATION_SCALE *
                        static_cast<double>(s.defense_bonus()))) {
-          kills = int_rand(0, (static_cast<int>(fac / 20.0) * s.get_troops())) /
-                  (1 + s.is_plated());
+          kills =
+              uniform_rand(0, static_cast<int>(fac / 20.0) * s.get_troops()) /
+              (1 + s.is_plated());
           if (kills > s.get_troops())
             s.set_troops(0);
           else
@@ -229,20 +230,21 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
 
       // High-intensity blasts can strip surface terraforming back to the
       // sector's underlying geological type.
-      if (fac >= TERRAFORM_STRIP_BLAST_THRESHOLD && !int_rand(0, 10)) {
-        if (int_rand(0, 6) >= s.defense_bonus()) s.set_condition(s.get_type());
+      if (fac >= TERRAFORM_STRIP_BLAST_THRESHOLD && !uniform_rand(0, 10)) {
+        if (uniform_rand(0, 6) >= s.defense_bonus())
+          s.set_condition(s.get_type());
       }
 
-      if (round_rand(fac) > s.defense_bonus() * int_rand(0, 10)) {
+      if (round_rand(fac) > s.defense_bonus() * uniform_rand(0, 10)) {
         if (sector_owner != 0) nuked.insert(sector_owner);
         s.clear_popn();
-        s.set_troops(int_rand(0, static_cast<int>(s.get_troops())));
+        s.set_troops(uniform_rand(0, s.get_troops()));
         s.clear_owner_if_empty(); /* troops may survive this */
         s.clear_efficiency();
         s.set_resource(s.get_resource() / (static_cast<int>(fac) + 1));
         s.set_mobilization(0);
         s.set_fert(0); /*all is lost !*/
-        s.set_crystals(int_rand(0, static_cast<int>(s.get_crystals())));
+        s.set_crystals(uniform_rand(0, s.get_crystals()));
         s.set_condition(SectorType::SEC_WASTED);
         numdest++;
       } else {
@@ -298,7 +300,7 @@ static std::pair<radiation_t, radiation_t> do_radiation(Ship& ship, double tech,
 
   /* check to see how many hits penetrate */
   for (auto _ : std::views::iota(hit_count_t{0}, hits)) {
-    if (double_rand() <= r) penetrate += 1;
+    if (uniform_rand() <= r) penetrate += 1;
   }
 
   const radiation_t dosage =
@@ -341,7 +343,7 @@ do_damage(EntityManager& em, ShipShotAttackerKind attacker_kind, player_t who,
 
   /* check to see how many hits penetrate */
   for (auto _ : std::views::iota(hit_count_t{0}, hits)) {
-    if (double_rand() <= r) penetrate += 1;
+    if (uniform_rand() <= r) penetrate += 1;
   }
 
   damage_t damage = std::max(
@@ -517,9 +519,9 @@ static CriticalHitResult do_critical_hits(hit_count_t penetrate, Ship& ship,
   const int caliber_val = std::max(1, gun_caliber(caliber));
   const auto eff_size = std::max<ship_size_t>(1, ship.shipbody() / caliber_val);
   for (auto _ : std::views::iota(hit_count_t{0}, penetrate)) {
-    if (!int_rand(0, eff_size - 1)) {
+    if (!uniform_rand(0, eff_size - 1)) {
       crithits += 1;
-      const damage_t dam = int_rand(0, 100);
+      const damage_t dam = uniform_rand(0, 100);
       critdam += dam;
     }
   }
@@ -544,11 +546,11 @@ static CriticalHitResult do_critical_hits(hit_count_t penetrate, Ship& ship,
   }
   if (ship.max_speed() && success(critdam)) {
     ship.speed() = 0;
-    ship.max_speed() = int_rand(0, ship.max_speed() - 1);
+    ship.max_speed() = uniform_rand(0, ship.max_speed().get() - 1);
     systems.reduced_max_speed = ship.max_speed();
   }
   if (ship.armor() && success(critdam)) {
-    ship.armor() = int_rand(0, ship.armor() - 1);
+    ship.armor() = uniform_rand(0, ship.armor() - 1);
     systems.reduced_armor = ship.armor();
   }
   return {

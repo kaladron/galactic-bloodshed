@@ -825,19 +825,19 @@ ap_t Planet::get_points() const {
     case PlanetType::ASTEROID:
       return ASTEROID_POINTS;
     case PlanetType::EARTH:
-      return int_rand(EARTH_POINTS_LOW, EARTH_POINTS_HIGH);
+      return uniform_rand(EARTH_POINTS_LOW, EARTH_POINTS_HIGH);
     case PlanetType::MARS:
-      return int_rand(MARS_POINTS_LOW, MARS_POINTS_HIGH);
+      return uniform_rand(MARS_POINTS_LOW, MARS_POINTS_HIGH);
     case PlanetType::ICEBALL:
-      return int_rand(ICEBALL_POINTS_LOW, ICEBALL_POINTS_HIGH);
+      return uniform_rand(ICEBALL_POINTS_LOW, ICEBALL_POINTS_HIGH);
     case PlanetType::GASGIANT:
-      return int_rand(GASGIANT_POINTS_LOW, GASGIANT_POINTS_HIGH);
+      return uniform_rand(GASGIANT_POINTS_LOW, GASGIANT_POINTS_HIGH);
     case PlanetType::WATER:
-      return int_rand(WATER_POINTS_LOW, WATER_POINTS_HIGH);
+      return uniform_rand(WATER_POINTS_LOW, WATER_POINTS_HIGH);
     case PlanetType::FOREST:
-      return int_rand(FOREST_POINTS_LOW, FOREST_POINTS_HIGH);
+      return uniform_rand(FOREST_POINTS_LOW, FOREST_POINTS_HIGH);
     case PlanetType::DESERT:
-      return int_rand(DESERT_POINTS_LOW, DESERT_POINTS_HIGH);
+      return uniform_rand(DESERT_POINTS_LOW, DESERT_POINTS_HIGH);
   }
 }
 

@@ -203,7 +203,7 @@ Coordinates AutonomousShip::roam_to_adjacent_sector(const Planet& planet) {
 }
 
 std::string AutonomousShip::generate_binary_name() {
-  const int len = int_rand(3, std::min(10, SHIP_NAMESIZE));
+  const int len = uniform_rand(3, std::min(10, SHIP_NAMESIZE));
   std::string name;
   name.reserve(len);
   for (int i = 0; i < len; ++i) {

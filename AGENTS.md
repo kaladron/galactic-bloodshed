@@ -363,7 +363,7 @@ Rules:
 #### Planetary Grid Dimensions & `num_sectors()`
 
 - **Use `num_sectors()` helper**: Prefer `planet.num_sectors()` and `smap.num_sectors()` over raw multiplication (`dimensions().x * dimensions().y`).
-- **Use `smap.get_random()`**: When selecting a random sector coordinate on a world, call `smap.get_random().coords()` or `smap.get_random(rng)` instead of computing `int_rand(0, p.dimensions().x - 1)` manually.
+- **Use `smap.get_random()`**: When selecting a random sector coordinate on a world, call `smap.get_random().coords()` or `smap.get_random(rng)` instead of computing `uniform_rand(0, p.dimensions().x - 1)` manually.
 
 #### Sparse Per-Player Containers (`std::flat_map` / `std::flat_set`) & Nullable Foreign Keys (`std::optional<ID>`)
 

@@ -147,11 +147,11 @@ MechAttackPeopleResult mech_attack_people(EntityManager& em, Ship& ship,
 
   const double ratio = (dstrength > 0.0) ? std::min(1e6, astrength / dstrength)
                                          : (astrength > 0.0 ? 1e6 : 0.0);
-  population_t cas_civ =
-      int_rand(0, round_rand(static_cast<double>(oldciv) * ratio));
+  population_t cas_civ = uniform_rand(
+      0, round_rand<population_t>(static_cast<double>(oldciv) * ratio));
   cas_civ = std::min(oldciv, cas_civ);
-  population_t cas_mil =
-      int_rand(0, round_rand(static_cast<double>(oldmil) * ratio));
+  population_t cas_mil = uniform_rand(
+      0, round_rand<population_t>(static_cast<double>(oldmil) * ratio));
   cas_mil = std::min(oldmil, cas_mil);
   *civ -= cas_civ;
   *mil -= cas_mil;
@@ -192,7 +192,7 @@ PeopleAttackMechResult people_attack_mech(EntityManager& em, Ship& ship,
       (dstrength > 0.0) ? std::min(1e6, 100.0 * astrength / dstrength)
                         : (astrength > 0.0 ? 100.0 : 0.0);
   const damage_t damage =
-      std::min(100, int_rand(0, round_rand(damage_ceiling)));
+      std::min(100, uniform_rand(0, round_rand(damage_ceiling)));
   if (ship.apply_damage(damage).destroyed) {
     em.kill_ship(race.Playernum, ship);
   }
@@ -253,21 +253,22 @@ GroundAttackResult ground_attack(const GroundAttackParams& p) {
       (p.attacker_type == PopulationType::MIL)
           ? static_cast<int>(MILITARY_COMBAT_MULTIPLIER)
           : 1;
-  population_t attacker_casualties = int_rand(
-      0, round_rand(static_cast<double>(casualty_scale / attacker_divisor) *
-                    dstrength / astrength));
+  population_t attacker_casualties = uniform_rand(
+      0, round_rand<population_t>(
+             static_cast<double>(casualty_scale / attacker_divisor) *
+             dstrength / astrength));
   attacker_casualties = std::min(p.attacker_force, attacker_casualties);
 
-  population_t defender_civ_casualties =
-      int_rand(0, round_rand(static_cast<double>(casualty_scale) * astrength /
-                             dstrength));
+  population_t defender_civ_casualties = uniform_rand(
+      0, round_rand<population_t>(static_cast<double>(casualty_scale) *
+                                  astrength / dstrength));
   defender_civ_casualties = std::min(p.defender_civ, defender_civ_casualties);
 
-  population_t defender_mil_casualties =
-      int_rand(0, round_rand(static_cast<double>(
-                                 casualty_scale /
+  population_t defender_mil_casualties = uniform_rand(
+      0, round_rand<population_t>(
+             static_cast<double>(casualty_scale /
                                  static_cast<int>(MILITARY_COMBAT_MULTIPLIER)) *
-                             astrength / dstrength));
+             astrength / dstrength));
   defender_mil_casualties = std::min(p.defender_mil, defender_mil_casualties);
 
   return GroundAttackResult{

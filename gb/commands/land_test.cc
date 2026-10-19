@@ -6,6 +6,8 @@
 import commands;
 import dallib;
 import gb.entities;
+import gb.mechanics;
+import gb.presentation.navigation;
 import gb.services;
 import test;
 import std;
@@ -458,12 +460,182 @@ void test_land_planet_preconditions_and_crashes() {
                                 .in_planet_orbit(1, 1)
                                 .with_fuel(20.0)
                                 .with_damage(100)
+                                .with_destruct(30)
                                 .build();
+  ctx.em.mutate_ship(crash_dmg_id, [](Ship& s) { s.max_destruct() = 30; });
   ctx.assert_dispatch_success(
       g, {"land", std::format("#{}", crash_dmg_id.value), "5,5"}, 1);
   test::expect_contains(g.out.str(), "Ship damage 100%");
   test::expect_throws<EntityNotFoundError>(
       [&]() { ctx.em.peek_ship(crash_dmg_id); });
+}
+
+void test_land_json_and_remaining_conditions() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 1);
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(1);
+
+  // 1. Star-scope spaceborne carrier landing + carrier mass conservation check
+  const auto carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
+                              .owned_by(1, 1)
+                              .named("StarCarrier")
+                              .in_star_orbit(1)
+                              .with_max_hanger(300)
+                              .build();
+  ctx.em.mutate_ship(1, [](Ship& s) {
+    s.enter_star_orbit(1);
+    s.set_coordinates({0.0, 0.0});
+  });
+  ctx.em.mutate_ship(carrier_id,
+                     [](Ship& c) { c.set_coordinates({2.0, 0.0}); });
+
+  // Self-landing rejected in spaceborne mode
+  ctx.assert_dispatch_rejected(g, {"land", std::format("#{}", carrier_id.value),
+                                   std::format("#{}", carrier_id.value)});
+  test::expect_contains(g.out.str(), "Cannot dock a ship into its own");
+
+  const double carrier_base_mass = ctx.em.peek_ship(carrier_id)->mass();
+  ctx.assert_dispatch_success(
+      g, {"land", "#1", std::format("#{}", carrier_id.value)}, 0);
+  const double shuttle_post_land_mass = ctx.em.peek_ship(1)->mass();
+  test::expect_true(std::abs(ctx.em.peek_ship(carrier_id)->mass() -
+                             (carrier_base_mass + shuttle_post_land_mass)) <
+                    1e-6);
+
+  // Already docked to carrier rejected
+  ctx.assert_dispatch_rejected(
+      g, {"land", "#1", std::format("#{}", carrier_id.value)});
+  test::expect_contains(g.out.str(), "That ship is docked to another ship.");
+
+  // Launch back out and verify carrier mass returns to exact base mass
+  ctx.assert_dispatch_success(g, {"launch", "#1"}, 0);
+  test::expect_true(std::abs(ctx.em.peek_ship(carrier_id)->mass() -
+                             carrier_base_mass) < 1e-6);
+
+  // 2. Planetary landing preconditions: not orbiting planet, not equipped,
+  // wrong scope (star & planet), not rated for maneuvering
+  ctx.assert_dispatch_rejected(g, {"land", "#1", "5,5"});
+  test::expect_contains(g.out.str(), "doesn't orbit a planet");
+
+  const auto hab_id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
+                          .owned_by(1, 1)
+                          .in_planet_orbit(1, 1)
+                          .build();
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_pnum(1);
+  ctx.assert_dispatch_rejected(
+      g, {"land", std::format("#{}", hab_id.value), "5,5"});
+  test::expect_contains(g.out.str(), "This ship is not equipped to land.");
+
+  ctx.em.mutate_ship(1, [](Ship& s) { s.enter_planet_orbit(1, 1); });
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_snum(0);
+  g.set_pnum(0);
+  ctx.assert_dispatch_rejected(g, {"land", "#1", "5,5"});
+  test::expect_contains(g.out.str(), "You have to cs to the planet it orbits.");
+
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(1);
+  g.set_pnum(0);
+  ctx.assert_dispatch_rejected(g, {"land", "#1", "5,5"});
+  test::expect_contains(g.out.str(), "You have to cs to the planet it orbits.");
+
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_pnum(1);
+  ctx.em.mutate_ship(1, [](Ship& s) { s.max_speed() = 0; });
+  ctx.assert_dispatch_rejected(g, {"land", "#1", "5,5"});
+  test::expect_contains(g.out.str(), "This ship is not rated for maneuvering.");
+  ctx.em.mutate_ship(1, [](Ship& s) { s.max_speed() = 4; });
+
+  // 3. One-way alliance on alien sector & landing on own sector & JSON mode
+  const auto* star = ctx.em.peek_star(1);
+  const auto* planet = ctx.em.peek_planet(1, 1);
+  const auto planet_coords = planet->absolute_coordinates(*star);
+  ctx.em.mutate_ship(1, [&](Ship& s) {
+    s.set_coordinates(planet_coords);
+    s.add_fuel(50.0);
+  });
+  ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
+    smap.get({1, 1}).set_owner(1);
+    smap.get({3, 3}).set_owner(2);
+  });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) {
+    p.info(1).numsectsowned = 1;
+    p.info(2).numsectsowned = 1;
+    p.info(2).popn = 100;
+    p.info(2).guns = 0;
+    p.info(2).destruct = 0;
+  });
+  ctx.em.mutate_race(1, [](Race& r) { r.declare_alliance_with(2); });
+
+  // Land on one-way allied sector (player 1 allied with 2, but 2 not allied
+  // with 1)
+  ctx.assert_dispatch_success(g, {"land", "#1", "3,3"}, 1);
+  test::expect_contains(g.out.str(), "You have landed on an alien sector");
+
+  // Self-landing rejected when landed
+  ctx.em.mutate_ship(carrier_id, [](Ship& c) {
+    c.land_on_planet(1, 1, {3, 3});
+    c.on() = false;
+  });
+  ctx.assert_dispatch_rejected(g, {"land", std::format("#{}", carrier_id.value),
+                                   std::format("#{}", carrier_id.value)});
+  test::expect_contains(g.out.str(), "Cannot dock a ship into its own");
+
+  // Relaunch and land on own sector (1, 1) in JSON mode
+  ctx.em.mutate_ship(1, [&](Ship& s) {
+    s.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
+    s.set_coordinates(planet_coords);
+    s.add_fuel(50.0);
+  });
+  g.set_ui_mode(UiMode::JSON);
+  ctx.assert_dispatch_success(g, {"land", "#1", "1,1"}, 1);
+  test::expect_contains(g.out.str(), "\"type\":\"land_ship\"");
+  g.set_ui_mode(UiMode::ASCII);
+
+  // 4. Ship destroyed by planetary defense fire during descent
+  const auto doomed_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
+                             .owned_by(1, 1)
+                             .in_planet_orbit(1, 1)
+                             .with_damage(99)
+                             .build();
+  ctx.em.mutate_ship(doomed_id,
+                     [&](Ship& s) { s.set_coordinates(planet_coords); });
+  ctx.em.mutate_race(2, [](Race& r) {
+    r.declare_war_on(1);
+    r.tech = 500.0;
+  });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) {
+    p.info(2).popn = 5000;
+    p.info(2).guns = 50;
+    p.info(2).destruct = 50;
+  });
+  ctx.assert_dispatch_success(
+      g, {"land", std::format("#{}", doomed_id.value), "1,1"}, 1);
+  test::expect_throws<EntityNotFoundError>(
+      [&]() { ctx.em.peek_ship(doomed_id); });
+
+  // 5. Verify all LandErrorReason values format non-empty diagnostics
+  for (const auto reason : all_land_error_reasons) {
+    const LandError err{
+        .reason = reason,
+        .ship_display = "s1",
+        .target_ship_input = "#bad",
+        .target_ship_display = "s2",
+        .target_ship_number = 2,
+        .ship_size = 10,
+        .star_name = "Sol",
+        .planet_name = "Earth",
+        .planet_gravity = 1.0,
+        .distance_to_planet = 5.0,
+    };
+    test::expect_false(GB::presentation::format_land_error(err).empty());
+  }
 }
 
 }  // namespace
@@ -477,6 +649,7 @@ int main() {
   test_land_spaceborne_on_carrier_and_edge_cases();
   test_land_mothership_loading_edge_cases();
   test_land_planet_preconditions_and_crashes();
+  test_land_json_and_remaining_conditions();
 
   std::println(std::cout, "✓ land_test passed!");
   return 0;

@@ -23,6 +23,69 @@ export struct CapturedShipsReport {
   std::vector<CapturedShipEvent> captured_ships{};
 };
 
+/// \brief Collateral casualties and system damage inflicted on a target ship.
+export struct CollateralDamage {
+  population_t civilian_casualties{0};
+  population_t military_casualties{0};
+  gun_count_t primary_guns_lost{0};
+  gun_count_t secondary_guns_lost{0};
+};
+
+export struct CriticalHitSystemsDamage {
+  bool cew_destroyed{false};
+  bool laser_destroyed{false};
+  bool cloak_destroyed{false};
+  bool hyper_drive_destroyed{false};
+  std::optional<speed_t> reduced_max_speed{std::nullopt};
+  std::optional<armor_t> reduced_armor{std::nullopt};
+};
+
+export struct CriticalHitResult {
+  hit_count_t count{0};
+  damage_t damage{0};
+  CriticalHitSystemsDamage systems{};
+};
+
+export enum class ShipShotAttackerKind {
+  Ship,
+  Planet,
+};
+
+export enum class ShipShotWeaponKind {
+  Radiation,
+  Cew,
+  FocusedLaser,
+  Laser,
+  LightGuns,
+  MediumGuns,
+  HeavyGuns,
+};
+
+export struct ShipShotResult {
+  ShipShotAttackerKind attacker_kind{ShipShotAttackerKind::Ship};
+  player_t attacker_player{0};
+  std::string attacker_display{};
+  std::string target_location_display{};
+  std::string target_display{};
+  bool target_alive{true};
+  ShipShotWeaponKind weapon{ShipShotWeaponKind::LightGuns};
+  weapon_power_t strength{0};
+  double range{0.0};
+  hit_count_t hits{0};
+  hit_odds_t hit_probability{0};
+  damage_t damage{0};
+  damage_t total_damage{0};
+  radiation_t radiation_dosage{0};
+  radiation_t total_radiation{0};
+  std::optional<armor_t> armor_reduced_to{std::nullopt};
+  hit_count_t penetrations{0};
+  armor_t effective_armor{0};
+  armor_t defense{0};
+  double penetration_probability{0.0};
+  CriticalHitResult critical{};
+  CollateralDamage collateral{};
+};
+
 export armor_t getdefense(EntityManager&, const Ship&);
 export CapturedShipsReport capture_stuff(EntityManager&, const Ship&);
 export void domass(Ship&, EntityManager&);
@@ -498,3 +561,131 @@ export struct LaunchShipResult {
 
 export std::expected<LaunchShipResult, LaunchError>
 launch_single_ship(EntityManager& em, Ship& s, player_t player, bool god);
+
+export enum class LandErrorReason {
+  Overloaded,
+  CannotLoadQuarry,
+  DockedToAnotherShip,
+  InvalidTargetShipFormat,
+  TargetShipNotFound,
+  TargetNotCommandable,
+  CannotLandOnFactory,
+  MothershipNotLanded,
+  NotInSameStarSystem,
+  NotOnSamePlanet,
+  NotInSameSector,
+  MustTurnOffBeforeLoading,
+  InsufficientHangarSpace,
+  CannotDockIntoParasite,
+  NotInSameScope,
+  NotInPlanetOrStarScope,
+  TooFarFromCarrier,
+  InsufficientFuel,
+  AlreadyLanded,
+  InvalidCoordinatesFormat,
+  NotOrbitingPlanet,
+  NotEquippedToLand,
+  WrongPlanetScope,
+  NotRatedForManeuvering,
+  TooFarFromPlanet,
+  IllegalCoordinates,
+  InsufficientStarAp,
+};
+
+export inline constexpr std::array all_land_error_reasons = {
+    LandErrorReason::Overloaded,
+    LandErrorReason::CannotLoadQuarry,
+    LandErrorReason::DockedToAnotherShip,
+    LandErrorReason::InvalidTargetShipFormat,
+    LandErrorReason::TargetShipNotFound,
+    LandErrorReason::TargetNotCommandable,
+    LandErrorReason::CannotLandOnFactory,
+    LandErrorReason::MothershipNotLanded,
+    LandErrorReason::NotInSameStarSystem,
+    LandErrorReason::NotOnSamePlanet,
+    LandErrorReason::NotInSameSector,
+    LandErrorReason::MustTurnOffBeforeLoading,
+    LandErrorReason::InsufficientHangarSpace,
+    LandErrorReason::CannotDockIntoParasite,
+    LandErrorReason::NotInSameScope,
+    LandErrorReason::NotInPlanetOrStarScope,
+    LandErrorReason::TooFarFromCarrier,
+    LandErrorReason::InsufficientFuel,
+    LandErrorReason::AlreadyLanded,
+    LandErrorReason::InvalidCoordinatesFormat,
+    LandErrorReason::NotOrbitingPlanet,
+    LandErrorReason::NotEquippedToLand,
+    LandErrorReason::WrongPlanetScope,
+    LandErrorReason::NotRatedForManeuvering,
+    LandErrorReason::TooFarFromPlanet,
+    LandErrorReason::IllegalCoordinates,
+    LandErrorReason::InsufficientStarAp,
+};
+
+export struct LandError {
+  LandErrorReason reason{LandErrorReason::Overloaded};
+  std::string ship_display{};
+  std::string target_ship_input{};
+  std::string target_ship_display{};
+  shipnum_t target_ship_number{0};
+  CommandableError commandable_error{CommandableError::NotOwner};
+  radiation_t target_radiation{0};
+  ship_size_t ship_size{0};
+  std::string star_name{};
+  std::string planet_name{};
+  std::optional<double> planet_gravity{std::nullopt};
+  std::optional<double> distance_to_planet{std::nullopt};
+};
+
+export enum class LandMode {
+  LoadedOntoMothership,
+  LandedOnCarrier,
+  DestroyedByDefenseFire,
+  CrashedOnPlanet,
+  LandedOnPlanet,
+};
+
+export enum class LandSectorStatus {
+  Normal,
+  Wasteland,
+  AlliedSector,
+  AlienSector,
+};
+
+export struct PlanetaryDefenseSalvo {
+  player_t defender_player{0};
+  governor_t defender_governor{0};
+  ShipShotResult shot{};
+};
+
+export struct LandObserverTarget {
+  player_t player{0};
+  governor_t governor{0};
+};
+
+export struct LandShipResult {
+  LandMode mode{LandMode::LandedOnPlanet};
+  std::string ship_display{};
+  std::string target_ship_display{};
+  starnum_t star_id{0};
+  std::string star_name{};
+  std::string planet_name{};
+  double planet_gravity{0.0};
+  double distance_to_planet{0.0};
+  double fuel_used{0.0};
+  double ship_fuel{0.0};
+  double required_fuel{0.0};
+  Coordinates target_coords{0, 0};
+  sector_count_t sectors_destroyed{0};
+  int crash_roll{0};
+  damage_t ship_damage{0};
+  LandSectorStatus sector_status{LandSectorStatus::Normal};
+  std::string sector_owner_name{};
+  std::vector<PlanetaryDefenseSalvo> defense_salvos{};
+  std::vector<LandObserverTarget> observers{};
+};
+
+export std::expected<LandShipResult, LandError>
+land_single_ship(EntityManager& em, Ship& s, std::string_view target_arg,
+                 player_t player, governor_t governor, starnum_t snum,
+                 planetnum_t pnum, bool god);

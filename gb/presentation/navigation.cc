@@ -6,6 +6,7 @@
 
 module gb.presentation.navigation;
 
+import gb.presentation.combat;
 import gb.presentation.core;
 import glaze.core;
 import glaze.json;
@@ -824,6 +825,217 @@ std::string render_for_mode(UiMode mode, const LaunchShipResult& vm) {
 std::string render_launch_observed_telegram(const LaunchShipResult& res) {
   return std::format("{} observed launching from planet /{}/{}.\n",
                      res.ship_display, res.star_name, res.planet_name);
+}
+
+std::string format_land_error(const LandError& err) {
+  std::string out;
+  if (err.planet_gravity.has_value() && err.distance_to_planet.has_value()) {
+    std::format_to(std::back_inserter(out),
+                   "Planet /{}/{} has gravity field of {:.2f}.\n"
+                   "Distance to planet: {:.2f}.\n",
+                   err.star_name, err.planet_name, *err.planet_gravity,
+                   *err.distance_to_planet);
+  }
+  switch (err.reason) {
+    case LandErrorReason::Overloaded:
+      std::format_to(std::back_inserter(out), "{} is too overloaded to land.\n",
+                     err.ship_display);
+      break;
+    case LandErrorReason::CannotLoadQuarry:
+      out += "You can't load quarries onto ship.\n";
+      break;
+    case LandErrorReason::DockedToAnotherShip:
+      out += "That ship is docked to another ship.\n";
+      break;
+    case LandErrorReason::InvalidTargetShipFormat:
+      std::format_to(std::back_inserter(out), "Ship {} wasn't found.\n",
+                     err.target_ship_input);
+      break;
+    case LandErrorReason::TargetShipNotFound:
+      std::format_to(std::back_inserter(out), "Ship #{} wasn't found.\n",
+                     err.target_ship_number);
+      break;
+    case LandErrorReason::TargetNotCommandable:
+      switch (err.commandable_error) {
+        case CommandableError::NotOwner:
+        case CommandableError::NotAuthorizedGovernor:
+          std::format_to(std::back_inserter(out), "You don't own ship #{}.\n",
+                         err.target_ship_number);
+          break;
+        case CommandableError::ShipDead:
+          std::format_to(std::back_inserter(out), "{} has been destroyed.\n",
+                         err.target_ship_display);
+          break;
+        case CommandableError::ShipIrradiated:
+          std::format_to(std::back_inserter(out),
+                         "{} is irradiated {}% and inactive.\n",
+                         err.target_ship_display, err.target_radiation);
+          break;
+      }
+      out += "Illegal format.\n";
+      break;
+    case LandErrorReason::CannotLandOnFactory:
+      out += "Can't land on factories.\n";
+      break;
+    case LandErrorReason::MothershipNotLanded:
+      std::format_to(std::back_inserter(out), "{} is not landed on a planet.\n",
+                     err.target_ship_display);
+      break;
+    case LandErrorReason::NotInSameStarSystem:
+      out += "These ships are not in the same star system.\n";
+      break;
+    case LandErrorReason::NotOnSamePlanet:
+      out += "These ships are not landed on the same planet.\n";
+      break;
+    case LandErrorReason::NotInSameSector:
+      out += "These ships are not in the same sector.\n";
+      break;
+    case LandErrorReason::MustTurnOffBeforeLoading:
+      std::format_to(std::back_inserter(out),
+                     "{} must be turned off before loading.\n",
+                     err.ship_display);
+      break;
+    case LandErrorReason::InsufficientHangarSpace:
+      std::format_to(std::back_inserter(out),
+                     "Mothership does not have {} hanger space "
+                     "available to load ship.\n",
+                     err.ship_size);
+      break;
+    case LandErrorReason::CannotDockIntoParasite:
+      out += "Cannot dock a ship into its own parasite craft.\n";
+      break;
+    case LandErrorReason::NotInSameScope:
+      out += "Those ships are not in the same scope.\n";
+      break;
+    case LandErrorReason::NotInPlanetOrStarScope:
+      out += "Ship is not in planet or star scope.\n";
+      break;
+    case LandErrorReason::TooFarFromCarrier:
+      std::format_to(std::back_inserter(out),
+                     "{} must be {} or closer to {}.\n", err.ship_display,
+                     DIST_TO_DOCK, err.target_ship_display);
+      break;
+    case LandErrorReason::InsufficientFuel:
+      out += "Not enough fuel.\n";
+      break;
+    case LandErrorReason::AlreadyLanded:
+      std::format_to(std::back_inserter(out), "{} is docked.\n",
+                     err.ship_display);
+      break;
+    case LandErrorReason::InvalidCoordinatesFormat:
+      out += "Invalid coordinates format. Use: x,y\n";
+      break;
+    case LandErrorReason::NotOrbitingPlanet:
+      std::format_to(std::back_inserter(out), "{} doesn't orbit a planet.\n",
+                     err.ship_display);
+      break;
+    case LandErrorReason::NotEquippedToLand:
+      out += "This ship is not equipped to land.\n";
+      break;
+    case LandErrorReason::WrongPlanetScope:
+      out += "You have to cs to the planet it orbits.\n";
+      break;
+    case LandErrorReason::NotRatedForManeuvering:
+      out += "This ship is not rated for maneuvering.\n";
+      break;
+    case LandErrorReason::TooFarFromPlanet:
+      std::format_to(std::back_inserter(out),
+                     "{} must be {:.3g} or closer to the planet ({:.2f}).\n",
+                     err.ship_display, DIST_TO_LAND, *err.distance_to_planet);
+      break;
+    case LandErrorReason::IllegalCoordinates:
+      out += "Illegal coordinates.\n";
+      break;
+    case LandErrorReason::InsufficientStarAp:
+      out += "You don't have 1 action points there.\n";
+      break;
+  }
+  return out;
+}
+
+std::string render_land_ship_result(const LandShipResult& res) {
+  switch (res.mode) {
+    case LandMode::LoadedOntoMothership:
+      return std::format("{} loaded onto {} using 0 fuel.\n", res.ship_display,
+                         res.target_ship_display);
+    case LandMode::LandedOnCarrier:
+      return std::format("{} landed on {} using {} fuel.\n", res.ship_display,
+                         res.target_ship_display, res.fuel_used);
+    case LandMode::DestroyedByDefenseFire:
+    case LandMode::CrashedOnPlanet:
+    case LandMode::LandedOnPlanet: {
+      std::string out =
+          std::format("Planet /{}/{} has gravity field of {:.2f}.\n"
+                      "Distance to planet: {:.2f}.\n",
+                      res.star_name, res.planet_name, res.planet_gravity,
+                      res.distance_to_planet);
+      for (const auto& salvo : res.defense_salvos) {
+        out += render_ship_shot_long(salvo.shot);
+      }
+      if (res.mode == LandMode::DestroyedByDefenseFire) {
+        return out;
+      }
+      if (res.mode == LandMode::CrashedOnPlanet) {
+        if (res.crash_roll > 0) {
+          std::format_to(std::back_inserter(out),
+                         "Ship damage {}% (you rolled a {})\n", res.ship_damage,
+                         res.crash_roll);
+        } else {
+          std::format_to(std::back_inserter(out),
+                         "You had {:.1f}f while the landing required {:.1f}f\n",
+                         res.ship_fuel, res.required_fuel);
+        }
+        return out;
+      }
+      switch (res.sector_status) {
+        case LandSectorStatus::Normal:
+          break;
+        case LandSectorStatus::Wasteland:
+          out += "Warning: That sector is a wasteland!\n";
+          break;
+        case LandSectorStatus::AlliedSector:
+          std::format_to(std::back_inserter(out),
+                         "You have landed on allied sector ({}).\n",
+                         res.sector_owner_name);
+          break;
+        case LandSectorStatus::AlienSector:
+          std::format_to(std::back_inserter(out),
+                         "You have landed on an alien sector ({}).\n",
+                         res.sector_owner_name);
+          break;
+      }
+      std::format_to(std::back_inserter(out), "{} landed on planet.\n",
+                     res.ship_display);
+      return out;
+    }
+  }
+  return {};
+}
+
+std::string render_json_land_ship_result(const LandShipResult& res) {
+  return render_json_envelope("land_ship", res);
+}
+
+std::string render_for_mode(UiMode mode, const LandShipResult& vm) {
+  if (mode == UiMode::JSON) {
+    return render_json_land_ship_result(vm);
+  }
+  return render_land_ship_result(vm);
+}
+
+std::optional<std::string>
+render_land_observer_telegram(const LandShipResult& res) {
+  if (res.mode == LandMode::CrashedOnPlanet) {
+    return std::format(
+        "BOOM!! {} crashes on sector {} with blast radius of {}.\n",
+        res.ship_display, res.target_coords, res.sectors_destroyed);
+  }
+  if (res.mode == LandMode::LandedOnPlanet) {
+    return std::format("{} observed landing on sector {},planet /{}/{}.\n",
+                       res.ship_display, res.target_coords, res.star_name,
+                       res.planet_name);
+  }
+  return std::nullopt;
 }
 
 }  // namespace GB::presentation

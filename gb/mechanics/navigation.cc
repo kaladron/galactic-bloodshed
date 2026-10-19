@@ -1612,3 +1612,380 @@ launch_single_ship(EntityManager& em, Ship& s, player_t player, bool god) {
   }
   return launch_from_planet(em, s, player, god);
 }
+
+namespace {
+
+std::expected<LandShipResult, LandError>
+load_landed_onto_mothership(EntityManager& em, Ship& s,
+                            const Ship& mothership) {
+  if (!mothership.is_landed()) {
+    return std::unexpected(LandError{
+        .reason = LandErrorReason::MothershipNotLanded,
+        .target_ship_display = std::format("{}", mothership),
+    });
+  }
+  if (mothership.storbits() != s.storbits()) {
+    return std::unexpected(LandError{
+        .reason = LandErrorReason::NotInSameStarSystem,
+    });
+  }
+  if (mothership.pnumorbits() != s.pnumorbits()) {
+    return std::unexpected(LandError{
+        .reason = LandErrorReason::NotOnSamePlanet,
+    });
+  }
+  if (mothership.land_coords() != s.land_coords()) {
+    return std::unexpected(LandError{
+        .reason = LandErrorReason::NotInSameSector,
+    });
+  }
+  if (s.on()) {
+    return std::unexpected(LandError{
+        .reason = LandErrorReason::MustTurnOffBeforeLoading,
+        .ship_display = std::format("{}", s),
+    });
+  }
+  if (s.size() > mothership.hanger_space()) {
+    return std::unexpected(LandError{
+        .reason = LandErrorReason::InsufficientHangarSpace,
+        .ship_size = s.size(),
+    });
+  }
+
+  auto dock_res = em.dock_carrier(s.number(), mothership.number());
+  if (!dock_res) {
+    return std::unexpected(LandError{
+        .reason = LandErrorReason::CannotDockIntoParasite,
+    });
+  }
+  return LandShipResult{
+      .mode = LandMode::LoadedOntoMothership,
+      .ship_display = std::format("{}", s),
+      .target_ship_display = std::format("{}", mothership),
+      .fuel_used = 0.0,
+  };
+}
+
+std::expected<LandShipResult, LandError>
+land_spaceborne_on_carrier(EntityManager& em, Ship& s, const Ship& carrier) {
+  if (s.whatorbits() != carrier.whatorbits()) {
+    return std::unexpected(LandError{
+        .reason = LandErrorReason::NotInSameScope,
+    });
+  }
+  if (s.whatorbits() != ScopeLevel::LEVEL_PLAN &&
+      s.whatorbits() != ScopeLevel::LEVEL_STAR) {
+    return std::unexpected(LandError{
+        .reason = LandErrorReason::NotInPlanetOrStarScope,
+    });
+  }
+
+  const double dist = carrier.coordinates().distance_to(s.coordinates());
+  if (dist > DIST_TO_DOCK) {
+    return std::unexpected(LandError{
+        .reason = LandErrorReason::TooFarFromCarrier,
+        .ship_display = std::format("{}", s),
+        .target_ship_display = std::format("{}", carrier),
+    });
+  }
+
+  const double fuel = DOCK_BASE_FUEL_COST +
+                      dist * DOCK_DISTANCE_FUEL_FACTOR * std::sqrt(s.mass());
+  if (s.fuel() < fuel) {
+    return std::unexpected(LandError{
+        .reason = LandErrorReason::InsufficientFuel,
+    });
+  }
+  if (s.size() > carrier.hanger_space()) {
+    return std::unexpected(LandError{
+        .reason = LandErrorReason::InsufficientHangarSpace,
+        .ship_size = s.size(),
+    });
+  }
+  if (s.number() == carrier.number()) {
+    return std::unexpected(LandError{
+        .reason = LandErrorReason::CannotDockIntoParasite,
+    });
+  }
+
+  s.consume_fuel(fuel);
+  (void)em.dock_carrier(s.number(), carrier.number());
+  return LandShipResult{
+      .mode = LandMode::LandedOnCarrier,
+      .ship_display = std::format("{}", s),
+      .target_ship_display = std::format("{}", carrier),
+      .fuel_used = fuel,
+  };
+}
+
+std::expected<LandShipResult, LandError>
+land_friendly_ship(EntityManager& em, Ship& s, std::string_view target_arg,
+                   player_t player, governor_t governor, bool god) {
+  auto ship2tmp = string_to_shipnum(target_arg);
+  if (!ship2tmp) {
+    return std::unexpected(LandError{
+        .reason = LandErrorReason::InvalidTargetShipFormat,
+        .target_ship_input = std::string(target_arg),
+    });
+  }
+
+  const auto ship2no = *ship2tmp;
+  const Ship* s2_check = nullptr;
+  try {
+    s2_check = em.peek_ship(ship2no);
+  } catch (const EntityNotFoundError&) {
+    return std::unexpected(LandError{
+        .reason = LandErrorReason::TargetShipNotFound,
+        .target_ship_number = ship2no,
+    });
+  }
+
+  if (auto cmd_res = validate_commandable(*s2_check, player, governor, god);
+      !cmd_res) {
+    return std::unexpected(LandError{
+        .reason = LandErrorReason::TargetNotCommandable,
+        .target_ship_display = std::format("{}", *s2_check),
+        .target_ship_number = s2_check->number(),
+        .commandable_error = cmd_res.error(),
+        .target_radiation = s2_check->rad(),
+    });
+  }
+  if (s2_check->type() == ShipType::OTYPE_FACTORY) {
+    return std::unexpected(LandError{
+        .reason = LandErrorReason::CannotLandOnFactory,
+    });
+  }
+  if (s.is_landed()) {
+    return load_landed_onto_mothership(em, s, *s2_check);
+  }
+  return land_spaceborne_on_carrier(em, s, *s2_check);
+}
+
+void resolve_planetary_defense_fire(
+    EntityManager& em, Ship& s, const Star& star, Planet& p, player_t player,
+    std::vector<PlanetaryDefenseSalvo>& salvos) {
+  for (const Race& alien_race : RaceList::readonly(em)) {
+    if (!s.alive()) break;
+    const player_t i = alien_race.Playernum;
+    if (i == player) continue;
+    const weapon_power_t strength = std::min(
+        p.info(i).guns, static_cast<weapon_power_t>(p.info(i).destruct));
+    if (p.info(i).popn <= 0 || strength <= 0) continue;
+    if (!alien_race.is_at_war_with(s.owner())) continue;
+
+    if (auto p2s_opt = shoot_planet_to_ship(em, alien_race, s, strength)) {
+      salvos.push_back(PlanetaryDefenseSalvo{
+          .defender_player = i,
+          .defender_governor = star.governor(i),
+          .shot = std::move(*p2s_opt),
+      });
+    }
+    p.info(i).destruct -= strength;
+  }
+}
+
+std::expected<LandShipResult, LandError>
+land_on_planet_sector(EntityManager& em, Ship& s, std::string_view target_arg,
+                      player_t player, starnum_t snum, planetnum_t pnum,
+                      bool god) {
+  if (s.docked()) {
+    return std::unexpected(LandError{
+        .reason = LandErrorReason::AlreadyLanded,
+        .ship_display = std::format("{}", s),
+    });
+  }
+  auto coords_opt = Coordinates::parse(target_arg);
+  if (!coords_opt) {
+    return std::unexpected(LandError{
+        .reason = LandErrorReason::InvalidCoordinatesFormat,
+    });
+  }
+  const Coordinates target_coords = *coords_opt;
+  if (s.whatorbits() != ScopeLevel::LEVEL_PLAN) {
+    return std::unexpected(LandError{
+        .reason = LandErrorReason::NotOrbitingPlanet,
+        .ship_display = std::format("{}", s),
+    });
+  }
+  if (!s.can_land()) {
+    return std::unexpected(LandError{
+        .reason = LandErrorReason::NotEquippedToLand,
+    });
+  }
+  if (s.storbits() != snum || s.pnumorbits() != pnum) {
+    return std::unexpected(LandError{
+        .reason = LandErrorReason::WrongPlanetScope,
+    });
+  }
+  if (!s.max_speed_capacity()) {
+    return std::unexpected(LandError{
+        .reason = LandErrorReason::NotRatedForManeuvering,
+    });
+  }
+
+  const auto& star = *em.peek_star(s.storbits());
+  const std::string star_name = star.get_name();
+  const std::string planet_name = star.get_planet_name(s.pnumorbits());
+
+  std::optional<std::expected<LandShipResult, LandError>> outcome;
+  em.mutate_planet(s.storbits(), s.pnumorbits(), [&](Planet& p) {
+    const double gravity = p.gravity();
+    const double dist =
+        s.coordinates().distance_to(p.absolute_coordinates(star));
+
+    if (dist > DIST_TO_LAND) {
+      outcome = std::unexpected(LandError{
+          .reason = LandErrorReason::TooFarFromPlanet,
+          .ship_display = std::format("{}", s),
+          .star_name = star_name,
+          .planet_name = planet_name,
+          .planet_gravity = gravity,
+          .distance_to_planet = dist,
+      });
+      return;
+    }
+
+    if (!p.is_valid(target_coords)) {
+      outcome = std::unexpected(LandError{
+          .reason = LandErrorReason::IllegalCoordinates,
+          .star_name = star_name,
+          .planet_name = planet_name,
+          .planet_gravity = gravity,
+          .distance_to_planet = dist,
+      });
+      return;
+    }
+
+    if (!god && star.AP(player) < 1) {
+      outcome = std::unexpected(LandError{
+          .reason = LandErrorReason::InsufficientStarAp,
+          .star_name = star_name,
+          .planet_name = planet_name,
+          .planet_gravity = gravity,
+          .distance_to_planet = dist,
+      });
+      return;
+    }
+
+    if (!god) {
+      em.mutate_star(s.storbits(), [&](Star& st) { st.AP(player) -= 1; });
+    }
+
+    const double fuel = s.mass() * gravity * LAND_GRAV_MASS_FACTOR;
+    LandShipResult res{
+        .mode = LandMode::LandedOnPlanet,
+        .ship_display = std::format("{}", s),
+        .star_id = s.storbits(),
+        .star_name = star_name,
+        .planet_name = planet_name,
+        .planet_gravity = gravity,
+        .distance_to_planet = dist,
+        .fuel_used = fuel,
+        .target_coords = target_coords,
+    };
+
+    resolve_planetary_defense_fire(em, s, star, p, player, res.defense_salvos);
+    if (!s.alive()) {
+      res.mode = LandMode::DestroyedByDefenseFire;
+      outcome = std::move(res);
+      return;
+    }
+
+    if (auto [did_crash, roll] = s.roll_landing_crash(fuel); did_crash) {
+      sector_count_t numdest = 0;
+      em.mutate_sectormap(s.storbits(), s.pnumorbits(), [&](SectorMap& smap) {
+        auto result_opt = shoot_ship_to_planet(
+            em, s, p, round_rand<weapon_power_t>(s.destruct(), 3),
+            target_coords, smap, false, guntype_t::HEAVY);
+        numdest = result_opt ? result_opt->sectors_destroyed : 0;
+      });
+
+      for (const Race& race : RaceList::readonly(em)) {
+        const player_t i = race.Playernum;
+        if (p.info(i).numsectsowned || i == player) {
+          res.observers.push_back(LandObserverTarget{
+              .player = i,
+              .governor = star.governor(i),
+          });
+        }
+      }
+
+      res.mode = LandMode::CrashedOnPlanet;
+      res.sectors_destroyed = numdest;
+      res.crash_roll = roll;
+      res.ship_damage = s.damage();
+      res.ship_fuel = s.fuel();
+      res.required_fuel = fuel;
+      em.kill_ship(s.owner(), s);
+      outcome = std::move(res);
+      return;
+    }
+
+    s.set_land_coords(target_coords);
+    s.set_coordinates(p.absolute_coordinates(star));
+    s.consume_fuel(fuel);
+    s.land_on_planet();
+
+    em.with_sectormap(s.storbits(), s.pnumorbits(), [&](const SectorMap& smap) {
+      const auto& sector = smap.get(target_coords);
+      if (sector.is_wasted()) {
+        res.sector_status = LandSectorStatus::Wasteland;
+        return;
+      }
+      if (sector.get_owner() != 0 && sector.get_owner() != player) {
+        const auto* alien = em.peek_race(sector.get_owner());
+        const auto* caller_race = em.peek_race(player);
+        res.sector_owner_name = alien->name;
+        if (caller_race->is_allied_with(sector.get_owner()) &&
+            alien->is_allied_with(player)) {
+          res.sector_status = LandSectorStatus::AlliedSector;
+        } else {
+          res.sector_status = LandSectorStatus::AlienSector;
+        }
+      }
+    });
+
+    for (const Race& race : RaceList::readonly(em)) {
+      const player_t i = race.Playernum;
+      if (p.info(i).numsectsowned && i != player) {
+        res.observers.push_back(LandObserverTarget{
+            .player = i,
+            .governor = star.governor(i),
+        });
+      }
+    }
+
+    outcome = std::move(res);
+  });
+
+  return *outcome;
+}
+
+}  // namespace
+
+std::expected<LandShipResult, LandError>
+land_single_ship(EntityManager& em, Ship& s, std::string_view target_arg,
+                 player_t player, governor_t governor, starnum_t snum,
+                 planetnum_t pnum, bool god) {
+  if (s.is_overloaded()) {
+    return std::unexpected(LandError{
+        .reason = LandErrorReason::Overloaded,
+        .ship_display = std::format("{}", s),
+    });
+  }
+  if (s.type() == ShipType::OTYPE_QUARRY) {
+    return std::unexpected(LandError{
+        .reason = LandErrorReason::CannotLoadQuarry,
+    });
+  }
+  if (s.is_docked()) {
+    return std::unexpected(LandError{
+        .reason = LandErrorReason::DockedToAnotherShip,
+    });
+  }
+
+  if (target_arg.starts_with('#')) {
+    return land_friendly_ship(em, s, target_arg, player, governor, god);
+  }
+  return land_on_planet_sector(em, s, target_arg, player, snum, pnum, god);
+}

@@ -35,71 +35,8 @@ export std::pair<weapon_power_t, std::optional<ReactorOverloadEvent>>
 check_overload(EntityManager& entity_manager, Ship& ship, int cew,
                weapon_power_t strength);
 
-/// \brief Collateral casualties and system damage inflicted on a target ship.
-export struct CollateralDamage {
-  population_t civilian_casualties{0};
-  population_t military_casualties{0};
-  gun_count_t primary_guns_lost{0};
-  gun_count_t secondary_guns_lost{0};
-};
-
 export CollateralDamage do_collateral(Ship& ship, damage_t damage,
                                       double race_mass = 1.0);
-
-export struct CriticalHitSystemsDamage {
-  bool cew_destroyed{false};
-  bool laser_destroyed{false};
-  bool cloak_destroyed{false};
-  bool hyper_drive_destroyed{false};
-  std::optional<speed_t> reduced_max_speed{std::nullopt};
-  std::optional<armor_t> reduced_armor{std::nullopt};
-};
-
-export struct CriticalHitResult {
-  hit_count_t count{0};
-  damage_t damage{0};
-  CriticalHitSystemsDamage systems{};
-};
-
-export enum class ShipShotAttackerKind {
-  Ship,
-  Planet,
-};
-
-export enum class ShipShotWeaponKind {
-  Radiation,
-  Cew,
-  FocusedLaser,
-  Laser,
-  LightGuns,
-  MediumGuns,
-  HeavyGuns,
-};
-
-export struct ShipShotResult {
-  ShipShotAttackerKind attacker_kind{ShipShotAttackerKind::Ship};
-  player_t attacker_player{0};
-  std::string attacker_display{};
-  std::string target_location_display{};
-  std::string target_display{};
-  bool target_alive{true};
-  ShipShotWeaponKind weapon{ShipShotWeaponKind::LightGuns};
-  weapon_power_t strength{0};
-  double range{0.0};
-  hit_count_t hits{0};
-  hit_odds_t hit_probability{0};
-  damage_t damage{0};
-  damage_t total_damage{0};
-  radiation_t radiation_dosage{0};
-  radiation_t total_radiation{0};
-  std::optional<armor_t> armor_reduced_to{std::nullopt};
-  hit_count_t penetrations{0};
-  armor_t effective_armor{0};
-  armor_t defense{0};
-  double penetration_probability{0.0};
-  CriticalHitResult critical{};
-  CollateralDamage collateral{};
-};
 
 export std::optional<ShipShotResult>
 shoot_ship_to_ship(EntityManager& em, const Ship& attacker, Ship& target,

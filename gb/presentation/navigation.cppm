@@ -180,4 +180,24 @@ render_json_launch_ship_result(const LaunchShipResult& res);
 [[nodiscard]] std::string
 render_launch_observed_telegram(const LaunchShipResult& res);
 
+/// Formats a `LandError` into its user-facing error diagnostic string.
+[[nodiscard]] std::string format_land_error(const LandError& err);
+
+/// Formats a `LandShipResult` into its ASCII presentation string.
+[[nodiscard]] std::string render_land_ship_result(const LandShipResult& res);
+
+/// Serializes a `LandShipResult` into a newline-delimited Glaze JSON
+/// envelope (`{"type":"land_ship","data":{...}}\n`).
+[[nodiscard]] std::string
+render_json_land_ship_result(const LandShipResult& res);
+
+/// Open ADL dispatch for `LandShipResult`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const LandShipResult& vm);
+
+/// Formats the optional observer or crash telegram sent to races on a planet
+/// when a ship lands or crashes.
+[[nodiscard]] std::optional<std::string>
+render_land_observer_telegram(const LandShipResult& res);
+
 }  // namespace GB::presentation

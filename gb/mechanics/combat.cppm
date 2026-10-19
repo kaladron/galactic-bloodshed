@@ -491,3 +491,50 @@ execute_sector_ground_assault(EntityManager& em, starnum_t snum,
                               planetnum_t pnum, player_t attacker_player,
                               Coordinates from_coords, Coordinates to_coords,
                               population_t people, PopulationType what);
+
+export enum class MovePopnErrorReason {
+  PlanetEnslaved,
+  BadSectorFormat,
+  IllegalOriginCoordinates,
+};
+
+export struct MovePopnError {
+  MovePopnErrorReason reason{MovePopnErrorReason::BadSectorFormat};
+};
+
+export enum class MovePopnStopReason {
+  CompletedPath,
+  SectorNotOwned,
+  StationaryMove,
+  IllegalTargetCoordinates,
+  NonAdjacentMove,
+  InvalidPopulationCount,
+  AttackAbortedByMechs,
+  InsufficientAp,
+};
+
+export struct MovePopnStepResult {
+  population_t moved_people{0};
+  MechDefendResult mech_defense{};
+  std::optional<SectorGroundAssaultResult> assault{std::nullopt};
+};
+
+export struct MovePopnResult {
+  PopulationType what{PopulationType::CIV};
+  std::vector<MovePopnStepResult> steps{};
+  MovePopnStopReason stop_reason{MovePopnStopReason::CompletedPath};
+  Coordinates stop_coords{};
+  population_t available_popn{0};
+  ap_t required_ap{0};
+  bool any_moved{false};
+};
+
+/// \brief Validates and executes a multi-step planetary sector movement or
+/// deployment path.
+export std::expected<MovePopnResult, MovePopnError>
+execute_planet_sector_movement(EntityManager& em, starnum_t snum,
+                               planetnum_t pnum, player_t player, bool god,
+                               std::string_view origin_str,
+                               std::string_view path,
+                               std::optional<population_t> requested_count,
+                               PopulationType what);

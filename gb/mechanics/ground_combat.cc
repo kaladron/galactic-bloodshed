@@ -512,3 +512,121 @@ execute_sector_ground_assault(EntityManager& em, starnum_t snum,
   em.mutate_race(defender_player, [&](Race& a) { a = alien; });
   return res;
 }
+
+std::expected<MovePopnResult, MovePopnError> execute_planet_sector_movement(
+    EntityManager& em, starnum_t snum, planetnum_t pnum, player_t player,
+    bool god, std::string_view origin_str, std::string_view path,
+    std::optional<population_t> requested_count, PopulationType what) {
+  const auto& planet_peek = *em.peek_planet(snum, pnum);
+  if (planet_peek.is_enslaved_to_foreign(player)) {
+    return std::unexpected(
+        MovePopnError{.reason = MovePopnErrorReason::PlanetEnslaved});
+  }
+  const auto from_opt = Coordinates::parse(origin_str);
+  if (!from_opt) {
+    return std::unexpected(
+        MovePopnError{.reason = MovePopnErrorReason::BadSectorFormat});
+  }
+  Coordinates curr_coords = *from_opt;
+  if (!planet_peek.is_valid(curr_coords)) {
+    return std::unexpected(
+        MovePopnError{.reason = MovePopnErrorReason::IllegalOriginCoordinates});
+  }
+
+  MovePopnResult res{.what = what};
+  for (const char dir_char : path) {
+    const auto& smap_peek = *em.peek_sectormap(snum, pnum);
+    const auto& sect_curr = smap_peek.get(curr_coords);
+    if (sect_curr.get_owner() != player) {
+      res.stop_reason = MovePopnStopReason::SectorNotOwned;
+      res.stop_coords = curr_coords;
+      return res;
+    }
+
+    const Coordinates next_coords =
+        get_move(planet_peek, dir_char, curr_coords);
+    if (curr_coords == next_coords) {
+      res.stop_reason = MovePopnStopReason::StationaryMove;
+      return res;
+    }
+    if (!planet_peek.is_valid(next_coords)) {
+      res.stop_reason = MovePopnStopReason::IllegalTargetCoordinates;
+      res.stop_coords = next_coords;
+      return res;
+    }
+    if (!planet_peek.is_adjacent(curr_coords, next_coords)) {
+      res.stop_reason = MovePopnStopReason::NonAdjacentMove;
+      return res;
+    }
+
+    const population_t available = (what == PopulationType::CIV)
+                                       ? sect_curr.get_popn()
+                                       : sect_curr.get_troops();
+    population_t people = available;
+    if (requested_count.has_value()) {
+      people = *requested_count < 0 ? (available + *requested_count)
+                                    : *requested_count;
+    }
+    if (people <= 0 || people > available) {
+      res.stop_reason = MovePopnStopReason::InvalidPopulationCount;
+      res.stop_coords = curr_coords;
+      res.available_popn = available;
+      return res;
+    }
+
+    MovePopnStepResult step{.moved_people = people};
+    const auto& race_peek = *em.peek_race(player);
+    em.mutate_sectormap(snum, pnum, [&](SectorMap& smap_mut) {
+      auto& sect2_mut = smap_mut.get(next_coords);
+      step.mech_defense = mech_defend(em, race_peek, &people, what, planet_peek,
+                                      next_coords, sect2_mut);
+    });
+    if (people == 0) {
+      res.steps.push_back(std::move(step));
+      res.stop_reason = MovePopnStopReason::AttackAbortedByMechs;
+      return res;
+    }
+
+    const auto& sect2_peek = em.peek_sectormap(snum, pnum)->get(next_coords);
+    const bool is_assault =
+        (sect2_peek.get_owner() != 0 && sect2_peek.get_owner() != player);
+    const double pop_log = (what == PopulationType::CIV)
+                               ? std::log(1.0 + static_cast<double>(people))
+                               : std::log10(1.0 + static_cast<double>(people));
+    const ap_t ap_cost =
+        MOVE_FACTOR * (static_cast<int>(pop_log) + (is_assault ? 1 : 0)) + 1;
+    if (!god && em.peek_star(snum)->AP(player) < ap_cost) {
+      res.steps.push_back(std::move(step));
+      res.stop_reason = MovePopnStopReason::InsufficientAp;
+      res.required_ap = ap_cost;
+      return res;
+    }
+    if (!god && ap_cost > 0) {
+      em.mutate_star(snum, [&](Star& s) { s.AP(player) -= ap_cost; });
+    }
+
+    bool stop_after_step = false;
+    if (is_assault) {
+      step.assault = execute_sector_ground_assault(
+          em, snum, pnum, player, curr_coords, next_coords, people, what);
+      stop_after_step = step.assault->stop_movement;
+    } else {
+      em.mutate_planet_and_sectors(
+          snum, pnum, [&](Planet& planet, SectorMap& smap) {
+            auto& sect = smap.get(curr_coords);
+            auto& sect2 = smap.get(next_coords);
+            planet.move_sector_population(sect, sect2, player, people, what);
+          });
+    }
+
+    res.steps.push_back(std::move(step));
+    res.any_moved = true;
+    if (stop_after_step) {
+      break;
+    }
+    curr_coords = next_coords;
+  }
+
+  res.stop_reason = MovePopnStopReason::CompletedPath;
+  return res;
+}

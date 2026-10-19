@@ -248,4 +248,18 @@ render_sector_ground_assault_absorb_warning(
 [[nodiscard]] std::string
 render_sector_ground_assault_telegram(const SectorGroundAssaultResult& res);
 
+/// Formats a `MovePopnError` into its user-facing error message.
+[[nodiscard]] std::string format_move_popn_error(const MovePopnError& err);
+
+/// Formats a `MovePopnResult` into its user-facing ASCII report.
+[[nodiscard]] std::string render_move_popn_result(const MovePopnResult& res);
+
+/// Formats a `MovePopnResult` into its JSON envelope string.
+[[nodiscard]] std::string
+render_json_move_popn_result(const MovePopnResult& res);
+
+/// Open ADL dispatch for `MovePopnResult`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const MovePopnResult& vm);
+
 }  // namespace GB::presentation

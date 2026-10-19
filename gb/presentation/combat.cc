@@ -710,4 +710,72 @@ render_sector_ground_assault_telegram(const SectorGroundAssaultResult& res) {
   return telegram;
 }
 
+std::string format_move_popn_error(const MovePopnError& err) {
+  switch (err.reason) {
+    case MovePopnErrorReason::PlanetEnslaved:
+      return "That planet has been enslaved!\n";
+    case MovePopnErrorReason::BadSectorFormat:
+      return "Bad format for sector.\n";
+    case MovePopnErrorReason::IllegalOriginCoordinates:
+      return "Origin coordinates illegal.\n";
+  }
+  return "";
+}
+
+std::string render_move_popn_result(const MovePopnResult& res) {
+  std::string out;
+  const std::string_view moved_label =
+      res.what == PopulationType::CIV ? "population" : "troops";
+  for (const auto& step : res.steps) {
+    std::format_to(std::back_inserter(out), "{} {} moved.\n", step.moved_people,
+                   moved_label);
+    if (step.assault) {
+      out += render_sector_ground_assault(*step.assault);
+    }
+  }
+
+  switch (res.stop_reason) {
+    case MovePopnStopReason::CompletedPath:
+    case MovePopnStopReason::StationaryMove:
+      out += "Finished.\n";
+      break;
+    case MovePopnStopReason::SectorNotOwned:
+      std::format_to(std::back_inserter(out), "You don't own sector {}!\n",
+                     res.stop_coords);
+      break;
+    case MovePopnStopReason::IllegalTargetCoordinates:
+      std::format_to(std::back_inserter(out), "Illegal coordinates {}.\n",
+                     res.stop_coords);
+      break;
+    case MovePopnStopReason::NonAdjacentMove:
+      out += "Illegal move - to adjacent sectors only!\n";
+      break;
+    case MovePopnStopReason::InvalidPopulationCount:
+      std::format_to(std::back_inserter(out), "Bad value - {} {} in [{}]\n",
+                     res.available_popn,
+                     res.what == PopulationType::CIV ? "civilians" : "troops",
+                     res.stop_coords);
+      break;
+    case MovePopnStopReason::AttackAbortedByMechs:
+      out += "Attack aborted.\n";
+      break;
+    case MovePopnStopReason::InsufficientAp:
+      std::format_to(std::back_inserter(out),
+                     "You don't have {} action points there.\n",
+                     res.required_ap);
+      break;
+  }
+  return out;
+}
+
+std::string render_json_move_popn_result(const MovePopnResult& res) {
+  return render_json_envelope(
+      res.what == PopulationType::CIV ? "move" : "deploy", res);
+}
+
+std::string render_for_mode(UiMode mode, const MovePopnResult& vm) {
+  return mode == UiMode::JSON ? render_json_move_popn_result(vm)
+                              : render_move_popn_result(vm);
+}
+
 }  // namespace GB::presentation

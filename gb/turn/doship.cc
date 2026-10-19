@@ -72,7 +72,7 @@ void do_habitat(Ship& ship, EntityManager& entity_manager) {
   }
 
   if (ship.max_crew_capacity() > 0) {
-    auto add = round_rand(static_cast<double>(ship.popn()) * race.birthrate);
+    auto add = round_rand(ship.popn(), race.birthrate);
     ship.add_popn(add, race.mass);
   }
 }
@@ -128,9 +128,8 @@ void do_pod(SporePodShip& ship, EntityManager& entity_manager) {
 
       if (ship.temperature() < POD_THRESHOLD) {
         const auto& state = *entity_manager.peek_server_state();
-        ship.set_temperature(
-            ship.temperature() +
-            round_rand((double)star.temperature() / (double)state.segments));
+        ship.set_temperature(ship.temperature() +
+                             round_rand(star.temperature(), state.segments));
         return;
       }
 
@@ -153,7 +152,7 @@ void do_pod(SporePodShip& ship, EntityManager& entity_manager) {
     case ScopeLevel::LEVEL_PLAN: {
       if (ship.decay() < POD_DECAY) {
         const auto& state = *entity_manager.peek_server_state();
-        ship.set_decay(ship.decay() + round_rand(1.0 / (double)state.segments));
+        ship.set_decay(ship.decay() + round_rand(1, state.segments));
         return;
       }
 

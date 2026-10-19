@@ -85,11 +85,20 @@ Result round_rand(std::floating_point auto x) {
   return static_cast<Result>(rounded);
 }
 
-export template <std::integral Result = int>
-Result round_rand(std::integral auto num, std::integral auto denom) {
-  if (denom == 0) return Result{0};
-  return round_rand<Result>(static_cast<double>(num) /
-                            static_cast<double>(denom));
+export template <typename Result = void, std::integral Num, std::integral Denom>
+  requires(std::is_void_v<Result> || std::integral<Result>)
+auto round_rand(Num num, Denom denom) {
+  using R = std::conditional_t<std::is_void_v<Result>, Num, Result>;
+  if (denom == 0) return R{0};
+  return round_rand<R>(static_cast<double>(num) / static_cast<double>(denom));
+}
+
+export template <typename Result = void, std::integral Base,
+                 std::floating_point Scale>
+  requires(std::is_void_v<Result> || std::integral<Result>)
+auto round_rand(Base base, Scale scale) {
+  using R = std::conditional_t<std::is_void_v<Result>, Base, Result>;
+  return round_rand<R>(static_cast<double>(base) * static_cast<double>(scale));
 }
 
 export template <std::integral T>

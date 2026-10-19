@@ -200,8 +200,7 @@ void Sector::apply_supernova(int stage) noexcept {
   } else {
     // Active nova radiation: kills approximately 50% of the living population
     // per turn.
-    auto deaths = round_rand(static_cast<double>(data_.popn) *
-                             radiation_casualty_rate.as_fraction());
+    auto deaths = round_rand(data_.popn, radiation_casualty_rate.as_fraction());
     subtract_popn(deaths);
   }
 
@@ -224,9 +223,9 @@ void Sector::update_efficiency(const Race& race,
   if (!is_owned()) return;
 
   if (data_.eff < 100) {
-    const int chance = round_rand(
-        (100.0 - static_cast<double>(planet.info(*data_.owner).tax)) *
-        race.sector_compatibility(*this));
+    const int chance =
+        round_rand(planet.info(*data_.owner).tax.complement().value(),
+                   race.sector_compatibility(*this));
     if (success(chance)) {
       improve_efficiency(round_rand(race.metabolism));
       if (data_.eff >= 100) {
@@ -294,8 +293,7 @@ population_t calculate_population_change(const Race& race, const Sector& s,
 
   if (diff < 0) {
     if (popn >= race.number_sexes) {
-      return round_rand<population_t>(-static_cast<double>(diff) *
-                                      race.birthrate);
+      return round_rand(-diff, race.birthrate);
     }
     return 0;
   }

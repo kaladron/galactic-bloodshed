@@ -151,10 +151,10 @@ export struct Stockpile {
 
   [[nodiscard]] Stockpile split_share(std::size_t shares) const noexcept {
     return Stockpile{
-        .resources = round_rand<resource_t>(resources, shares),
-        .destruct = round_rand<resource_t>(destruct, shares),
-        .fuel = round_rand<resource_t>(fuel, shares),
-        .crystals = round_rand<resource_t>(crystals, shares),
+        .resources = round_rand(resources, shares),
+        .destruct = round_rand(destruct, shares),
+        .fuel = round_rand(fuel, shares),
+        .crystals = round_rand(crystals, shares),
     };
   }
 

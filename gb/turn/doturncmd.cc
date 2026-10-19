@@ -422,19 +422,15 @@ void calculate_victory_scores(EntityManager& entity_manager) {
   for (auto race_handle : RaceList(entity_manager)) {
     const player_t player = race_handle->Playernum;
     const auto& v = victory[player];
-    const std::int64_t raw_score =
-        (static_cast<std::int64_t>(VICT_SECT) * v.numsects) +
-        (static_cast<std::int64_t>(VICT_SHIP) *
-         (v.shipcost + static_cast<std::int64_t>(VICT_TECH * v.shiptech))) +
-        (static_cast<std::int64_t>(VICT_RES) *
-         (static_cast<std::int64_t>(v.res) + v.des)) +
-        (static_cast<std::int64_t>(VICT_FUEL) * v.fuel) +
-        (static_cast<std::int64_t>(VICT_MONEY) *
-         static_cast<std::int64_t>(v.money));
-    const std::int64_t scaled_score = raw_score / VICT_DIVISOR;
-    race_handle->victory_score = static_cast<victory_score_t>(
-        std::lround(morale_factor(static_cast<double>(v.morale)) *
-                    static_cast<double>(scaled_score)));
+    const victory_score_t raw_score =
+        (static_cast<victory_score_t>(VICT_SECT) * v.numsects) +
+        (VICT_SHIP *
+         (v.shipcost + static_cast<victory_score_t>(VICT_TECH * v.shiptech))) +
+        (VICT_RES * (v.res + v.des)) + (VICT_FUEL * v.fuel) +
+        (VICT_MONEY * v.money);
+    const victory_score_t scaled_score = raw_score / VICT_DIVISOR;
+    race_handle->victory_score = std::lround(morale_factor(v.morale) *
+                                             static_cast<double>(scaled_score));
   }
 }
 
@@ -564,7 +560,7 @@ ap_t compute_star_action_points(int num_ships, population_t popn,
     return APs;
   }
   /* dont have an active gov center */
-  return round_rand(static_cast<double>(APs) / 20.0);
+  return round_rand(APs, 20);
 }
 
 void distribute_universe_action_points(EntityManager& entity_manager) {

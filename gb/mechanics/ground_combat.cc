@@ -87,15 +87,12 @@ namespace {
 constexpr double calculate_mech_combat_strength(
     const Ship& ship, const weapon_power_t retal_strength,
     const Race& mech_owner, const Race& opponent, const Sector& sect) {
-  const double armor_factor =
-      percent_to_fraction(static_cast<double>(ship.armor()) + 1.0);
-  const double hull_integrity_factor =
-      percent_to_fraction(100.0 - static_cast<double>(ship.damage()));
+  const double armor_factor = percent_to_fraction(ship.armor() + 1);
+  const double hull_integrity_factor = percent_to_fraction(100 - ship.damage());
   return MECH_ATTACK * ship.tech() * static_cast<double>(retal_strength) *
          armor_factor * hull_integrity_factor *
          mech_owner.sector_combat_factor(sect) *
-         morale_factor(
-             static_cast<double>(mech_owner.morale - opponent.morale));
+         morale_factor(mech_owner.morale - opponent.morale);
 }
 
 /// \brief Computes the combat strength of a sector's civilian and military
@@ -110,16 +107,13 @@ constexpr double calculate_garrison_combat_strength(const population_t civ,
                                                     const Race& garrison_race,
                                                     const Race& opponent,
                                                     const Sector& sect) {
-  const double weighted_personnel =
-      MILITARY_COMBAT_MULTIPLIER * static_cast<double>(mil) *
-          static_cast<double>(garrison_race.fighters) +
-      static_cast<double>(civ);
+  const population_t weighted_personnel =
+      MILITARY_COMBAT_MULTIPLIER * mil * garrison_race.fighters + civ;
   return percent_to_fraction(weighted_personnel) *
          percent_to_fraction(garrison_race.tech) *
          garrison_race.sector_combat_factor(sect) *
          sect.combat_defense_factor() *
-         morale_factor(
-             static_cast<double>(garrison_race.morale - opponent.morale));
+         morale_factor(garrison_race.morale - opponent.morale);
 }
 
 }  // namespace
@@ -147,11 +141,9 @@ MechAttackPeopleResult mech_attack_people(EntityManager& em, Ship& ship,
 
   const double ratio = (dstrength > 0.0) ? std::min(1e6, astrength / dstrength)
                                          : (astrength > 0.0 ? 1e6 : 0.0);
-  population_t cas_civ = uniform_rand(
-      0, round_rand<population_t>(static_cast<double>(oldciv) * ratio));
+  population_t cas_civ = uniform_rand(0, round_rand(oldciv, ratio));
   cas_civ = std::min(oldciv, cas_civ);
-  population_t cas_mil = uniform_rand(
-      0, round_rand<population_t>(static_cast<double>(oldmil) * ratio));
+  population_t cas_mil = uniform_rand(0, round_rand(oldmil, ratio));
   cas_mil = std::min(oldmil, cas_mil);
   *civ -= cas_civ;
   *mil -= cas_mil;
@@ -217,58 +209,40 @@ PeopleAttackMechResult people_attack_mech(EntityManager& em, Ship& ship,
 }
 
 GroundAttackResult ground_attack(const GroundAttackParams& p) {
-  const double attacker_type_weight = (p.attacker_type == PopulationType::MIL)
-                                          ? MILITARY_COMBAT_MULTIPLIER
-                                          : 1.0;
+  const population_t attacker_divisor =
+      (p.attacker_type == PopulationType::MIL) ? MILITARY_COMBAT_MULTIPLIER : 1;
+  const population_t attacker_effective_scale =
+      p.attacker_force * attacker_divisor * p.attacker.fighters;
+  const population_t defender_effective_scale =
+      (p.defender_civ + p.defender_mil * MILITARY_COMBAT_MULTIPLIER) *
+      p.defender.fighters;
+
   const double astrength =
-      static_cast<double>(p.attacker_force) *
-      static_cast<double>(p.attacker.fighters) * attacker_type_weight *
+      static_cast<double>(attacker_effective_scale) *
       (p.attacker_compatibility + 1.0) *
       (static_cast<double>(p.attacker_defense_bonus) + 1.0) *
-      morale_factor(static_cast<double>(p.attacker.morale - p.defender.morale));
+      morale_factor(p.attacker.morale - p.defender.morale);
 
   const double dstrength =
-      (static_cast<double>(p.defender_civ) +
-       static_cast<double>(p.defender_mil) * MILITARY_COMBAT_MULTIPLIER) *
-      static_cast<double>(p.defender.fighters) *
+      static_cast<double>(defender_effective_scale) *
       (p.defender_compatibility + 1.0) *
       (static_cast<double>(p.defender_defense_bonus) + 1.0) *
-      morale_factor(static_cast<double>(p.defender.morale - p.attacker.morale));
+      morale_factor(p.defender.morale - p.attacker.morale);
 
-  const int attacker_effective_scale =
-      static_cast<int>(p.attacker_force) *
-      (p.attacker_type == PopulationType::MIL
-           ? static_cast<int>(MILITARY_COMBAT_MULTIPLIER)
-           : 1) *
-      p.attacker.fighters;
-  const int defender_effective_scale =
-      static_cast<int>(p.defender_civ +
-                       p.defender_mil *
-                           static_cast<int>(MILITARY_COMBAT_MULTIPLIER)) *
-      p.defender.fighters;
-  const int casualty_scale =
+  const population_t casualty_scale =
       std::min(attacker_effective_scale, defender_effective_scale);
 
-  const int attacker_divisor =
-      (p.attacker_type == PopulationType::MIL)
-          ? static_cast<int>(MILITARY_COMBAT_MULTIPLIER)
-          : 1;
   population_t attacker_casualties = uniform_rand(
-      0, round_rand<population_t>(
-             static_cast<double>(casualty_scale / attacker_divisor) *
-             dstrength / astrength));
+      0, round_rand(casualty_scale / attacker_divisor, dstrength / astrength));
   attacker_casualties = std::min(p.attacker_force, attacker_casualties);
 
-  population_t defender_civ_casualties = uniform_rand(
-      0, round_rand<population_t>(static_cast<double>(casualty_scale) *
-                                  astrength / dstrength));
+  population_t defender_civ_casualties =
+      uniform_rand(0, round_rand(casualty_scale, astrength / dstrength));
   defender_civ_casualties = std::min(p.defender_civ, defender_civ_casualties);
 
-  population_t defender_mil_casualties = uniform_rand(
-      0, round_rand<population_t>(
-             static_cast<double>(casualty_scale /
-                                 static_cast<int>(MILITARY_COMBAT_MULTIPLIER)) *
-             astrength / dstrength));
+  population_t defender_mil_casualties =
+      uniform_rand(0, round_rand(casualty_scale / MILITARY_COMBAT_MULTIPLIER,
+                                 astrength / dstrength));
   defender_mil_casualties = std::min(p.defender_mil, defender_mil_casualties);
 
   return GroundAttackResult{

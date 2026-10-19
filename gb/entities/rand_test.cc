@@ -56,12 +56,24 @@ int main() {
   test::expect_false(bool_rand(0.0));
   test::expect_true(bool_rand(1.0));
 
-  // 7. round_rand exact and fractional
+  // 7. round_rand exact, fractional, integer division, and integer*float
+  // scaling
   test::expect_eq(round_rand(0.0), 0);
   test::expect_eq(round_rand(5.0), 5);
   for (int i = 0; i < 50; ++i) {
     int r = round_rand(2.4);
     test::expect_true(r == 2 || r == 3, "round_rand(2.4) must be 2 or 3");
+
+    resource_t res = 10;
+    auto div_r = round_rand(res, 3);
+    static_assert(std::same_as<decltype(div_r), resource_t>);
+    test::expect_true(div_r == 3 || div_r == 4,
+                      "round_rand(10, 3) must be 3 or 4");
+
+    population_t pop = 100;
+    auto scale_r = round_rand(pop, 0.25);
+    static_assert(std::same_as<decltype(scale_r), population_t>);
+    test::expect_eq(scale_r, 25);
   }
 
   // 8. uniform_rand deduced and explicit types with consteval range checks

@@ -98,7 +98,7 @@ bool insurgency(const command_t& argv, GameObj& g) {
     double x = INSURG_FACTOR * static_cast<double>(amount) *
                static_cast<double>(target_tax_rate) /
                static_cast<double>(target_planet_pop);
-    x *= morale_factor(static_cast<double>(g.race->morale - alien->morale));
+    x *= morale_factor(g.race->morale - alien->morale);
     x *= morale_factor(static_cast<double>(eligible - them) /
                        POPULATION_DIFF_SCALE);
     x *= morale_factor(

@@ -191,9 +191,8 @@ void handle_landing_crash(GameObj& g, Ship& s, const Star& star, Planet& p,
   g.entity_manager.mutate_sectormap(
       s.storbits(), s.pnumorbits(), [&](SectorMap& smap) {
         auto result_opt = shoot_ship_to_planet(
-            g.entity_manager, s, p,
-            round_rand(static_cast<double>(s.destruct()) / 3.0), target_coords,
-            smap, 0, guntype_t::HEAVY);
+            g.entity_manager, s, p, round_rand<weapon_power_t>(s.destruct(), 3),
+            target_coords, smap, 0, guntype_t::HEAVY);
         numdest = result_opt ? result_opt->sectors_destroyed : 0;
       });
 

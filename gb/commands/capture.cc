@@ -24,15 +24,15 @@ constexpr double calculate_boarding_attack_strength(const population_t boarders,
                                                     const Race& attacker,
                                                     const Race& defender,
                                                     const Sector& sect) {
-  const double force_weight =
+  const population_t force_weight =
       what == PopulationType::MIL
-          ? static_cast<double>(attacker.fighters) * MILITARY_COMBAT_MULTIPLIER
-          : 1.0;
-  return static_cast<double>(boarders) * force_weight *
+          ? attacker.fighters * MILITARY_COMBAT_MULTIPLIER
+          : 1;
+  return static_cast<double>(boarders * force_weight) *
          percent_to_fraction(attacker.tech) *
          (attacker.sector_compatibility(sect) + COMBAT_FLOOR_EPSILON) *
          sect.combat_defense_factor() *
-         morale_factor(static_cast<double>(attacker.morale - defender.morale));
+         morale_factor(attacker.morale - defender.morale);
 }
 
 /// \brief Computes the internal defensive strength of a landed starship's
@@ -40,16 +40,14 @@ constexpr double calculate_boarding_attack_strength(const population_t boarders,
 constexpr double calculate_boarding_defense_strength(const Ship& ship,
                                                      const Race& defender,
                                                      const Race& attacker) {
-  const double crew_weight = static_cast<double>(ship.popn()) +
-                             static_cast<double>(ship.troops()) *
-                                 MILITARY_COMBAT_MULTIPLIER *
-                                 static_cast<double>(defender.fighters);
-  const double hull_integrity_factor =
-      percent_to_fraction(100.0 - static_cast<double>(ship.damage()));
-  return crew_weight * percent_to_fraction(defender.tech) *
+  const population_t crew_weight =
+      ship.popn() +
+      ship.troops() * MILITARY_COMBAT_MULTIPLIER * defender.fighters;
+  const double hull_integrity_factor = percent_to_fraction(100 - ship.damage());
+  return static_cast<double>(crew_weight) * percent_to_fraction(defender.tech) *
          (static_cast<double>(ship.effective_armor()) + COMBAT_FLOOR_EPSILON) *
          hull_integrity_factor *
-         morale_factor(static_cast<double>(defender.morale - attacker.morale));
+         morale_factor(defender.morale - attacker.morale);
 }
 
 }  // namespace
@@ -203,20 +201,17 @@ bool capture(const command_t& argv, GameObj& g) {
                 astrength, dstrength);
             casualty_scale = std::min(boarders, ship.popn() + ship.troops());
             if (astrength > 0.0)
-              casualties =
-                  uniform_rand(0, round_rand<population_t>(
-                                      static_cast<double>(casualty_scale) *
-                                      (dstrength + 1.0) / (astrength + 1.0)));
+              casualties = uniform_rand(
+                  0, round_rand(casualty_scale,
+                                (dstrength + 1.0) / (astrength + 1.0)));
 
             if (dstrength > 0.0) {
-              casualties1 =
-                  uniform_rand(0, round_rand<population_t>(
-                                      static_cast<double>(casualty_scale) *
-                                      (astrength + 1.0) / (dstrength + 1.0)));
-              casualties2 =
-                  uniform_rand(0, round_rand<population_t>(
-                                      static_cast<double>(casualty_scale) *
-                                      (astrength + 1.0) / (dstrength + 1.0)));
+              casualties1 = uniform_rand(
+                  0, round_rand(casualty_scale,
+                                (astrength + 1.0) / (dstrength + 1.0)));
+              casualties2 = uniform_rand(
+                  0, round_rand(casualty_scale,
+                                (astrength + 1.0) / (dstrength + 1.0)));
               shipdam = uniform_rand(
                   0, round_rand(MAX_BOARDING_COLLATERAL_DAMAGE *
                                 (astrength + 1.0) / (dstrength + 1.0)));

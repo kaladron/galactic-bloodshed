@@ -1034,8 +1034,7 @@ unload_onto_alien_sector(EntityManager& em, Planet& planet, SectorMap& smap,
           .defender_mil = initial_defender_mil,
           .attacker_defense_bonus = ship.armor(),
           .defender_defense_bonus = sect.defense_bonus(),
-          .attacker_compatibility =
-              percent_to_fraction(100.0 - static_cast<double>(ship.damage())),
+          .attacker_compatibility = percent_to_fraction(100 - ship.damage()),
           .defender_compatibility = alien.sector_compatibility(sect),
       });
       const population_t surviving = outcome.surviving_attackers;

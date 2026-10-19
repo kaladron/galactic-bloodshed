@@ -304,9 +304,7 @@ static std::pair<radiation_t, radiation_t> do_radiation(Ship& ship, double tech,
   }
 
   const radiation_t dosage =
-      std::clamp(round_rand(40.0 * static_cast<double>(penetrate) /
-                            static_cast<double>(body)),
-                 0, 100);
+      std::clamp(round_rand(40 * penetrate, body), 0, 100);
 
   ship.apply_radiation(dosage);
   if (success(ship.rad())) ship.active() = false;
@@ -347,8 +345,7 @@ do_damage(EntityManager& em, ShipShotAttackerKind attacker_kind, player_t who,
   }
 
   damage_t damage = std::max(
-      0, round_rand(SHIP_DAMAGE * static_cast<double>(gun_caliber(caliber)) *
-                    static_cast<double>(penetrate) / body));
+      0, round_rand(gun_caliber(caliber) * penetrate, SHIP_DAMAGE / body));
 
   const auto crit = do_critical_hits(penetrate, ship, caliber);
 

@@ -1167,8 +1167,11 @@ export constexpr double MORALE_FACTOR_MIDPOINT = 0.5;
 /// Maps an empire's raw morale score (-infinity, +infinity) onto a normalized
 /// multiplier in the open interval (0.0, 1.0), centered at 0.5 when morale = 0:
 ///   morale_factor(x) = atan(x / 10000) / pi + 0.5
-export constexpr double morale_factor(const double x) {
-  return (std::atan(x / MORALE_ATAN_SCALE) / std::numbers::pi +
+export template <typename T>
+  requires(std::integral<T> || std::floating_point<T>)
+constexpr double morale_factor(const T x) {
+  return (std::atan(static_cast<double>(x) / MORALE_ATAN_SCALE) /
+              std::numbers::pi +
           MORALE_FACTOR_MIDPOINT);
 }
 

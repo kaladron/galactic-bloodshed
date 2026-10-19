@@ -68,11 +68,10 @@ money_t plinfo::collect_tax(Race::gov& gov, const Race& race) noexcept {
     prod_money = 0;
     return 0;
   }
-  prod_money = round_rand(INCOME_FACTOR * static_cast<double>(tax) *
-                          static_cast<double>(popn));
+  prod_money = round_rand(popn * tax.value(), INCOME_FACTOR);
   gov.money += prod_money;
   gov.income += prod_money;
-  tax += std::min(static_cast<int>(newtax) - static_cast<int>(tax), 5);
+  tax += std::min(newtax.value() - tax.value(), 5);
   return prod_money;
 }
 

@@ -294,8 +294,8 @@ export constexpr double AFV_FUEL_COST = 1.0;
 export constexpr double MECH_ATTACK = 3.0;
 
 // Ground and boarding combat constants
-export constexpr double MILITARY_COMBAT_MULTIPLIER =
-    10.0;  // Combat weight of 1 military troop relative to 1 civilian
+export constexpr population_t MILITARY_COMBAT_MULTIPLIER =
+    10;  // Combat weight of 1 military troop relative to 1 civilian
 export constexpr double COMBAT_FLOOR_EPSILON =
     0.01;  // Minimum baseline floor for sector compatibility or armor in
            // boarding combat
@@ -312,8 +312,10 @@ export constexpr double TERRAFORM_STRIP_BLAST_THRESHOLD =
           // to base geology
 
 /// Converts a percentage value (0..100) to a fractional multiplier (0.0..1.0).
-export inline constexpr double percent_to_fraction(const double pct) noexcept {
-  return pct * 0.01;
+export template <typename T>
+  requires(std::integral<T> || std::floating_point<T>)
+constexpr double percent_to_fraction(const T pct) noexcept {
+  return static_cast<double>(pct) * 0.01;
 }
 
 /// Converts a fractional multiplier (0.0..1.0) to a percentage value (0..100).

@@ -65,10 +65,9 @@ void apply_boarding_casualties(EntityManager& em, Ship& s, Ship& s2,
       std::min(report.surviving_boarders, s2.troops() + s2.popn());
 
   if (b2strength > 0.0) {
-    report.attacker_casualties =
-        std::min(report.surviving_boarders,
-                 uniform_rand<population_t>(
-                     0, round_rand(static_cast<double>(casualty_scale) *
+    report.attacker_casualties = std::min(
+        report.surviving_boarders,
+        uniform_rand(0, round_rand(casualty_scale,
                                    (b2strength + 1.0) / (bstrength + 1.0))));
     report.surviving_boarders -= report.attacker_casualties;
 
@@ -80,13 +79,12 @@ void apply_boarding_casualties(EntityManager& em, Ship& s, Ship& s2,
     }
 
     report.defender_civ_casualties = std::min(
-        s2.popn(), uniform_rand<population_t>(
-                       0, round_rand(static_cast<double>(casualty_scale) *
-                                     (bstrength + 1.0) / (b2strength + 1.0))));
-    report.defender_mil_casualties =
-        std::min(s2.troops(),
-                 uniform_rand<population_t>(
-                     0, round_rand(static_cast<double>(casualty_scale) *
+        s2.popn(),
+        uniform_rand(0, round_rand(casualty_scale,
+                                   (bstrength + 1.0) / (b2strength + 1.0))));
+    report.defender_mil_casualties = std::min(
+        s2.troops(),
+        uniform_rand(0, round_rand(casualty_scale,
                                    (bstrength + 1.0) / (b2strength + 1.0))));
     s2.remove_popn(report.defender_civ_casualties, alien.mass);
     s2.remove_troops(report.defender_mil_casualties, alien.mass);
@@ -170,14 +168,16 @@ resolve_boarding_combat(EntityManager& em, Ship& s, Ship& s2,
 
       remove_ship_boarders(s, what, report.surviving_boarders, race.mass);
 
-      report.attack_strength =
-          report.surviving_boarders *
-          (what == PopulationType::MIL ? 10 * race.fighters : 1) * .01 *
-          race.tech *
-          morale_factor(static_cast<double>(race.morale - alien.morale));
-      report.defense_strength =
-          (s2.popn() + 10 * s2.troops() * alien.fighters) * .01 * alien.tech *
-          morale_factor(static_cast<double>(alien.morale - race.morale));
+      report.attack_strength = report.surviving_boarders *
+                               (what == PopulationType::MIL
+                                    ? MILITARY_COMBAT_MULTIPLIER * race.fighters
+                                    : 1) *
+                               percent_to_fraction(race.tech) *
+                               morale_factor(race.morale - alien.morale);
+      report.defense_strength = (s2.popn() + MILITARY_COMBAT_MULTIPLIER *
+                                                 s2.troops() * alien.fighters) *
+                                percent_to_fraction(alien.tech) *
+                                morale_factor(alien.morale - race.morale);
 
       report.hyperdrive_deactivated = maneuver_ship_to_target(s, s2, fuel);
 

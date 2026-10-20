@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /// \file move_popn.cc
-/// \brief Move civilian population or deploy military troops across sectors.
+/// \brief Move civilian population across planetary sectors.
 
 module;
 
@@ -15,9 +15,8 @@ module commands;
 
 namespace GB::commands {
 
-bool move_popn(const command_t& argv, GameObj& g) {
-  const PopulationType what =
-      (argv[0] == "move") ? PopulationType::CIV : PopulationType::MIL;
+bool dispatch_planet_sector_movement(const command_t& argv, GameObj& g,
+                                     PopulationType what) {
   std::optional<population_t> requested_count;
   if (argv.size() >= 4) {
     auto count_res = scn::scan<population_t>(argv[3], "{}");
@@ -72,8 +71,8 @@ bool move_popn(const command_t& argv, GameObj& g) {
   return res->any_moved;
 }
 
-bool deploy(const command_t& argv, GameObj& g) {
-  return move_popn(argv, g);
+bool move_popn(const command_t& argv, GameObj& g) {
+  return dispatch_planet_sector_movement(argv, g, PopulationType::CIV);
 }
 
 const CommandDescriptor move_cmd{
@@ -88,20 +87,6 @@ const CommandDescriptor move_cmd{
     .syntax = "move <from_sector> <path> [<amount>]",
     .description = "Move civilian population across planetary sectors",
     .handler = &move_popn,
-};
-
-const CommandDescriptor deploy_cmd{
-    .name = "deploy",
-    .roles =
-        {
-            .star_control = true,
-        },
-    .scopes = AllowedScopes::planet_only(),
-    .ap = APCost::dynamic(),
-    .min_args = 3,
-    .syntax = "deploy <from_sector> <path> [<amount>]",
-    .description = "Deploy military troops across planetary sectors",
-    .handler = &deploy,
 };
 
 }  // namespace GB::commands

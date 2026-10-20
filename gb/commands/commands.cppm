@@ -229,4 +229,6 @@ void notify_ship_combat_exchange(GameObj& g, const ShipCombatExchange& exchange,
 bool dispatch_cargo_transfer(Ship& s, char commod, std::int64_t amt,
                              bool default_to_lower_limit, GameObj& g,
                              bool& should_return_early);
+bool dispatch_planet_sector_movement(const command_t& argv, GameObj& g,
+                                     PopulationType what);
 }  // namespace GB::commands

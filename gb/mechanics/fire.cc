@@ -303,6 +303,70 @@ execute_ship_attack(EntityManager& em, Ship& from, shipnum_t target_id,
   return std::nullopt;
 }
 
+std::expected<Coordinates, BombardErrorReason>
+resolve_bombard_coords(EntityManager& em, const Ship& from, const Planet& p,
+                       std::optional<std::string_view> coords_arg,
+                       player_t player) {
+  if (!from.is_landed() &&
+      has_planet_defense(em, p.star_id(), p.planet_order(), player)) {
+    return std::unexpected(BombardErrorReason::PlanetaryDefenseNetworksPresent);
+  }
+  Coordinates target_coords{};
+  if (coords_arg) {
+    auto coords_opt = Coordinates::parse(*coords_arg);
+    if (!coords_opt) {
+      return std::unexpected(BombardErrorReason::InvalidSectorFormat);
+    }
+    target_coords = *coords_opt;
+    if (!p.is_valid(target_coords)) {
+      return std::unexpected(BombardErrorReason::IllegalSector);
+    }
+  } else {
+    target_coords = em.peek_sectormap(from.storbits(), from.pnumorbits())
+                        ->get_random()
+                        .coords();
+  }
+  if (from.is_landed() && !p.is_adjacent(from.land_coords(), target_coords)) {
+    return std::unexpected(BombardErrorReason::NotAdjacentToSector);
+  }
+  return target_coords;
+}
+
+void resolve_bombard_retaliation(EntityManager& em, Ship& from, Planet& p,
+                                 BombardShipResult& res) {
+  if (!res.bombard->sectors_destroyed || from.type() == ShipType::OTYPE_AFV) {
+    return;
+  }
+  if (!p.is_enslaved()) {
+    const auto* star = em.peek_star(from.storbits());
+    for (player_t i : res.bombard->nuked_players) {
+      const auto* alien = em.peek_race(i);
+      const weapon_power_t retal_strength = std::min(
+          static_cast<weapon_power_t>(p.info(i).destruct), p.info(i).guns);
+      p.info(i).destruct -= retal_strength;
+      if (auto shot = shoot_planet_to_ship(em, *alien, from, retal_strength)) {
+        res.planet_retaliation.push_back({
+            .defender_player = i,
+            .defender_governor = star->governor(i),
+            .shot = std::move(*shot),
+        });
+      }
+    }
+  }
+  for (auto ship_handle :
+       ShipList::on_planet(em, from.storbits(), from.pnumorbits())) {
+    if (!from.alive()) break;
+    Ship& ship = *ship_handle;
+    if (!ship.protect().planet || ship.number() == from.number() ||
+        !ship.active()) {
+      continue;
+    }
+    if (auto event = execute_escort_shot(em, ship, from)) {
+      res.protector_retaliation.push_back(std::move(*event));
+    }
+  }
+}
+
 }  // namespace
 
 std::optional<ShipCombatExchange>
@@ -440,4 +504,83 @@ cew_single_ship(EntityManager& em, Ship& from, shipnum_t target_id,
   }
 
   return result;
+}
+
+std::expected<BombardShipResult, BombardError>
+bombard_single_ship(EntityManager& em, Ship& from,
+                    std::optional<std::string_view> coords_arg,
+                    std::optional<weapon_power_t> requested_strength,
+                    player_t player, bool god) {
+  if (!from.active()) {
+    return std::unexpected(BombardError{
+        .reason = BombardErrorReason::ShipIrradiated,
+        .ship_display = std::format("{}", from),
+    });
+  }
+  if (from.whatorbits() != ScopeLevel::LEVEL_PLAN) {
+    return std::unexpected(
+        BombardError{.reason = BombardErrorReason::NotInPlanetOrbit});
+  }
+  if (from.type() == ShipType::OTYPE_AFV && !from.is_landed()) {
+    return std::unexpected(
+        BombardError{.reason = BombardErrorReason::AfvNotLanded});
+  }
+  if (requested_strength && *requested_strength < 0) {
+    return std::unexpected(
+        BombardError{.reason = BombardErrorReason::NoAttack});
+  }
+
+  const weapon_power_t maxstrength = from.check_retal_strength();
+  weapon_power_t strength = requested_strength.value_or(maxstrength);
+  BombardShipResult res{.star_id = from.storbits()};
+  if (strength > maxstrength) {
+    strength = maxstrength;
+    res.clamped_strength = strength;
+    res.clamped_is_laser = from.is_laser_on();
+  }
+
+  std::optional<BombardErrorReason> err;
+  em.mutate_planet(from.storbits(), from.pnumorbits(), [&](Planet& p) {
+    auto coords = resolve_bombard_coords(em, from, p, coords_arg, player);
+    if (!coords) {
+      err = coords.error();
+      return;
+    }
+    if (strength <= 0) {
+      err = BombardErrorReason::NoAttack;
+      return;
+    }
+    if (check_fire_ap(em, from, player, god)) {
+      err = BombardErrorReason::InsufficientAp;
+      return;
+    }
+    auto [effective_strength, overload] = check_overload(em, from, 0, strength);
+    if (overload) {
+      res.bomber_overload = std::move(overload);
+      deduct_fire_ap(em, from, player, god);
+      return;
+    }
+    em.mutate_sectormap(
+        from.storbits(), from.pnumorbits(), [&](SectorMap& smap) {
+          res.bombard =
+              shoot_ship_to_planet(em, from, p, effective_strength, *coords,
+                                   smap, false, guntype_t::NONE);
+        });
+    if (!res.bombard) {
+      err = BombardErrorReason::IllegalAttack;
+      return;
+    }
+    deduct_fire_ap(em, from, player, god);
+    from.consume_weapon_resources(effective_strength);
+    resolve_bombard_retaliation(em, from, p, res);
+  });
+
+  if (err) {
+    return std::unexpected(BombardError{
+        .reason = *err,
+        .clamped_strength = res.clamped_strength,
+        .clamped_is_laser = res.clamped_is_laser,
+    });
+  }
+  return res;
 }

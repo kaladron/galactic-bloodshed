@@ -414,6 +414,44 @@ export std::expected<FireShipResult, FireError>
 cew_single_ship(EntityManager& em, Ship& from, shipnum_t target_id,
                 player_t player, bool god = false);
 
+export enum class BombardErrorReason {
+  ShipIrradiated,
+  NotInPlanetOrbit,
+  AfvNotLanded,
+  NoAttack,
+  PlanetaryDefenseNetworksPresent,
+  InvalidSectorFormat,
+  IllegalSector,
+  NotAdjacentToSector,
+  InsufficientAp,
+  IllegalAttack,
+};
+
+export struct BombardError {
+  BombardErrorReason reason{BombardErrorReason::NoAttack};
+  std::string ship_display{};
+  std::optional<weapon_power_t> clamped_strength{std::nullopt};
+  bool clamped_is_laser{false};
+};
+
+export struct BombardShipResult {
+  starnum_t star_id{0};
+  std::optional<weapon_power_t> clamped_strength{std::nullopt};
+  bool clamped_is_laser{false};
+  std::optional<ReactorOverloadEvent> bomber_overload{std::nullopt};
+  std::optional<BombardResult> bombard{std::nullopt};
+  std::vector<PlanetaryDefenseSalvo> planet_retaliation{};
+  std::vector<EscortRetaliationEvent> protector_retaliation{};
+};
+
+/// \brief Validates and executes planetary bombardment from a single ship,
+/// including planetary gun retaliation and orbital protector ship retaliation.
+export std::expected<BombardShipResult, BombardError>
+bombard_single_ship(EntityManager& em, Ship& from,
+                    std::optional<std::string_view> coords_arg,
+                    std::optional<weapon_power_t> requested_strength,
+                    player_t player, bool god = false);
+
 export enum class MilitiaErrorReason {
   PlanetEnslaved,
   InvalidCoordinates,

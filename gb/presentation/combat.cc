@@ -778,4 +778,81 @@ std::string render_for_mode(UiMode mode, const MovePopnResult& vm) {
                               : render_move_popn_result(vm);
 }
 
+std::string format_bombard_error(const BombardError& err) {
+  std::string out;
+  if (err.clamped_strength) {
+    std::format_to(std::back_inserter(out), "{} set to {}\n",
+                   err.clamped_is_laser ? "Laser strength" : "Guns",
+                   *err.clamped_strength);
+  }
+  switch (err.reason) {
+    case BombardErrorReason::ShipIrradiated:
+      std::format_to(std::back_inserter(out),
+                     "{} is irradiated and inactive.\n", err.ship_display);
+      break;
+    case BombardErrorReason::NotInPlanetOrbit:
+      out += "You must be in orbit around a planet to bombard.\n";
+      break;
+    case BombardErrorReason::AfvNotLanded:
+      out += "This ship is not landed on the planet.\n";
+      break;
+    case BombardErrorReason::NoAttack:
+      out += "No attack.\n";
+      break;
+    case BombardErrorReason::PlanetaryDefenseNetworksPresent:
+      out += "Target has planetary defense networks.\n"
+             "These have to be eliminated before you can attack sectors.\n";
+      break;
+    case BombardErrorReason::InvalidSectorFormat:
+      out += "Invalid sector format.\n";
+      break;
+    case BombardErrorReason::IllegalSector:
+      out += "Illegal sector.\n";
+      break;
+    case BombardErrorReason::NotAdjacentToSector:
+      out += "You are not adjacent to that sector.\n";
+      break;
+    case BombardErrorReason::InsufficientAp:
+      out += "You don't have 1 action points there.\n";
+      break;
+    case BombardErrorReason::IllegalAttack:
+      out += "Illegal attack.\n";
+      break;
+  }
+  return out;
+}
+
+std::string render_bombard_ship_result(const BombardShipResult& res) {
+  std::string out;
+  if (res.clamped_strength) {
+    std::format_to(std::back_inserter(out), "{} set to {}\n",
+                   res.clamped_is_laser ? "Laser strength" : "Guns",
+                   *res.clamped_strength);
+  }
+  if (res.bomber_overload) {
+    out += "No attack.\n";
+  }
+  if (res.bombard) {
+    out += render_bombard_long(*res.bombard);
+  }
+  for (const auto& salvo : res.planet_retaliation) {
+    out += render_ship_shot_long(salvo.shot);
+  }
+  for (const auto& prot : res.protector_retaliation) {
+    if (prot.shot) {
+      out += render_ship_shot_long(*prot.shot);
+    }
+  }
+  return out;
+}
+
+std::string render_json_bombard_ship_result(const BombardShipResult& res) {
+  return render_json_envelope("bombard", res);
+}
+
+std::string render_for_mode(UiMode mode, const BombardShipResult& vm) {
+  return mode == UiMode::JSON ? render_json_bombard_ship_result(vm)
+                              : render_bombard_ship_result(vm);
+}
+
 }  // namespace GB::presentation

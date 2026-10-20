@@ -69,6 +69,12 @@ void test_bombard_happy_paths() {
   const auto* smap_after = ctx.em.peek_sectormap(1, 1);
   test::expect_true(smap_after != nullptr);
 
+  g.set_ui_mode(UiMode::JSON);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"bombard", "#1", "5,5", "10"}, 1);
+  test::expect_contains(g.out.str(), R"("type":"bombard")");
+  test::expect_contains(g.out.str(), R"("sectors_destroyed":)");
+
   ctx.verify_universe_invariants();
 }
 

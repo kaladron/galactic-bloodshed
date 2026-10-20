@@ -262,4 +262,19 @@ render_json_move_popn_result(const MovePopnResult& res);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const MovePopnResult& vm);
 
+/// Formats a `BombardError` into its user-facing error message.
+[[nodiscard]] std::string format_bombard_error(const BombardError& err);
+
+/// Formats a `BombardShipResult` into its user-facing ASCII report.
+[[nodiscard]] std::string
+render_bombard_ship_result(const BombardShipResult& res);
+
+/// Formats a `BombardShipResult` into its JSON envelope string.
+[[nodiscard]] std::string
+render_json_bombard_ship_result(const BombardShipResult& res);
+
+/// Open ADL dispatch for `BombardShipResult`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const BombardShipResult& vm);
+
 }  // namespace GB::presentation

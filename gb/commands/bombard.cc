@@ -6,6 +6,7 @@
 module;
 
 import gb.entities;
+import gb.mechanics;
 import gb.presentation.combat;
 import gb.services;
 import scnlib;
@@ -15,233 +16,53 @@ module commands;
 
 namespace {
 
-/**
- * @brief Validate planetary defense networks and resolve target sector
- * coordinates for bombardment.
- */
-std::optional<Coordinates> resolve_bombard_target_coords(const command_t& argv,
-                                                         GameObj& g,
-                                                         const Ship& from,
-                                                         const Planet& p) {
-  const bool has_defense = has_planet_defense(g.entity_manager, p.star_id(),
-                                              p.planet_order(), g.player());
-
-  if (has_defense && !from.is_landed()) {
-    g.out << "Target has planetary defense networks.\n";
-    g.out << "These have to be eliminated before you can attack sectors.\n";
-    return std::nullopt;
+void notify_retaliation_shot(GameObj& g, starnum_t star_id,
+                             player_t recipient_owner,
+                             governor_t recipient_governor,
+                             const ShipShotResult& shot) {
+  const std::string short_buf = GB::presentation::render_ship_shot_short(shot);
+  const std::string long_buf = GB::presentation::render_ship_shot_long(shot);
+  if (!shot.target_alive) {
+    post(g.entity_manager, short_buf, NewsType::COMBAT);
   }
-
-  Coordinates target_coords{};
-  if (argv.size() > 2) {
-    auto coords_opt = Coordinates::parse(argv[2]);
-    if (!coords_opt) {
-      g.out << "Invalid sector format.\n";
-      return std::nullopt;
-    }
-    target_coords = *coords_opt;
-    if (!p.is_valid(target_coords)) {
-      g.out << "Illegal sector.\n";
-      return std::nullopt;
-    }
-  } else {
-    g.entity_manager.with_sectormap(
-        from.storbits(), from.pnumorbits(), [&](const SectorMap& smap) {
-          target_coords = smap.get_random().coords();
-        });
-  }
-
-  if (from.is_landed() && !p.is_adjacent(from.land_coords(), target_coords)) {
-    g.out << "You are not adjacent to that sector.\n";
-    return std::nullopt;
-  }
-  return target_coords;
+  notify_star(g.session_registry, g.entity_manager, g.player(), g.governor(),
+              star_id, short_buf);
+  warn_player(g.session_registry, g.entity_manager, recipient_owner,
+              recipient_governor, long_buf);
 }
 
-/**
- * @brief Resolve planetary surface-to-orbit gun retaliation against a
- * bombarding ship.
- */
-void resolve_planetary_retaliation(GameObj& g, Ship& from, Planet& p,
-                                   const BombardResult& result) {
-  if (!DEFENSE || !result.sectors_destroyed ||
-      from.type() == ShipType::OTYPE_AFV || p.is_enslaved()) {
-    return;
+void notify_bombard_result(GameObj& g, const BombardShipResult& res) {
+  if (res.bomber_overload) {
+    GB::commands::notify_reactor_overload(g.entity_manager,
+                                          *res.bomber_overload);
   }
-
-  const player_t playernum = g.player();
-  const governor_t governor = g.governor();
-  const auto* star = g.entity_manager.peek_star(from.storbits());
-
-  for (player_t i : result.nuked_players) {
-    g.entity_manager.mutate_race(i, [&](Race& alien) {
-      const weapon_power_t retal_strength = std::min(
-          static_cast<weapon_power_t>(p.info(i).destruct), p.info(i).guns);
-      p.info(i).destruct -= retal_strength;
-
-      if (auto p2s_opt = shoot_planet_to_ship(g.entity_manager, alien, from,
-                                              retal_strength)) {
-        const std::string p_short =
-            GB::presentation::render_ship_shot_short(*p2s_opt);
-        const std::string p_long =
-            GB::presentation::render_ship_shot_long(*p2s_opt);
-        warn_player(g.session_registry, g.entity_manager, i, star->governor(i),
-                    p_long);
-        g.present(*p2s_opt);
-        if (!from.alive()) {
-          post(g.entity_manager, p_short, NewsType::COMBAT);
-        }
-        notify_star(g.session_registry, g.entity_manager, playernum, governor,
-                    from.storbits(), p_short);
-      }
-    });
-  }
-}
-
-/**
- * @brief Resolve orbital ship retaliation (`protect().planet`) against a
- * bombarding ship.
- */
-void resolve_protector_ship_retaliation(GameObj& g, Ship& from,
-                                        const BombardResult& result) {
-  if (!result.sectors_destroyed || !from.alive() ||
-      from.type() == ShipType::OTYPE_AFV) {
-    return;
-  }
-
-  const player_t playernum = g.player();
-  const governor_t governor = g.governor();
-
-  for (auto ship_handle : ShipList::on_planet(g.entity_manager, from.storbits(),
-                                              from.pnumorbits())) {
-    if (!from.alive()) break;
-    Ship& ship = *ship_handle;
-    if (!ship.protect().planet || ship.number() == from.number() ||
-        !ship.alive() || !ship.active()) {
-      continue;
-    }
-
-    auto [retal_strength, overload] =
-        check_overload(g.entity_manager, ship, 0, ship.check_retal_strength());
-    if (overload) {
-      GB::commands::notify_reactor_overload(g.entity_manager, *overload);
-      continue;
-    }
-
-    if (auto s2s_opt = shoot_ship_to_ship(g.entity_manager, ship, from,
-                                          retal_strength, 0)) {
-      const std::string short_buf =
-          GB::presentation::render_ship_shot_short(*s2s_opt);
-      const std::string long_buf =
-          GB::presentation::render_ship_shot_long(*s2s_opt);
-      ship.consume_weapon_resources(retal_strength);
-      if (!from.alive()) {
-        post(g.entity_manager, short_buf, NewsType::COMBAT);
-      }
-      notify_star(g.session_registry, g.entity_manager, playernum, governor,
-                  from.storbits(), short_buf);
-      warn_player(g.session_registry, g.entity_manager, ship.owner(),
-                  ship.governor(), long_buf);
-      g.present(*s2s_opt);
+  if (res.bombard) {
+    const std::string short_msg =
+        GB::presentation::render_bombard_short(*res.bombard);
+    const std::string long_msg =
+        GB::presentation::render_bombard_long(*res.bombard);
+    post(g.entity_manager, short_msg, NewsType::COMBAT);
+    notify_star(g.session_registry, g.entity_manager, g.player(), g.governor(),
+                res.star_id, short_msg);
+    const auto* star = g.entity_manager.peek_star(res.star_id);
+    for (player_t i : res.bombard->nuked_players) {
+      warn_player(g.session_registry, g.entity_manager, i, star->governor(i),
+                  long_msg);
     }
   }
-}
-
-/**
- * @brief Execute planetary bombardment from a single ship.
- */
-bool bombard_from_ship(const command_t& argv, GameObj& g, Ship& from) {
-  if (from.whatorbits() != ScopeLevel::LEVEL_PLAN) {
-    g.out << "You must be in orbit around a planet to bombard.\n";
-    return false;
+  for (const auto& salvo : res.planet_retaliation) {
+    notify_retaliation_shot(g, res.star_id, salvo.defender_player,
+                            salvo.defender_governor, salvo.shot);
   }
-  if (from.type() == ShipType::OTYPE_AFV && !from.is_landed()) {
-    g.out << "This ship is not landed on the planet.\n";
-    return false;
-  }
-
-  const auto maxstrength = from.check_retal_strength();
-  auto strength = maxstrength;
-  if (argv.size() > 3) {
-    auto parsed = scn::scan<weapon_power_t>(argv[3], "{}");
-    if (!parsed || parsed->value() < 0) {
-      g.out << "No attack.\n";
-      return false;
+  for (const auto& prot : res.protector_retaliation) {
+    if (prot.overload) {
+      GB::commands::notify_reactor_overload(g.entity_manager, *prot.overload);
     }
-    strength = parsed->value();
+    if (prot.shot) {
+      notify_retaliation_shot(g, res.star_id, prot.escort_owner,
+                              prot.escort_governor, *prot.shot);
+    }
   }
-
-  if (strength > maxstrength) {
-    strength = maxstrength;
-    g.out << std::format("{} set to {}\n",
-                         from.is_laser_on() ? "Laser strength" : "Guns",
-                         strength);
-  }
-
-  bool fired = false;
-  g.entity_manager.mutate_planet(
-      from.storbits(), from.pnumorbits(), [&](Planet& p) {
-        auto coords_opt = resolve_bombard_target_coords(argv, g, from, p);
-        if (!coords_opt) {
-          return;
-        }
-        const Coordinates target_coords = *coords_opt;
-
-        if (strength <= 0) {
-          g.out << "No attack.\n";
-          return;
-        }
-
-        if (!g.deduct_ap(from.storbits(), 1)) {
-          g.out << "You don't have 1 action points there.\n";
-          return;
-        }
-
-        auto [effective_strength, overload] =
-            check_overload(g.entity_manager, from, 0, strength);
-        if (overload) {
-          GB::commands::notify_reactor_overload(g.entity_manager, *overload);
-          g.out << "No attack.\n";
-          fired = true;
-          return;
-        }
-
-        std::optional<BombardResult> opt_result;
-        g.entity_manager.mutate_sectormap(
-            from.storbits(), from.pnumorbits(), [&](SectorMap& smap) {
-              opt_result = shoot_ship_to_planet(
-                  g.entity_manager, from, p, effective_strength, target_coords,
-                  smap, false, guntype_t::NONE);
-            });
-
-        if (!opt_result) {
-          g.out << "Illegal attack.\n";
-          return;
-        }
-        const auto& result = *opt_result;
-
-        from.consume_weapon_resources(effective_strength);
-
-        const std::string short_msg =
-            GB::presentation::render_bombard_short(result);
-        const std::string long_msg =
-            GB::presentation::render_bombard_long(result);
-        post(g.entity_manager, short_msg, NewsType::COMBAT);
-        notify_star(g.session_registry, g.entity_manager, g.player(),
-                    g.governor(), from.storbits(), short_msg);
-        const auto* star = g.entity_manager.peek_star(from.storbits());
-        for (player_t i : result.nuked_players) {
-          warn_player(g.session_registry, g.entity_manager, i,
-                      star->governor(i), long_msg);
-        }
-        g.present(result);
-
-        resolve_planetary_retaliation(g, from, p, result);
-        resolve_protector_ship_retaliation(g, from, result);
-        fired = true;
-      });
-
-  return fired;
 }
 
 }  // namespace
@@ -250,19 +71,25 @@ namespace GB::commands {
 
 /*! Ship vs planet */
 bool bombard(const command_t& argv, GameObj& g) {
+  const std::optional<std::string_view> coords_arg =
+      argv.size() > 2 ? std::optional<std::string_view>{argv[2]} : std::nullopt;
+  std::optional<weapon_power_t> requested_strength;
+  if (argv.size() > 3) {
+    auto parsed = scn::scan<weapon_power_t>(argv[3], "{}");
+    requested_strength = parsed ? parsed->value() : -1;
+  }
+
   bool any_fired = false;
-
   for (auto ship_handle : ScopedCommandableShips(g, argv[1])) {
-    Ship& from = *ship_handle;
-
-    if (!from.active()) {
-      g.out << std::format("{} is irradiated and inactive.\n", from);
+    auto res = bombard_single_ship(g.entity_manager, *ship_handle, coords_arg,
+                                   requested_strength, g.player(), g.god());
+    if (!res) {
+      g.out << GB::presentation::format_bombard_error(res.error());
       continue;
     }
-
-    if (bombard_from_ship(argv, g, from)) {
-      any_fired = true;
-    }
+    notify_bombard_result(g, *res);
+    g.present(*res);
+    any_fired = true;
   }
 
   return any_fired;

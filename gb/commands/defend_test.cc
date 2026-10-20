@@ -135,6 +135,14 @@ void test_defend_retaliation_and_escort() {
   std::string out = g.out.str();
   test::expect_contains(out, "Attacker");
 
+  g.set_ui_mode(UiMode::JSON);
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"defend", std::format("#{}", target_id.value), "5,5", "10"});
+  test::expect_contains(g.out.str(), R"("type":"defend")");
+  test::expect_contains(g.out.str(), R"("planet_shot":)");
+  g.set_ui_mode(UiMode::ASCII);
+
   // Configure escort with a laser that burns out (tech = 2.0, fire_laser = 1)
   // and verify that the burnout is persisted to SQLite even though
   // shoot_ship_to_planet returns std::nullopt when strength drops to 0.

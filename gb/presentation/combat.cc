@@ -855,4 +855,53 @@ std::string render_for_mode(UiMode mode, const BombardShipResult& vm) {
                               : render_bombard_ship_result(vm);
 }
 
+std::string format_defend_error(const DefendError& err) {
+  switch (err.reason) {
+    case DefendErrorReason::ShipNotFound:
+      return "Ship not found.\n";
+    case DefendErrorReason::ShipAlreadyDestroyed:
+      return "That ship is already destroyed.\n";
+    case DefendErrorReason::ShipNotInPlanetOrbit:
+      return "The ship is not in planet orbit.\n";
+    case DefendErrorReason::TargetNotOrbitingThisPlanet:
+      return "Target is not in orbit around this planet.\n";
+    case DefendErrorReason::CannotFireOnLandedShip:
+      return "Planet guns can't fire on landed ships.\n";
+    case DefendErrorReason::BadSectorFormat:
+      return "Bad format for sector.\n";
+    case DefendErrorReason::NoSectorsOccupied:
+      return "You do not occupy any sectors here.\n";
+    case DefendErrorReason::PlanetEnslaved:
+      return "This planet is enslaved.\n";
+    case DefendErrorReason::IllegalSector:
+      return "Illegal sector.\n";
+    case DefendErrorReason::SectorNotOwned:
+      return "Nice try.\n";
+    case DefendErrorReason::NoAttack:
+      return std::format("No attack - {} guns, {}d\n", err.guns, err.destruct);
+    case DefendErrorReason::TargetOutOfRange:
+      return std::format("Target out of range  {}!\n", SYSTEMSIZE);
+  }
+  return "";
+}
+
+std::string render_defend_planet_result(const DefendPlanetResult& res) {
+  std::string out = render_ship_shot_long(res.planet_shot);
+  for (const auto& ret : res.ship_retaliation) {
+    if (ret.bombard) {
+      out += render_bombard_long(*ret.bombard);
+    }
+  }
+  return out;
+}
+
+std::string render_json_defend_planet_result(const DefendPlanetResult& res) {
+  return render_json_envelope("defend", res);
+}
+
+std::string render_for_mode(UiMode mode, const DefendPlanetResult& vm) {
+  return mode == UiMode::JSON ? render_json_defend_planet_result(vm)
+                              : render_defend_planet_result(vm);
+}
+
 }  // namespace GB::presentation

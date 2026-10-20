@@ -367,6 +367,132 @@ void resolve_bombard_retaliation(EntityManager& em, Ship& from, Planet& p,
   }
 }
 
+std::optional<DefendPlanetRetaliationEvent>
+execute_planet_retaliation_shot(EntityManager& em, Ship& ship, Planet& p,
+                                SectorMap& smap, Coordinates sector_coords,
+                                weapon_power_t initial_strength) {
+  auto [strength, overload] = check_overload(em, ship, 0, initial_strength);
+  if (overload) {
+    return DefendPlanetRetaliationEvent{
+        .ship_owner = ship.owner(),
+        .ship_governor = ship.governor(),
+        .overload = std::move(overload),
+    };
+  }
+  auto bombard = shoot_ship_to_planet(em, ship, p, strength, sector_coords,
+                                      smap, false, guntype_t::NONE);
+  if (!bombard) {
+    return std::nullopt;
+  }
+  ship.consume_weapon_resources(strength);
+  return DefendPlanetRetaliationEvent{
+      .ship_owner = ship.owner(),
+      .ship_governor = ship.governor(),
+      .bombard = std::move(bombard),
+  };
+}
+
+std::expected<weapon_power_t, DefendError>
+validate_defend_target(EntityManager& em, starnum_t snum, planetnum_t pnum,
+                       shipnum_t toship) {
+  const Ship* to = nullptr;
+  try {
+    to = em.peek_ship(toship);
+  } catch (const EntityNotFoundError&) {
+    return std::unexpected(
+        DefendError{.reason = DefendErrorReason::ShipNotFound});
+  }
+  if (!to->alive()) {
+    return std::unexpected(
+        DefendError{.reason = DefendErrorReason::ShipAlreadyDestroyed});
+  }
+  if (to->whatorbits() != ScopeLevel::LEVEL_PLAN) {
+    return std::unexpected(
+        DefendError{.reason = DefendErrorReason::ShipNotInPlanetOrbit});
+  }
+  if (to->storbits() != snum || to->pnumorbits() != pnum) {
+    return std::unexpected(
+        DefendError{.reason = DefendErrorReason::TargetNotOrbitingThisPlanet});
+  }
+  if (to->is_landed()) {
+    return std::unexpected(
+        DefendError{.reason = DefendErrorReason::CannotFireOnLandedShip});
+  }
+  return to->check_retal_strength();
+}
+
+std::expected<std::pair<Coordinates, weapon_power_t>, DefendError>
+validate_defend_sector_and_strength(
+    EntityManager& em, starnum_t snum, planetnum_t pnum, player_t player,
+    std::string_view sector_arg,
+    std::optional<weapon_power_t> requested_strength) {
+  auto coords_opt = Coordinates::parse(sector_arg);
+  if (!coords_opt) {
+    return std::unexpected(
+        DefendError{.reason = DefendErrorReason::BadSectorFormat});
+  }
+  const Coordinates sector_coords = *coords_opt;
+
+  const auto& p_peek = *em.peek_planet(snum, pnum);
+  if (!p_peek.info(player).numsectsowned) {
+    return std::unexpected(
+        DefendError{.reason = DefendErrorReason::NoSectorsOccupied});
+  }
+  if (p_peek.is_enslaved_to_foreign(player)) {
+    return std::unexpected(
+        DefendError{.reason = DefendErrorReason::PlanetEnslaved});
+  }
+  if (!p_peek.is_valid(sector_coords)) {
+    return std::unexpected(
+        DefendError{.reason = DefendErrorReason::IllegalSector});
+  }
+  if (em.peek_sectormap(snum, pnum)->get(sector_coords).get_owner() != player) {
+    return std::unexpected(
+        DefendError{.reason = DefendErrorReason::SectorNotOwned});
+  }
+
+  weapon_power_t strength =
+      requested_strength ? std::max<weapon_power_t>(0, *requested_strength)
+                         : p_peek.info(player).guns;
+  strength =
+      std::min(strength, static_cast<weapon_power_t>(std::max<resource_t>(
+                             0, p_peek.info(player).destruct)));
+  strength = std::min(strength, p_peek.info(player).guns);
+  if (strength <= 0) {
+    return std::unexpected(DefendError{
+        .reason = DefendErrorReason::NoAttack,
+        .guns = p_peek.info(player).guns,
+        .destruct = p_peek.info(player).destruct,
+    });
+  }
+  return std::pair{sector_coords, strength};
+}
+
+void resolve_defend_retaliation(EntityManager& em, starnum_t snum,
+                                planetnum_t pnum, Ship& target_ship, Planet& p,
+                                SectorMap& smap, Coordinates sector_coords,
+                                weapon_power_t retal, DefendPlanetResult& res) {
+  if (res.planet_shot.damage <= 0) {
+    return;
+  }
+  if (retal > 0 && target_ship.protect().retaliate) {
+    if (auto ev = execute_planet_retaliation_shot(em, target_ship, p, smap,
+                                                  sector_coords, retal)) {
+      res.ship_retaliation.push_back(std::move(*ev));
+    }
+  }
+  for (auto ship_handle : ShipList::on_planet(em, snum, pnum)) {
+    Ship& ship = *ship_handle;
+    if (!is_eligible_escort(ship, target_ship.number(), 0)) {
+      continue;
+    }
+    if (auto ev = execute_planet_retaliation_shot(
+            em, ship, p, smap, sector_coords, ship.check_retal_strength())) {
+      res.ship_retaliation.push_back(std::move(*ev));
+    }
+  }
+}
+
 }  // namespace
 
 std::optional<ShipCombatExchange>
@@ -583,4 +709,49 @@ bombard_single_ship(EntityManager& em, Ship& from,
     });
   }
   return res;
+}
+
+std::expected<DefendPlanetResult, DefendError>
+defend_planet_against_ship(EntityManager& em, starnum_t snum, planetnum_t pnum,
+                           player_t player, shipnum_t toship,
+                           std::string_view sector_arg,
+                           std::optional<weapon_power_t> requested_strength) {
+  auto retal = validate_defend_target(em, snum, pnum, toship);
+  if (!retal) {
+    return std::unexpected(retal.error());
+  }
+  auto sector_and_strength = validate_defend_sector_and_strength(
+      em, snum, pnum, player, sector_arg, requested_strength);
+  if (!sector_and_strength) {
+    return std::unexpected(sector_and_strength.error());
+  }
+  const auto [sector_coords, strength] = *sector_and_strength;
+
+  const auto& race = *em.peek_race(player);
+  std::optional<DefendPlanetResult> res;
+  em.mutate_ship(toship, [&](Ship& target_ship) {
+    em.mutate_planet(snum, pnum, [&](Planet& p) {
+      em.mutate_sectormap(snum, pnum, [&](SectorMap& smap) {
+        auto p2s_opt = shoot_planet_to_ship(em, race, target_ship, strength);
+        if (!p2s_opt) {
+          return;
+        }
+        p.info(player).destruct -= strength;
+        res = DefendPlanetResult{
+            .star_id = target_ship.storbits(),
+            .target_owner = target_ship.owner(),
+            .target_governor = target_ship.governor(),
+            .planet_shot = std::move(*p2s_opt),
+        };
+        resolve_defend_retaliation(em, snum, pnum, target_ship, p, smap,
+                                   sector_coords, *retal, *res);
+      });
+    });
+  });
+
+  if (!res) {
+    return std::unexpected(
+        DefendError{.reason = DefendErrorReason::TargetOutOfRange});
+  }
+  return *res;
 }

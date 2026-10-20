@@ -277,4 +277,19 @@ render_json_bombard_ship_result(const BombardShipResult& res);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const BombardShipResult& vm);
 
+/// Formats a `DefendError` into its user-facing error message.
+[[nodiscard]] std::string format_defend_error(const DefendError& err);
+
+/// Formats a `DefendPlanetResult` into its user-facing ASCII report.
+[[nodiscard]] std::string
+render_defend_planet_result(const DefendPlanetResult& res);
+
+/// Formats a `DefendPlanetResult` into its JSON envelope string.
+[[nodiscard]] std::string
+render_json_defend_planet_result(const DefendPlanetResult& res);
+
+/// Open ADL dispatch for `DefendPlanetResult`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const DefendPlanetResult& vm);
+
 }  // namespace GB::presentation

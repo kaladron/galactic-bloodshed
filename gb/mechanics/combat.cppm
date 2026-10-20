@@ -452,6 +452,51 @@ bombard_single_ship(EntityManager& em, Ship& from,
                     std::optional<weapon_power_t> requested_strength,
                     player_t player, bool god = false);
 
+export enum class DefendErrorReason {
+  ShipNotFound,
+  ShipAlreadyDestroyed,
+  ShipNotInPlanetOrbit,
+  TargetNotOrbitingThisPlanet,
+  CannotFireOnLandedShip,
+  BadSectorFormat,
+  NoSectorsOccupied,
+  PlanetEnslaved,
+  IllegalSector,
+  SectorNotOwned,
+  NoAttack,
+  TargetOutOfRange,
+};
+
+export struct DefendError {
+  DefendErrorReason reason{DefendErrorReason::NoAttack};
+  gun_count_t guns{0};
+  resource_t destruct{0};
+};
+
+export struct DefendPlanetRetaliationEvent {
+  player_t ship_owner{0};
+  governor_t ship_governor{0};
+  std::optional<ReactorOverloadEvent> overload{std::nullopt};
+  std::optional<BombardResult> bombard{std::nullopt};
+};
+
+export struct DefendPlanetResult {
+  starnum_t star_id{0};
+  player_t target_owner{0};
+  governor_t target_governor{0};
+  ShipShotResult planet_shot{};
+  std::vector<DefendPlanetRetaliationEvent> ship_retaliation{};
+};
+
+/// \brief Validates and executes surface-to-orbit planetary defense gun fire
+/// against an orbiting ship, including target self-retaliation and escort
+/// orbital bombardment retaliation.
+export std::expected<DefendPlanetResult, DefendError>
+defend_planet_against_ship(EntityManager& em, starnum_t snum, planetnum_t pnum,
+                           player_t player, shipnum_t toship,
+                           std::string_view sector_arg,
+                           std::optional<weapon_power_t> requested_strength);
+
 export enum class MilitiaErrorReason {
   PlanetEnslaved,
   InvalidCoordinates,

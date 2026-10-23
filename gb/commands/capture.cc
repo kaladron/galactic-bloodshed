@@ -7,69 +7,36 @@ module;
 
 import std;
 import gb.entities;
-import gb.presentation.navigation;
+import gb.mechanics;
+import gb.presentation.combat;
 import gb.services;
 import scnlib;
 
 module commands;
 
-namespace GB::commands {
-
 namespace {
 
-/// \brief Computes the boarding attack strength of a sector force assaulting
-/// a landed starship.
-constexpr double calculate_boarding_attack_strength(const population_t boarders,
-                                                    const PopulationType what,
-                                                    const Race& attacker,
-                                                    const Race& defender,
-                                                    const Sector& sect) {
-  const population_t force_weight =
-      what == PopulationType::MIL
-          ? attacker.fighters * MILITARY_COMBAT_MULTIPLIER
-          : 1;
-  return static_cast<double>(boarders * force_weight) *
-         percent_to_fraction(attacker.tech) *
-         (attacker.sector_compatibility(sect) + COMBAT_FLOOR_EPSILON) *
-         sect.combat_defense_factor() *
-         morale_factor(attacker.morale - defender.morale);
-}
+void notify_capture_result(GameObj& g, const LandedBoardingResult& res) {
+  warn_player(g.session_registry, g.entity_manager, res.old_defender_owner,
+              res.old_defender_gov,
+              GB::presentation::render_capture_defender_telegram(res));
 
-/// \brief Computes the internal defensive strength of a landed starship's
-/// crew against boarders.
-constexpr double calculate_boarding_defense_strength(const Ship& ship,
-                                                     const Race& defender,
-                                                     const Race& attacker) {
-  const population_t crew_weight =
-      ship.popn() +
-      ship.troops() * MILITARY_COMBAT_MULTIPLIER * defender.fighters;
-  const double hull_integrity_factor = percent_to_fraction(100 - ship.damage());
-  return static_cast<double>(crew_weight) * percent_to_fraction(defender.tech) *
-         (static_cast<double>(ship.effective_armor()) + COMBAT_FLOOR_EPSILON) *
-         hull_integrity_factor *
-         morale_factor(defender.morale - attacker.morale);
+  const auto news = GB::presentation::render_capture_news(res);
+  if (res.captured || !res.ship_alive) {
+    post(g.entity_manager, news, NewsType::COMBAT);
+  }
+  notify_star(g.session_registry, g.entity_manager, g.player(), g.governor(),
+              res.star_id, news);
 }
 
 }  // namespace
 
+namespace GB::commands {
+
 bool capture(const command_t& argv, GameObj& g) {
-  const player_t Playernum = g.player();
-  const governor_t Governor = g.governor();
-  const ap_t APcount = 1;
-  player_t oldowner;
-  governor_t oldgov;
-  int shipdam = 0;
-  int booby = 0;
-  PopulationType what;
-  population_t olddpopn;
-  population_t olddtroops;
-  population_t casualties = 0;
-  population_t casualties1 = 0;
-  population_t casualties2 = 0;
-  population_t casualty_scale = 0;
-  double astrength;
-  double dstrength;
-  bool any_captured = false;
+  const auto Playernum = g.player();
+  const auto Governor = g.governor();
+  constexpr ap_t APcount = 1;
 
   if (argv.size() < 2) {
     g.out << "Capture what?\n";
@@ -85,7 +52,7 @@ bool capture(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  auto target_shipno = string_to_shipnum(argv[1]);
+  const auto target_shipno = string_to_shipnum(argv[1]);
   if (!target_shipno) {
     g.out << "Illegal ship value.\n";
     return false;
@@ -112,259 +79,46 @@ bool capture(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  bool owns_sector = g.entity_manager.with_sectormap(
-      ship_peek->storbits(), ship_peek->pnumorbits(),
-      [&](const SectorMap& smap) {
-        return smap.get(ship_peek->land_coords()).get_owner() == Playernum;
-      });
-  if (!owns_sector) {
-    g.entity_manager.with_sectormap(
-        ship_peek->storbits(), ship_peek->pnumorbits(),
-        [&](const SectorMap& smap) {
-          g.out << std::format(
-              "You don't own the sector where the ship is landed [{}].\n",
-              smap.get(ship_peek->land_coords()).get_owner());
-        });
+  const auto& smap_peek = *g.entity_manager.peek_sectormap(
+      ship_peek->storbits(), ship_peek->pnumorbits());
+  const auto& sect_peek = smap_peek.get(ship_peek->land_coords());
+  if (sect_peek.get_owner() != Playernum) {
+    g.out << std::format(
+        "You don't own the sector where the ship is landed [{}].\n",
+        sect_peek.get_owner());
     return false;
   }
 
-  if (argv.size() < 4)
-    what = PopulationType::CIV;
-  else if (argv[3] == "civilians" || argv[3] == "civ")
-    what = PopulationType::CIV;
-  else if (argv[3] == "military" || argv[3] == "mil")
-    what = PopulationType::MIL;
-  else {
-    g.out << "Capture with what?\n";
-    return false;
+  auto what = PopulationType::CIV;
+  if (argv.size() >= 4) {
+    if (argv[3] == "civilians" || argv[3] == "civ") {
+      what = PopulationType::CIV;
+    } else if (argv[3] == "military" || argv[3] == "mil") {
+      what = PopulationType::MIL;
+    } else {
+      g.out << "Capture with what?\n";
+      return false;
+    }
   }
 
-  population_t available_boarders = 0;
-  g.entity_manager.with_sectormap(
-      ship_peek->storbits(), ship_peek->pnumorbits(),
-      [&](const SectorMap& smap) {
-        const auto& sect = smap.get(ship_peek->land_coords());
-        available_boarders =
-            (what == PopulationType::CIV) ? sect.get_popn() : sect.get_troops();
-      });
-
-  population_t boarders = available_boarders;
+  const auto available_boarders = (what == PopulationType::CIV)
+                                      ? sect_peek.get_popn()
+                                      : sect_peek.get_troops();
+  auto boarders = available_boarders;
   if (argv.size() >= 3) {
     auto parsed = scn::scan<population_t>(argv[2], "{}");
     boarders = parsed ? std::min(parsed->value(), available_boarders) : 0;
   }
-
   if (boarders <= 0) {
     g.out << "Illegal number of boarders.\n";
     return false;
   }
 
-  const auto* race_ptr =
-      g.race ? g.race : g.entity_manager.peek_race(Playernum);
-  const auto& race = *race_ptr;
-  const auto* alien = g.entity_manager.peek_race(ship_peek->owner());
-  if (!alien) {
-    g.out << "Ship owner race not found.\n";
-    return false;
-  }
-
-  if (race.is_allied_with(ship_peek->owner())) {
-    g.out << std::format("Boarding the ship of your ally, {}\n", alien->name);
-  }
-
-  g.entity_manager.mutate_ship(*target_shipno, [&](Ship& ship) {
-    olddpopn = ship.popn();
-    olddtroops = ship.troops();
-    oldowner = ship.owner();
-    oldgov = ship.governor();
-
-    shipdam = 0;
-    casualties = 0;
-    casualties1 = 0;
-    casualties2 = 0;
-
-    population_t net_civ_lost = 0;
-    population_t net_mil_lost = 0;
-    player_t sect_owner_display = 0;
-
-    g.entity_manager.mutate_planet_and_sectors(
-        ship.storbits(), ship.pnumorbits(),
-        [&](Planet& planet, SectorMap& smap) {
-          auto& sect = smap.get(ship.land_coords());
-
-          if (olddpopn + olddtroops) {
-            astrength = calculate_boarding_attack_strength(boarders, what, race,
-                                                           *alien, sect);
-            dstrength = calculate_boarding_defense_strength(ship, *alien, race);
-            g.out << std::format(
-                "Attack strength: {:.2f}     Defense strength: {:.2f}\n",
-                astrength, dstrength);
-            casualty_scale = std::min(boarders, ship.popn() + ship.troops());
-            if (astrength > 0.0)
-              casualties = uniform_rand(
-                  0, round_rand(casualty_scale,
-                                (dstrength + 1.0) / (astrength + 1.0)));
-
-            if (dstrength > 0.0) {
-              casualties1 = uniform_rand(
-                  0, round_rand(casualty_scale,
-                                (astrength + 1.0) / (dstrength + 1.0)));
-              casualties2 = uniform_rand(
-                  0, round_rand(casualty_scale,
-                                (astrength + 1.0) / (dstrength + 1.0)));
-              shipdam = uniform_rand(
-                  0, round_rand(MAX_BOARDING_COLLATERAL_DAMAGE *
-                                (astrength + 1.0) / (dstrength + 1.0)));
-              if (ship.apply_damage(shipdam).destroyed) {
-                g.entity_manager.kill_ship(Playernum, ship);
-              }
-            }
-
-            casualties = std::min(boarders, casualties);
-            boarders -= casualties;
-
-            casualties1 = std::min(olddpopn, casualties1);
-            ship.remove_popn(casualties1, alien->mass);
-
-            casualties2 = std::min(olddtroops, casualties2);
-            ship.remove_troops(casualties2, alien->mass);
-
-          } else if (ship.destruct()) { /* booby trapped robot ships */
-            booby = uniform_rand(0, 10 * ship.destruct());
-            booby = std::min(100, booby);
-            casualties = casualties2 = 0;
-            for (unsigned long i = 0; i < boarders; i++)
-              casualties += (uniform_rand(1, 100) < booby);
-            boarders -= casualties;
-            shipdam += booby;
-            if (ship.apply_damage(booby).destroyed) {
-              g.entity_manager.kill_ship(Playernum, ship);
-            }
-          }
-          shipdam = std::min(100, shipdam);
-          if (ship.alive() && ship.damage() >= 100)
-            g.entity_manager.kill_ship(Playernum, ship);
-
-          if (!(ship.popn() + ship.troops()) && ship.alive()) {
-            /* we got 'em */
-            ship.owner() = Playernum;
-            ship.governor() = Governor;
-            if (what == PopulationType::CIV) {
-              const auto taken = std::min(boarders, ship.max_crew_capacity());
-              ship.add_popn(taken, race.mass);
-              net_civ_lost = taken + casualties;
-            } else if (what == PopulationType::MIL) {
-              const auto taken = std::min(boarders, ship.available_mil());
-              ship.add_troops(taken, race.mass);
-              net_mil_lost = taken + casualties;
-            }
-            if (olddpopn + olddtroops &&
-                ship.type() != ShipType::OTYPE_FACTORY) {
-              g.entity_manager.mutate_race(Playernum, [&](Race& r) {
-                g.entity_manager.mutate_race(oldowner, [&](Race& a) {
-                  r.adjust_morale(a, static_cast<int>(ship.build_cost()));
-                });
-              });
-            }
-            /* unoccupied ships and factories don't count */
-          } else { /* retreat */
-            if (what == PopulationType::CIV) {
-              net_civ_lost = casualties;
-            } else if (what == PopulationType::MIL) {
-              net_mil_lost = casualties;
-            }
-          }
-
-          planet.adjust_sector_population(sect, Playernum, -net_civ_lost,
-                                          -net_mil_lost);
-          sect_owner_display = sect.get_owner();
-        });
-
-    const auto& star = *g.entity_manager.peek_star(ship.storbits());
-    std::string telegram =
-        std::format("BULLETIN from {}/{}!!\n", star.get_name(),
-                    star.get_planet_name(ship.pnumorbits()));
-    telegram += std::format(
-        "You are being attacked by{} Player #{} ({})!!!\n",
-        (alien->is_allied_with(Playernum)
-             ? " your ally"
-             : (alien->is_at_war_with(Playernum) ? " your enemy" : " neutral")),
-        Playernum, race.name);
-    telegram += std::format("{} at sector {} [owner {}] !\n", ship,
-                            ship.land_coords(), sect_owner_display);
-
-    if (booby) {
-      telegram +=
-          std::format("Booby trap triggered causing {}% damage.\n", booby);
-      g.out << std::format("Booby trap triggered causing {}% damage.\n", booby);
-    }
-
-    if (shipdam) {
-      telegram +=
-          std::format("Total damage: {}% (now {}%)\n", shipdam, ship.damage());
-      g.out << std::format("Damage inflicted:  Them: {}% (now {}%)\n", shipdam,
-                           ship.damage());
-    }
-
-    if (!ship.alive()) {
-      telegram += "              YOUR SHIP WAS DESTROYED!!!\n";
-      g.out << "              Their ship DESTROYED!!!\n";
-      auto short_buf = std::format("{}: {} [{}] DESTROYED {}\n",
-                                   dispshiploc(g.entity_manager, ship),
-                                   race.name, Playernum, ship);
-    }
-
-    if (ship.owner() == Playernum) {
-      telegram += std::format("{} CAPTURED!\n", ship);
-      g.out << "VICTORY! The ship is yours!\n";
-      if (what == PopulationType::CIV)
-        g.out << std::format("{} boarders move in.\n",
-                             std::min(boarders, ship.popn()));
-      else if (what == PopulationType::MIL)
-        g.out << std::format("{} troops move in.\n",
-                             std::min(boarders, ship.troops()));
-      g.present(capture_stuff(g.entity_manager, ship));
-      auto short_buf = std::format("{}: {} [{}] CAPTURED {}\n",
-                                   dispshiploc(g.entity_manager, ship),
-                                   race.name, Playernum, ship);
-    } else if (ship.popn() + ship.troops()) {
-      telegram += "You fought them off!\n";
-      g.out << "The boarding was repulsed; try again.\n";
-      auto short_buf = std::format("{}: {} [{}] assaults {}\n",
-                                   dispshiploc(g.entity_manager, ship),
-                                   race.name, Playernum, ship);
-    }
-    if (ship.alive()) {
-      if (!boarders) {
-        g.out << "Oh no! They killed your party to the last man!\n";
-      }
-    } else {
-      telegram += "Your ship was weakened too much!\n";
-      g.out << "The assault weakened their ship too much!\n";
-    }
-
-    if (casualties || casualties1 || casualties2) {
-      telegram += std::format(
-          "Casualties: Yours: {} civ/{} mil, Theirs: {} {}\n", casualties1,
-          casualties2, casualties, what == PopulationType::CIV ? "civ" : "mil");
-      g.out << std::format("Casualties: Yours: {} {}, Theirs: {} civ/{} mil\n",
-                           casualties,
-                           what == PopulationType::CIV ? "civ" : "mil",
-                           casualties1, casualties2);
-    }
-    warn_player(g.session_registry, g.entity_manager, oldowner, oldgov,
-                telegram);
-    if (ship.owner() != oldowner || !ship.alive()) {
-      auto short_msg = std::format(
-          "{}: {} [{}] {} {}\n", dispshiploc(g.entity_manager, ship), race.name,
-          Playernum, (ship.alive() ? "assaults" : "DESTROYED"), ship);
-      post(g.entity_manager, short_msg, NewsType::COMBAT);
-      notify_star(g.session_registry, g.entity_manager, Playernum, Governor,
-                  ship.storbits(), short_msg);
-    }
-    any_captured = true;
-  });
-  return any_captured;
+  const auto res = execute_landed_ship_boarding(
+      g.entity_manager, *target_shipno, boarders, what, Playernum, Governor);
+  notify_capture_result(g, res);
+  g.present(res);
+  return true;
 }
 
 const CommandDescriptor capture_cmd{

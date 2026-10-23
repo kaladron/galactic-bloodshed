@@ -225,6 +225,7 @@ void test_capture_civilian_victory() {
   test::expect_false(victim_teles.empty());
   test::expect_contains(victim_teles.front().message, "BULLETIN from");
   test::expect_contains(victim_teles.front().message, "CAPTURED!");
+  test::expect_contains(victim_teles.back().message, "CAPTURED ");
 
   ctx.em.clear_cache();
   const auto* ship = ctx.em.peek_ship(target_ship);
@@ -332,9 +333,10 @@ void test_capture_boarders_wiped_and_ship_destroyed() {
   test::expect_contains(g.out.str(), "killed your party to the last man");
 
   const auto defender_teles = ctx.em.get_telegrams(2, 1);
-  test::expect_false(defender_teles.empty());
-  test::expect_contains(defender_teles.back().message, "BULLETIN from");
-  test::expect_contains(defender_teles.back().message, "You fought them off!");
+  test::expect_ge(defender_teles.size(), 2u);
+  test::expect_contains(defender_teles.front().message, "BULLETIN from");
+  test::expect_contains(defender_teles.front().message, "You fought them off!");
+  test::expect_contains(defender_teles.back().message, "assaults ");
 
   ctx.verify_universe_invariants();
 }

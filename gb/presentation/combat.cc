@@ -978,4 +978,119 @@ std::string render_for_mode(UiMode mode, const WalkResult& vm) {
                               : render_walk_result(vm);
 }
 
+std::string render_capture_defender_telegram(const LandedBoardingResult& res) {
+  const auto* relation =
+      res.defender_allied_with_attacker
+          ? " your ally"
+          : (res.defender_at_war_with_attacker ? " your enemy" : " neutral");
+  auto telegram =
+      std::format("BULLETIN from {}/{}!!\n"
+                  "You are being attacked by{} Player #{} ({})!!!\n"
+                  "{} at sector {} [owner {}] !\n",
+                  res.star_name, res.planet_name, relation, res.attacker_player,
+                  res.attacker_race_name, res.ship_display, res.sector_coords,
+                  res.sector_owner);
+
+  if (res.booby_damage > 0) {
+    std::format_to(std::back_inserter(telegram),
+                   "Booby trap triggered causing {}% damage.\n",
+                   res.booby_damage);
+  }
+  if (res.ship_damage > 0) {
+    std::format_to(std::back_inserter(telegram),
+                   "Total damage: {}% (now {}%)\n", res.ship_damage,
+                   res.ship_total_damage);
+  }
+  if (!res.ship_alive) {
+    telegram += "              YOUR SHIP WAS DESTROYED!!!\n";
+  }
+  if (res.captured) {
+    std::format_to(std::back_inserter(telegram), "{} CAPTURED!\n",
+                   res.ship_display);
+  } else if (res.defender_has_remaining_crew) {
+    telegram += "You fought them off!\n";
+  }
+  if (!res.ship_alive) {
+    telegram += "Your ship was weakened too much!\n";
+  }
+  if (res.attacker_casualties || res.defender_civ_casualties ||
+      res.defender_mil_casualties) {
+    std::format_to(std::back_inserter(telegram),
+                   "Casualties: Yours: {} civ/{} mil, Theirs: {} {}\n",
+                   res.defender_civ_casualties, res.defender_mil_casualties,
+                   res.attacker_casualties,
+                   res.what == PopulationType::CIV ? "civ" : "mil");
+  }
+  return telegram;
+}
+
+std::string render_capture_news(const LandedBoardingResult& res) {
+  const auto* verb =
+      !res.ship_alive ? "DESTROYED" : (res.captured ? "CAPTURED" : "assaults");
+  return std::format("{}: {} [{}] {} {}\n", res.location_display,
+                     res.attacker_race_name, res.attacker_player, verb,
+                     res.ship_display);
+}
+
+std::string render_capture_result(const LandedBoardingResult& res) {
+  std::string out;
+  if (res.allied_warning) {
+    std::format_to(std::back_inserter(out),
+                   "Boarding the ship of your ally, {}\n",
+                   res.defender_race_name);
+  }
+  if (res.had_defenders) {
+    std::format_to(std::back_inserter(out),
+                   "Attack strength: {:.2f}     Defense strength: {:.2f}\n",
+                   res.attack_strength, res.defense_strength);
+  }
+  if (res.booby_damage > 0) {
+    std::format_to(std::back_inserter(out),
+                   "Booby trap triggered causing {}% damage.\n",
+                   res.booby_damage);
+  }
+  if (res.ship_damage > 0) {
+    std::format_to(std::back_inserter(out),
+                   "Damage inflicted:  Them: {}% (now {}%)\n", res.ship_damage,
+                   res.ship_total_damage);
+  }
+  if (!res.ship_alive) {
+    out += "              Their ship DESTROYED!!!\n";
+  }
+  if (res.captured) {
+    out += "VICTORY! The ship is yours!\n";
+    std::format_to(std::back_inserter(out), "{} {} move in.\n",
+                   res.boarders_moved_in,
+                   res.what == PopulationType::CIV ? "boarders" : "troops");
+    out += render_captured_ships_report(res.captured_ships);
+  } else if (res.defender_has_remaining_crew) {
+    out += "The boarding was repulsed; try again.\n";
+  }
+  if (res.ship_alive) {
+    if (res.surviving_boarders == 0) {
+      out += "Oh no! They killed your party to the last man!\n";
+    }
+  } else {
+    out += "The assault weakened their ship too much!\n";
+  }
+  if (res.attacker_casualties || res.defender_civ_casualties ||
+      res.defender_mil_casualties) {
+    std::format_to(std::back_inserter(out),
+                   "Casualties: Yours: {} {}, Theirs: {} civ/{} mil\n",
+                   res.attacker_casualties,
+                   res.what == PopulationType::CIV ? "civ" : "mil",
+                   res.defender_civ_casualties, res.defender_mil_casualties);
+  }
+  return out;
+}
+
+std::string render_json_capture_result(const LandedBoardingResult& res) {
+  return render_json_envelope("capture", res);
+}
+
+std::string render_for_mode(UiMode mode, const LandedBoardingResult& vm) {
+  return mode == UiMode::JSON ? render_json_capture_result(vm)
+                              : render_capture_result(vm);
+}
+
 }  // namespace GB::presentation

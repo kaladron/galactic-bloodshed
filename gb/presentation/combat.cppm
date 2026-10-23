@@ -307,4 +307,24 @@ render_json_defend_planet_result(const DefendPlanetResult& res);
 /// Open ADL dispatch for `WalkResult`.
 [[nodiscard]] std::string render_for_mode(UiMode mode, const WalkResult& vm);
 
+/// Formats a `LandedBoardingResult` into the defending owner's warning
+/// telegram.
+[[nodiscard]] std::string
+render_capture_defender_telegram(const LandedBoardingResult& res);
+
+/// Formats a `LandedBoardingResult` into a combat news/star notification line.
+[[nodiscard]] std::string render_capture_news(const LandedBoardingResult& res);
+
+/// Formats a `LandedBoardingResult` into its user-facing ASCII report.
+[[nodiscard]] std::string
+render_capture_result(const LandedBoardingResult& res);
+
+/// Formats a `LandedBoardingResult` into its JSON envelope string.
+[[nodiscard]] std::string
+render_json_capture_result(const LandedBoardingResult& res);
+
+/// Open ADL dispatch for `LandedBoardingResult`.
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const LandedBoardingResult& vm);
+
 }  // namespace GB::presentation

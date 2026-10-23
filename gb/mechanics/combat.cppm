@@ -364,6 +364,48 @@ assault_single_ship(EntityManager& em, Ship& s, shipnum_t target_id,
                     std::optional<population_t> requested_boarders,
                     player_t player, governor_t governor, bool god = false);
 
+export struct LandedBoardingResult {
+  PopulationType what{PopulationType::CIV};
+  player_t attacker_player{0};
+  std::string attacker_race_name{};
+  player_t old_defender_owner{0};
+  governor_t old_defender_gov{0};
+  std::string defender_race_name{};
+  starnum_t star_id{0};
+  std::string star_name{};
+  std::string planet_name{};
+  std::string location_display{};
+  std::string ship_display{};
+  Coordinates sector_coords{};
+  player_t sector_owner{0};
+  bool allied_warning{false};
+  bool defender_allied_with_attacker{false};
+  bool defender_at_war_with_attacker{false};
+  bool had_defenders{false};
+  double attack_strength{0.0};
+  double defense_strength{0.0};
+  damage_t booby_damage{0};
+  damage_t ship_damage{0};
+  damage_t ship_total_damage{0};
+  bool ship_alive{true};
+  bool captured{false};
+  bool defender_has_remaining_crew{false};
+  population_t surviving_boarders{0};
+  population_t boarders_moved_in{0};
+  population_t attacker_casualties{0};
+  population_t defender_civ_casualties{0};
+  population_t defender_mil_casualties{0};
+  CapturedShipsReport captured_ships{};
+};
+
+/// \brief Executes a ground-to-ship boarding assault against a landed enemy
+/// ship from the planetary sector it occupies.
+export LandedBoardingResult
+execute_landed_ship_boarding(EntityManager& em, shipnum_t target_shipno,
+                             population_t boarders, PopulationType what,
+                             player_t attacker_player,
+                             governor_t attacker_governor);
+
 export enum class FireErrorReason {
   ShipIrradiated,
   CannotFireAtSelf,

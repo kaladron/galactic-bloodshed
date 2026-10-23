@@ -456,3 +456,191 @@ assault_single_ship(EntityManager& em, Ship& s, shipnum_t target_id,
 
   return result;
 }
+
+namespace {
+
+constexpr double calculate_boarding_attack_strength(population_t boarders,
+                                                    PopulationType what,
+                                                    const Race& attacker,
+                                                    const Race& defender,
+                                                    const Sector& sect) {
+  const population_t force_weight =
+      what == PopulationType::MIL
+          ? attacker.fighters * MILITARY_COMBAT_MULTIPLIER
+          : 1;
+  return static_cast<double>(boarders * force_weight) *
+         percent_to_fraction(attacker.tech) *
+         (attacker.sector_compatibility(sect) + COMBAT_FLOOR_EPSILON) *
+         sect.combat_defense_factor() *
+         morale_factor(attacker.morale - defender.morale);
+}
+
+constexpr double calculate_boarding_defense_strength(const Ship& ship,
+                                                     const Race& defender,
+                                                     const Race& attacker) {
+  const population_t crew_weight =
+      ship.popn() +
+      ship.troops() * MILITARY_COMBAT_MULTIPLIER * defender.fighters;
+  const double hull_integrity_factor = percent_to_fraction(100 - ship.damage());
+  return static_cast<double>(crew_weight) * percent_to_fraction(defender.tech) *
+         (static_cast<double>(ship.effective_armor()) + COMBAT_FLOOR_EPSILON) *
+         hull_integrity_factor *
+         morale_factor(defender.morale - attacker.morale);
+}
+
+void resolve_manned_landed_boarding(EntityManager& em, Ship& ship,
+                                    const Sector& sect, const Race& race,
+                                    const Race& alien, population_t boarders,
+                                    PopulationType what,
+                                    player_t attacker_player,
+                                    LandedBoardingResult& res) {
+  const auto old_popn = ship.popn();
+  const auto old_troops = ship.troops();
+  res.had_defenders = true;
+  res.attack_strength =
+      calculate_boarding_attack_strength(boarders, what, race, alien, sect);
+  res.defense_strength = calculate_boarding_defense_strength(ship, alien, race);
+
+  const auto casualty_scale = std::min(boarders, old_popn + old_troops);
+  if (res.attack_strength > 0.0) {
+    res.attacker_casualties = std::min(
+        boarders, uniform_rand(0, round_rand(casualty_scale,
+                                             (res.defense_strength + 1.0) /
+                                                 (res.attack_strength + 1.0))));
+  }
+  if (res.defense_strength > 0.0) {
+    const double ratio =
+        (res.attack_strength + 1.0) / (res.defense_strength + 1.0);
+    res.defender_civ_casualties =
+        std::min(old_popn, uniform_rand(0, round_rand(casualty_scale, ratio)));
+    res.defender_mil_casualties = std::min(
+        old_troops, uniform_rand(0, round_rand(casualty_scale, ratio)));
+    res.ship_damage = static_cast<damage_t>(std::min(
+        100,
+        uniform_rand(0, round_rand(MAX_BOARDING_COLLATERAL_DAMAGE * ratio))));
+    if (ship.apply_damage(res.ship_damage).destroyed) {
+      em.kill_ship(attacker_player, ship);
+    }
+  }
+  res.surviving_boarders = boarders - res.attacker_casualties;
+  ship.remove_popn(res.defender_civ_casualties, alien.mass);
+  ship.remove_troops(res.defender_mil_casualties, alien.mass);
+}
+
+void resolve_booby_trap_boarding(EntityManager& em, Ship& ship,
+                                 population_t boarders,
+                                 player_t attacker_player,
+                                 LandedBoardingResult& res) {
+  res.booby_damage = static_cast<damage_t>(
+      std::min<resource_t>(100, uniform_rand(0, 10 * ship.destruct())));
+  population_t casualties = 0;
+  for (population_t i = 0; i < boarders; ++i) {
+    casualties += (uniform_rand(1, 100) < res.booby_damage);
+  }
+  res.attacker_casualties = casualties;
+  res.surviving_boarders = boarders - casualties;
+  res.ship_damage = res.booby_damage;
+  if (ship.apply_damage(res.booby_damage).destroyed) {
+    em.kill_ship(attacker_player, ship);
+  }
+}
+
+void finalize_landed_ship_capture(EntityManager& em, Ship& ship, Planet& planet,
+                                  Sector& sect, const Race& race,
+                                  PopulationType what, player_t attacker_player,
+                                  governor_t attacker_governor,
+                                  LandedBoardingResult& res) {
+  population_t net_civ_lost = 0;
+  population_t net_mil_lost = 0;
+  const bool defenders_cleared = (ship.popn() + ship.troops() == 0);
+
+  if (defenders_cleared && ship.alive() && res.surviving_boarders > 0) {
+    res.captured = true;
+    ship.owner() = attacker_player;
+    ship.governor() = attacker_governor;
+    if (what == PopulationType::CIV) {
+      res.boarders_moved_in =
+          std::min(res.surviving_boarders, ship.max_crew_capacity());
+      ship.add_popn(res.boarders_moved_in, race.mass);
+      net_civ_lost = res.boarders_moved_in + res.attacker_casualties;
+    } else {
+      res.boarders_moved_in =
+          std::min(res.surviving_boarders, ship.available_mil());
+      ship.add_troops(res.boarders_moved_in, race.mass);
+      net_mil_lost = res.boarders_moved_in + res.attacker_casualties;
+    }
+    res.captured_ships = capture_stuff(em, ship);
+    if (res.had_defenders && ship.type() != ShipType::OTYPE_FACTORY) {
+      em.mutate_race(attacker_player, [&](Race& r) {
+        em.mutate_race(res.old_defender_owner, [&](Race& a) {
+          r.adjust_morale(a, static_cast<int>(ship.build_cost()));
+        });
+      });
+    }
+  } else if (what == PopulationType::CIV) {
+    net_civ_lost = res.attacker_casualties;
+  } else {
+    net_mil_lost = res.attacker_casualties;
+  }
+
+  planet.adjust_sector_population(sect, attacker_player, -net_civ_lost,
+                                  -net_mil_lost);
+  res.sector_owner = sect.get_owner();
+}
+
+}  // namespace
+
+LandedBoardingResult
+execute_landed_ship_boarding(EntityManager& em, shipnum_t target_shipno,
+                             population_t boarders, PopulationType what,
+                             player_t attacker_player,
+                             governor_t attacker_governor) {
+  const auto& race = *em.peek_race(attacker_player);
+  LandedBoardingResult res{
+      .what = what,
+      .attacker_player = attacker_player,
+      .attacker_race_name = race.name,
+      .surviving_boarders = boarders,
+  };
+
+  em.mutate_ship(target_shipno, [&](Ship& ship) {
+    const auto old_owner = ship.owner();
+    const auto& alien = *em.peek_race(old_owner);
+    const auto& star = *em.peek_star(ship.storbits());
+
+    res.old_defender_owner = old_owner;
+    res.old_defender_gov = ship.governor();
+    res.defender_race_name = alien.name;
+    res.star_id = ship.storbits();
+    res.star_name = star.get_name();
+    res.planet_name = star.get_planet_name(ship.pnumorbits());
+    res.sector_coords = ship.land_coords();
+    res.allied_warning = race.is_allied_with(old_owner);
+    res.defender_allied_with_attacker = alien.is_allied_with(attacker_player);
+    res.defender_at_war_with_attacker = alien.is_at_war_with(attacker_player);
+
+    em.mutate_planet_and_sectors(
+        ship.storbits(), ship.pnumorbits(),
+        [&](Planet& planet, SectorMap& smap) {
+          auto& sect = smap.get(ship.land_coords());
+          if (ship.popn() + ship.troops() > 0) {
+            resolve_manned_landed_boarding(em, ship, sect, race, alien,
+                                           boarders, what, attacker_player,
+                                           res);
+          } else if (ship.destruct() > 0) {
+            resolve_booby_trap_boarding(em, ship, boarders, attacker_player,
+                                        res);
+          }
+          finalize_landed_ship_capture(em, ship, planet, sect, race, what,
+                                       attacker_player, attacker_governor, res);
+        });
+
+    res.location_display = dispshiploc(em, ship);
+    res.ship_display = std::format("{}", ship);
+    res.ship_total_damage = ship.damage();
+    res.ship_alive = ship.alive();
+    res.defender_has_remaining_crew = (ship.popn() + ship.troops() > 0);
+  });
+
+  return res;
+}

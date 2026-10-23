@@ -644,3 +644,104 @@ execute_landed_ship_boarding(EntityManager& em, shipnum_t target_shipno,
 
   return res;
 }
+
+namespace {
+
+std::expected<const Ship*, CaptureError>
+validate_capture_ship(EntityManager& em, starnum_t snum, planetnum_t pnum,
+                      shipnum_t target_shipno, player_t player) {
+  if (em.peek_planet(snum, pnum)->is_enslaved_to_foreign(player)) {
+    return std::unexpected(
+        CaptureError{.reason = CaptureErrorReason::PlanetEnslaved});
+  }
+
+  const Ship* ship_peek = nullptr;
+  try {
+    ship_peek = em.peek_ship(target_shipno);
+  } catch (const EntityNotFoundError&) {
+    return std::unexpected(
+        CaptureError{.reason = CaptureErrorReason::ShipNotFound});
+  }
+
+  if (!ship_peek->alive()) {
+    return std::unexpected(
+        CaptureError{.reason = CaptureErrorReason::ShipNotFound});
+  }
+  if (ship_peek->owner() == player) {
+    return std::unexpected(
+        CaptureError{.reason = CaptureErrorReason::AlreadyOwned});
+  }
+  if (!ship_peek->is_landed()) {
+    return std::unexpected(CaptureError{
+        .reason = CaptureErrorReason::NotLanded,
+        .ship_id = target_shipno,
+        .ship_type_name = std::string(ship_peek->type_name()),
+    });
+  }
+  if (ship_peek->storbits() != snum || ship_peek->pnumorbits() != pnum) {
+    return std::unexpected(CaptureError{
+        .reason = CaptureErrorReason::WrongPlanet,
+        .ship_id = target_shipno,
+        .ship_type_name = std::string(ship_peek->type_name()),
+    });
+  }
+  if (ship_peek->type() == ShipType::OTYPE_VN) {
+    return std::unexpected(
+        CaptureError{.reason = CaptureErrorReason::CannotCaptureVonNeumann});
+  }
+  return ship_peek;
+}
+
+std::expected<population_t, CaptureError>
+resolve_capture_boarders(const Sector& sect,
+                         std::optional<population_t> requested_boarders,
+                         PopulationType what, player_t player) {
+  if (sect.get_owner() != player) {
+    return std::unexpected(CaptureError{
+        .reason = CaptureErrorReason::SectorNotOwned,
+        .sector_owner = sect.get_owner(),
+    });
+  }
+  const auto available =
+      (what == PopulationType::CIV) ? sect.get_popn() : sect.get_troops();
+  const auto boarders =
+      requested_boarders ? std::min(*requested_boarders, available) : available;
+  if (boarders <= 0) {
+    return std::unexpected(
+        CaptureError{.reason = CaptureErrorReason::IllegalBoarderCount});
+  }
+  return boarders;
+}
+
+}  // namespace
+
+std::expected<LandedBoardingResult, CaptureError> capture_landed_ship(
+    EntityManager& em, starnum_t snum, planetnum_t pnum,
+    shipnum_t target_shipno, std::optional<population_t> requested_boarders,
+    PopulationType what, player_t player, governor_t governor, bool god) {
+  auto ship_res = validate_capture_ship(em, snum, pnum, target_shipno, player);
+  if (!ship_res) {
+    return std::unexpected(ship_res.error());
+  }
+
+  const auto& smap = *em.peek_sectormap(snum, pnum);
+  auto boarders_res = resolve_capture_boarders(
+      smap.get((*ship_res)->land_coords()), requested_boarders, what, player);
+  if (!boarders_res) {
+    return std::unexpected(boarders_res.error());
+  }
+
+  constexpr ap_t ap_cost = 1;
+  if (!god) {
+    if (em.peek_star(snum)->AP(player) < ap_cost) {
+      return std::unexpected(CaptureError{
+          .reason = CaptureErrorReason::InsufficientAp,
+          .required_ap = ap_cost,
+      });
+    }
+    em.mutate_star(snum, [&](Star& star) { star.AP(player) -= ap_cost; });
+  }
+
+  return execute_landed_ship_boarding(em, target_shipno, *boarders_res, what,
+                                      player, governor);
+}

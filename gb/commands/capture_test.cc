@@ -5,6 +5,7 @@
 
 import commands;
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import test;
 import std;
@@ -172,27 +173,76 @@ void test_capture_domain_errors() {
   ctx.assert_dispatch_rejected(g, {"capture", std::format("#{}", vn_id.value)});
   test::expect_contains(g.out.str(), "Von Neumann");
 
-  // 5. Unowned landing sector
+  // 5. Unowned landing sector (must preserve Star AP)
+  const auto initial_ap = ctx.em.peek_star(1)->AP(1);
   ctx.em.mutate_sectormap(
       1, 1, [](SectorMap& smap) { smap.get(Coordinates{2, 2}).set_owner(0); });
-  shipnum_t unowned_sect_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                                    .owned_by(2, 1)
-                                    .landed_on(1, 1, Coordinates(2, 2))
-                                    .build();
+  const auto unowned_sect_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
+                                     .owned_by(2, 1)
+                                     .landed_on(1, 1, Coordinates(2, 2))
+                                     .build();
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"capture", std::format("#{}", unowned_sect_ship.value)});
   test::expect_contains(g.out.str(), "don't own the sector");
+  test::expect_eq(ctx.em.peek_star(1)->AP(1), initial_ap);
 
-  // 6. Invalid population type
+  // 6. Invalid population type and non-numeric / zero boarder counts
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"capture", "#1", "10", "lasers"});
   test::expect_contains(g.out.str(), "Capture with what?");
+  test::expect_eq(ctx.em.peek_star(1)->AP(1), initial_ap);
 
-  // 7. Illegal number of boarders (0)
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"capture", "#1", "0"});
   test::expect_contains(g.out.str(), "Illegal number of boarders");
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"capture", "#1", "abc"});
+  test::expect_contains(g.out.str(), "Illegal number of boarders");
+  test::expect_eq(ctx.em.peek_star(1)->AP(1), initial_ap);
+
+  // 7. Illegal ship values, non-existent ship, self-owned ship, and wrong
+  // planet/star
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"capture", "notaship"});
+  test::expect_contains(g.out.str(), "Illegal ship value");
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"capture", "#0"});
+  test::expect_contains(g.out.str(), "Illegal ship value");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"capture", "#9999"});
+  test::expect_contains(g.out.str(), "No such ship");
+
+  const auto own_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
+                            .owned_by(1, 1)
+                            .landed_on(1, 1, Coordinates(5, 5))
+                            .build();
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g,
+                               {"capture", std::format("#{}", own_ship.value)});
+  test::expect_contains(g.out.str(), "already own");
+
+  const auto other_star_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
+                                   .owned_by(2, 1)
+                                   .landed_on(2, 1, Coordinates(0, 0))
+                                   .build();
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"capture", std::format("#{}", other_star_ship.value)});
+  test::expect_contains(g.out.str(), "not landed on this planet");
+
+  ctx.create_planet(1, PlanetType::MARS, Coordinates{4, 4}, 2)
+      .named("Mars")
+      .build();
+  const auto other_planet_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
+                                     .owned_by(2, 1)
+                                     .landed_on(1, 2, Coordinates(0, 0))
+                                     .build();
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"capture", std::format("#{}", other_planet_ship.value)});
+  test::expect_contains(g.out.str(), "not landed on this planet");
 
   ctx.verify_universe_invariants();
 }
@@ -269,6 +319,20 @@ void test_capture_default_boarders_and_allied_ship() {
   ctx.em.clear_cache();
   const auto* ship = ctx.em.peek_ship(target_ship);
   test::expect_eq(ship->owner(), 1);
+
+  // Also verify JSON presentation mode with "mil" prefix
+  const auto json_target = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
+                               .owned_by(2, 1)
+                               .landed_on(1, 1, Coordinates(5, 5))
+                               .with_crew(0, 0)
+                               .with_destruct(0)
+                               .build();
+  g.set_ui_mode(UiMode::JSON);
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"capture", std::format("#{}", json_target.value), "5", "mil"});
+  test::expect_contains(g.out.str(), "\"type\":\"capture\"");
+  test::expect_contains(g.out.str(), "\"captured\":true");
 
   ctx.verify_universe_invariants();
 }

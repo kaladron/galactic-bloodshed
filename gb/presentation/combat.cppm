@@ -307,6 +307,9 @@ render_json_defend_planet_result(const DefendPlanetResult& res);
 /// Open ADL dispatch for `WalkResult`.
 [[nodiscard]] std::string render_for_mode(UiMode mode, const WalkResult& vm);
 
+/// Formats a `CaptureError` into its user-facing error message.
+[[nodiscard]] std::string format_capture_error(const CaptureError& err);
+
 /// Formats a `LandedBoardingResult` into the defending owner's warning
 /// telegram.
 [[nodiscard]] std::string

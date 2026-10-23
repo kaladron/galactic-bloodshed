@@ -978,6 +978,35 @@ std::string render_for_mode(UiMode mode, const WalkResult& vm) {
                               : render_walk_result(vm);
 }
 
+std::string format_capture_error(const CaptureError& err) {
+  switch (err.reason) {
+    case CaptureErrorReason::PlanetEnslaved:
+      return "That planet has been enslaved!\n";
+    case CaptureErrorReason::ShipNotFound:
+      return "No such ship.\n";
+    case CaptureErrorReason::AlreadyOwned:
+      return "You already own that ship!\n";
+    case CaptureErrorReason::NotLanded:
+      return std::format("{} #{} is not landed on a planet.\n",
+                         err.ship_type_name, err.ship_id);
+    case CaptureErrorReason::WrongPlanet:
+      return std::format("{} #{} is not landed on this planet.\n",
+                         err.ship_type_name, err.ship_id);
+    case CaptureErrorReason::CannotCaptureVonNeumann:
+      return "You can't capture Von Neumann machines.\n";
+    case CaptureErrorReason::SectorNotOwned:
+      return std::format(
+          "You don't own the sector where the ship is landed [{}].\n",
+          err.sector_owner);
+    case CaptureErrorReason::IllegalBoarderCount:
+      return "Illegal number of boarders.\n";
+    case CaptureErrorReason::InsufficientAp:
+      return std::format("You don't have {} action points there.\n",
+                         err.required_ap);
+  }
+  return "";
+}
+
 std::string render_capture_defender_telegram(const LandedBoardingResult& res) {
   const auto* relation =
       res.defender_allied_with_attacker

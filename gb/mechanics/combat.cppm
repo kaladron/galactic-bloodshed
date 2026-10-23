@@ -406,6 +406,35 @@ execute_landed_ship_boarding(EntityManager& em, shipnum_t target_shipno,
                              player_t attacker_player,
                              governor_t attacker_governor);
 
+export enum class CaptureErrorReason {
+  PlanetEnslaved,
+  ShipNotFound,
+  AlreadyOwned,
+  NotLanded,
+  WrongPlanet,
+  CannotCaptureVonNeumann,
+  SectorNotOwned,
+  IllegalBoarderCount,
+  InsufficientAp,
+};
+
+export struct CaptureError {
+  CaptureErrorReason reason{CaptureErrorReason::ShipNotFound};
+  shipnum_t ship_id{0};
+  std::string ship_type_name{};
+  player_t sector_owner{0};
+  ap_t required_ap{0};
+};
+
+/// \brief Validates preconditions, deducts AP, and executes a ground-to-ship
+/// boarding assault against a landed enemy ship on `(snum, pnum)`.
+export std::expected<LandedBoardingResult, CaptureError>
+capture_landed_ship(EntityManager& em, starnum_t snum, planetnum_t pnum,
+                    shipnum_t target_shipno,
+                    std::optional<population_t> requested_boarders,
+                    PopulationType what, player_t player, governor_t governor,
+                    bool god = false);
+
 export enum class FireErrorReason {
   ShipIrradiated,
   CannotFireAtSelf,

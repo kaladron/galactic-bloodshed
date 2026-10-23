@@ -621,3 +621,64 @@ execute_planet_sector_movement(EntityManager& em, starnum_t snum,
                                std::string_view path,
                                std::optional<population_t> requested_count,
                                PopulationType what);
+
+export enum class WalkErrorReason {
+  ShipNotFound,
+  NotCommandable,
+  ShipCannotWalk,
+  NotLanded,
+  NoCrew,
+  InsufficientFuel,
+  InsufficientAp,
+  IllegalMove,
+  IllegalCoordinates,
+  IncompatibleSectorType,
+};
+
+export struct WalkError {
+  WalkErrorReason reason{WalkErrorReason::IllegalMove};
+  std::optional<CommandableError> commandable_error{std::nullopt};
+  shipnum_t ship_id{0};
+  std::string ship_display{};
+  radiation_t radiation{0};
+  double required_fuel{0.0};
+  ap_t required_ap{0};
+  Coordinates target_coords{};
+};
+
+export struct AfvDuelShot {
+  player_t defender_owner{0};
+  governor_t defender_governor{0};
+  ShipShotResult shot{};
+};
+
+export struct WalkGarrisonRound {
+  player_t defender_player{0};
+  governor_t defender_governor{0};
+  MechAttackPeopleResult mech_attack{};
+  PeopleAttackMechResult people_counterattack{};
+};
+
+export struct WalkObserverTarget {
+  player_t player{0};
+  governor_t governor{0};
+};
+
+export struct WalkResult {
+  starnum_t star_id{0};
+  std::string ship_display{};
+  std::string location_display{};
+  Coordinates old_coords{};
+  Coordinates new_coords{};
+  std::vector<AfvDuelShot> afv_duel_shots{};
+  bool unarmed_against_garrison{false};
+  std::vector<WalkGarrisonRound> garrison_rounds{};
+  bool advanced{false};
+  std::vector<WalkObserverTarget> move_observers{};
+};
+
+/// \brief Validates and executes an AFV sector walk, including defending AFV
+/// duels, hostile sector garrison combat, and sector occupation advancement.
+export std::expected<WalkResult, WalkError>
+execute_afv_walk(EntityManager& em, shipnum_t shipno, char direction,
+                 player_t player, governor_t governor, bool god = false);

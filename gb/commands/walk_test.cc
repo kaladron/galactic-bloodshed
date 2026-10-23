@@ -179,6 +179,12 @@ void test_walk_happy_path() {
   test::expect_true(saved_star != nullptr);
   test::expect_eq(saved_star->AP(1), 99);  // 1 Star AP deducted
 
+  g.set_ui_mode(UiMode::JSON);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"walk", "1", "8"});
+  test::expect_contains(g.out.str(), R"("type":"walk")");
+  test::expect_contains(g.out.str(), R"("advanced":true)");
+
   ctx.verify_universe_invariants();
 }
 
@@ -232,27 +238,35 @@ void test_walk_afv_and_sector_combat() {
   test::expect_lt(ctx.em.peek_ship(enemy_afv)->destruct(), 1);
   test::expect_lt(ctx.em.peek_ship(armed_afv)->destruct(), 50);
 
-  // Also test unarmed AFV walking onto a hostile populated sector
+  // Also test unarmed AFV walking onto a hostile populated sector (even if
+  // Player 1 unilaterally declared alliance with Player 2, Player 2 has not
+  // reciprocated, so the unarmed AFV cannot occupy the sector)
+  ctx.em.mutate_race(1, [](Race& r) { r.declare_alliance_with(2); });
   shipnum_t unarmed_afv = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
                               .owned_by(1, 1)
-                              .landed_on(1, 1, Coordinates(2, 2))
+                              .landed_on(1, 1, Coordinates(2, 0))
                               .with_crew(10, 0)
                               .with_fuel(50.0)
                               .with_destruct(0)
                               .build();
   ctx.em.mutate_planet_and_sectors(1, 1, [](Planet& p, SectorMap& smap) {
-    auto& sect = smap.get(Coordinates{2, 3});
+    auto& sect = smap.get(Coordinates{2, 1});
     sect.set_owner(2);
     sect.set_condition(SectorType::SEC_MOUNT);
     sect.set_popn_exact(50);
     p.sync_demographics(smap);
   });
   g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"walk", std::format("{}", unarmed_afv.value), "8"});
+  test::expect_contains(g.out.str(), "Illegal coordinates");
+
+  g.out.str("");
   ctx.assert_dispatch_success(
       g, {"walk", std::format("{}", unarmed_afv.value), "k"});
   test::expect_contains(g.out.str(), "You have nothing to attack with!");
   test::expect_eq(ctx.em.peek_ship(unarmed_afv)->land_coords(),
-                  Coordinates(2, 2));
+                  Coordinates(2, 0));
 
   ctx.verify_universe_invariants();
 }

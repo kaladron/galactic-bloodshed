@@ -630,3 +630,238 @@ std::expected<MovePopnResult, MovePopnError> execute_planet_sector_movement(
   res.stop_reason = MovePopnStopReason::CompletedPath;
   return res;
 }
+
+namespace {
+
+std::expected<const Ship*, WalkError>
+validate_walk_afv(EntityManager& em, shipnum_t shipno, player_t player,
+                  governor_t governor, bool god, ap_t ap_cost) {
+  const Ship* ship_peek = nullptr;
+  try {
+    ship_peek = em.peek_ship(shipno);
+  } catch (const EntityNotFoundError&) {
+    return std::unexpected(WalkError{.reason = WalkErrorReason::ShipNotFound});
+  }
+  if (auto cmd_res = validate_commandable(*ship_peek, player, governor, god);
+      !cmd_res) {
+    return std::unexpected(WalkError{
+        .reason = WalkErrorReason::NotCommandable,
+        .commandable_error = cmd_res.error(),
+        .ship_id = ship_peek->number(),
+        .ship_display = std::format("{}", *ship_peek),
+        .radiation = ship_peek->rad(),
+    });
+  }
+  if (ship_peek->type() != ShipType::OTYPE_AFV) {
+    return std::unexpected(
+        WalkError{.reason = WalkErrorReason::ShipCannotWalk});
+  }
+  if (!ship_peek->is_landed()) {
+    return std::unexpected(WalkError{.reason = WalkErrorReason::NotLanded});
+  }
+  if (!ship_peek->popn()) {
+    return std::unexpected(WalkError{.reason = WalkErrorReason::NoCrew});
+  }
+  if (ship_peek->fuel() < AFV_FUEL_COST) {
+    return std::unexpected(WalkError{
+        .reason = WalkErrorReason::InsufficientFuel,
+        .required_fuel = AFV_FUEL_COST,
+    });
+  }
+  if (!god && em.peek_star(ship_peek->storbits())->AP(player) < ap_cost) {
+    return std::unexpected(WalkError{
+        .reason = WalkErrorReason::InsufficientAp,
+        .required_ap = ap_cost,
+    });
+  }
+  return ship_peek;
+}
+
+std::expected<Coordinates, WalkError>
+resolve_walk_destination(const Race& race, const Planet& planet,
+                         const SectorMap& smap, Coordinates old_coords,
+                         char direction) {
+  const auto new_coords = get_move(planet, direction, old_coords);
+  if (old_coords == new_coords) {
+    return std::unexpected(WalkError{.reason = WalkErrorReason::IllegalMove});
+  }
+  if (!planet.is_valid(new_coords)) {
+    return std::unexpected(WalkError{
+        .reason = WalkErrorReason::IllegalCoordinates,
+        .target_coords = new_coords,
+    });
+  }
+  if (!race.tolerates_sector(smap.get(new_coords))) {
+    return std::unexpected(
+        WalkError{.reason = WalkErrorReason::IncompatibleSectorType});
+  }
+  return new_coords;
+}
+
+void resolve_afv_duel(EntityManager& em, Ship& attacker, Ship& defender,
+                      std::vector<AfvDuelShot>& shots) {
+  while (defender.retal_strength() > 0 && attacker.retal_strength() > 0) {
+    const auto def_strength = defender.retal_strength();
+    const auto att_strength = attacker.retal_strength();
+    Ship attacker_snapshot(attacker.get_struct());
+    if (auto def_shot = shoot_ship_to_ship(em, defender, attacker, def_strength,
+                                           0, false)) {
+      defender.consume_destruct(def_strength);
+      shots.push_back({
+          .defender_owner = defender.owner(),
+          .defender_governor = defender.governor(),
+          .shot = std::move(*def_shot),
+      });
+    }
+    if (auto att_shot = shoot_ship_to_ship(em, attacker_snapshot, defender,
+                                           att_strength, 0, true)) {
+      attacker.consume_destruct(att_strength);
+      shots.push_back({
+          .defender_owner = defender.owner(),
+          .defender_governor = defender.governor(),
+          .shot = std::move(*att_shot),
+      });
+    }
+  }
+}
+
+void engage_defending_afvs(EntityManager& em, const Race& attacker_race,
+                           Ship& ship, starnum_t snum, planetnum_t pnum,
+                           Coordinates new_coords,
+                           std::vector<AfvDuelShot>& shots) {
+  for (auto ship_handle : ShipList::on_planet(em, snum, pnum)) {
+    auto& ship2 = *ship_handle;
+    if (is_hostile_defending_afv(em, attacker_race, ship2, new_coords)) {
+      resolve_afv_duel(em, ship, ship2, shots);
+    }
+    if (!ship.alive()) {
+      break;
+    }
+  }
+}
+
+bool is_mutually_allied(EntityManager& em, const Race& race,
+                        player_t other_owner) {
+  if (other_owner == 0 || other_owner == race.Playernum) {
+    return true;
+  }
+  const auto& alien = *em.peek_race(other_owner);
+  return race.is_allied_with(other_owner) &&
+         alien.is_allied_with(race.Playernum);
+}
+
+void engage_sector_defenders(EntityManager& em, const Race& attacker_race,
+                             Ship& ship, const Star& star, Planet& planet,
+                             Sector& sect, Coordinates new_coords,
+                             WalkResult& res) {
+  if (!ship.popn() || !ship.alive() ||
+      is_mutually_allied(em, attacker_race, sect.get_owner())) {
+    return;
+  }
+  if (!ship.retal_strength()) {
+    res.unarmed_against_garrison = true;
+    return;
+  }
+  const auto oldowner = sect.get_owner();
+  const auto oldgov = star.governor(oldowner);
+  const auto& alien = *em.peek_race(oldowner);
+
+  while ((sect.get_popn() + sect.get_troops()) > 0 &&
+         ship.retal_strength() > 0) {
+    auto civ = sect.get_popn();
+    auto mil = sect.get_troops();
+    auto mech_res = mech_attack_people(em, ship, &civ, &mil, attacker_race,
+                                       alien, sect, false);
+    auto people_res =
+        people_attack_mech(em, ship, sect.get_popn(), sect.get_troops(), alien,
+                           attacker_race, sect, new_coords);
+    res.garrison_rounds.push_back({
+        .defender_player = alien.Playernum,
+        .defender_governor = oldgov,
+        .mech_attack = std::move(mech_res),
+        .people_counterattack = std::move(people_res),
+    });
+    sect.set_popn_exact(civ);
+    sect.set_troops(mil);
+    if (sect.is_empty()) {
+      planet.info(oldowner).mob_points -=
+          static_cast<int>(sect.get_mobilization());
+      sect.clear_owner();
+    }
+  }
+}
+
+void advance_afv_to_sector(EntityManager& em, const Race& attacker_race,
+                           Ship& ship, const Star& star, const Planet& planet,
+                           const Sector& sect, Coordinates new_coords,
+                           WalkResult& res) {
+  if (!ship.alive() || !ship.popn() ||
+      !is_mutually_allied(em, attacker_race, sect.get_owner())) {
+    return;
+  }
+  res.advanced = true;
+  res.ship_display = std::format("{}", ship);
+  res.location_display = dispshiploc(em, ship);
+  ship.set_land_coords(new_coords);
+  ship.consume_fuel(AFV_FUEL_COST);
+  for (const auto& [i, info] : planet.info_map()) {
+    if (i != attacker_race.Playernum && info.numsectsowned) {
+      res.move_observers.push_back({
+          .player = i,
+          .governor = star.governor(i),
+      });
+    }
+  }
+}
+
+}  // namespace
+
+std::expected<WalkResult, WalkError>
+execute_afv_walk(EntityManager& em, shipnum_t shipno, char direction,
+                 player_t player, governor_t governor, bool god) {
+  constexpr ap_t ap_cost = 1;
+  auto ship_res = validate_walk_afv(em, shipno, player, governor, god, ap_cost);
+  if (!ship_res) {
+    return std::unexpected(ship_res.error());
+  }
+  const auto* ship_peek = *ship_res;
+  const auto snum = ship_peek->storbits();
+  const auto pnum = ship_peek->pnumorbits();
+  const auto old_coords = ship_peek->land_coords();
+
+  const auto& attacker_race = *em.peek_race(player);
+  const auto& star = *em.peek_star(snum);
+  const auto& planet_peek = *em.peek_planet(snum, pnum);
+  const auto& smap_peek = *em.peek_sectormap(snum, pnum);
+
+  auto new_coords = resolve_walk_destination(attacker_race, planet_peek,
+                                             smap_peek, old_coords, direction);
+  if (!new_coords) {
+    return std::unexpected(new_coords.error());
+  }
+
+  WalkResult res{
+      .star_id = snum,
+      .old_coords = old_coords,
+      .new_coords = *new_coords,
+  };
+  em.mutate_ship(shipno, [&](Ship& ship) {
+    engage_defending_afvs(em, attacker_race, ship, snum, pnum, *new_coords,
+                          res.afv_duel_shots);
+    em.mutate_planet_and_sectors(
+        snum, pnum, [&](Planet& planet, SectorMap& smap) {
+          auto& sect = smap.get(*new_coords);
+          engage_sector_defenders(em, attacker_race, ship, star, planet, sect,
+                                  *new_coords, res);
+          planet.sync_demographics(smap);
+          advance_afv_to_sector(em, attacker_race, ship, star, planet, sect,
+                                *new_coords, res);
+        });
+  });
+
+  if (!god) {
+    em.mutate_star(snum,
+                   [&](Star& star_mut) { star_mut.AP(player) -= ap_cost; });
+  }
+  return res;
+}

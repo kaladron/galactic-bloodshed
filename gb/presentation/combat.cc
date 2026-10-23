@@ -904,4 +904,78 @@ std::string render_for_mode(UiMode mode, const DefendPlanetResult& vm) {
                               : render_defend_planet_result(vm);
 }
 
+std::string format_walk_error(const WalkError& err) {
+  switch (err.reason) {
+    case WalkErrorReason::ShipNotFound:
+      return "No such ship.\n";
+    case WalkErrorReason::NotCommandable: {
+      std::string prefix;
+      if (err.commandable_error) {
+        switch (*err.commandable_error) {
+          case CommandableError::NotOwner:
+          case CommandableError::NotAuthorizedGovernor:
+            prefix = std::format("You don't own ship #{}.\n", err.ship_id);
+            break;
+          case CommandableError::ShipDead:
+            prefix = std::format("{} has been destroyed.\n", err.ship_display);
+            break;
+          case CommandableError::ShipIrradiated:
+            prefix = std::format("{} is irradiated {}% and inactive.\n",
+                                 err.ship_display, err.radiation);
+            break;
+        }
+      }
+      return prefix + "You do not control this ship.\n";
+    }
+    case WalkErrorReason::ShipCannotWalk:
+      return "This ship doesn't walk!\n";
+    case WalkErrorReason::NotLanded:
+      return "This ship is not landed on a planet.\n";
+    case WalkErrorReason::NoCrew:
+      return "No crew.\n";
+    case WalkErrorReason::InsufficientFuel:
+      return std::format("You don't have {:.1f} fuel to move it.\n",
+                         err.required_fuel);
+    case WalkErrorReason::InsufficientAp:
+      return std::format("You don't have {} action points there.\n",
+                         err.required_ap);
+    case WalkErrorReason::IllegalMove:
+      return "Illegal move.\n";
+    case WalkErrorReason::IllegalCoordinates:
+      return std::format("Illegal coordinates {}.\n", err.target_coords);
+    case WalkErrorReason::IncompatibleSectorType:
+      return "Your ships cannot walk into that sector type!\n";
+  }
+  return "";
+}
+
+std::string render_walk_observer_warning(const WalkResult& res) {
+  return std::format("{} moving from {} to {} on {}.\n", res.ship_display,
+                     res.old_coords, res.new_coords, res.location_display);
+}
+
+std::string render_walk_result(const WalkResult& res) {
+  std::string out;
+  for (const auto& duel : res.afv_duel_shots) {
+    out += render_ship_shot_long(duel.shot);
+  }
+  if (res.unarmed_against_garrison) {
+    out += "You have nothing to attack with!\n";
+  }
+  for (const auto& round : res.garrison_rounds) {
+    out += render_mech_attack_people_long(round.mech_attack);
+    out += render_people_attack_mech_long(round.people_counterattack);
+  }
+  return out;
+}
+
+std::string render_json_walk_result(const WalkResult& res) {
+  return render_json_envelope("walk", res);
+}
+
+std::string render_for_mode(UiMode mode, const WalkResult& vm) {
+  return mode == UiMode::JSON ? render_json_walk_result(vm)
+                              : render_walk_result(vm);
+}
+
 }  // namespace GB::presentation

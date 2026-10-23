@@ -292,4 +292,19 @@ render_json_defend_planet_result(const DefendPlanetResult& res);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const DefendPlanetResult& vm);
 
+/// Formats a `WalkError` into its user-facing error message.
+[[nodiscard]] std::string format_walk_error(const WalkError& err);
+
+/// Formats the planetary observer warning telegram for an AFV sector walk.
+[[nodiscard]] std::string render_walk_observer_warning(const WalkResult& res);
+
+/// Formats a `WalkResult` into its user-facing ASCII report.
+[[nodiscard]] std::string render_walk_result(const WalkResult& res);
+
+/// Formats a `WalkResult` into its JSON envelope string.
+[[nodiscard]] std::string render_json_walk_result(const WalkResult& res);
+
+/// Open ADL dispatch for `WalkResult`.
+[[nodiscard]] std::string render_for_mode(UiMode mode, const WalkResult& vm);
+
 }  // namespace GB::presentation

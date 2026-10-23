@@ -6,6 +6,7 @@
 module;
 
 import gb.entities;
+import gb.mechanics;
 import gb.presentation.combat;
 import gb.services;
 import std;
@@ -14,242 +15,48 @@ module commands;
 
 namespace {
 
-/**
- * @brief Validate AFV preconditions and Star AP before executing a walk move.
- */
-const Ship* validate_walk_afv(GameObj& g, std::string_view ship_arg,
-                              ap_t ap_cost) {
-  auto shipno = string_to_shipnum(ship_arg);
-  if (!shipno || *shipno <= 0) {
-    g.out << "Bad ship number.\n";
-    return nullptr;
-  }
-  const Ship* ship_peek = nullptr;
-  try {
-    ship_peek = g.entity_manager.peek_ship(*shipno);
-  } catch (const EntityNotFoundError&) {
-    g.out << "No such ship.\n";
-    return nullptr;
-  }
-  if (!g.check_commandable(*ship_peek)) {
-    g.out << "You do not control this ship.\n";
-    return nullptr;
-  }
-  if (ship_peek->type() != ShipType::OTYPE_AFV) {
-    g.out << "This ship doesn't walk!\n";
-    return nullptr;
-  }
-  if (!ship_peek->is_landed()) {
-    g.out << "This ship is not landed on a planet.\n";
-    return nullptr;
-  }
-  if (!ship_peek->popn()) {
-    g.out << "No crew.\n";
-    return nullptr;
-  }
-  if (ship_peek->fuel() < AFV_FUEL_COST) {
-    g.out << std::format("You don't have {:.1f} fuel to move it.\n",
-                         AFV_FUEL_COST);
-    return nullptr;
-  }
-  const auto& star = *g.entity_manager.peek_star(ship_peek->storbits());
-  if (star.AP(g.player()) < ap_cost) {
-    g.out << std::format("You don't have {} action points there.\n", ap_cost);
-    return nullptr;
-  }
-  return ship_peek;
-}
-
-/**
- * @brief Compute and validate destination coordinates and sector compatibility
- * for an AFV walk move.
- */
-std::optional<Coordinates> resolve_walk_destination(GameObj& g,
-                                                    const Planet& planet,
-                                                    const SectorMap& smap,
-                                                    Coordinates old_coords,
-                                                    char direction) {
-  const Coordinates new_coords = get_move(planet, direction, old_coords);
-  if (old_coords == new_coords) {
-    g.out << "Illegal move.\n";
-    return std::nullopt;
-  }
-  if (!planet.is_valid(new_coords)) {
-    g.out << std::format("Illegal coordinates {}.\n", new_coords);
-    return std::nullopt;
-  }
-  const auto& sect_check = smap.get(new_coords);
-  if (!g.race->tolerates_sector(sect_check)) {
-    g.out << "Your ships cannot walk into that sector type!\n";
-    return std::nullopt;
-  }
-  return new_coords;
-}
-
-/**
- * @brief Execute a mutual gun duel between the moving AFV and a defending AFV
- * until one loses its retaliation strength or is destroyed.
- */
-void resolve_afv_duel(GameObj& g, Ship& attacker, Ship& defender) {
-  weapon_power_t def_strength = 0;
-  weapon_power_t att_strength = 0;
-  while ((def_strength = defender.retal_strength()) &&
-         (att_strength = attacker.retal_strength())) {
-    Ship attacker_snapshot(attacker.get_struct());
-    if (auto def_shot = shoot_ship_to_ship(g.entity_manager, defender, attacker,
-                                           def_strength, 0, false)) {
-      const std::string short_buf =
-          GB::presentation::render_ship_shot_short(*def_shot);
-      const std::string long_buf =
-          GB::presentation::render_ship_shot_long(*def_shot);
-      defender.consume_destruct(def_strength);
-      g.present(*def_shot);
-      warn_player(g.session_registry, g.entity_manager, defender.owner(),
-                  defender.governor(), long_buf);
-      if (!attacker.alive()) {
-        post(g.entity_manager, short_buf, NewsType::COMBAT);
-      }
-      notify_star(g.session_registry, g.entity_manager, g.player(),
-                  g.governor(), attacker.storbits(), short_buf);
+void notify_walk_result(GameObj& g, const WalkResult& res) {
+  for (const auto& duel : res.afv_duel_shots) {
+    const auto short_buf = GB::presentation::render_ship_shot_short(duel.shot);
+    const auto long_buf = GB::presentation::render_ship_shot_long(duel.shot);
+    warn_player(g.session_registry, g.entity_manager, duel.defender_owner,
+                duel.defender_governor, long_buf);
+    if (!duel.shot.target_alive) {
+      post(g.entity_manager, short_buf, NewsType::COMBAT);
     }
-
-    if (att_strength) {
-      if (auto att_shot =
-              shoot_ship_to_ship(g.entity_manager, attacker_snapshot, defender,
-                                 att_strength, 0, true)) {
-        const std::string short_buf2 =
-            GB::presentation::render_ship_shot_short(*att_shot);
-        const std::string long_buf2 =
-            GB::presentation::render_ship_shot_long(*att_shot);
-        attacker.consume_destruct(att_strength);
-        g.present(*att_shot);
-        warn_player(g.session_registry, g.entity_manager, defender.owner(),
-                    defender.governor(), long_buf2);
-        if (!defender.alive()) {
-          post(g.entity_manager, short_buf2, NewsType::COMBAT);
-        }
-        notify_star(g.session_registry, g.entity_manager, g.player(),
-                    g.governor(), attacker.storbits(), short_buf2);
-      }
-    }
-  }
-}
-
-/**
- * @brief Engage any non-allied landed AFVs occupying the destination sector.
- */
-void engage_defending_afvs(GameObj& g, Ship& ship, starnum_t snum,
-                           planetnum_t pnum, Coordinates new_coords) {
-  const player_t playernum = g.player();
-  for (auto ship_handle : ShipList::on_planet(g.entity_manager, snum, pnum)) {
-    Ship& ship2 = *ship_handle;
-    if (ship2.owner() != playernum && ship2.type() == ShipType::OTYPE_AFV &&
-        ship2.is_landed() && ship2.retal_strength() &&
-        ship2.land_coords() == new_coords) {
-      const auto& alien = *g.entity_manager.peek_race(ship2.owner());
-      if (!g.race->is_allied_with(ship2.owner()) ||
-          !alien.is_allied_with(playernum)) {
-        resolve_afv_duel(g, ship, ship2);
-      }
-    }
-    if (!ship.alive()) {
-      break;
-    }
-  }
-}
-
-/**
- * @brief Engage non-allied civilian and military population occupying the
- * destination sector.
- */
-void engage_sector_defenders(GameObj& g, Ship& ship, const Star& star,
-                             Planet& planet, Sector& sect,
-                             Coordinates new_coords) {
-  const player_t playernum = g.player();
-  if (!ship.popn() || !ship.alive() || sect.get_owner() == 0 ||
-      sect.get_owner() == playernum) {
-    return;
+    notify_star(g.session_registry, g.entity_manager, g.player(), g.governor(),
+                res.star_id, short_buf);
   }
 
-  const auto oldowner = sect.get_owner();
-  const auto oldgov = star.governor(oldowner);
-  const auto* alien = g.entity_manager.peek_race(oldowner);
-  if (!alien ||
-      (g.race->is_allied_with(oldowner) && alien->is_allied_with(playernum))) {
-    return;
-  }
-
-  if (!ship.retal_strength()) {
-    g.out << "You have nothing to attack with!\n";
-    return;
-  }
-
-  while ((sect.get_popn() + sect.get_troops()) && ship.retal_strength()) {
-    auto civ = sect.get_popn();
-    auto mil = sect.get_troops();
-    const auto mech_res = mech_attack_people(g.entity_manager, ship, &civ, &mil,
-                                             *g.race, *alien, sect, false);
+  for (const auto& round : res.garrison_rounds) {
     const auto short_buf =
-        GB::presentation::render_mech_attack_people_short(mech_res);
+        GB::presentation::render_mech_attack_people_short(round.mech_attack);
     const auto long_buf =
-        GB::presentation::render_mech_attack_people_long(mech_res);
-    g.present(mech_res);
-    warn_player(g.session_registry, g.entity_manager, alien->Playernum, oldgov,
-                long_buf);
-    notify_star(g.session_registry, g.entity_manager, playernum, g.governor(),
-                ship.storbits(), short_buf);
+        GB::presentation::render_mech_attack_people_long(round.mech_attack);
+    warn_player(g.session_registry, g.entity_manager, round.defender_player,
+                round.defender_governor, long_buf);
+    notify_star(g.session_registry, g.entity_manager, g.player(), g.governor(),
+                res.star_id, short_buf);
     post(g.entity_manager, short_buf, NewsType::COMBAT);
 
-    const auto people_res = people_attack_mech(
-        g.entity_manager, ship, sect.get_popn(), sect.get_troops(), *alien,
-        *g.race, sect, new_coords);
-    const auto short_buf2 =
-        GB::presentation::render_people_attack_mech_short(people_res);
-    const auto long_buf2 =
-        GB::presentation::render_people_attack_mech_long(people_res);
-    g.present(people_res);
-    warn_player(g.session_registry, g.entity_manager, alien->Playernum, oldgov,
-                long_buf2);
-    notify_star(g.session_registry, g.entity_manager, playernum, g.governor(),
-                ship.storbits(), short_buf2);
-    if (!ship.alive()) {
+    const auto short_buf2 = GB::presentation::render_people_attack_mech_short(
+        round.people_counterattack);
+    const auto long_buf2 = GB::presentation::render_people_attack_mech_long(
+        round.people_counterattack);
+    warn_player(g.session_registry, g.entity_manager, round.defender_player,
+                round.defender_governor, long_buf2);
+    notify_star(g.session_registry, g.entity_manager, g.player(), g.governor(),
+                res.star_id, short_buf2);
+    if (!round.people_counterattack.mech_alive) {
       post(g.entity_manager, short_buf2, NewsType::COMBAT);
     }
-
-    sect.set_popn_exact(civ);
-    sect.set_troops(mil);
-    if (sect.is_empty()) {
-      planet.info(oldowner).mob_points -=
-          static_cast<int>(sect.get_mobilization());
-      sect.clear_owner();
-    }
-  }
-}
-
-/**
- * @brief Complete the AFV movement into the target sector if friendly or
- * cleared, deducting fuel and notifying other planetary inhabitants.
- */
-void advance_afv_to_sector(GameObj& g, Ship& ship, const Star& star,
-                           const Planet& planet, const Sector& sect,
-                           Coordinates old_coords, Coordinates new_coords) {
-  const player_t playernum = g.player();
-  const bool can_occupy = sect.get_owner() == 0 ||
-                          sect.get_owner() == playernum ||
-                          g.race->is_allied_with(sect.get_owner());
-  if (!ship.alive() || !ship.popn() || !can_occupy) {
-    return;
   }
 
-  std::string moving =
-      std::format("{} moving from {} to {} on {}.\n", ship, old_coords,
-                  new_coords, dispshiploc(g.entity_manager, ship));
-  ship.set_land_coords(new_coords);
-  ship.consume_fuel(AFV_FUEL_COST);
-  for (const auto& [i, info] : planet.info_map()) {
-    if (i != playernum && info.numsectsowned) {
-      warn_player(g.session_registry, g.entity_manager, i, star.governor(i),
-                  moving);
+  if (res.advanced && !res.move_observers.empty()) {
+    const auto moving = GB::presentation::render_walk_observer_warning(res);
+    for (const auto& obs : res.move_observers) {
+      warn_player(g.session_registry, g.entity_manager, obs.player,
+                  obs.governor, moving);
     }
   }
 }
@@ -259,45 +66,22 @@ void advance_afv_to_sector(GameObj& g, Ship& ship, const Star& star,
 namespace GB::commands {
 
 bool walk(const command_t& argv, GameObj& g) {
-  const player_t playernum = g.player();
-  const ap_t ap_cost = 1;
-
-  const Ship* ship_peek = validate_walk_afv(g, argv[1], ap_cost);
-  if (!ship_peek) {
+  const auto shipno = string_to_shipnum(argv[1]);
+  if (!shipno || *shipno <= 0) {
+    g.out << "Bad ship number.\n";
     return false;
   }
 
-  const shipnum_t shipno = ship_peek->number();
-  const starnum_t snum = ship_peek->storbits();
-  const planetnum_t pnum = ship_peek->pnumorbits();
-  const Coordinates old_coords = ship_peek->land_coords();
-
-  const auto& star = *g.entity_manager.peek_star(snum);
-  const auto& planet_peek = *g.entity_manager.peek_planet(snum, pnum);
-  const auto& smap_peek = *g.entity_manager.peek_sectormap(snum, pnum);
-
-  auto new_coords_opt = resolve_walk_destination(g, planet_peek, smap_peek,
-                                                 old_coords, argv[2][0]);
-  if (!new_coords_opt) {
+  const char direction = argv[2].empty() ? '\0' : argv[2][0];
+  auto res = execute_afv_walk(g.entity_manager, *shipno, direction, g.player(),
+                              g.governor(), g.god());
+  if (!res) {
+    g.out << GB::presentation::format_walk_error(res.error());
     return false;
   }
-  const Coordinates new_coords = *new_coords_opt;
 
-  g.entity_manager.mutate_ship(shipno, [&](Ship& ship) {
-    engage_defending_afvs(g, ship, snum, pnum, new_coords);
-
-    g.entity_manager.mutate_planet_and_sectors(
-        snum, pnum, [&](Planet& planet, SectorMap& smap) {
-          auto& sect = smap.get(new_coords);
-          engage_sector_defenders(g, ship, star, planet, sect, new_coords);
-          planet.sync_demographics(smap);
-          advance_afv_to_sector(g, ship, star, planet, sect, old_coords,
-                                new_coords);
-        });
-  });
-
-  g.entity_manager.mutate_star(
-      snum, [&](Star& star_mut) { star_mut.AP(playernum) -= ap_cost; });
+  notify_walk_result(g, *res);
+  g.present(*res);
   return true;
 }
 

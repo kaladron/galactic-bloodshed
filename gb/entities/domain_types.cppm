@@ -221,6 +221,21 @@ struct NewsValues {
   constexpr bool operator==(const NewsValues&) const noexcept = default;
 };
 
+export struct NewsItem {
+  news_id_t id{0};
+  NewsType type{NewsType::ANNOUNCE};
+  std::string message;
+  std::int64_t timestamp{0};
+};
+
+export struct TelegramItem {
+  telegram_id_t id{0};
+  player_t recipient_player{0};
+  governor_t recipient_governor{1};
+  std::string message;
+  std::int64_t timestamp{0};
+};
+
 export enum SectorType {
   SEC_SEA = 0,
   SEC_LAND = 1,

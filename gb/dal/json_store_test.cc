@@ -192,6 +192,33 @@ int main() {
                  "✓ JsonStore respects database transaction rollback");
   }
 
+  // Filtered retrieve_where, count_where, and remove_where
+  {
+    store.store("tbl_news", 1,
+                R"({"id":1,"type":1,"message":"War","timestamp":100})");
+    store.store("tbl_news", 2,
+                R"({"id":2,"type":1,"message":"Skirmish","timestamp":200})");
+    store.store("tbl_news", 3,
+                R"({"id":3,"type":2,"message":"Treaty","timestamp":300})");
+
+    test::expect_eq(store.count_where("tbl_news"), 3);
+    test::expect_eq(store.count_where("tbl_news", "type = ?", {1}), 2);
+
+    auto filtered = store.retrieve_where(
+        "tbl_news", "type = ? AND id > ? ORDER BY timestamp ASC", {1, 1});
+    test::expect_eq(filtered.size(), 1u);
+    test::expect_contains(filtered[0], "Skirmish");
+
+    test::expect_true(store.remove_where("tbl_news", "type = ?", {1}));
+    test::expect_eq(store.count_where("tbl_news"), 1);
+
+    test::expect_true(store.remove_where("tbl_news"));
+    test::expect_eq(store.count_where("tbl_news"), 0);
+    std::println(
+        std::cout,
+        "✓ retrieve_where, count_where, and remove_where work correctly");
+  }
+
   // Database error handling (SqliteError exception)
   {
     test::expect_throws<SqliteError>(

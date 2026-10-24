@@ -5,7 +5,6 @@
 
 module gb.presentation.empire_views;
 
-import dallib;
 import gb.entities;
 import gb.services;
 import tabulate;

@@ -65,13 +65,38 @@ public:
   }
 
   // Get next available ID
-  int next_available_id() {
+  std::int64_t next_available_id() {
     return store.find_next_available_id(table_name);
   }
 
   // List all IDs in the table
   std::vector<int> list_ids() {
     return store.list_ids(table_name);
+  }
+
+  // Find entities matching a SQL WHERE clause (may include ORDER BY)
+  std::vector<T> find_where(const std::string& where_clause = "",
+                            const std::vector<KeyValue>& params = {}) {
+    std::vector<T> results;
+    for (const auto& json :
+         store.retrieve_where(table_name, where_clause, params)) {
+      if (auto entity = deserialize(json)) {
+        results.push_back(std::move(*entity));
+      }
+    }
+    return results;
+  }
+
+  // Remove entities matching a SQL WHERE clause (or all rows if empty)
+  bool remove_where(const std::string& where_clause = "",
+                    const std::vector<KeyValue>& params = {}) {
+    return store.remove_where(table_name, where_clause, params);
+  }
+
+  // Count entities matching a SQL WHERE clause (or all rows if empty)
+  int count_where(const std::string& where_clause = "",
+                  const std::vector<KeyValue>& params = {}) {
+    return store.count_where(table_name, where_clause, params);
   }
 };
 
@@ -366,70 +391,42 @@ protected:
 // ============================================================================
 // NewsRepository - Repository for news items
 // ============================================================================
-export class NewsRepository {
-private:
-  Database& db;
-
+export class NewsRepository : public Repository<NewsItem> {
 public:
-  explicit NewsRepository(Database& database) : db(database) {}
+  explicit NewsRepository(JsonStore& store)
+      : Repository<NewsItem>(store, "tbl_news") {}
 
-  news_id_t add(NewsType type, std::string_view message) {
-    const auto now = std::chrono::system_clock::now();
-    const auto timestamp =
-        std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch())
-            .count();
-
-    return db.news_add(std::to_underlying(type), std::string(message),
-                       timestamp);
-  }
-
+  news_id_t add(NewsType type, std::string_view message);
   std::vector<NewsItem> get_since(NewsType type,
-                                  news_id_t since_id = news_id_t{0}) {
-    return db.news_get_since(std::to_underlying(type), since_id);
-  }
+                                  news_id_t since_id = news_id_t{0});
+  bool purge_type(NewsType type);
+  bool purge_all();
 
-  bool purge_type(NewsType type) {
-    return db.news_purge_type(std::to_underlying(type));
-  }
-
-  bool purge_all() {
-    return db.news_purge_all();
-  }
+protected:
+  [[nodiscard]] std::optional<std::string>
+  serialize(const NewsItem& item) const override;
+  [[nodiscard]] std::optional<NewsItem>
+  deserialize(const std::string& json_str) const override;
 };
 
 // ============================================================================
 // TelegramRepository - Repository for telegram items
 // ============================================================================
-export class TelegramRepository {
-private:
-  Database& db;
-
+export class TelegramRepository : public Repository<TelegramItem> {
 public:
-  explicit TelegramRepository(Database& database) : db(database) {}
+  explicit TelegramRepository(JsonStore& store)
+      : Repository<TelegramItem>(store, "tbl_telegram") {}
 
   telegram_id_t add(player_t player, governor_t governor,
-                    std::string_view message) {
-    const auto now = std::chrono::system_clock::now();
-    const auto timestamp =
-        std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch())
-            .count();
+                    std::string_view message);
+  std::vector<TelegramItem> get(player_t player, governor_t governor);
+  void delete_for_governor(player_t player, governor_t governor);
+  int count(player_t player, governor_t governor);
+  bool purge_all();
 
-    return db.telegram_add(player, governor, std::string(message), timestamp);
-  }
-
-  std::vector<TelegramItem> get(player_t player, governor_t governor) {
-    return db.telegram_get(player, governor);
-  }
-
-  void delete_for_governor(player_t player, governor_t governor) {
-    db.telegram_delete_for_governor(player, governor);
-  }
-
-  int count(player_t player, governor_t governor) {
-    return db.telegram_count(player, governor);
-  }
-
-  bool purge_all() {
-    return db.telegram_purge_all();
-  }
+protected:
+  [[nodiscard]] std::optional<std::string>
+  serialize(const TelegramItem& item) const override;
+  [[nodiscard]] std::optional<TelegramItem>
+  deserialize(const std::string& json_str) const override;
 };

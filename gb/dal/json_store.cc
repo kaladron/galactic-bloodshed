@@ -37,6 +37,32 @@ void bind_keys(sqlite3_stmt* stmt,
     bind_key(stmt, keys[i].second, static_cast<int>(i + 1));
   }
 }
+
+void bind_params(sqlite3_stmt* stmt, const std::vector<KeyValue>& params) {
+  for (std::size_t i = 0; i < params.size(); ++i) {
+    bind_key(stmt, params[i], static_cast<int>(i + 1));
+  }
+}
+
+struct SqliteStmtDeleter {
+  void operator()(sqlite3_stmt* stmt) const {
+    sqlite3_finalize(stmt);
+  }
+};
+
+using SqliteStmtPtr = std::unique_ptr<sqlite3_stmt, SqliteStmtDeleter>;
+
+SqliteStmtPtr prepare_table_stmt(sqlite3* conn, const std::string& table,
+                                 const std::string& sql) {
+  sqlite3_stmt* stmt = nullptr;
+  const int rc = sqlite3_prepare_v2(conn, sql.c_str(), -1, &stmt, nullptr);
+  if (rc != SQLITE_OK) {
+    throw SqliteError(std::format("SQLite prepare error in table '{}': {}",
+                                  table, sqlite3_errmsg(conn)),
+                      rc);
+  }
+  return SqliteStmtPtr(stmt);
+}
 }  // namespace
 
 JsonStore::JsonStore(Database& database) : db(database) {}
@@ -176,7 +202,7 @@ std::vector<int> JsonStore::list_ids(const std::string& table) {
   return ids;
 }
 
-int JsonStore::find_next_available_id(const std::string& table) {
+std::int64_t JsonStore::find_next_available_id(const std::string& table) {
   if (!db.is_open()) {
     throw SqliteError("Database connection is not open");
   }
@@ -189,20 +215,13 @@ int JsonStore::find_next_available_id(const std::string& table) {
   )",
                                 table, table);
 
-  sqlite3_stmt* stmt = nullptr;
-  int rc = sqlite3_prepare_v2(db.impl_->conn, sql.c_str(), -1, &stmt, nullptr);
-  if (rc != SQLITE_OK) {
-    throw SqliteError(std::format("SQLite prepare error in table '{}': {}",
-                                  table, sqlite3_errmsg(db.impl_->conn)),
-                      rc);
-  }
+  auto stmt = prepare_table_stmt(db.impl_->conn, table, sql);
 
-  int result = 1;  // Default if no rows exist
-  int step_rc = sqlite3_step(stmt);
+  std::int64_t result = 1;  // Default if no rows exist
+  const int step_rc = sqlite3_step(stmt.get());
   if (step_rc == SQLITE_ROW) {
-    result = sqlite3_column_int(stmt, 0);
+    result = sqlite3_column_int64(stmt.get(), 0);
   } else if (step_rc != SQLITE_DONE) {
-    sqlite3_finalize(stmt);
     throw SqliteError(
         std::format(
             "SQLite step error in find_next_available_id for table '{}': {}",
@@ -210,7 +229,6 @@ int JsonStore::find_next_available_id(const std::string& table) {
         step_rc);
   }
 
-  sqlite3_finalize(stmt);
   return result;
 }
 
@@ -319,33 +337,106 @@ std::vector<int> JsonStore::query_ids(const std::string& table,
     throw SqliteError("Database connection is not open");
   }
 
-  std::string sql =
+  const std::string sql =
       std::format("SELECT id FROM {} WHERE {}", table, where_clause);
-
-  sqlite3_stmt* stmt = nullptr;
-  int rc = sqlite3_prepare_v2(db.impl_->conn, sql.c_str(), -1, &stmt, nullptr);
-  if (rc != SQLITE_OK) {
-    throw SqliteError(std::format("SQLite prepare error in table '{}': {}",
-                                  table, sqlite3_errmsg(db.impl_->conn)),
-                      rc);
-  }
-
-  for (std::size_t i = 0; i < params.size(); ++i) {
-    bind_key(stmt, params[i], static_cast<int>(i + 1));
-  }
+  auto stmt = prepare_table_stmt(db.impl_->conn, table, sql);
+  bind_params(stmt.get(), params);
 
   std::vector<int> ids;
-  while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) {
-    ids.push_back(sqlite3_column_int(stmt, 0));
+  int rc = SQLITE_OK;
+  while ((rc = sqlite3_step(stmt.get())) == SQLITE_ROW) {
+    ids.push_back(sqlite3_column_int(stmt.get(), 0));
   }
 
   if (rc != SQLITE_DONE) {
-    sqlite3_finalize(stmt);
     throw SqliteError(std::format("SQLite step error in table '{}': {}", table,
                                   sqlite3_errmsg(db.impl_->conn)),
                       rc);
   }
 
-  sqlite3_finalize(stmt);
   return ids;
+}
+
+std::vector<std::string>
+JsonStore::retrieve_where(const std::string& table,
+                          const std::string& where_clause,
+                          const std::vector<KeyValue>& params) {
+  if (!db.is_open()) {
+    throw SqliteError("Database connection is not open");
+  }
+
+  const std::string sql =
+      where_clause.empty()
+          ? std::format("SELECT data FROM {}", table)
+          : std::format("SELECT data FROM {} WHERE {}", table, where_clause);
+  auto stmt = prepare_table_stmt(db.impl_->conn, table, sql);
+  bind_params(stmt.get(), params);
+
+  std::vector<std::string> results;
+  int rc = SQLITE_OK;
+  while ((rc = sqlite3_step(stmt.get())) == SQLITE_ROW) {
+    if (const auto* data =
+            reinterpret_cast<const char*>(sqlite3_column_text(stmt.get(), 0))) {
+      results.emplace_back(data);
+    }
+  }
+
+  if (rc != SQLITE_DONE) {
+    throw SqliteError(std::format("SQLite step error querying table '{}': {}",
+                                  table, sqlite3_errmsg(db.impl_->conn)),
+                      rc);
+  }
+
+  return results;
+}
+
+bool JsonStore::remove_where(const std::string& table,
+                             const std::string& where_clause,
+                             const std::vector<KeyValue>& params) {
+  if (!db.is_open()) {
+    throw SqliteError("Database connection is not open");
+  }
+
+  const std::string sql =
+      where_clause.empty()
+          ? std::format("DELETE FROM {}", table)
+          : std::format("DELETE FROM {} WHERE {}", table, where_clause);
+  auto stmt = prepare_table_stmt(db.impl_->conn, table, sql);
+  bind_params(stmt.get(), params);
+
+  const int rc = sqlite3_step(stmt.get());
+  if (rc != SQLITE_DONE) {
+    throw SqliteError(
+        std::format("SQLite step error deleting from table '{}': {}", table,
+                    sqlite3_errmsg(db.impl_->conn)),
+        rc);
+  }
+
+  return true;
+}
+
+int JsonStore::count_where(const std::string& table,
+                           const std::string& where_clause,
+                           const std::vector<KeyValue>& params) {
+  if (!db.is_open()) {
+    throw SqliteError("Database connection is not open");
+  }
+
+  const std::string sql = where_clause.empty()
+                              ? std::format("SELECT COUNT(*) FROM {}", table)
+                              : std::format("SELECT COUNT(*) FROM {} WHERE {}",
+                                            table, where_clause);
+  auto stmt = prepare_table_stmt(db.impl_->conn, table, sql);
+  bind_params(stmt.get(), params);
+
+  const int rc = sqlite3_step(stmt.get());
+  if (rc == SQLITE_ROW) {
+    return sqlite3_column_int(stmt.get(), 0);
+  }
+  if (rc != SQLITE_DONE) {
+    throw SqliteError(std::format("SQLite step error counting table '{}': {}",
+                                  table, sqlite3_errmsg(db.impl_->conn)),
+                      rc);
+  }
+  return 0;
 }

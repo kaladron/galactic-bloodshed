@@ -7,7 +7,6 @@ export module gb.presentation.empire_views;
 
 export import gb.presentation.core;
 
-import dallib;
 import gb.entities;
 import gb.services;
 import std;

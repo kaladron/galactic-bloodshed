@@ -145,8 +145,8 @@ struct EntityManager::Storage {
       : db(database), store(database), races(store), ships(store),
         planets(store), stars(store), sectors(store), commods(store),
         blocks(store), powers(store), universe_repo(store),
-        server_state_repo(store), ship_exams(store), news(database),
-        telegrams(database) {}
+        server_state_repo(store), ship_exams(store), news(store),
+        telegrams(store) {}
 };
 
 EntityManager::EntityManager(Database& database)

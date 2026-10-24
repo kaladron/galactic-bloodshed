@@ -20,24 +20,6 @@ public:
   }
 };
 
-// News item structure (minimal POD for data transfer)
-// Note: type is stored as int to avoid circular module dependencies
-// Repositories can cast it to/from NewsType enum
-export struct NewsItem {
-  news_id_t id{0};
-  int type{0};  // NewsType as int
-  std::string message;
-  std::int64_t timestamp{0};
-};
-
-export struct TelegramItem {
-  telegram_id_t id{0};
-  player_t recipient_player{0};
-  governor_t recipient_governor{1};
-  std::string message;
-  std::int64_t timestamp{0};
-};
-
 struct DatabaseImpl;
 export class Database;
 export void initialize_schema(Database& db);
@@ -76,22 +58,6 @@ public:
   // Check if database is open
   [[nodiscard]] bool is_open() const noexcept;
 
-  // News operations - SQL queries encapsulated in DAL
-  news_id_t news_add(int type, const std::string& message,
-                     std::int64_t timestamp);
-  std::vector<NewsItem> news_get_since(int type, news_id_t since_id);
-  bool news_purge_type(int type);
-  bool news_purge_all();
-
-  // Telegram operations - SQL queries encapsulated in DAL
-  telegram_id_t telegram_add(player_t player, governor_t governor,
-                             const std::string& message,
-                             std::int64_t timestamp);
-  std::vector<TelegramItem> telegram_get(player_t player, governor_t governor);
-  bool telegram_delete_for_governor(player_t player, governor_t governor);
-  int telegram_count(player_t player, governor_t governor);
-  bool telegram_purge_all();
-
   // Planet queries
   int count_non_asteroid_planets();
 };
@@ -128,12 +94,21 @@ public:
 
   // ID management
   std::vector<int> list_ids(const std::string& table);
-  int find_next_available_id(const std::string& table);
+  std::int64_t find_next_available_id(const std::string& table);
 
   // Query operations
   std::vector<int> query_ids(const std::string& table,
                              const std::string& where_clause,
                              const std::vector<KeyValue>& params = {});
+  std::vector<std::string>
+  retrieve_where(const std::string& table, const std::string& where_clause = "",
+                 const std::vector<KeyValue>& params = {});
+  bool remove_where(const std::string& table,
+                    const std::string& where_clause = "",
+                    const std::vector<KeyValue>& params = {});
+  int count_where(const std::string& table,
+                  const std::string& where_clause = "",
+                  const std::vector<KeyValue>& params = {});
 
   // Multi-key operations (for Sector, Planet with composite keys)
   bool store_multi(const std::string& table,

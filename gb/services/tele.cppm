@@ -7,7 +7,6 @@ export module gb.services:tele;
 
 import std;
 
-import dallib;
 import gb.entities;
 import :gameobj;
 

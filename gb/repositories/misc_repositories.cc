@@ -2,7 +2,8 @@
 
 /// \file misc_repositories.cc
 /// \brief Implementation of CommodRepository, BlockRepository, PowerRepository,
-/// UniverseRepository, ServerStateRepository, and ShipExamRepository.
+/// UniverseRepository, ServerStateRepository, ShipExamRepository,
+/// NewsRepository, and TelegramRepository.
 
 module;
 
@@ -84,6 +85,23 @@ struct meta<ShipExam> {
   static constexpr auto value =
       object("ship_type", &T::ship_type, "name", &T::name, "description",
              &T::description);
+};
+
+template <>
+struct meta<NewsItem> {
+  using T = NewsItem;
+  static constexpr auto value =
+      object("id", &T::id, "type", &T::type, "message", &T::message,
+             "timestamp", &T::timestamp);
+};
+
+template <>
+struct meta<TelegramItem> {
+  using T = TelegramItem;
+  static constexpr auto value =
+      object("id", &T::id, "recipient_player", &T::recipient_player,
+             "recipient_governor", &T::recipient_governor, "message",
+             &T::message, "timestamp", &T::timestamp);
 };
 
 }  // namespace glz
@@ -238,4 +256,112 @@ ShipExamRepository::deserialize(const std::string& json_str) const {
     return exam;
   }
   return std::nullopt;
+}
+
+std::optional<std::string>
+NewsRepository::serialize(const NewsItem& item) const {
+  auto result = glz::write_json(item);
+  if (result.has_value()) {
+    return result.value();
+  }
+  return std::nullopt;
+}
+
+std::optional<NewsItem>
+NewsRepository::deserialize(const std::string& json_str) const {
+  NewsItem data{};
+  auto result = glz::read_json(data, json_str);
+  if (!result) {
+    return data;
+  }
+  return std::nullopt;
+}
+
+news_id_t NewsRepository::add(NewsType type, std::string_view message) {
+  const auto now = std::chrono::system_clock::now();
+  const auto timestamp =
+      std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch())
+          .count();
+  const news_id_t id{next_available_id()};
+  const NewsItem item{
+      .id = id,
+      .type = type,
+      .message = std::string(message),
+      .timestamp = timestamp,
+  };
+  save(id, item);
+  return id;
+}
+
+std::vector<NewsItem> NewsRepository::get_since(NewsType type,
+                                                news_id_t since_id) {
+  return find_where("type = ? AND id > ? ORDER BY timestamp ASC, id ASC",
+                    {std::to_underlying(type), since_id});
+}
+
+bool NewsRepository::purge_type(NewsType type) {
+  return remove_where("type = ?", {std::to_underlying(type)});
+}
+
+bool NewsRepository::purge_all() {
+  return remove_where();
+}
+
+std::optional<std::string>
+TelegramRepository::serialize(const TelegramItem& item) const {
+  auto result = glz::write_json(item);
+  if (result.has_value()) {
+    return result.value();
+  }
+  return std::nullopt;
+}
+
+std::optional<TelegramItem>
+TelegramRepository::deserialize(const std::string& json_str) const {
+  TelegramItem data{};
+  auto result = glz::read_json(data, json_str);
+  if (!result) {
+    return data;
+  }
+  return std::nullopt;
+}
+
+telegram_id_t TelegramRepository::add(player_t player, governor_t governor,
+                                      std::string_view message) {
+  const auto now = std::chrono::system_clock::now();
+  const auto timestamp =
+      std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch())
+          .count();
+  const telegram_id_t id{next_available_id()};
+  const TelegramItem item{
+      .id = id,
+      .recipient_player = player,
+      .recipient_governor = governor,
+      .message = std::string(message),
+      .timestamp = timestamp,
+  };
+  save(id, item);
+  return id;
+}
+
+std::vector<TelegramItem> TelegramRepository::get(player_t player,
+                                                  governor_t governor) {
+  return find_where("recipient_player = ? AND recipient_governor = ? "
+                    "ORDER BY timestamp ASC, id ASC",
+                    {player, governor});
+}
+
+void TelegramRepository::delete_for_governor(player_t player,
+                                             governor_t governor) {
+  remove_where("recipient_player = ? AND recipient_governor = ?",
+               {player, governor});
+}
+
+int TelegramRepository::count(player_t player, governor_t governor) {
+  return count_where("recipient_player = ? AND recipient_governor = ?",
+                     {player, governor});
+}
+
+bool TelegramRepository::purge_all() {
+  return remove_where();
 }

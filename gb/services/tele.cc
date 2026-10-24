@@ -5,7 +5,6 @@
 
 module;
 
-import dallib;
 import std;
 
 module gb.services;

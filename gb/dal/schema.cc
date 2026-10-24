@@ -129,19 +129,19 @@ void initialize_schema(Database& db) {
 
   CREATE TABLE tbl_news(
     id INTEGER PRIMARY KEY AUTOINCREMENT CHECK (id >= 1),
-    type INT NOT NULL,
-    message TEXT NOT NULL,
-    timestamp INT NOT NULL);
+    data TEXT NOT NULL CHECK (json_valid(data)),
+    type INT NOT NULL GENERATED ALWAYS AS (json_extract(data, '$.type')) STORED,
+    timestamp INT NOT NULL GENERATED ALWAYS AS (json_extract(data, '$.timestamp')) STORED);
 
   CREATE INDEX idx_news_type ON tbl_news(type);
   CREATE INDEX idx_news_timestamp ON tbl_news(type, timestamp);
 
   CREATE TABLE tbl_telegram(
     id INTEGER PRIMARY KEY AUTOINCREMENT CHECK (id >= 1),
-    recipient_player INT NOT NULL CHECK (recipient_player >= 1),
-    recipient_governor INT NOT NULL CHECK (recipient_governor >= 1),
-    message TEXT NOT NULL,
-    timestamp INT NOT NULL,
+    data TEXT NOT NULL CHECK (json_valid(data)),
+    recipient_player INT NOT NULL GENERATED ALWAYS AS (json_extract(data, '$.recipient_player')) STORED CHECK (recipient_player >= 1),
+    recipient_governor INT NOT NULL GENERATED ALWAYS AS (json_extract(data, '$.recipient_governor')) STORED CHECK (recipient_governor >= 1),
+    timestamp INT NOT NULL GENERATED ALWAYS AS (json_extract(data, '$.timestamp')) STORED,
     FOREIGN KEY(recipient_player) REFERENCES tbl_race(id));
 
   CREATE INDEX idx_telegram_recipient ON tbl_telegram(recipient_player, recipient_governor);

@@ -18,8 +18,9 @@ int main() {
   initialize_schema(db);
 
   // Create EntityManager and repositories
+  JsonStore store(db);
   EntityManager em(db);
-  NewsRepository news_repo(db);
+  NewsRepository news_repo(store);
 
   // Add news items
   const auto id1 = news_repo.add(NewsType::ANNOUNCE, "Server started\n");
@@ -38,6 +39,7 @@ int main() {
   auto announce_items = news_repo.get_since(NewsType::ANNOUNCE);
   test::expect_eq(announce_items.size(), 1);
   test::expect_eq(announce_items[0].id, id1);
+  test::expect_true(announce_items[0].type == NewsType::ANNOUNCE);
   test::expect_eq(announce_items[0].message, "Server started\n");
   std::println(std::cout, "Retrieved {} announcement(s)",
                announce_items.size());
@@ -45,6 +47,7 @@ int main() {
   auto combat_items = news_repo.get_since(NewsType::COMBAT);
   test::expect_eq(combat_items.size(), 1);
   test::expect_eq(combat_items[0].id, id2);
+  test::expect_true(combat_items[0].type == NewsType::COMBAT);
   test::expect_eq(combat_items[0].message, "Battle between races!\n");
   std::println(std::cout, "Retrieved {} combat news item(s)",
                combat_items.size());

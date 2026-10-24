@@ -4,7 +4,6 @@
 /// \brief Unit tests for miscellaneous entity and turn helpers (adjust_morale,
 /// add_to_queue, telegram_star).
 
-import dallib;
 import gb.entities;
 import gb.services;
 import test;
@@ -48,12 +47,12 @@ void test_telegram_star() {
   telegram_star(ctx.em, 1, 1, 1, "Welcome to Sol!\n");
 
   // Player 2 Gov 1 (leader) must receive the telegram
-  auto p2_telegrams = ctx.db.telegram_get(2, 1);
+  auto p2_telegrams = ctx.em.get_telegrams(2, 1);
   test::expect_eq(p2_telegrams.size(), 1);
   test::expect_contains(p2_telegrams[0].message, "Welcome to Sol!");
 
   // Player 1 Gov 1 is the sender, so they should not receive it
-  auto p1_g1_telegrams = ctx.db.telegram_get(1, 1);
+  auto p1_g1_telegrams = ctx.em.get_telegrams(1, 1);
   test::expect_eq(p1_g1_telegrams.size(), 0);
 
   // 3. Sender with subordinate governor sends telegram:
@@ -63,12 +62,12 @@ void test_telegram_star() {
   telegram_star(ctx.em, 1, 1, 2, "Notice from Gov 2\n");
 
   // Player 1 Gov 1 (leader) should receive this notice (sender was Gov 2)
-  p1_g1_telegrams = ctx.db.telegram_get(1, 1);
+  p1_g1_telegrams = ctx.em.get_telegrams(1, 1);
   test::expect_eq(p1_g1_telegrams.size(), 1);
   test::expect_contains(p1_g1_telegrams[0].message, "Notice from Gov 2");
 
   // Player 1 Gov 2 is the sender, so they should not receive it
-  auto p1_g2_telegrams = ctx.db.telegram_get(1, 2);
+  auto p1_g2_telegrams = ctx.em.get_telegrams(1, 2);
   test::expect_eq(p1_g2_telegrams.size(), 0);
 
   // 4. Star not inhabited by Player 2
@@ -76,7 +75,7 @@ void test_telegram_star() {
   telegram_star(ctx.em, 3, 1, 1, "Antares exclusive\n");
 
   // Player 2 should not receive any telegram for Star 3
-  auto p2_new_telegrams = ctx.db.telegram_get(2, 1);
+  auto p2_new_telegrams = ctx.em.get_telegrams(2, 1);
   // Size should still be 2 (from the two earlier Sol telegrams)
   test::expect_eq(p2_new_telegrams.size(), 2);
   for (const auto& t : p2_new_telegrams) {

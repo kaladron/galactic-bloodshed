@@ -46,20 +46,22 @@ int main() {
   {
     Database db(":memory:");
     initialize_schema(db);
+    JsonStore store(db);
+    NewsRepository news(store);
 
     // Initial state: news table is empty
-    test::expect_true(db.news_get_since(1, 0).empty());
+    test::expect_true(news.get_since(NewsType::COMBAT).empty());
     test::expect_false(db.is_in_transaction());
 
     // Transaction 1: insert and commit
     db.begin_transaction();
     test::expect_true(db.is_in_transaction());
-    const auto id1 = db.news_add(1, "Committed news", 1000);
+    const auto id1 = news.add(NewsType::COMBAT, "Committed news");
     test::expect_gt(id1.value, 0);
     db.commit();
     test::expect_false(db.is_in_transaction());
 
-    auto news_committed = db.news_get_since(1, 0);
+    auto news_committed = news.get_since(NewsType::COMBAT);
     test::expect_eq(news_committed.size(), 1);
     test::expect_eq(news_committed[0].message, "Committed news");
     std::println(std::cout, "✓ Transaction commit persists changes");
@@ -67,12 +69,12 @@ int main() {
     // Transaction 2: insert and rollback
     db.begin_transaction();
     test::expect_true(db.is_in_transaction());
-    const auto id2 = db.news_add(1, "Rolled back news", 2000);
+    const auto id2 = news.add(NewsType::COMBAT, "Rolled back news");
     test::expect_gt(id2.value, 0);
     db.rollback();
     test::expect_false(db.is_in_transaction());
 
-    auto news_after_rollback = db.news_get_since(1, 0);
+    auto news_after_rollback = news.get_since(NewsType::COMBAT);
     test::expect_eq(news_after_rollback.size(), 1);
     test::expect_eq(news_after_rollback[0].message, "Committed news");
     std::println(std::cout,
@@ -82,53 +84,66 @@ int main() {
     std::println(std::cout, "✓ Can optimize database");
   }
 
-  // News operations
-  {
-    Database db(":memory:");
-    initialize_schema(db);
-
-    // Test news_add
-    const auto id1 = db.news_add(1, "First declaration of war", 100);
-    const auto id2 = db.news_add(1, "Second declaration of war", 200);
-    const auto id3 = db.news_add(2, "Peace treaty signed", 300);
-    test::expect_gt(id1.value, 0);
-    test::expect_true(id2 > id1);
-    test::expect_true(id3 > id2);
-    std::println(std::cout, "✓ news_add creates incrementing IDs");
-
-    // Test news_get_since
-    auto type1_all = db.news_get_since(1, 0);
-    test::expect_eq(type1_all.size(), 2);
-    test::expect_eq(type1_all[0].id, id1);
-    test::expect_eq(type1_all[0].type, 1);
-    test::expect_eq(type1_all[0].message, "First declaration of war");
-    test::expect_eq(type1_all[0].timestamp, 100);
-
-    auto type1_since = db.news_get_since(1, id1);
-    test::expect_eq(type1_since.size(), 1);
-    test::expect_eq(type1_since[0].id, id2);
-    std::println(std::cout, "✓ news_get_since filters by since_id");
-
-    // Test news_purge_type
-    test::expect_true(db.news_purge_type(1));
-    test::expect_true(db.news_get_since(1, 0).empty());
-    test::expect_eq(db.news_get_since(2, 0).size(), 1);  // Type 2 remains
-    std::println(std::cout, "✓ news_purge_type purges only specified type");
-
-    // Test news_purge_all
-    const auto id4 = db.news_add(1, "Another news", 400);
-    test::expect_true(id4 > id3);  // AUTOINCREMENT never reuses purged IDs
-    test::expect_true(db.news_purge_all());
-    test::expect_true(db.news_get_since(1, 0).empty());
-    test::expect_true(db.news_get_since(2, 0).empty());
-    std::println(std::cout, "✓ news_purge_all clears all news");
-  }
-
-  // Telegram operations
+  // NewsRepository JSON storage and STORED generated columns
   {
     Database db(":memory:");
     initialize_schema(db);
     JsonStore store(db);
+    NewsRepository news(store);
+
+    const auto id1 =
+        news.add(NewsType::DECLARATION, "First declaration of war");
+    const auto id2 =
+        news.add(NewsType::DECLARATION, "Second declaration of war");
+    const auto id3 = news.add(NewsType::ANNOUNCE, "Peace treaty signed");
+    test::expect_gt(id1.value, 0);
+    test::expect_true(id2 > id1);
+    test::expect_true(id3 > id2);
+    std::println(std::cout, "✓ NewsRepository::add creates incrementing IDs");
+
+    // Verify STORED generated column extraction on tbl_news
+    auto decl_ids =
+        store.query_ids("tbl_news", "type = ? ORDER BY id",
+                        {std::to_underlying(NewsType::DECLARATION)});
+    test::expect_eq(decl_ids.size(), 2u);
+
+    auto decl_all = news.get_since(NewsType::DECLARATION);
+    test::expect_eq(decl_all.size(), 2);
+    test::expect_eq(decl_all[0].id, id1);
+    test::expect_true(decl_all[0].type == NewsType::DECLARATION);
+    test::expect_eq(decl_all[0].message, "First declaration of war");
+    test::expect_gt(decl_all[0].timestamp, 0);
+
+    auto decl_since = news.get_since(NewsType::DECLARATION, id1);
+    test::expect_eq(decl_since.size(), 1);
+    test::expect_eq(decl_since[0].id, id2);
+    std::println(std::cout, "✓ NewsRepository::get_since filters by since_id");
+
+    // Purge specific type
+    test::expect_true(news.purge_type(NewsType::DECLARATION));
+    test::expect_true(news.get_since(NewsType::DECLARATION).empty());
+    test::expect_eq(news.get_since(NewsType::ANNOUNCE).size(), 1);
+    std::println(std::cout,
+                 "✓ NewsRepository::purge_type purges only specified type");
+
+    // Purge all and verify AUTOINCREMENT monotonicity
+    const auto id4 = news.add(NewsType::DECLARATION, "Another news");
+    test::expect_true(id4 > id3);
+    test::expect_true(news.purge_all());
+    test::expect_true(news.get_since(NewsType::DECLARATION).empty());
+    test::expect_true(news.get_since(NewsType::ANNOUNCE).empty());
+    const auto id5 = news.add(NewsType::ANNOUNCE, "Post-purge news");
+    test::expect_true(id5 > id4);  // AUTOINCREMENT never reuses purged IDs
+    std::println(std::cout, "✓ NewsRepository::purge_all clears all news and "
+                            "preserves monotonic IDs");
+  }
+
+  // TelegramRepository JSON storage and STORED generated columns
+  {
+    Database db(":memory:");
+    initialize_schema(db);
+    JsonStore store(db);
+    TelegramRepository telegrams(store);
 
     player_t p1{1};
     player_t p2{2};
@@ -137,53 +152,54 @@ int main() {
     store.store("tbl_race", p1.value, "{}");
     store.store("tbl_race", p2.value, "{}");
 
-    // Test telegram_count on empty
-    test::expect_eq(db.telegram_count(p1, g1), 0);
+    test::expect_eq(telegrams.count(p1, g1), 0);
 
-    // Test telegram_add
-    const auto t1 = db.telegram_add(p1, g1, "Hello Governor 1", 1000);
-    const auto t2 = db.telegram_add(p1, g1, "Fleet arriving soon", 1050);
-    const auto t3 = db.telegram_add(p1, g2, "Governor 2 secret dispatch", 1100);
-    const auto t4 = db.telegram_add(p2, g1, "Message for Player 2", 1200);
+    const auto t1 = telegrams.add(p1, g1, "Hello Governor 1");
+    const auto t2 = telegrams.add(p1, g1, "Fleet arriving soon");
+    const auto t3 = telegrams.add(p1, g2, "Governor 2 secret dispatch");
+    const auto t4 = telegrams.add(p2, g1, "Message for Player 2");
     test::expect_gt(t1.value, 0);
     test::expect_true(t2 > t1 && t3 > t2 && t4 > t3);
-    std::println(std::cout, "✓ telegram_add successfully stores messages");
-
-    // Test telegram_count
-    test::expect_eq(db.telegram_count(p1, g1), 2);
-    test::expect_eq(db.telegram_count(p1, g2), 1);
-    test::expect_eq(db.telegram_count(p2, g1), 1);
-    test::expect_eq(db.telegram_count(player_t{99}, g1), 0);
     std::println(std::cout,
-                 "✓ telegram_count returns correct counts per recipient");
+                 "✓ TelegramRepository::add successfully stores messages");
 
-    // Test telegram_get
-    auto p1_g1_msgs = db.telegram_get(p1, g1);
+    test::expect_eq(telegrams.count(p1, g1), 2);
+    test::expect_eq(telegrams.count(p1, g2), 1);
+    test::expect_eq(telegrams.count(p2, g1), 1);
+    test::expect_eq(telegrams.count(player_t{99}, g1), 0);
+    std::println(
+        std::cout,
+        "✓ TelegramRepository::count returns correct counts per recipient");
+
+    auto p1_g1_msgs = telegrams.get(p1, g1);
     test::expect_eq(p1_g1_msgs.size(), 2);
     test::expect_eq(p1_g1_msgs[0].id, t1);
     test::expect_eq(p1_g1_msgs[0].recipient_player, p1);
     test::expect_eq(p1_g1_msgs[0].recipient_governor, g1);
     test::expect_eq(p1_g1_msgs[0].message, "Hello Governor 1");
-    test::expect_eq(p1_g1_msgs[0].timestamp, 1000);
+    test::expect_gt(p1_g1_msgs[0].timestamp, 0);
 
     test::expect_eq(p1_g1_msgs[1].id, t2);
     test::expect_eq(p1_g1_msgs[1].message, "Fleet arriving soon");
+    std::println(std::cout, "✓ TelegramRepository::get retrieves messages in "
+                            "chronological order");
+
+    telegrams.delete_for_governor(p1, g1);
+    test::expect_eq(telegrams.count(p1, g1), 0);
+    test::expect_eq(telegrams.count(p1, g2), 1);
+    test::expect_eq(telegrams.count(p2, g1), 1);
     std::println(std::cout,
-                 "✓ telegram_get retrieves messages in chronological order");
+                 "✓ TelegramRepository::delete_for_governor removes only "
+                 "target recipient messages");
 
-    // Test telegram_delete_for_governor
-    test::expect_true(db.telegram_delete_for_governor(p1, g1));
-    test::expect_eq(db.telegram_count(p1, g1), 0);
-    test::expect_eq(db.telegram_count(p1, g2), 1);  // Other governor untouched
-    test::expect_eq(db.telegram_count(p2, g1), 1);  // Other player untouched
-    std::println(std::cout, "✓ telegram_delete_for_governor removes only "
-                            "target recipient messages");
-
-    // Test telegram_purge_all
-    test::expect_true(db.telegram_purge_all());
-    test::expect_eq(db.telegram_count(p1, g2), 0);
-    test::expect_eq(db.telegram_count(p2, g1), 0);
-    std::println(std::cout, "✓ telegram_purge_all purges all messages");
+    test::expect_true(telegrams.purge_all());
+    test::expect_eq(telegrams.count(p1, g2), 0);
+    test::expect_eq(telegrams.count(p2, g1), 0);
+    const auto t5 = telegrams.add(p1, g1, "Post-purge telegram");
+    test::expect_true(t5 > t4);
+    std::println(std::cout,
+                 "✓ TelegramRepository::purge_all purges all messages and "
+                 "preserves monotonic IDs");
   }
 
   // Planet query count_non_asteroid_planets
@@ -245,7 +261,7 @@ int main() {
     Database db2(std::move(db1));  // db1 is now closed/moved-from
 
     test::expect_throws<SqliteError>([&] {
-      db1.news_add(1, "Test Message", 100);  // NOLINT(bugprone-use-after-move)
+      db1.begin_transaction();  // NOLINT(bugprone-use-after-move)
     });
 
     test::expect_throws<SqliteError>([&] {
@@ -373,10 +389,12 @@ int main() {
         [&] { store.store("tbl_block", 99, "{}"); });
     test::expect_throws<SqliteError>(
         [&] { store.store("tbl_power", 99, "{}"); });
+    TelegramRepository telegrams(store);
     test::expect_throws<SqliteError>(
-        [&] { db.telegram_add(player_t{99}, governor_t{1}, "Hi", 100); });
+        [&] { telegrams.add(player_t{99}, governor_t{1}, "Hi"); });
     test::expect_throws<SqliteError>(
-        [&] { db.telegram_add(player_t{1}, governor_t{0}, "Hi", 100); });
+        [&] { telegrams.add(player_t{1}, governor_t{0}, "Hi"); });
+    test::expect_throws<SqliteError>([&] { store.store("tbl_news", 1, "{}"); });
 
     test::expect_throws<SqliteError>([&] {
       store.store("tbl_commod", 1,

@@ -364,6 +364,7 @@ target_sources(
           commands/pay.cc
           commands/personal.cc
           commands/pledge.cc
+          commands/post.cc
           commands/power.cc
           commands/production.cc
           commands/profile.cc
@@ -554,6 +555,7 @@ gb_add_test(planet_repository_test SOURCES repositories/planet_repository_test.c
 gb_add_test(planet_sqlite_test SOURCES repositories/planet_sqlite_test.cc)
 gb_add_test(planet_test SOURCES entities/planet_test.cc)
 gb_add_test(pledge_test SOURCES commands/pledge_test.cc)
+gb_add_test(post_test SOURCES commands/post_test.cc)
 gb_add_test(power_command_test SOURCES commands/power_test.cc EXTRA_LIBS tabulate::tabulate)
 gb_add_test(power_json_test SOURCES repositories/power_json_test.cc)
 gb_add_test(presentation_test SOURCES presentation/presentation_test.cc)

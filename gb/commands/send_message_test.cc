@@ -5,6 +5,7 @@
 
 import dallib;
 import gb.entities;
+import gb.presentation;
 import gb.repositories;
 import gb.services;
 import test;
@@ -23,6 +24,7 @@ void setup_test_world(TestContext& ctx) {
   });
 
   ctx.em.mutate_race(2, [](Race& r) {
+    r.God = false;
     r.leader().name = "TargetGovernor";
     r.translate[player_t{1}] = 50;
   });
@@ -73,7 +75,7 @@ void test_send_message_and_translation_cap() {
   ctx.verify_universe_invariants();
 }
 
-void test_send_to_governor_and_self() {
+void test_send_to_governor_self_deity_and_json() {
   TestContext ctx;
   setup_test_world(ctx);
 
@@ -88,15 +90,29 @@ void test_send_to_governor_and_self() {
   ctx.assert_dispatch_success(g, {"send", "2", "1", "Direct", "Order"}, 1);
   test::expect_contains(g.out.str(), "Message sent.");
 
-  // Sending to oneself costs 0 AP
+  // Sending to oneself costs 0 AP (including empty first message token)
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"send", "1", "Note", "to", "self"}, 0);
+  ctx.assert_dispatch_success(g, {"send", "1", "", "Note"}, 0);
   test::expect_contains(g.out.str(), "Message sent.");
+
+  // Sending to a deity race costs 0 AP
+  ctx.em.mutate_race(2, [](Race& r) { r.God = true; });
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"send", "2", "Petition"}, 0);
+  ctx.em.mutate_race(2, [](Race& r) { r.God = false; });
+
+  // Sending as deity costs 0 AP and renders JSON in UiMode::JSON
+  g.set_god(true);
+  g.set_ui_mode(UiMode::JSON);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"send", "2", "Decree"}, 0);
+  test::expect_contains(g.out.str(), "\"type\":\"send\"");
+  test::expect_contains(g.out.str(), "\"target\":0");
 
   ctx.verify_universe_invariants();
 }
 
-void test_send_block_star_and_post() {
+void test_send_block_and_star() {
   TestContext ctx;
   setup_test_world(ctx);
 
@@ -107,25 +123,29 @@ void test_send_block_star_and_post() {
   g.set_snum(1);
   g.set_god(false);
 
-  // Send to alliance block 1
+  // Send to alliance block 1 (costs 1 AP)
   ctx.assert_dispatch_success(
       g, {"send", "block", "1", "Allied", "fleet", "mobilize"}, 1);
+  test::expect_contains(g.out.str(), "Sending message to alliance block.");
   test::expect_contains(g.out.str(), "Message sent.");
 
-  // Send to star system /Sol
+  // Send to star system /Sol (costs 1 AP)
   g.out.str("");
   ctx.assert_dispatch_success(
       g, {"send", "star", "/Sol", "System", "wide", "broadcast"}, 1);
+  test::expect_contains(g.out.str(), "Sending message to star system.");
   test::expect_contains(g.out.str(), "Message sent.");
 
-  // Post public message from star scope (post is free, 0 AP)
+  // Deity send in JSON mode costs 0 AP
+  g.set_god(true);
+  g.set_ui_mode(UiMode::JSON);
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"post", "Galactic", "news", "bulletin"}, 0);
+  ctx.assert_dispatch_success(g, {"send", "block", "1", "Broadcast"}, 0);
+  test::expect_contains(g.out.str(), "\"target\":1");
 
-  // Post public message from universe scope (costs 0 AP)
-  g.set_level(ScopeLevel::LEVEL_UNIV);
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"post", "Universe", "bulletin"}, 0);
+  ctx.assert_dispatch_success(g, {"send", "star", "/Sol", "Ping"}, 0);
+  test::expect_contains(g.out.str(), "\"target\":2");
 
   ctx.verify_universe_invariants();
 }
@@ -156,11 +176,20 @@ void test_send_validation_errors() {
   // Invalid block, player, governor, and star targets
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"send", "block", "99", "Hello"});
-  test::expect_contains(g.out.str(), "No such alliance block.");
+  test::expect_eq(g.out.str(), "No such alliance block.\n");
 
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"send", "99", "Hello"});
   test::expect_contains(g.out.str(), "No such player.");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"send", "2", "0", "Hello"});
+  test::expect_contains(g.out.str(), "No such governor.");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g,
+                               {"send", "2", "99999999999999999999", "Hello"});
+  test::expect_contains(g.out.str(), "No such governor.");
 
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"send", "2", "99", "Hello"});
@@ -170,14 +199,22 @@ void test_send_validation_errors() {
   ctx.assert_dispatch_rejected(g, {"send", "star", "/Nowhere", "Hello"});
 
   g.out.str("");
-  ctx.assert_dispatch_rejected(g, {"send", "star", ".", "Hello"});
-  test::expect_contains(g.out.str(), "No such star.");
+  ctx.assert_dispatch_rejected(g, {"send", "star", "/Sol/Earth", "Hello"});
+  test::expect_eq(g.out.str(), "No such star.\n");
 
-  // Insufficient AP at star scope
+  // Insufficient AP at star scope (no spurious "Sending message..." output)
   ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 0; });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"send", "2", "No", "AP"});
-  test::expect_contains(g.out.str(), "You don't have 1 action points there.");
+  test::expect_eq(g.out.str(), "You don't have 1 action points there.\n");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"send", "block", "1", "No", "AP"});
+  test::expect_eq(g.out.str(), "You don't have 1 action points there.\n");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"send", "star", "/Sol", "No", "AP"});
+  test::expect_eq(g.out.str(), "You don't have 1 action points there.\n");
 
   ctx.verify_universe_invariants();
 }
@@ -186,8 +223,8 @@ void test_send_validation_errors() {
 
 int main() {
   test_send_message_and_translation_cap();
-  test_send_to_governor_and_self();
-  test_send_block_star_and_post();
+  test_send_to_governor_self_deity_and_json();
+  test_send_block_and_star();
   test_send_validation_errors();
 
   std::println(std::cout, "✓ send_message_test passed!");

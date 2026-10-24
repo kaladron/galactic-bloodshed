@@ -6,6 +6,7 @@
 module;
 
 import gb.entities;
+import gb.presentation.empire_views;
 import gb.services;
 import scnlib;
 import std;
@@ -15,23 +16,11 @@ module commands;
 namespace {
 
 /**
- * @brief Format sender prefix (`<Race> "<Gov>" [<player>,<gov>]`).
- */
-std::string format_sender_tag(const Race& race, player_t playernum,
-                              governor_t governor) {
-  return std::format("{} \"{}\" [{},{}]", race.name,
-                     race.governor(governor).name, playernum, governor);
-}
-
-/**
  * @brief Join command tokens from `start` into a space-delimited message body.
  */
 std::string join_message_tokens(const command_t& argv, std::size_t start) {
-  std::string body;
-  for (auto j = start; j < argv.size(); ++j) {
-    body += argv[j] + " ";
-  }
-  return body;
+  return argv | std::views::drop(start) | std::views::join_with(' ') |
+         std::ranges::to<std::string>();
 }
 
 /**
@@ -58,16 +47,32 @@ void increment_translation_skill(EntityManager& em, player_t recipient,
                  [&](Race& alien) { alien.increase_translation(sender, 2); });
 }
 
-/**
- * @brief Handle `post <message>` public bulletin announcement.
- */
-bool handle_post_command(const command_t& argv, GameObj& g) {
-  const auto& race = *g.race;
-  std::string msg =
-      std::format("{}: {}\n", format_sender_tag(race, g.player(), g.governor()),
-                  join_message_tokens(argv, 1));
-  post(g.entity_manager, msg, NewsType::ANNOUNCE);
-  return true;
+struct PlayerMessageRoute {
+  std::optional<governor_t> target_gov{std::nullopt};
+  std::size_t body_start{2};
+};
+
+std::optional<PlayerMessageRoute>
+parse_player_message_route(const command_t& argv, const Race& alien,
+                           GameObj& g) {
+  if (argv[2].empty() ||
+      !std::isdigit(static_cast<unsigned char>(argv[2][0]))) {
+    return PlayerMessageRoute{};
+  }
+  if (argv.size() < 4) {
+    g.out << "Syntax: send <race> [<governor>] <message>\n";
+    return std::nullopt;
+  }
+  auto parsed_gov = scn::scan<int>(argv[2], "{}");
+  if (!parsed_gov || parsed_gov->value() < 1 ||
+      !alien.has_governor(governor_t{parsed_gov->value()})) {
+    g.out << "No such governor.\n";
+    return std::nullopt;
+  }
+  return PlayerMessageRoute{
+      .target_gov = governor_t{parsed_gov->value()},
+      .body_start = 3,
+  };
 }
 
 /**
@@ -78,46 +83,34 @@ bool send_to_alliance_block(const command_t& argv, GameObj& g) {
     g.out << "Syntax: send block <block> <message>\n";
     return false;
   }
-  g.out << "Sending message to alliance block.\n";
-  const player_t who = get_player(g.entity_manager, argv[2]);
+  const auto who = get_player(g.entity_manager, argv[2]);
   if (who == player_t{0}) {
     g.out << "No such alliance block.\n";
     return false;
   }
-  const auto* alien = g.entity_manager.peek_race(who);
-  if (!alien) {
-    g.out << "Alien race not found.\n";
-    return false;
-  }
 
-  const Block* block_target = nullptr;
-  try {
-    block_target = g.entity_manager.peek_block(who);
-  } catch (const EntityNotFoundError&) {
-    g.out << "Block not found.\n";
-    return false;
-  }
+  const auto& block_target = *g.entity_manager.peek_block(who);
 
-  const player_t playernum = g.player();
+  const auto playernum = g.player();
   const ap_t ap_cost = g.god() ? 0 : 1;
   if (!deduct_message_ap(g, ap_cost)) {
     return false;
   }
 
-  const std::string sender_tag =
-      format_sender_tag(*g.race, playernum, g.governor());
-  const std::string msg =
-      std::format("{} to {} [{}]: {}", sender_tag, block_target->name(), who,
+  const auto sender_tag =
+      GB::presentation::format_sender_tag(*g.race, playernum, g.governor());
+  const auto msg =
+      std::format("{} to {} [{}]: {}", sender_tag, block_target.name(), who,
                   join_message_tokens(argv, 3));
-  const std::string notice = std::format(
+  const auto notice = std::format(
       "{} has sent you a telegram. Use `read' to read it.\n", sender_tag);
-  const std::string block_msg =
+  const auto block_msg =
       std::format("{} sends a message to {} [{}] alliance block.\n", sender_tag,
-                  block_target->name(), who);
+                  block_target.name(), who);
 
   for (const Race& race : RaceList::readonly(g.entity_manager)) {
-    const player_t i = race.Playernum;
-    if (block_target->is_member(i) && i != playernum) {
+    const auto i = race.Playernum;
+    if (block_target.is_member(i) && i != playernum) {
       increment_translation_skill(g.entity_manager, i, playernum);
       g.session_registry.notify_race(i, block_msg);
       g.session_registry.notify_race(i, notice);
@@ -125,7 +118,9 @@ bool send_to_alliance_block(const command_t& argv, GameObj& g) {
     }
   }
 
-  g.out << "Message sent.\n";
+  g.present(GB::presentation::SendMessageResult{
+      .target = GB::presentation::SendMessageTarget::Block,
+  });
   return true;
 }
 
@@ -137,7 +132,6 @@ bool send_to_star_system(const command_t& argv, GameObj& g) {
     g.out << "Syntax: send star <star> <message>\n";
     return false;
   }
-  g.out << "Sending message to star system.\n";
   auto where =
       Place::resolve(g.entity_manager, g.scope_context(), argv[2], true);
   if (!where) {
@@ -155,20 +149,20 @@ bool send_to_star_system(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  const player_t playernum = g.player();
+  const auto playernum = g.player();
   const auto& star_ref = *g.entity_manager.peek_star(where->snum);
-  const std::string sender_tag =
-      format_sender_tag(*g.race, playernum, g.governor());
-  const std::string msg =
+  const auto sender_tag =
+      GB::presentation::format_sender_tag(*g.race, playernum, g.governor());
+  const auto msg =
       std::format("{} to inhabitants of {}: {}", sender_tag,
                   star_ref.get_name(), join_message_tokens(argv, 3));
-  const std::string notice = std::format(
+  const auto notice = std::format(
       "{} has sent you a telegram. Use `read' to read it.\n", sender_tag);
-  const std::string star_msg = std::format("{} sends a message to {}.\n",
-                                           sender_tag, star_ref.get_name());
+  const auto star_msg = std::format("{} sends a message to {}.\n", sender_tag,
+                                    star_ref.get_name());
 
   for (const Race& race : RaceList::readonly(g.entity_manager)) {
-    const player_t i = race.Playernum;
+    const auto i = race.Playernum;
     if (star_ref.is_inhabited_by(i) && i != playernum) {
       increment_translation_skill(g.entity_manager, i, playernum);
       g.session_registry.notify_race(i, star_msg);
@@ -177,7 +171,9 @@ bool send_to_star_system(const command_t& argv, GameObj& g) {
     }
   }
 
-  g.out << "Message sent.\n";
+  g.present(GB::presentation::SendMessageResult{
+      .target = GB::presentation::SendMessageTarget::Star,
+  });
   return true;
 }
 
@@ -185,57 +181,42 @@ bool send_to_star_system(const command_t& argv, GameObj& g) {
  * @brief Handle `send <race> [<governor>] <message>`.
  */
 bool send_to_player(const command_t& argv, GameObj& g) {
-  const player_t who = get_player(g.entity_manager, argv[1]);
+  const auto who = get_player(g.entity_manager, argv[1]);
   if (who == player_t{0}) {
     g.out << "No such player.\n";
     return false;
   }
-  const auto* alien = g.entity_manager.peek_race(who);
-  if (!alien) {
-    g.out << "Alien race not found.\n";
+  const auto& alien = *g.entity_manager.peek_race(who);
+  const auto route = parse_player_message_route(argv, alien, g);
+  if (!route) {
     return false;
   }
 
-  std::optional<governor_t> target_gov = std::nullopt;
-  std::size_t start = 2;
-  if (std::isdigit(static_cast<unsigned char>(argv[2][0]))) {
-    if (argv.size() < 4) {
-      g.out << "Syntax: send <race> [<governor>] <message>\n";
-      return false;
-    }
-    auto parsed_gov = scn::scan<int>(argv[2], "{}");
-    if (!parsed_gov || parsed_gov->value() < 1 ||
-        !alien->has_governor(governor_t{parsed_gov->value()})) {
-      g.out << "No such governor.\n";
-      return false;
-    }
-    target_gov = governor_t{parsed_gov->value()};
-    start = 3;
-  }
-
-  const player_t playernum = g.player();
-  const ap_t ap_cost = (g.god() || who == playernum || alien->God) ? 0 : 1;
+  const auto playernum = g.player();
+  const ap_t ap_cost = (g.god() || who == playernum || alien.God) ? 0 : 1;
   if (!deduct_message_ap(g, ap_cost)) {
     return false;
   }
 
-  const std::string sender_tag =
-      format_sender_tag(*g.race, playernum, g.governor());
-  const std::string msg =
-      std::format("{}: {}", sender_tag, join_message_tokens(argv, start));
-  const std::string notice = std::format(
+  const auto sender_tag =
+      GB::presentation::format_sender_tag(*g.race, playernum, g.governor());
+  const auto msg = std::format("{}: {}", sender_tag,
+                               join_message_tokens(argv, route->body_start));
+  const auto notice = std::format(
       "{} has sent you a telegram. Use `read' to read it.\n", sender_tag);
 
   increment_translation_skill(g.entity_manager, who, playernum);
-  if (target_gov) {
-    g.session_registry.notify_player(who, *target_gov, notice);
+  if (route->target_gov) {
+    g.session_registry.notify_player(who, *route->target_gov, notice);
   } else {
     g.session_registry.notify_race(who, notice);
   }
-  push_telegram(g.entity_manager, who, target_gov.value_or(Race::leader_id),
-                msg);
+  push_telegram(g.entity_manager, who,
+                route->target_gov.value_or(Race::leader_id), msg);
 
-  g.out << "Message sent.\n";
+  g.present(GB::presentation::SendMessageResult{
+      .target = GB::presentation::SendMessageTarget::Player,
+  });
   return true;
 }
 
@@ -244,9 +225,6 @@ bool send_to_player(const command_t& argv, GameObj& g) {
 namespace GB::commands {
 
 bool send_message(const command_t& argv, GameObj& g) {
-  if (argv[0] == "post") {
-    return handle_post_command(argv, g);
-  }
   if (argv[1] == "block") {
     return send_to_alliance_block(argv, g);
   }
@@ -265,17 +243,6 @@ const CommandDescriptor send_cmd{
     .syntax = "send <race|block|star> [<governor>] <message>",
     .description =
         "Send private telegrams, alliance block messages, or stargrams",
-    .handler = &send_message,
-};
-
-const CommandDescriptor post_cmd{
-    .name = "post",
-    .roles = {},
-    .scopes = AllowedScopes::any(),
-    .ap = APCost::free(),
-    .min_args = 2,
-    .syntax = "post <message>",
-    .description = "Post a public announcement bulletin to all players",
     .handler = &send_message,
 };
 

@@ -1279,4 +1279,44 @@ std::string render_for_mode(UiMode mode, const NameResult& vm) {
                               : render_name_result(vm);
 }
 
+std::string format_sender_tag(const Race& race, player_t player,
+                              governor_t governor) {
+  return std::format("{} \"{}\" [{},{}]", race.name,
+                     race.governor(governor).name, player, governor);
+}
+
+std::string render_send_message_result(const SendMessageResult& vm) {
+  switch (vm.target) {
+    case SendMessageTarget::Player:
+      return "Message sent.\n";
+    case SendMessageTarget::Block:
+      return "Sending message to alliance block.\nMessage sent.\n";
+    case SendMessageTarget::Star:
+      return "Sending message to star system.\nMessage sent.\n";
+  }
+  return "";
+}
+
+std::string render_json_send_message_result(const SendMessageResult& vm) {
+  return render_json_envelope("send", vm);
+}
+
+std::string render_for_mode(UiMode mode, const SendMessageResult& vm) {
+  return mode == UiMode::JSON ? render_json_send_message_result(vm)
+                              : render_send_message_result(vm);
+}
+
+std::string render_post_result(const PostResult&) {
+  return "";
+}
+
+std::string render_json_post_result(const PostResult& vm) {
+  return render_json_envelope("post", vm);
+}
+
+std::string render_for_mode(UiMode mode, const PostResult& vm) {
+  return mode == UiMode::JSON ? render_json_post_result(vm)
+                              : render_post_result(vm);
+}
+
 }  // namespace GB::presentation

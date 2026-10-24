@@ -945,4 +945,37 @@ struct NameResult {
 [[nodiscard]] std::string render_json_name_result(const NameResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode, const NameResult& vm);
 
+/// Formats a race/governor sender tag (`<Race> "<Gov>" [<player>,<gov>]`).
+[[nodiscard]] std::string format_sender_tag(const Race& race, player_t player,
+                                            governor_t governor);
+
+/// Recipient category targeted by `send` command.
+enum class SendMessageTarget : std::uint8_t {
+  Player,
+  Block,
+  Star,
+};
+
+/// Result of dispatching a telegram, block message, or stargram via `send`.
+struct SendMessageResult {
+  SendMessageTarget target{SendMessageTarget::Player};
+};
+
+[[nodiscard]] std::string
+render_send_message_result(const SendMessageResult& vm);
+[[nodiscard]] std::string
+render_json_send_message_result(const SendMessageResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const SendMessageResult& vm);
+
+/// Result of posting a public bulletin via `post`.
+struct PostResult {
+  std::string sender{};
+  std::string message{};
+};
+
+[[nodiscard]] std::string render_post_result(const PostResult& vm);
+[[nodiscard]] std::string render_json_post_result(const PostResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode, const PostResult& vm);
+
 }  // namespace GB::presentation

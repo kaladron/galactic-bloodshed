@@ -282,10 +282,111 @@ void test_gameobj_ui_mode_and_present() {
   test::expect_eq(g.ui_mode(), UiMode::ASCII);
 }
 
+void test_bless_presentation() {
+  using GB::presentation::BlessProperty;
+  using GB::presentation::BlessResult;
+  using GB::presentation::render_bless_notification;
+
+  test::expect_eq(
+      render_bless_notification({.target_player = 2,
+                                 .property = BlessProperty::Password,
+                                 .value = std::string{"sec"}}),
+      "Deity changed your race password to `sec`\n");
+  test::expect_eq(render_bless_notification(
+                      {.target_player = 2, .property = BlessProperty::Pods}),
+                  "Deity gave you pod ability.\n");
+  test::expect_eq(
+      render_bless_notification(
+          {.target_player = 2, .property = BlessProperty::Water, .value = 60}),
+      "Deity set your water preference to 60%\n");
+  test::expect_eq(
+      render_bless_notification(
+          {.target_player = 2, .property = BlessProperty::Money, .value = 500}),
+      "Deity gave you 500 money.\n");
+  test::expect_eq(
+      render_bless_notification({.target_player = 2,
+                                 .property = BlessProperty::Fertility,
+                                 .value = 75}),
+      "Deity gave you a fetilization ability of 75.\n");
+  test::expect_eq(
+      render_bless_notification(
+          {.target_player = 2, .property = BlessProperty::Fight, .value = 80}),
+      "Deity set your fighting ability to 80.\n");
+  test::expect_eq(
+      render_bless_notification(
+          {.target_player = 2, .property = BlessProperty::MaxIq, .value = 200}),
+      "Deity gave you a maximum IQ of 200.\n");
+  test::expect_eq(
+      render_bless_notification(
+          {.target_player = 2, .property = BlessProperty::Mass, .value = 2.5}),
+      "Deity gave you 2.50 mass.\n");
+  test::expect_eq(
+      render_bless_notification({.target_player = 2,
+                                 .property = BlessProperty::Adventurism,
+                                 .value = 0.45}),
+      "Deity gave you 45 % adventurism.\n");
+  test::expect_eq(
+      render_bless_notification({.target_player = 2,
+                                 .property = BlessProperty::ExploreBit,
+                                 .star_name = "Sol",
+                                 .planet_name = "Earth"}),
+      "Deity set your explored bit at /Sol/Earth.\n");
+  test::expect_eq(
+      render_bless_notification({.target_player = 2,
+                                 .property = BlessProperty::NoExploreBit,
+                                 .star_name = "Sol",
+                                 .planet_name = "Earth"}),
+      "Deity reset your explored bit at /Sol/Earth.\n");
+  test::expect_eq(
+      render_bless_notification({.target_player = 2,
+                                 .property = BlessProperty::PlanetPopulation,
+                                 .value = 2500,
+                                 .star_name = "Sol",
+                                 .planet_name = "Earth"}),
+      "Deity set your population variable to 2500 at /Sol/Earth.\n");
+  test::expect_eq(
+      render_bless_notification({.target_player = 2,
+                                 .property = BlessProperty::Inhabited,
+                                 .star_name = "Sol",
+                                 .planet_name = "Earth"}),
+      "Deity has set your inhabited bit for /Sol/Earth.\n");
+  test::expect_eq(
+      render_bless_notification({.target_player = 2,
+                                 .property = BlessProperty::NumSectsOwned,
+                                 .value = 42,
+                                 .star_name = "Sol",
+                                 .planet_name = "Earth"}),
+      "Deity set your \"numsectsowned\" variable at /Sol/Earth to 42.\n");
+  test::expect_eq(
+      render_bless_notification({.target_player = 2,
+                                 .property = BlessProperty::Resources,
+                                 .value = 100,
+                                 .star_name = "Sol",
+                                 .planet_name = "Earth"}),
+      "Deity gave you 100 resources at Sol/Earth.\n");
+
+  const BlessResult ap_res{.target_player = 2,
+                           .property = BlessProperty::ActionPoints,
+                           .value = 30,
+                           .star_name = "Sol"};
+  test::expect_eq(render_bless_notification(ap_res),
+                  "Deity gave you 30 action points at Sol.\n");
+  test::expect_eq(GB::presentation::render_for_mode(UiMode::ASCII, ap_res), "");
+  const std::string json =
+      GB::presentation::render_for_mode(UiMode::JSON, ap_res);
+  test::expect_contains(json, "\"type\":\"bless\"");
+  test::expect_contains(json, "\"target_player\":2");
+  test::expect_contains(
+      json, std::format("\"property\":{}",
+                        std::to_underlying(BlessProperty::ActionPoints)));
+  test::expect_contains(json, "\"value\":30");
+}
+
 }  // namespace
 
 int main() {
   test_render_json_envelope_and_polymorphic_presenter();
   test_gameobj_ui_mode_and_present();
+  test_bless_presentation();
   return 0;
 }

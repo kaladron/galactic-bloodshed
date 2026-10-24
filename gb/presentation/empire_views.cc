@@ -1466,4 +1466,154 @@ std::string render_for_mode(UiMode mode, const NewsBundleResult& vm) {
                               : render_news_bundle_result(vm);
 }
 
+namespace {
+
+std::optional<std::string> try_render_bless_race_trait(const BlessResult& vm) {
+  if (vm.property == BlessProperty::Password) {
+    return std::format("Deity changed your race password to `{}`\n",
+                       std::get<std::string>(vm.value));
+  }
+  constexpr std::array<std::pair<BlessProperty, std::string_view>, 7>
+      bless_flag_messages{{
+          {BlessProperty::Pods, "Deity gave you pod ability.\n"},
+          {BlessProperty::NoPods, "Deity took away pod ability.\n"},
+          {BlessProperty::CollectiveIq,
+           "Deity gave you collective intelligence.\n"},
+          {BlessProperty::NoCollectiveIq,
+           "Deity took away collective intelligence.\n"},
+          {BlessProperty::Guest, "Deity turned you into a guest race.\n"},
+          {BlessProperty::God, "Deity turned you into a deity race.\n"},
+          {BlessProperty::Mortal, "Deity turned you into a mortal race.\n"},
+      }};
+  for (const auto& [prop, msg] : bless_flag_messages) {
+    if (prop == vm.property) {
+      return std::string(msg);
+    }
+  }
+  constexpr std::array<std::pair<BlessProperty, std::string_view>, 8>
+      sector_pref_props{{
+          {BlessProperty::Water, "water"},
+          {BlessProperty::Land, "land"},
+          {BlessProperty::Mountain, "mountain"},
+          {BlessProperty::Gas, "gas"},
+          {BlessProperty::Ice, "ice"},
+          {BlessProperty::Forest, "forest"},
+          {BlessProperty::Desert, "desert"},
+          {BlessProperty::Plated, "plated"},
+      }};
+  for (const auto& [prop, label] : sector_pref_props) {
+    if (prop == vm.property) {
+      return std::format("Deity set your {} preference to {}%\n", label,
+                         std::get<int>(vm.value));
+    }
+  }
+  return std::nullopt;
+}
+
+std::optional<std::string> try_render_bless_race_stat(const BlessResult& vm) {
+  constexpr std::array<std::pair<BlessProperty, std::string_view>, 4>
+      direct_int_props{{
+          {BlessProperty::Money, "money"},
+          {BlessProperty::Morale, "morale"},
+          {BlessProperty::Iq, "IQ"},
+          {BlessProperty::Technology, "technology"},
+      }};
+  for (const auto& [prop, label] : direct_int_props) {
+    if (prop == vm.property) {
+      return std::format("Deity gave you {} {}.\n", std::get<int>(vm.value),
+                         label);
+    }
+  }
+  if (vm.property == BlessProperty::Fertility) {
+    return std::format("Deity gave you a fetilization ability of {}.\n",
+                       std::get<int>(vm.value));
+  }
+  if (vm.property == BlessProperty::Fight) {
+    return std::format("Deity set your fighting ability to {}.\n",
+                       std::get<int>(vm.value));
+  }
+  if (vm.property == BlessProperty::MaxIq) {
+    return std::format("Deity gave you a maximum IQ of {}.\n",
+                       std::get<int>(vm.value));
+  }
+  constexpr std::array<std::pair<BlessProperty, std::string_view>, 3>
+      direct_float_props{{
+          {BlessProperty::Mass, "mass"},
+          {BlessProperty::Metabolism, "metabolism"},
+          {BlessProperty::Birthrate, "birthrate"},
+      }};
+  for (const auto& [prop, label] : direct_float_props) {
+    if (prop == vm.property) {
+      return std::format("Deity gave you {:.2f} {}.\n",
+                         std::get<double>(vm.value), label);
+    }
+  }
+  if (vm.property == BlessProperty::Adventurism) {
+    return std::format("Deity gave you {:<3.0f}% adventurism.\n",
+                       std::get<double>(vm.value) * 100.0);
+  }
+  return std::nullopt;
+}
+
+}  // namespace
+
+std::string render_bless_notification(const BlessResult& vm) {
+  if (auto msg = try_render_bless_race_trait(vm)) {
+    return *std::move(msg);
+  }
+  if (auto msg = try_render_bless_race_stat(vm)) {
+    return *std::move(msg);
+  }
+  if (vm.property == BlessProperty::ExploreBit) {
+    return std::format("Deity set your explored bit at /{}/{}.\n", vm.star_name,
+                       vm.planet_name);
+  }
+  if (vm.property == BlessProperty::NoExploreBit) {
+    return std::format("Deity reset your explored bit at /{}/{}.\n",
+                       vm.star_name, vm.planet_name);
+  }
+  if (vm.property == BlessProperty::PlanetPopulation) {
+    return std::format("Deity set your population variable to {} at /{}/{}.\n",
+                       std::get<int>(vm.value), vm.star_name, vm.planet_name);
+  }
+  if (vm.property == BlessProperty::Inhabited) {
+    return std::format("Deity has set your inhabited bit for /{}/{}.\n",
+                       vm.star_name, vm.planet_name);
+  }
+  if (vm.property == BlessProperty::NumSectsOwned) {
+    return std::format(
+        "Deity set your \"numsectsowned\" variable at /{}/{} to {}.\n",
+        vm.star_name, vm.planet_name, std::get<int>(vm.value));
+  }
+  constexpr std::array<std::pair<BlessProperty, std::string_view>, 4>
+      planet_commod_props{{
+          {BlessProperty::Resources, "resources"},
+          {BlessProperty::Destruct, "destruct"},
+          {BlessProperty::Fuel, "fuel"},
+          {BlessProperty::Crystals, "crystals"},
+      }};
+  for (const auto& [prop, label] : planet_commod_props) {
+    if (prop == vm.property) {
+      return std::format("Deity gave you {} {} at {}/{}.\n",
+                         std::get<int>(vm.value), label, vm.star_name,
+                         vm.planet_name);
+    }
+  }
+  return std::format("Deity gave you {} action points at {}.\n",
+                     std::get<int>(vm.value), vm.star_name);
+}
+
+std::string render_bless_result(const BlessResult&) {
+  return "";
+}
+
+std::string render_json_bless_result(const BlessResult& vm) {
+  return render_json_envelope("bless", vm);
+}
+
+std::string render_for_mode(UiMode mode, const BlessResult& vm) {
+  return mode == UiMode::JSON ? render_json_bless_result(vm)
+                              : render_bless_result(vm);
+}
+
 }  // namespace GB::presentation

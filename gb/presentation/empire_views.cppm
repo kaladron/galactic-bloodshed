@@ -1058,4 +1058,62 @@ render_json_news_bundle_result(const NewsBundleResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const NewsBundleResult& vm);
 
+/// Attribute, flag, or stockpile granted or adjusted by deity `bless`.
+enum class BlessProperty : std::uint8_t {
+  Password,
+  Pods,
+  NoPods,
+  CollectiveIq,
+  NoCollectiveIq,
+  Guest,
+  God,
+  Mortal,
+  Water,
+  Land,
+  Mountain,
+  Gas,
+  Ice,
+  Forest,
+  Desert,
+  Plated,
+  Money,
+  Morale,
+  Fertility,
+  Iq,
+  Fight,
+  Technology,
+  MaxIq,
+  Mass,
+  Metabolism,
+  Adventurism,
+  Birthrate,
+  ExploreBit,
+  NoExploreBit,
+  PlanetPopulation,
+  Inhabited,
+  NumSectsOwned,
+  Resources,
+  Destruct,
+  Fuel,
+  Crystals,
+  ActionPoints,
+};
+
+/// Typed payload for a `bless` operation (`std::monostate` for flag toggles).
+using BlessValue = std::variant<std::monostate, int, double, std::string>;
+
+/// Result of bestowing a divine blessing upon a player via `bless`.
+struct BlessResult {
+  player_t target_player{0};
+  BlessProperty property{BlessProperty::Money};
+  BlessValue value{};
+  std::string star_name{};
+  std::string planet_name{};
+};
+
+[[nodiscard]] std::string render_bless_notification(const BlessResult& vm);
+[[nodiscard]] std::string render_bless_result(const BlessResult& vm);
+[[nodiscard]] std::string render_json_bless_result(const BlessResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode, const BlessResult& vm);
+
 }  // namespace GB::presentation

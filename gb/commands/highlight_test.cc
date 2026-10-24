@@ -89,6 +89,14 @@ void test_highlight_database_persistence() {
                     2);  // Should still be 2
   }
 
+  // TEST 5: Extra arguments rejected and JSON output mode
+  ctx.assert_dispatch_rejected(g, {"highlight", "1", "extra"});
+  test::expect_contains(g.out.str(), "Syntax: highlight <player>");
+  g.set_ui_mode(UiMode::JSON);
+  ctx.assert_dispatch_success(g, {"highlight", "1"});
+  test::expect_contains(g.out.str(), "\"type\":\"highlight\"");
+  test::expect_contains(g.out.str(), "\"target_player\":1");
+
   std::println(std::cout,
                "  ✅ All highlight database persistence tests passed!");
 }

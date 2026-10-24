@@ -6,6 +6,7 @@
 module;
 
 import gb.entities;
+import gb.presentation.empire_views;
 import gb.services;
 import std;
 
@@ -14,16 +15,16 @@ module commands;
 namespace GB::commands {
 
 bool personal(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player();
+  const player_t playernum = g.player();
+  auto message = argv | std::views::drop(1) | std::views::join_with(' ') |
+                 std::ranges::to<std::string>();
 
-  std::stringstream ss_message;
-  std::copy(++argv.begin(), argv.end(),
-            std::ostream_iterator<std::string>(ss_message, " "));
-  std::string message = ss_message.str();
-
-  g.entity_manager.mutate_race(Playernum,
+  g.entity_manager.mutate_race(playernum,
                                [&](Race& race) { race.info = message; });
-  g.out << "Personal information updated.\n";
+  g.present(GB::presentation::PersonalResult{
+      .player = playernum,
+      .info = std::move(message),
+  });
   return true;
 }
 

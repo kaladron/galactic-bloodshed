@@ -32,12 +32,18 @@ void test_personal_dispatch() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
 
-  // 1. Leader (governor 1) sets personal info
+  // 1. Leader (governor 1) sets personal info without trailing space
   ctx.assert_dispatch_success(
       g, {"personal", "Peaceful", "explorers", "of", "the", "galaxy"});
+  test::expect_contains(g.out.str(), "Personal information updated.");
   const auto* updated_race = ctx.em.peek_race(1);
   test::expect_ne(updated_race, nullptr);
-  test::expect_contains(updated_race->info, "Peaceful explorers of the galaxy");
+  test::expect_eq(updated_race->info, "Peaceful explorers of the galaxy");
+  g.set_ui_mode(UiMode::JSON);
+  ctx.assert_dispatch_success(g, {"personal", "Bold", "pioneers"});
+  test::expect_contains(g.out.str(), "\"type\":\"personal\"");
+  test::expect_contains(g.out.str(), "\"info\":\"Bold pioneers\"");
+  g.set_ui_mode(UiMode::ASCII);
   std::println(std::cout, "    ✓ Leader successfully set personal info");
 
   // 2. Non-leader governor (governor 2) is rejected by leader_only role

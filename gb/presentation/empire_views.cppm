@@ -1169,4 +1169,67 @@ struct VictoryAnnouncementViewModel {
 [[nodiscard]] std::string
 render_victory_announcement(const VictoryAnnouncementViewModel& vm);
 
+/// Result of setting the highlighted player (`highlight <player>`).
+struct HighlightResult {
+  player_t target_player{0};
+};
+[[nodiscard]] std::string render_highlight_result(const HighlightResult& vm);
+[[nodiscard]] std::string
+render_json_highlight_result(const HighlightResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const HighlightResult& vm);
+
+/// Result of setting an alliance block motto (`motto <motto text>`).
+struct MottoResult {
+  player_t block_id{0};
+  std::string motto{};
+};
+[[nodiscard]] std::string render_motto_result(const MottoResult& vm);
+[[nodiscard]] std::string render_json_motto_result(const MottoResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode, const MottoResult& vm);
+
+/// Result of updating race personal description (`personal <info text>`).
+struct PersonalResult {
+  player_t player{0};
+  std::string info{};
+};
+[[nodiscard]] std::string render_personal_result(const PersonalResult& vm);
+[[nodiscard]] std::string render_json_personal_result(const PersonalResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const PersonalResult& vm);
+
+/// Governor configuration flag modified by `toggle <option>`.
+enum class ToggleOption : std::uint8_t {
+  Inverse,
+  Color,
+  DoubleDigits,
+  Geography,
+  Gag,
+  Autoload,
+  Invisible,
+  Compatibility,
+};
+
+/// View model for `toggle` (display all governor configuration options).
+struct ToggleStatusViewModel {
+  toggletype toggles{};
+};
+[[nodiscard]] std::string render_toggle_status(const ToggleStatusViewModel& vm);
+[[nodiscard]] std::string
+render_json_toggle_status(const ToggleStatusViewModel& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const ToggleStatusViewModel& vm);
+
+/// Result of toggling a single governor configuration option (`toggle <opt>`).
+struct ToggleChangedResult {
+  ToggleOption option{ToggleOption::Gag};
+  bool enabled{false};
+};
+[[nodiscard]] std::string
+render_toggle_changed_result(const ToggleChangedResult& vm);
+[[nodiscard]] std::string
+render_json_toggle_changed_result(const ToggleChangedResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const ToggleChangedResult& vm);
+
 }  // namespace GB::presentation

@@ -6,83 +6,73 @@
 module;
 
 import gb.entities;
+import gb.presentation.empire_views;
 import gb.services;
 import std;
-#undef stdout
 
 module commands;
 
 namespace {
-void tog(GameObj& g, bool* op, const char* name) {
-  *op = !(*op);
-  g.out << std::format("{0} is now {1}\n", name, *op ? "on" : "off");
-}
 
-void display_toggles(GameObj& g, const Race::gov& governor) {
-  g.out << std::format("gag is {}\n", governor.toggle.gag ? "ON" : "OFF");
-  g.out << std::format("inverse is {}\n",
-                       governor.toggle.inverse ? "ON" : "OFF");
-  g.out << std::format("color is {}\n", governor.toggle.color ? "ON" : "OFF");
-  g.out << std::format("double_digits is {}\n",
-                       governor.toggle.double_digits ? "ON" : "OFF");
-  g.out << std::format("geography is {}\n",
-                       governor.toggle.geography ? "ON" : "OFF");
-  g.out << std::format("autoload is {}\n",
-                       governor.toggle.autoload ? "ON" : "OFF");
-  g.out << std::format("compatibility is {}\n",
-                       governor.toggle.compat ? "ON" : "OFF");
-  g.out << std::format("{}\n",
-                       governor.toggle.invisible ? "INVISIBLE" : "VISIBLE");
-  g.out << std::format("highlight player {}\n", governor.toggle.highlight);
-}
+struct ToggleSpec {
+  std::string_view arg;
+  bool toggletype::* field;
+  GB::presentation::ToggleOption option;
+};
+
+constexpr std::array<ToggleSpec, 9> toggle_specs{{
+    {"inverse", &toggletype::inverse, GB::presentation::ToggleOption::Inverse},
+    {"color", &toggletype::color, GB::presentation::ToggleOption::Color},
+    {"colour", &toggletype::color, GB::presentation::ToggleOption::Color},
+    {"double_digits", &toggletype::double_digits,
+     GB::presentation::ToggleOption::DoubleDigits},
+    {"geography", &toggletype::geography,
+     GB::presentation::ToggleOption::Geography},
+    {"gag", &toggletype::gag, GB::presentation::ToggleOption::Gag},
+    {"autoload", &toggletype::autoload,
+     GB::presentation::ToggleOption::Autoload},
+    {"visible", &toggletype::invisible,
+     GB::presentation::ToggleOption::Invisible},
+    {"compatibility", &toggletype::compat,
+     GB::presentation::ToggleOption::Compatibility},
+}};
+
 }  // namespace
 
 namespace GB::commands {
 
 bool toggle(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player();
-  governor_t Governor = g.governor();
+  if (argv.size() > 2) {
+    g.out << "Syntax: toggle [<option>]\n";
+    return false;
+  }
 
   if (argv.size() == 1) {
-    g.entity_manager.with_race(Playernum, [&](const Race& race) {
-      display_toggles(g, race.governor(Governor));
+    g.entity_manager.with_race(g.player(), [&](const Race& race) {
+      g.present(GB::presentation::ToggleStatusViewModel{
+          .toggles = race.governor(g.governor()).toggle,
+      });
     });
     return true;
   }
 
-  bool result = false;
-  g.entity_manager.mutate_race(Playernum, [&](Race& race) {
-    auto& toggles = race.governor(Governor).toggle;
-    if (argv[1] == "inverse") {
-      tog(g, &toggles.inverse, "inverse");
-      result = true;
-    } else if (argv[1] == "color" || argv[1] == "colour") {
-      tog(g, &toggles.color, "color");
-      result = true;
-    } else if (argv[1] == "double_digits") {
-      tog(g, &toggles.double_digits, "double_digits");
-      result = true;
-    } else if (argv[1] == "geography") {
-      tog(g, &toggles.geography, "geography");
-      result = true;
-    } else if (argv[1] == "gag") {
-      tog(g, &toggles.gag, "gag");
-      result = true;
-    } else if (argv[1] == "autoload") {
-      tog(g, &toggles.autoload, "autoload");
-      result = true;
-    } else if (argv[1] == "visible") {
-      tog(g, &toggles.invisible, "invisible");
-      result = true;
-    } else if (argv[1] == "compatibility") {
-      tog(g, &toggles.compat, "compatibility");
-      result = true;
-    } else {
-      g.out << std::format("No such option '{}'\n", argv[1]);
-      result = false;
-    }
+  const auto it = std::ranges::find(toggle_specs, argv[1], &ToggleSpec::arg);
+  if (it == toggle_specs.end()) {
+    g.out << std::format("No such option '{}'\n", argv[1]);
+    return false;
+  }
+
+  bool enabled = false;
+  g.entity_manager.mutate_race(g.player(), [&](Race& race) {
+    auto& field = race.governor(g.governor()).toggle.*(it->field);
+    field = !field;
+    enabled = field;
   });
-  return result;
+  g.present(GB::presentation::ToggleChangedResult{
+      .option = it->option,
+      .enabled = enabled,
+  });
+  return true;
 }
 
 const CommandDescriptor toggle_cmd{

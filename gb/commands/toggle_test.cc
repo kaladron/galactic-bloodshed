@@ -96,10 +96,19 @@ void test_toggle_database_persistence() {
     g.out.str("");
   }
 
-  // TEST 4: Reject invalid toggle option
+  // TEST 4: Reject invalid toggle option and extra arguments; verify JSON mode
   {
     ctx.assert_dispatch_rejected(g, {"toggle", "invalid_option"});
     test::expect_contains(g.out.str(), "No such option");
+    ctx.assert_dispatch_rejected(g, {"toggle", "gag", "extra"});
+    test::expect_contains(g.out.str(), "Syntax: toggle [<option>]");
+
+    g.set_ui_mode(UiMode::JSON);
+    ctx.assert_dispatch_success(g, {"toggle"});
+    test::expect_contains(g.out.str(), "\"type\":\"toggle_status\"");
+    ctx.assert_dispatch_success(g, {"toggle", "gag"});
+    test::expect_contains(g.out.str(), "\"type\":\"toggle\"");
+    test::expect_contains(g.out.str(), "\"enabled\":true");
   }
 
   ctx.verify_universe_invariants();

@@ -1555,6 +1555,18 @@ std::optional<std::string> try_render_bless_race_stat(const BlessResult& vm) {
   return std::nullopt;
 }
 
+constexpr std::string_view on_off_upper(bool v) {
+  return v ? "ON" : "OFF";
+}
+
+constexpr std::string_view toggle_option_label(ToggleOption option) {
+  constexpr std::array<std::string_view, 8> labels{
+      "inverse", "color",    "double_digits", "geography",
+      "gag",     "autoload", "invisible",     "compatibility",
+  };
+  return labels.at(std::to_underlying(option));
+}
+
 }  // namespace
 
 std::string render_bless_notification(const BlessResult& vm) {
@@ -1673,6 +1685,70 @@ render_victory_announcement(const VictoryAnnouncementViewModel& vm) {
     }
   }
   return out;
+}
+
+std::string render_highlight_result(const HighlightResult& /*vm*/) {
+  return "";
+}
+std::string render_json_highlight_result(const HighlightResult& vm) {
+  return render_json_envelope("highlight", vm);
+}
+std::string render_for_mode(UiMode mode, const HighlightResult& vm) {
+  return mode == UiMode::JSON ? render_json_highlight_result(vm)
+                              : render_highlight_result(vm);
+}
+
+std::string render_motto_result(const MottoResult& /*vm*/) {
+  return "Done.\n";
+}
+std::string render_json_motto_result(const MottoResult& vm) {
+  return render_json_envelope("motto", vm);
+}
+std::string render_for_mode(UiMode mode, const MottoResult& vm) {
+  return mode == UiMode::JSON ? render_json_motto_result(vm)
+                              : render_motto_result(vm);
+}
+
+std::string render_personal_result(const PersonalResult& /*vm*/) {
+  return "Personal information updated.\n";
+}
+std::string render_json_personal_result(const PersonalResult& vm) {
+  return render_json_envelope("personal", vm);
+}
+std::string render_for_mode(UiMode mode, const PersonalResult& vm) {
+  return mode == UiMode::JSON ? render_json_personal_result(vm)
+                              : render_personal_result(vm);
+}
+
+std::string render_toggle_status(const ToggleStatusViewModel& vm) {
+  const auto& t = vm.toggles;
+  return std::format(
+      "gag is {}\ninverse is {}\ncolor is {}\ndouble_digits is {}\n"
+      "geography is {}\nautoload is {}\ncompatibility is {}\n{}\n"
+      "highlight player {}\n",
+      on_off_upper(t.gag), on_off_upper(t.inverse), on_off_upper(t.color),
+      on_off_upper(t.double_digits), on_off_upper(t.geography),
+      on_off_upper(t.autoload), on_off_upper(t.compat),
+      t.invisible ? "INVISIBLE" : "VISIBLE", t.highlight);
+}
+std::string render_json_toggle_status(const ToggleStatusViewModel& vm) {
+  return render_json_envelope("toggle_status", vm);
+}
+std::string render_for_mode(UiMode mode, const ToggleStatusViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_toggle_status(vm)
+                              : render_toggle_status(vm);
+}
+
+std::string render_toggle_changed_result(const ToggleChangedResult& vm) {
+  return std::format("{} is now {}\n", toggle_option_label(vm.option),
+                     vm.enabled ? "on" : "off");
+}
+std::string render_json_toggle_changed_result(const ToggleChangedResult& vm) {
+  return render_json_envelope("toggle", vm);
+}
+std::string render_for_mode(UiMode mode, const ToggleChangedResult& vm) {
+  return mode == UiMode::JSON ? render_json_toggle_changed_result(vm)
+                              : render_toggle_changed_result(vm);
 }
 
 }  // namespace GB::presentation

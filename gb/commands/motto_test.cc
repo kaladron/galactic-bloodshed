@@ -44,24 +44,26 @@ void test_motto_database_persistence() {
     std::println(std::cout, "    ✓ Output message correct");
     g.out.str("");  // Clear output
 
-    // Verify database: motto should be set
+    // Verify database: motto should be set without trailing space
     auto saved = blocks.find_by_id(1);
     test::expect_true(saved.has_value());
-    std::string saved_motto = saved->motto();
-    test::expect_contains(saved_motto, "For the Empire!");
+    test::expect_eq(saved->motto(), "For the Empire!");
     std::println(std::cout, "    ✓ Database: motto = '{}'", saved->motto());
   }
 
-  // TEST 2: Change the motto
+  // TEST 2: Change the motto in JSON mode
   std::println(std::cout, "  Testing: Change motto");
   {
+    g.set_ui_mode(UiMode::JSON);
     ctx.assert_dispatch_success(g, {"motto", "Victory", "or", "Death"});
+    test::expect_contains(g.out.str(), "\"type\":\"motto\"");
+    test::expect_contains(g.out.str(), "\"motto\":\"Victory or Death\"");
+    g.set_ui_mode(UiMode::ASCII);
 
     // Verify database: motto should be changed
     auto saved = blocks.find_by_id(1);
     test::expect_true(saved.has_value());
-    std::string saved_motto = saved->motto();
-    test::expect_contains(saved_motto, "Victory or Death");
+    test::expect_eq(saved->motto(), "Victory or Death");
     std::println(std::cout, "    ✓ Database: motto = '{}'", saved->motto());
   }
 
@@ -81,13 +83,12 @@ void test_motto_database_persistence() {
     g.set_governor(2);  // Change to non-leader governor
     ctx.assert_dispatch_rejected(g, {"motto", "Should", "Fail"});
 
-    std::string out_str = g.out.str();
-    test::expect_true(out_str.find("Only the leader") != std::string::npos ||
-                      out_str.find("not authorized") != std::string::npos);
+    test::expect_contains(g.out.str(), "Only the leader");
     std::println(std::cout, "    ✓ Authorization check works");
     g.out.str("");
   }
 
+  ctx.verify_universe_invariants();
   std::println(std::cout, "  ✅ All motto database persistence tests passed!");
 }
 

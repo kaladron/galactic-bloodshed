@@ -6,6 +6,7 @@
 module;
 
 import gb.entities;
+import gb.presentation.empire_views;
 import gb.services;
 import std;
 
@@ -15,20 +16,15 @@ namespace GB::commands {
 
 bool motto(const command_t& argv, GameObj& g) {
   // Concatenate all arguments after command name into motto string
-  std::stringstream ss_message;
-  std::copy(++argv.begin(), argv.end(),
-            std::ostream_iterator<std::string>(ss_message, " "));
-  std::string message = ss_message.str();
+  auto message = argv | std::views::drop(1) | std::views::join_with(' ') |
+                 std::ranges::to<std::string>();
 
-  try {
-    g.entity_manager.mutate_block(g.player(),
-                                  [&](Block& b) { b.motto() = message; });
-  } catch (const EntityNotFoundError&) {
-    g.out << "Block not found.\n";
-    return false;
-  }
-
-  g.out << "Done.\n";
+  g.entity_manager.mutate_block(g.player(),
+                                [&](Block& b) { b.motto() = message; });
+  g.present(GB::presentation::MottoResult{
+      .block_id = g.player(),
+      .motto = std::move(message),
+  });
   return true;
 }
 

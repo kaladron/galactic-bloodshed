@@ -175,12 +175,12 @@ export enum class NewsType {
 };
 
 /// Named values indexed by NewsType (e.g., last-read SQLite news item IDs).
-export template <typename T = int>
+export template <typename T = news_id_t>
 struct NewsValues {
-  T announce{};
-  T combat{};
-  T declaration{};
-  T transfer{};
+  T announce{0};
+  T combat{0};
+  T declaration{0};
+  T transfer{0};
 
   [[nodiscard]] constexpr T& operator[](NewsType type) {
     switch (type) {

@@ -159,9 +159,9 @@ struct meta<ConditionValues> {
              &T::sulfur, "helium", &T::helium, "other", &T::other);
 };
 
-template <>
-struct meta<NewsValues<int>> {
-  using T = NewsValues<int>;
+template <typename Val>
+struct meta<NewsValues<Val>> {
+  using T = NewsValues<Val>;
   static constexpr auto value =
       object("announce", &T::announce, "combat", &T::combat, "declaration",
              &T::declaration, "transfer", &T::transfer);

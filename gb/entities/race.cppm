@@ -188,7 +188,8 @@ public:
     planetnum_t defplanetnum{1}; /* current default */
     starnum_t homesystem{1};
     planetnum_t homeplanetnum{1}; /* home place */
-    NewsValues<int> newspos{};    /* last-read news database IDs per NewsType */
+    NewsValues<news_id_t>
+        newspos{}; /* last-read news database IDs per NewsType */
     toggletype toggle{};
     money_t money{0};
     money_t income{0};

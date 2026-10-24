@@ -20,6 +20,24 @@ public:
   }
 };
 
+// News item structure (minimal POD for data transfer)
+// Note: type is stored as int to avoid circular module dependencies
+// Repositories can cast it to/from NewsType enum
+export struct NewsItem {
+  news_id_t id{0};
+  int type{0};  // NewsType as int
+  std::string message;
+  std::int64_t timestamp{0};
+};
+
+export struct TelegramItem {
+  telegram_id_t id{0};
+  player_t recipient_player{0};
+  governor_t recipient_governor{1};
+  std::string message;
+  std::int64_t timestamp{0};
+};
+
 struct DatabaseImpl;
 export class Database;
 export void initialize_schema(Database& db);
@@ -59,44 +77,23 @@ public:
   [[nodiscard]] bool is_open() const noexcept;
 
   // News operations - SQL queries encapsulated in DAL
-  std::optional<int> news_add(int type, const std::string& message,
-                              std::int64_t timestamp);
-  std::vector<std::tuple<int, int, std::string, std::int64_t>>
-  news_get_since(int type, int since_id);
-  int news_get_latest_id(int type);
+  news_id_t news_add(int type, const std::string& message,
+                     std::int64_t timestamp);
+  std::vector<NewsItem> news_get_since(int type, news_id_t since_id);
   bool news_purge_type(int type);
   bool news_purge_all();
 
   // Telegram operations - SQL queries encapsulated in DAL
-  std::optional<int> telegram_add(player_t player, governor_t governor,
-                                  const std::string& message,
-                                  std::int64_t timestamp);
-  std::vector<std::tuple<int, int, int, std::string, std::int64_t>>
-  telegram_get(player_t player, governor_t governor);
+  telegram_id_t telegram_add(player_t player, governor_t governor,
+                             const std::string& message,
+                             std::int64_t timestamp);
+  std::vector<TelegramItem> telegram_get(player_t player, governor_t governor);
   bool telegram_delete_for_governor(player_t player, governor_t governor);
   int telegram_count(player_t player, governor_t governor);
   bool telegram_purge_all();
 
   // Planet queries
   int count_non_asteroid_planets();
-};
-
-// News item structure (minimal POD for data transfer)
-// Note: type is stored as int to avoid circular module dependencies
-// Repositories can cast it to/from NewsType enum
-export struct NewsItem {
-  int id{0};
-  int type{0};  // NewsType as int
-  std::string message;
-  std::int64_t timestamp{0};
-};
-
-export struct TelegramItem {
-  int id{0};
-  player_t recipient_player{0};
-  governor_t recipient_governor{1};
-  std::string message;
-  std::int64_t timestamp{0};
 };
 
 export struct KeyValue {

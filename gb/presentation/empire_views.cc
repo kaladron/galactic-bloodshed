@@ -1385,7 +1385,7 @@ std::vector<TimestampedMessage>
 to_timestamped_messages(std::vector<Item>&& items) {
   return items | std::views::as_rvalue | std::views::transform([](Item&& item) {
            return TimestampedMessage{
-               .id = item.id,
+               .id = item.id.value,
                .timestamp = item.timestamp,
                .message = std::move(item.message),
            };

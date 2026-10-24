@@ -15,6 +15,8 @@ export using starnum_t = ID<"star", std::uint32_t>;
 export using planetnum_t = ID<"planet", std::uint32_t>;
 export using player_t = ID<"player">;
 export using governor_t = ID<"governor">;
+export using news_id_t = ID<"news", std::int64_t>;
+export using telegram_id_t = ID<"telegram", std::int64_t>;
 
 export using segments_t = std::int32_t;
 export using turn_t = std::int32_t;  ///< Full update turn counter

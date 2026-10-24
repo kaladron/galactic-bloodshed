@@ -136,8 +136,8 @@ void Database::optimize() {
 }
 
 // News operations implementation
-std::optional<int> Database::news_add(int type, const std::string& message,
-                                      std::int64_t timestamp) {
+news_id_t Database::news_add(int type, const std::string& message,
+                             std::int64_t timestamp) {
   if (!is_open()) {
     throw SqliteError("Database connection is not open");
   }
@@ -161,17 +161,16 @@ std::optional<int> Database::news_add(int type, const std::string& message,
                       result);
   }
 
-  return static_cast<int>(sqlite3_last_insert_rowid(conn));
+  return news_id_t{sqlite3_last_insert_rowid(conn)};
 }
 
-std::vector<std::tuple<int, int, std::string, std::int64_t>>
-Database::news_get_since(int type, int since_id) {
+std::vector<NewsItem> Database::news_get_since(int type, news_id_t since_id) {
   if (!is_open()) {
     throw SqliteError("Database connection is not open");
   }
   sqlite3* conn = impl_->conn;
 
-  std::vector<std::tuple<int, int, std::string, std::int64_t>> items;
+  std::vector<NewsItem> items;
 
   const char* sql = R"(
     SELECT id, type, message, timestamp
@@ -183,17 +182,22 @@ Database::news_get_since(int type, int since_id) {
   SqliteStmtPtr stmt = prepare_stmt(conn, sql);
 
   sqlite3_bind_int(stmt.get(), 1, type);
-  sqlite3_bind_int(stmt.get(), 2, since_id);
+  sqlite3_bind_int64(stmt.get(), 2, since_id.value);
 
   int step_rc;
   while ((step_rc = sqlite3_step(stmt.get())) == SQLITE_ROW) {
-    int id = sqlite3_column_int(stmt.get(), 0);
-    int news_type = sqlite3_column_int(stmt.get(), 1);
+    const news_id_t id{sqlite3_column_int64(stmt.get(), 0)};
+    const int news_type = sqlite3_column_int(stmt.get(), 1);
     const char* msg_text =
         reinterpret_cast<const char*>(sqlite3_column_text(stmt.get(), 2));
     std::string message = msg_text ? msg_text : "";
-    std::int64_t ts = sqlite3_column_int64(stmt.get(), 3);
-    items.emplace_back(id, news_type, std::move(message), ts);
+    const std::int64_t ts = sqlite3_column_int64(stmt.get(), 3);
+    items.push_back(NewsItem{
+        .id = id,
+        .type = news_type,
+        .message = std::move(message),
+        .timestamp = ts,
+    });
   }
 
   if (step_rc != SQLITE_DONE) {
@@ -203,34 +207,6 @@ Database::news_get_since(int type, int since_id) {
   }
 
   return items;
-}
-
-int Database::news_get_latest_id(int type) {
-  if (!is_open()) {
-    throw SqliteError("Database connection is not open");
-  }
-  sqlite3* conn = impl_->conn;
-
-  const char* sql = R"(
-    SELECT MAX(id) FROM tbl_news WHERE type = ?
-  )";
-
-  SqliteStmtPtr stmt = prepare_stmt(conn, sql);
-
-  sqlite3_bind_int(stmt.get(), 1, type);
-
-  int latest_id = 0;
-  int step_rc = sqlite3_step(stmt.get());
-  if (step_rc == SQLITE_ROW) {
-    latest_id = sqlite3_column_int(stmt.get(), 0);
-  } else if (step_rc != SQLITE_DONE) {
-    throw SqliteError(
-        std::format("SQLite step error retrieving latest news ID: {}",
-                    sqlite3_errmsg(conn)),
-        step_rc);
-  }
-
-  return latest_id;
 }
 
 bool Database::news_purge_type(int type) {
@@ -266,9 +242,9 @@ bool Database::news_purge_all() {
 }
 
 // Telegram operations implementation
-std::optional<int> Database::telegram_add(player_t player, governor_t governor,
-                                          const std::string& message,
-                                          std::int64_t timestamp) {
+telegram_id_t Database::telegram_add(player_t player, governor_t governor,
+                                     const std::string& message,
+                                     std::int64_t timestamp) {
   if (!is_open()) {
     throw SqliteError("Database connection is not open");
   }
@@ -293,17 +269,17 @@ std::optional<int> Database::telegram_add(player_t player, governor_t governor,
                       result);
   }
 
-  return static_cast<int>(sqlite3_last_insert_rowid(conn));
+  return telegram_id_t{sqlite3_last_insert_rowid(conn)};
 }
 
-std::vector<std::tuple<int, int, int, std::string, std::int64_t>>
-Database::telegram_get(player_t player, governor_t governor) {
+std::vector<TelegramItem> Database::telegram_get(player_t player,
+                                                 governor_t governor) {
   if (!is_open()) {
     throw SqliteError("Database connection is not open");
   }
   sqlite3* conn = impl_->conn;
 
-  std::vector<std::tuple<int, int, int, std::string, std::int64_t>> items;
+  std::vector<TelegramItem> items;
 
   const char* sql = R"(
     SELECT id, recipient_player, recipient_governor, message, timestamp
@@ -319,14 +295,20 @@ Database::telegram_get(player_t player, governor_t governor) {
 
   int step_rc;
   while ((step_rc = sqlite3_step(stmt.get())) == SQLITE_ROW) {
-    int id = sqlite3_column_int(stmt.get(), 0);
-    int recv_player = sqlite3_column_int(stmt.get(), 1);
-    governor_t recv_governor{sqlite3_column_int(stmt.get(), 2)};
+    const telegram_id_t id{sqlite3_column_int64(stmt.get(), 0)};
+    const player_t recv_player{sqlite3_column_int(stmt.get(), 1)};
+    const governor_t recv_governor{sqlite3_column_int(stmt.get(), 2)};
     const char* msg_text =
         reinterpret_cast<const char*>(sqlite3_column_text(stmt.get(), 3));
     std::string message = msg_text ? msg_text : "";
-    std::int64_t ts = sqlite3_column_int64(stmt.get(), 4);
-    items.emplace_back(id, recv_player, recv_governor, std::move(message), ts);
+    const std::int64_t ts = sqlite3_column_int64(stmt.get(), 4);
+    items.push_back(TelegramItem{
+        .id = id,
+        .recipient_player = recv_player,
+        .recipient_governor = recv_governor,
+        .message = std::move(message),
+        .timestamp = ts,
+    });
   }
 
   if (step_rc != SQLITE_DONE) {

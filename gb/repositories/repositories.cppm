@@ -364,8 +364,7 @@ protected:
 };
 
 // ============================================================================
-// NewsRepository - Repository for news/telegram items
-// Delegates all SQL operations to the DAL layer
+// NewsRepository - Repository for news items
 // ============================================================================
 export class NewsRepository {
 private:
@@ -374,10 +373,9 @@ private:
 public:
   explicit NewsRepository(Database& database) : db(database) {}
 
-  // Add news item and return auto-generated ID
-  std::optional<int> add(NewsType type, std::string_view message) {
-    auto now = std::chrono::system_clock::now();
-    auto timestamp =
+  news_id_t add(NewsType type, std::string_view message) {
+    const auto now = std::chrono::system_clock::now();
+    const auto timestamp =
         std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch())
             .count();
 
@@ -385,36 +383,15 @@ public:
                        timestamp);
   }
 
-  // Get news items of specific type after a given ID (for pagination)
-  std::vector<NewsItem> get_since(NewsType type, int since_id = 0) {
-    auto tuples = db.news_get_since(std::to_underlying(type), since_id);
-
-    std::vector<NewsItem> items;
-    items.reserve(tuples.size());
-
-    for (const auto& [id, type_val, message, timestamp] : tuples) {
-      NewsItem item;
-      item.id = id;
-      item.type = type_val;  // NewsItem.type is now int
-      item.message = message;
-      item.timestamp = timestamp;
-      items.push_back(std::move(item));
-    }
-
-    return items;
+  std::vector<NewsItem> get_since(NewsType type,
+                                  news_id_t since_id = news_id_t{0}) {
+    return db.news_get_since(std::to_underlying(type), since_id);
   }
 
-  // Get latest news ID for a specific type (for tracking what user has read)
-  int get_latest_id(NewsType type) {
-    return db.news_get_latest_id(std::to_underlying(type));
-  }
-
-  // Delete all news of a specific type (for purge)
   bool purge_type(NewsType type) {
     return db.news_purge_type(std::to_underlying(type));
   }
 
-  // Delete all news (for complete purge)
   bool purge_all() {
     return db.news_purge_all();
   }
@@ -422,7 +399,6 @@ public:
 
 // ============================================================================
 // TelegramRepository - Repository for telegram items
-// Delegates all SQL operations to the DAL layer
 // ============================================================================
 export class TelegramRepository {
 private:
@@ -431,49 +407,28 @@ private:
 public:
   explicit TelegramRepository(Database& database) : db(database) {}
 
-  // Add telegram and return auto-generated ID
-  std::optional<int> add(player_t player, governor_t governor,
-                         std::string_view message) {
-    auto now = std::chrono::system_clock::now();
-    auto timestamp =
+  telegram_id_t add(player_t player, governor_t governor,
+                    std::string_view message) {
+    const auto now = std::chrono::system_clock::now();
+    const auto timestamp =
         std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch())
             .count();
 
     return db.telegram_add(player, governor, std::string(message), timestamp);
   }
 
-  // Get all telegrams for a specific recipient
   std::vector<TelegramItem> get(player_t player, governor_t governor) {
-    auto tuples = db.telegram_get(player, governor);
-
-    std::vector<TelegramItem> items;
-    items.reserve(tuples.size());
-
-    for (const auto& [id, recv_player, recv_governor, message, timestamp] :
-         tuples) {
-      TelegramItem item;
-      item.id = id;
-      item.recipient_player = recv_player;
-      item.recipient_governor = recv_governor;
-      item.message = message;
-      item.timestamp = timestamp;
-      items.push_back(std::move(item));
-    }
-
-    return items;
+    return db.telegram_get(player, governor);
   }
 
-  // Delete all telegrams for a specific governor (delete on read behavior)
   void delete_for_governor(player_t player, governor_t governor) {
     db.telegram_delete_for_governor(player, governor);
   }
 
-  // Count telegrams for a specific recipient
   int count(player_t player, governor_t governor) {
     return db.telegram_count(player, governor);
   }
 
-  // Delete all telegrams (for purge command)
   bool purge_all() {
     return db.telegram_purge_all();
   }

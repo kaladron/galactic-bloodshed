@@ -48,33 +48,33 @@ int main() {
     initialize_schema(db);
 
     // Initial state: news table is empty
-    test::expect_eq(db.news_get_latest_id(1), 0);
+    test::expect_true(db.news_get_since(1, 0).empty());
     test::expect_false(db.is_in_transaction());
 
     // Transaction 1: insert and commit
     db.begin_transaction();
     test::expect_true(db.is_in_transaction());
-    auto id1 = db.news_add(1, "Committed news", 1000);
-    test::expect_true(id1.has_value());
+    const auto id1 = db.news_add(1, "Committed news", 1000);
+    test::expect_gt(id1.value, 0);
     db.commit();
     test::expect_false(db.is_in_transaction());
 
     auto news_committed = db.news_get_since(1, 0);
     test::expect_eq(news_committed.size(), 1);
-    test::expect_eq(std::get<2>(news_committed[0]), "Committed news");
+    test::expect_eq(news_committed[0].message, "Committed news");
     std::println(std::cout, "✓ Transaction commit persists changes");
 
     // Transaction 2: insert and rollback
     db.begin_transaction();
     test::expect_true(db.is_in_transaction());
-    auto id2 = db.news_add(1, "Rolled back news", 2000);
-    test::expect_true(id2.has_value());
+    const auto id2 = db.news_add(1, "Rolled back news", 2000);
+    test::expect_gt(id2.value, 0);
     db.rollback();
     test::expect_false(db.is_in_transaction());
 
     auto news_after_rollback = db.news_get_since(1, 0);
     test::expect_eq(news_after_rollback.size(), 1);
-    test::expect_eq(std::get<2>(news_after_rollback[0]), "Committed news");
+    test::expect_eq(news_after_rollback[0].message, "Committed news");
     std::println(std::cout,
                  "✓ Transaction rollback discards uncommitted changes");
 
@@ -88,31 +88,25 @@ int main() {
     initialize_schema(db);
 
     // Test news_add
-    auto id1 = db.news_add(1, "First declaration of war", 100);
-    auto id2 = db.news_add(1, "Second declaration of war", 200);
-    auto id3 = db.news_add(2, "Peace treaty signed", 300);
-    test::expect_true(id1.has_value() && *id1 > 0);
-    test::expect_true(id2.has_value() && *id2 > *id1);
-    test::expect_true(id3.has_value() && *id3 > *id2);
+    const auto id1 = db.news_add(1, "First declaration of war", 100);
+    const auto id2 = db.news_add(1, "Second declaration of war", 200);
+    const auto id3 = db.news_add(2, "Peace treaty signed", 300);
+    test::expect_gt(id1.value, 0);
+    test::expect_true(id2 > id1);
+    test::expect_true(id3 > id2);
     std::println(std::cout, "✓ news_add creates incrementing IDs");
-
-    // Test news_get_latest_id
-    test::expect_eq(db.news_get_latest_id(1), *id2);
-    test::expect_eq(db.news_get_latest_id(2), *id3);
-    test::expect_eq(db.news_get_latest_id(99), 0);  // Unused type
-    std::println(std::cout, "✓ news_get_latest_id returns correct ID per type");
 
     // Test news_get_since
     auto type1_all = db.news_get_since(1, 0);
     test::expect_eq(type1_all.size(), 2);
-    test::expect_eq(std::get<0>(type1_all[0]), *id1);
-    test::expect_eq(std::get<1>(type1_all[0]), 1);
-    test::expect_eq(std::get<2>(type1_all[0]), "First declaration of war");
-    test::expect_eq(std::get<3>(type1_all[0]), 100);
+    test::expect_eq(type1_all[0].id, id1);
+    test::expect_eq(type1_all[0].type, 1);
+    test::expect_eq(type1_all[0].message, "First declaration of war");
+    test::expect_eq(type1_all[0].timestamp, 100);
 
-    auto type1_since = db.news_get_since(1, *id1);
+    auto type1_since = db.news_get_since(1, id1);
     test::expect_eq(type1_since.size(), 1);
-    test::expect_eq(std::get<0>(type1_since[0]), *id2);
+    test::expect_eq(type1_since[0].id, id2);
     std::println(std::cout, "✓ news_get_since filters by since_id");
 
     // Test news_purge_type
@@ -122,7 +116,8 @@ int main() {
     std::println(std::cout, "✓ news_purge_type purges only specified type");
 
     // Test news_purge_all
-    db.news_add(1, "Another news", 400);
+    const auto id4 = db.news_add(1, "Another news", 400);
+    test::expect_true(id4 > id3);  // AUTOINCREMENT never reuses purged IDs
     test::expect_true(db.news_purge_all());
     test::expect_true(db.news_get_since(1, 0).empty());
     test::expect_true(db.news_get_since(2, 0).empty());
@@ -146,12 +141,12 @@ int main() {
     test::expect_eq(db.telegram_count(p1, g1), 0);
 
     // Test telegram_add
-    auto t1 = db.telegram_add(p1, g1, "Hello Governor 1", 1000);
-    auto t2 = db.telegram_add(p1, g1, "Fleet arriving soon", 1050);
-    auto t3 = db.telegram_add(p1, g2, "Governor 2 secret dispatch", 1100);
-    auto t4 = db.telegram_add(p2, g1, "Message for Player 2", 1200);
-    test::expect_true(t1.has_value() && t2.has_value() && t3.has_value() &&
-                      t4.has_value());
+    const auto t1 = db.telegram_add(p1, g1, "Hello Governor 1", 1000);
+    const auto t2 = db.telegram_add(p1, g1, "Fleet arriving soon", 1050);
+    const auto t3 = db.telegram_add(p1, g2, "Governor 2 secret dispatch", 1100);
+    const auto t4 = db.telegram_add(p2, g1, "Message for Player 2", 1200);
+    test::expect_gt(t1.value, 0);
+    test::expect_true(t2 > t1 && t3 > t2 && t4 > t3);
     std::println(std::cout, "✓ telegram_add successfully stores messages");
 
     // Test telegram_count
@@ -165,14 +160,14 @@ int main() {
     // Test telegram_get
     auto p1_g1_msgs = db.telegram_get(p1, g1);
     test::expect_eq(p1_g1_msgs.size(), 2);
-    test::expect_eq(std::get<0>(p1_g1_msgs[0]), *t1);
-    test::expect_eq(std::get<1>(p1_g1_msgs[0]), p1.value);
-    test::expect_eq(std::get<2>(p1_g1_msgs[0]), g1.value);
-    test::expect_eq(std::get<3>(p1_g1_msgs[0]), "Hello Governor 1");
-    test::expect_eq(std::get<4>(p1_g1_msgs[0]), 1000);
+    test::expect_eq(p1_g1_msgs[0].id, t1);
+    test::expect_eq(p1_g1_msgs[0].recipient_player, p1);
+    test::expect_eq(p1_g1_msgs[0].recipient_governor, g1);
+    test::expect_eq(p1_g1_msgs[0].message, "Hello Governor 1");
+    test::expect_eq(p1_g1_msgs[0].timestamp, 1000);
 
-    test::expect_eq(std::get<0>(p1_g1_msgs[1]), *t2);
-    test::expect_eq(std::get<3>(p1_g1_msgs[1]), "Fleet arriving soon");
+    test::expect_eq(p1_g1_msgs[1].id, t2);
+    test::expect_eq(p1_g1_msgs[1].message, "Fleet arriving soon");
     std::println(std::cout,
                  "✓ telegram_get retrieves messages in chronological order");
 

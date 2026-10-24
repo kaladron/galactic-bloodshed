@@ -50,7 +50,7 @@ void test_telegram_star() {
   // Player 2 Gov 1 (leader) must receive the telegram
   auto p2_telegrams = ctx.db.telegram_get(2, 1);
   test::expect_eq(p2_telegrams.size(), 1);
-  test::expect_contains(std::get<3>(p2_telegrams[0]), "Welcome to Sol!");
+  test::expect_contains(p2_telegrams[0].message, "Welcome to Sol!");
 
   // Player 1 Gov 1 is the sender, so they should not receive it
   auto p1_g1_telegrams = ctx.db.telegram_get(1, 1);
@@ -65,7 +65,7 @@ void test_telegram_star() {
   // Player 1 Gov 1 (leader) should receive this notice (sender was Gov 2)
   p1_g1_telegrams = ctx.db.telegram_get(1, 1);
   test::expect_eq(p1_g1_telegrams.size(), 1);
-  test::expect_contains(std::get<3>(p1_g1_telegrams[0]), "Notice from Gov 2");
+  test::expect_contains(p1_g1_telegrams[0].message, "Notice from Gov 2");
 
   // Player 1 Gov 2 is the sender, so they should not receive it
   auto p1_g2_telegrams = ctx.db.telegram_get(1, 2);
@@ -80,7 +80,7 @@ void test_telegram_star() {
   // Size should still be 2 (from the two earlier Sol telegrams)
   test::expect_eq(p2_new_telegrams.size(), 2);
   for (const auto& t : p2_new_telegrams) {
-    test::expect_false(std::get<3>(t).contains("Antares"));
+    test::expect_false(t.message.contains("Antares"));
   }
 }
 

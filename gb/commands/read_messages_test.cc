@@ -168,10 +168,13 @@ void test_read_news() {
   g.out.str("");
 
   // Governor's newspos array in database should have advanced to latest IDs
-  int latest_decl = ctx.em.get_latest_news_id(NewsType::DECLARATION);
-  int latest_combat = ctx.em.get_latest_news_id(NewsType::COMBAT);
-  int latest_transfer = ctx.em.get_latest_news_id(NewsType::TRANSFER);
-  int latest_announce = ctx.em.get_latest_news_id(NewsType::ANNOUNCE);
+  const auto latest_decl =
+      ctx.em.get_news_since(NewsType::DECLARATION).back().id;
+  const auto latest_combat = ctx.em.get_news_since(NewsType::COMBAT).back().id;
+  const auto latest_transfer =
+      ctx.em.get_news_since(NewsType::TRANSFER).back().id;
+  const auto latest_announce =
+      ctx.em.get_news_since(NewsType::ANNOUNCE).back().id;
 
   ctx.em.with_race(1, [&](const Race& race) {
     test::expect_eq(race.leader().newspos[NewsType::DECLARATION], latest_decl);

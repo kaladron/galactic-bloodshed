@@ -1023,7 +1023,7 @@ struct PageResult {
 
 /// Single timestamped telegram or news entry in a `read` view model.
 struct TimestampedMessage {
-  int id{0};
+  std::int64_t id{0};
   std::int64_t timestamp{0};
   std::string message{};
 };

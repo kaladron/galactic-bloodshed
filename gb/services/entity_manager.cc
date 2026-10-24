@@ -1313,17 +1313,13 @@ void EntityManager::release_sectormap(starnum_t star, planetnum_t pnum) {
 }
 
 // News operations (Service Layer)
-void EntityManager::post_news(NewsType type, std::string_view message) {
-  storage_->news.add(type, message);
+news_id_t EntityManager::post_news(NewsType type, std::string_view message) {
+  return storage_->news.add(type, message);
 }
 
 std::vector<NewsItem> EntityManager::get_news_since(NewsType type,
-                                                    int since_id) {
+                                                    news_id_t since_id) {
   return storage_->news.get_since(type, since_id);
-}
-
-int EntityManager::get_latest_news_id(NewsType type) {
-  return storage_->news.get_latest_id(type);
 }
 
 void EntityManager::purge_news_type(NewsType type) {
@@ -1335,9 +1331,9 @@ void EntityManager::purge_all_news() {
 }
 
 // Telegram operations (Service Layer)
-void EntityManager::post_telegram(player_t player, governor_t governor,
-                                  std::string_view message) {
-  storage_->telegrams.add(player, governor, message);
+telegram_id_t EntityManager::post_telegram(player_t player, governor_t governor,
+                                           std::string_view message) {
+  return storage_->telegrams.add(player, governor, message);
 }
 
 std::vector<TelegramItem> EntityManager::get_telegrams(player_t player,

@@ -460,15 +460,15 @@ public:
   unmoor_ships(shipnum_t ship_id);
 
   // News operations (service layer)
-  void post_news(NewsType type, std::string_view message);
-  std::vector<NewsItem> get_news_since(NewsType type, int since_id);
-  int get_latest_news_id(NewsType type);
+  news_id_t post_news(NewsType type, std::string_view message);
+  std::vector<NewsItem> get_news_since(NewsType type,
+                                       news_id_t since_id = news_id_t{0});
   void purge_news_type(NewsType type);
   void purge_all_news();
 
   // Telegram operations (service layer)
-  void post_telegram(player_t player, governor_t governor,
-                     std::string_view message);
+  telegram_id_t post_telegram(player_t player, governor_t governor,
+                              std::string_view message);
   std::vector<TelegramItem> get_telegrams(player_t player, governor_t governor);
   void delete_telegrams(player_t player, governor_t governor);
   bool has_telegrams(player_t player, governor_t governor);

@@ -440,6 +440,52 @@ void test_planet_turn_bulletins() {
       "All population belonging to player #2 on the planet have been killed!");
 }
 
+void test_ship_combat_turn_bulletins() {
+  namespace pres = GB::presentation;
+
+  test::expect_eq(
+      pres::render_spore_pod_explosion({.pod_display = "p1 Pod",
+                                        .orbit_path = "/Sol",
+                                        .colonized_planet_name = "Earth"}),
+      "p1 Pod has warmed and exploded at /Sol\n\tmeta-colony "
+      "established on Earth.");
+  test::expect_eq(pres::render_spore_pod_explosion(
+                      {.pod_display = "p1 Pod", .orbit_path = "/Sol"}),
+                  "p1 Pod has warmed and exploded at /Sol\n\tno spores have "
+                  "survived.");
+  test::expect_eq(pres::render_spore_pod_decay("p1 Pod", "/Sol/Earth"),
+                  "p1 Pod has decayed at /Sol/Earth\n");
+  test::expect_contains(
+      pres::render_atmosphere_device_dissipated("/Sol/Earth", false),
+      "Canister of dust");
+  test::expect_contains(
+      pres::render_atmosphere_device_dissipated("/Sol/Earth", true),
+      "Greenhouse gases");
+
+  test::expect_eq(pres::render_mirror_ship_strike({.mirror_display = "m1 Lens",
+                                                   .target_display = "s2 Craft",
+                                                   .damage_applied = 0,
+                                                   .destroyed = false}),
+                  "m1 Lens aimed at s2 Craft\n");
+  test::expect_eq(pres::render_mirror_ship_strike({.mirror_display = "m1 Lens",
+                                                   .target_display = "s2 Craft",
+                                                   .damage_applied = 45,
+                                                   .destroyed = true}),
+                  "m1 Lens aimed at s2 Craft\n45% damage done.\ns2 Craft "
+                  "DESTROYED!!!\n");
+
+  const BombardResult bombard_res{.ship_display = "B9 Nemesis",
+                                  .location_display = "/Sol/Earth",
+                                  .previous_sector_owner = 2,
+                                  .sectors_destroyed = 3};
+  test::expect_eq(
+      pres::render_missile_planet_drop_telegram(bombard_res, "/Sol/Earth"),
+      "B9 Nemesis dropped on /Sol/Earth.\n\t3 sectors destroyed.\n");
+  test::expect_eq(
+      pres::render_missile_planet_drop_news(bombard_res, "/Sol/Earth"),
+      "B9 Nemesis dropped on /Sol/Earth.\n");
+}
+
 }  // namespace
 
 int main() {
@@ -447,5 +493,6 @@ int main() {
   test_gameobj_ui_mode_and_present();
   test_bless_presentation();
   test_planet_turn_bulletins();
+  test_ship_combat_turn_bulletins();
   return 0;
 }

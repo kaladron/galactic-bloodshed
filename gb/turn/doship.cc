@@ -134,17 +134,15 @@ void do_pod(SporePodShip& ship, EntityManager& entity_manager) {
       }
 
       auto i = star.get_random_planet_index();
-      std::stringstream telegram_buf;
-      telegram_buf << std::format("{} has warmed and exploded at {}\n", ship,
-                                  prin_ship_orbits(entity_manager, ship));
-      if (infect_planet(ship.owner(), ship.storbits(), i, entity_manager)) {
-        telegram_buf << std::format("\tmeta-colony established on {}.",
-                                    star.get_planet_name(i));
-      } else {
-        telegram_buf << std::format("\tno spores have survived.");
-      }
+      const std::optional<std::string> colonized =
+          infect_planet(ship.owner(), ship.storbits(), i, entity_manager)
+              ? std::optional{star.get_planet_name(i)}
+              : std::nullopt;
       push_telegram(entity_manager, ship.owner(), ship.governor(),
-                    telegram_buf.str());
+                    GB::presentation::render_spore_pod_explosion(
+                        {.pod_display = std::format("{}", ship),
+                         .orbit_path = prin_ship_orbits(entity_manager, ship),
+                         .colonized_planet_name = colonized}));
       entity_manager.kill_ship(ship.owner(), ship);
       return;
     }
@@ -156,10 +154,10 @@ void do_pod(SporePodShip& ship, EntityManager& entity_manager) {
         return;
       }
 
-      std::string telegram =
-          std::format("{} has decayed at {}\n", ship,
-                      prin_ship_orbits(entity_manager, ship));
-      push_telegram(entity_manager, ship.owner(), ship.governor(), telegram);
+      push_telegram(
+          entity_manager, ship.owner(), ship.governor(),
+          GB::presentation::render_spore_pod_decay(
+              std::format("{}", ship), prin_ship_orbits(entity_manager, ship)));
       entity_manager.kill_ship(ship.owner(), ship);
       return;
     }
@@ -187,9 +185,9 @@ void do_canister(CanisterShip& ship, EntityManager& entity_manager,
   } else { /* timer expired; destroy canister */
     entity_manager.kill_ship(ship.owner(), ship);
 
-    std::string telegram =
-        std::format("Canister of dust previously covering {} has dissipated.\n",
-                    prin_ship_orbits(entity_manager, ship));
+    const std::string telegram =
+        GB::presentation::render_atmosphere_device_dissipated(
+            prin_ship_orbits(entity_manager, ship), false);
 
     const auto& star = *entity_manager.peek_star(ship.storbits());
     const auto& planet =
@@ -217,9 +215,9 @@ void do_greenhouse(CanisterShip& ship, EntityManager& entity_manager,
         std::min(100, stats.temp_add(ship.storbits(), ship.pnumorbits()) + 10));
   } else { /* timer expired; destroy canister */
     entity_manager.kill_ship(ship.owner(), ship);
-    std::string telegram =
-        std::format("Greenhouse gases at {} have dissipated.\n",
-                    prin_ship_orbits(entity_manager, ship));
+    const std::string telegram =
+        GB::presentation::render_atmosphere_device_dissipated(
+            prin_ship_orbits(entity_manager, ship), true);
 
     const auto& star = *entity_manager.peek_star(ship.storbits());
     const auto& planet =
@@ -250,21 +248,23 @@ void do_mirror(SpaceMirrorShip& ship, EntityManager& entity_manager,
                                     static_cast<double>(ship.intensity()) /
                                     (range / PLORBITSIZE + 1.0));
           auto i = uniform_rand(0, max_dmg);
-          std::stringstream telegram_buf;
-          telegram_buf << std::format("{} aimed at {}\n", ship, target);
           const auto dmg_res = target.apply_damage(i);
-          if (dmg_res.damage_applied > 0) {
-            telegram_buf << std::format("{}% damage done.\n",
-                                        dmg_res.damage_applied);
-          }
+          const std::string telegram =
+              GB::presentation::render_mirror_ship_strike(
+                  {.mirror_display = std::format("{}", ship),
+                   .target_display = std::format("{}", target),
+                   .damage_applied = dmg_res.damage_applied,
+                   .destroyed = dmg_res.destroyed});
           if (dmg_res.destroyed) {
-            telegram_buf << std::format("{} DESTROYED!!!\n", target);
             entity_manager.kill_ship(ship.owner(), target);
           }
           push_telegram(entity_manager, target.owner(), target.governor(),
-                        telegram_buf.str());
-          push_telegram(entity_manager, ship.owner(), ship.governor(),
-                        telegram_buf.str());
+                        telegram);
+          if (target.owner() != ship.owner() ||
+              target.governor() != ship.governor()) {
+            push_telegram(entity_manager, ship.owner(), ship.governor(),
+                          telegram);
+          }
         }
       });
       break;
@@ -578,10 +578,11 @@ void execute_missile_planet_strike(Ship& missile,
                     entity_manager, missile.owner(), missile.governor(),
                     GB::presentation::render_bombard_long(*result_opt));
                 entity_manager.kill_ship(missile.owner(), missile);
-                std::string sectors_destroyed_msg = std::format(
-                    "{} dropped on {}.\n\t{} sectors destroyed.\n", missile,
-                    prin_ship_orbits(entity_manager, missile),
-                    result_opt->sectors_destroyed);
+                const std::string orbit_path =
+                    prin_ship_orbits(entity_manager, missile);
+                const std::string sectors_destroyed_msg =
+                    GB::presentation::render_missile_planet_drop_telegram(
+                        *result_opt, orbit_path);
                 const auto& star =
                     *entity_manager.peek_star(missile.storbits());
                 for (const Race& race : RaceList::readonly(entity_manager)) {
@@ -593,10 +594,10 @@ void execute_missile_planet_strike(Ship& missile,
                   }
                 }
                 if (result_opt->sectors_destroyed) {
-                  std::string dropmsg =
-                      std::format("{} dropped on {}.\n", missile,
-                                  prin_ship_orbits(entity_manager, missile));
-                  post(entity_manager, dropmsg, NewsType::COMBAT);
+                  post(entity_manager,
+                       GB::presentation::render_missile_planet_drop_news(
+                           *result_opt, orbit_path),
+                       NewsType::COMBAT);
                 }
               }
             });

@@ -1122,4 +1122,55 @@ std::string render_for_mode(UiMode mode, const LandedBoardingResult& vm) {
                               : render_capture_result(vm);
 }
 
+std::string render_spore_pod_explosion(const SporePodExplosionNotice& vm) {
+  if (vm.colonized_planet_name) {
+    return std::format(
+        "{} has warmed and exploded at {}\n\tmeta-colony established on {}.",
+        vm.pod_display, vm.orbit_path, *vm.colonized_planet_name);
+  }
+  return std::format(
+      "{} has warmed and exploded at {}\n\tno spores have survived.",
+      vm.pod_display, vm.orbit_path);
+}
+
+std::string render_spore_pod_decay(std::string_view pod_display,
+                                   std::string_view orbit_path) {
+  return std::format("{} has decayed at {}\n", pod_display, orbit_path);
+}
+
+std::string render_atmosphere_device_dissipated(std::string_view orbit_path,
+                                                bool greenhouse) {
+  return greenhouse
+             ? std::format("Greenhouse gases at {} have dissipated.\n",
+                           orbit_path)
+             : std::format(
+                   "Canister of dust previously covering {} has dissipated.\n",
+                   orbit_path);
+}
+
+std::string render_mirror_ship_strike(const MirrorShipStrikeNotice& vm) {
+  std::string out =
+      std::format("{} aimed at {}\n", vm.mirror_display, vm.target_display);
+  if (vm.damage_applied > 0) {
+    std::format_to(std::back_inserter(out), "{}% damage done.\n",
+                   vm.damage_applied);
+  }
+  if (vm.destroyed) {
+    std::format_to(std::back_inserter(out), "{} DESTROYED!!!\n",
+                   vm.target_display);
+  }
+  return out;
+}
+
+std::string render_missile_planet_drop_telegram(const BombardResult& res,
+                                                std::string_view orbit_path) {
+  return std::format("{} dropped on {}.\n\t{} sectors destroyed.\n",
+                     res.ship_display, orbit_path, res.sectors_destroyed);
+}
+
+std::string render_missile_planet_drop_news(const BombardResult& res,
+                                            std::string_view orbit_path) {
+  return std::format("{} dropped on {}.\n", res.ship_display, orbit_path);
+}
+
 }  // namespace GB::presentation

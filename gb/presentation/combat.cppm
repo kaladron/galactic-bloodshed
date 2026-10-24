@@ -330,4 +330,47 @@ render_json_capture_result(const LandedBoardingResult& res);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const LandedBoardingResult& vm);
 
+/// Turn bulletin payload when a warming spore pod explodes in star orbit.
+struct SporePodExplosionNotice {
+  std::string pod_display{};
+  std::string orbit_path{};
+  std::optional<std::string> colonized_planet_name{std::nullopt};
+};
+
+/// Formats a `SporePodExplosionNotice` into its owner telegram.
+[[nodiscard]] std::string
+render_spore_pod_explosion(const SporePodExplosionNotice& vm);
+
+/// Formats the decay telegram for a spore pod in planet orbit.
+[[nodiscard]] std::string render_spore_pod_decay(std::string_view pod_display,
+                                                 std::string_view orbit_path);
+
+/// Formats the planetary dissipation telegram for a dust canister or greenhouse
+/// gas device.
+[[nodiscard]] std::string
+render_atmosphere_device_dissipated(std::string_view orbit_path,
+                                    bool greenhouse);
+
+/// Turn bulletin payload when a space mirror focuses thermal energy on a ship.
+struct MirrorShipStrikeNotice {
+  std::string mirror_display{};
+  std::string target_display{};
+  damage_t damage_applied{0};
+  bool destroyed{false};
+};
+
+/// Formats a `MirrorShipStrikeNotice` into its combat telegram.
+[[nodiscard]] std::string
+render_mirror_ship_strike(const MirrorShipStrikeNotice& vm);
+
+/// Formats a planetary missile drop into the bystander colony telegram.
+[[nodiscard]] std::string
+render_missile_planet_drop_telegram(const BombardResult& res,
+                                    std::string_view orbit_path);
+
+/// Formats a planetary missile drop into its combat news headline.
+[[nodiscard]] std::string
+render_missile_planet_drop_news(const BombardResult& res,
+                                std::string_view orbit_path);
+
 }  // namespace GB::presentation

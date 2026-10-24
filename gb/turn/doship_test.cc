@@ -1828,10 +1828,14 @@ void test_special_subsystems_extended() {
   mirror_ship->aim_at_ship(target_handle->number());
   mirror_ship->set_intensity(100);
 
+  em.purge_all_telegrams();
   do_mirror(*mirror_ship, em, stats);
   const auto* target_after = em.peek_ship(target_handle->number());
   // Destroyed ship is killed via em.kill_ship
   test::expect_true(target_after == nullptr || target_after->alive() == 0);
+  const auto self_telegrams = em.get_telegrams(1, 1);
+  test::expect_eq(self_telegrams.size(), 1U);
+  test::expect_contains(self_telegrams[0].message, "aimed at");
 }
 
 void test_prepare_ship_for_flight() {

@@ -2780,6 +2780,88 @@ void test_planet_turn_simulation_defaults() {
   test::expect_true(stats.is_intimidated(1, 1));
 }
 
+void test_moveplanet_and_ground_mcdc() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  // 1. advance_ground_vehicle empty orders, invalid index, and 'c' -> 's'
+  shipnum_t terra_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TERRA)
+                           .owned_by(1)
+                           .landed_on(1, 1, {2, 2})
+                           .with_special(TerraformData{.index = 0})
+                           .with_on(true)
+                           .build();
+  const auto& planet = *ctx.em.peek_planet(1, 1);
+
+  ctx.em.mutate_ship(terra_id, [&](Ship& s) {
+    s.shipclass() = "";
+    auto res_empty = advance_ground_vehicle(s, planet, ctx.em);
+    test::expect_false(res_empty.has_value());
+    test::expect_eq(res_empty.error(), GroundMovementError::EmptyOrders);
+
+    s.on() = 1;
+    s.shipclass() = "2";
+    s.as<TerraformerShip>()->set_index(5);
+    auto res_idx = advance_ground_vehicle(s, planet, ctx.em);
+    test::expect_false(res_idx.has_value());
+    test::expect_eq(res_idx.error(), GroundMovementError::InvalidIndex);
+
+    s.on() = 1;
+    s.shipclass() = "sc";
+    s.as<TerraformerShip>()->set_index(1);
+    auto res_stop_cycle = advance_ground_vehicle(s, planet, ctx.em);
+    test::expect_false(res_stop_cycle.has_value());
+    test::expect_eq(res_stop_cycle.error(), GroundMovementError::Stopped);
+  });
+
+  // 2. execute_terraforming NotLanded, NoCrew, and MovementFailed guards
+  ctx.em.mutate_planet(1, 1, [&](Planet& p) {
+    ctx.em.mutate_sectormap(1, 1, [&](SectorMap& smap) {
+      ctx.em.mutate_ship(terra_id, [&](Ship& s) {
+        s.on() = 1;
+        s.add_fuel(50.0);
+        s.launch_to_orbit();
+        test::expect_eq(execute_terraforming(s, p, smap, ctx.em).error(),
+                        GroundActionError::NotLanded);
+
+        s.land_on_planet(1, 1, {2, 2});
+        s.popn() = 0;
+        test::expect_eq(execute_terraforming(s, p, smap, ctx.em).error(),
+                        GroundActionError::NoCrew);
+
+        s.popn() = 10;
+        s.shipclass() = "s";
+        s.as<TerraformerShip>()->set_index(0);
+        test::expect_eq(execute_terraforming(s, p, smap, ctx.em).error(),
+                        GroundActionError::MovementFailed);
+      });
+    });
+  });
+
+  // 3. moveplanet updates orbital position + orbiting ship and guards invalid
+  // radius/gravity
+  shipnum_t orbiter_id =
+      TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+          .owned_by(1)
+          .in_planet_orbit(1, 1, SystemCoordinates{100.0, 0.0})
+          .build();
+  ctx.em.mutate_star(1, [](Star& st) { st.gravity() = 10.0; });
+  ctx.em.mutate_planet(1, 1, [&](Planet& p) {
+    p.set_system_coordinates({100.0, 0.0});
+    moveplanet(ctx.em, *ctx.em.peek_star(1), p);
+    test::expect_ne(p.system_coordinates().y, 0.0);
+    const auto expected_coords = p.absolute_coordinates(*ctx.em.peek_star(1));
+    test::expect_lt(ctx.em.peek_ship(orbiter_id)
+                        ->coordinates()
+                        .distance_to(expected_coords),
+                    1e-9);
+
+    p.set_system_coordinates({0.0, 0.0});
+    test::expect_throws<std::domain_error>(
+        [&]() { moveplanet(ctx.em, *ctx.em.peek_star(1), p); });
+  });
+}
+
 }  // namespace
 
 int main() {
@@ -2958,6 +3040,10 @@ int main() {
   std::println(std::cout,
                "  Testing planet turn simulation defaults and types... ");
   test_planet_turn_simulation_defaults();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing moveplanet and ground MC/DC branches... ");
+  test_moveplanet_and_ground_mcdc();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "All doplanet tests passed!");

@@ -1364,6 +1364,56 @@ void test_end_to_end_multi_turn_game_lifecycle() {
   }
 }
 
+void test_doturn_mcdc_branches() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  // 1. fix_stability mid-nova progression (1..14) and low-stability clamping
+  ctx.em.mutate_star(1, [&](Star& s) {
+    s.nova_stage() = 5;
+    fix_stability(ctx.em, s);
+    test::expect_eq(s.nova_stage(), 6);
+
+    s.nova_stage() = 0;
+    s.stability() = 0;
+    fix_stability(ctx.em, s);
+    test::expect_ge(s.stability(), 0);
+  });
+
+  // 2. compute_segment_schedule with override = true and target_segment = 0
+  ServerState state{};
+  state.segments = 4;
+  state.update_time_minutes = 60;
+  state.nsegments_done = 2;
+  state.next_update_time = 20'000;
+  auto calc = compute_segment_schedule(state, /*current_time=*/10'000,
+                                       /*override=*/true, /*target_segment=*/0);
+  test::expect_eq(calc.nsegments_done, 3U);
+  test::expect_eq(calc.next_update_time, 20'000);
+  test::expect_eq(calc.next_segment_time, 10'900);
+
+  // 3. compute_governed_status with deep-space habitat and non-habitat carrier
+  shipnum_t deep_hab_id =
+      TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT).owned_by(1).build();
+  ctx.em.mutate_ship(deep_hab_id, [](Ship& s) { s.enter_deep_space(); });
+
+  shipnum_t carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
+                             .owned_by(1)
+                             .in_star_orbit(1)
+                             .build();
+
+  shipnum_t gov_id = TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
+                         .owned_by(1)
+                         .docked_to(deep_hab_id, 1)
+                         .build();
+  ctx.em.mutate_race(1, [&](Race& r) {
+    r.Gov_ship = gov_id;
+    test::expect_false(compute_governed_status(r, ctx.em));
+  });
+  ctx.em.mutate_ship(gov_id, [&](Ship& s) { s.dock_into_carrier(carrier_id); });
+  test::expect_false(compute_governed_status(*ctx.em.peek_race(1), ctx.em));
+}
+
 }  // namespace
 
 int main() {
@@ -1486,6 +1536,10 @@ int main() {
 
   std::println(std::cout, "  Testing end-to-end multi-turn game lifecycle... ");
   test_end_to_end_multi_turn_game_lifecycle();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing doturn MC/DC branches... ");
+  test_doturn_mcdc_branches();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "All doturn tests passed!");

@@ -2037,6 +2037,68 @@ void test_doship_pipeline_types() {
   });
 }
 
+void test_doship_mcdc_branches() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  // 1. do_repair partial repair branch when 0 < ship.resource() < cost
+  shipnum_t battleship_id = TestShipBuilder(ctx.em, ShipType::STYPE_DREADNT)
+                                .owned_by(1)
+                                .in_star_orbit(1)
+                                .with_crew(200, 0)
+                                .with_max_crew(200)
+                                .with_resource(1)
+                                .with_damage(50)
+                                .build();
+  ctx.em.mutate_ship(battleship_id, [&](Ship& s) {
+    do_repair(s, ctx.em);
+    test::expect_eq(s.resource(), 0);
+    test::expect_le(s.damage(), 50);
+  });
+
+  // 2. do_ap out-of-fuel notification and non-god do_god guard
+  shipnum_t ap_id = TestShipBuilder(ctx.em, ShipType::OTYPE_AP)
+                        .owned_by(1)
+                        .landed_on(1, 1, {0, 0})
+                        .with_fuel(1.0)
+                        .with_resource(0)
+                        .with_on(true)
+                        .build();
+  ctx.em.mutate_ship(ap_id, [&](Ship& s) {
+    do_god(s, ctx.em);
+    test::expect_eq(s.resource(), 0);
+    do_ap(s, ctx.em);
+    test::expect_true(s.notified());
+    test::expect_false(s.on());
+  });
+
+  // 3. do_pod in deep space (LEVEL_UNIV) is a no-op
+  shipnum_t deep_pod_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
+                              .owned_by(1)
+                              .with_pod(0, 0)
+                              .build();
+  ctx.em.mutate_as<SporePodShip>(deep_pod_id, [&](SporePodShip& pod) {
+    pod.enter_deep_space();
+    do_pod(pod, ctx.em);
+    test::expect_true(pod.alive());
+  });
+
+  // 4. doabm early-return guards (offline, unlanded, zero destruct)
+  shipnum_t abm_id = TestShipBuilder(ctx.em, ShipType::OTYPE_ABM)
+                         .owned_by(1)
+                         .in_planet_orbit(1, 1)
+                         .with_destruct(10)
+                         .with_retaliate(5)
+                         .with_on(false)
+                         .build();
+  ctx.em.mutate_ship(abm_id, [&](Ship& abm) {
+    doabm(abm, ctx.em);
+    abm.on() = 1;
+    doabm(abm, ctx.em);  // Still in orbit (not landed)
+    test::expect_eq(abm.destruct(), 10);
+  });
+}
+
 }  // namespace
 
 int main() {
@@ -2174,6 +2236,10 @@ int main() {
 
   std::println(std::cout, "  Testing doship pipeline across ship types... ");
   test_doship_pipeline_types();
+  std::println(std::cout, "PASS");
+
+  std::println(std::cout, "  Testing doship MC/DC branches... ");
+  test_doship_mcdc_branches();
   std::println(std::cout, "PASS");
 
   std::println(std::cout, "All doship tests passed!");

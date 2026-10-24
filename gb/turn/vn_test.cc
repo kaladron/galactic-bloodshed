@@ -963,6 +963,113 @@ int main() {
         "  ✓ planet_doVN handles landing, mining, roaming, and replication");
   }
 
+  // =========================================================================
+  // 17. MC/DC branch coverage extensions
+  // =========================================================================
+  {
+    std::println(std::cout, "\nTest: VN MC/DC branch extensions");
+
+    // 1. find_closest_stars with num_stars() <= 1 returns current_star
+    {
+      TestContext single_ctx;
+      TestWorldBuilder(single_ctx).add_star("Solo");
+      auto single_res = find_closest_stars(single_ctx.em, starnum_t{1},
+                                           UniverseCoordinates{5.0, 5.0});
+      test::expect_eq(single_res.closest, starnum_t{1});
+      test::expect_eq(single_res.second_closest, starnum_t{1});
+    }
+
+    // 2. select_berserker_destination without most_mad or mounted hyperdrive
+    {
+      TurnStats no_mad_stats{};
+      auto bers_ship = ShipFactory::create(ship_struct{
+          .number = 901,
+          .owner = 1,
+          .hyper_drive = {.has = true},
+          .type = ShipType::OTYPE_BERS,
+          .mounted = false,
+      });
+      auto* bers = bers_ship->as<BerserkerShip>();
+      select_berserker_destination(em, *bers, no_mad_stats);
+      test::expect_eq(bers->target(), std::nullopt);
+      test::expect_false(bers->hyper_drive().on);
+    }
+
+    // 3. select_vn_destination when both closest and second_closest are
+    // inhabited by player 1
+    {
+      em.mutate_star(2, [](Star& s) { s.mark_inhabited_by(player_t{1}); });
+      em.mutate_star(3, [](Star& s) { s.mark_inhabited_by(player_t{1}); });
+      auto vn_ship = ShipFactory::create(ship_struct{
+          .number = 902,
+          .owner = 1,
+          .coordinates = UniverseCoordinates{0.0, 0.0},
+          .storbits = 1,
+          .type = ShipType::OTYPE_VN,
+      });
+      select_vn_destination(em, *vn_ship->as<VonNeumannShip>());
+      test::expect_ge(vn_ship->deststar(), starnum_t{1});
+      test::expect_le(vn_ship->deststar(), em.num_stars());
+    }
+
+    // 4. steal_planetary_resources with no victim and self-owner victim
+    {
+      em.mutate_planet(1, 1, [](Planet& p) {
+        for (player_t pl = 1; pl <= 4; ++pl)
+          p.info(pl).resource = 0;
+      });
+      auto vn_ship = ShipFactory::create(ship_struct{
+          .number = 903,
+          .owner = 1,
+          .governor = 1,
+          .max_resource = 500,
+          .storbits = 1,
+          .pnumorbits = 1,
+          .type = ShipType::OTYPE_VN,
+      });
+      auto empty_steal =
+          steal_planetary_resources(em, *vn_ship->as<AutonomousShip>());
+      test::expect_eq(empty_steal.victim, player_t{0});
+      test::expect_eq(empty_steal.amount, 0);
+
+      em.purge_all_telegrams();
+      em.mutate_planet(1, 1,
+                       [](Planet& p) { p.info(player_t{1}).resource = 300; });
+      auto self_steal =
+          steal_planetary_resources(em, *vn_ship->as<AutonomousShip>());
+      test::expect_eq(self_steal.victim, player_t{1});
+      test::expect_gt(self_steal.amount, 0);
+      auto tele = em.get_telegrams(1, 1);
+      test::expect_eq(tele.size(), 1U);
+      test::expect_contains(tele.back().message, "resources stolen from [1]");
+    }
+
+    // 5. replicate_machines insufficient resources & attempt_planet_landing
+    // guards
+    {
+      Planet planet(1, 1, PlanetType::EARTH, Coordinates{5, 5});
+      SectorMap smap(planet);
+      TurnStats stats{};
+      auto vn_ship = ShipFactory::create(ship_struct{
+          .number = 904,
+          .owner = 1,
+          .resource = 0,
+          .special = MindData{.busy = true},
+          .storbits = 1,
+          .deststar = 2,
+          .destpnum = 1,
+          .pnumorbits = 1,
+          .whatdest = ScopeLevel::LEVEL_PLAN,
+          .type = ShipType::OTYPE_VN,
+      });
+      auto* vn = vn_ship->as<VonNeumannShip>();
+      test::expect_eq(replicate_machines(em, *vn, planet, stats), 0);
+      test::expect_false(attempt_planet_landing(em, *vn, planet, smap));
+    }
+
+    std::println(std::cout, "  ✓ VN MC/DC branch extensions passed");
+  }
+
   std::println(std::cout,
                "\nAll VN navigation and turn tests passed successfully!");
   return 0;

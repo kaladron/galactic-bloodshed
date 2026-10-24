@@ -1173,4 +1173,57 @@ std::string render_missile_planet_drop_news(const BombardResult& res,
   return std::format("{} dropped on {}.\n", res.ship_display, orbit_path);
 }
 
+std::string
+render_berserker_bombard_owner_report(const BerserkerBombardNotice& vm,
+                                      const BombardResult& result) {
+  return std::format(
+      "REPORT from ship #{}\n\n{}sector {} (owner {}). {} sectors destroyed.\n",
+      vm.ship_number, render_bombard_short(result), vm.target, vm.old_owner,
+      vm.sectors_destroyed);
+}
+
+std::string
+render_berserker_bombard_victim_alert(const BerserkerBombardNotice& vm) {
+  return std::format("ALERT from planet /{}/{}\n{}{} {} bombarded sector {}; "
+                     "{} sectors destroyed.\n",
+                     vm.star_name, vm.planet_name, vm.ship_letter,
+                     vm.ship_number, vm.ship_name, vm.target,
+                     vm.sectors_destroyed);
+}
+
+std::string render_berserker_bombard_news(const BerserkerBombardNotice& vm) {
+  return std::format("{}{} {} [{}] bombards {}/{}\n", vm.ship_letter,
+                     vm.ship_number, vm.ship_name, vm.attacker, vm.star_name,
+                     vm.planet_name);
+}
+
+std::string render_berserker_pdn_cancelled(std::string_view orbit_path) {
+  return std::format("Bombardment of {} cancelled, PDNs are present.\n",
+                     orbit_path);
+}
+
+std::string
+render_berserker_saturation_report(const BerserkerBombardNotice& vm) {
+  return std::format(
+      "Report from {}{} {}\n\nPlanet /{}/{} has been saturation bombed.\n",
+      vm.ship_letter, vm.ship_number, vm.ship_name, vm.star_name,
+      vm.planet_name);
+}
+
+std::string render_berserker_no_weapons(const BerserkerBombardNotice& vm) {
+  return std::format("Bulletin\n\n {}{} {} has no weapons to bombard with.\n",
+                     vm.ship_letter, vm.ship_number, vm.ship_name);
+}
+
+std::string render_vn_theft_telegram(const VnResourceTheftNotice& vm) {
+  return std::format("{} resources stolen from [{}] by {}{} at {}.", vm.amount,
+                     vm.victim, vm.ship_letter, vm.ship_number, vm.orbit_path);
+}
+
+std::string
+render_berserker_constructed_telegram(std::string_view parent_display,
+                                      std::string_view child_display) {
+  return std::format("{} constructed {}.", parent_display, child_display);
+}
+
 }  // namespace GB::presentation

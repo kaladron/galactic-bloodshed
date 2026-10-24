@@ -63,36 +63,34 @@ void dispatch_bombardment_alerts(EntityManager& entity_manager,
                                  Coordinates target, player_t old_owner,
                                  int sectors_destroyed,
                                  const BombardResult& result) {
+  const GB::presentation::BerserkerBombardNotice notice{
+      .ship_number = ship.number(),
+      .ship_letter = ship.type_letter(),
+      .ship_name = ship.name(),
+      .attacker = ship.owner(),
+      .star_name = star.get_name(),
+      .planet_name = star.get_planet_name(ship.pnumorbits()),
+      .target = target,
+      .old_owner = old_owner,
+      .sectors_destroyed = sectors_destroyed,
+  };
+
   /* tell the bombarding player about it.. */
-  std::stringstream telegram_report;
-  telegram_report << std::format("REPORT from ship #{}\n\n", ship.number());
-  telegram_report << GB::presentation::render_bombard_short(result);
-  telegram_report << std::format(
-      "sector {} (owner {}). {} sectors destroyed.\n", target, old_owner,
-      sectors_destroyed);
-  push_telegram(entity_manager, ship.owner(), ship.governor(),
-                telegram_report.str());
+  push_telegram(
+      entity_manager, ship.owner(), ship.governor(),
+      GB::presentation::render_berserker_bombard_owner_report(notice, result));
 
   /* notify other player. */
-  std::stringstream telegram_alert;
-  telegram_alert << std::format("ALERT from planet /{}/{}\n", star.get_name(),
-                                star.get_planet_name(ship.pnumorbits()));
-  telegram_alert << std::format(
-      "{}{} {} bombarded sector {}; {} sectors destroyed.\n",
-      ship.type_letter(), ship.number(), ship.name(), target,
-      sectors_destroyed);
-
+  const std::string telegram_alert =
+      GB::presentation::render_berserker_bombard_victim_alert(notice);
   for (player_t i : result.nuked_players) {
     if (i != ship.owner()) {
-      push_telegram(entity_manager, i, star.governor(i), telegram_alert.str());
+      push_telegram(entity_manager, i, star.governor(i), telegram_alert);
     }
   }
 
-  std::string combatpost =
-      std::format("{}{} {} [{}] bombards {}/{}\n", ship.type_letter(),
-                  ship.number(), ship.name(), ship.owner(), star.get_name(),
-                  star.get_planet_name(ship.pnumorbits()));
-  post(entity_manager, combatpost, NewsType::COMBAT);
+  post(entity_manager, GB::presentation::render_berserker_bombard_news(notice),
+       NewsType::COMBAT);
 }
 
 /**
@@ -128,10 +126,9 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
 
   /* check to see if PDNs are present */
   if (check_orbital_pdn_defense(entity_manager, planet, ship.owner())) {
-    std::string notice =
-        std::format("Bombardment of {} cancelled, PDNs are present.\n",
-                    prin_ship_orbits(entity_manager, ship));
-    push_telegram(entity_manager, ship.owner(), ship.governor(), notice);
+    push_telegram(entity_manager, ship.owner(), ship.governor(),
+                  GB::presentation::render_berserker_pdn_cancelled(
+                      prin_ship_orbits(entity_manager, ship)));
     return 0;
   }
 
@@ -140,15 +137,15 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
   if (!target.has_value()) {
     /* there were no sectors worth bombing. */
     if (!ship.notified()) {
-      ship.notified() = 1;
-      std::stringstream telegram;
-      telegram << std::format("Report from {}{} {}\n\n", ship.type_letter(),
-                              ship.number(), ship.name());
-      telegram << std::format("Planet /{}/{} has been saturation bombed.\n",
-                              star.get_name(),
-                              star.get_planet_name(ship.pnumorbits()));
-      push_telegram(entity_manager, ship.owner(), ship.governor(),
-                    telegram.str());
+      ship.notified() = true;
+      push_telegram(
+          entity_manager, ship.owner(), ship.governor(),
+          GB::presentation::render_berserker_saturation_report(
+              {.ship_number = ship.number(),
+               .ship_letter = ship.type_letter(),
+               .ship_name = ship.name(),
+               .star_name = star.get_name(),
+               .planet_name = star.get_planet_name(ship.pnumorbits())}));
     }
     return 0;
   }
@@ -158,10 +155,11 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
     /* no weapons! */
     if (!ship.notified()) {
       ship.notified() = true;
-      std::string telegram =
-          std::format("Bulletin\n\n {}{} {} has no weapons to bombard with.\n",
-                      ship.type_letter(), ship.number(), ship.name());
-      push_telegram(entity_manager, ship.owner(), ship.governor(), telegram);
+      push_telegram(entity_manager, ship.owner(), ship.governor(),
+                    GB::presentation::render_berserker_no_weapons(
+                        {.ship_number = ship.number(),
+                         .ship_letter = ship.type_letter(),
+                         .ship_name = ship.name()}));
     }
     return 0;
   }

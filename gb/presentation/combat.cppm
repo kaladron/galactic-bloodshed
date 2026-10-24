@@ -373,4 +373,60 @@ render_missile_planet_drop_telegram(const BombardResult& res,
 render_missile_planet_drop_news(const BombardResult& res,
                                 std::string_view orbit_path);
 
+/// Turn bulletin payload for an autonomous berserker planetary bombardment.
+struct BerserkerBombardNotice {
+  shipnum_t ship_number{0};
+  char ship_letter{' '};
+  std::string ship_name{};
+  player_t attacker{0};
+  std::string star_name{};
+  std::string planet_name{};
+  Coordinates target{};
+  player_t old_owner{0};
+  sector_count_t sectors_destroyed{0};
+};
+
+/// Formats the bombarding owner's telegram for a berserker planetary strike.
+[[nodiscard]] std::string
+render_berserker_bombard_owner_report(const BerserkerBombardNotice& vm,
+                                      const BombardResult& result);
+
+/// Formats the bombarded victim's alert telegram for a berserker strike.
+[[nodiscard]] std::string
+render_berserker_bombard_victim_alert(const BerserkerBombardNotice& vm);
+
+/// Formats the combat news headline for a berserker planetary bombardment.
+[[nodiscard]] std::string
+render_berserker_bombard_news(const BerserkerBombardNotice& vm);
+
+/// Formats the PDN cancellation telegram for a berserker bombardment.
+[[nodiscard]] std::string
+render_berserker_pdn_cancelled(std::string_view orbit_path);
+
+/// Formats the saturation-bombed status telegram from a berserker ship.
+[[nodiscard]] std::string
+render_berserker_saturation_report(const BerserkerBombardNotice& vm);
+
+/// Formats the unarmed-berserker bulletin telegram.
+[[nodiscard]] std::string
+render_berserker_no_weapons(const BerserkerBombardNotice& vm);
+
+/// Turn bulletin payload when an autonomous machine steals colony resources.
+struct VnResourceTheftNotice {
+  resource_t amount{0};
+  player_t victim{0};
+  char ship_letter{' '};
+  shipnum_t ship_number{0};
+  std::string orbit_path{};
+};
+
+/// Formats a `VnResourceTheftNotice` into its theft telegram.
+[[nodiscard]] std::string
+render_vn_theft_telegram(const VnResourceTheftNotice& vm);
+
+/// Formats the telegram announcing a newly replicated Berserker warship.
+[[nodiscard]] std::string
+render_berserker_constructed_telegram(std::string_view parent_display,
+                                      std::string_view child_display);
+
 }  // namespace GB::presentation

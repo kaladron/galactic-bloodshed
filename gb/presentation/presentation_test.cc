@@ -484,6 +484,39 @@ void test_ship_combat_turn_bulletins() {
   test::expect_eq(
       pres::render_missile_planet_drop_news(bombard_res, "/Sol/Earth"),
       "B9 Nemesis dropped on /Sol/Earth.\n");
+
+  const pres::BerserkerBombardNotice bers{.ship_number = 9,
+                                          .ship_letter = 'B',
+                                          .ship_name = "Nemesis",
+                                          .attacker = 1,
+                                          .star_name = "Sol",
+                                          .planet_name = "Earth",
+                                          .target = {4, 5},
+                                          .old_owner = 2,
+                                          .sectors_destroyed = 3};
+  test::expect_contains(
+      pres::render_berserker_bombard_owner_report(bers, bombard_res),
+      "sector 4,5 (owner 2). 3 sectors destroyed.\n");
+  test::expect_contains(pres::render_berserker_bombard_victim_alert(bers),
+                        "B9 Nemesis bombarded sector 4,5; 3 sectors destroyed");
+  test::expect_eq(pres::render_berserker_bombard_news(bers),
+                  "B9 Nemesis [1] bombards Sol/Earth\n");
+  test::expect_contains(pres::render_berserker_pdn_cancelled("/Sol/Earth"),
+                        "PDNs are present");
+  test::expect_contains(pres::render_berserker_saturation_report(bers),
+                        "Planet /Sol/Earth has been saturation bombed.");
+  test::expect_contains(pres::render_berserker_no_weapons(bers),
+                        "B9 Nemesis has no weapons to bombard with.");
+
+  test::expect_eq(pres::render_vn_theft_telegram({.amount = 20,
+                                                  .victim = 2,
+                                                  .ship_letter = 'V',
+                                                  .ship_number = 7,
+                                                  .orbit_path = "/Sol/Earth"}),
+                  "20 resources stolen from [2] by V7 at /Sol/Earth.");
+  test::expect_eq(
+      pres::render_berserker_constructed_telegram("V7 101", "B8 Fury"),
+      "V7 101 constructed B8 Fury.");
 }
 
 }  // namespace

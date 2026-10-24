@@ -5,6 +5,7 @@
 
 module;
 
+import gb.presentation.combat;
 import std;
 
 module gb.turn;
@@ -170,19 +171,18 @@ StealResult steal_planetary_resources(EntityManager& em, AutonomousShip& ship) {
 
   if (f == 0) return StealResult{};
 
-  std::string buf;
   if (ship.type() == ShipType::OTYPE_VN) {
     ship.add_resource(prod);
-    buf = std::format("{0} resources stolen from [{1}] by {2}{3} at {4}.", prod,
-                      f, ship.type_letter(), ship.number(),
-                      prin_ship_orbits(em, ship));
   } else if (ship.type() == ShipType::OTYPE_BERS) {
     ship.add_destruct(prod);
-    buf = std::format("{0} resources stolen from [{1}] by {2}{3} at {4}.", prod,
-                      f, ship.type_letter(), ship.number(),
-                      prin_ship_orbits(em, ship));
   }
 
+  const std::string buf = GB::presentation::render_vn_theft_telegram(
+      {.amount = prod,
+       .victim = f,
+       .ship_letter = ship.type_letter(),
+       .ship_number = ship.number(),
+       .orbit_path = prin_ship_orbits(em, ship)});
   push_telegram_race(em, f, buf);
   if (f != ship.owner()) push_telegram(em, ship.owner(), ship.governor(), buf);
   return StealResult{.victim = f, .amount = prod};
@@ -301,9 +301,9 @@ shipnum_t construct_replicated_berserker(EntityManager& em,
   s2.bombard() = true;
   s2.mounted() = true;
 
-  auto buf =
-      std::format("{0} constructed {1}.", static_cast<const Ship&>(parent), s2);
-  push_telegram(em, parent.owner(), parent.governor(), buf);
+  push_telegram(em, parent.owner(), parent.governor(),
+                GB::presentation::render_berserker_constructed_telegram(
+                    std::format("{}", parent), std::format("{}", s2)));
   return s2.number();
 }
 

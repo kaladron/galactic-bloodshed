@@ -404,6 +404,26 @@ int main() {
     const auto& planet_after = *em.peek_planet(1, 1);
     test::expect_eq(planet_after.info(player_t{2}).resource, 1000 - vn_cost);
 
+    // Berserker theft converts stolen resources into destruct and sends
+    // identical theft telegram
+    em.purge_all_telegrams();
+    ship_struct bers_steal_data{};
+    bers_steal_data.number = 305;
+    bers_steal_data.owner = 1;
+    bers_steal_data.governor = 1;
+    bers_steal_data.max_destruct = 500;
+    bers_steal_data.storbits = 1;
+    bers_steal_data.pnumorbits = 1;
+    bers_steal_data.type = ShipType::OTYPE_BERS;
+    auto bers_steal_ship = ShipFactory::create(bers_steal_data);
+    auto* bers_thief = bers_steal_ship->as<BerserkerShip>();
+    auto bers_steal = steal_planetary_resources(em, *bers_thief);
+    test::expect_eq(bers_steal.victim, player_t{2});
+    test::expect_eq(bers_thief->destruct(), vn_cost);
+    const auto owner_tele = em.get_telegrams(1, 1);
+    test::expect_eq(owner_tele.size(), 1U);
+    test::expect_contains(owner_tele[0].message, "resources stolen from [2]");
+
     std::println(
         std::cout,
         "  ✓ steal_planetary_resources steals resources from alien colony");

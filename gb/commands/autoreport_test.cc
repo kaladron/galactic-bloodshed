@@ -98,15 +98,46 @@ void test_autoreport_dispatch() {
                        [](Planet& p) { p.info(player_t{1}).explored = 1; });
   std::println(std::cout, "    ✓ Unexplored planet rejected in autoreport");
 
-  // 8. Command matrix validation (roles, guests, governor, scopes)
+  // 8. Cross-star governor authorization: governor controlling Sol cannot
+  // toggle autoreport on a planet in Vega (controlled by Governor 1)
+  ctx.em.mutate_race(
+      1, [](Race& r) { r.appoint_governor(2, {.name = "SubGov"}); });
+  ctx.em.mutate_star(1, [](Star& s) { s.set_governor(1, 2); });
+  g.set_governor(2);
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(1);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"autoreport", "/Vega/Vega Prime"});
+  test::expect_contains(g.out.str(), "You are not authorized to do this here.");
+  test::expect_eq(ctx.em.peek_planet(2, 1)->info(1).autorep, 0);
+  ctx.em.mutate_star(1, [](Star& s) { s.set_governor(1, Race::leader_id); });
+  ctx.em.mutate_race(1, [](Race& r) { r.revoke_governor(2); });
+  g.set_governor(1);
+
+  // 9. UiMode::JSON output
+  g.set_ui_mode(UiMode::JSON);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"autoreport"});
+  test::expect_contains(g.out.str(), "\"type\":\"autoreport\"");
+  test::expect_contains(g.out.str(), "\"planet_name\":\"Earth\"");
+  test::expect_contains(g.out.str(), "\"enabled\":true");
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"autoreport"});
+  test::expect_contains(g.out.str(), "\"enabled\":false");
+  g.set_ui_mode(UiMode::ASCII);
+
+  // 10. Command matrix validation (roles, guests, governor, scopes)
   TestCommandMatrix(ctx, "autoreport")
       .with_valid_argv({"autoreport"})
       .with_invalid_argv({"autoreport", "1", "extra"})
       .with_valid_scope(ScopeLevel::LEVEL_PLAN)
       .run_matrix(g);
+
+  ctx.verify_universe_invariants();
 }
 
 }  // namespace

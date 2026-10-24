@@ -901,4 +901,18 @@ std::string render_for_mode(UiMode mode, const RouteSetResult& vm) {
                               : render_route_set_result(vm);
 }
 
+std::string render_autoreport_result(const AutoreportResult& vm) {
+  return std::format("Autoreport on {} has been {}.\n", vm.planet_name,
+                     vm.enabled ? "set" : "unset");
+}
+
+std::string render_json_autoreport_result(const AutoreportResult& vm) {
+  return render_json_envelope("autoreport", vm);
+}
+
+std::string render_for_mode(UiMode mode, const AutoreportResult& vm) {
+  return mode == UiMode::JSON ? render_json_autoreport_result(vm)
+                              : render_autoreport_result(vm);
+}
+
 }  // namespace GB::presentation

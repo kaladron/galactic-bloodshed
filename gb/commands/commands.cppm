@@ -7,10 +7,13 @@ export import :spec;
 import gb.entities;
 import gb.services;
 import gb.mechanics;
+import std;
 namespace GB::commands {
 
 // God commands
 export bool help(const command_t&, GameObj&);
+export bool help(const command_t&, GameObj&,
+                 std::string_view help_dir_override);
 export extern const CommandDescriptor help_cmd;
 export bool quit(const command_t&, GameObj&);
 export extern const CommandDescriptor quit_cmd;

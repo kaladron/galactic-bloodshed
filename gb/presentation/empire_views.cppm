@@ -1116,4 +1116,15 @@ struct BlessResult {
 [[nodiscard]] std::string render_json_bless_result(const BlessResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode, const BlessResult& vm);
 
+/// View model for `help [<topic>]` documentation output.
+struct HelpViewModel {
+  std::string topic{};
+  bool is_index{false};
+  std::string content{};
+};
+
+[[nodiscard]] std::string render_help(const HelpViewModel& vm);
+[[nodiscard]] std::string render_json_help(const HelpViewModel& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode, const HelpViewModel& vm);
+
 }  // namespace GB::presentation

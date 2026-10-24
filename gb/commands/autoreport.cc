@@ -7,6 +7,7 @@
 module;
 
 import gb.entities;
+import gb.presentation.planet_views;
 import gb.services;
 import std;
 
@@ -15,15 +16,6 @@ module commands;
 namespace GB::commands {
 
 bool autoreport(const command_t& argv, GameObj& g) {
-  bool authorized = g.entity_manager.with_star(g.snum(), [&](const Star& star) {
-    return star.control(g.player(), g.governor());
-  });
-
-  if (!authorized) {
-    g.out << "You are not authorized to do this here.\n";
-    return false;
-  }
-
   starnum_t snum = 0;
   planetnum_t pnum = 0;
 
@@ -55,24 +47,25 @@ bool autoreport(const command_t& argv, GameObj& g) {
       return false;
   }
 
-  bool is_set = false;
+  const auto& target_star = *g.entity_manager.peek_star(snum);
+  if (!target_star.control(g.player(), g.governor())) {
+    g.out << "You are not authorized to do this here.\n";
+    return false;
+  }
+
+  bool enabled = false;
   g.entity_manager.mutate_planet(snum, pnum, [&](Planet& p) {
-    if (p.info(g.player()).autorep) {
-      p.info(g.player()).autorep = 0;
-      is_set = false;
-    } else {
-      p.info(g.player()).autorep = TELEG_MAX_AUTO;
-      is_set = true;
-    }
+    auto& info = p.info(g.player());
+    enabled = (info.autorep == 0);
+    info.autorep = enabled ? TELEG_MAX_AUTO : 0;
   });
 
-  std::string planet_name;
-  g.entity_manager.with_star(snum, [&](const Star& target_star) {
-    planet_name = target_star.get_planet_name(pnum);
+  g.present(GB::presentation::AutoreportResult{
+      .snum = snum,
+      .pnum = pnum,
+      .planet_name = target_star.get_planet_name(pnum),
+      .enabled = enabled,
   });
-  g.out << std::format("Autoreport on {0} has been {1}.\n",
-                       planet_name.empty() ? "Unknown" : planet_name,
-                       is_set ? "set" : "unset");
   return true;
 }
 

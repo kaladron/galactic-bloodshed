@@ -1616,4 +1616,17 @@ std::string render_for_mode(UiMode mode, const BlessResult& vm) {
                               : render_bless_result(vm);
 }
 
+std::string render_help(const HelpViewModel& vm) {
+  return vm.is_index ? vm.content
+                     : std::format("{}----\nFinished.\n", vm.content);
+}
+
+std::string render_json_help(const HelpViewModel& vm) {
+  return render_json_envelope("help", vm);
+}
+
+std::string render_for_mode(UiMode mode, const HelpViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_help(vm) : render_help(vm);
+}
+
 }  // namespace GB::presentation

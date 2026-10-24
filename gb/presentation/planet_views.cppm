@@ -485,4 +485,19 @@ render_json_route_set_result(const RouteSetResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const RouteSetResult& vm);
 
+/// Result of toggling automatic production reports on a planet (`autoreport
+/// [<planet>]`).
+struct AutoreportResult {
+  starnum_t snum{0};
+  planetnum_t pnum{0};
+  std::string planet_name{};
+  bool enabled{false};
+};
+
+[[nodiscard]] std::string render_autoreport_result(const AutoreportResult& vm);
+[[nodiscard]] std::string
+render_json_autoreport_result(const AutoreportResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const AutoreportResult& vm);
+
 }  // namespace GB::presentation

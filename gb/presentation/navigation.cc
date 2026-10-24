@@ -1038,4 +1038,30 @@ render_land_observer_telegram(const LandShipResult& res) {
   return std::nullopt;
 }
 
+std::string render_scope_change(const ScopeChangeResult& /*vm*/) {
+  return {};
+}
+
+std::string render_json_scope_change(const ScopeChangeResult& vm) {
+  return render_json_envelope("scope_change", vm);
+}
+
+std::string render_for_mode(UiMode mode, const ScopeChangeResult& vm) {
+  return mode == UiMode::JSON ? render_json_scope_change(vm)
+                              : render_scope_change(vm);
+}
+
+std::string render_default_scope_result(const DefaultScopeResult& vm) {
+  return std::format("New home system is {}\n", vm.path);
+}
+
+std::string render_json_default_scope_result(const DefaultScopeResult& vm) {
+  return render_json_envelope("default_scope", vm);
+}
+
+std::string render_for_mode(UiMode mode, const DefaultScopeResult& vm) {
+  return mode == UiMode::JSON ? render_json_default_scope_result(vm)
+                              : render_default_scope_result(vm);
+}
+
 }  // namespace GB::presentation

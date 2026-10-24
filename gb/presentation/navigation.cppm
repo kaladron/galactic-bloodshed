@@ -200,4 +200,36 @@ render_json_land_ship_result(const LandShipResult& res);
 [[nodiscard]] std::optional<std::string>
 render_land_observer_telegram(const LandShipResult& res);
 
+/// Result of changing the active session scope (`cs` / `cs <scope>`).
+struct ScopeChangeResult {
+  ScopeLevel level{ScopeLevel::LEVEL_UNIV};
+  starnum_t snum{0};
+  planetnum_t pnum{0};
+  shipnum_t shipno{0};
+  std::string path{};
+  UniverseCoordinates universe_center{0.0, 0.0};
+  SystemCoordinates system_center{0.0, 0.0};
+};
+
+/// Result of updating a governor's persistent default home scope
+/// (`cs -d <scope>`).
+struct DefaultScopeResult {
+  ScopeLevel level{ScopeLevel::LEVEL_UNIV};
+  starnum_t snum{0};
+  planetnum_t pnum{0};
+  std::string path{};
+};
+
+[[nodiscard]] std::string render_scope_change(const ScopeChangeResult& vm);
+[[nodiscard]] std::string render_json_scope_change(const ScopeChangeResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const ScopeChangeResult& vm);
+
+[[nodiscard]] std::string
+render_default_scope_result(const DefaultScopeResult& vm);
+[[nodiscard]] std::string
+render_json_default_scope_result(const DefaultScopeResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const DefaultScopeResult& vm);
+
 }  // namespace GB::presentation

@@ -6,12 +6,26 @@
 module;
 
 import gb.entities;
+import gb.presentation.navigation;
 import gb.services;
 import std;
 
 module commands;
 
 namespace {
+
+void present_scope_change(GameObj& g) {
+  const Place current{g.level(), g.snum(), g.pnum(), g.shipno()};
+  g.present(GB::presentation::ScopeChangeResult{
+      .level = g.level(),
+      .snum = g.snum(),
+      .pnum = g.pnum(),
+      .shipno = g.shipno(),
+      .path = current.to_string(g.entity_manager),
+      .universe_center = g.universe_center(),
+      .system_center = g.system_center(),
+  });
+}
 
 /**
  * @brief Reset the governor's current scope to their configured default home
@@ -40,6 +54,7 @@ bool change_to_default_scope(GameObj& g) {
   g.set_shipno(0);
   g.set_system_center({0.0, 0.0});
   g.set_universe_center(star.coordinates());
+  present_scope_change(g);
   return true;
 }
 
@@ -59,18 +74,38 @@ void update_viewport_from_planet(GameObj& g, const Place& where) {
   }
 }
 
+const Ship* try_peek_ship(EntityManager& em, shipnum_t shipno) {
+  try {
+    return em.peek_ship(shipno);
+  } catch (const EntityNotFoundError&) {
+    return nullptr;
+  }
+}
+
+SystemCoordinates ship_system_viewport_offset(EntityManager& em, const Ship& s,
+                                              const Place& where) {
+  if (where.level == ScopeLevel::LEVEL_STAR &&
+      s.whatorbits() >= ScopeLevel::LEVEL_STAR && s.storbits() == where.snum) {
+    const auto& orbit_star = *em.peek_star(s.storbits());
+    return s.coordinates() - orbit_star.coordinates();
+  }
+  if (where.level == ScopeLevel::LEVEL_PLAN &&
+      s.whatorbits() == ScopeLevel::LEVEL_PLAN && s.storbits() == where.snum &&
+      s.pnumorbits() == where.pnum) {
+    const auto& planet = *em.peek_planet(s.storbits(), s.pnumorbits());
+    const auto& orbit_star = *em.peek_star(s.storbits());
+    return s.coordinates() - planet.absolute_coordinates(orbit_star);
+  }
+  return {0.0, 0.0};
+}
+
 /**
  * @brief Update viewport center coordinates when navigating away from a ship
  * scope.
  */
 void update_viewport_from_ship(GameObj& g, const Place& where) {
-  const Ship* s = nullptr;
-  try {
-    s = g.entity_manager.peek_ship(g.shipno());
-  } catch (const EntityNotFoundError&) {
-    s = nullptr;
-  }
-  if (!s || !s->alive() || s->docked()) {
+  const Ship* s = try_peek_ship(g.entity_manager, g.shipno());
+  if (!s || s->docked()) {
     g.set_system_center({0.0, 0.0});
     return;
   }
@@ -79,24 +114,7 @@ void update_viewport_from_ship(GameObj& g, const Place& where) {
     g.set_universe_center(s->coordinates());
     return;
   }
-  if (where.level == ScopeLevel::LEVEL_STAR &&
-      s->whatorbits() >= ScopeLevel::LEVEL_STAR &&
-      s->storbits() == where.snum) {
-    const auto& orbit_star = *g.entity_manager.peek_star(s->storbits());
-    g.set_system_center(s->coordinates() - orbit_star.coordinates());
-    return;
-  }
-  if (where.level == ScopeLevel::LEVEL_PLAN &&
-      s->whatorbits() == ScopeLevel::LEVEL_PLAN &&
-      s->storbits() == where.snum && s->pnumorbits() == where.pnum) {
-    const auto& planet =
-        *g.entity_manager.peek_planet(s->storbits(), s->pnumorbits());
-    const auto& orbit_star = *g.entity_manager.peek_star(s->storbits());
-    g.set_system_center(s->coordinates() -
-                        planet.absolute_coordinates(orbit_star));
-    return;
-  }
-  g.set_system_center({0.0, 0.0});
+  g.set_system_center(ship_system_viewport_offset(g.entity_manager, *s, where));
 }
 
 /**
@@ -129,7 +147,8 @@ void update_viewport_center(GameObj& g, const Place& where) {
  * @brief Update the governor's persistent default home scope (`cs -d <scope>`).
  */
 bool change_default_home_scope(GameObj& g, std::string_view target_arg) {
-  auto where = Place::resolve(g.entity_manager, g.scope_context(), target_arg);
+  const auto where =
+      Place::resolve(g.entity_manager, g.scope_context(), target_arg);
   if (!where) {
     g.out << format_place_error(where.error());
     g.out << "cs: bad home system.\n";
@@ -149,8 +168,12 @@ bool change_default_home_scope(GameObj& g, std::string_view target_arg) {
     gov.defplanetnum = where->pnum;
   });
 
-  g.out << std::format("New home system is {}\n",
-                       where->to_string(g.entity_manager));
+  g.present(GB::presentation::DefaultScopeResult{
+      .level = where->level,
+      .snum = where->snum,
+      .pnum = where->pnum,
+      .path = where->to_string(g.entity_manager),
+  });
   return true;
 }
 
@@ -164,7 +187,8 @@ bool cs(const command_t& argv, GameObj& g) {
   }
 
   if (argv.size() == 2) {
-    auto where = Place::resolve(g.entity_manager, g.scope_context(), argv[1]);
+    const auto where =
+        Place::resolve(g.entity_manager, g.scope_context(), argv[1]);
     if (!where) {
       g.out << format_place_error(where.error());
       g.out << "cs: bad scope.\n";
@@ -177,6 +201,7 @@ bool cs(const command_t& argv, GameObj& g) {
     g.set_snum(where->snum);
     g.set_pnum(where->pnum);
     g.set_shipno(where->shipno);
+    present_scope_change(g);
     return true;
   }
 

@@ -225,6 +225,33 @@ void test_read_invalid_arguments() {
   ctx.verify_universe_invariants();
 }
 
+void test_read_json_mode() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 1);
+  g.set_ui_mode(UiMode::JSON);
+
+  push_telegram(ctx.em, 1, 1, "Structured alert");
+  post(ctx.em, "War declared", NewsType::DECLARATION);
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"read"});
+  test::expect_contains(g.out.str(), "\"type\":\"telegrams\"");
+  test::expect_contains(g.out.str(), "\"message\":\"Structured alert\"");
+  test::expect_false(ctx.em.has_telegrams(1, 1));
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"read", "news"});
+  test::expect_contains(g.out.str(), "\"type\":\"news\"");
+  test::expect_contains(g.out.str(), "\"declarations\":[");
+  test::expect_contains(g.out.str(), "\"message\":\"War declared\"");
+
+  ctx.verify_universe_invariants();
+}
+
 }  // namespace
 
 int main() {
@@ -234,6 +261,7 @@ int main() {
   test_read_telegrams_governor_isolation();
   test_read_news();
   test_read_invalid_arguments();
+  test_read_json_mode();
 
   std::println(std::cout, "✓ read_messages_test passed!");
   return 0;

@@ -7,6 +7,7 @@ export module gb.services:tele;
 
 import std;
 
+import dallib;
 import gb.entities;
 import :gameobj;
 
@@ -19,5 +20,9 @@ export void push_telegram_race(EntityManager&, const player_t,
                                std::string_view);
 export void telegram_star(EntityManager&, starnum_t, player_t sender,
                           governor_t sender_gov, const std::string& message);
-export void teleg_read(GameObj&);
-export void news_read(NewsType type, GameObj& g);
+export [[nodiscard]] std::vector<TelegramItem>
+teleg_read(EntityManager& em, player_t player, governor_t governor);
+export [[nodiscard]] std::vector<NewsItem> news_read(EntityManager& em,
+                                                     player_t player,
+                                                     governor_t governor,
+                                                     NewsType type);

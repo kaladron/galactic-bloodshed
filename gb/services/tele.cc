@@ -5,31 +5,10 @@
 
 module;
 
+import dallib;
 import std;
-#undef stdout
 
 module gb.services;
-
-namespace {
-
-void print_timestamped_message(GameObj& g, std::int64_t raw_timestamp,
-                               std::string_view message) {
-  const auto timestamp_time = static_cast<std::time_t>(raw_timestamp);
-  const auto* calendar_time = std::localtime(&timestamp_time);
-  if (calendar_time != nullptr) {
-    g.out << std::format("{:02d}/{:02d} {:02d}:{:02d}:{:02d} {}",
-                         calendar_time->tm_mon + 1, calendar_time->tm_mday,
-                         calendar_time->tm_hour, calendar_time->tm_min,
-                         calendar_time->tm_sec, message);
-  } else {
-    g.out << std::format("--/-- --:--:-- {}", message);
-  }
-  if (!message.empty() && message.back() != '\n') {
-    g.out << "\n";
-  }
-}
-
-}  // namespace
 
 /**
  * \brief Sends a message to everyone from person to person
@@ -100,69 +79,29 @@ void telegram_star(EntityManager& em, starnum_t star, player_t sender,
   }
 }
 
-/**
- * \brief Read the telegrams for the player.
- *
- * \param g Game object
- *
- * \description Retrieves telegrams from database, displays them, then deletes
- * them (delete-on-read behavior).
- */
-void teleg_read(GameObj& g) {
-  g.out << "Telegrams:\n";
-
-  // Get all telegrams for this governor
-  auto telegrams = g.entity_manager.get_telegrams(g.player(), g.governor());
-
-  if (telegrams.empty()) {
-    g.out << " None.\n";
-    return;
+std::vector<TelegramItem> teleg_read(EntityManager& em, player_t player,
+                                     governor_t governor) {
+  auto telegrams = em.get_telegrams(player, governor);
+  if (!telegrams.empty()) {
+    em.delete_telegrams(player, governor);
   }
-
-  // Display telegrams with timestamps
-  for (const auto& telegram : telegrams) {
-    print_timestamped_message(g, telegram.timestamp, telegram.message);
-  }
-
-  // Delete telegrams after reading (delete-on-read behavior)
-  g.entity_manager.delete_telegrams(g.player(), g.governor());
+  return telegrams;
 }
 
-/**
- * \brief Read the news file.
- *
- * \param type Type of news. Valid types are DECLARATION, TRANSFER, COMBAT, and
- * ANNOUNCE.
- * \param g Game object
- *
- * \description This function reads the news from database based on the
- * specified type and game object. It tracks which news the user has already
- * read via newspos array in governor data.
- */
-void news_read(NewsType type, GameObj& g) {
-  int last_read_id = 0;
-  g.entity_manager.with_race(g.player(), [&](const Race& race) {
-    last_read_id = race.governor(g.governor()).newspos[type];
-  });
-
-  // Get all news since last read
-  auto news_items = g.entity_manager.get_news_since(type, last_read_id);
-
+std::vector<NewsItem> news_read(EntityManager& em, player_t player,
+                                governor_t governor, NewsType type) {
+  const auto last_read_id =
+      em.peek_race(player)->governor(governor).newspos[type];
+  auto news_items = em.get_news_since(type, last_read_id);
   if (news_items.empty()) {
-    // No new news
-    return;
+    return news_items;
   }
 
-  // Display news items with timestamps
-  for (const auto& item : news_items) {
-    print_timestamped_message(g, item.timestamp, item.message);
-  }
-
-  // Update the last read position to the latest ID
-  int latest_id = g.entity_manager.get_latest_news_id(type);
-  g.entity_manager.mutate_race(g.player(), [&](Race& race) {
-    race.governor(g.governor()).newspos[type] = latest_id;
+  const auto latest_id = std::ranges::max(news_items, {}, &NewsItem::id).id;
+  em.mutate_race(player, [&](Race& race) {
+    race.governor(governor).newspos[type] = latest_id;
   });
+  return news_items;
 }
 
 /**

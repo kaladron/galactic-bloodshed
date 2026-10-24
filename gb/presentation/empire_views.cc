@@ -5,6 +5,7 @@
 
 module gb.presentation.empire_views;
 
+import dallib;
 import gb.entities;
 import gb.services;
 import tabulate;
@@ -1375,6 +1376,95 @@ std::string render_json_page_result(const PageResult& vm) {
 std::string render_for_mode(UiMode mode, const PageResult& vm) {
   return mode == UiMode::JSON ? render_json_page_result(vm)
                               : render_page_result(vm);
+}
+
+namespace {
+
+template <typename Item>
+std::vector<TimestampedMessage>
+to_timestamped_messages(std::vector<Item>&& items) {
+  return items | std::views::as_rvalue | std::views::transform([](Item&& item) {
+           return TimestampedMessage{
+               .id = item.id,
+               .timestamp = item.timestamp,
+               .message = std::move(item.message),
+           };
+         }) |
+         std::ranges::to<std::vector>();
+}
+
+void append_timestamped_messages(
+    std::string& out, const std::vector<TimestampedMessage>& messages) {
+  for (const auto& item : messages) {
+    const auto tp =
+        std::chrono::sys_seconds{std::chrono::seconds{item.timestamp}};
+    std::format_to(std::back_inserter(out), "{:%m/%d %H:%M:%S} {}", tp,
+                   item.message);
+    if (!item.message.ends_with('\n')) {
+      out.push_back('\n');
+    }
+  }
+}
+
+}  // namespace
+
+TelegramReadResult make_telegram_read_result(std::vector<TelegramItem> items) {
+  return TelegramReadResult{
+      .messages = to_timestamped_messages(std::move(items)),
+  };
+}
+
+NewsBundleResult make_news_bundle_result(std::vector<NewsItem> declarations,
+                                         std::vector<NewsItem> combat,
+                                         std::vector<NewsItem> business,
+                                         std::vector<NewsItem> bulletins) {
+  return NewsBundleResult{
+      .declarations = to_timestamped_messages(std::move(declarations)),
+      .combat = to_timestamped_messages(std::move(combat)),
+      .business = to_timestamped_messages(std::move(business)),
+      .bulletins = to_timestamped_messages(std::move(bulletins)),
+  };
+}
+
+std::string render_telegram_read_result(const TelegramReadResult& vm) {
+  std::string out = "Telegrams:\n";
+  if (vm.messages.empty()) {
+    out += " None.\n";
+    return out;
+  }
+  append_timestamped_messages(out, vm.messages);
+  return out;
+}
+
+std::string render_json_telegram_read_result(const TelegramReadResult& vm) {
+  return render_json_envelope("telegrams", vm);
+}
+
+std::string render_for_mode(UiMode mode, const TelegramReadResult& vm) {
+  return mode == UiMode::JSON ? render_json_telegram_read_result(vm)
+                              : render_telegram_read_result(vm);
+}
+
+std::string render_news_bundle_result(const NewsBundleResult& vm) {
+  std::string out{CUTE_MESSAGE};
+  out += "\n----------        Declarations        ----------\n";
+  append_timestamped_messages(out, vm.declarations);
+  out += "\n----------           Combat           ----------\n";
+  append_timestamped_messages(out, vm.combat);
+  out += "\n----------          Business          ----------\n";
+  append_timestamped_messages(out, vm.business);
+  out += "\n----------          Bulletins         ----------\n";
+  append_timestamped_messages(out, vm.bulletins);
+  return out;
+}
+
+std::string render_json_news_bundle_result(const NewsBundleResult& vm) {
+  return render_json_envelope("news", vm);
+}
+
+std::string render_for_mode(UiMode mode, const NewsBundleResult& vm) {
+  return mode == UiMode::JSON ? render_json_news_bundle_result(vm)
+                              : render_news_bundle_result(vm);
 }
 
 }  // namespace GB::presentation

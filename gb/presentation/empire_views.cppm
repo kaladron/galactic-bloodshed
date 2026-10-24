@@ -7,6 +7,7 @@ export module gb.presentation.empire_views;
 
 export import gb.presentation.core;
 
+import dallib;
 import gb.entities;
 import gb.services;
 import std;
@@ -1019,5 +1020,43 @@ struct PageResult {
 [[nodiscard]] std::string render_page_result(const PageResult& vm);
 [[nodiscard]] std::string render_json_page_result(const PageResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode, const PageResult& vm);
+
+/// Single timestamped telegram or news entry in a `read` view model.
+struct TimestampedMessage {
+  int id{0};
+  std::int64_t timestamp{0};
+  std::string message{};
+};
+
+/// View model for `read` / `read telegram`.
+struct TelegramReadResult {
+  std::vector<TimestampedMessage> messages{};
+};
+
+[[nodiscard]] TelegramReadResult
+make_telegram_read_result(std::vector<TelegramItem> items);
+[[nodiscard]] std::string
+render_telegram_read_result(const TelegramReadResult& vm);
+[[nodiscard]] std::string
+render_json_telegram_read_result(const TelegramReadResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const TelegramReadResult& vm);
+
+/// View model for `read news`.
+struct NewsBundleResult {
+  std::vector<TimestampedMessage> declarations{};
+  std::vector<TimestampedMessage> combat{};
+  std::vector<TimestampedMessage> business{};
+  std::vector<TimestampedMessage> bulletins{};
+};
+
+[[nodiscard]] NewsBundleResult make_news_bundle_result(
+    std::vector<NewsItem> declarations, std::vector<NewsItem> combat,
+    std::vector<NewsItem> business, std::vector<NewsItem> bulletins);
+[[nodiscard]] std::string render_news_bundle_result(const NewsBundleResult& vm);
+[[nodiscard]] std::string
+render_json_news_bundle_result(const NewsBundleResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const NewsBundleResult& vm);
 
 }  // namespace GB::presentation

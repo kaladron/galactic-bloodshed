@@ -6,6 +6,7 @@
 module;
 
 import gb.entities;
+import gb.presentation.empire_views;
 import gb.services;
 import std;
 
@@ -19,19 +20,19 @@ bool read_messages(const command_t& argv, GameObj& g) {
     return false;
   }
   if (argv.size() == 1 || argv[1] == "telegram") {
-    teleg_read(g);
+    g.present(GB::presentation::make_telegram_read_result(
+        teleg_read(g.entity_manager, g.player(), g.governor())));
     return true;
   }
   if (argv[1] == "news") {
-    g.out << CUTE_MESSAGE;
-    g.out << "\n----------        Declarations        ----------\n";
-    news_read(NewsType::DECLARATION, g);
-    g.out << "\n----------           Combat           ----------\n";
-    news_read(NewsType::COMBAT, g);
-    g.out << "\n----------          Business          ----------\n";
-    news_read(NewsType::TRANSFER, g);
-    g.out << "\n----------          Bulletins         ----------\n";
-    news_read(NewsType::ANNOUNCE, g);
+    auto& em = g.entity_manager;
+    const auto player = g.player();
+    const auto governor = g.governor();
+    g.present(GB::presentation::make_news_bundle_result(
+        news_read(em, player, governor, NewsType::DECLARATION),
+        news_read(em, player, governor, NewsType::COMBAT),
+        news_read(em, player, governor, NewsType::TRANSFER),
+        news_read(em, player, governor, NewsType::ANNOUNCE)));
     return true;
   }
   g.out << "Read what?\n";

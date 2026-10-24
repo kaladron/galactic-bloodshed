@@ -6,76 +6,106 @@
 module;
 
 import gb.entities;
+import gb.presentation.empire_views;
 import gb.services;
+import scnlib;
 import std;
 
 module commands;
 
-namespace GB::commands {
+namespace {
 
-bool page(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player();
-  ap_t APcount = g.god() ? 0 : 1;
-  player_t who = 0;
-  governor_t gov{0};
-  bool to_block = false;
+bool deduct_page_ap(GameObj& g, ap_t ap_cost) {
+  if (ap_cost == 0) {
+    return true;
+  }
+  if (!g.deduct_ap(g.snum(), ap_cost)) {
+    g.out << std::format("You don't have {} action points there.\n", ap_cost);
+    return false;
+  }
+  return true;
+}
 
-  if (argv[1] == "block") {
-    to_block = true;
-    g.out << "Paging alliance block.\n";
-  } else {
-    who = get_player(g.entity_manager, argv[1]);
-    if (who == player_t{0}) {
-      g.out << "No such player.\n";
-      return false;
-    }
-    const auto* alien = g.entity_manager.peek_race(who);
-    if (!alien) {
-      g.out << "Race not found.\n";
-      return false;
-    }
-    APcount *= !alien->God;
-    if (argv.size() > 2) {
-      gov = governor_t{static_cast<unsigned char>(std::stoi(argv[2]))};
+std::expected<std::optional<governor_t>, bool>
+parse_page_governor(const command_t& argv, const Race& alien, GameObj& g) {
+  if (argv.size() <= 2) {
+    return std::optional<governor_t>{std::nullopt};
+  }
+  auto parsed_gov = scn::scan<int>(argv[2], "{}");
+  if (!parsed_gov || parsed_gov->value() < 1 ||
+      !alien.has_governor(governor_t{parsed_gov->value()})) {
+    g.out << "No such governor.\n";
+    return std::unexpected(false);
+  }
+  return std::optional<governor_t>{governor_t{parsed_gov->value()}};
+}
+
+bool page_alliance_block(GameObj& g) {
+  const ap_t ap_cost = g.god() ? 0 : 1;
+  if (!deduct_page_ap(g, ap_cost)) {
+    return false;
+  }
+
+  const auto playernum = g.player();
+  const auto& star = *g.entity_manager.peek_star(g.snum());
+  const auto msg = GB::presentation::render_page_notification(
+      g.race->name, g.current_governor().name, star.get_name());
+  const auto& block_player = *g.entity_manager.peek_block(playernum);
+
+  for (const Race& race : RaceList::readonly(g.entity_manager)) {
+    const auto i = race.Playernum;
+    if (block_player.is_member(i) && i != playernum) {
+      g.session_registry.notify_race(i, msg);
     }
   }
 
-  if (APcount > 0) {
-    if (!g.deduct_ap(g.snum(), APcount)) {
-      g.out << std::format("You don't have {} action points there.\n", APcount);
-      return false;
-    }
+  g.present(GB::presentation::PageResult{
+      .target = GB::presentation::PageTarget::Block,
+  });
+  return true;
+}
+
+bool page_player(const command_t& argv, GameObj& g) {
+  const auto who = get_player(g.entity_manager, argv[1]);
+  if (who == player_t{0}) {
+    g.out << "No such player.\n";
+    return false;
+  }
+  const auto& alien = *g.entity_manager.peek_race(who);
+  const auto target_gov = parse_page_governor(argv, alien, g);
+  if (!target_gov) {
+    return false;
+  }
+
+  const ap_t ap_cost = (g.god() || alien.God) ? 0 : 1;
+  if (!deduct_page_ap(g, ap_cost)) {
+    return false;
   }
 
   const auto& star = *g.entity_manager.peek_star(g.snum());
-  auto msg =
-      std::format("{} \"{}\" page(s) you from the {} star system.\n",
-                  g.race->name, g.current_governor().name, star.get_name());
-
-  if (to_block) {
-    const Block* block_player = nullptr;
-    try {
-      block_player = g.entity_manager.peek_block(Playernum);
-    } catch (const EntityNotFoundError&) {
-      g.out << "Block not found.\n";
-      return false;
-    }
-    for (const Race& race : RaceList::readonly(g.entity_manager)) {
-      const player_t i = race.Playernum;
-      if (block_player->is_member(i) && i != Playernum) {
-        g.session_registry.notify_race(i, msg);
-      }
-    }
+  const auto msg = GB::presentation::render_page_notification(
+      g.race->name, g.current_governor().name, star.get_name());
+  if (*target_gov) {
+    g.session_registry.notify_player(who, **target_gov, msg);
   } else {
-    if (argv.size() > 2) {
-      g.session_registry.notify_player(who, gov, msg);
-    } else {
-      g.session_registry.notify_race(who, msg);
-    }
+    g.session_registry.notify_race(who, msg);
   }
 
-  g.out << "Request sent.\n";
+  g.present(GB::presentation::PageResult{
+      .target = GB::presentation::PageTarget::Player,
+  });
   return true;
+}
+
+}  // namespace
+
+namespace GB::commands {
+
+bool page(const command_t& argv, GameObj& g) {
+  if (argv[1] == "block") {
+    return page_alliance_block(g);
+  }
+  return page_player(argv, g);
 }
 
 const CommandDescriptor page_cmd{

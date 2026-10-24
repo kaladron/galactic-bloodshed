@@ -978,4 +978,46 @@ struct PostResult {
 [[nodiscard]] std::string render_json_post_result(const PostResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode, const PostResult& vm);
 
+/// Live communication channel used by `announce`, `broadcast`, `shout`, and
+/// `think`.
+enum class AnnounceMode : std::uint8_t {
+  Announce,
+  Broadcast,
+  Shout,
+  Think,
+};
+
+/// Result of dispatching a live communication via `announce` / `broadcast` /
+/// `shout` / `think`.
+struct AnnounceResult {
+  AnnounceMode mode{AnnounceMode::Announce};
+  std::string sender{};
+  std::string message{};
+};
+
+[[nodiscard]] std::string
+render_announce_dispatch_message(const AnnounceResult& vm);
+[[nodiscard]] std::string render_announce_result(const AnnounceResult& vm);
+[[nodiscard]] std::string render_json_announce_result(const AnnounceResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const AnnounceResult& vm);
+
+/// Recipient category targeted by `page` command.
+enum class PageTarget : std::uint8_t {
+  Player,
+  Block,
+};
+
+/// Result of paging a player or alliance block via `page`.
+struct PageResult {
+  PageTarget target{PageTarget::Player};
+};
+
+[[nodiscard]] std::string render_page_notification(std::string_view race_name,
+                                                   std::string_view gov_name,
+                                                   std::string_view star_name);
+[[nodiscard]] std::string render_page_result(const PageResult& vm);
+[[nodiscard]] std::string render_json_page_result(const PageResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode, const PageResult& vm);
+
 }  // namespace GB::presentation

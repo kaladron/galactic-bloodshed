@@ -1319,4 +1319,62 @@ std::string render_for_mode(UiMode mode, const PostResult& vm) {
                               : render_post_result(vm);
 }
 
+std::string render_announce_dispatch_message(const AnnounceResult& vm) {
+  char sep = ':';
+  switch (vm.mode) {
+    case AnnounceMode::Announce:
+      sep = ':';
+      break;
+    case AnnounceMode::Broadcast:
+      sep = '>';
+      break;
+    case AnnounceMode::Shout:
+      sep = '!';
+      break;
+    case AnnounceMode::Think:
+      sep = '=';
+      break;
+  }
+  return std::format("{} {} {}\n", vm.sender, sep, vm.message);
+}
+
+std::string render_announce_result(const AnnounceResult&) {
+  return "";
+}
+
+std::string render_json_announce_result(const AnnounceResult& vm) {
+  return render_json_envelope("announce", vm);
+}
+
+std::string render_for_mode(UiMode mode, const AnnounceResult& vm) {
+  return mode == UiMode::JSON ? render_json_announce_result(vm)
+                              : render_announce_result(vm);
+}
+
+std::string render_page_notification(std::string_view race_name,
+                                     std::string_view gov_name,
+                                     std::string_view star_name) {
+  return std::format("{} \"{}\" page(s) you from the {} star system.\n",
+                     race_name, gov_name, star_name);
+}
+
+std::string render_page_result(const PageResult& vm) {
+  switch (vm.target) {
+    case PageTarget::Player:
+      return "Request sent.\n";
+    case PageTarget::Block:
+      return "Paging alliance block.\nRequest sent.\n";
+  }
+  return "";
+}
+
+std::string render_json_page_result(const PageResult& vm) {
+  return render_json_envelope("page", vm);
+}
+
+std::string render_for_mode(UiMode mode, const PageResult& vm) {
+  return mode == UiMode::JSON ? render_json_page_result(vm)
+                              : render_page_result(vm);
+}
+
 }  // namespace GB::presentation

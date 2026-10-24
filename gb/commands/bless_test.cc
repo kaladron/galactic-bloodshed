@@ -6,6 +6,7 @@
 import commands;
 import dallib;
 import gb.entities;
+import gb.presentation.empire_views;
 import gb.services;
 import test;
 import std;
@@ -104,16 +105,16 @@ void test_bless_race_characteristics() {
 
   // Float attributes
   ctx.assert_dispatch_success(g, {"bless", "2", "mass", "2.5"});
-  test::expect_eq(ctx.em.peek_race(2)->mass, 2.5f);
+  test::expect_eq(ctx.em.peek_race(2)->mass, 2.5);
 
   ctx.assert_dispatch_success(g, {"bless", "2", "metabolism", "1.75"});
-  test::expect_eq(ctx.em.peek_race(2)->metabolism, 1.75f);
+  test::expect_eq(ctx.em.peek_race(2)->metabolism, 1.75);
 
   ctx.assert_dispatch_success(g, {"bless", "2", "adventurism", "0.45"});
-  test::expect_eq(ctx.em.peek_race(2)->adventurism, 0.45f);
+  test::expect_eq(ctx.em.peek_race(2)->adventurism, 0.45);
 
   ctx.assert_dispatch_success(g, {"bless", "2", "birthrate", "1.25"});
-  test::expect_eq(ctx.em.peek_race(2)->birthrate, 1.25f);
+  test::expect_eq(ctx.em.peek_race(2)->birthrate, 1.25);
 
   // Flags & password
   ctx.assert_dispatch_success(g, {"bless", "2", "password", "secret42"});
@@ -221,11 +222,14 @@ void test_bless_commodities() {
   g.set_snum(1);
   g.set_pnum(1);
 
-  // resources: full word and char
+  // resources: full word, plural, and char
   ctx.assert_dispatch_success(g, {"bless", "2", "resource", "100"});
   test::expect_eq(ctx.em.peek_planet(1, 1)->info(2).resource, 1100);
+  test::expect_eq(g.out.str(), "");
+  ctx.assert_dispatch_success(g, {"bless", "2", "resources", "25"});
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(2).resource, 1125);
   ctx.assert_dispatch_success(g, {"bless", "2", "r", "50"});
-  test::expect_eq(ctx.em.peek_planet(1, 1)->info(2).resource, 1150);
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(2).resource, 1175);
 
   // destruct
   ctx.assert_dispatch_success(g, {"bless", "2", "destruct", "200"});
@@ -239,17 +243,32 @@ void test_bless_commodities() {
   ctx.assert_dispatch_success(g, {"bless", "2", "f", "50"});
   test::expect_eq(ctx.em.peek_planet(1, 1)->info(2).fuel, 1350);
 
-  // crystals
+  // crystals: singular, plural, and char
   ctx.assert_dispatch_success(g, {"bless", "2", "crystal", "400"});
   test::expect_eq(ctx.em.peek_planet(1, 1)->info(2).crystals, 400);
+  ctx.assert_dispatch_success(g, {"bless", "2", "crystals", "25"});
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(2).crystals, 425);
   ctx.assert_dispatch_success(g, {"bless", "2", "x", "50"});
-  test::expect_eq(ctx.em.peek_planet(1, 1)->info(2).crystals, 450);
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(2).crystals, 475);
 
-  // action points
+  // action points: ap, char, and full word (by race name in JSON mode)
   ctx.assert_dispatch_success(g, {"bless", "2", "ap", "30"});
   test::expect_eq(ctx.em.peek_star(1)->AP(2), 130);
   ctx.assert_dispatch_success(g, {"bless", "2", "a", "20"});
   test::expect_eq(ctx.em.peek_star(1)->AP(2), 150);
+
+  g.set_ui_mode(UiMode::JSON);
+  const std::string race2_name = ctx.em.peek_race(2)->name;
+  ctx.assert_dispatch_success(g, {"bless", race2_name, "action", "15"});
+  test::expect_eq(ctx.em.peek_star(1)->AP(2), 165);
+  test::expect_contains(g.out.str(), "\"type\":\"bless\"");
+  test::expect_contains(g.out.str(), "\"target_player\":2");
+  test::expect_contains(
+      g.out.str(),
+      std::format(
+          "\"property\":{}",
+          std::to_underlying(GB::presentation::BlessProperty::ActionPoints)));
+  test::expect_contains(g.out.str(), "\"value\":15");
 
   ctx.verify_universe_invariants();
 }
@@ -267,6 +286,10 @@ void test_bless_error_handling() {
   g.set_snum(1);
   g.set_pnum(1);
 
+  // Extra trailing arguments
+  ctx.assert_dispatch_rejected(g, {"bless", "2", "technology", "10", "extra"});
+  test::expect_contains(g.out.str(), "Syntax: bless <player> <what> <+amount>");
+
   // Invalid player number
   ctx.assert_dispatch_rejected(g, {"bless", "99", "technology", "10"});
   test::expect_contains(g.out.str(), "No such player number.");
@@ -275,6 +298,9 @@ void test_bless_error_handling() {
   test::expect_contains(g.out.str(), "No such player number.");
 
   ctx.assert_dispatch_rejected(g, {"bless", "abc", "technology", "10"});
+  test::expect_contains(g.out.str(), "No such player number.");
+
+  ctx.assert_dispatch_rejected(g, {"bless", "1abc", "technology", "10"});
   test::expect_contains(g.out.str(), "No such player number.");
 
   // Unknown property or commodity

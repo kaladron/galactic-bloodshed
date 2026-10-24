@@ -6,6 +6,7 @@
 module;
 
 import gb.entities;
+import gb.presentation.empire_views;
 import gb.services;
 import scnlib;
 import std;
@@ -16,154 +17,153 @@ namespace GB::commands {
 
 namespace {
 
+using GB::presentation::BlessProperty;
+using GB::presentation::BlessResult;
+using GB::presentation::BlessValue;
+
+void emit_blessing(GameObj& g, const BlessResult& result) {
+  warn_player(g.session_registry, g.entity_manager, result.target_player,
+              Race::leader_id,
+              GB::presentation::render_bless_notification(result));
+  g.present(result);
+}
+
+void emit_planet_blessing(GameObj& g, player_t who, BlessProperty prop,
+                          BlessValue value = {}) {
+  const auto& star = *g.entity_manager.peek_star(g.snum());
+  emit_blessing(g, BlessResult{
+                       .target_player = who,
+                       .property = prop,
+                       .value = std::move(value),
+                       .star_name = star.get_name(),
+                       .planet_name = star.get_planet_name(g.pnum()),
+                   });
+}
+
 struct RaceIntProp {
   std::string_view name;
+  BlessProperty property;
   void (*apply)(Race&, int);
-  std::string (*message)(const Race&, int);
 };
 
-constexpr std::array<RaceIntProp, 7> kRaceIntProps{{
+constexpr std::array<RaceIntProp, 7> race_int_props{{
     {.name = "money",
-     .apply = [](Race& r, int amt) { r.leader().money += amt; },
-     .message =
-         [](const Race&, int amt) {
-           return std::format("Deity gave you {} money.\n", amt);
-         }},
+     .property = BlessProperty::Money,
+     .apply = [](Race& r, int amt) { r.leader().money += amt; }},
     {.name = "morale",
-     .apply = [](Race& r, int amt) { r.morale += amt; },
-     .message =
-         [](const Race&, int amt) {
-           return std::format("Deity gave you {} morale.\n", amt);
-         }},
+     .property = BlessProperty::Morale,
+     .apply = [](Race& r, int amt) { r.morale += amt; }},
     {.name = "fertility",
-     .apply = [](Race& r, int amt) { r.fertilize = amt; },
-     .message =
-         [](const Race&, int amt) {
-           return std::format("Deity gave you a fetilization ability of {}.\n",
-                              amt);
-         }},
+     .property = BlessProperty::Fertility,
+     .apply = [](Race& r, int amt) { r.fertilize = amt; }},
     {.name = "IQ",
-     .apply = [](Race& r, int amt) { r.IQ = amt; },
-     .message =
-         [](const Race&, int amt) {
-           return std::format("Deity gave you {} IQ.\n", amt);
-         }},
+     .property = BlessProperty::Iq,
+     .apply = [](Race& r, int amt) { r.IQ = amt; }},
     {.name = "fight",
-     .apply = [](Race& r, int amt) { r.fighters = amt; },
-     .message =
-         [](const Race&, int amt) {
-           return std::format("Deity set your fighting ability to {}.\n", amt);
-         }},
+     .property = BlessProperty::Fight,
+     .apply = [](Race& r, int amt) { r.fighters = amt; }},
     {.name = "technology",
-     .apply = [](Race& r, int amt) { r.tech += static_cast<double>(amt); },
-     .message =
-         [](const Race&, int amt) {
-           return std::format("Deity gave you {} technology.\n", amt);
-         }},
+     .property = BlessProperty::Technology,
+     .apply = [](Race& r, int amt) { r.tech += static_cast<double>(amt); }},
     {.name = "maxiq",
-     .apply = [](Race& r, int amt) { r.IQ_limit = amt; },
-     .message =
-         [](const Race& r, int) {
-           return std::format("Deity gave you a maximum IQ of {}.\n",
-                              r.IQ_limit);
-         }},
+     .property = BlessProperty::MaxIq,
+     .apply = [](Race& r, int amt) { r.IQ_limit = amt; }},
 }};
 
 struct RaceFloatProp {
   std::string_view name;
-  void (*apply)(Race&, float);
-  std::string (*message)(const Race&);
+  BlessProperty property;
+  void (*apply)(Race&, double);
 };
 
-constexpr std::array<RaceFloatProp, 4> kRaceFloatProps{{
+constexpr std::array<RaceFloatProp, 4> race_float_props{{
     {.name = "mass",
-     .apply = [](Race& r, float v) { r.mass = v; },
-     .message =
-         [](const Race& r) {
-           return std::format("Deity gave you {:.2f} mass.\n", r.mass);
-         }},
+     .property = BlessProperty::Mass,
+     .apply = [](Race& r, double v) { r.mass = v; }},
     {.name = "metabolism",
-     .apply = [](Race& r, float v) { r.metabolism = v; },
-     .message =
-         [](const Race& r) {
-           return std::format("Deity gave you {:.2f} metabolism.\n",
-                              r.metabolism);
-         }},
+     .property = BlessProperty::Metabolism,
+     .apply = [](Race& r, double v) { r.metabolism = v; }},
     {.name = "adventurism",
-     .apply = [](Race& r, float v) { r.adventurism = v; },
-     .message =
-         [](const Race& r) {
-           return std::format("Deity gave you {:<3.0f}% adventurism.\n",
-                              r.adventurism * 100.0);
-         }},
+     .property = BlessProperty::Adventurism,
+     .apply = [](Race& r, double v) { r.adventurism = v; }},
     {.name = "birthrate",
-     .apply = [](Race& r, float v) { r.birthrate = v; },
-     .message =
-         [](const Race& r) {
-           return std::format("Deity gave you {:.2f} birthrate.\n",
-                              r.birthrate);
-         }},
+     .property = BlessProperty::Birthrate,
+     .apply = [](Race& r, double v) { r.birthrate = v; }},
 }};
 
 struct RaceFlagProp {
   std::string_view name;
+  BlessProperty property;
   void (*apply)(Race&);
-  std::string_view message;
 };
 
-constexpr std::array<RaceFlagProp, 7> kRaceFlagProps{{
+constexpr std::array<RaceFlagProp, 7> race_flag_props{{
     {.name = "pods",
-     .apply = [](Race& r) { r.pods = true; },
-     .message = "Deity gave you pod ability.\n"},
+     .property = BlessProperty::Pods,
+     .apply = [](Race& r) { r.pods = true; }},
     {.name = "nopods",
-     .apply = [](Race& r) { r.pods = false; },
-     .message = "Deity took away pod ability.\n"},
+     .property = BlessProperty::NoPods,
+     .apply = [](Race& r) { r.pods = false; }},
     {.name = "collectiveiq",
-     .apply = [](Race& r) { r.collective_iq = true; },
-     .message = "Deity gave you collective intelligence.\n"},
+     .property = BlessProperty::CollectiveIq,
+     .apply = [](Race& r) { r.collective_iq = true; }},
     {.name = "nocollectiveiq",
-     .apply = [](Race& r) { r.collective_iq = false; },
-     .message = "Deity took away collective intelligence.\n"},
+     .property = BlessProperty::NoCollectiveIq,
+     .apply = [](Race& r) { r.collective_iq = false; }},
     {.name = "guest",
-     .apply = [](Race& r) { r.Guest = true; },
-     .message = "Deity turned you into a guest race.\n"},
+     .property = BlessProperty::Guest,
+     .apply = [](Race& r) { r.Guest = true; }},
     {.name = "god",
-     .apply = [](Race& r) { r.God = true; },
-     .message = "Deity turned you into a deity race.\n"},
+     .property = BlessProperty::God,
+     .apply = [](Race& r) { r.God = true; }},
     {.name = "mortal",
+     .property = BlessProperty::Mortal,
      .apply =
          [](Race& r) {
            r.God = false;
            r.Guest = false;
-         },
-     .message = "Deity turned you into a mortal race.\n"},
+         }},
 }};
 
 struct SectorPref {
   std::string_view name;
+  BlessProperty property;
   SectorType type;
 };
 
-constexpr std::array<SectorPref, 8> kSectorPrefs{{
-    {.name = "water", .type = SectorType::SEC_SEA},
-    {.name = "land", .type = SectorType::SEC_LAND},
-    {.name = "mountain", .type = SectorType::SEC_MOUNT},
-    {.name = "gas", .type = SectorType::SEC_GAS},
-    {.name = "ice", .type = SectorType::SEC_ICE},
-    {.name = "forest", .type = SectorType::SEC_FOREST},
-    {.name = "desert", .type = SectorType::SEC_DESERT},
-    {.name = "plated", .type = SectorType::SEC_PLATED},
+constexpr std::array<SectorPref, 8> sector_prefs{{
+    {.name = "water",
+     .property = BlessProperty::Water,
+     .type = SectorType::SEC_SEA},
+    {.name = "land",
+     .property = BlessProperty::Land,
+     .type = SectorType::SEC_LAND},
+    {.name = "mountain",
+     .property = BlessProperty::Mountain,
+     .type = SectorType::SEC_MOUNT},
+    {.name = "gas",
+     .property = BlessProperty::Gas,
+     .type = SectorType::SEC_GAS},
+    {.name = "ice",
+     .property = BlessProperty::Ice,
+     .type = SectorType::SEC_ICE},
+    {.name = "forest",
+     .property = BlessProperty::Forest,
+     .type = SectorType::SEC_FOREST},
+    {.name = "desert",
+     .property = BlessProperty::Desert,
+     .type = SectorType::SEC_DESERT},
+    {.name = "plated",
+     .property = BlessProperty::Plated,
+     .type = SectorType::SEC_PLATED},
 }};
 
 std::optional<bool> bless_race_flags(player_t who, std::string_view prop,
                                      GameObj& g) {
-  for (const auto& entry : kRaceFlagProps) {
+  for (const auto& entry : race_flag_props) {
     if (entry.name == prop) {
-      g.entity_manager.mutate_race(who, [&](Race& race) {
-        entry.apply(race);
-        warn_player(g.session_registry, g.entity_manager, who, Race::leader_id,
-                    std::string(entry.message));
-      });
+      g.entity_manager.mutate_race(who, [&](Race& race) { entry.apply(race); });
+      emit_blessing(g, {.target_player = who, .property = entry.property});
       return true;
     }
   }
@@ -172,18 +172,18 @@ std::optional<bool> bless_race_flags(player_t who, std::string_view prop,
 
 std::optional<bool> bless_race_floats(player_t who, std::string_view prop,
                                       std::string_view val_str, GameObj& g) {
-  for (const auto& entry : kRaceFloatProps) {
+  for (const auto& entry : race_float_props) {
     if (entry.name == prop) {
-      auto val = scn::scan<float>(val_str, "{}");
+      auto val = scn::scan<double>(val_str, "{}");
       if (!val) {
         g.out << "Invalid numeric value.\n";
         return false;
       }
-      g.entity_manager.mutate_race(who, [&](Race& race) {
-        entry.apply(race, val->value());
-        warn_player(g.session_registry, g.entity_manager, who, Race::leader_id,
-                    entry.message(race));
-      });
+      g.entity_manager.mutate_race(
+          who, [&](Race& race) { entry.apply(race, val->value()); });
+      emit_blessing(g, {.target_player = who,
+                        .property = entry.property,
+                        .value = val->value()});
       return true;
     }
   }
@@ -192,18 +192,18 @@ std::optional<bool> bless_race_floats(player_t who, std::string_view prop,
 
 std::optional<bool> bless_race_ints(player_t who, std::string_view prop,
                                     std::string_view val_str, GameObj& g) {
-  for (const auto& entry : kRaceIntProps) {
+  for (const auto& entry : race_int_props) {
     if (entry.name == prop) {
       auto val = scn::scan<int>(val_str, "{}");
       if (!val) {
         g.out << "Invalid amount.\n";
         return false;
       }
-      g.entity_manager.mutate_race(who, [&](Race& race) {
-        entry.apply(race, val->value());
-        warn_player(g.session_registry, g.entity_manager, who, Race::leader_id,
-                    entry.message(race, val->value()));
-      });
+      g.entity_manager.mutate_race(
+          who, [&](Race& race) { entry.apply(race, val->value()); });
+      emit_blessing(g, {.target_player = who,
+                        .property = entry.property,
+                        .value = val->value()});
       return true;
     }
   }
@@ -212,7 +212,7 @@ std::optional<bool> bless_race_ints(player_t who, std::string_view prop,
 
 std::optional<bool> bless_race_prefs(player_t who, std::string_view prop,
                                      std::string_view val_str, GameObj& g) {
-  for (const auto& entry : kSectorPrefs) {
+  for (const auto& entry : sector_prefs) {
     if (entry.name == prop) {
       auto val = scn::scan<int>(val_str, "{}");
       if (!val) {
@@ -221,10 +221,10 @@ std::optional<bool> bless_race_prefs(player_t who, std::string_view prop,
       }
       g.entity_manager.mutate_race(who, [&](Race& race) {
         race.likes[entry.type] = 0.01 * static_cast<double>(val->value());
-        warn_player(g.session_registry, g.entity_manager, who, Race::leader_id,
-                    std::format("Deity set your {} preference to {}%\n",
-                                entry.name, val->value()));
       });
+      emit_blessing(g, {.target_player = who,
+                        .property = entry.property,
+                        .value = val->value()});
       return true;
     }
   }
@@ -234,12 +234,11 @@ std::optional<bool> bless_race_prefs(player_t who, std::string_view prop,
 std::optional<bool> bless_race_property(player_t who, std::string_view prop,
                                         std::string_view val_str, GameObj& g) {
   if (prop == "password") {
-    g.entity_manager.mutate_race(who, [&](Race& race) {
-      race.password = std::string(val_str);
-      warn_player(
-          g.session_registry, g.entity_manager, who, Race::leader_id,
-          std::format("Deity changed your race password to `{}`\n", val_str));
-    });
+    g.entity_manager.mutate_race(
+        who, [&](Race& race) { race.password = std::string(val_str); });
+    emit_blessing(g, {.target_player = who,
+                      .property = BlessProperty::Password,
+                      .value = std::string(val_str)});
     return true;
   }
 
@@ -261,12 +260,9 @@ std::optional<bool> bless_planet_or_star(player_t who, std::string_view prop,
     g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
       planet.info(who).explored = 1;
     });
-    g.entity_manager.mutate_star(g.snum(), [&](Star& star) {
-      star.mark_explored_by(who);
-      warn_player(g.session_registry, g.entity_manager, who, Race::leader_id,
-                  std::format("Deity set your explored bit at /{}/{}.\n",
-                              star.get_name(), star.get_planet_name(g.pnum())));
-    });
+    g.entity_manager.mutate_star(
+        g.snum(), [&](Star& star) { star.mark_explored_by(who); });
+    emit_planet_blessing(g, who, BlessProperty::ExploreBit);
     return true;
   }
 
@@ -274,10 +270,7 @@ std::optional<bool> bless_planet_or_star(player_t who, std::string_view prop,
     g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
       planet.info(who).explored = 0;
     });
-    const auto& star = *g.entity_manager.peek_star(g.snum());
-    warn_player(g.session_registry, g.entity_manager, who, Race::leader_id,
-                std::format("Deity reset your explored bit at /{}/{}.\n",
-                            star.get_name(), star.get_planet_name(g.pnum())));
+    emit_planet_blessing(g, who, BlessProperty::NoExploreBit);
     return true;
   }
 
@@ -290,22 +283,14 @@ std::optional<bool> bless_planet_or_star(player_t who, std::string_view prop,
     g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
       planet.info(who).popn = val->value();
     });
-    const auto& star = *g.entity_manager.peek_star(g.snum());
-    warn_player(
-        g.session_registry, g.entity_manager, who, Race::leader_id,
-        std::format("Deity set your population variable to {} at /{}/{}.\n",
-                    val->value(), star.get_name(),
-                    star.get_planet_name(g.pnum())));
+    emit_planet_blessing(g, who, BlessProperty::PlanetPopulation, val->value());
     return true;
   }
 
   if (prop == "inhabited") {
-    g.entity_manager.mutate_star(g.snum(), [&](Star& star) {
-      star.mark_inhabited_by(who);
-      warn_player(g.session_registry, g.entity_manager, who, Race::leader_id,
-                  std::format("Deity has set your inhabited bit for /{}/{}.\n",
-                              star.get_name(), star.get_planet_name(g.pnum())));
-    });
+    g.entity_manager.mutate_star(
+        g.snum(), [&](Star& star) { star.mark_inhabited_by(who); });
+    emit_planet_blessing(g, who, BlessProperty::Inhabited);
     return true;
   }
 
@@ -318,85 +303,97 @@ std::optional<bool> bless_planet_or_star(player_t who, std::string_view prop,
     g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
       planet.info(who).numsectsowned = val->value();
     });
-    const auto& star = *g.entity_manager.peek_star(g.snum());
-    warn_player(
-        g.session_registry, g.entity_manager, who, Race::leader_id,
-        std::format(
-            "Deity set your \"numsectsowned\" variable at /{}/{} to {}.\n",
-            star.get_name(), star.get_planet_name(g.pnum()), val->value()));
+    emit_planet_blessing(g, who, BlessProperty::NumSectsOwned, val->value());
     return true;
   }
 
   return std::nullopt;
 }
 
-std::optional<char> parse_commodity(std::string_view prop) {
-  if (prop == "r" || prop == "resource" || prop == "resources") return 'r';
-  if (prop == "d" || prop == "destruct") return 'd';
-  if (prop == "f" || prop == "fuel") return 'f';
-  if (prop == "x" || prop == "crystal" || prop == "crystals") return 'x';
-  if (prop == "a" || prop == "ap" || prop == "action") return 'a';
+enum class BlessCommodity : std::uint8_t {
+  Resources,
+  Destruct,
+  Fuel,
+  Crystals,
+  ActionPoints,
+};
+
+struct CommodityAlias {
+  std::string_view alias;
+  BlessCommodity commodity;
+  BlessProperty property;
+};
+
+constexpr std::array<CommodityAlias, 13> commodity_aliases{{
+    {"r", BlessCommodity::Resources, BlessProperty::Resources},
+    {"resource", BlessCommodity::Resources, BlessProperty::Resources},
+    {"resources", BlessCommodity::Resources, BlessProperty::Resources},
+    {"d", BlessCommodity::Destruct, BlessProperty::Destruct},
+    {"destruct", BlessCommodity::Destruct, BlessProperty::Destruct},
+    {"f", BlessCommodity::Fuel, BlessProperty::Fuel},
+    {"fuel", BlessCommodity::Fuel, BlessProperty::Fuel},
+    {"x", BlessCommodity::Crystals, BlessProperty::Crystals},
+    {"crystal", BlessCommodity::Crystals, BlessProperty::Crystals},
+    {"crystals", BlessCommodity::Crystals, BlessProperty::Crystals},
+    {"a", BlessCommodity::ActionPoints, BlessProperty::ActionPoints},
+    {"ap", BlessCommodity::ActionPoints, BlessProperty::ActionPoints},
+    {"action", BlessCommodity::ActionPoints, BlessProperty::ActionPoints},
+}};
+
+std::optional<CommodityAlias> parse_commodity(std::string_view prop) {
+  for (const auto& entry : commodity_aliases) {
+    if (entry.alias == prop) {
+      return entry;
+    }
+  }
   return std::nullopt;
 }
 
-bool bless_commodity(player_t who, char commod, int amount, GameObj& g) {
-  const auto& star = *g.entity_manager.peek_star(g.snum());
-  switch (commod) {
-    case 'r':
+bool bless_commodity(player_t who, CommodityAlias commod, int amount,
+                     GameObj& g) {
+  switch (commod.commodity) {
+    case BlessCommodity::Resources:
       g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
         planet.info(who).resource += amount;
       });
-      warn_player(g.session_registry, g.entity_manager, who, Race::leader_id,
-                  std::format("Deity gave you {} resources at {}/{}.\n", amount,
-                              star.get_name(), star.get_planet_name(g.pnum())));
-      return true;
-    case 'd':
+      break;
+    case BlessCommodity::Destruct:
       g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
         planet.info(who).destruct += amount;
       });
-      warn_player(g.session_registry, g.entity_manager, who, Race::leader_id,
-                  std::format("Deity gave you {} destruct at {}/{}.\n", amount,
-                              star.get_name(), star.get_planet_name(g.pnum())));
-      return true;
-    case 'f':
+      break;
+    case BlessCommodity::Fuel:
       g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
         planet.info(who).fuel += amount;
       });
-      warn_player(g.session_registry, g.entity_manager, who, Race::leader_id,
-                  std::format("Deity gave you {} fuel at {}/{}.\n", amount,
-                              star.get_name(), star.get_planet_name(g.pnum())));
-      return true;
-    case 'x':
+      break;
+    case BlessCommodity::Crystals:
       g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
         planet.info(who).crystals += amount;
       });
-      warn_player(g.session_registry, g.entity_manager, who, Race::leader_id,
-                  std::format("Deity gave you {} crystals at {}/{}.\n", amount,
-                              star.get_name(), star.get_planet_name(g.pnum())));
-      return true;
-    case 'a':
+      break;
+    case BlessCommodity::ActionPoints:
       g.entity_manager.mutate_star(g.snum(),
                                    [&](Star& s) { s.AP(who) += amount; });
-      warn_player(g.session_registry, g.entity_manager, who, Race::leader_id,
-                  std::format("Deity gave you {} action points at {}.\n",
-                              amount, star.get_name()));
-      return true;
-    default:
-      g.out << "No such commodity.\n";
-      return false;
+      break;
   }
+  emit_planet_blessing(g, who, commod.property, amount);
+  return true;
 }
 
 }  // namespace
 
 bool bless(const command_t& argv, GameObj& g) {
-  auto parsed_who = scn::scan<int>(argv[1], "{}");
-  if (!parsed_who || parsed_who->value() < 1 ||
-      !g.entity_manager.find_player_by_name(argv[1])) {
+  if (argv.size() > 4) {
+    g.out << "Syntax: bless <player> <what> <+amount>\n";
+    return false;
+  }
+
+  const player_t who = get_player(g.entity_manager, argv[1]);
+  if (who == 0) {
     g.out << "No such player number.\n";
     return false;
   }
-  player_t who{parsed_who->value()};
 
   std::string_view prop = argv[2];
   std::string_view val_str = argv[3];

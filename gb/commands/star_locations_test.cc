@@ -47,11 +47,31 @@ void test_stars_dispatch() {
   ctx.assert_dispatch_success(g, {"stars", "10"});
   test::expect_contains(g.out.str(),
                         "No stars found within specified distance.");
-  std::println(std::cout, "    ✓ stars handled empty search radius cleanly");
 
-  // 4. Matrix runner
+  // 4. Domain errors: non-numeric, trailing garbage, negative radius, extra arg
+  g.set_universe_center({0.0, 0.0});
+  for (std::string bad : {"abc", "100abc", "-5"}) {
+    g.out.str("");
+    ctx.assert_dispatch_rejected(g, {"stars", bad});
+    test::expect_contains(g.out.str(), "Bad distance value.");
+  }
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"stars", "100", "extra"});
+  test::expect_contains(g.out.str(), "Syntax: stars [<radius>]");
+
+  // 5. UiMode::JSON output
+  g.set_ui_mode(UiMode::JSON);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"stars", "100"});
+  test::expect_contains(g.out.str(), "\"type\":\"stars\"");
+  test::expect_contains(g.out.str(), "\"name\":\"Sol\"");
+  g.set_ui_mode(UiMode::ASCII);
+
+  // 6. Matrix runner
   TestCommandMatrix(ctx, "stars")
       .with_valid_argv({"stars"})
+      .with_invalid_argv({"stars", "abc"})
       .with_valid_scope(ScopeLevel::LEVEL_UNIV)
       .run_matrix(g);
 }

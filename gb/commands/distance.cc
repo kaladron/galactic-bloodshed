@@ -5,9 +5,10 @@
 
 module;
 
-import std;
 import gb.entities;
+import gb.presentation.planet_views;
 import gb.services;
+import std;
 
 module commands;
 
@@ -47,7 +48,7 @@ resolve_scope_coords(const Place& place, player_t player, EntityManager& em,
 }
 
 bool distance(const command_t& argv, GameObj& g) {
-  if (argv.size() < 3) {
+  if (argv.size() != 3) {
     g.out << "Syntax: 'distance <from> <to>'.\n";
     return false;
   }
@@ -77,8 +78,11 @@ bool distance(const command_t& argv, GameObj& g) {
       resolve_scope_coords(to, g.player(), g.entity_manager, g);
   if (!to_coords) return false;
 
-  const double dist = from_coords->distance_to(*to_coords);
-  g.out << std::format("Distance = {}\n", dist);
+  g.present(GB::presentation::DistanceResult{
+      .from = from.to_string(g.entity_manager),
+      .to = to.to_string(g.entity_manager),
+      .distance = from_coords->distance_to(*to_coords),
+  });
   return true;
 }
 

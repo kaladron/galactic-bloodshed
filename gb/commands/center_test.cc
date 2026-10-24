@@ -49,6 +49,14 @@ void test_center_happy_path() {
   // 3. Center on Antares at (-300, -400)
   ctx.assert_dispatch_success(g, {"center", "/Antares"});
   test::expect_eq(g.universe_center(), UniverseCoordinates(-300.0, -400.0));
+
+  // 4. Planet path centers on its host star, and UiMode::JSON emits envelope
+  g.set_ui_mode(UiMode::JSON);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"center", "/Sol/Earth"});
+  test::expect_eq(g.universe_center(), UniverseCoordinates(0.0, 0.0));
+  test::expect_contains(g.out.str(), "\"type\":\"center\"");
+  test::expect_contains(g.out.str(), "\"star_name\":\"Sol\"");
 }
 
 void test_center_domain_errors() {

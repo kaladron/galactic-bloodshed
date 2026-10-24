@@ -146,8 +146,29 @@ void test_distance_dispatch() {
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"distance", "/", "/Sol"});
   test::expect_contains(g.out.str(), "Scope has no spatial coordinates.");
-  std::println(std::cout,
-               "    ✓ distance rejected scope with no spatial coordinates");
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"distance", "/Sol", "/"});
+  test::expect_contains(g.out.str(), "Scope has no spatial coordinates.");
+
+  // 15. Domain error: Extra trailing arguments and deleted current ship scope
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"distance", "/Sol", "/Vega", "extra"});
+  test::expect_contains(g.out.str(), "Syntax: 'distance <from> <to>'.");
+
+  g.set_level(ScopeLevel::LEVEL_SHIP);
+  g.set_shipno(999);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"distance", ".", "/Sol"});
+  test::expect_contains(g.out.str(), "Ship not found.");
+
+  // 16. UiMode::JSON output
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_shipno(0);
+  g.set_ui_mode(UiMode::JSON);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"distance", "/Sol", "/Vega"});
+  test::expect_contains(g.out.str(), "\"type\":\"distance\"");
+  test::expect_contains(g.out.str(), "\"distance\":500");
 }
 
 void test_distance_matrix() {

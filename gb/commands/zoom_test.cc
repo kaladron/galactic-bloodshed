@@ -49,11 +49,13 @@ void test_zoom_happy_path() {
   test::expect_contains(g.out.str(), "Zoom value 0.5");
   test::expect_eq(g.zoom[0], 0.5);
 
-  // 4. Zoom at universe level (affects index 1)
+  // 4. Zoom at universe level (affects index 1) and UiMode::JSON envelope
   g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"zoom", "3.0"});
-  test::expect_contains(g.out.str(), "Zoom value 3");
+  test::expect_contains(g.out.str(), "\"type\":\"zoom\"");
+  test::expect_contains(g.out.str(), "\"zoom\":3");
   test::expect_eq(g.zoom[1], 3.0);
 }
 
@@ -69,6 +71,17 @@ void test_zoom_domain_errors() {
   // Division by zero denominator
   ctx.assert_dispatch_rejected(g, {"zoom", "5/0"});
   test::expect_contains(g.out.str(), "Illegal denominator value");
+
+  // Malformed fraction, trailing garbage, non-numeric, and extra arguments
+  for (std::string bad : {"/2", "1/2abc", "banana", "2.5abc"}) {
+    g.out.str("");
+    ctx.assert_dispatch_rejected(g, {"zoom", bad});
+    test::expect_contains(g.out.str(), "Bad zoom value.");
+  }
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"zoom", "2.5", "extra"});
+  test::expect_contains(g.out.str(), "Syntax: zoom [<amount>]");
 }
 
 }  // namespace

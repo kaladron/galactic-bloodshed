@@ -561,4 +561,60 @@ struct SlaveRevoltBulletinViewModel {
 [[nodiscard]] std::string
 render_slave_revolt_bulletin(const SlaveRevoltBulletinViewModel& vm);
 
+/// Result of updating the global map centerpoint via `center <star>`.
+struct CenterResult {
+  starnum_t snum{0};
+  std::string star_name{};
+  UniverseCoordinates universe_center{0.0, 0.0};
+};
+
+[[nodiscard]] std::string render_center_result(const CenterResult& vm);
+[[nodiscard]] std::string render_json_center_result(const CenterResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode, const CenterResult& vm);
+
+/// Result of querying or setting the orbit map zoom scale (`zoom [<amount>]`).
+struct ZoomResult {
+  double zoom{1.0};
+  double last_x{0.0};
+  double last_y{0.0};
+};
+
+[[nodiscard]] std::string render_zoom_result(const ZoomResult& vm);
+[[nodiscard]] std::string render_json_zoom_result(const ZoomResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode, const ZoomResult& vm);
+
+/// Result of calculating Euclidean distance via `distance <from> <to>`.
+struct DistanceResult {
+  std::string from{};
+  std::string to{};
+  double distance{0.0};
+};
+
+[[nodiscard]] std::string render_distance_result(const DistanceResult& vm);
+[[nodiscard]] std::string render_json_distance_result(const DistanceResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const DistanceResult& vm);
+
+/// Single star entry in a `stars [<radius>]` report.
+struct StarLocationRow {
+  starnum_t star_id{0};
+  std::string name{};
+  double x{0.0};
+  double y{0.0};
+  double distance{0.0};
+};
+
+/// View model for `stars [<radius>]` stellar position reports.
+struct StarLocationsViewModel {
+  int max_distance{999999};
+  std::vector<StarLocationRow> stars{};
+};
+
+[[nodiscard]] std::string
+render_star_locations(const StarLocationsViewModel& vm);
+[[nodiscard]] std::string
+render_json_star_locations(const StarLocationsViewModel& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const StarLocationsViewModel& vm);
+
 }  // namespace GB::presentation

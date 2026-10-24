@@ -6,47 +6,46 @@
 module;
 
 import gb.entities;
+import gb.presentation.planet_views;
 import gb.services;
+import scnlib;
 import std;
-import tabulate;
-#undef stdout
 
 module commands;
 
 namespace GB::commands {
 bool star_locations(const command_t& argv, GameObj& g) {
-  // Optional argument filters to only show stars within this distance
-  int max_dist = (argv.size() > 1) ? std::stoi(argv[1]) : 999999;
+  if (argv.size() > 2) {
+    g.out << "Syntax: stars [<radius>]\n";
+    return false;
+  }
 
-  tabulate::Table table;
-  table.format().hide_border().column_separator("  ");
+  int max_dist = 999999;
+  if (argv.size() == 2) {
+    auto scan_res = scn::scan<int>(argv[1], "{}");
+    if (!scan_res || !scan_res->range().empty() || scan_res->value() < 0) {
+      g.out << "Bad distance value.\n";
+      return false;
+    }
+    max_dist = scan_res->value();
+  }
 
-  table.column(0).format().width(4).font_align(tabulate::FontAlign::right);
-  table.column(1).format().width(20);
-  table.column(2).format().width(8).font_align(tabulate::FontAlign::right);
-  table.column(3).format().width(8).font_align(tabulate::FontAlign::right);
-  table.column(4).format().width(7).font_align(tabulate::FontAlign::right);
-
-  table.add_row({"#", "Name", "X", "Y", "Dist"});
-  table[0].format().font_style({tabulate::FontStyle::bold});
-
+  GB::presentation::StarLocationsViewModel vm{.max_distance = max_dist};
   const auto center = g.universe_center();
   for (const Star& star : StarList::readonly(g.entity_manager)) {
-    auto dist = star.coordinates().distance_to(center);
+    const double dist = star.coordinates().distance_to(center);
     if (std::floor(dist) <= max_dist) {
-      table.add_row({std::format("{}", star.star_id()),
-                     std::string(star.get_name()),
-                     std::format("{:.0f}", star.coordinates().x),
-                     std::format("{:.0f}", star.coordinates().y),
-                     std::format("{:.0f}", dist)});
+      vm.stars.push_back({
+          .star_id = star.star_id(),
+          .name = star.get_name(),
+          .x = star.coordinates().x,
+          .y = star.coordinates().y,
+          .distance = dist,
+      });
     }
   }
 
-  if (table.size() > 1) {
-    g.out << table << "\n";
-  } else {
-    g.out << "No stars found within specified distance.\n";
-  }
+  g.present(vm);
   return true;
 }
 

@@ -6,42 +6,66 @@
 module;
 
 import gb.entities;
+import gb.presentation.planet_views;
 import gb.services;
 import scnlib;
 import std;
-#undef stdout
 
 module commands;
+
+namespace {
+
+bool parse_zoom_factor(std::string_view arg, double& out_zoom, GameObj& g) {
+  if (arg.contains('/')) {
+    auto scan_res = scn::scan<double, double>(arg, "{}/{}");
+    if (!scan_res || !scan_res->range().empty()) {
+      g.out << "Bad zoom value.\n";
+      return false;
+    }
+    const auto [num, denom] = scan_res->values();
+    if (denom == 0.0) {
+      g.out << "Illegal denominator value.\n";
+      return false;
+    }
+    out_zoom = num / denom;
+    return true;
+  }
+
+  auto single_res = scn::scan<double>(arg, "{}");
+  if (!single_res || !single_res->range().empty()) {
+    g.out << "Bad zoom value.\n";
+    return false;
+  }
+  out_zoom = single_res->value();
+  return true;
+}
+
+}  // namespace
 
 namespace GB::commands {
 /// Zoom in or out for orbit display
 bool zoom(const command_t& argv, GameObj& g) {
-  int i = (g.level() == ScopeLevel::LEVEL_UNIV);
-
-  if (argv.size() > 1) {
-    auto scan_res = scn::scan<double, double>(argv[1], "{}/{}");
-    if (scan_res) {
-      auto [num, denom] = scan_res->values();
-      if (denom == 0.0) {
-        g.out << "Illegal denominator value.\n";
-        return false;
-      }
-      g.zoom[i] = num / denom;
-    } else {
-      auto single_res = scn::scan<double>(argv[1], "{}");
-      if (single_res) {
-        g.zoom[i] = single_res->value();
-      }
-    }
+  if (argv.size() > 2) {
+    g.out << "Syntax: zoom [<amount>]\n";
+    return false;
   }
 
-  const auto [lastx, lasty] =
-      (g.level() == ScopeLevel::LEVEL_UNIV)
-          ? std::pair{g.universe_center().x, g.universe_center().y}
-          : std::pair{g.system_center().x, g.system_center().y};
+  const int i = (g.level() == ScopeLevel::LEVEL_UNIV) ? 1 : 0;
+  if (argv.size() == 2 && !parse_zoom_factor(argv[1], g.zoom[i], g)) {
+    return false;
+  }
 
-  g.out << std::format("Zoom value {0}, lastx = {1}, lasty = {2}.\n", g.zoom[i],
-                       lastx, lasty);
+  const double last_x = (g.level() == ScopeLevel::LEVEL_UNIV)
+                            ? g.universe_center().x
+                            : g.system_center().x;
+  const double last_y = (g.level() == ScopeLevel::LEVEL_UNIV)
+                            ? g.universe_center().y
+                            : g.system_center().y;
+  g.present(GB::presentation::ZoomResult{
+      .zoom = g.zoom[i],
+      .last_x = last_x,
+      .last_y = last_y,
+  });
   return true;
 }
 

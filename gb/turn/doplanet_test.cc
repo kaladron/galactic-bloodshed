@@ -2713,6 +2713,7 @@ void test_send_planet_turn_telegrams_nova() {
         tele1.back().message.contains("Seas and rivers are boiling!"));
     test::expect_true(tele1.back().message.contains(
         "This planet must be evacuated immediately!"));
+    test::expect_false(tele1.back().message.contains('~'));
 
     // Race 2 has 0 sectors owned -> no telegram received
     auto tele2 = em.get_telegrams(player_t{2}, governor_t{1});

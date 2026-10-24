@@ -915,4 +915,108 @@ std::string render_for_mode(UiMode mode, const AutoreportResult& vm) {
                               : render_autoreport_result(vm);
 }
 
+std::string render_recovery_report(const RecoveryReportViewModel& vm) {
+  if (vm.shares.empty() || vm.total_stolen.empty()) {
+    return {};
+  }
+
+  tabulate::Table table;
+  table.format().hide_border().column_separator("  ");
+  table.add_row({"", "res", "destr", "fuel", "xtal"});
+
+  for (const auto& row : vm.shares) {
+    table.add_row({
+        row.race_name,
+        std::format("{}", row.share.resources),
+        std::format("{}", row.share.destruct),
+        std::format("{}", row.share.fuel),
+        std::format("{}", row.share.crystals),
+    });
+  }
+
+  table.add_row({
+      "Total:",
+      std::format("{}", vm.total_stolen.resources),
+      std::format("{}", vm.total_stolen.destruct),
+      std::format("{}", vm.total_stolen.fuel),
+      std::format("{}", vm.total_stolen.crystals),
+  });
+
+  table.column(0).format().font_align(tabulate::FontAlign::left);
+  table.column(1).format().font_align(tabulate::FontAlign::right);
+  table.column(2).format().font_align(tabulate::FontAlign::right);
+  table.column(3).format().font_align(tabulate::FontAlign::right);
+  table.column(4).format().font_align(tabulate::FontAlign::right);
+
+  return std::format("Recovery Report: Planet /{}/{}\n{}\n", vm.star_name,
+                     vm.planet_name, table.str());
+}
+
+std::string render_json_recovery_report(const RecoveryReportViewModel& vm) {
+  return render_json_envelope("recovery_report", vm);
+}
+
+std::string render_for_mode(UiMode mode, const RecoveryReportViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_recovery_report(vm)
+                              : render_recovery_report(vm);
+}
+
+std::string
+render_planet_turn_autoreport(const PlanetTurnAutoreportViewModel& vm) {
+  std::string out;
+  std::format_to(std::back_inserter(out), "\nFrom /{}/{}\n", vm.star_name,
+                 vm.planet_name);
+  if (vm.temp_changed) {
+    std::format_to(std::back_inserter(out), "Temp: {} to {}\n", vm.rest_temp,
+                   vm.current_temp);
+  }
+  std::format_to(std::back_inserter(out), "Total      Prod: {}r {}f {}d\n",
+                 vm.production.resources, vm.production.fuel,
+                 vm.production.destruct);
+  if (vm.production.crystals) {
+    std::format_to(std::back_inserter(out), "    {} crystals found\n",
+                   vm.production.crystals);
+  }
+  if (vm.sectors_captured) {
+    std::format_to(std::back_inserter(out), "{} sectors captured\n",
+                   vm.sectors_captured);
+  }
+  if (vm.nova_stage) {
+    std::format_to(std::back_inserter(out),
+                   "This planet's primary is in a Stage {} nova.\n",
+                   vm.nova_stage);
+  }
+  if (vm.envir_damage) {
+    std::format_to(std::back_inserter(out),
+                   "Environmental damage on sector {},{}\n", vm.envir_damage->x,
+                   vm.envir_damage->y);
+  }
+  if (vm.slaved_to) {
+    std::format_to(std::back_inserter(out), "ENSLAVED to player {}\n",
+                   *vm.slaved_to);
+  }
+  return out;
+}
+
+std::string render_planet_nova_bulletin(const PlanetNovaBulletinViewModel& vm) {
+  std::string out;
+  std::format_to(std::back_inserter(out),
+                 "BULLETIN from /{}/{}\n\nStar {} is undergoing nova.\n",
+                 vm.star_name, vm.planet_name, vm.star_name);
+  if (vm.seas_boiling) {
+    out += "Seas and rivers are boiling!\n";
+  }
+  out += "This planet must be evacuated immediately!\n";
+  return out;
+}
+
+std::string
+render_slave_revolt_bulletin(const SlaveRevoltBulletinViewModel& vm) {
+  return std::format(
+      "\nThere has been a SLAVE REVOLT on /{}/{}!\n"
+      "All population belonging to player #{} on the planet have been killed!\n"
+      "Productions now go to their rightful owners.\n",
+      vm.star_name, vm.planet_name, vm.former_master);
+}
+
 }  // namespace GB::presentation

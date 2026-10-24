@@ -243,7 +243,7 @@ target_sources(
           turn/vn.cc)
 target_link_libraries(
   gb_turn
-  PUBLIC gb_entities gb_services gb_mechanics gb_presentation strong_id_module dallib types_module scnlib_module tabulate_module)
+  PUBLIC gb_entities gb_services gb_mechanics gb_presentation strong_id_module dallib types_module scnlib_module)
 
 add_library(gb_creator)
 target_sources(
@@ -492,7 +492,7 @@ gb_add_test(dispatch_pipeline_test SOURCES commands/dispatch_pipeline_test.cc)
 gb_add_test(dissolve_test SOURCES commands/dissolve_test.cc)
 gb_add_test(distance_test SOURCES commands/distance_test.cc)
 gb_add_test(dock_test SOURCES commands/dock_test.cc)
-gb_add_test(doplanet_test SOURCES turn/doplanet_test.cc EXTRA_LIBS tabulate::tabulate)
+gb_add_test(doplanet_test SOURCES turn/doplanet_test.cc)
 gb_add_test(dosector_simple_test SOURCES turn/dosector_simple_test.cc)
 gb_add_test(doship_repair_test SOURCES turn/doship_repair_test.cc)
 gb_add_test(doship_test SOURCES turn/doship_test.cc)

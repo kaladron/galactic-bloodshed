@@ -382,11 +382,70 @@ void test_bless_presentation() {
   test::expect_contains(json, "\"value\":30");
 }
 
+void test_planet_turn_bulletins() {
+  namespace pres = GB::presentation;
+
+  test::expect_true(pres::render_recovery_report({}).empty());
+  test::expect_true(
+      pres::render_recovery_report({.shares = {pres::RecoveryShareRow{
+                                        .player = 1, .race_name = "Alpha"}},
+                                    .total_stolen = {}})
+          .empty());
+
+  const pres::RecoveryReportViewModel recovery_vm{
+      .star_id = 1,
+      .star_name = "Sol",
+      .planet_name = "Earth",
+      .planet_num = 1,
+      .shares = {pres::RecoveryShareRow{
+          .player = 1,
+          .race_name = "Humanoid",
+          .share = {.resources = 60, .destruct = 30, .fuel = 10, .crystals = 3},
+      }},
+      .total_stolen = {.resources = 60,
+                       .destruct = 30,
+                       .fuel = 10,
+                       .crystals = 3},
+  };
+  const std::string recovery_ascii =
+      pres::render_for_mode(UiMode::ASCII, recovery_vm);
+  test::expect_contains(recovery_ascii, "Recovery Report: Planet /Sol/Earth\n");
+  test::expect_contains(recovery_ascii, "Humanoid");
+  test::expect_contains(recovery_ascii, "Total:");
+  const std::string recovery_json =
+      pres::render_for_mode(UiMode::JSON, recovery_vm);
+  test::expect_contains(recovery_json, "\"type\":\"recovery_report\"");
+  test::expect_contains(recovery_json, "\"race_name\":\"Humanoid\"");
+
+  test::expect_eq(
+      pres::render_planet_turn_autoreport(
+          {.star_name = "Sol",
+           .planet_name = "Mars",
+           .production = {.resources = 5, .destruct = 1, .fuel = 2}}),
+      "\nFrom /Sol/Mars\nTotal      Prod: 5r 2f 1d\n");
+
+  const std::string nova_wet = pres::render_planet_nova_bulletin(
+      {.star_name = "Sol", .planet_name = "Earth", .seas_boiling = true});
+  test::expect_contains(nova_wet, "Seas and rivers are boiling!\n");
+  test::expect_false(nova_wet.contains('~'));
+
+  const std::string nova_dry = pres::render_planet_nova_bulletin(
+      {.star_name = "Sol", .planet_name = "Mars", .seas_boiling = false});
+  test::expect_false(nova_dry.contains("Seas and rivers are boiling!"));
+  test::expect_false(nova_dry.contains('~'));
+
+  test::expect_contains(
+      pres::render_slave_revolt_bulletin(
+          {.star_name = "Sol", .planet_name = "Earth", .former_master = 2}),
+      "All population belonging to player #2 on the planet have been killed!");
+}
+
 }  // namespace
 
 int main() {
   test_render_json_envelope_and_polymorphic_presenter();
   test_gameobj_ui_mode_and_present();
   test_bless_presentation();
+  test_planet_turn_bulletins();
   return 0;
 }

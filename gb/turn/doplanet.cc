@@ -6,8 +6,8 @@
 
 module;
 
+import gb.presentation.planet_views;
 import std;
-import tabulate;
 
 module gb.turn;
 
@@ -369,8 +369,8 @@ recover_conquered_stockpiles(EntityManager& entity_manager, const Star& star,
   }
 
   // 1. Deposit plunder into conqueror colonies
-  for (const auto& [conqueror, allocated] : distribution->shares) {
-    planet.info(conqueror).deposit_stockpile(allocated);
+  for (const auto& item : distribution->shares) {
+    planet.info(item.player).deposit_stockpile(item.share);
   }
 
   // 2. Drain stockpiles from defeated non-god races
@@ -400,42 +400,26 @@ std::string format_recovery_report(const RecoveryReport& report,
     return {};
   }
 
-  std::stringstream out;
-  out << std::format("Recovery Report: Planet /{}/{}\n", report.star_name,
-                     report.planet_name);
-
-  tabulate::Table table;
-  table.format().hide_border().column_separator("  ");
-
-  table.add_row({"", "res", "destr", "fuel", "xtal"});
-
-  for (const auto& [conqueror, allocated] : report.allocated_shares) {
-    const auto& race = *entity_manager.peek_race(conqueror);
-    table.add_row({
-        race.name,
-        std::format("{}", allocated.resources),
-        std::format("{}", allocated.destruct),
-        std::format("{}", allocated.fuel),
-        std::format("{}", allocated.crystals),
+  std::vector<GB::presentation::RecoveryShareRow> shares;
+  shares.reserve(report.allocated_shares.size());
+  for (const auto& item : report.allocated_shares) {
+    const auto& race = *entity_manager.peek_race(item.player);
+    shares.push_back(GB::presentation::RecoveryShareRow{
+        .player = item.player,
+        .race_name = race.name,
+        .share = item.share,
     });
   }
 
-  table.add_row({
-      "Total:",
-      std::format("{}", report.total_stolen.resources),
-      std::format("{}", report.total_stolen.destruct),
-      std::format("{}", report.total_stolen.fuel),
-      std::format("{}", report.total_stolen.crystals),
-  });
-
-  table.column(0).format().font_align(tabulate::FontAlign::left);
-  table.column(1).format().font_align(tabulate::FontAlign::right);
-  table.column(2).format().font_align(tabulate::FontAlign::right);
-  table.column(3).format().font_align(tabulate::FontAlign::right);
-  table.column(4).format().font_align(tabulate::FontAlign::right);
-
-  out << table << "\n";
-  return out.str();
+  return GB::presentation::render_recovery_report(
+      GB::presentation::RecoveryReportViewModel{
+          .star_id = report.star_id,
+          .star_name = report.star_name,
+          .planet_name = report.planet_name,
+          .planet_num = report.planet_num,
+          .shares = std::move(shares),
+          .total_stolen = report.total_stolen,
+      });
 }
 
 void dispatch_recovery_telegrams(EntityManager& entity_manager,
@@ -610,12 +594,12 @@ void divert_slave_tribute(EntityManager& entity_manager, Planet& planet,
 
 void notify_slave_revolt(EntityManager& entity_manager, const Star& star,
                          const Planet& planet, player_t former_master) {
-  const std::string message = std::format(
-      "\nThere has been a SLAVE REVOLT on /{}/{}!\n"
-      "All population belonging to player #{} on the planet have been killed!\n"
-      "Productions now go to their rightful owners.\n",
-      star.get_name(), star.get_planet_name(planet.planet_order()),
-      former_master);
+  const std::string message = GB::presentation::render_slave_revolt_bulletin(
+      GB::presentation::SlaveRevoltBulletinViewModel{
+          .star_name = star.get_name(),
+          .planet_name = star.get_planet_name(planet.planet_order()),
+          .former_master = former_master,
+      });
 
   for (const Race& race : RaceList::readonly(entity_manager)) {
     const player_t r_id = race.Playernum;
@@ -809,6 +793,15 @@ void process_planet_production(EntityManager& entity_manager, const Star& star,
   }
 }
 
+namespace {
+
+[[nodiscard]] constexpr bool has_surface_water(PlanetType type) noexcept {
+  return type == PlanetType::EARTH || type == PlanetType::WATER ||
+         type == PlanetType::FOREST;
+}
+
+}  // namespace
+
 void send_planet_turn_telegrams(EntityManager& entity_manager, const Star& star,
                                 Planet& planet,
                                 const std::optional<Coordinates>& envir_damage,
@@ -829,59 +822,36 @@ void send_planet_turn_telegrams(EntityManager& entity_manager, const Star& star,
     info.prod_dest = prod.destruct;
     if (info.autorep) {
       info.autorep--;
-      std::stringstream telegram_buf;
-      telegram_buf << std::format("\nFrom /{}/{}\n", star.get_name(),
-                                  star.get_planet_name(planetnum));
-
-      if (stats.temp_add(starnum, planetnum)) {
-        telegram_buf << std::format("Temp: {} to {}\n", planet.rtemp(),
-                                    planet.temp());
-      }
-      telegram_buf << std::format("Total      Prod: {}r {}f {}d\n",
-                                  prod.resources, prod.fuel, prod.destruct);
-      if (prod.crystals) {
-        telegram_buf << std::format("    {} crystals found\n", prod.crystals);
-      }
-      if (stats.tot_captured) {
-        telegram_buf << std::format("{} sectors captured\n",
-                                    stats.tot_captured);
-      }
-      if (star.nova_stage()) {
-        telegram_buf << std::format(
-            "This planet's primary is in a Stage {} nova.\n",
-            star.nova_stage());
-      }
-      // Remind the player that they should clean up the environment
-      if (envir_damage.has_value()) {
-        telegram_buf << std::format("Environmental damage on sector {},{}\n",
-                                    envir_damage->x, envir_damage->y);
-      }
-      if (planet.slaved_to()) {
-        telegram_buf << std::format("ENSLAVED to player {}\n",
-                                    *planet.slaved_to());
-      }
-      push_telegram(entity_manager, p, star.governor(p), telegram_buf.str());
+      const std::string telegram_msg =
+          GB::presentation::render_planet_turn_autoreport(
+              GB::presentation::PlanetTurnAutoreportViewModel{
+                  .star_name = star.get_name(),
+                  .planet_name = star.get_planet_name(planetnum),
+                  .temp_changed = stats.temp_add(starnum, planetnum) != 0,
+                  .rest_temp = planet.rtemp(),
+                  .current_temp = planet.temp(),
+                  .production = prod,
+                  .sectors_captured = stats.tot_captured,
+                  .nova_stage = star.nova_stage(),
+                  .envir_damage = envir_damage,
+                  .slaved_to = planet.slaved_to(),
+              });
+      push_telegram(entity_manager, p, star.governor(p), telegram_msg);
     }
   }
 
   // Find out who is on this planet, for nova notification
   if (star.nova_stage() == 1) {
-    std::stringstream telegram_buf;
-    telegram_buf << std::format("BULLETIN from /{}/{}\n", star.get_name(),
-                                star.get_planet_name(planetnum));
-    telegram_buf << std::format("\nStar {} is undergoing nova.\n",
-                                star.get_name());
-    if (planet.type() == PlanetType::EARTH ||
-        planet.type() == PlanetType::WATER ||
-        planet.type() == PlanetType::FOREST) {
-      telegram_buf << "Seas and rivers are boiling!\n";
-    }
-    telegram_buf << "This planet must be evacuated immediately!\n"
-                 << TELEG_DELIM;
+    const std::string bulletin = GB::presentation::render_planet_nova_bulletin(
+        GB::presentation::PlanetNovaBulletinViewModel{
+            .star_name = star.get_name(),
+            .planet_name = star.get_planet_name(planetnum),
+            .seas_boiling = has_surface_water(planet.type()),
+        });
     for (const Race& race : RaceList::readonly(entity_manager)) {
       const player_t p = race.Playernum;
       if (planet.sectors_owned_by(p)) {
-        push_telegram(entity_manager, p, star.governor(p), telegram_buf.str());
+        push_telegram(entity_manager, p, star.governor(p), bulletin);
       }
     }
   }

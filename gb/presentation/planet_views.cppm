@@ -500,4 +500,65 @@ render_json_autoreport_result(const AutoreportResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const AutoreportResult& vm);
 
+/// Single conqueror loot allocation row in a planetary recovery report.
+struct RecoveryShareRow {
+  player_t player{0};
+  std::string race_name{};
+  Stockpile share{};
+};
+
+/// View model for conquered planetary stockpile recovery reports.
+struct RecoveryReportViewModel {
+  starnum_t star_id{0};
+  std::string star_name{};
+  std::string planet_name{};
+  planetnum_t planet_num{0};
+  std::vector<RecoveryShareRow> shares{};
+  Stockpile total_stolen{};
+};
+
+[[nodiscard]] std::string
+render_recovery_report(const RecoveryReportViewModel& vm);
+[[nodiscard]] std::string
+render_json_recovery_report(const RecoveryReportViewModel& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const RecoveryReportViewModel& vm);
+
+/// View model for per-turn automatic planetary production report telegrams.
+struct PlanetTurnAutoreportViewModel {
+  std::string star_name{};
+  std::string planet_name{};
+  bool temp_changed{false};
+  temperature_t rest_temp{0};
+  temperature_t current_temp{0};
+  Stockpile production{};
+  sector_count_t sectors_captured{0};
+  int nova_stage{0};
+  std::optional<Coordinates> envir_damage{std::nullopt};
+  std::optional<player_t> slaved_to{std::nullopt};
+};
+
+[[nodiscard]] std::string
+render_planet_turn_autoreport(const PlanetTurnAutoreportViewModel& vm);
+
+/// View model for Stage 1 stellar nova planetary evacuation bulletins.
+struct PlanetNovaBulletinViewModel {
+  std::string star_name{};
+  std::string planet_name{};
+  bool seas_boiling{false};
+};
+
+[[nodiscard]] std::string
+render_planet_nova_bulletin(const PlanetNovaBulletinViewModel& vm);
+
+/// View model for planetary slave revolt notifications.
+struct SlaveRevoltBulletinViewModel {
+  std::string star_name{};
+  std::string planet_name{};
+  player_t former_master{0};
+};
+
+[[nodiscard]] std::string
+render_slave_revolt_bulletin(const SlaveRevoltBulletinViewModel& vm);
+
 }  // namespace GB::presentation

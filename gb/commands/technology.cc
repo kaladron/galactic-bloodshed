@@ -6,7 +6,9 @@
 module;
 
 import gb.entities;
+import gb.presentation.planet_views;
 import gb.services;
+import scnlib;
 import std;
 
 module commands;
@@ -14,39 +16,40 @@ module commands;
 namespace GB::commands {
 
 bool technology(const command_t& argv, GameObj& g) {
-  player_t Playernum = g.player();
+  if (argv.size() > 2) {
+    g.out << "Syntax: technology [<investment>]\n";
+    return false;
+  }
 
-  if (argv.size() < 2) {
-    g.entity_manager.with_planet(g.snum(), g.pnum(), [&](const Planet& planet) {
-      g.out << std::format(
-          "Current investment : {}    Technology production/update: "
-          "{:.3f}\n",
-          planet.info(Playernum).tech_invest,
-          tech_prod(planet.info(Playernum).tech_invest,
-                    planet.info(Playernum).popn));
+  const player_t player = g.player();
+  if (argv.size() == 1) {
+    const auto& planet = *g.entity_manager.peek_planet(g.snum(), g.pnum());
+    const auto& info = planet.info(player);
+    g.present(GB::presentation::TechnologyViewModel{
+        .updated = false,
+        .investment = info.tech_invest,
+        .tech_production = tech_prod(info.tech_invest, info.popn),
     });
     return true;
   }
 
-  money_t invest = 0;
-  try {
-    invest = std::stoi(argv[1]);
-  } catch (...) {
+  auto scan_res = scn::scan<money_t>(argv[1], "{}");
+  if (!scan_res || !scan_res->range().empty() || scan_res->value() < 0) {
     g.out << "Illegal value.\n";
     return false;
   }
+  const money_t invest = scan_res->value();
 
-  if (invest < 0) {
-    g.out << "Illegal value.\n";
-    return false;
-  }
-
+  double new_prod = 0.0;
   g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {
-    p.info(Playernum).tech_invest = invest;
-
-    g.out << std::format(
-        "   New (ideal) tech production: {:.3f} (this planet)\n",
-        tech_prod(p.info(Playernum).tech_invest, p.info(Playernum).popn));
+    auto& info = p.info(player);
+    info.tech_invest = invest;
+    new_prod = tech_prod(info.tech_invest, info.popn);
+  });
+  g.present(GB::presentation::TechnologyViewModel{
+      .updated = true,
+      .investment = invest,
+      .tech_production = new_prod,
   });
   return true;
 }

@@ -46,10 +46,14 @@ void test_technology_happy_paths() {
   test::expect_contains(g.out.str(), "New (ideal) tech production:");
   test::expect_eq(ctx.em.peek_planet(1, 1)->info(1).tech_invest, 500);
 
-  // 3. Set technology investment to 0
+  // 3. Set 64-bit technology investment and verify UiMode::JSON envelope
+  g.set_ui_mode(UiMode::JSON);
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"technology", "0"}, 1);
-  test::expect_eq(ctx.em.peek_planet(1, 1)->info(1).tech_invest, 0);
+  ctx.assert_dispatch_success(g, {"technology", "3000000000"}, 1);
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(1).tech_invest,
+                  3'000'000'000LL);
+  test::expect_contains(g.out.str(), "\"type\":\"technology\"");
+  test::expect_contains(g.out.str(), "\"investment\":3000000000");
 }
 
 // Test technology command with insufficient AP
@@ -106,9 +110,14 @@ void test_technology_domain_errors() {
   g.set_snum(1);
   g.set_pnum(1);
 
-  // Domain error: Illegal negative value (0 AP deducted, investment unchanged)
-  ctx.assert_dispatch_rejected(g, {"technology", "-100"});
-  test::expect_contains(g.out.str(), "Illegal value.");
+  for (std::string bad : {"-100", "abc", "500abc"}) {
+    g.out.str("");
+    ctx.assert_dispatch_rejected(g, {"technology", bad});
+    test::expect_contains(g.out.str(), "Illegal value.");
+  }
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"technology", "500", "extra"});
+  test::expect_contains(g.out.str(), "Syntax: technology [<investment>]");
   test::expect_eq(ctx.em.peek_planet(1, 1)->info(1).tech_invest, 100);
 }
 

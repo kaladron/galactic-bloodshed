@@ -1094,4 +1094,74 @@ std::string render_for_mode(UiMode mode, const StarLocationsViewModel& vm) {
                               : render_star_locations(vm);
 }
 
+std::string render_production_report(const ProductionReportViewModel& vm) {
+  std::string out = "          ============ Production Report ==========\n";
+  for (const auto& loc : vm.bad_locations) {
+    std::format_to(std::back_inserter(out), "Bad location `{}`.\n", loc);
+  }
+
+  tabulate::Table table;
+  table.format().hide_border().column_separator("  ");
+  constexpr std::array<std::size_t, 13> widths{1, 9, 1, 3, 8, 8, 3,
+                                               6, 5, 6, 6, 3, 8};
+  for (std::size_t i = 0; i < widths.size(); ++i) {
+    table.column(i).format().width(widths[i]);
+    if (i >= 3) table.column(i).format().font_align(tabulate::FontAlign::right);
+  }
+
+  table.add_row({"", "Planet", "", "gov", "tech", "deposit", "x", "res", "des",
+                 "fuel", "tax", "tox", "est prod"});
+  table[0].format().font_style({tabulate::FontStyle::bold});
+
+  for (const auto& row : vm.rows) {
+    table.add_row({
+        std::string(1, row.type_symbol),
+        std::format("{}/{}", row.star_name.substr(0, 4),
+                    row.planet_name.substr(0, 4)),
+        row.autoreport ? "*" : " ",
+        std::format("{}", row.governor),
+        std::format("{:.4f}", row.prod_tech),
+        std::format("{}", row.total_resources),
+        std::format("{}", row.prod_crystals),
+        std::format("{}", row.prod_res),
+        std::format("{}", row.prod_dest),
+        std::format("{}", row.prod_fuel),
+        std::format("{}", row.prod_money),
+        std::format("{}", row.tox_thresh),
+        std::format("{:.2f}", row.est_production),
+    });
+  }
+
+  std::format_to(std::back_inserter(out), "{}\n", table.str());
+  return out;
+}
+
+std::string render_json_production_report(const ProductionReportViewModel& vm) {
+  return render_json_envelope("production", vm);
+}
+
+std::string render_for_mode(UiMode mode, const ProductionReportViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_production_report(vm)
+                              : render_production_report(vm);
+}
+
+std::string render_technology(const TechnologyViewModel& vm) {
+  if (vm.updated) {
+    return std::format("   New (ideal) tech production: {:.3f} (this planet)\n",
+                       vm.tech_production);
+  }
+  return std::format("Current investment : {}    Technology production/update: "
+                     "{:.3f}\n",
+                     vm.investment, vm.tech_production);
+}
+
+std::string render_json_technology(const TechnologyViewModel& vm) {
+  return render_json_envelope("technology", vm);
+}
+
+std::string render_for_mode(UiMode mode, const TechnologyViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_technology(vm)
+                              : render_technology(vm);
+}
+
 }  // namespace GB::presentation

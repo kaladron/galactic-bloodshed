@@ -617,4 +617,49 @@ render_json_star_locations(const StarLocationsViewModel& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const StarLocationsViewModel& vm);
 
+/// Single planetary colony row in a `production` report.
+struct ProductionRow {
+  starnum_t snum{0};
+  planetnum_t pnum{0};
+  std::string star_name{};
+  std::string planet_name{};
+  char type_symbol{' '};
+  bool autoreport{false};
+  governor_t governor{0};
+  double prod_tech{0.0};
+  resource_t total_resources{0};
+  resource_t prod_crystals{0};
+  resource_t prod_res{0};
+  resource_t prod_dest{0};
+  resource_t prod_fuel{0};
+  money_t prod_money{0};
+  Percentage tox_thresh{0};
+  double est_production{0.0};
+};
+
+/// View model for `production [<location> ...]` colony output reports.
+struct ProductionReportViewModel {
+  std::vector<ProductionRow> rows{};
+  std::vector<std::string> bad_locations{};
+};
+
+[[nodiscard]] std::string
+render_production_report(const ProductionReportViewModel& vm);
+[[nodiscard]] std::string
+render_json_production_report(const ProductionReportViewModel& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const ProductionReportViewModel& vm);
+
+/// View model for `technology [<investment>]` planetary tech investment.
+struct TechnologyViewModel {
+  bool updated{false};
+  money_t investment{0};
+  double tech_production{0.0};
+};
+
+[[nodiscard]] std::string render_technology(const TechnologyViewModel& vm);
+[[nodiscard]] std::string render_json_technology(const TechnologyViewModel& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const TechnologyViewModel& vm);
+
 }  // namespace GB::presentation

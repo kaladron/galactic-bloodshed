@@ -406,7 +406,7 @@ target_sources(
           commands/whois.cc
           commands/zoom.cc)
 target_link_libraries(commands PRIVATE gb_presentation gb_turn gb_mechanics gb_entities gb_services glaze::glaze
-                                       scnlib_module tabulate_module)
+                                       scnlib_module)
 
 # Create test utilities module
 add_library(test_module)
@@ -556,7 +556,7 @@ gb_add_test(planet_sqlite_test SOURCES repositories/planet_sqlite_test.cc)
 gb_add_test(planet_test SOURCES entities/planet_test.cc)
 gb_add_test(pledge_test SOURCES commands/pledge_test.cc)
 gb_add_test(post_test SOURCES commands/post_test.cc)
-gb_add_test(power_command_test SOURCES commands/power_test.cc EXTRA_LIBS tabulate::tabulate)
+gb_add_test(power_command_test SOURCES commands/power_test.cc)
 gb_add_test(power_json_test SOURCES repositories/power_json_test.cc)
 gb_add_test(presentation_test SOURCES presentation/presentation_test.cc)
 gb_add_test(production_test SOURCES commands/production_test.cc)
@@ -604,7 +604,7 @@ gb_add_test(stardata_json_test SOURCES repositories/stardata_json_test.cc)
 gb_add_test(strong_id_json_test SOURCES entities/strong_id_json_test.cc EXTRA_LIBS glaze_core_module)
 gb_add_test(strong_id_test SOURCES entities/strong_id_test.cc EXTRA_LIBS strong_id_module)
 gb_add_test(survey_test SOURCES commands/survey_test.cc)
-gb_add_test(tactical_test SOURCES commands/tactical_test.cc EXTRA_LIBS tabulate::tabulate)
+gb_add_test(tactical_test SOURCES commands/tactical_test.cc)
 gb_add_test(tax_test SOURCES commands/tax_test.cc)
 gb_add_test(tech_status_test SOURCES commands/tech_status_test.cc)
 gb_add_test(technology_test SOURCES commands/technology_test.cc)

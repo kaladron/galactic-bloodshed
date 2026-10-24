@@ -38,14 +38,30 @@ void test_production_dispatch() {
   test::expect_contains(g.out.str(), "Production Report");
   test::expect_contains(g.out.str(), "Sol/Eart");
 
-  // 2. Production report for specific location
-  ctx.assert_dispatch_success(g, {"production", "/Sol"});
-  test::expect_contains(g.out.str(), "Production Report");
+  // 2. Planet-scoped argument filters to only that planet
+  TestPlanetBuilder(ctx, 1, PlanetType::MARS)
+      .named("Mars")
+      .with_colony(1, 500)
+      .build();
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"production", "/Sol/Earth"});
   test::expect_contains(g.out.str(), "Sol/Eart");
+  test::expect_false(g.out.str().contains("Sol/Mars"));
 
-  // 3. Bad location warning
-  ctx.assert_dispatch_success(g, {"production", "/InvalidStar"});
-  test::expect_contains(g.out.str(), "Bad location");
+  // 3. Bad location warnings (no duplicate PlaceError text)
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"production", "/InvalidStar", "/"});
+  test::expect_contains(g.out.str(), "Bad location `/InvalidStar`.");
+  test::expect_contains(g.out.str(), "Bad location `/`.");
+  test::expect_false(g.out.str().contains("No such star"));
+
+  // 4. UiMode::JSON output
+  g.set_ui_mode(UiMode::JSON);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"production", "/Sol/Earth"});
+  test::expect_contains(g.out.str(), "\"type\":\"production\"");
+  test::expect_contains(g.out.str(), "\"planet_name\":\"Earth\"");
+  test::expect_contains(g.out.str(), "\"prod_res\":100");
 
   ctx.verify_universe_invariants();
 }

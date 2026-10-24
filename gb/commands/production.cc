@@ -5,105 +5,88 @@
 
 module;
 
-import std;
 import gb.entities;
+import gb.presentation.planet_views;
 import gb.services;
-import tabulate;
+import std;
 
 module commands;
 
 namespace {
-void production_at_star(GameObj& g, starnum_t star, tabulate::Table& table) {
-  player_t Playernum = g.player();
-  governor_t Governor = g.governor();
 
+void append_planet_production(
+    const Star& star_ref, const Planet& pl, player_t player,
+    governor_t governor, std::vector<GB::presentation::ProductionRow>& rows) {
+  const auto& info = pl.info(player);
+  if (!info.explored || !info.numsectsowned ||
+      !star_ref.control(player, governor)) {
+    return;
+  }
+  rows.push_back({
+      .snum = star_ref.star_id(),
+      .pnum = pl.planet_order(),
+      .star_name = star_ref.get_name(),
+      .planet_name = star_ref.get_planet_name(pl.planet_order()),
+      .type_symbol = pl.type_symbol(),
+      .autoreport = info.autorep != 0,
+      .governor = star_ref.governor(player),
+      .prod_tech = info.prod_tech,
+      .total_resources = pl.total_resources(),
+      .prod_crystals = info.prod_crystals,
+      .prod_res = info.prod_res,
+      .prod_dest = info.prod_dest,
+      .prod_fuel = info.prod_fuel,
+      .prod_money = info.prod_money,
+      .tox_thresh = info.tox_thresh.value_or(0),
+      .est_production = info.est_production,
+  });
+}
+
+void append_star_production(
+    GameObj& g, starnum_t star,
+    std::vector<GB::presentation::ProductionRow>& rows) {
   const auto& star_ref = *g.entity_manager.peek_star(star);
-  if (!star_ref.is_explored_by(Playernum)) return;
+  if (!star_ref.is_explored_by(g.player())) return;
 
   for (const auto& pl :
        PlanetList::readonly(g.entity_manager, star, star_ref.numplanets())) {
-    if (pl.info(Playernum).explored && pl.info(Playernum).numsectsowned &&
-        star_ref.control(Playernum, Governor)) {
-      const auto star4 = std::string(star_ref.get_name()).substr(0, 4);
-      const auto planet4 =
-          std::string(star_ref.get_planet_name(pl.planet_order())).substr(0, 4);
-
-      std::string autorep = pl.info(Playernum).autorep ? "*" : " ";
-
-      table.add_row(
-          {std::string(1, pl.type_symbol()),
-           std::format("{}/{}", star4, planet4), autorep,
-           std::format("{}", star_ref.governor(Playernum)),
-           std::format("{:.4f}", pl.info(Playernum).prod_tech),
-           std::format("{}", pl.total_resources()),
-           std::format("{}", pl.info(Playernum).prod_crystals),
-           std::format("{}", pl.info(Playernum).prod_res),
-           std::format("{}", pl.info(Playernum).prod_dest),
-           std::format("{}", pl.info(Playernum).prod_fuel),
-           std::format("{}", pl.info(Playernum).prod_money),
-           std::format("{}", pl.info(Playernum).tox_thresh.value_or(0)),
-           std::format("{:.2f}", pl.info(Playernum).est_production)});
-    }
+    append_planet_production(star_ref, pl, g.player(), g.governor(), rows);
   }
 }
+
 }  // namespace
 
 namespace GB::commands {
 bool production(const command_t& argv, GameObj& g) {
-  g.out << "          ============ Production Report ==========\n";
+  GB::presentation::ProductionReportViewModel vm{};
 
-  tabulate::Table table;
-  table.format().hide_border().column_separator("  ");
-
-  // Configure columns
-  table.column(0).format().width(1);  // Planet type symbol
-  table.column(1).format().width(9);  // Star/Planet
-  table.column(2).format().width(1);  // Autorep flag
-  table.column(3).format().width(3).font_align(
-      tabulate::FontAlign::right);  // Gov
-  table.column(4).format().width(8).font_align(
-      tabulate::FontAlign::right);  // Tech
-  table.column(5).format().width(8).font_align(
-      tabulate::FontAlign::right);  // Deposit
-  table.column(6).format().width(3).font_align(
-      tabulate::FontAlign::right);  // Crystals
-  table.column(7).format().width(6).font_align(
-      tabulate::FontAlign::right);  // Res
-  table.column(8).format().width(5).font_align(
-      tabulate::FontAlign::right);  // Dest
-  table.column(9).format().width(6).font_align(
-      tabulate::FontAlign::right);  // Fuel
-  table.column(10).format().width(6).font_align(
-      tabulate::FontAlign::right);  // Tax
-  table.column(11).format().width(3).font_align(
-      tabulate::FontAlign::right);  // Tox
-  table.column(12).format().width(8).font_align(
-      tabulate::FontAlign::right);  // Est prod
-
-  // Add header
-  table.add_row({"", "Planet", "", "gov", "tech", "deposit", "x", "res", "des",
-                 "fuel", "tax", "tox", "est prod"});
-  table[0].format().font_style({tabulate::FontStyle::bold});
-
-  if (argv.size() < 2)
+  if (argv.size() < 2) {
     for (const Star& star : StarList::readonly(g.entity_manager)) {
-      production_at_star(g, star.star_id(), table);
+      append_star_production(g, star.star_id(), vm.rows);
     }
-  else
-    for (int i = 1; i < argv.size(); i++) {
+  } else {
+    for (std::size_t i = 1; i < argv.size(); ++i) {
       auto where = Place::resolve(g.entity_manager, g.scope_context(), argv[i]);
-      if (!where) {
-        g.out << format_place_error(where.error());
-      }
-      if (!where || (where->level == ScopeLevel::LEVEL_UNIV) ||
-          (where->level == ScopeLevel::LEVEL_SHIP)) {
-        g.out << std::format("Bad location `{}`.\n", argv[i]);
+      if (!where || where->level == ScopeLevel::LEVEL_UNIV ||
+          where->level == ScopeLevel::LEVEL_SHIP) {
+        vm.bad_locations.push_back(argv[i]);
         continue;
-      } /* ok, a proper location */
-      production_at_star(g, where->snum, table);
+      }
+      if (where->level == ScopeLevel::LEVEL_PLAN) {
+        const auto& star_ref = *g.entity_manager.peek_star(where->snum);
+        if (star_ref.is_explored_by(g.player())) {
+          const auto& pl =
+              *g.entity_manager.peek_planet(where->snum, where->pnum);
+          append_planet_production(star_ref, pl, g.player(), g.governor(),
+                                   vm.rows);
+        }
+      } else {
+        append_star_production(g, where->snum, vm.rows);
+      }
     }
+  }
 
-  g.out << table << "\n";
+  g.present(vm);
   return true;
 }
 

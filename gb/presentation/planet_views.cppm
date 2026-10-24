@@ -448,4 +448,41 @@ render_json_insurgency_result(const InsurgencyResult& vm);
 render_insurgency_telegram(const InsurgencyResult& vm);
 [[nodiscard]] std::string render_insurgency_news(const InsurgencyResult& vm);
 
+/// Single active shipping route entry for a planet (`route` / `route <n>`).
+struct RouteRow {
+  int route_num{0};
+  Coordinates dest_coords{0, 0};
+  std::string load{};
+  std::string unload{};
+  std::string dest_star_name{};
+  std::string dest_planet_name{};
+};
+
+/// View model for planetary shipping route inspection (`route` / `route <n>`).
+struct RouteListViewModel {
+  std::vector<RouteRow> routes{};
+};
+
+/// Result of updating a planetary shipping route (`route <n> ...`).
+struct RouteSetResult {
+  int route_num{0};
+  bool active{false};
+  Coordinates dest_coords{0, 0};
+  std::string load{};
+  std::string unload{};
+  std::optional<starnum_t> dest_star{std::nullopt};
+  std::optional<planetnum_t> dest_planet{std::nullopt};
+};
+
+[[nodiscard]] std::string render_route_list(const RouteListViewModel& vm);
+[[nodiscard]] std::string render_json_route_list(const RouteListViewModel& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const RouteListViewModel& vm);
+
+[[nodiscard]] std::string render_route_set_result(const RouteSetResult& vm);
+[[nodiscard]] std::string
+render_json_route_set_result(const RouteSetResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const RouteSetResult& vm);
+
 }  // namespace GB::presentation

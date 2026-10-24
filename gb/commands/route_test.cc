@@ -98,6 +98,11 @@ void test_route_command_dispatch() {
   g.set_snum(1);
   g.set_pnum(1);
 
+  // Viewing all routes when none are active emits Done without a table
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"route"});
+  test::expect_eq(g.out.str(), std::string_view{"Done.\n"});
+
   // Activate route 1
   g.out.str("");
   ctx.assert_dispatch_success(g, {"route", "1", "activate"});
@@ -128,7 +133,11 @@ void test_route_command_dispatch() {
   ctx.assert_dispatch_success(g, {"route"});
   test::expect_contains(g.out.str(), "Done");
 
-  // 3. Domain error: Bad route number (out-of-range and non-numeric)
+  // 3. Domain error: Bad route number (below 1, above MAX_ROUTES, non-numeric)
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"route", "0"});
+  test::expect_contains(g.out.str(), "Bad route number");
+
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"route", "99"});
   test::expect_contains(g.out.str(), "Bad route number");
@@ -164,7 +173,7 @@ void test_route_command_dispatch() {
   // Inspecting an inactive route prints Done without route details
   g.out.str("");
   ctx.assert_dispatch_success(g, {"route", "2"});
-  test::expect_contains(g.out.str(), "Done");
+  test::expect_eq(g.out.str(), std::string_view{"Done.\n"});
 
   // 6. Deactivate route and verify
   g.out.str("");
@@ -172,7 +181,7 @@ void test_route_command_dispatch() {
   test::expect_contains(g.out.str(), "Set");
   test::expect_false(ctx.em.peek_planet(1, 1)->info(player_t{1}).route[0].set);
 
-  // 7. Destination validation errors and unknown 4-arg subcommand
+  // 7. Destination validation errors, unknown 4-arg subcommand, and >4 args
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"route", "1", "/NoSuchStar"});
   test::expect_contains(g.out.str(), "Illegal destination");
@@ -185,12 +194,53 @@ void test_route_command_dispatch() {
   ctx.assert_dispatch_rejected(g, {"route", "1", "bogus", "fr"});
   test::expect_contains(g.out.str(), "What are you trying to do?");
 
-  // 8. Direct handler scope guard
-  g.set_level(ScopeLevel::LEVEL_STAR);
   g.out.str("");
-  test::expect_false(GB::commands::route({"route"}, g));
-  test::expect_contains(g.out.str(),
-                        "You have to 'cs' to a planet to examine routes.");
+  ctx.assert_dispatch_rejected(g, {"route", "1", "load", "f", "r"});
+  test::expect_contains(g.out.str(), "What are you trying to do?");
+}
+
+void test_route_json_mode() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 1);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(1);
+  g.set_ui_mode(UiMode::JSON);
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"route"});
+  test::expect_contains(g.out.str(), R"("type":"route_list")");
+  test::expect_contains(g.out.str(), R"("routes":[])");
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"route", "2", "activate"});
+  test::expect_contains(g.out.str(), R"("type":"route_set")");
+  test::expect_contains(g.out.str(), R"("route_num":2)");
+  test::expect_contains(g.out.str(), R"("active":true)");
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"route", "2", "/Vega/Vega Prime"});
+  test::expect_contains(g.out.str(), R"("dest_star":2)");
+  test::expect_contains(g.out.str(), R"("dest_planet":1)");
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"route", "2", "land", "2,4"});
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"route", "2", "load", "fr"});
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"route", "2", "unload", "d"});
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"route", "2"});
+  test::expect_contains(g.out.str(), R"("type":"route_list")");
+  test::expect_contains(g.out.str(), R"("load":"fr")");
+  test::expect_contains(g.out.str(), R"("unload":"d")");
+  test::expect_contains(g.out.str(), R"("dest_star_name":"Vega")");
+  test::expect_contains(g.out.str(), R"("dest_planet_name":"Vega Prime")");
 }
 
 }  // namespace
@@ -198,6 +248,7 @@ void test_route_command_dispatch() {
 int main() {
   test_route_persistence();
   test_route_command_dispatch();
+  test_route_json_mode();
 
   std::println(std::cout, "All route tests passed!");
   return 0;

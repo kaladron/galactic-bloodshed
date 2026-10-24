@@ -6,11 +6,10 @@
 module;
 
 import gb.entities;
+import gb.presentation.planet_views;
 import gb.services;
 import scnlib;
 import std;
-import tabulate;
-#undef stdout
 
 module commands;
 
@@ -20,7 +19,7 @@ namespace {
  * @brief Parse and validate a 1-based route index (`1..MAX_ROUTES`).
  */
 std::optional<int> parse_route_index(std::string_view arg, GameObj& g) {
-  auto parsed = scn::scan<int>(arg, "{}");
+  const auto parsed = scn::scan<int>(arg, "{}");
   if (!parsed || parsed->value() < 1 || parsed->value() > MAX_ROUTES) {
     g.out << "Bad route number.\n";
     return std::nullopt;
@@ -28,35 +27,36 @@ std::optional<int> parse_route_index(std::string_view arg, GameObj& g) {
   return parsed->value();
 }
 
-tabulate::Table create_routes_table() {
-  tabulate::Table table;
-  table.format().hide_border().column_separator("  ");
-  table.column(0).format().width(3).font_align(tabulate::FontAlign::right);
-  table.column(1).format().width(11);
-  table.column(2).format().width(12);
-  table.column(3).format().width(14);
-  table.column(4).format().width(24);
-  return table;
+GB::presentation::RouteRow make_route_row(EntityManager& em, int route_num,
+                                          const plroute& rt) {
+  std::string star_name = "???";
+  std::string planet_name = "???";
+  if (rt.has_destination()) {
+    const auto& dest_star = *em.peek_star(*rt.dest_star);
+    star_name = dest_star.get_name();
+    planet_name = dest_star.get_planet_name(*rt.dest_planet);
+  }
+  return GB::presentation::RouteRow{
+      .route_num = route_num,
+      .dest_coords = rt.dest_coords,
+      .load = rt.load.format_compact(),
+      .unload = rt.unload.format_compact(),
+      .dest_star_name = std::move(star_name),
+      .dest_planet_name = std::move(planet_name),
+  };
 }
 
-void append_route_row(tabulate::Table& table, EntityManager& em, int route_num,
-                      const plroute& rt) {
-  const auto* dest_star = rt.dest_star ? em.peek_star(*rt.dest_star) : nullptr;
-  const std::string star_name = dest_star ? dest_star->get_name() : "???";
-  const std::string planet_name =
-      (dest_star && rt.dest_planet && *rt.dest_planet >= 1 &&
-       *rt.dest_planet <= dest_star->numplanets())
-          ? dest_star->get_planet_name(*rt.dest_planet)
-          : "???";
-
-  table.add_row({
-      std::format("{}", route_num),
-      std::format("land {:2},{:2}", rt.dest_coords.x, rt.dest_coords.y),
-      rt.load.any() ? std::format("load: {}", rt.load.format_compact()) : "",
-      rt.unload.any() ? std::format("unload: {}", rt.unload.format_compact())
-                      : "",
-      std::format("-> {}/{}", star_name, planet_name),
-  });
+GB::presentation::RouteSetResult make_route_set_result(int route_num,
+                                                       const plroute& rt) {
+  return GB::presentation::RouteSetResult{
+      .route_num = route_num,
+      .active = rt.set,
+      .dest_coords = rt.dest_coords,
+      .load = rt.load.format_compact(),
+      .unload = rt.unload.format_compact(),
+      .dest_star = rt.dest_star,
+      .dest_planet = rt.dest_planet,
+  };
 }
 
 /**
@@ -64,20 +64,16 @@ void append_route_row(tabulate::Table& table, EntityManager& em, int route_num,
  */
 void show_all_routes(GameObj& g) {
   const player_t playernum = g.player();
-  tabulate::Table table = create_routes_table();
+  GB::presentation::RouteListViewModel vm;
   g.entity_manager.with_planet(g.snum(), g.pnum(), [&](const Planet& p) {
-    int route_num = 0;
-    for (const auto& rt : p.info(playernum).route) {
-      ++route_num;
+    for (const int route_num : std::views::iota(1, MAX_ROUTES + 1)) {
+      const auto& rt = p.info(playernum).route_at(route_num);
       if (rt.set) {
-        append_route_row(table, g.entity_manager, route_num, rt);
+        vm.routes.push_back(make_route_row(g.entity_manager, route_num, rt));
       }
     }
   });
-  if (table.size() > 0) {
-    g.out << table << "\n";
-  }
-  g.out << "Done.\n";
+  g.present(vm);
 }
 
 /**
@@ -85,17 +81,14 @@ void show_all_routes(GameObj& g) {
  */
 void show_single_route(GameObj& g, int route_num) {
   const player_t playernum = g.player();
-  tabulate::Table table = create_routes_table();
+  GB::presentation::RouteListViewModel vm;
   g.entity_manager.with_planet(g.snum(), g.pnum(), [&](const Planet& p) {
     const auto& rt = p.info(playernum).route_at(route_num);
     if (rt.set) {
-      append_route_row(table, g.entity_manager, route_num, rt);
+      vm.routes.push_back(make_route_row(g.entity_manager, route_num, rt));
     }
   });
-  if (table.size() > 0) {
-    g.out << table << "\n";
-  }
-  g.out << "Done.\n";
+  g.present(vm);
 }
 
 /**
@@ -107,14 +100,17 @@ bool configure_route_target(GameObj& g, int route_num,
   const player_t playernum = g.player();
   if (target_arg == "activate" || target_arg == "deactivate") {
     const bool active = (target_arg == "activate");
+    plroute updated{};
     g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {
-      p.info(playernum).route_at(route_num).set = active;
+      auto& rt = p.info(playernum).route_at(route_num);
+      rt.set = active;
+      updated = rt;
     });
-    g.out << "Set.\n";
+    g.present(make_route_set_result(route_num, updated));
     return true;
   }
 
-  auto where =
+  const auto where =
       Place::resolve(g.entity_manager, g.scope_context(), target_arg, true);
   if (!where) {
     g.out << format_place_error(where.error());
@@ -125,11 +121,13 @@ bool configure_route_target(GameObj& g, int route_num,
     g.out << "You have to designate a planet.\n";
     return false;
   }
+  plroute updated{};
   g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {
-    p.info(playernum).route_at(route_num).set_destination(where->snum,
-                                                          where->pnum);
+    auto& rt = p.info(playernum).route_at(route_num);
+    rt.set_destination(where->snum, where->pnum);
+    updated = rt;
   });
-  g.out << "Set.\n";
+  g.present(make_route_set_result(route_num, updated));
   return true;
 }
 
@@ -141,41 +139,39 @@ bool configure_route_attribute(GameObj& g, int route_num,
                                std::string_view value_arg) {
   const player_t playernum = g.player();
   if (subcmd == "land") {
-    auto coords_opt = Coordinates::parse(value_arg);
-    if (!coords_opt) {
+    const auto coords_opt = Coordinates::parse(value_arg);
+    const auto* planet = g.entity_manager.peek_planet(g.snum(), g.pnum());
+    if (!coords_opt || !planet->is_valid(*coords_opt)) {
       g.out << "Bad sector coordinates.\n";
       return false;
     }
-    const Coordinates coords = *coords_opt;
-    bool valid = false;
+    plroute updated{};
     g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {
-      if (!p.is_valid(coords)) {
-        return;
-      }
-      valid = true;
-      p.info(playernum).route_at(route_num).dest_coords = coords;
+      auto& rt = p.info(playernum).route_at(route_num);
+      rt.dest_coords = *coords_opt;
+      updated = rt;
     });
-    if (!valid) {
-      g.out << "Bad sector coordinates.\n";
-      return false;
-    }
-    g.out << "Set.\n";
+    g.present(make_route_set_result(route_num, updated));
     return true;
   }
   if (subcmd == "load") {
+    plroute updated{};
     g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {
-      p.info(playernum).route_at(route_num).load =
-          CommodityManifest::parse(value_arg);
+      auto& rt = p.info(playernum).route_at(route_num);
+      rt.load = CommodityManifest::parse(value_arg);
+      updated = rt;
     });
-    g.out << "Set.\n";
+    g.present(make_route_set_result(route_num, updated));
     return true;
   }
   if (subcmd == "unload") {
+    plroute updated{};
     g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {
-      p.info(playernum).route_at(route_num).unload =
-          CommodityManifest::parse(value_arg);
+      auto& rt = p.info(playernum).route_at(route_num);
+      rt.unload = CommodityManifest::parse(value_arg);
+      updated = rt;
     });
-    g.out << "Set.\n";
+    g.present(make_route_set_result(route_num, updated));
     return true;
   }
 
@@ -188,17 +184,12 @@ bool configure_route_attribute(GameObj& g, int route_num,
 namespace GB::commands {
 
 bool route(const command_t& argv, GameObj& g) {
-  if (g.level() != ScopeLevel::LEVEL_PLAN) {
-    g.out << "You have to 'cs' to a planet to examine routes.\n";
-    return false;
-  }
-
   if (argv.size() == 1) {
     show_all_routes(g);
     return true;
   }
 
-  auto route_num = parse_route_index(argv[1], g);
+  const auto route_num = parse_route_index(argv[1], g);
   if (!route_num) {
     return false;
   }
@@ -210,7 +201,11 @@ bool route(const command_t& argv, GameObj& g) {
   if (argv.size() == 3) {
     return configure_route_target(g, *route_num, argv[2]);
   }
-  return configure_route_attribute(g, *route_num, argv[2], argv[3]);
+  if (argv.size() == 4) {
+    return configure_route_attribute(g, *route_num, argv[2], argv[3]);
+  }
+  g.out << "What are you trying to do?\n";
+  return false;
 }
 
 const CommandDescriptor route_cmd{

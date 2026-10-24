@@ -853,4 +853,52 @@ std::string render_insurgency_news(const InsurgencyResult& vm) {
                      vm.instigator_id, vm.target_name, vm.target_id);
 }
 
+std::string render_route_list(const RouteListViewModel& vm) {
+  std::string out;
+  if (!vm.routes.empty()) {
+    tabulate::Table table;
+    table.format().hide_border().column_separator("  ");
+    table.column(0).format().width(3).font_align(tabulate::FontAlign::right);
+    table.column(1).format().width(11);
+    table.column(2).format().width(12);
+    table.column(3).format().width(14);
+    table.column(4).format().width(24);
+
+    for (const auto& row : vm.routes) {
+      table.add_row({
+          std::format("{}", row.route_num),
+          std::format("land {:2},{:2}", row.dest_coords.x, row.dest_coords.y),
+          row.load.empty() ? "" : std::format("load: {}", row.load),
+          row.unload.empty() ? "" : std::format("unload: {}", row.unload),
+          std::format("-> {}/{}", row.dest_star_name, row.dest_planet_name),
+      });
+    }
+    std::format_to(std::back_inserter(out), "{}\n", table.str());
+  }
+  out += "Done.\n";
+  return out;
+}
+
+std::string render_json_route_list(const RouteListViewModel& vm) {
+  return render_json_envelope("route_list", vm);
+}
+
+std::string render_for_mode(UiMode mode, const RouteListViewModel& vm) {
+  return mode == UiMode::JSON ? render_json_route_list(vm)
+                              : render_route_list(vm);
+}
+
+std::string render_route_set_result(const RouteSetResult& /*vm*/) {
+  return "Set.\n";
+}
+
+std::string render_json_route_set_result(const RouteSetResult& vm) {
+  return render_json_envelope("route_set", vm);
+}
+
+std::string render_for_mode(UiMode mode, const RouteSetResult& vm) {
+  return mode == UiMode::JSON ? render_json_route_set_result(vm)
+                              : render_route_set_result(vm);
+}
+
 }  // namespace GB::presentation

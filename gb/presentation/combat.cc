@@ -1226,4 +1226,10 @@ render_berserker_constructed_telegram(std::string_view parent_display,
   return std::format("{} constructed {}.", parent_display, child_display);
 }
 
+std::string render_star_ground_assault_news(const StarGroundAssaultNews& vm) {
+  return std::format("{}: {} [{}] assaults {} [{}] {} times.\n", vm.star_name,
+                     vm.attacker_name, vm.attacker, vm.defender_name,
+                     vm.defender, vm.assaults);
+}
+
 }  // namespace GB::presentation

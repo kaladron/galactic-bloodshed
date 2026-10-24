@@ -429,4 +429,18 @@ render_vn_theft_telegram(const VnResourceTheftNotice& vm);
 render_berserker_constructed_telegram(std::string_view parent_display,
                                       std::string_view child_display);
 
+/// Combat news summary entry for planetary ground assaults in a star system.
+struct StarGroundAssaultNews {
+  std::string star_name{};
+  std::string attacker_name{};
+  player_t attacker{0};
+  std::string defender_name{};
+  player_t defender{0};
+  std::uint32_t assaults{0};
+};
+
+/// Formats a `StarGroundAssaultNews` combat news headline.
+[[nodiscard]] std::string
+render_star_ground_assault_news(const StarGroundAssaultNews& vm);
+
 }  // namespace GB::presentation

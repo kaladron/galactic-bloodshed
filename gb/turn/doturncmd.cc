@@ -6,6 +6,7 @@
 module;
 
 import gb.presentation.combat;
+import gb.presentation.empire_views;
 import std;
 
 module gb.turn;
@@ -213,17 +214,23 @@ void process_market_transactions(EntityManager& entity_manager) {
         });
 
         const auto* star = entity_manager.peek_star(star_to);
-        std::string purchased_msg = std::format(
-            "Lot {} purchased from {} [{}] at a cost of {}.\n   {} {} "
-            "arrived at /{}/{}\n",
-            c.id(), owner_race->name, c.owner(), c.bid(), c.amount(), c.type(),
-            star ? star->get_name() : "unknown",
-            star ? star->get_planet_name(planet_to) : "unknown");
-        push_telegram(entity_manager, bidder, c.bidder_gov(), purchased_msg);
-        std::string sold_msg = std::format(
-            "Lot {} ({} {}) sold to {} [{}] at a cost of {}.\n", c.id(),
-            c.amount(), c.type(), bidder_race->name, bidder, c.bid());
-        push_telegram(entity_manager, c.owner(), c.governor(), sold_msg);
+        const GB::presentation::MarketLotSettlementNotice notice{
+            .lot = c.id(),
+            .type = c.type(),
+            .amount = c.amount(),
+            .bid = c.bid(),
+            .seller = c.owner(),
+            .seller_name = owner_race->name,
+            .buyer = bidder,
+            .buyer_name = bidder_race->name,
+            .star_name = star ? star->get_name() : "unknown",
+            .planet_name = star ? star->get_planet_name(planet_to) : "unknown",
+        };
+        push_telegram(
+            entity_manager, bidder, c.bidder_gov(),
+            GB::presentation::render_market_purchase_telegram(notice));
+        push_telegram(entity_manager, c.owner(), c.governor(),
+                      GB::presentation::render_market_sale_telegram(notice));
         c.clear_bid();
         entity_manager.delete_commod(c.id());
       } else {
@@ -583,10 +590,8 @@ void fix_stability(EntityManager& em, Star& s) {
     if (s.nova_stage() > 14) {
       s.stability() = 20;
       s.nova_stage() = 0;
-      std::string telegram_msg = std::format(
-          "Notice\n\n  Scientists report that star {}\nis no longer undergoing "
-          "nova.\n",
-          s.get_name());
+      const std::string telegram_msg =
+          GB::presentation::render_star_nova_bulletin(s.get_name(), false);
       for (const Race& race : RaceList::readonly(em))
         push_telegram_race(em, race.Playernum, telegram_msg);
 
@@ -599,10 +604,8 @@ void fix_stability(EntityManager& em, Star& s) {
     if ((s.stability() + a) > 100) {
       s.stability() = 100;
       s.nova_stage() = 1;
-      std::string telegram_msg = std::format(
-          "***** BULLETIN! ******\n\n  Scientists report that star {}\nis "
-          "undergoing nova.\n",
-          s.get_name());
+      const std::string telegram_msg =
+          GB::presentation::render_star_nova_bulletin(s.get_name(), true);
       for (const Race& race : RaceList::readonly(em))
         push_telegram_race(em, race.Playernum, telegram_msg);
     } else
@@ -640,6 +643,7 @@ VictoryResult handle_victory(EntityManager& em, bool victory_enabled) {
   VictoryResult result{};
   std::flat_set<player_t> big_winners;
   std::flat_set<player_t> lesser_winners;
+  GB::presentation::VictoryAnnouncementViewModel announcement{};
 
   for (const Race& race : RaceList::readonly(em)) {
     const player_t player = race.Playernum;
@@ -647,37 +651,21 @@ VictoryResult handle_victory(EntityManager& em, bool victory_enabled) {
     if (race.victory_turns >= VICTORY_UPDATES) {
       result.game_over = true;
       big_winners.insert(player);
+      announcement.big_winners.push_back({.player = player, .name = race.name});
     } else if (planet_count > 0 && race.controlled_planets >= threshold) {
       lesser_winners.insert(player);
+      announcement.lesser_winners.push_back(
+          {.player = player, .name = race.name});
     }
   }
 
   if (result.game_over) {
     result.big_winners = std::move(big_winners);
     result.lesser_winners = std::move(lesser_winners);
-
+    const std::string msg =
+        GB::presentation::render_victory_announcement(announcement);
     for (const Race& race : RaceList::readonly(em)) {
-      const player_t i = race.Playernum;
-      push_telegram_race(em, i, "*** Attention ***");
-      push_telegram_race(em, i,
-                         "This game of Galactic Bloodshed is now *over*");
-      std::string winner_msg =
-          std::format("The big winner{}",
-                      (result.big_winners.size() == 1) ? " is" : "s are");
-      push_telegram_race(em, i, winner_msg);
-      for (const player_t j : result.big_winners) {
-        const auto* winner = em.peek_race(j);
-        std::string big_winner_msg =
-            std::format("*** [{:2d}] {:<30.30s} ***", j, winner->name);
-        push_telegram_race(em, i, big_winner_msg);
-      }
-      push_telegram_race(em, i, "Lesser winners:");
-      for (const player_t j : result.lesser_winners) {
-        const auto* winner = em.peek_race(j);
-        std::string little_winner_msg =
-            std::format("+++ [{:2d}] {:<30.30s} +++", j, winner->name);
-        push_telegram_race(em, i, little_winner_msg);
-      }
+      push_telegram_race(em, race.Playernum, msg);
     }
   }
 
@@ -747,11 +735,15 @@ void output_ground_attacks(EntityManager& em) {
         if (const auto assaults =
                 star_handle->ground_assault_count(race_i, race_j);
             assaults > 0) {
-          std::string assault_news = std::format(
-              "{}: {} [{}] assaults {} [{}] {} times.\n",
-              star_handle->get_name(), race_i.name, race_i.Playernum,
-              race_j.name, race_j.Playernum, assaults);
-          post(em, assault_news, NewsType::COMBAT);
+          post(em,
+               GB::presentation::render_star_ground_assault_news(
+                   {.star_name = star_handle->get_name(),
+                    .attacker_name = race_i.name,
+                    .attacker = race_i.Playernum,
+                    .defender_name = race_j.name,
+                    .defender = race_j.Playernum,
+                    .assaults = assaults}),
+               NewsType::COMBAT);
           star_handle->clear_ground_assaults(race_i, race_j);
         }
       }

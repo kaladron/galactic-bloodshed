@@ -796,18 +796,12 @@ void test_handle_victory_single_winner() {
   test::expect_true(ctx.em.has_telegrams(player_t{2}, Race::leader_id));
 
   auto tele1 = ctx.em.get_telegrams(player_t{1}, Race::leader_id);
-  bool found_announcement = false;
-  bool found_winner = false;
-  for (const auto& t : tele1) {
-    if (t.message.contains("This game of Galactic Bloodshed is now *over*")) {
-      found_announcement = true;
-    }
-    if (t.message.contains("The big winner is")) {
-      found_winner = true;
-    }
-  }
-  test::expect_true(found_announcement);
-  test::expect_true(found_winner);
+  test::expect_eq(tele1.size(), 1U);
+  test::expect_contains(tele1[0].message,
+                        "This game of Galactic Bloodshed is now *over*");
+  test::expect_contains(tele1[0].message,
+                        "The big winner is\n*** [ 1] GloriousEmpire");
+  test::expect_false(tele1[0].message.contains("Lesser winners:"));
 }
 
 void test_handle_victory_multiple_winners_and_lesser_winners() {
@@ -845,18 +839,12 @@ void test_handle_victory_multiple_winners_and_lesser_winners() {
   test::expect_true(result.lesser_winners.contains(player_t{3}));
 
   auto tele3 = ctx.em.get_telegrams(player_t{3}, Race::leader_id);
-  bool found_plural_winners = false;
-  bool found_lesser_winner = false;
-  for (const auto& t : tele3) {
-    if (t.message.contains("The big winners are")) {
-      found_plural_winners = true;
-    }
-    if (t.message.contains("EmpireGamma")) {
-      found_lesser_winner = true;
-    }
-  }
-  test::expect_true(found_plural_winners);
-  test::expect_true(found_lesser_winner);
+  test::expect_eq(tele3.size(), 1U);
+  test::expect_contains(tele3[0].message, "The big winners are\n");
+  test::expect_contains(tele3[0].message, "EmpireAlpha");
+  test::expect_contains(tele3[0].message, "EmpireBeta");
+  test::expect_contains(tele3[0].message,
+                        "Lesser winners:\n+++ [ 3] EmpireGamma");
 }
 
 void test_calculate_victory_scores_large_accumulation() {

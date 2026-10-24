@@ -517,6 +517,58 @@ void test_ship_combat_turn_bulletins() {
   test::expect_eq(
       pres::render_berserker_constructed_telegram("V7 101", "B8 Fury"),
       "V7 101 constructed B8 Fury.");
+  test::expect_eq(
+      pres::render_star_ground_assault_news({.star_name = "Sol",
+                                             .attacker_name = "Terrans",
+                                             .attacker = 1,
+                                             .defender_name = "Martians",
+                                             .defender = 2,
+                                             .assaults = 4}),
+      "Sol: Terrans [1] assaults Martians [2] 4 times.\n");
+}
+
+void test_empire_turn_bulletins() {
+  namespace pres = GB::presentation;
+  const pres::MarketLotSettlementNotice settlement{.lot = 12,
+                                                   .type = CommodType::FUEL,
+                                                   .amount = 50,
+                                                   .bid = 300,
+                                                   .seller = 2,
+                                                   .seller_name = "VegaCorp",
+                                                   .buyer = 1,
+                                                   .buyer_name = "SolEmpire",
+                                                   .star_name = "Sol",
+                                                   .planet_name = "Earth"};
+  test::expect_eq(pres::render_market_purchase_telegram(settlement),
+                  "Lot 12 purchased from VegaCorp [2] at a cost of 300.\n"
+                  "   50 fuel arrived at /Sol/Earth\n");
+  test::expect_eq(pres::render_market_sale_telegram(settlement),
+                  "Lot 12 (50 fuel) sold to SolEmpire [1] at a cost of 300.\n");
+
+  test::expect_eq(pres::render_star_nova_bulletin("Betelgeuse", true),
+                  "***** BULLETIN! ******\n\n  Scientists report that star "
+                  "Betelgeuse\nis undergoing nova.\n");
+  test::expect_eq(pres::render_star_nova_bulletin("Betelgeuse", false),
+                  "Notice\n\n  Scientists report that star Betelgeuse\nis no "
+                  "longer undergoing nova.\n");
+
+  const std::string single_victory = pres::render_victory_announcement(
+      {.big_winners = {{.player = 1, .name = "SolEmpire"}}});
+  test::expect_contains(single_victory,
+                        "*** Attention ***\n"
+                        "This game of Galactic Bloodshed is now *over*\n"
+                        "The big winner is\n"
+                        "*** [ 1] SolEmpire");
+  test::expect_false(single_victory.contains("Lesser winners:"));
+
+  const std::string multi_victory = pres::render_victory_announcement(
+      {.big_winners = {{.player = 1, .name = "Alpha"},
+                       {.player = 2, .name = "Beta"}},
+       .lesser_winners = {{.player = 3, .name = "Gamma"}}});
+  test::expect_contains(multi_victory, "The big winners are\n");
+  test::expect_contains(multi_victory, "*** [ 1] Alpha");
+  test::expect_contains(multi_victory, "*** [ 2] Beta");
+  test::expect_contains(multi_victory, "Lesser winners:\n+++ [ 3] Gamma");
 }
 
 }  // namespace
@@ -527,5 +579,6 @@ int main() {
   test_bless_presentation();
   test_planet_turn_bulletins();
   test_ship_combat_turn_bulletins();
+  test_empire_turn_bulletins();
   return 0;
 }

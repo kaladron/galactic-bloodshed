@@ -1629,4 +1629,50 @@ std::string render_for_mode(UiMode mode, const HelpViewModel& vm) {
   return mode == UiMode::JSON ? render_json_help(vm) : render_help(vm);
 }
 
+std::string
+render_market_purchase_telegram(const MarketLotSettlementNotice& vm) {
+  return std::format("Lot {} purchased from {} [{}] at a cost of {}.\n"
+                     "   {} {} arrived at /{}/{}\n",
+                     vm.lot, vm.seller_name, vm.seller, vm.bid, vm.amount,
+                     vm.type, vm.star_name, vm.planet_name);
+}
+
+std::string render_market_sale_telegram(const MarketLotSettlementNotice& vm) {
+  return std::format("Lot {} ({} {}) sold to {} [{}] at a cost of {}.\n",
+                     vm.lot, vm.amount, vm.type, vm.buyer_name, vm.buyer,
+                     vm.bid);
+}
+
+std::string render_star_nova_bulletin(std::string_view star_name,
+                                      bool started) {
+  if (started) {
+    return std::format("***** BULLETIN! ******\n\n  Scientists report that "
+                       "star {}\nis undergoing nova.\n",
+                       star_name);
+  }
+  return std::format("Notice\n\n  Scientists report that star {}\nis no longer "
+                     "undergoing nova.\n",
+                     star_name);
+}
+
+std::string
+render_victory_announcement(const VictoryAnnouncementViewModel& vm) {
+  std::string out = "*** Attention ***\n"
+                    "This game of Galactic Bloodshed is now *over*\n";
+  std::format_to(std::back_inserter(out), "The big winner{}\n",
+                 vm.big_winners.size() == 1 ? " is" : "s are");
+  for (const auto& winner : vm.big_winners) {
+    std::format_to(std::back_inserter(out), "*** [{:2d}] {:<30.30s} ***\n",
+                   winner.player, winner.name);
+  }
+  if (!vm.lesser_winners.empty()) {
+    out += "Lesser winners:\n";
+    for (const auto& winner : vm.lesser_winners) {
+      std::format_to(std::back_inserter(out), "+++ [{:2d}] {:<30.30s} +++\n",
+                     winner.player, winner.name);
+    }
+  }
+  return out;
+}
+
 }  // namespace GB::presentation

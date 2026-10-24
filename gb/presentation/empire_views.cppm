@@ -1127,4 +1127,46 @@ struct HelpViewModel {
 [[nodiscard]] std::string render_json_help(const HelpViewModel& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode, const HelpViewModel& vm);
 
+/// Turn bulletin payload when a commodity market lot settles.
+struct MarketLotSettlementNotice {
+  int lot{0};
+  CommodType type{CommodType::RESOURCE};
+  resource_t amount{0};
+  money_t bid{0};
+  player_t seller{0};
+  std::string seller_name{};
+  player_t buyer{0};
+  std::string buyer_name{};
+  std::string star_name{};
+  std::string planet_name{};
+};
+
+/// Formats the buyer's delivery telegram when a market lot settles.
+[[nodiscard]] std::string
+render_market_purchase_telegram(const MarketLotSettlementNotice& vm);
+
+/// Formats the seller's proceeds telegram when a market lot settles.
+[[nodiscard]] std::string
+render_market_sale_telegram(const MarketLotSettlementNotice& vm);
+
+/// Formats the empire-wide bulletin when a star starts or finishes going nova.
+[[nodiscard]] std::string render_star_nova_bulletin(std::string_view star_name,
+                                                    bool started);
+
+/// Single winner entry in an end-of-game victory announcement.
+struct VictoryWinnerEntry {
+  player_t player{0};
+  std::string name{};
+};
+
+/// View model for the end-of-game victory broadcast telegram.
+struct VictoryAnnouncementViewModel {
+  std::vector<VictoryWinnerEntry> big_winners{};
+  std::vector<VictoryWinnerEntry> lesser_winners{};
+};
+
+/// Formats the cohesive end-of-game victory broadcast telegram.
+[[nodiscard]] std::string
+render_victory_announcement(const VictoryAnnouncementViewModel& vm);
+
 }  // namespace GB::presentation

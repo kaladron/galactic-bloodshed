@@ -126,12 +126,32 @@ void test_server_boundary_dispatch_lifecycle() {
   test::expect_contains(g.out.str(), "Mortal command executed.");
 }
 
+void test_output_buffer() {
+  OutputBuffer buf;
+  test::expect_true(buf.empty());
+  test::expect_eq(buf.view(), "");
+
+  buf << "Hello ";
+  buf.append("world");
+  test::expect_false(buf.empty());
+  test::expect_eq(buf.str(), "Hello world");
+  test::expect_eq(buf.view(), "Hello world");
+
+  buf.str("Replaced");
+  test::expect_eq(buf.view(), "Replaced");
+
+  buf.clear();
+  test::expect_true(buf.empty());
+  test::expect_eq(buf.str(), "");
+}
+
 }  // namespace
 
 int main() {
   test_god_privilege_propagation();
   test_emulation_privilege_drop_and_guest_restrictions();
   test_server_boundary_dispatch_lifecycle();
+  test_output_buffer();
 
   std::println(std::cout, "✓ server_command_test passed!");
   return 0;

@@ -84,17 +84,18 @@ namespace {
 [[nodiscard]] bool merchant_land_ship(EntityManager& em, Ship& s,
                                       const Planet& p,
                                       const Coordinates& dest_coords,
-                                      std::stringstream& telegram) {
+                                      std::string& telegram) {
   if (s.is_landed()) return true;
 
   const double fuel = s.mass() * p.gravity() * LAND_GRAV_MASS_FACTOR;
   if (s.fuel() < fuel) {
     s.clear_destination();
-    telegram << "\t\tNot enough fuel to land!\n";
+    telegram += "\t\tNot enough fuel to land!\n";
     return false;
   }
   s.set_land_coords(dest_coords);
-  telegram << std::format("\t\tLanded on sector {}\n", s.land_coords());
+  std::format_to(std::back_inserter(telegram), "\t\tLanded on sector {}\n",
+                 s.land_coords());
   const auto& star = *em.peek_star(s.storbits());
   s.set_coordinates(p.absolute_coordinates(star));
   s.consume_fuel(fuel);
@@ -103,101 +104,99 @@ namespace {
 }
 
 void merchant_load_cargo(Ship& s, plinfo& pinfo, const auto& load,
-                         std::stringstream& telegram) {
+                         std::string& telegram) {
   if (!load.any()) return;
 
-  telegram << "\t\t";
+  telegram += "\t\t";
   if (load.fuel) {
     const resource_t amount = std::min(s.available_fuel_capacity(), pinfo.fuel);
     pinfo.fuel -= amount;
     s.add_fuel(amount);
-    telegram << std::format("{}f ", amount);
+    std::format_to(std::back_inserter(telegram), "{}f ", amount);
   }
   if (load.resources) {
     const resource_t amount =
         std::min(s.available_resource_capacity(), pinfo.resource);
     pinfo.resource -= amount;
     s.add_resource(amount);
-    telegram << std::format("{}r ", amount);
+    std::format_to(std::back_inserter(telegram), "{}r ", amount);
   }
   if (load.crystals) {
     const resource_t amount =
         std::min(s.available_crystals_capacity(), pinfo.crystals);
     pinfo.crystals -= amount;
     s.add_crystals(amount);
-    telegram << std::format("{}x ", amount);
+    std::format_to(std::back_inserter(telegram), "{}x ", amount);
   }
   if (load.destruct) {
     const resource_t amount =
         std::min(s.available_destruct_capacity(), pinfo.destruct);
     pinfo.destruct -= amount;
     s.add_destruct(amount);
-    telegram << std::format("{}d ", amount);
+    std::format_to(std::back_inserter(telegram), "{}d ", amount);
   }
-  telegram << "loaded\n";
+  telegram += "loaded\n";
 }
 
 void merchant_unload_cargo(Ship& s, plinfo& pinfo, const auto& unload,
-                           std::stringstream& telegram) {
+                           std::string& telegram) {
   if (!unload.any()) return;
 
-  telegram << "\t\t";
+  telegram += "\t\t";
   if (unload.fuel) {
     const resource_t amount = s.fuel_units();
     pinfo.fuel += amount;
-    telegram << std::format("{}f ", amount);
+    std::format_to(std::back_inserter(telegram), "{}f ", amount);
     s.consume_fuel(amount);
   }
   if (unload.resources) {
     const resource_t amount = s.resource();
     pinfo.resource += amount;
-    telegram << std::format("{}r ", amount);
+    std::format_to(std::back_inserter(telegram), "{}r ", amount);
     s.consume_resource(amount);
   }
   if (unload.crystals) {
     const resource_t amount = s.crystals();
     pinfo.crystals += amount;
-    telegram << std::format("{}x ", amount);
+    std::format_to(std::back_inserter(telegram), "{}x ", amount);
     s.consume_crystals(amount);
   }
   if (unload.destruct) {
     const resource_t amount = s.destruct();
     pinfo.destruct += amount;
-    telegram << std::format("{}d ", amount);
+    std::format_to(std::back_inserter(telegram), "{}d ", amount);
     s.consume_destruct(amount);
   }
-  telegram << "unloaded\n";
+  telegram += "unloaded\n";
 }
 
 void merchant_launch_to_next_stop(EntityManager& em, Ship& s, const Planet& p,
-                                  const plroute& route,
-                                  std::stringstream& telegram) {
+                                  const plroute& route, std::string& telegram) {
   if (!route.has_destination()) {
     return;
   }
   const double fuel = s.mass() * p.gravity() * LAUNCH_GRAV_MASS_FACTOR;
   if (s.fuel() < fuel) {
-    telegram << "\t\tNot enough fuel to launch!\n";
+    telegram += "\t\tNot enough fuel to launch!\n";
     return;
   }
   s.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
   s.set_planet_destination(*route.dest_star, *route.dest_planet);
   s.consume_fuel(fuel);
-  telegram << std::format("\t\tDestination set to {}\n",
-                          format_ship_dest(em, s));
+  std::format_to(std::back_inserter(telegram), "\t\tDestination set to {}\n",
+                 format_ship_dest(em, s));
   if (s.hyper_drive().has && s.storbits() != s.deststar()) {
     s.navigate().on = false;
     s.hyper_drive().on = true;
     s.hyper_drive().charge = s.mounted() ? HYPER_DRIVE_READY_CHARGE : 0;
-    telegram << "\t\tJump orders set\n";
+    telegram += "\t\tJump orders set\n";
   }
 }
 
 /* this routine will do landing, launching, loading, unloading, etc
         for merchant ships. The ship is within landing distance of
         the target Planet */
-bool do_merchant(EntityManager& em, Ship& s, Planet& p,
-                 std::stringstream& telegram) {
+bool do_merchant(EntityManager& em, Ship& s, Planet& p, std::string& telegram) {
   if (!s.merchant()) {
     return false;
   }
@@ -553,10 +552,10 @@ void explore_arrived_planet(EntityManager& em, const Ship& s,
 
 void handle_planet_landing_distance(EntityManager& em, Ship& s,
                                     starnum_t deststar, planetnum_t destpnum,
-                                    bool checking_fuel,
-                                    std::stringstream& telegram) {
-  telegram << std::format("{} within landing distance of {}.", s,
-                          prin_ship_orbits(em, s));
+                                    bool checking_fuel, std::string& telegram) {
+  std::format_to(std::back_inserter(telegram),
+                 "{} within landing distance of {}.", s,
+                 prin_ship_orbits(em, s));
   em.mutate_planet(deststar, destpnum, [&](Planet& dpl_planet) {
     const bool merch =
         checking_fuel ? false : do_merchant(em, s, dpl_planet, telegram);
@@ -580,18 +579,19 @@ void handle_planet_arrival(EntityManager& em, Ship& s, starnum_t deststar,
   }
   s.enter_planet_orbit(destpnum);
 
-  std::stringstream telegram;
+  std::string telegram;
   if (dist <= DIST_TO_LAND) {
     handle_planet_landing_distance(em, s, deststar, destpnum, checking_fuel,
                                    telegram);
   } else {
-    telegram << std::format("{} arriving at {}.", s, prin_ship_orbits(em, s));
+    std::format_to(std::back_inserter(telegram), "{} arriving at {}.", s,
+                   prin_ship_orbits(em, s));
   }
   if (s.type() == ShipType::STYPE_OAP) {
-    telegram << "\nEnslavement of the planet is now possible.";
+    telegram += "\nEnslavement of the planet is now possible.";
   }
   if (send_messages && s.type() != ShipType::OTYPE_VN) {
-    push_telegram(em, s.owner(), s.governor(), telegram.str());
+    push_telegram(em, s.owner(), s.governor(), telegram);
   }
 }
 

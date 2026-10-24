@@ -160,11 +160,9 @@ void check_connect(Session& session, std::string_view message) {
   }
 
   // Display time and treasury via centralized command dispatch pipeline
-  g.out.str("");
   g.out.clear();
   GB::commands::dispatch_command(g, {"time"});
   session.send(g.out.view());
-  g.out.str("");
   g.out.clear();
 
   if (session.ui_mode() != UiMode::JSON) {
@@ -173,7 +171,6 @@ void check_connect(Session& session, std::string_view message) {
 
   GB::commands::dispatch_command(g, {"treasury"});
   session.send(g.out.view());
-  g.out.str("");
   g.out.clear();
   g.race = nullptr;
 

@@ -27,7 +27,7 @@ public:
     bool connected;
     player_t player;
     governor_t governor;
-    std::ostringstream output;
+    OutputBuffer output;
   };
 
   std::vector<SessionData> sessions;

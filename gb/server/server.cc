@@ -261,17 +261,14 @@ bool Server::do_command(Session& session, std::string_view comm) {
       session.send("Goodbye!\n");
       return false;
     }
-    g.out.str("");
     g.out.clear();
     check_for_telegrams(g);
     process_command(g, {"cs"});
     session.send(g.out.view());
-    g.out.str("");
     g.out.clear();
     return true;
   }
 
-  g.out.str("");
   g.out.clear();
   process_command(g, make_command_t(comm));
 
@@ -280,7 +277,6 @@ bool Server::do_command(Session& session, std::string_view comm) {
   }
 
   session.send(g.out.view());
-  g.out.str("");
   g.out.clear();
 
   return !g.disconnect_requested();
@@ -289,17 +285,12 @@ bool Server::do_command(Session& session, std::string_view comm) {
 void Server::process_command(GameObj& g, const command_t& argv) {
   if (argv.empty()) return;
 
-  const auto* race = g.entity_manager.peek_race(g.player());
-  if (!race) {
-    g.out << "Error: Could not find your race.\n";
-    return;
-  }
-  g.race = race;
+  g.race = g.entity_manager.peek_race(g.player());
 
   if (const auto* desc = GB::commands::find_command_descriptor(argv[0])) {
     GB::commands::dispatch_command(g, *desc, argv);
   } else {
-    g.out << "'" << argv[0] << "':illegal command error.\n";
+    g.out << std::format("'{}':illegal command error.\n", argv[0]);
   }
 
   /* compute the prompt and send to the player */

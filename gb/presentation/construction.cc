@@ -209,8 +209,7 @@ std::string format_factory_modify_error(FactoryModifyError err) {
 }
 
 std::string render_factory_specs(const FactorySpecsViewModel& vm) {
-  std::ostringstream ss;
-  ss << "  --- Current Production Specifications ---\n";
+  std::string out = "  --- Current Production Specifications ---\n";
 
   tabulate::Table table;
   table.format().hide_border().column_separator("    ");
@@ -248,14 +247,14 @@ std::string render_factory_specs(const FactorySpecsViewModel& vm) {
        (vm.has_cew && vm.cew) ? std::format("   Energy:    {:4d}", vm.cew)
                               : ""});
 
-  ss << table << "\n";
+  std::format_to(std::back_inserter(out), "{}\n", table.str());
 
   if (vm.race_tech < vm.complexity) {
-    ss << "Your engineering capability is not "
-          "advanced enough to produce this "
-          "design.\n";
+    out += "Your engineering capability is not "
+           "advanced enough to produce this "
+           "design.\n";
   }
-  return ss.str();
+  return out;
 }
 
 std::string render_json_factory_specs(const FactorySpecsViewModel& vm) {
@@ -416,14 +415,11 @@ build_ship_spec_detail_vm(ShipType type, const Race& race,
 }
 
 std::string render_ship_specs_table(const ShipSpecsTableViewModel& vm) {
-  std::ostringstream ss;
-  ss << "     - Default ship parameters -\n";
   auto table = create_ship_spec_table();
   for (const auto& row : vm.rows) {
     add_ship_spec_row(table, row);
   }
-  ss << table << "\n";
-  return ss.str();
+  return std::format("     - Default ship parameters -\n{}\n", table.str());
 }
 
 std::string render_json_ship_specs_table(const ShipSpecsTableViewModel& vm) {
@@ -431,35 +427,37 @@ std::string render_json_ship_specs_table(const ShipSpecsTableViewModel& vm) {
 }
 
 std::string render_ship_spec_detail(const ShipSpecDetailViewModel& vm) {
-  std::ostringstream ss;
+  std::string out;
   if (vm.description && !vm.description->empty()) {
-    ss << "\n" << *vm.description;
+    out += "\n";
+    out += *vm.description;
     if (!vm.description->ends_with('\n')) {
-      ss << "\n";
+      out += "\n";
     }
   }
   if (vm.can_build_on_planet) {
-    ss << "\nCan be constructed on planet.";
+    out += "\nCan be constructed on planet.";
   }
   const std::size_t n = vm.builder_letters.size();
   if (n > 0) {
-    ss << "\nCan be built by ";
+    out += "\nCan be built by ";
     for (std::size_t m = 0; m < n; ++m) {
       const std::size_t remaining = n - (m + 1);
       if (remaining > 1) {
-        ss << std::format("{}, ", vm.builder_letters[m]);
+        std::format_to(std::back_inserter(out), "{}, ", vm.builder_letters[m]);
       } else if (remaining == 1) {
-        ss << std::format("{} and ", vm.builder_letters[m]);
+        std::format_to(std::back_inserter(out), "{} and ",
+                       vm.builder_letters[m]);
       } else {
-        ss << std::format("{} ", vm.builder_letters[m]);
+        std::format_to(std::back_inserter(out), "{} ", vm.builder_letters[m]);
       }
     }
-    ss << "type ships.\n";
+    out += "type ships.\n";
   }
   auto table = create_ship_spec_table();
   add_ship_spec_row(table, vm.spec);
-  ss << table << "\n";
-  return ss.str();
+  std::format_to(std::back_inserter(out), "{}\n", table.str());
+  return out;
 }
 
 std::string render_json_ship_spec_detail(const ShipSpecDetailViewModel& vm) {

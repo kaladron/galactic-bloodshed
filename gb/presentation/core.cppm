@@ -46,12 +46,12 @@ concept HasModeRenderOverload = requires(UiMode mode, const T& vm) {
   { render_for_mode(mode, vm) } -> std::same_as<std::string>;
 };
 
-/// Polymorphically formats `vm` according to `mode` and writes it to `out`.
+/// Polymorphically formats `vm` according to `mode` and appends it to `out`.
 /// Found via ADL from `GameObj::present(const ViewModel&)` because `UiMode`
 /// resides in `namespace GB::presentation`.
 template <HasModeRenderOverload ViewModel>
-void present_to(std::ostream& out, UiMode mode, const ViewModel& vm) {
-  out << render_for_mode(mode, vm);
+void present_to(OutputBuffer& out, UiMode mode, const ViewModel& vm) {
+  out.append(render_for_mode(mode, vm));
 }
 
 /// Terminal display capabilities derived from a Telnet `TTYPE` (`$TERM`)

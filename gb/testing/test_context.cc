@@ -70,7 +70,7 @@ void TestContext::setup_game_obj(GameObj& g, player_t player, governor_t gov) {
 bool TestContext::dispatch(GameObj& g,
                            const GB::commands::CommandDescriptor& desc,
                            const command_t& argv) {
-  g.out.str("");
+  g.out.clear();
   return GB::commands::dispatch_command(g, desc, argv);
 }
 

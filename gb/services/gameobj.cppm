@@ -48,10 +48,50 @@ export struct ScopeContext {
   shipnum_t shipno{0};
 };
 
+/// Lightweight, zero-locale string buffer for command and error output.
+/// Accepts only `std::string_view`-convertible formatted text, preventing
+/// accidental `std::ostream` insertion of raw numbers or domain entities.
+export class OutputBuffer {
+public:
+  OutputBuffer() = default;
+
+  OutputBuffer& operator<<(std::string_view text) {
+    buffer_.append(text);
+    return *this;
+  }
+
+  void append(std::string_view text) {
+    buffer_.append(text);
+  }
+
+  [[nodiscard]] const std::string& str() const noexcept {
+    return buffer_;
+  }
+
+  void str(std::string_view text) {
+    buffer_.assign(text);
+  }
+
+  [[nodiscard]] std::string_view view() const noexcept {
+    return buffer_;
+  }
+
+  void clear() noexcept {
+    buffer_.clear();
+  }
+
+  [[nodiscard]] bool empty() const noexcept {
+    return buffer_.empty();
+  }
+
+private:
+  std::string buffer_;
+};
+
 export class GameObj {
 public:
   EntityManager& entity_manager;  ///< Entity lifecycle manager
-  std::stringstream out;          ///< Output stream (temporary - Step 4A)
+  OutputBuffer out;               ///< Buffered command and diagnostic output
   const Race* race = nullptr;     ///< Pointer to current player's race (valid
                                   ///< during command execution)
   SessionRegistry& session_registry;  ///< Session registry for notifications

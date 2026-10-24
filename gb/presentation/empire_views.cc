@@ -1751,4 +1751,71 @@ std::string render_for_mode(UiMode mode, const ToggleChangedResult& vm) {
                               : render_toggle_changed_result(vm);
 }
 
+std::string render_emulate_result(const EmulateResult& vm) {
+  return std::format("Emulating {} \"{}\" [{},{}]\n", vm.race_name,
+                     vm.governor_name, vm.player, vm.governor);
+}
+std::string render_json_emulate_result(const EmulateResult& vm) {
+  return render_json_envelope("emulate", vm);
+}
+std::string render_for_mode(UiMode mode, const EmulateResult& vm) {
+  return mode == UiMode::JSON ? render_json_emulate_result(vm)
+                              : render_emulate_result(vm);
+}
+
+std::string render_purge_result(const PurgeResult& /*vm*/) {
+  return "Purged all news.\n";
+}
+std::string render_json_purge_result(const PurgeResult& vm) {
+  return render_json_envelope("purge", vm);
+}
+std::string render_for_mode(UiMode mode, const PurgeResult& vm) {
+  return mode == UiMode::JSON ? render_json_purge_result(vm)
+                              : render_purge_result(vm);
+}
+
+std::string render_quit_result(const QuitResult& /*vm*/) {
+  return "Goodbye!\n";
+}
+std::string render_json_quit_result(const QuitResult& vm) {
+  return render_json_envelope("quit", vm);
+}
+std::string render_for_mode(UiMode mode, const QuitResult& vm) {
+  return mode == UiMode::JSON ? render_json_quit_result(vm)
+                              : render_quit_result(vm);
+}
+
+std::string render_segment_result(const SegmentResult& /*vm*/) {
+  return "Starting segment movement...\nSegment completed.\n";
+}
+std::string render_json_segment_result(const SegmentResult& vm) {
+  return render_json_envelope("segment", vm);
+}
+std::string render_for_mode(UiMode mode, const SegmentResult& vm) {
+  return mode == UiMode::JSON ? render_json_segment_result(vm)
+                              : render_segment_result(vm);
+}
+
+std::string render_shutdown_result(const ShutdownResult& /*vm*/) {
+  return "Doing shutdown.\n";
+}
+std::string render_json_shutdown_result(const ShutdownResult& vm) {
+  return render_json_envelope("shutdown", vm);
+}
+std::string render_for_mode(UiMode mode, const ShutdownResult& vm) {
+  return mode == UiMode::JSON ? render_json_shutdown_result(vm)
+                              : render_shutdown_result(vm);
+}
+
+std::string render_update_result(const UpdateResult& /*vm*/) {
+  return "Starting update...\nUpdate completed.\n";
+}
+std::string render_json_update_result(const UpdateResult& vm) {
+  return render_json_envelope("update", vm);
+}
+std::string render_for_mode(UiMode mode, const UpdateResult& vm) {
+  return mode == UiMode::JSON ? render_json_update_result(vm)
+                              : render_update_result(vm);
+}
+
 }  // namespace GB::presentation

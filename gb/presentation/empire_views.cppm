@@ -1232,4 +1232,56 @@ render_json_toggle_changed_result(const ToggleChangedResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const ToggleChangedResult& vm);
 
+/// Result of deity emulating a player and governor (`emulate <player> <gov>`).
+struct EmulateResult {
+  player_t player{0};
+  governor_t governor{1};
+  std::string race_name{};
+  std::string governor_name{};
+};
+[[nodiscard]] std::string render_emulate_result(const EmulateResult& vm);
+[[nodiscard]] std::string render_json_emulate_result(const EmulateResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode, const EmulateResult& vm);
+
+/// Result of deity purging all galactic news items (`purge`).
+struct PurgeResult {
+  bool purged{true};
+};
+[[nodiscard]] std::string render_purge_result(const PurgeResult& vm);
+[[nodiscard]] std::string render_json_purge_result(const PurgeResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode, const PurgeResult& vm);
+
+/// Result of disconnecting from the game server (`quit`).
+struct QuitResult {
+  bool disconnect_requested{true};
+};
+[[nodiscard]] std::string render_quit_result(const QuitResult& vm);
+[[nodiscard]] std::string render_json_quit_result(const QuitResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode, const QuitResult& vm);
+
+/// Result of deity triggering segment movement (`@@segment [seg_num]`).
+struct SegmentResult {
+  int segment{0};
+};
+[[nodiscard]] std::string render_segment_result(const SegmentResult& vm);
+[[nodiscard]] std::string render_json_segment_result(const SegmentResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode, const SegmentResult& vm);
+
+/// Result of initiating emergency server shutdown (`@@shutdown`).
+struct ShutdownResult {
+  bool shutdown_requested{true};
+};
+[[nodiscard]] std::string render_shutdown_result(const ShutdownResult& vm);
+[[nodiscard]] std::string render_json_shutdown_result(const ShutdownResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const ShutdownResult& vm);
+
+/// Result of deity triggering a full game update (`@@update`).
+struct UpdateResult {
+  bool completed{true};
+};
+[[nodiscard]] std::string render_update_result(const UpdateResult& vm);
+[[nodiscard]] std::string render_json_update_result(const UpdateResult& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode, const UpdateResult& vm);
+
 }  // namespace GB::presentation

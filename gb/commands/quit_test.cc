@@ -28,9 +28,16 @@ void test_quit_command() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
 
-  // Happy Path: Player requests quit
+  // Happy Path: Player requests quit in ASCII and JSON modes
+  ctx.assert_dispatch_rejected(g, {"quit", "extra"});
+  test::expect_contains(g.out.str(), "Syntax: quit");
   ctx.assert_dispatch_success(g, {"quit"});
   test::expect_contains(g.out.str(), "Goodbye!");
+  test::expect_true(g.disconnect_requested());
+  g.set_disconnect_requested(false);
+  g.set_ui_mode(UiMode::JSON);
+  ctx.assert_dispatch_success(g, {"quit"});
+  test::expect_contains(g.out.str(), "\"type\":\"quit\"");
   test::expect_true(g.disconnect_requested());
 }
 

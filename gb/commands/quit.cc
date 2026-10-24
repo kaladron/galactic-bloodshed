@@ -6,6 +6,7 @@
 module;
 
 import gb.entities;
+import gb.presentation.empire_views;
 import gb.services;
 import std;
 
@@ -13,8 +14,12 @@ module commands;
 
 namespace GB::commands {
 
-bool quit(const command_t&, GameObj& g) {
-  g.out << "Goodbye!\n";
+bool quit(const command_t& argv, GameObj& g) {
+  if (argv.size() > 1) {
+    g.out << "Syntax: quit\n";
+    return false;
+  }
+  g.present(GB::presentation::QuitResult{});
   g.set_disconnect_requested(true);
   return true;
 }

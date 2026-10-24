@@ -60,9 +60,11 @@ void test_update_matrix() {
                                                     {"@@update"}));
   test::expect_contains(g.out.str(), "Only deity can use this command.");
 
-  // --- Case 3: Scope Testing (Valid in all scopes) ---
+  // --- Case 3: Scope Testing and JSON mode ---
   ctx.setup_game_obj(g, 1, 1);
   g.set_god(true);
+  ctx.assert_dispatch_rejected(g, {"@@update", "extra"});
+  test::expect_contains(g.out.str(), "Syntax: @@update");
   for (auto scope : {ScopeLevel::LEVEL_UNIV, ScopeLevel::LEVEL_STAR,
                      ScopeLevel::LEVEL_PLAN, ScopeLevel::LEVEL_SHIP}) {
     g.set_level(scope);
@@ -70,6 +72,9 @@ void test_update_matrix() {
     test::expect_true(GB::commands::dispatch_command(
         g, GB::commands::update_cmd, {"@@update"}));
   }
+  g.set_ui_mode(UiMode::JSON);
+  ctx.assert_dispatch_success(g, {"@@update"});
+  test::expect_contains(g.out.str(), "\"type\":\"update\"");
 }
 
 void test_update_population_growth_persistence() {

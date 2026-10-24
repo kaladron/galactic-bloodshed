@@ -68,16 +68,17 @@ void test_segment_matrix() {
       g, GB::commands::segment_cmd, {"@@segment"}));
   test::expect_contains(g.out.str(), "Only deity can use this command.");
 
-  // --- Case 3: Domain Error (Invalid segment argument) ---
+  // --- Case 3: Domain Error (Invalid segment argument and extra args) ---
   ctx.setup_game_obj(g, 1, 1);
   g.set_god(true);
-  g.out.str("");
+  for (std::string_view bad : {"invalid", "2abc", "-1"}) {
+    ctx.assert_dispatch_rejected(g, {"@@segment", std::string(bad)});
+    test::expect_contains(g.out.str(), "Invalid segment number.");
+  }
+  ctx.assert_dispatch_rejected(g, {"@@segment", "1", "extra"});
+  test::expect_contains(g.out.str(), "Syntax: @@segment [seg_num]");
 
-  test::expect_false(GB::commands::dispatch_command(
-      g, GB::commands::segment_cmd, {"@@segment", "invalid"}));
-  test::expect_contains(g.out.str(), "Invalid segment number.");
-
-  // --- Case 4: Scope Testing (Valid in all scopes) ---
+  // --- Case 4: Scope Testing and JSON mode ---
   for (auto scope : {ScopeLevel::LEVEL_UNIV, ScopeLevel::LEVEL_STAR,
                      ScopeLevel::LEVEL_PLAN, ScopeLevel::LEVEL_SHIP}) {
     g.set_level(scope);
@@ -85,6 +86,10 @@ void test_segment_matrix() {
     test::expect_true(GB::commands::dispatch_command(
         g, GB::commands::segment_cmd, {"@@segment"}));
   }
+  g.set_ui_mode(UiMode::JSON);
+  ctx.assert_dispatch_success(g, {"@@segment", "2"});
+  test::expect_contains(g.out.str(), "\"type\":\"segment\"");
+  test::expect_contains(g.out.str(), "\"segment\":2");
 }
 
 }  // namespace

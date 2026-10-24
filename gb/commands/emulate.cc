@@ -6,35 +6,34 @@
 module;
 
 import gb.entities;
+import gb.presentation.empire_views;
 import gb.services;
+import scnlib;
 import std;
-#undef stdout
 
 module commands;
 
 namespace GB::commands {
 
 bool emulate(const command_t& argv, GameObj& g) {
-  player_t new_player = 0;
-  governor_t new_gov = 0;
+  if (argv.size() > 3) {
+    g.out << "Syntax: emulate <player> <governor>\n";
+    return false;
+  }
 
-  auto [ptr1, ec1] = std::from_chars(
-      argv[1].data(), argv[1].data() + argv[1].size(), new_player.value);
-  auto [ptr2, ec2] = std::from_chars(
-      argv[2].data(), argv[2].data() + argv[2].size(), new_gov.value);
-  if (ec1 != std::errc{} || ec2 != std::errc{}) {
+  auto p_res = scn::scan<player_t::value_type>(argv[1], "{}");
+  auto g_res = scn::scan<governor_t::value_type>(argv[2], "{}");
+  if (!p_res || !p_res->range().empty() || !g_res || !g_res->range().empty()) {
     g.out << "Invalid player or governor number.\n";
     return false;
   }
+  const player_t new_player = p_res->value();
+  const governor_t new_gov = g_res->value();
 
   const Race* race = nullptr;
   try {
     race = g.entity_manager.peek_race(new_player);
   } catch (const EntityNotFoundError&) {
-    g.out << std::format("Player {} does not exist.\n", new_player);
-    return false;
-  }
-  if (!race) {
     g.out << std::format("Player {} does not exist.\n", new_player);
     return false;
   }
@@ -53,8 +52,12 @@ bool emulate(const command_t& argv, GameObj& g) {
   g.set_god(false);  // When emulating, act as normal player
   g.race = race;
 
-  g.out << std::format("Emulating {} \"{}\" [{},{}]\n", race->name,
-                       race->governor(new_gov).name, new_player, new_gov);
+  g.present(GB::presentation::EmulateResult{
+      .player = new_player,
+      .governor = new_gov,
+      .race_name = race->name,
+      .governor_name = race->governor(new_gov).name,
+  });
   return true;
 }
 

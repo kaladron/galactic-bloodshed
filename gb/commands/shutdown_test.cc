@@ -30,10 +30,17 @@ void test_shutdown_as_god() {
   ctx.setup_game_obj(g, 1, 1);
   g.set_god(true);
 
-  // 1. Happy Path: Deity successfully triggers shutdown
+  // 1. Happy Path: Deity triggers shutdown in ASCII and JSON modes
+  ctx.assert_dispatch_rejected(g, {"@@shutdown", "extra"});
+  test::expect_contains(g.out.str(), "Syntax: @@shutdown");
   ctx.assert_dispatch_success(g, {"@@shutdown"});
   test::expect_true(g.shutdown_requested());
   test::expect_contains(g.out.str(), "Doing shutdown.");
+  g.set_shutdown_requested(false);
+  g.set_ui_mode(UiMode::JSON);
+  ctx.assert_dispatch_success(g, {"@@shutdown"});
+  test::expect_contains(g.out.str(), "\"type\":\"shutdown\"");
+  test::expect_true(g.shutdown_requested());
 }
 
 // Test shutdown rejection for mortal player

@@ -99,6 +99,23 @@ void test_emulate_matrix() {
   test::expect_false(GB::commands::dispatch_command(
       g, GB::commands::emulate_cmd, {"emulate", "2", "3"}));
   test::expect_contains(g.out.str(), "Governor 3 is not active.");
+
+  // Trailing garbage, bad governor number, and extra arguments
+  for (const command_t& bad :
+       std::initializer_list<command_t>{{"emulate", "2abc", "1"},
+                                        {"emulate", "2", "1xyz"},
+                                        {"emulate", "2", "bad"}}) {
+    ctx.assert_dispatch_rejected(g, bad);
+    test::expect_contains(g.out.str(), "Invalid player or governor number.");
+  }
+  ctx.assert_dispatch_rejected(g, {"emulate", "2", "1", "extra"});
+  test::expect_contains(g.out.str(), "Syntax: emulate <player> <governor>");
+
+  // JSON mode
+  g.set_ui_mode(UiMode::JSON);
+  ctx.assert_dispatch_success(g, {"emulate", "2", "2"});
+  test::expect_contains(g.out.str(), "\"type\":\"emulate\"");
+  test::expect_contains(g.out.str(), "\"governor_name\":\"Governor2\"");
 }
 
 }  // namespace

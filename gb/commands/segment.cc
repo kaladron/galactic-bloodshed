@@ -6,8 +6,10 @@
 module;
 
 import gb.entities;
+import gb.presentation.empire_views;
 import gb.services;
 import gb.turn;
+import scnlib;
 import std;
 
 module commands;
@@ -15,20 +17,24 @@ module commands;
 namespace GB::commands {
 
 bool segment(const command_t& argv, GameObj& g) {
+  if (argv.size() > 2) {
+    g.out << "Syntax: @@segment [seg_num]\n";
+    return false;
+  }
+
   int seg_num = 0;
-  if (argv.size() > 1) {
-    auto [ptr, ec] = std::from_chars(argv[1].data(),
-                                     argv[1].data() + argv[1].size(), seg_num);
-    if (ec != std::errc{}) {
+  if (argv.size() == 2) {
+    auto res = scn::scan<int>(argv[1], "{}");
+    if (!res || !res->range().empty() || res->value() < 0) {
       g.out << "Invalid segment number.\n";
       return false;
     }
+    seg_num = res->value();
   }
 
-  g.out << "Starting segment movement...\n";
   g.session_registry.flush_all();
   do_segment(g.entity_manager, g.session_registry, 1, seg_num);
-  g.out << "Segment completed.\n";
+  g.present(GB::presentation::SegmentResult{.segment = seg_num});
   return true;
 }
 

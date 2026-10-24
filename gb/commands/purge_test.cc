@@ -33,9 +33,14 @@ void test_purge_as_god() {
   ctx.setup_game_obj(g, 1, 1);
   g.set_god(true);
 
-  // 1. Happy Path: Deity successfully purges news
+  // 1. Happy Path: Deity successfully purges news in ASCII and JSON modes
   ctx.assert_dispatch_success(g, {"purge"});
   test::expect_contains(g.out.str(), "Purged all news.");
+  ctx.assert_dispatch_rejected(g, {"purge", "extra"});
+  test::expect_contains(g.out.str(), "Syntax: purge");
+  g.set_ui_mode(UiMode::JSON);
+  ctx.assert_dispatch_success(g, {"purge"});
+  test::expect_contains(g.out.str(), "\"type\":\"purge\"");
 }
 
 // Test purge rejection for mortal player

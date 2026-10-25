@@ -79,11 +79,11 @@ Impulse thrusters consume fuel during each movement segment proportional to engi
 $$\text{Fuel Burn}_{\text{segment}} = \frac{\text{EvadeMultiplier} \times \text{Speed} \times \text{Mass}_{\text{total}} \times 0.02}{\text{Segments}}, \quad \text{EvadeMultiplier} = \begin{cases} 0.5 & \text{normal cruise} \\ 1.0 & \text{evasive maneuvers (`evade`)} \end{cases}$$
 
 - **Normal Cruise vs. Evasive Maneuvers (`evade`)**: During standard straight-line cruise, impulse thrusters burn fuel at half the maximum thruster rate ($\text{EvadeMultiplier} = 0.5$, historically written as $0.5 \times (1 + \mathbb{I}_{\text{evade}})$). Enabling evasive maneuvers (`order <ship> evade on`) doubles propellant consumption to the full $1.0\times$ base rate ($\text{EvadeMultiplier} = 1.0$) to power continuous jinking thrusters.
-- **Deep-Space Stranding & Vessel Loss**: If a vessel exhausts its propellant in interstellar deep space (`LEVEL_UNIV`) and is either an inexpensive hull ($\text{Build Cost} \le 50$) or an automated Von Neumann / Berserker probe, it is permanently lost in deep space and destroyed.
+- **Deep-Space Stranding & Vessel Loss**: When a vessel lacks the propellant required for its next sub-light movement segment, it halts and transmits an out-of-fuel alert. If the vessel is stranded in interstellar deep space and is either a low-cost hull ($\text{Build Cost} \le 50$, such as an uncrewed space probe or light craft) or an automated Von Neumann machine or Berserker, it is permanently lost in deep space and destroyed. Higher-value capital vessels ($\text{Build Cost} > 50$) in deep space, as well as any vessel that exhausts its fuel within a star system or planetary orbit, survive intact and drift awaiting refueling or towing.
 
 ### Vessel Pursuit and Sensor Tracking (`destination #<ship>`)
 A spaceborne vessel can be ordered to shadow and follow another target vessel (`order #<ship> dest #<target>`) provided:
-1. The pursuing vessel is active and the target vessel is alive and not berthed inside a carrier hangar (`LEVEL_SHIP`).
+1. The pursuing vessel is active and the target vessel is alive and not berthed inside a carrier hangar.
 2. The target vessel belongs to the same empire, an allied empire, or lies within sensor tracking range:
 
 $$R_{\text{track}} = 4.0 \times \text{logscale}(\lfloor \text{Tech} + 1 \rfloor) \times \text{SystemSize}$$

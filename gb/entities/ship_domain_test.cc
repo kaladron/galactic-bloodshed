@@ -1610,6 +1610,9 @@ void test_moveship_and_followable() {
     s1.speed() = 0;
     moveship(ctx.em, s1, true, true, false);
     s1.speed() = 9;
+    s1.land_on_planet();
+    moveship(ctx.em, s1, true, true, false);
+    s1.launch_to_orbit();
     s1.alive() = false;
     moveship(ctx.em, s1, true, true, false);
     s1.alive() = true;
@@ -1629,6 +1632,12 @@ void test_moveship_and_followable() {
     moveship(ctx.em, s1, true, true, false);
     test::expect_false(s1.navigate().on);
     test::expect_eq(s1.whatorbits(), ScopeLevel::LEVEL_STAR);
+
+    // Sublight approach within same star orbit (dest.level == LEVEL_STAR,
+    // storbits == dest.star)
+    s1.set_coordinates(star0_coords + SystemCoordinates{DIST_TO_LAND * 2.0, 0.0});
+    s1.set_star_destination(1);
+    moveship(ctx.em, s1, true, true, false);
 
     // Break star orbit into LEVEL_UNIV
     s1.set_coordinates(star0_coords +
@@ -1685,6 +1694,11 @@ void test_moveship_and_followable() {
     moveship(ctx.em, s1, true, true, false);
     test::expect_eq(s1.whatorbits(), ScopeLevel::LEVEL_PLAN);
 
+    // Approach planet while already in LEVEL_PLAN outside DIST_TO_LAND
+    s1.set_coordinates(p0_coords + SystemCoordinates{DIST_TO_LAND * 2.0, 0.0});
+    s1.set_planet_destination(1, 1);
+    moveship(ctx.em, s1, true, true, false);
+
     // Already at destination (truedist < DIST_TO_LAND in LEVEL_PLAN)
     s1.set_coordinates(p0_coords);
     s1.set_planet_destination(1, 1);
@@ -1703,8 +1717,19 @@ void test_moveship_and_followable() {
     test::expect_true(s1.hyper_drive().on);
     s1.hyper_drive().on = false;
 
-    // Merchant edge cases: foreign sector, unload fuel (not enough fuel to
-    // launch), and same-system route (no hyperjump)
+    // Merchant edge cases: unowned sector without hyperdrive, foreign sector,
+    // unload fuel (not enough fuel to launch), and same-system route
+    ctx.em.mutate_sectormap(
+        1, 1, [](SectorMap& smap) { smap.get({0, 0}).set_owner(0); });
+    s1.hyper_drive().has = false;
+    s1.enter_star_orbit(1);
+    s1.set_coordinates(p0_coords + SystemCoordinates{DIST_TO_LAND * 0.5, 0.0});
+    s1.set_planet_destination(1, 1);
+    s1.admin_override_fuel(500.0);
+    moveship(ctx.em, s1, true, true, false);
+    test::expect_false(s1.hyper_drive().on);
+    s1.hyper_drive().has = true;
+
     ctx.em.mutate_sectormap(
         1, 1, [](SectorMap& smap) { smap.get({0, 0}).set_owner(2); });
     s1.enter_star_orbit(1);
@@ -1764,25 +1789,43 @@ void test_moveship_and_followable() {
     test::expect_eq(s1.whatorbits(), ScopeLevel::LEVEL_STAR);
   });
 
-  // Follow ship in same planet orbit (handle_ship_arrival LEVEL_PLAN)
+  // Follow ship in planet orbit from star orbit (resolves to LEVEL_PLAN arrival
+  // while whatdest() == LEVEL_SHIP), then follow within same planet orbit
   ctx.em.mutate_ship(s2_id, [&](Ship& s2) {
     s2.owner() = 1;
     s2.enter_planet_orbit(1, 1);
     s2.set_coordinates(p0_coords);
   });
   ctx.em.mutate_ship(s1_id, [&](Ship& s1) {
-    s1.enter_planet_orbit(1, 1);
+    s1.enter_star_orbit(1);
+    s1.set_coordinates(p0_coords + SystemCoordinates{DIST_TO_LAND * 0.5, 0.0});
+    s1.set_ship_destination(s2_id);
+    moveship(ctx.em, s1, true, true, false);
+    test::expect_eq(s1.whatorbits(), ScopeLevel::LEVEL_PLAN);
+
     s1.set_coordinates(p0_coords + SystemCoordinates{DIST_TO_LAND * 2.0, 0.0});
     s1.set_ship_destination(s2_id);
     moveship(ctx.em, s1, true, true, false);
     test::expect_eq(s1.whatorbits(), ScopeLevel::LEVEL_PLAN);
   });
 
-  // Cross-system pursuit where both ships orbit planet #1 of different stars
-  // routes via destination star approach first
+  // Cross-system pursuit where target is in LEVEL_STAR or LEVEL_PLAN of star 2
   const auto star2_coords = ctx.em.peek_star(2)->coordinates();
   ctx.em.mutate_ship(s2_id, [&](Ship& s2) {
     s2.owner() = 1;
+    s2.enter_star_orbit(2);
+    s2.set_coordinates(star2_coords + SystemCoordinates{0.0, 200.0});
+  });
+  ctx.em.mutate_ship(s1_id, [&](Ship& s1) {
+    s1.enter_star_orbit(1);
+    s1.set_coordinates(star2_coords + SystemCoordinates{-10.0, 0.0});
+    s1.set_ship_destination(s2_id);
+    moveship(ctx.em, s1, true, true, false);
+    test::expect_eq(s1.whatorbits(), ScopeLevel::LEVEL_STAR);
+    test::expect_eq(s1.storbits(), starnum_t{2});
+  });
+
+  ctx.em.mutate_ship(s2_id, [&](Ship& s2) {
     s2.enter_planet_orbit(2, 1);
     s2.set_coordinates(star2_coords + SystemCoordinates{0.0, 200.0});
   });
@@ -1804,11 +1847,15 @@ void test_moveship_and_followable() {
     test::expect_eq(s1.whatdest(), ScopeLevel::LEVEL_UNIV);
   });
 
-  // 6. Deep space out-of-fuel loss for cheap / probe / VN / Berserker vs
-  // survival for expensive capital ship
+  // 6. Out-of-fuel handling (in star orbit vs deep space) + probe/VN/Berserker
+  // exploration & message suppression
   ctx.em.mutate_ship(s1_id, [&](Ship& s1) {
     s1.build_cost() = 500;
     s1.admin_override_fuel(0.0);
+    s1.enter_star_orbit(1);
+    s1.set_star_destination(2);
+    moveship(ctx.em, s1, true, true, false);
+
     s1.set_coordinates({50000.0, 50000.0});
     s1.enter_deep_space();
     s1.set_star_destination(1);
@@ -1819,15 +1866,57 @@ void test_moveship_and_followable() {
 
   const auto probe_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE, 22)
                             .owned_by(1, 1)
-                            .with_fuel(0.0)
+                            .with_fuel(100.0)
                             .with_speed(9)
                             .build();
   ctx.em.mutate_ship(probe_id, [&](Ship& probe) {
+    // Crewless probe explores star 1 on arrival, then runs out of fuel in deep space
+    probe.enter_deep_space();
+    probe.set_coordinates(star0_coords + SystemCoordinates{SYSTEMSIZE * 0.5, 0.0});
+    probe.set_star_destination(1);
+    moveship(ctx.em, probe, true, true, false);
+    test::expect_eq(probe.whatorbits(), ScopeLevel::LEVEL_STAR);
+
+    probe.admin_override_fuel(0.0);
     probe.set_coordinates({50000.0, 50000.0});
     probe.enter_deep_space();
     probe.set_star_destination(1);
     moveship(ctx.em, probe, true, true, false);
     test::expect_false(probe.alive());
+  });
+
+  const auto vn_id = TestShipBuilder(ctx.em, ShipType::OTYPE_VN, 23)
+                         .owned_by(1, 1)
+                         .with_fuel(500.0)
+                         .with_speed(9)
+                         .build();
+  ctx.em.mutate_ship(vn_id, [&](Ship& vn) {
+    // Crewless VN neither explores nor sends arrival messages at star or planet
+    vn.build_cost() = 100;
+    vn.enter_deep_space();
+    vn.set_coordinates(star0_coords + SystemCoordinates{SYSTEMSIZE * 0.5, 0.0});
+    vn.set_star_destination(1);
+    moveship(ctx.em, vn, true, true, false);
+    test::expect_eq(vn.whatorbits(), ScopeLevel::LEVEL_STAR);
+
+    vn.set_coordinates(
+        p0_coords + SystemCoordinates{(DIST_TO_LAND + PLORBITSIZE) * 0.5, 0.0});
+    vn.set_planet_destination(1, 1);
+    moveship(ctx.em, vn, true, true, false);
+    test::expect_eq(vn.whatorbits(), ScopeLevel::LEVEL_PLAN);
+
+    // High-cost VN and Berserker are still lost when out of fuel in deep space
+    vn.admin_override_fuel(0.0);
+    vn.enter_deep_space();
+    vn.set_star_destination(1);
+    moveship(ctx.em, vn, true, true, false);
+    test::expect_false(vn.alive());
+
+    vn.alive() = true;
+    vn.type() = ShipType::OTYPE_BERS;
+    vn.set_star_destination(1);
+    moveship(ctx.em, vn, true, true, false);
+    test::expect_false(vn.alive());
   });
 }
 

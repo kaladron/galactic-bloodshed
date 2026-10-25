@@ -396,17 +396,16 @@ void handle_sublight_out_of_fuel(EntityManager& em, Ship& s,
 
 void check_and_break_orbit(EntityManager& em, Ship& s) {
   if (s.whatorbits() == ScopeLevel::LEVEL_PLAN) {
-    const auto* ost = em.peek_star(s.storbits());
-    const auto* opl = em.peek_planet(s.storbits(), s.pnumorbits());
-    if (ost && opl &&
-        s.coordinates().distance_to(opl->absolute_coordinates(*ost)) >
-            PLORBITSIZE) {
+    const auto& ost = *em.peek_star(s.storbits());
+    const auto& opl = *em.peek_planet(s.storbits(), s.pnumorbits());
+    if (s.coordinates().distance_to(opl.absolute_coordinates(ost)) >
+        PLORBITSIZE) {
       s.enter_star_orbit();
       s.protect().planet = false;
     }
   } else if (s.whatorbits() == ScopeLevel::LEVEL_STAR) {
-    const auto* ost = em.peek_star(s.storbits());
-    if (ost && s.coordinates().distance_to(ost->coordinates()) > SYSTEMSIZE) {
+    const auto& ost = *em.peek_star(s.storbits());
+    if (s.coordinates().distance_to(ost.coordinates()) > SYSTEMSIZE) {
       s.enter_deep_space();
       s.protect().evade = false;
       s.protect().planet = false;
@@ -454,13 +453,11 @@ void resolve_ship_destination_target(EntityManager& em, Ship& s,
 
   const ScopeLevel dsh_orbit = res.target_ship->whatorbits();
   if (dsh_orbit == ScopeLevel::LEVEL_PLAN &&
-      (s.whatorbits() != ScopeLevel::LEVEL_PLAN ||
-       s.storbits() != res.target_ship->storbits() ||
+      (s.storbits() != res.target_ship->storbits() ||
        s.pnumorbits() != res.target_ship->pnumorbits())) {
     res.level = ScopeLevel::LEVEL_PLAN;
   } else if (dsh_orbit == ScopeLevel::LEVEL_STAR &&
-             (s.whatorbits() == ScopeLevel::LEVEL_UNIV ||
-              s.storbits() != res.target_ship->storbits())) {
+             s.storbits() != res.target_ship->storbits()) {
     res.level = ScopeLevel::LEVEL_STAR;
   }
 }
@@ -469,8 +466,7 @@ void resolve_ship_destination_target(EntityManager& em, Ship& s,
                                                ScopeLevel level) noexcept {
   if (level == ScopeLevel::LEVEL_STAR) return true;
   if (level != ScopeLevel::LEVEL_PLAN) return false;
-  return s.storbits() != s.deststar() ||
-         s.whatorbits() == ScopeLevel::LEVEL_UNIV;
+  return s.storbits() != s.deststar();
 }
 
 [[nodiscard]] ResolvedDestination resolve_destination_target(EntityManager& em,
@@ -490,8 +486,7 @@ void resolve_ship_destination_target(EntityManager& em, Ship& s,
     res.level = ScopeLevel::LEVEL_STAR;
     res.star = s.deststar();
     res.coords = em.peek_star(res.star)->coordinates();
-  } else if (res.level == ScopeLevel::LEVEL_PLAN &&
-             s.storbits() == s.deststar()) {
+  } else if (res.level == ScopeLevel::LEVEL_PLAN) {
     res.level = ScopeLevel::LEVEL_PLAN;
     res.star = s.deststar();
     res.pnum = s.destpnum();
@@ -611,19 +606,20 @@ void handle_ship_arrival(Ship& s, const Ship& dsh) {
                                              double truedist) noexcept {
   if (truedist >= DIST_TO_LAND) return false;
   if (s.whatorbits() != dest.level) return false;
-  return s.storbits() == dest.star && s.pnumorbits() == dest.pnum;
+  if (dest.level == ScopeLevel::LEVEL_STAR) {
+    return s.storbits() == dest.star;
+  }
+  return s.pnumorbits() == dest.pnum;
 }
 
 [[nodiscard]] double adjust_approach_distance(const Ship& s,
                                               const ResolvedDestination& dest,
                                               double truedist) noexcept {
-  if (dest.level == ScopeLevel::LEVEL_STAR &&
-      (s.storbits() != dest.star || s.whatorbits() == ScopeLevel::LEVEL_UNIV)) {
+  if (dest.level == ScopeLevel::LEVEL_STAR && s.storbits() != dest.star) {
     return truedist - SYSTEMSIZE * 0.90;
   }
   if (dest.level == ScopeLevel::LEVEL_PLAN &&
-      s.whatorbits() == ScopeLevel::LEVEL_STAR && s.storbits() == dest.star &&
-      truedist >= PLORBITSIZE) {
+      s.whatorbits() == ScopeLevel::LEVEL_STAR && truedist >= PLORBITSIZE) {
     return truedist - PLORBITSIZE * 0.90;
   }
   return truedist;
@@ -634,11 +630,10 @@ void dispatch_destination_arrival(EntityManager& em, Ship& s,
                                   bool send_messages, bool checking_fuel) {
   if (needs_interstellar_approach(s, dest.level)) {
     handle_star_arrival(em, s, dest.star, send_messages, checking_fuel);
-  } else if (dest.level == ScopeLevel::LEVEL_PLAN &&
-             dest.star == s.storbits()) {
+  } else if (dest.level == ScopeLevel::LEVEL_PLAN) {
     handle_planet_arrival(em, s, dest.star, dest.pnum, send_messages,
                           checking_fuel);
-  } else if (dest.level == ScopeLevel::LEVEL_SHIP && dest.target_ship) {
+  } else if (dest.level == ScopeLevel::LEVEL_SHIP) {
     handle_ship_arrival(s, *dest.target_ship);
   }
 }
@@ -655,7 +650,7 @@ void execute_destination_step(EntityManager& em, Ship& s, double fuse,
   }
 
   if (s.whatdest() == ScopeLevel::LEVEL_SHIP &&
-      (!dest.target_ship || !followable(em, s, *dest.target_ship))) {
+      !followable(em, s, *dest.target_ship)) {
     const auto lost_dest = s.destshipno().value_or(0);
     s.clear_destination();
     s.protect().evade = false;
@@ -683,8 +678,7 @@ void execute_destination_step(EntityManager& em, Ship& s, double fuse,
 }
 
 [[nodiscard]] bool can_ship_move_sublight(const Ship& s) noexcept {
-  if (!s.speed() || s.docked() || !s.alive() ||
-      s.whatorbits() == ScopeLevel::LEVEL_SHIP) {
+  if (!s.speed() || s.docked() || !s.alive()) {
     return false;
   }
   return s.whatdest() != ScopeLevel::LEVEL_UNIV || s.navigate().on;

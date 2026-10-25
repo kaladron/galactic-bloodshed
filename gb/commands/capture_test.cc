@@ -286,6 +286,44 @@ void test_capture_civilian_victory() {
   const auto* smap = ctx.em.peek_sectormap(1, 1);
   test::expect_eq(smap->get(Coordinates{5, 5}).get_popn(), 30);
 
+  // Capture a manned landed ship (non-factory) and a manned landed factory
+  ctx.em.mutate_race(1, [](Race& r) { r.likes[SectorType::SEC_LAND] = 0.0; });
+  ctx.em.mutate_race(2, [](Race& r) {
+    r.tech = 100.0;
+    r.morale = 100;
+  });
+  for (ShipType stype : {ShipType::STYPE_CARGO, ShipType::OTYPE_FACTORY}) {
+    shipnum_t manned_id = TestShipBuilder(ctx.em, stype)
+                              .owned_by(2, 1)
+                              .landed_on(1, 1, Coordinates(5, 5))
+                              .with_crew(1, 0)
+                              .with_armor(0)
+                              .with_destruct(0)
+                              .build();
+    while (ctx.em.peek_ship(manned_id)->owner() != 1) {
+      ctx.em.mutate_star(1, [](Star& s) { s.AP(player_t{1}) = 10; });
+      ctx.em.mutate_ship(manned_id, [](Ship& s) {
+        s.admin_override_damage(0);
+        s.popn() = 1;
+      });
+      ctx.assert_dispatch_success(
+          g,
+          {"capture", std::format("#{}", manned_id.value), "2", "civilians"});
+    }
+    test::expect_eq(ctx.em.peek_ship(manned_id)->owner(), 1);
+  }
+
+  // Uncrewed ship boarded with 0 surviving boarders stays uncaptured
+  shipnum_t empty_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
+                             .owned_by(2, 1)
+                             .landed_on(1, 1, Coordinates(5, 5))
+                             .with_crew(0, 0)
+                             .with_destruct(0)
+                             .build();
+  auto zero_res = execute_landed_ship_boarding(
+      ctx.em, empty_ship, 0, PopulationType::CIV, player_t{1}, governor_t{1});
+  test::expect_false(zero_res.captured);
+
   ctx.verify_universe_invariants();
 }
 

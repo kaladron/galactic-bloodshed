@@ -199,7 +199,8 @@ void test_defend_target_scope_validations() {
       g, {"defend", std::format("#{}", star_ship.value), "5,5", "10"});
   test::expect_contains(g.out.str(), "The ship is not in planet orbit.");
 
-  // 2. Ship in orbit around different planet (Planet 2 instead of Planet 1)
+  // 2. Ship in orbit around different planet (Planet 2 instead of Planet 1, or
+  // Star 2 Planet 1)
   TestPlanetBuilder(ctx.em, ctx.db, 1, PlanetType::MARS, {5, 5}, 2)
       .named("Mars")
       .build();
@@ -208,6 +209,14 @@ void test_defend_target_scope_validations() {
           .owned_by(2, 1)
           .in_planet_orbit(1, 2)
           .build();
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"defend", std::format("#{}", other_planet_ship.value), "5,5", "10"});
+  test::expect_contains(g.out.str(),
+                        "Target is not in orbit around this planet.");
+
+  ctx.em.mutate_ship(other_planet_ship,
+                     [](Ship& s) { s.enter_planet_orbit(2, 1); });
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"defend", std::format("#{}", other_planet_ship.value), "5,5", "10"});
@@ -228,6 +237,29 @@ void test_defend_target_scope_validations() {
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"defend", "#9999", "5,5", "10"});
   test::expect_contains(g.out.str(), "Ship not found.");
+
+  // 5. Armed target ship with protect.retaliate false vs true
+  const shipnum_t armed_target = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
+                                     .owned_by(2, 1)
+                                     .in_planet_orbit(1, 1)
+                                     .with_size(1000)
+                                     .with_guns(guntype_t::LIGHT, 5)
+                                     .with_destruct(50)
+                                     .with_crew(20, 10)
+                                     .with_fuel(500.0)
+                                     .build();
+  ctx.em.mutate_ship(armed_target,
+                     [](Ship& s) { s.protect().retaliate = false; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(player_t{1}) = 10; });
+  ctx.assert_dispatch_success(
+      g, {"defend", std::format("#{}", armed_target.value), "5,5", "10"}, 1);
+  test::expect_eq(ctx.em.peek_ship(armed_target)->destruct(), 50);
+
+  ctx.em.mutate_ship(armed_target,
+                     [](Ship& s) { s.protect().retaliate = true; });
+  ctx.assert_dispatch_success(
+      g, {"defend", std::format("#{}", armed_target.value), "5,5", "10"}, 1);
+  test::expect_lt(ctx.em.peek_ship(armed_target)->destruct(), 50);
 
   std::println(std::cout, "    ✓ Target ship validation rejections verified");
 }

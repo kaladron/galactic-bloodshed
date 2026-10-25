@@ -226,9 +226,26 @@ void test_fire_domain_errors_and_surface_geometry() {
       g, {"fire", std::format("#{}", afv_id.value), "#2"});
   test::expect_contains(g.out.str(), "isn't landed on a planet!");
 
-  // Land target #2 on a DIFFERENT planet (Star 2, Planet 1) -> rejected
+  // Land target #2 on a DIFFERENT planet (Star 2, Planet 1, and Star 1,
+  // Planet 2) -> rejected
   ctx.em.mutate_ship(2, [](Ship& s) {
     s.enter_planet_orbit(2, 1);
+    s.land_on_planet();
+    s.set_land_coords({0, 0});
+  });
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"fire", std::format("#{}", afv_id.value), "#2"});
+  test::expect_contains(
+      g.out.str(),
+      "Landed ships can only attack other landed ships if they are on the same "
+      "planet!");
+
+  TestPlanetBuilder(ctx.em, ctx.db, 1, PlanetType::MARS, {5, 5}, 2)
+      .named("Mars")
+      .build();
+  ctx.em.mutate_ship(2, [](Ship& s) {
+    s.enter_planet_orbit(1, 2);
     s.land_on_planet();
     s.set_land_coords({0, 0});
   });
@@ -293,9 +310,28 @@ void test_protecting_ship_retaliation() {
       .with_fuel(1000.0)
       .build();
 
+  ctx.em.mutate_ship(1, [](Ship& shooter) {
+    shooter.protect().on = true;
+    shooter.protect().ship = 2;
+  });
+  ctx.em.mutate_ship(2, [](Ship& target) {
+    target.protect().on = true;
+    target.protect().ship = 2;
+  });
   ctx.em.mutate_ship(3, [](Ship& escort) {
     escort.protect().on = true;
     escort.protect().ship = 2;
+  });
+
+  const auto inactive_escort =
+      TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
+          .owned_by(2, 1)
+          .in_star_orbit(1, SystemCoordinates{110.0, 210.0})
+          .build();
+  ctx.em.mutate_ship(inactive_escort, [](Ship& s) {
+    s.active() = false;
+    s.protect().on = true;
+    s.protect().ship = 2;
   });
 
   auto& registry = get_test_session_registry();

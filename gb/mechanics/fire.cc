@@ -144,10 +144,6 @@ void resolve_escort_retaliation(EntityManager& em, const Ship& protected_ship,
       shooter_ship.type() == ShipType::OTYPE_AFV) {
     return;
   }
-  if (protected_ship.whatorbits() != ScopeLevel::LEVEL_STAR &&
-      protected_ship.whatorbits() != ScopeLevel::LEVEL_PLAN) {
-    return;
-  }
 
   ShipList shiplist = (protected_ship.whatorbits() == ScopeLevel::LEVEL_STAR)
                           ? ShipList::in_star(em, protected_ship.storbits())

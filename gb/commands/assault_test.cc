@@ -326,6 +326,25 @@ void test_assault_combat_boobytrap_and_unmooring() {
   test::expect_contains(g.out.str(), "Their boobytrap gave you");
   test::expect_contains(g.out.str(), "VICTORY! the ship is yours!");
 
+  // Unmanned ship without boobytrap (max_crew == 0 && destruct == 0)
+  ctx.em.mutate_ship(1, [](Ship& s) {
+    s.undock_from_ship();
+    s.admin_override_damage(0);
+    s.troops() = 20;
+  });
+  shipnum_t safe_mine_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
+                               .owned_by(2, 1)
+                               .named("SafeMine")
+                               .in_star_orbit(1, 100.0, 200.0)
+                               .with_max_crew(0)
+                               .with_destruct(0)
+                               .build();
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"assault", "#1", std::format("#{}", safe_mine_id.value)}, 1);
+  test::expect_contains(g.out.str(), "VICTORY! the ship is yours!");
+  (void)ctx.em.unmoor_ships(safe_mine_id);
+
   // 4. Universe scope assault (deducts Universe AP)
   ctx.em.mutate_ship(1, [](Ship& s) {
     s.undock_from_ship();
@@ -375,7 +394,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
   test::expect_eq(ctx.em.peek_ship(civ_target)->owner(), 1);
   test::expect_eq(ctx.em.peek_ship(civ_target)->popn(), 20);
 
-  // 6. Illegal boarder count (0 boarders requested)
+  // 6. Illegal boarder count (0 or negative boarders requested)
   ctx.em.mutate_ship(1, [](Ship& s) {
     s.undock_from_ship();
     s.troops() = 20;
@@ -391,6 +410,10 @@ void test_assault_combat_boobytrap_and_unmooring() {
   ctx.assert_dispatch_rejected(
       g, {"assault", "#1", std::format("#{}", zero_target.value), "0", "mil"});
   test::expect_contains(g.out.str(), "Illegal number of boarders (0).");
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"assault", "#1", std::format("#{}", zero_target.value), "-1", "mil"});
+  test::expect_contains(g.out.str(), "Illegal number of boarders (-1).");
 
   // 7. Defender ship destroyed during boarding combat: boarders die on target
   // and do NOT return to attacking ship #1.
@@ -481,7 +504,8 @@ void test_assault_defensive_fire_and_escort_retaliation() {
                                  .owned_by(2, 1)
                                  .named("GlassDefender")
                                  .in_star_orbit(1, 100.0, 200.0)
-                                 .with_guns(guntype_t::LIGHT, 1)
+                                 .with_guns(guntype_t::HEAVY, 5)
+                                 .with_destruct(100)
                                  .with_armor(0)
                                  .with_size(1)
                                  .with_damage(99)
@@ -521,6 +545,7 @@ void test_assault_defensive_fire_and_escort_retaliation() {
   // 2b. Target fires defensive guns at an attacker with self-retaliate off,
   // and an escort ship protecting the attacker retaliates.
   ctx.em.mutate_ship(heavy_attacker, [](Ship& s) {
+    s.admin_override_damage(0);
     s.protect().retaliate = false;
     s.troops() = 20;
   });
@@ -668,6 +693,79 @@ void test_assault_defensive_fire_and_escort_retaliation() {
                                std::format("#{}", overload_defender.value)},
                               1);
   test::expect_contains(g.out.str(), "Distance to");
+
+  // 5. execute_defensive_fire with dead or inactive defender returns nullopt;
+  // defensive fire killing the lone boarding troop aborts boarding while the
+  // attacking ship survives.
+  ctx.em.mutate_ship(heavy_attacker, [&](Ship& att) {
+    Ship dead_def{att.get_struct()};
+    dead_def.alive() = false;
+    test::expect_false(
+        execute_defensive_fire(ctx.em, att, dead_def).has_value());
+    dead_def.alive() = true;
+    dead_def.active() = false;
+    test::expect_false(
+        execute_defensive_fire(ctx.em, att, dead_def).has_value());
+  });
+
+  ctx.em.mutate_ship(escort_ship, [](Ship& s) { s.protect().on = false; });
+
+  ctx.em.mutate_race(1, [](Race& r) {
+    r.tech = 100.0;
+    r.morale = 100;
+  });
+  ctx.em.mutate_race(2, [](Race& r) {
+    r.tech = 100.0;
+    r.morale = 100;
+  });
+
+  shipnum_t moderate_defender =
+      TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+          .owned_by(2, 1)
+          .named("ModerateDefender")
+          .in_planet_orbit(1, 1, UniverseCoordinates{100.0, 200.0})
+          .with_crew(1, 0)
+          .with_fuel(5000.0)
+          .build();
+  ctx.em.mutate_ship(moderate_defender, [](Ship& s) {
+    s.tech() = 1000.0;
+    s.laser() = 1;
+    s.mounted() = 1;
+    s.fire_laser() = 60;
+  });
+
+  bool civ_lost = false;
+  for (int attempt = 0; attempt < 25 && !civ_lost; ++attempt) {
+    (void)ctx.em.unmoor_ships(heavy_attacker);
+    ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 10; });
+    ctx.em.mutate_ship(moderate_defender, [](Ship& s) {
+      s.owner() = 2;
+      s.admin_override_damage(0);
+      s.popn() = 1;
+      s.troops() = 0;
+      s.destruct() = 500;
+    });
+    ctx.em.mutate_ship(heavy_attacker, [](Ship& s) {
+      s.admin_override_damage(0);
+      s.size() = 1000;
+      s.armor() = 0;
+      s.tech() = 1.0;
+      s.popn() = 1;
+      s.troops() = 0;
+      s.laser() = 0;
+      s.protect().retaliate = false;
+    });
+    ctx.em.mutate_ship(heavy_attacker, [&](Ship& s) {
+      auto res =
+          assault_single_ship(ctx.em, s, moderate_defender, PopulationType::CIV,
+                              1, player_t{1}, governor_t{1}, true);
+      if (res && !res->boarding.has_value() && s.alive()) {
+        civ_lost = true;
+      }
+    });
+  }
+  test::expect_true(civ_lost);
+  ctx.em.mutate_ship(heavy_attacker, [](Ship& s) { s.popn() = 10; });
 
   ctx.verify_universe_invariants();
 }

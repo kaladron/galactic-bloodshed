@@ -195,7 +195,8 @@ void test_bombard_preconditions_afv_and_retaliation() {
       g, {"bombard", std::format("#{}", afv_id.value), "5,5"});
   test::expect_contains(g.out.str(), "This ship is not landed on the planet.");
 
-  // 4. Landed AFV must be adjacent to target sector
+  // 4. Landed AFV must be adjacent to target sector; adjacent sector succeeds
+  // without planetary retaliation
   ctx.em.mutate_ship(afv_id, [](Ship& s) {
     s.land_on_planet();
     s.set_land_coords({0, 0});
@@ -203,6 +204,17 @@ void test_bombard_preconditions_afv_and_retaliation() {
   ctx.assert_dispatch_rejected(
       g, {"bombard", std::format("#{}", afv_id.value), "5,5"});
   test::expect_contains(g.out.str(), "You are not adjacent to that sector.");
+
+  ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
+    auto& adj = smap.get({0, 1});
+    adj.set_condition(SectorType::SEC_SEA);
+    adj.set_type(SectorType::SEC_SEA);
+    adj.set_owner(2);
+    adj.set_popn_exact(100);
+  });
+  ctx.assert_dispatch_success(
+      g, {"bombard", std::format("#{}", afv_id.value), "0,1", "5"}, 1);
+  ctx.em.mutate_star(1, [ap_before](Star& s) { s.AP(1) = ap_before; });
 
   // 5. Planetary defense network blocks orbital bombardment without AP loss
   const auto pdef_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF)
@@ -225,6 +237,7 @@ void test_bombard_preconditions_afv_and_retaliation() {
     s.laser() = true;
     s.fire_laser() = 5;
     s.mounted() = true;
+    s.protect().planet = true;
   });
   ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
     for (int y = 0; y < 2; ++y) {
@@ -254,6 +267,19 @@ void test_bombard_preconditions_afv_and_retaliation() {
                                 .with_fuel(500.0)
                                 .build();
   ctx.em.mutate_ship(protector_id, [](Ship& s) { s.protect().planet = true; });
+
+  const auto inactive_protector_id =
+      TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
+          .owned_by(2, 1)
+          .in_planet_orbit(1, 1)
+          .with_guns(guntype_t::LIGHT, 5)
+          .with_destruct(50)
+          .with_crew(10, 10)
+          .build();
+  ctx.em.mutate_ship(inactive_protector_id, [](Ship& s) {
+    s.protect().planet = true;
+    s.active() = false;
+  });
 
   // Bombard with excessive strength (clamped to maxstrength) on (5,5)
   ctx.assert_dispatch_success(g, {"bombard", "#1", "5,5", "999"}, 1);

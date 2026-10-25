@@ -173,6 +173,28 @@ void test_scrap_docked_capacity_clamping() {
                               1);
   test::expect_eq(ctx.em.peek_ship(shuttle_id)->resource(), 175);
 
+  // Carrier hangar docking (LEVEL_SHIP) -> reclaims resources into carrier
+  auto carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
+                        .owned_by(player_t{1}, governor_t{1})
+                        .in_star_orbit(1)
+                        .with_crew(10, 0)
+                        .with_resource(100)
+                        .build();
+  auto hangar_fighter = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+                            .owned_by(player_t{1}, governor_t{1})
+                            .with_crew(2, 0)
+                            .with_resource(20)
+                            .build();
+  ctx.em.mutate_ship(hangar_fighter, [&](Ship& s) {
+    s.dock_into_carrier(*ctx.em.peek_ship(carrier_id));
+    s.build_cost() = 40;
+  });
+  ctx.em.flush_all();
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"scrap", std::format("#{}", hangar_fighter.value)}, 1);
+  test::expect_eq(ctx.em.peek_ship(carrier_id)->resource(), 140);
+
   ctx.verify_universe_invariants();
 }
 
@@ -319,6 +341,10 @@ void test_scrap_domain_errors() {
   // (and verify AP is NOT deducted!)
   const ap_t ap_before = ctx.em.peek_star(1)->AP(1);
   ctx.em.mutate_ship(2, [](Ship& s) { s.popn() = 5; });
+  ctx.em.mutate_ship(1, [](Ship& s) { s.dock_with_ship(shipnum_t{1}); });
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"scrap", "#2"});
+  test::expect_contains(g.out.str(), "Warning, other ship not docked..");
   ctx.em.mutate_ship(1, [](Ship& s) { s.undock_from_ship(); });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"scrap", "#2"});

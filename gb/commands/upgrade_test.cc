@@ -366,6 +366,12 @@ void test_upgrade_weapons_and_systems() {
   ctx.assert_dispatch_success(g, {"upgrade", "laser"}, 1);
   test::expect_true(ctx.em.peek_ship(1)->laser());
 
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"upgrade", "laser"});
+  test::expect_contains(
+      g.out.str(),
+      "That characteristic either doesn't exist or can't be modified.");
+
   ctx.assert_dispatch_success(g, {"upgrade", "cew", "strength", "50"}, 1);
   test::expect_eq(ctx.em.peek_ship(1)->cew(), 50);
 

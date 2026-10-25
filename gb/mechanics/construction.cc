@@ -362,8 +362,7 @@ scrap_single_ship(EntityManager& em, Ship& s, const Race& race) {
     }
   }
 
-  const bool in_deep_space =
-      (s.whatorbits() == ScopeLevel::LEVEL_UNIV || s.storbits() == 0);
+  const bool in_deep_space = (s.whatorbits() == ScopeLevel::LEVEL_UNIV);
   if (in_deep_space) {
     if (!race.God) {
       const auto* univ = em.peek_universe();
@@ -398,8 +397,7 @@ scrap_single_ship(EntityManager& em, Ship& s, const Race& race) {
     }
   }
 
-  const bool is_landed_on_planet =
-      (s.whatorbits() == ScopeLevel::LEVEL_PLAN && s.is_landed());
+  const bool is_landed_on_planet = s.is_landed();
   player_t sect_owner = 0;
   if (is_landed_on_planet) {
     sect_owner = em.peek_sectormap(s.storbits(), s.pnumorbits())
@@ -446,11 +444,11 @@ scrap_single_ship(EntityManager& em, Ship& s, const Race& race) {
             std::max<resource_t>(0, s2.max_resource_capacity() - s2.resource());
         result.resource_room_limit = scrapval;
       }
-      if (fuelval > 0.0 && s2.fuel() + fuelval > s2.max_fuel_capacity()) {
+      if (s2.fuel() + fuelval > s2.max_fuel_capacity()) {
         fuelval = std::max(0.0, s2.max_fuel_capacity() - s2.fuel());
         result.fuel_room_limit = fuelval;
       }
-      if (destval > 0 && s2.destruct() + destval > s2.max_destruct_capacity()) {
+      if (s2.destruct() + destval > s2.max_destruct_capacity()) {
         destval =
             std::max<resource_t>(0, s2.max_destruct_capacity() - s2.destruct());
         result.destruct_room_limit = destval;
@@ -467,7 +465,7 @@ scrap_single_ship(EntityManager& em, Ship& s, const Race& race) {
           result.crew_room_limit = crewval;
         }
       }
-      if (xtalval > 0 && s2.crystals() + xtalval > s2.max_crystals_capacity()) {
+      if (s2.crystals() + xtalval > s2.max_crystals_capacity()) {
         xtalval =
             s2.max_crystals_capacity() > s2.crystals()
                 ? static_cast<int>(s2.max_crystals_capacity() - s2.crystals())
@@ -589,25 +587,69 @@ modify_cew(Ship& dirship, const Race& race, const command_t& argv) {
   return std::unexpected(FactoryModifyError::InvalidCewOption);
 }
 
+enum class ShipAttr {
+  Primary,
+  Secondary,
+  Cew,
+  Mount,
+  Hyperdrive,
+  Laser,
+  Armor,
+  Crew,
+  Cargo,
+  Hanger,
+  Fuel,
+  Destruct,
+  Speed,
+};
+
+std::optional<ShipAttr> parse_ship_attribute(std::string_view name) {
+  static constexpr std::array<std::pair<std::string_view, ShipAttr>, 14> table{{
+      {"primary", ShipAttr::Primary},
+      {"secondary", ShipAttr::Secondary},
+      {"cew", ShipAttr::Cew},
+      {"mount", ShipAttr::Mount},
+      {"hyperdrive", ShipAttr::Hyperdrive},
+      {"laser", ShipAttr::Laser},
+      {"armor", ShipAttr::Armor},
+      {"crew", ShipAttr::Crew},
+      {"cargo", ShipAttr::Cargo},
+      {"resource", ShipAttr::Cargo},
+      {"hanger", ShipAttr::Hanger},
+      {"fuel", ShipAttr::Fuel},
+      {"destruct", ShipAttr::Destruct},
+      {"speed", ShipAttr::Speed},
+  }};
+  for (const auto& [key, val] : table) {
+    if (name == key) return val;
+  }
+  return std::nullopt;
+}
+
 std::expected<void, FactoryModifyError>
 modify_simple_attribute(Ship& dirship, const Race& race,
-                        const ShipTemplate& btmpl, const command_t& argv) {
-  std::string_view attr = argv[1];
-  if (attr == "mount" && btmpl.can_mount && race.discoveries.crystal) {
-    dirship.mount() = !dirship.mount();
-    return {};
-  }
-  if (attr == "hyperdrive" && btmpl.can_hyperjump &&
-      race.discoveries.hyperdrive) {
-    dirship.hyper_drive().has = !dirship.hyper_drive().has;
-    return {};
-  }
-  if (attr == "laser" && btmpl.can_mount_laser) {
-    if (!race.discoveries.laser) {
-      return std::unexpected(FactoryModifyError::NoLaserDiscovery);
-    }
-    dirship.laser() = !dirship.laser();
-    return {};
+                        const ShipTemplate& btmpl, ShipAttr attr,
+                        const command_t& argv) {
+  switch (attr) {
+    case ShipAttr::Mount:
+      if (!btmpl.can_mount) break;
+      if (!race.discoveries.crystal) break;
+      dirship.mount() = !dirship.mount();
+      return {};
+    case ShipAttr::Hyperdrive:
+      if (!btmpl.can_hyperjump) break;
+      if (!race.discoveries.hyperdrive) break;
+      dirship.hyper_drive().has = !dirship.hyper_drive().has;
+      return {};
+    case ShipAttr::Laser:
+      if (!btmpl.can_mount_laser) break;
+      if (!race.discoveries.laser) {
+        return std::unexpected(FactoryModifyError::NoLaserDiscovery);
+      }
+      dirship.laser() = !dirship.laser();
+      return {};
+    default:
+      break;
   }
 
   int value = 0;
@@ -619,34 +661,39 @@ modify_simple_attribute(Ship& dirship, const Race& race,
     value = *parsed;
   }
 
-  if (attr == "armor") {
-    dirship.armor() = std::min<armor_t>(value, MAX_FACTORY_ARMOR);
-    return {};
-  }
-  if (attr == "crew" && btmpl.max_crew) {
-    dirship.max_crew() = std::min<population_t>(value, MAX_FACTORY_CAPACITY);
-    return {};
-  }
-  if ((attr == "cargo" || attr == "resource") && btmpl.max_resource) {
-    dirship.max_resource() = std::min<resource_t>(value, MAX_FACTORY_CAPACITY);
-    return {};
-  }
-  if (attr == "hanger" && btmpl.max_hangar) {
-    dirship.max_hanger() = std::min<hangar_t>(value, MAX_FACTORY_CAPACITY);
-    return {};
-  }
-  if (attr == "fuel" && btmpl.max_fuel) {
-    dirship.max_fuel() = std::min<fuel_t>(value, MAX_FACTORY_CAPACITY);
-    return {};
-  }
-  if (attr == "destruct" && btmpl.max_destruct) {
-    dirship.max_destruct() = std::min<resource_t>(value, MAX_FACTORY_CAPACITY);
-    return {};
-  }
-  if (attr == "speed" && btmpl.base_speed) {
-    dirship.max_speed() =
-        std::clamp<speed_t>(value, MIN_FACTORY_SPEED, MAX_FACTORY_SPEED);
-    return {};
+  switch (attr) {
+    case ShipAttr::Armor:
+      dirship.armor() = std::min<armor_t>(value, MAX_FACTORY_ARMOR);
+      return {};
+    case ShipAttr::Crew:
+      if (!btmpl.max_crew) break;
+      dirship.max_crew() = std::min<population_t>(value, MAX_FACTORY_CAPACITY);
+      return {};
+    case ShipAttr::Cargo:
+      if (!btmpl.max_resource) break;
+      dirship.max_resource() =
+          std::min<resource_t>(value, MAX_FACTORY_CAPACITY);
+      return {};
+    case ShipAttr::Hanger:
+      if (!btmpl.max_hangar) break;
+      dirship.max_hanger() = std::min<hangar_t>(value, MAX_FACTORY_CAPACITY);
+      return {};
+    case ShipAttr::Fuel:
+      if (!btmpl.max_fuel) break;
+      dirship.max_fuel() = std::min<fuel_t>(value, MAX_FACTORY_CAPACITY);
+      return {};
+    case ShipAttr::Destruct:
+      if (!btmpl.max_destruct) break;
+      dirship.max_destruct() =
+          std::min<resource_t>(value, MAX_FACTORY_CAPACITY);
+      return {};
+    case ShipAttr::Speed:
+      if (!btmpl.base_speed) break;
+      dirship.max_speed() =
+          std::clamp<speed_t>(value, MIN_FACTORY_SPEED, MAX_FACTORY_SPEED);
+      return {};
+    default:
+      break;
   }
 
   return std::unexpected(FactoryModifyError::InvalidCharacteristic);
@@ -674,16 +721,29 @@ apply_factory_modification(Ship& dirship, const Race& race,
     return std::unexpected(FactoryModifyError::CannotModifyShip);
   }
 
-  if (argv[1] == "primary" && btmpl.has_primary()) {
-    return modify_battery(dirship, argv, true);
+  const auto attr = parse_ship_attribute(argv[1]);
+  if (!attr) {
+    return std::unexpected(FactoryModifyError::InvalidCharacteristic);
   }
-  if (argv[1] == "secondary" && btmpl.has_secondary()) {
-    return modify_battery(dirship, argv, false);
+  switch (*attr) {
+    case ShipAttr::Primary:
+      if (!btmpl.has_primary()) {
+        return std::unexpected(FactoryModifyError::InvalidCharacteristic);
+      }
+      return modify_battery(dirship, argv, true);
+    case ShipAttr::Secondary:
+      if (!btmpl.has_secondary()) {
+        return std::unexpected(FactoryModifyError::InvalidCharacteristic);
+      }
+      return modify_battery(dirship, argv, false);
+    case ShipAttr::Cew:
+      if (!btmpl.has_cew) {
+        return std::unexpected(FactoryModifyError::InvalidCharacteristic);
+      }
+      return modify_cew(dirship, race, argv);
+    default:
+      return modify_simple_attribute(dirship, race, btmpl, *attr, argv);
   }
-  if (argv[1] == "cew" && btmpl.has_cew) {
-    return modify_cew(dirship, race, argv);
-  }
-  return modify_simple_attribute(dirship, race, btmpl, argv);
 }
 
 std::optional<FactoryDesignStats>
@@ -892,28 +952,35 @@ std::expected<void, UpgradeError> upgrade_cew(Ship& ship, const Ship& dirship,
 
 std::expected<void, UpgradeError>
 upgrade_simple_attribute(Ship& ship, const Ship& dirship, const Race& race,
-                         const ShipTemplate& btmpl, const command_t& argv) {
-  const std::string_view attr = argv[1];
-  if (attr == "mount" && btmpl.can_mount && !dirship.mount()) {
-    if (!race.discoveries.crystal) {
-      return std::unexpected(
-          UpgradeError{.reason = UpgradeErrorReason::NoCrystalDiscovery});
-    }
-    ship.mount() = true;
-    return {};
-  }
-  if (attr == "hyperdrive" && btmpl.can_hyperjump &&
-      !dirship.hyper_drive().has && race.discoveries.hyperdrive) {
-    ship.hyper_drive().has = true;
-    return {};
-  }
-  if (attr == "laser" && btmpl.can_mount_laser) {
-    if (!race.discoveries.laser) {
-      return std::unexpected(
-          UpgradeError{.reason = UpgradeErrorReason::NoLaserDiscovery});
-    }
-    ship.laser() = true;
-    return {};
+                         const ShipTemplate& btmpl, ShipAttr attr,
+                         const command_t& argv) {
+  switch (attr) {
+    case ShipAttr::Mount:
+      if (!btmpl.can_mount) break;
+      if (dirship.mount()) break;
+      if (!race.discoveries.crystal) {
+        return std::unexpected(
+            UpgradeError{.reason = UpgradeErrorReason::NoCrystalDiscovery});
+      }
+      ship.mount() = true;
+      return {};
+    case ShipAttr::Hyperdrive:
+      if (!btmpl.can_hyperjump) break;
+      if (dirship.hyper_drive().has) break;
+      if (!race.discoveries.hyperdrive) break;
+      ship.hyper_drive().has = true;
+      return {};
+    case ShipAttr::Laser:
+      if (!btmpl.can_mount_laser) break;
+      if (dirship.laser()) break;
+      if (!race.discoveries.laser) {
+        return std::unexpected(
+            UpgradeError{.reason = UpgradeErrorReason::NoLaserDiscovery});
+      }
+      ship.laser() = true;
+      return {};
+    default:
+      break;
   }
 
   int value = 0;
@@ -926,44 +993,48 @@ upgrade_simple_attribute(Ship& ship, const Ship& dirship, const Race& race,
     value = *parsed;
   }
 
-  if (attr == "armor") {
-    ship.armor() =
-        std::max(dirship.armor(), std::min<armor_t>(value, MAX_FACTORY_ARMOR));
-    return {};
-  }
-  if (attr == "crew" && btmpl.max_crew) {
-    ship.max_crew() =
-        std::max(dirship.max_crew(),
-                 std::min<population_t>(value, MAX_FACTORY_CAPACITY));
-    return {};
-  }
-  if ((attr == "cargo" || attr == "resource") && btmpl.max_resource) {
-    ship.max_resource() =
-        std::max(dirship.max_resource(),
-                 std::min<resource_t>(value, MAX_FACTORY_CAPACITY));
-    return {};
-  }
-  if (attr == "hanger" && btmpl.max_hangar) {
-    ship.max_hanger() = std::max(
-        dirship.max_hanger(), std::min<hangar_t>(value, MAX_FACTORY_CAPACITY));
-    return {};
-  }
-  if (attr == "fuel" && btmpl.max_fuel) {
-    ship.max_fuel() = std::max(dirship.max_fuel(),
-                               std::min<fuel_t>(value, MAX_FACTORY_CAPACITY));
-    return {};
-  }
-  if (attr == "destruct" && btmpl.max_destruct) {
-    ship.max_destruct() =
-        std::max(dirship.max_destruct(),
-                 std::min<resource_t>(value, MAX_FACTORY_CAPACITY));
-    return {};
-  }
-  if (attr == "speed" && btmpl.base_speed) {
-    ship.max_speed() = std::max(
-        dirship.max_speed(),
-        std::clamp<speed_t>(value, MIN_FACTORY_SPEED, MAX_FACTORY_SPEED));
-    return {};
+  switch (attr) {
+    case ShipAttr::Armor:
+      ship.armor() = std::max(dirship.armor(),
+                              std::min<armor_t>(value, MAX_FACTORY_ARMOR));
+      return {};
+    case ShipAttr::Crew:
+      if (!btmpl.max_crew) break;
+      ship.max_crew() =
+          std::max(dirship.max_crew(),
+                   std::min<population_t>(value, MAX_FACTORY_CAPACITY));
+      return {};
+    case ShipAttr::Cargo:
+      if (!btmpl.max_resource) break;
+      ship.max_resource() =
+          std::max(dirship.max_resource(),
+                   std::min<resource_t>(value, MAX_FACTORY_CAPACITY));
+      return {};
+    case ShipAttr::Hanger:
+      if (!btmpl.max_hangar) break;
+      ship.max_hanger() =
+          std::max(dirship.max_hanger(),
+                   std::min<hangar_t>(value, MAX_FACTORY_CAPACITY));
+      return {};
+    case ShipAttr::Fuel:
+      if (!btmpl.max_fuel) break;
+      ship.max_fuel() = std::max(dirship.max_fuel(),
+                                 std::min<fuel_t>(value, MAX_FACTORY_CAPACITY));
+      return {};
+    case ShipAttr::Destruct:
+      if (!btmpl.max_destruct) break;
+      ship.max_destruct() =
+          std::max(dirship.max_destruct(),
+                   std::min<resource_t>(value, MAX_FACTORY_CAPACITY));
+      return {};
+    case ShipAttr::Speed:
+      if (!btmpl.base_speed) break;
+      ship.max_speed() = std::max(
+          dirship.max_speed(),
+          std::clamp<speed_t>(value, MIN_FACTORY_SPEED, MAX_FACTORY_SPEED));
+      return {};
+    default:
+      break;
   }
 
   return std::unexpected(
@@ -973,23 +1044,39 @@ upgrade_simple_attribute(Ship& ship, const Ship& dirship, const Race& race,
 std::expected<void, UpgradeError>
 apply_upgrade_characteristic(Ship& ship, const Ship& dirship, const Race& race,
                              const ShipTemplate& btmpl, const command_t& argv) {
-  const std::string_view attr = argv[1];
-  if (attr == "primary" && btmpl.has_primary()) {
-    return upgrade_battery(ship, dirship, argv, true);
+  const auto attr = parse_ship_attribute(argv[1]);
+  if (!attr) {
+    return std::unexpected(
+        UpgradeError{.reason = UpgradeErrorReason::InvalidCharacteristic});
   }
-  if (attr == "secondary" && btmpl.has_secondary()) {
-    return upgrade_battery(ship, dirship, argv, false);
+  switch (*attr) {
+    case ShipAttr::Primary:
+      if (!btmpl.has_primary()) {
+        return std::unexpected(
+            UpgradeError{.reason = UpgradeErrorReason::InvalidCharacteristic});
+      }
+      return upgrade_battery(ship, dirship, argv, true);
+    case ShipAttr::Secondary:
+      if (!btmpl.has_secondary()) {
+        return std::unexpected(
+            UpgradeError{.reason = UpgradeErrorReason::InvalidCharacteristic});
+      }
+      return upgrade_battery(ship, dirship, argv, false);
+    case ShipAttr::Cew:
+      if (!btmpl.has_cew) {
+        return std::unexpected(
+            UpgradeError{.reason = UpgradeErrorReason::InvalidCharacteristic});
+      }
+      return upgrade_cew(ship, dirship, race, argv);
+    default:
+      return upgrade_simple_attribute(ship, dirship, race, btmpl, *attr, argv);
   }
-  if (attr == "cew" && btmpl.has_cew) {
-    return upgrade_cew(ship, dirship, race, argv);
-  }
-  return upgrade_simple_attribute(ship, dirship, race, btmpl, argv);
 }
 
 std::expected<void, UpgradeError>
 check_carrier_hangar_capacity(EntityManager& entity_manager,
                               const Ship& dirship, const Ship& candidate) {
-  if (dirship.whatorbits() != ScopeLevel::LEVEL_SHIP || !dirship.destshipno()) {
+  if (dirship.whatorbits() != ScopeLevel::LEVEL_SHIP) {
     return {};
   }
   std::optional<UpgradeError> err;
@@ -1050,7 +1137,7 @@ void commit_ship_upgrade(EntityManager& entity_manager, Ship& dirship,
   dirship.build_cost() = race.God ? 0 : static_cast<resource_t>(cost(dirship));
   dirship.complexity() = complexity(dirship);
 
-  if (dirship.whatorbits() == ScopeLevel::LEVEL_SHIP && dirship.destshipno()) {
+  if (dirship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
     entity_manager.mutate_ship(*dirship.destshipno(), [&](Ship& carrier) {
       carrier.unload_docked_craft(old_size, old_mass);
       carrier.load_docked_craft(dirship);

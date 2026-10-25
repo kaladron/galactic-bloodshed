@@ -94,7 +94,7 @@ export struct plroute {
 
   /// Returns whether both destination star and planet are configured.
   [[nodiscard]] constexpr bool has_destination() const noexcept {
-    return dest_star.has_value() && dest_planet.has_value();
+    return dest_star.has_value();
   }
 
   /// Atomically configures the destination planet for this shipping route.
@@ -303,17 +303,13 @@ public:
   }
   Planet(starnum_t star_id, planetnum_t planet_order,
          PlanetType type = PlanetType::EARTH,
-         Coordinates dimensions = {10, 10}) {
-    if (star_id < 1 || planet_order < 1) {
-      throw std::invalid_argument(std::format(
-          "Planet (star_id, planet_order) must be >= (1, 1) (got ({}, {}))",
-          star_id, planet_order));
-    }
-    data_.star_id = star_id;
-    data_.planet_order = planet_order;
-    data_.type = type;
-    data_.dimensions = dimensions;
-  }
+         Coordinates dimensions = {10, 10})
+      : Planet(planet_struct{
+            .dimensions = dimensions,
+            .type = type,
+            .star_id = star_id,
+            .planet_order = planet_order,
+        }) {}
   Planet(Planet&) = delete;
   Planet& operator=(const Planet&) = delete;
   Planet(Planet&&) = default;
@@ -438,15 +434,12 @@ public:
         return sector == SectorType::SEC_SEA ||
                sector == SectorType::SEC_FOREST;
       case PlanetType::DESERT:
+      case PlanetType::MARS:
         return sector == SectorType::SEC_LAND ||
                sector == SectorType::SEC_MOUNT ||
                sector == SectorType::SEC_DESERT;
       case PlanetType::WATER:
         return sector == SectorType::SEC_SEA;
-      case PlanetType::MARS:
-        return sector == SectorType::SEC_LAND ||
-               sector == SectorType::SEC_MOUNT ||
-               sector == SectorType::SEC_DESERT;
       case PlanetType::ICEBALL:
         return sector == SectorType::SEC_LAND ||
                sector == SectorType::SEC_MOUNT || sector == SectorType::SEC_ICE;
@@ -568,21 +561,12 @@ public:
     return data_.conditions;
   }
 
-  [[nodiscard]] Percentage conditions(AtmosphereConditions cond) const {
-    if (cond < METHANE || cond > OTHER) {
-      throw std::runtime_error(std::format("Condition {} out of range (max {})",
-                                           static_cast<int>(cond),
-                                           static_cast<int>(OTHER)));
-    }
+  [[nodiscard]] Percentage
+  conditions(AtmosphereConditions cond) const noexcept {
     return data_.conditions[cond];
   }
 
-  [[nodiscard]] Percentage& conditions(AtmosphereConditions cond) {
-    if (cond < METHANE || cond > OTHER) {
-      throw std::runtime_error(std::format("Condition {} out of range (max {})",
-                                           static_cast<int>(cond),
-                                           static_cast<int>(OTHER)));
-    }
+  [[nodiscard]] Percentage& conditions(AtmosphereConditions cond) noexcept {
     return data_.conditions[cond];
   }
 
@@ -699,7 +683,7 @@ public:
   /// \brief Updates planetary toxicity based on population overcapacity
   /// relative to maximum supportable capacity. Clamps toxicity within [0, 100].
   void update_toxicity() noexcept {
-    if (data_.maxpopn > 0 && data_.toxic < 100) {
+    if (data_.maxpopn > 0) {
       data_.toxic.adjust(static_cast<int>(data_.popn / data_.maxpopn));
     }
   }

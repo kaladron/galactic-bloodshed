@@ -104,13 +104,7 @@ public:
     return data_.planet_from;
   }
 
-  void set_origin(starnum_t star, planetnum_t planet) {
-    if (star < 1 || planet < 1) {
-      throw std::invalid_argument(std::format(
-          "Commod origin (star_from, planet_from) must be >= (1, 1) (got ({}, "
-          "{}))",
-          star, planet));
-    }
+  void set_origin(starnum_t star, planetnum_t planet) noexcept {
     data_.star_from = star;
     data_.planet_from = planet;
   }
@@ -131,8 +125,7 @@ public:
 
   /// Returns whether this commodity lot has a complete active bid.
   [[nodiscard]] constexpr bool has_bid() const noexcept {
-    return data_.bidder.has_value() && data_.star_to.has_value() &&
-           data_.planet_to.has_value();
+    return data_.bidder.has_value();
   }
 
   /// Returns the current bid price per unit of commodity.
@@ -149,22 +142,7 @@ public:
   /// Places or raises a bid on this commodity lot, atomically recording the
   /// bidder, governor, bid amount, and destination planet.
   void place_bid(player_t new_bidder, governor_t gov, money_t amount,
-                 starnum_t dest_star, planetnum_t dest_planet) {
-    if (new_bidder < 1 || gov < 1) {
-      throw std::invalid_argument(
-          std::format("Commod bidder and governor must be >= 1 (got {}, {})",
-                      new_bidder.value, gov.value));
-    }
-    if (amount < 0) {
-      throw std::invalid_argument(
-          std::format("Commod bid must be >= 0 (got {})", amount));
-    }
-    if (dest_star < 1 || dest_planet < 1) {
-      throw std::invalid_argument(
-          std::format("Commod destination (star_to, planet_to) must be >= "
-                      "(1, 1) (got ({}, {}))",
-                      dest_star, dest_planet));
-    }
+                 starnum_t dest_star, planetnum_t dest_planet) noexcept {
     data_.bid = amount;
     data_.bidder = new_bidder;
     data_.bidder_gov = gov;
@@ -184,11 +162,7 @@ public:
   /// Reassigns ownership or active bid jurisdiction from `src_gov` to `tgt_gov`
   /// for `player`.
   void transfer_governor(player_t player, governor_t src_gov,
-                         governor_t tgt_gov) {
-    if (tgt_gov < 1) {
-      throw std::invalid_argument(
-          std::format("Commod governor must be >= 1 (got {})", tgt_gov.value));
-    }
+                         governor_t tgt_gov) noexcept {
     if (data_.owner == player && data_.governor == src_gov) {
       data_.governor = tgt_gov;
     }
@@ -207,46 +181,6 @@ private:
     if (d.id < 1) {
       throw std::invalid_argument(
           std::format("Commod id must be >= 1 (got {})", d.id));
-    }
-    if (d.owner < 1 || d.governor < 1) {
-      throw std::invalid_argument(
-          std::format("Commod owner and governor must be >= 1 (got {}, {})",
-                      d.owner.value, d.governor.value));
-    }
-    if (d.amount < 1) {
-      throw std::invalid_argument(
-          std::format("Commod amount must be >= 1 (got {})", d.amount));
-    }
-    if (d.bid < 0) {
-      throw std::invalid_argument(
-          std::format("Commod bid must be >= 0 (got {})", d.bid));
-    }
-    if (d.star_from < 1 || d.planet_from < 1) {
-      throw std::invalid_argument(std::format(
-          "Commod origin (star_from, planet_from) must be >= (1, 1) (got ({}, "
-          "{}))",
-          d.star_from, d.planet_from));
-    }
-    const bool has_bidder = d.bidder.has_value();
-    const bool has_star_to = d.star_to.has_value();
-    const bool has_planet_to = d.planet_to.has_value();
-    if (has_bidder != has_star_to || has_bidder != has_planet_to) {
-      throw std::invalid_argument(
-          "Commod bid state must either have all of (bidder, star_to, "
-          "planet_to) or none of them");
-    }
-    if (has_bidder) {
-      if (*d.bidder < 1 || d.bidder_gov < 1) {
-        throw std::invalid_argument(std::format(
-            "Commod bidder and bidder_gov must be >= 1 (got {}, {})",
-            d.bidder->value, d.bidder_gov.value));
-      }
-      if (*d.star_to < 1 || *d.planet_to < 1) {
-        throw std::invalid_argument(
-            std::format("Commod destination (star_to, planet_to) must be >= "
-                        "(1, 1) (got ({}, {}))",
-                        *d.star_to, *d.planet_to));
-      }
     }
   }
 

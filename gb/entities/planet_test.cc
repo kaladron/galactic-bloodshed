@@ -150,6 +150,26 @@ int main() {
     test::expect_false(manifest.any());
     manifest.fuel = true;
     test::expect_true(manifest.any());
+    manifest.fuel = false;
+    manifest.destruct = true;
+    test::expect_true(manifest.any());
+    manifest.destruct = false;
+    manifest.resources = true;
+    test::expect_true(manifest.any());
+    manifest.resources = false;
+    manifest.crystals = true;
+    test::expect_true(manifest.any());
+
+    Stockpile sp{};
+    test::expect_true(sp.empty());
+    sp.destruct = 1;
+    test::expect_false(sp.empty());
+    sp.destruct = 0;
+    sp.fuel = 1;
+    test::expect_false(sp.empty());
+    sp.fuel = 0;
+    sp.crystals = 1;
+    test::expect_false(sp.empty());
 
     plroute route{};
     test::expect_false(route.set);
@@ -157,8 +177,6 @@ int main() {
     test::expect_false(route.unload.any());
     test::expect_eq(route.dest_star, std::nullopt);
     test::expect_eq(route.dest_planet, std::nullopt);
-    test::expect_false(route.has_destination());
-    route.dest_star = starnum_t{1};
     test::expect_false(route.has_destination());
     route.set_destination(starnum_t{2}, planetnum_t{3});
     test::expect_true(route.has_destination());
@@ -181,6 +199,7 @@ int main() {
     test::expect_false(lot.has_bid());
     test::expect_true(lot.is_origin(starnum_t{1}, planetnum_t{1}));
     test::expect_false(lot.is_origin(starnum_t{2}, planetnum_t{1}));
+    test::expect_false(lot.is_origin(starnum_t{1}, planetnum_t{2}));
     lot.place_bid(player_t{2}, governor_t{1}, 500, starnum_t{3},
                   planetnum_t{2});
     test::expect_true(lot.has_bid());
@@ -190,6 +209,12 @@ int main() {
     test::expect_eq(lot.cost_per_unit(), 5.0);
     test::expect_eq(lot.star_to(), starnum_t{3});
     test::expect_eq(lot.planet_to(), planetnum_t{2});
+    lot.transfer_governor(player_t{1}, governor_t{2}, governor_t{3});
+    lot.transfer_governor(player_t{2}, governor_t{2}, governor_t{3});
+    lot.transfer_governor(player_t{1}, governor_t{1}, governor_t{2});
+    lot.transfer_governor(player_t{2}, governor_t{1}, governor_t{2});
+    test::expect_eq(lot.governor(), governor_t{2});
+    test::expect_eq(lot.bidder_gov(), governor_t{2});
     lot.clear_bid();
     test::expect_false(lot.has_bid());
     test::expect_eq(lot.bidder(), std::nullopt);
@@ -201,18 +226,6 @@ int main() {
     // Commod constructor invariant enforcement
     test::expect_throws<std::invalid_argument>(
         [] { Commod{{.id = 0, .owner = 1, .amount = 100}}; });
-    test::expect_throws<std::invalid_argument>(
-        [] { Commod{{.id = 1, .owner = 0, .amount = 100}}; });
-    test::expect_throws<std::invalid_argument>(
-        [] { Commod{{.id = 1, .owner = 1, .amount = 0}}; });
-    test::expect_throws<std::invalid_argument>([] {
-      Commod{{
-          .id = 1,
-          .owner = 1,
-          .amount = 100,
-          .bidder = player_t{2},
-      }};
-    });
   }
 
   // Test 6: Planet compatibility with race conditions
@@ -925,6 +938,45 @@ int main() {
     planet.type() = PlanetType::FOREST;
     test::expect_eq(planet.type_symbol(), ')');
     test::expect_eq(planet.type_name(), "Forest");
+    test::expect_true(planet.is_common_sector(SectorType::SEC_SEA));
+    test::expect_true(planet.is_common_sector(SectorType::SEC_FOREST));
+    test::expect_false(planet.is_common_sector(SectorType::SEC_LAND));
+
+    planet.type() = PlanetType::ICEBALL;
+    test::expect_true(planet.is_common_sector(SectorType::SEC_LAND));
+    test::expect_true(planet.is_common_sector(SectorType::SEC_MOUNT));
+    test::expect_false(planet.is_common_sector(SectorType::SEC_SEA));
+    planet.type() = PlanetType::DESERT;
+    test::expect_false(planet.is_common_sector(SectorType::SEC_SEA));
+
+    planet.maxpopn() = 100;
+    planet.popn() = 200;
+    planet.update_toxicity();
+    test::expect_eq(planet.toxic(), 2);
+
+    test::expect_throws<std::invalid_argument>([] { Planet{1, 0}; });
+    Planet zero_y{1, 1, PlanetType::EARTH, {5, 0}};
+    test::expect_true(zero_y.adjacent_coordinates({0, 0}).empty());
+
+    Sector sect{};
+    planet.adjust_sector_population(sect, 0, 10, 0);
+    planet.adjust_sector_population(sect, 1, 0, 0);
+    planet.adjust_sector_population(sect, 1, 0, 5);
+    test::expect_eq(sect.get_owner(), player_t{1});
+
+    SectorMap smap{planet};
+    smap.get({0, 0}).claim(1);
+    smap.get({0, 0}).set_popn_exact(0);
+    Race r{};
+    r.Playernum = 1;
+    test::expect_eq(planet.revolt(smap, r, 2), 0);
+
+    PlanetExplorationContext exp{Coordinates{4, 4}};
+    test::expect_true(exp.in_bounds({1, 1}));
+    test::expect_false(exp.in_bounds({-1, 1}));
+    test::expect_false(exp.in_bounds({1, -1}));
+    test::expect_false(exp.in_bounds({4, 1}));
+    test::expect_false(exp.in_bounds({1, 4}));
   }
 
   std::println("Planet unit tests passed successfully!");

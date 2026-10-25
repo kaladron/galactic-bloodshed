@@ -2204,11 +2204,134 @@ void test_subclass_special_data_clamping() {
   test::expect_eq(battery.count, 0);
   test::expect_true(battery.caliber == guntype_t::NONE);
 
-  // 7. Ship::can_fit_in_hangar rejects negative craft_size
+  // 7. Ship::can_fit_in_hangar and domain predicates
   Ship carrier{};
   carrier.max_hanger() = 20;
   carrier.hanger() = 5;
   test::expect_false(carrier.can_fit_in_hangar(-5));
+  test::expect_true(carrier.can_fit_in_hangar(10));
+  test::expect_false(carrier.can_fit_in_hangar(20));
+
+  Ship fac{};
+  fac.type() = ShipType::OTYPE_FACTORY;
+  fac.build_type() = ShipType::OTYPE_FACTORY;
+  test::expect_false(carrier.has_factory_design());
+  test::expect_false(fac.has_factory_design());
+  fac.build_type() = ShipType::STYPE_FIGHTER;
+  test::expect_true(fac.has_factory_design());
+
+  carrier.laser() = true;
+  carrier.fire_laser() = 0;
+  test::expect_true(carrier.current_caliber() == guntype_t::NONE);
+  carrier.dock_into_carrier(99);
+  test::expect_false(carrier.moored_ship_id().has_value());
+
+  carrier.owner() = 1;
+  carrier.governor() = 0;
+  carrier.alive() = false;
+  carrier.active() = true;
+  test::expect_false(carrier.is_commandable_by(1, 0));
+  carrier.alive() = true;
+  carrier.active() = false;
+  test::expect_false(carrier.is_commandable_by(1, 0));
+
+  Ship bs{};
+  bs.type() = ShipType::STYPE_DREADNT;
+  bs.alive() = true;
+  test::expect_eq(bs.retal_strength(), 0);
+
+  Ship bers{};
+  bers.type() = ShipType::OTYPE_BERS;
+  bers.guns() = ActiveBattery::PRIMARY;
+  bers.set_primary_battery(2, guntype_t::HEAVY);
+  bers.max_destruct() = 5;
+  bers.admin_override_destruct(5);
+  bers.retaliate() = 5;
+  bers.alive() = true;
+  test::expect_eq(bers.retal_strength(), 2);
+
+  Ship ftr{};
+  ftr.type() = ShipType::STYPE_FIGHTER;
+  ftr.guns() = ActiveBattery::PRIMARY;
+  ftr.set_primary_battery(2, guntype_t::LIGHT);
+  ftr.max_crew() = 2;
+  ftr.add_popn(1, 1.0);
+  ftr.max_destruct() = 5;
+  ftr.admin_override_destruct(5);
+  ftr.retaliate() = 5;
+  ftr.alive() = true;
+  ftr.active() = false;
+  fac.alive() = true;
+  test::expect_eq(fac.retal_strength(), 0);
+
+  test::expect_false(ftr.is_laser_on());
+  ftr.type() = ShipType::OTYPE_AFV;
+  ftr.land_on_planet(1, 1);
+  test::expect_eq(ftr.retal_strength(), 2);
+  ftr.type() = ShipType::STYPE_FIGHTER;
+  test::expect_eq(ftr.retal_strength(), 2);
+  test::expect_eq(ftr.check_retal_strength(), 0);
+  ftr.active() = true;
+  ftr.alive() = false;
+  test::expect_eq(ftr.check_retal_strength(), 0);
+  ftr.alive() = true;
+  ftr.laser() = true;
+  ftr.fire_laser() = 4;
+  ftr.max_fuel() = 100;
+  ftr.admin_override_fuel(50.0);
+  test::expect_eq(ftr.check_retal_strength(), 4);
+  ftr.consume_weapon_resources(2, false);
+  ftr.fire_laser() = 0;
+  ftr.consume_weapon_resources(2, true);
+  ftr.consume_weapon_resources(1, false);
+
+  Ship ov{};
+  ov.max_resource() = 20;
+  ov.max_fuel() = 20;
+  ov.max_crew() = 20;
+  ov.max_destruct() = 20;
+  test::expect_false(ov.is_overloaded());
+  ov.admin_override_resource(20);
+  ov.max_resource() = 10;
+  test::expect_true(ov.is_overloaded());
+  ov.admin_override_resource(0);
+  ov.admin_override_fuel(20.0);
+  ov.max_fuel() = 10;
+  test::expect_true(ov.is_overloaded());
+  ov.admin_override_fuel(0.0);
+  ov.add_popn(15, 1.0);
+  ov.max_crew() = 10;
+  test::expect_true(ov.is_overloaded());
+  ov.add_popn(-15, 1.0);
+  ov.admin_override_destruct(15);
+  ov.max_destruct() = 10;
+  test::expect_true(ov.is_overloaded());
+
+  test::expect_true(ftr.can_navigate());
+  test::expect_false(fac.can_navigate());
+  test::expect_false(terra.can_navigate());
+  VonNeumannShip vn{};
+  test::expect_false(vn.can_navigate());
+  test::expect_false(ftr.can_aim());
+  test::expect_true(mirror.can_aim());
+  ov.type() = ShipType::OTYPE_VN;
+  test::expect_false(ov.can_aim());
+  test::expect_true(ftr.is_exploration_capable());
+  ov.type() = ShipType::OTYPE_PROBE;
+  test::expect_true(ov.is_exploration_capable());
+  ov.type() = ShipType::STYPE_FIGHTER;
+  test::expect_false(ov.is_exploration_capable());
+
+  Ship shuttle{};
+  shuttle.type() = ShipType::STYPE_SHUTTLE;
+  shuttle.max_resource() = 10;
+  shuttle.admin_override_resource(10);
+  shuttle.enter_star_orbit(1);
+  shuttle.add_resource(5);
+  test::expect_eq(shuttle.resource(), 15);
+  shuttle.dock_into_carrier(1);
+  shuttle.add_resource(5);
+  test::expect_eq(shuttle.resource(), 15);
 }
 
 }  // namespace

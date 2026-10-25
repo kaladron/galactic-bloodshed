@@ -239,7 +239,7 @@ public:
   /// and mines fire as LIGHT; missiles fire as HEAVY; otherwise uses the
   /// active gun battery's caliber).
   [[nodiscard]] constexpr guntype_t current_caliber() const noexcept {
-    if (laser() && fire_laser()) return guntype_t::LIGHT;
+    if (is_laser_on()) return guntype_t::LIGHT;
     if (type() == ShipType::STYPE_MINE) return guntype_t::LIGHT;
     if (type() == ShipType::STYPE_MISSILE) return guntype_t::HEAVY;
     return active_gun_caliber();
@@ -481,7 +481,7 @@ public:
   /// \brief Returns whether this ship is capable of exploring stars and planets
   /// (carrying population/crew or being an automated sensor probe).
   [[nodiscard]] constexpr bool is_exploration_capable() const noexcept {
-    return data_.popn > 0 || data_.type == ShipType::OTYPE_PROBE;
+    return has_sight();
   }
 
   [[nodiscard]] speed_t speed() const {
@@ -688,8 +688,7 @@ public:
 
   /// Returns the other ship ID if currently moored to another spaceborne ship.
   [[nodiscard]] std::optional<shipnum_t> moored_ship_id() const noexcept {
-    if (is_docked() && data_.whatorbits != ScopeLevel::LEVEL_SHIP &&
-        data_.whatdest == ScopeLevel::LEVEL_SHIP) {
+    if (is_docked() && data_.whatorbits != ScopeLevel::LEVEL_SHIP) {
       return data_.destshipno;
     }
     return std::nullopt;
@@ -1107,7 +1106,7 @@ public:
                                  double race_mass = 1.0) noexcept;
 
   /// Whether ship has an active combat laser armed and ready to fire.
-  [[nodiscard]] bool is_laser_on() const noexcept {
+  [[nodiscard]] constexpr bool is_laser_on() const noexcept {
     return data_.laser && data_.fire_laser > 0;
   }
 
@@ -1185,7 +1184,7 @@ public:
 
   /// Whether ship has planetary bombardment weapon capabilities.
   [[nodiscard]] bool can_bombard() const noexcept {
-    return get_template().max_guns != 0 && (data_.type != ShipType::STYPE_MINE);
+    return get_template().max_guns != 0;
   }
 
   /// Whether ship is capable of independent orbital navigation.
@@ -1202,7 +1201,7 @@ public:
   }
 
   /// Whether ship has sensor visibility / crew sight range.
-  [[nodiscard]] bool has_sight() const noexcept {
+  [[nodiscard]] constexpr bool has_sight() const noexcept {
     return (data_.type == ShipType::OTYPE_PROBE) || data_.popn > 0;
   }
 
@@ -1557,7 +1556,7 @@ public:
       };
     }
     const damage_t prev = data_.damage;
-    if (amt >= 100 || 100 - data_.damage <= amt) {
+    if (100 - data_.damage <= amt) {
       data_.damage = 100;
     } else {
       data_.damage += amt;

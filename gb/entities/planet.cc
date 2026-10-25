@@ -26,8 +26,7 @@ bool Planet::is_adjacent(const Coordinates from,
   if (std::abs(from.y - to.y) > 1) return false;
   const int dx = std::abs(from.x - to.x);
   if (dx <= 1) return true;
-  if (dimensions().x > 0 && dx == dimensions().x - 1) return true;
-  return false;
+  return dx == dimensions().x - 1;
 }
 
 std::vector<Coordinates> Planet::adjacent_coordinates(Coordinates from) const {

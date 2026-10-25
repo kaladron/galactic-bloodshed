@@ -420,7 +420,7 @@ RacegenEngine::create_default_spec(bool metamorph) const noexcept {
   }
   spec.fighters = 4;
   spec.mass = 1.0;
-  spec.number_sexes = 2;
+  spec.number_sexes = metamorph ? 1 : 2;
   spec.metabolism = 1.0;
 
   spec.sector_compatibilities = {.plated = 1.0};
@@ -520,10 +520,6 @@ std::vector<std::string> RacegenEngine::validate(const RaceEnrollmentSpec& spec,
     const double val = get_attribute_value(spec, attr_idx);
     const std::string name = attribute_name(spec, attr_idx);
 
-    if (p.is_integral == 2 && val != 0.0 && val != 1.0) {
-      errors.push_back(
-          std::format("{} is boolean valued. Use \"yes\" or \"no\".", name));
-    }
     if (val < p.minimum) {
       errors.push_back(
           std::format("{} must be at least {:.2f}.", name, p.minimum));
@@ -534,7 +530,7 @@ std::vector<std::string> RacegenEngine::validate(const RaceEnrollmentSpec& spec,
     }
   }
 
-  // 2. Normal race characteristics
+  // 2. Normal vs. Metamorph race characteristics
   if (!spec.metamorph) {
     if (spec.absorb) {
       errors.push_back("Normal races do not absorb their enemies in combat.");
@@ -542,6 +538,8 @@ std::vector<std::string> RacegenEngine::validate(const RaceEnrollmentSpec& spec,
     if (spec.pods) {
       errors.push_back("Normal races do not make pods.");
     }
+  } else if (spec.number_sexes != 1) {
+    errors.push_back("Metamorphs are required to have one sex.");
   }
 
   // 3. Name validation

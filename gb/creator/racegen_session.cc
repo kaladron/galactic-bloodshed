@@ -52,48 +52,70 @@ std::string capitalize(std::string_view s) {
   return result;
 }
 
-std::optional<PlanetType> parse_planet_type(std::string_view s) {
-  const std::string lower = to_lower(trim(s));
-  if (lower == "earth" || lower == "class m" || lower == "m") {
-    return PlanetType::EARTH;
-  }
-  if (lower == "forest") return PlanetType::FOREST;
-  if (lower == "desert") return PlanetType::DESERT;
-  if (lower == "water" || lower == "waterball") return PlanetType::WATER;
-  if (lower == "mars" || lower == "airless") return PlanetType::MARS;
-  if (lower == "iceball" || lower == "ice") return PlanetType::ICEBALL;
-  if (lower == "gasgiant" || lower == "jovian" || lower == "gas") {
-    return PlanetType::GASGIANT;
+template <typename T, std::size_t N>
+std::optional<T>
+lookup_table(const std::array<std::pair<std::string_view, T>, N>& table,
+             std::string_view key) noexcept {
+  for (const auto& [name, val] : table) {
+    if (iequals(name, key)) return val;
   }
   return std::nullopt;
+}
+
+std::optional<PlanetType> parse_planet_type(std::string_view s) {
+  static constexpr std::array<std::pair<std::string_view, PlanetType>, 14>
+      planet_aliases{{
+          {"earth", PlanetType::EARTH},
+          {"class m", PlanetType::EARTH},
+          {"m", PlanetType::EARTH},
+          {"forest", PlanetType::FOREST},
+          {"desert", PlanetType::DESERT},
+          {"water", PlanetType::WATER},
+          {"waterball", PlanetType::WATER},
+          {"mars", PlanetType::MARS},
+          {"airless", PlanetType::MARS},
+          {"iceball", PlanetType::ICEBALL},
+          {"ice", PlanetType::ICEBALL},
+          {"gasgiant", PlanetType::GASGIANT},
+          {"jovian", PlanetType::GASGIANT},
+          {"gas", PlanetType::GASGIANT},
+      }};
+  return lookup_table(planet_aliases, trim(s));
 }
 
 std::optional<SectorType> parse_sector_type(std::string_view s) {
-  const std::string lower = to_lower(trim(s));
-  if (lower == "water" || lower == "sea" || lower == "ocean") {
-    return SectorType::SEC_SEA;
-  }
-  if (lower == "land") return SectorType::SEC_LAND;
-  if (lower == "mountain" || lower == "mount" || lower == "mountainous") {
-    return SectorType::SEC_MOUNT;
-  }
-  if (lower == "gas" || lower == "gaseous") return SectorType::SEC_GAS;
-  if (lower == "ice") return SectorType::SEC_ICE;
-  if (lower == "forest") return SectorType::SEC_FOREST;
-  if (lower == "desert") return SectorType::SEC_DESERT;
-  if (lower == "plated") return SectorType::SEC_PLATED;
-  return std::nullopt;
+  static constexpr std::array<std::pair<std::string_view, SectorType>, 13>
+      sector_aliases{{
+          {"water", SectorType::SEC_SEA},
+          {"sea", SectorType::SEC_SEA},
+          {"ocean", SectorType::SEC_SEA},
+          {"land", SectorType::SEC_LAND},
+          {"mountain", SectorType::SEC_MOUNT},
+          {"mount", SectorType::SEC_MOUNT},
+          {"mountainous", SectorType::SEC_MOUNT},
+          {"gas", SectorType::SEC_GAS},
+          {"gaseous", SectorType::SEC_GAS},
+          {"ice", SectorType::SEC_ICE},
+          {"forest", SectorType::SEC_FOREST},
+          {"desert", SectorType::SEC_DESERT},
+          {"plated", SectorType::SEC_PLATED},
+      }};
+  return lookup_table(sector_aliases, trim(s));
 }
 
 std::optional<bool> parse_bool(std::string_view s) {
-  const std::string lower = to_lower(trim(s));
-  if (lower == "yes" || lower == "true" || lower == "1" || lower == "y") {
-    return true;
-  }
-  if (lower == "no" || lower == "false" || lower == "0" || lower == "n") {
-    return false;
-  }
-  return std::nullopt;
+  static constexpr std::array<std::pair<std::string_view, bool>, 8>
+      bool_aliases{{
+          {"yes", true},
+          {"true", true},
+          {"1", true},
+          {"y", true},
+          {"no", false},
+          {"false", false},
+          {"0", false},
+          {"n", false},
+      }};
+  return lookup_table(bool_aliases, trim(s));
 }
 
 template <typename T>
@@ -474,13 +496,13 @@ bool RacegenSession::modify_field(std::string_view field_name,
     spec_.sector_compatibilities[*sec] = compat;
   } else if (field == "name") {
     spec_.name = std::string(val_trimmed);
-  } else if (field == "password" || field == "pass") {
+  } else if (field.starts_with("pass")) {
     spec_.password = std::string(val_trimmed);
-  } else if (field == "gov_password" || field == "governor_password") {
+  } else if (field.starts_with("gov")) {
     spec_.governor_password = std::string(val_trimmed);
-  } else if (field == "address" || field == "email") {
+  } else if (field.starts_with("addr")) {
     spec_.address = std::string(val_trimmed);
-  } else if (field == "planet") {
+  } else if (field.starts_with("plan")) {
     auto ptype = parse_planet_type(val_trimmed);
     if (!ptype) {
       std::println(out_,
@@ -507,6 +529,9 @@ bool RacegenSession::modify_field(std::string_view field_name,
       spec_.absorb = false;
       spec_.pods = false;
       spec_.collective_iq = false;
+      if (backup.metamorph) {
+        spec_.number_sexes = 2;
+      }
       if (spec_.iq == 0 && spec_.iq_limit > 0) {
         spec_.iq = spec_.iq_limit;
         spec_.iq_limit = 0;
@@ -516,6 +541,7 @@ bool RacegenSession::modify_field(std::string_view field_name,
       spec_.absorb = true;
       spec_.pods = true;
       spec_.collective_iq = true;
+      spec_.number_sexes = 1;
       if (spec_.iq_limit == 0 && spec_.iq > 0) {
         spec_.iq_limit = spec_.iq;
         spec_.iq = 0;
@@ -526,7 +552,7 @@ bool RacegenSession::modify_field(std::string_view field_name,
           val_trimmed);
       return false;
     }
-  } else if (field == "adventurism" || field == "advent") {
+  } else if (field.starts_with("adv")) {
     if (auto num = parse_number<double>(val_trimmed)) {
       spec_.adventurism = *num;
     } else {
@@ -534,7 +560,7 @@ bool RacegenSession::modify_field(std::string_view field_name,
                    val_trimmed);
       return false;
     }
-  } else if (field == "absorb") {
+  } else if (field.starts_with("abs")) {
     if (auto b = parse_bool(val_trimmed)) {
       spec_.absorb = *b;
     } else {
@@ -542,7 +568,7 @@ bool RacegenSession::modify_field(std::string_view field_name,
                    val_trimmed);
       return false;
     }
-  } else if (field == "birthrate" || field == "birth") {
+  } else if (field.starts_with("birth")) {
     if (auto num = parse_number<double>(val_trimmed)) {
       spec_.birthrate = *num;
     } else {
@@ -550,8 +576,7 @@ bool RacegenSession::modify_field(std::string_view field_name,
                    val_trimmed);
       return false;
     }
-  } else if (field == "collective_iq" || field == "col_iq" ||
-             field == "collective") {
+  } else if (field.starts_with("col")) {
     if (auto b = parse_bool(val_trimmed)) {
       spec_.collective_iq = *b;
     } else {
@@ -559,7 +584,7 @@ bool RacegenSession::modify_field(std::string_view field_name,
                    val_trimmed);
       return false;
     }
-  } else if (field == "fertilize" || field == "fert") {
+  } else if (field.starts_with("fert")) {
     std::string_view num_str = val_trimmed;
     if (num_str.ends_with('%')) {
       num_str.remove_suffix(1);
@@ -572,6 +597,14 @@ bool RacegenSession::modify_field(std::string_view field_name,
       spec_.fertilize = static_cast<fertilize_t>(std::round(f));
     } else {
       std::println(out_, "Error: Invalid number '{}' for fertilize.",
+                   val_trimmed);
+      return false;
+    }
+  } else if (field == "iq_limit") {
+    if (auto num = parse_number<int>(val_trimmed)) {
+      spec_.iq_limit = *num;
+    } else {
+      std::println(out_, "Error: Invalid integer '{}' for IQ limit.",
                    val_trimmed);
       return false;
     }
@@ -588,15 +621,7 @@ bool RacegenSession::modify_field(std::string_view field_name,
       std::println(out_, "Error: Invalid integer '{}' for IQ.", val_trimmed);
       return false;
     }
-  } else if (field == "iq_limit") {
-    if (auto num = parse_number<int>(val_trimmed)) {
-      spec_.iq_limit = *num;
-    } else {
-      std::println(out_, "Error: Invalid integer '{}' for IQ limit.",
-                   val_trimmed);
-      return false;
-    }
-  } else if (field == "fighters" || field == "fight") {
+  } else if (field.starts_with("fight")) {
     if (auto num = parse_number<int>(val_trimmed)) {
       spec_.fighters = *num;
     } else {
@@ -604,7 +629,7 @@ bool RacegenSession::modify_field(std::string_view field_name,
                    val_trimmed);
       return false;
     }
-  } else if (field == "pods") {
+  } else if (field.starts_with("pod")) {
     if (auto b = parse_bool(val_trimmed)) {
       spec_.pods = *b;
     } else {
@@ -619,14 +644,14 @@ bool RacegenSession::modify_field(std::string_view field_name,
       std::println(out_, "Error: Invalid number '{}' for mass.", val_trimmed);
       return false;
     }
-  } else if (field == "sexes" || field == "sex") {
+  } else if (field.starts_with("sex")) {
     if (auto num = parse_number<int>(val_trimmed)) {
       spec_.number_sexes = *num;
     } else {
       std::println(out_, "Error: Invalid integer '{}' for sexes.", val_trimmed);
       return false;
     }
-  } else if (field == "metabolism" || field == "metab") {
+  } else if (field.starts_with("metab")) {
     if (auto num = parse_number<double>(val_trimmed)) {
       spec_.metabolism = *num;
     } else {
@@ -634,8 +659,7 @@ bool RacegenSession::modify_field(std::string_view field_name,
                    val_trimmed);
       return false;
     }
-  } else if (field == "likesbest" || field == "preferred" ||
-             field == "preferred_sector") {
+  } else if (field.starts_with("pref")) {
     auto sec = parse_sector_type(val_trimmed);
     if (!sec) {
       std::println(out_,
@@ -771,7 +795,11 @@ void RacegenSession::print_race() {
 }
 
 void RacegenSession::print_help(std::string_view topic) {
-  if (iequals(topic, "fields") || iequals(topic, "modify")) {
+  static constexpr std::array<std::string_view, 2> field_topics{
+      {"fields", "modify"}};
+  if (std::ranges::any_of(field_topics, [&](std::string_view t) {
+        return iequals(topic, t);
+      })) {
     std::println(out_, "Modifiable Fields:");
     std::println(out_, "  Attributes:");
     std::println(out_, "    adventurism (0.05 - 0.99)");
@@ -800,8 +828,11 @@ void RacegenSession::print_help(std::string_view topic) {
     return;
   }
 
-  if (iequals(topic, "archetype") || iequals(topic, "archetypes") ||
-      iequals(topic, "preset") || iequals(topic, "presets")) {
+  static constexpr std::array<std::string_view, 4> archetype_topics{
+      {"archetype", "archetypes", "preset", "presets"}};
+  if (std::ranges::any_of(archetype_topics, [&](std::string_view t) {
+        return iequals(topic, t);
+      })) {
     do_archetype("");
     return;
   }

@@ -57,11 +57,18 @@ Planetary equilibrium surface temperature $T_{\text{surf}}$ is computed by super
 $$T_{\text{surf}} = \max\left(T_{\text{cosmic}}, T_{\text{radiant}} + T_{\text{ambient}}\right)$$
 
 - **Cosmic Thermal Floor**: $`T_{\text{cosmic}} = -269^\circ\text{C}`$ ($\approx 4\text{ K}$, representing deep-space microwave background equilibrium).
-- **Core Thermal Zones**:
-  1. **Scorched Inner Band** ($`T_{\text{surf}} > 60^\circ\text{C}`$): High radiant heat boils off volatile liquids, yielding arid deserts or molten rock.
-  2. **Habitable Goldilocks Band** ($`-10^\circ\text{C} \le T_{\text{surf}} \le 40^\circ\text{C}`$): Liquid water condenses, supporting lush forests, expansive oceans, and earth-like ecologies.
-  3. **Cryogenic Outer Band** ($`T_{\text{surf}} < -20^\circ\text{C}`$): Water freezes into planetary ice sheets, producing glaciated iceballs and frozen tundras.
-  4. **Deep Orbital Gas Giants**: Massive Jovian worlds situated far from the primary star that trap thick atmospheres of hydrogen and helium.
+- **Thermal Classification Zones**:
+  Every orbital body first undergoes a $10\%$ random roll to form as a fragmented **Asteroid** regardless of distance. Remaining bodies are classified by surface temperature $T_{\text{surf}}$ across seven thermal bands:
+
+| Thermal Zone | Temperature Range ($T_{\text{surf}}$) | Planetary Type Distribution |
+| :--- | :--- | :--- |
+| **1. Coronal Vaporization Zone** | $> 400^\circ\text{C}$ | $100\%$ Asteroid |
+| **2. Scorched Inner Zone** | $101^\circ\text{C}$ to $400^\circ\text{C}$ | $60\%$ Airless (Mars), $40\%$ Desert |
+| **3. Warm Sub-Tropical Zone** | $31^\circ\text{C}$ to $100^\circ\text{C}$ | $25\%$ Earth, $25\%$ Water, $30\%$ Forest, $10\%$ Desert, $10\%$ Airless (Mars) |
+| **4. Temperate Goldilocks Zone** | $-9^\circ\text{C}$ to $30^\circ\text{C}$ | $45\%$ Earth, $25\%$ Water, $25\%$ Forest, $5\%$ Desert |
+| **5. Sub-Zero Boreal Zone** | $-49^\circ\text{C}$ to $-10^\circ\text{C}$ | $30\%$ Desert, $30\%$ Iceball, $30\%$ Forest, $10\%$ Airless (Mars) |
+| **6. Outer Jovian Zone** | $-99^\circ\text{C}$ to $-50^\circ\text{C}$ | $50\%$ Gas Giant, $30\%$ Iceball, $20\%$ Airless (Mars) |
+| **7. Deep Cryogenic Zone** | $\le -100^\circ\text{C}$ | $80\%$ Iceball, $20\%$ Gas Giant |
 
 ---
 

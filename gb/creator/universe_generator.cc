@@ -23,31 +23,35 @@ PlanetType roll_planet_type(int temperature) {
   int roll = uniform_rand(1, 100);
   if ((uniform_rand(1, 100) <= 10) || (temperature > 400)) {
     return PlanetType::ASTEROID;
-  } else if ((temperature > 100) && (temperature <= 400)) {
+  }
+  if (temperature > 100) {
     return (roll <= 60) ? PlanetType::MARS : PlanetType::DESERT;
-  } else if ((temperature > 30) && (temperature <= 100)) {
+  }
+  if (temperature > 30) {
     if (roll <= 25) return PlanetType::EARTH;
     if (roll <= 50) return PlanetType::WATER;
     if (roll <= 80) return PlanetType::FOREST;
     if (roll <= 90) return PlanetType::DESERT;
     return PlanetType::MARS;
-  } else if ((temperature > -10) && (temperature <= 30)) {
+  }
+  if (temperature > -10) {
     if (roll <= 45) return PlanetType::EARTH;
     if (roll <= 70) return PlanetType::WATER;
     if (roll <= 95) return PlanetType::FOREST;
     return PlanetType::DESERT;
-  } else if ((temperature > -50) && (temperature <= -10)) {
+  }
+  if (temperature > -50) {
     if (roll <= 30) return PlanetType::DESERT;
     if (roll <= 60) return PlanetType::ICEBALL;
     if (roll <= 90) return PlanetType::FOREST;
     return PlanetType::MARS;
-  } else if ((temperature > -100) && (temperature <= -50)) {
+  }
+  if (temperature > -100) {
     if (roll <= 50) return PlanetType::GASGIANT;
     if (roll <= 80) return PlanetType::ICEBALL;
     return PlanetType::MARS;
-  } else {
-    return (roll <= 80) ? PlanetType::ICEBALL : PlanetType::GASGIANT;
   }
+  return (roll <= 80) ? PlanetType::ICEBALL : PlanetType::GASGIANT;
 }
 }  // namespace
 
@@ -67,36 +71,27 @@ void UniverseGenerator::set_planet_names(std::vector<std::string> names) {
 }
 
 void UniverseGenerator::load_name_lists() {
-  if (star_names_.empty() && config_.auto_name_stars) {
-    std::ifstream f(config_.star_names_file);
-    if (f.is_open()) {
-      std::string line;
-      while (std::getline(f, line) && star_names_.size() < 1000) {
-        if (!line.empty() && line.back() == '\r') line.pop_back();
-        if (!line.empty()) {
-          star_names_.push_back(line.substr(0, 19));
-        }
+  auto load_list = [](const std::filesystem::path& path,
+                      std::vector<std::string>& names,
+                      std::vector<std::size_t>& indices) {
+    std::ifstream f(path);
+    std::string line;
+    while (std::getline(f, line) && names.size() < 1000) {
+      if (line.ends_with('\r')) line.pop_back();
+      if (!line.empty()) {
+        names.push_back(line.substr(0, 19));
       }
     }
-    if (!star_names_.empty()) {
-      star_indices_ = shuffled_indices(star_names_.size());
+    if (!names.empty()) {
+      indices = shuffled_indices(names.size());
     }
-  }
+  };
 
+  if (star_names_.empty() && config_.auto_name_stars) {
+    load_list(config_.star_names_file, star_names_, star_indices_);
+  }
   if (planet_names_.empty() && config_.auto_name_planets) {
-    std::ifstream f(config_.planet_names_file);
-    if (f.is_open()) {
-      std::string line;
-      while (std::getline(f, line) && planet_names_.size() < 1000) {
-        if (!line.empty() && line.back() == '\r') line.pop_back();
-        if (!line.empty()) {
-          planet_names_.push_back(line.substr(0, 19));
-        }
-      }
-    }
-    if (!planet_names_.empty()) {
-      planet_indices_ = shuffled_indices(planet_names_.size());
-    }
+    load_list(config_.planet_names_file, planet_names_, planet_indices_);
   }
 }
 

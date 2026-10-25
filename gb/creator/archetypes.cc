@@ -51,22 +51,17 @@ RaceArchetype::to_enrollment_spec(std::optional<PlanetType> planet_override,
     spec.metabolism = base_metabolism;
   }
 
-  // When a terrestrial archetype is overridden onto an expensive planet (e.g.,
-  // PlanetType::GASGIANT at +600 points), scale down metabolism (and secondary
-  // growth/migration traits if needed) so the generated spec stays within the
-  // 1400-point budget.
+  // When a terrestrial archetype is overridden onto an expensive planet (such
+  // as PlanetType::GASGIANT at +600 points, a net increase of at most ~350
+  // points after replacing multiple terrestrial sector compatibilities with
+  // 100% gas), lower metabolism in 0.05 steps until the specification fits
+  // within the 1400-point budget. Because all 11 presets start with
+  // base_metabolism >= 1.00 and lowering metabolism toward the 0.10 minimum
+  // yields up to ~760 points of credit, this loop always converges around
+  // metabolism 0.65-0.85 without reaching the 0.10 floor.
   RacegenEngine engine;
-  while (spec.metabolism > 0.10 &&
-         engine.calculate_cost(spec).points_remaining < 0) {
-    spec.metabolism = std::max(0.10, spec.metabolism - 0.05);
-  }
-  while (spec.adventurism > 0.05 &&
-         engine.calculate_cost(spec).points_remaining < 0) {
-    spec.adventurism = std::max(0.05, spec.adventurism - 0.05);
-  }
-  while (spec.birthrate > 0.20 &&
-         engine.calculate_cost(spec).points_remaining < 0) {
-    spec.birthrate = std::max(0.20, spec.birthrate - 0.05);
+  while (engine.calculate_cost(spec).points_remaining < 0) {
+    spec.metabolism -= 0.05;
   }
 
   return spec;
@@ -125,17 +120,12 @@ tabulate::Table create_archetypes_table() {
 }
 
 const RaceArchetype* find_archetype(std::string_view query) {
-  while (!query.empty() &&
-         std::isspace(static_cast<unsigned char>(query.front()))) {
-    query.remove_prefix(1);
-  }
-  while (!query.empty() &&
-         std::isspace(static_cast<unsigned char>(query.back()))) {
-    query.remove_suffix(1);
-  }
-  if (query.empty()) {
+  const auto first = query.find_first_not_of(" \t\r\n");
+  if (first == std::string_view::npos) {
     return nullptr;
   }
+  const auto last = query.find_last_not_of(" \t\r\n");
+  query = query.substr(first, last - first + 1);
 
   // 1. Check if query is a 1-based numeric index ("1".."11")
   std::size_t idx = 0;

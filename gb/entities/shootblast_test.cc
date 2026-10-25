@@ -81,6 +81,7 @@ void test_shoot_ship_to_planet_invalid_cases() {
   std::println(std::cout, "Test: shoot_ship_to_planet invalid cases");
 
   TestContext ctx;
+  ctx.with_standard_universe();
 
   Planet planet{1, 1, PlanetType::EARTH, Coordinates{5, 5}};
 
@@ -98,11 +99,15 @@ void test_shoot_ship_to_planet_invalid_cases() {
                                    smap, 0, guntype_t::NONE);
   test::expect_false(res1.has_value());
 
-  // Test 2: Dead ship -> returns std::nullopt
+  // Test 2: Dead ship with ignore=false -> returns std::nullopt; with
+  // ignore=true -> succeeds
   ship.alive() = false;
   auto res2 = shoot_ship_to_planet(ctx.em, ship, planet, 10, Coordinates{0, 0},
-                                   smap, 0, guntype_t::NONE);
+                                   smap, false, guntype_t::NONE);
   test::expect_false(res2.has_value());
+  auto res2_ignore = shoot_ship_to_planet(
+      ctx.em, ship, planet, 10, Coordinates{0, 0}, smap, true, guntype_t::NONE);
+  test::expect_true(res2_ignore.has_value());
 
   // Test 3: Invalid planet coords -> returns std::nullopt
   ship.alive() = true;
@@ -116,7 +121,7 @@ void test_shoot_ship_to_planet_invalid_cases() {
                                    smap, 0, guntype_t::HEAVY);
   test::expect_false(res4.has_value());
 
-  // Test 5: Ship with switch turned off and ignore=0 -> returns std::nullopt
+  // Test 5: Ship with switch turned off -> returns std::nullopt
   ship.enter_planet_orbit(1, 1);
   ship.type() = ShipType::STYPE_MINE;
   ship.on() = false;
@@ -132,6 +137,7 @@ void test_shoot_ship_to_planet_valid_attack() {
 
   TestContext ctx;
   ctx.with_standard_universe();
+  TestWorldBuilder(ctx).add_race("Vulcans", 100.0, false, player_t{5});
 
   Planet planet(ctx.em.peek_planet(1, 1)->get_struct());
 
@@ -139,8 +145,15 @@ void test_shoot_ship_to_planet_valid_attack() {
   auto& s = smap.get(Coordinates{1, 1});
   s.set_owner(player_t{2});
   s.set_popn_exact(100);
-  s.set_condition(SectorType::SEC_LAND);
-  s.set_type(SectorType::SEC_LAND);
+  s.set_condition(SectorType::SEC_SEA);
+  s.set_type(SectorType::SEC_SEA);
+
+  // Far sector owned by player 5 with mobilization so sum_mob[5] > 0 when
+  // !planet.has_info(5)
+  auto& far_sec = smap.get(Coordinates{9, 9});
+  far_sec.set_owner(player_t{5});
+  far_sec.set_popn_exact(100);
+  far_sec.set_mobilization(50);
 
   Ship ship{};
   ship.number() = 1;
@@ -152,7 +165,7 @@ void test_shoot_ship_to_planet_valid_attack() {
   ship.tech() = 10.0;
   ship.size() = 10;
 
-  auto res = shoot_ship_to_planet(ctx.em, ship, planet, 20, Coordinates{1, 1},
+  auto res = shoot_ship_to_planet(ctx.em, ship, planet, 8, Coordinates{1, 1},
                                   smap, 0, guntype_t::HEAVY);
   test::expect_true(res.has_value());
   test::expect_ge(res->sectors_destroyed, 0);
@@ -160,6 +173,7 @@ void test_shoot_ship_to_planet_valid_attack() {
   test::expect_false(res->location_display.empty());
   test::expect_eq(res->previous_sector_owner, player_t{2});
   test::expect_true(res->nuked_players.contains(player_t{2}));
+  test::expect_eq(planet.info(player_t{5}).mob_points, 50);
 
   std::println(std::cout,
                "  ✓ shoot_ship_to_planet valid attack passed (numdest={})",
@@ -341,6 +355,45 @@ void test_shoot_ship_to_ship_and_cew_caliber() {
   Ship& target = *target_h;
   target.set_mass(100.0);
 
+  // 0. Non-positive strength, dead attacker/target, invalid orbits, switch off
+  test::expect_false(
+      shoot_ship_to_ship(ctx.em, attacker, target, 0, 0, false).has_value());
+
+  attacker.alive() = false;
+  test::expect_false(
+      shoot_ship_to_ship(ctx.em, attacker, target, 10, 2, false).has_value());
+  test::expect_true(
+      shoot_ship_to_ship(ctx.em, attacker, target, 10, 2, true).has_value());
+  attacker.alive() = true;
+
+  target.alive() = false;
+  test::expect_false(
+      shoot_ship_to_ship(ctx.em, attacker, target, 10, 2, false).has_value());
+  target.alive() = true;
+
+  attacker.dock_into_carrier(shipnum_t{2});
+  test::expect_false(
+      shoot_ship_to_ship(ctx.em, attacker, target, 10, 2, false).has_value());
+  attacker.enter_star_orbit(1);
+
+  target.dock_into_carrier(shipnum_t{1});
+  test::expect_false(
+      shoot_ship_to_ship(ctx.em, attacker, target, 10, 2, false).has_value());
+  target.enter_deep_space();
+  test::expect_false(
+      shoot_ship_to_ship(ctx.em, attacker, target, 10, 2, false).has_value());
+  target.enter_star_orbit(2);
+  test::expect_false(
+      shoot_ship_to_ship(ctx.em, attacker, target, 10, 2, false).has_value());
+  target.enter_star_orbit(1);
+
+  attacker.type() = ShipType::STYPE_MINE;
+  attacker.on() = false;
+  test::expect_false(
+      shoot_ship_to_ship(ctx.em, attacker, target, 10, 2, false).has_value());
+  attacker.on() = true;
+  attacker.type() = ShipType::STYPE_DESTROYER;
+
   // 1. Conventional attack with ActiveBattery::NONE fails (caliber == NONE)
   test::expect_false(
       shoot_ship_to_ship(ctx.em, attacker, target, 5, 0, false).has_value());
@@ -358,9 +411,13 @@ void test_shoot_ship_to_ship_and_cew_caliber() {
   test::expect_false(
       shoot_ship_to_ship(ctx.em, attacker, target, 10, 0, false).has_value());
 
-  // 4. Radiative weapon mode (mode == 1)
+  // 4. Radiative weapon mode (mode == 1) and manual navigation evasion
   target.coordinates() = orig_coords;
   target.alive() = true;
+  target.active() = true;
+  target.navigate().on = 1;
+  target.protect().evade = 1;
+  target.speed() = 3;
   attacker.type() = ShipType::STYPE_MINE;
   attacker.mode() = 1;
   auto rad_res = shoot_ship_to_ship(ctx.em, attacker, target, 10, 0, true);
@@ -368,8 +425,131 @@ void test_shoot_ship_to_ship_and_cew_caliber() {
   test::expect_eq(rad_res->weapon, ShipShotWeaponKind::Radiation);
   test::expect_eq(rad_res->damage, rad_res->radiation_dosage);
 
+  // 5. Focused laser mode (is_laser_on() && focus())
+  attacker.type() = ShipType::STYPE_DESTROYER;
+  attacker.mode() = 0;
+  attacker.laser() = 1;
+  attacker.fire_laser() = 5;
+  attacker.focus() = 1;
+  target.alive() = true;
+  auto laser_res = shoot_ship_to_ship(ctx.em, attacker, target, 5, 0, false);
+  test::expect_true(laser_res.has_value());
+  test::expect_eq(laser_res->weapon, ShipShotWeaponKind::FocusedLaser);
+
   std::println(std::cout,
                "  ✓ shoot_ship_to_ship guard clauses and CEW caliber passed");
+}
+
+void test_critical_hit_systems_and_mine_guards() {
+  std::println(std::cout,
+               "Test: critical hit subsystem destruction and mine guards");
+
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  auto attacker_h = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER, 1)
+                        .owned_by(1, 1)
+                        .in_star_orbit(1, SystemCoordinates{10.0, 10.0})
+                        .with_size(100)
+                        .with_tech(500.0)
+                        .with_guns(guntype_t::HEAVY, 50, ActiveBattery::PRIMARY)
+                        .with_on(true)
+                        .build_handle();
+  Ship& attacker = *attacker_h;
+
+  auto target_h = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER, 2)
+                      .owned_by(2, 1)
+                      .in_star_orbit(1, SystemCoordinates{10.0, 10.0})
+                      .with_size(1)
+                      .with_tech(1.0)
+                      .with_crew(10, 0)
+                      .with_on(true)
+                      .build_handle();
+  Ship& target = *target_h;
+  target.set_mass(10.0);
+
+  auto crippled_attacker_h =
+      TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER, 5)
+          .owned_by(1, 1)
+          .in_star_orbit(1, SystemCoordinates{10.0, 10.0})
+          .with_size(100)
+          .with_tech(500.0)
+          .with_damage(100)
+          .with_guns(guntype_t::HEAVY, 50, ActiveBattery::PRIMARY)
+          .with_on(true)
+          .build_handle();
+  Ship& crippled_attacker = *crippled_attacker_h;
+
+  // 1. Crippled attacker (damage = 100) -> hit factor = 0, hits = 0,
+  // penetrate = 0, critdam = 0 -> subsystems survive even when present
+  target.cew() = 10;
+  target.laser() = 1;
+  target.cloak() = 1;
+  target.hyper_drive().has = 1;
+  auto no_crit =
+      shoot_ship_to_ship(ctx.em, crippled_attacker, target, 1, 0, false);
+  test::expect_true(no_crit.has_value());
+  test::expect_false(no_crit->critical.systems.cew_destroyed);
+  test::expect_false(no_crit->critical.systems.laser_destroyed);
+  test::expect_false(no_crit->critical.systems.cloak_destroyed);
+  test::expect_false(no_crit->critical.systems.hyper_drive_destroyed);
+
+  // 2. Unarmored tiny target (size = 1, armor = 0) hit by massive heavy salvo
+  // -> eff_size = 1, critdam clamps to 100 -> all equipped subsystems destroyed
+  target.armor() = 0;
+  auto full_crit = shoot_ship_to_ship(ctx.em, attacker, target, 50, 0, false);
+  test::expect_true(full_crit.has_value());
+  test::expect_true(full_crit->critical.systems.cew_destroyed);
+  test::expect_true(full_crit->critical.systems.laser_destroyed);
+  test::expect_true(full_crit->critical.systems.cloak_destroyed);
+  test::expect_true(full_crit->critical.systems.hyper_drive_destroyed);
+
+  // 3. Mine proximity, greenhouse immunity, and domine guard clauses
+  test::expect_false(check_mine_proximity_trigger(attacker, ctx.em));
+
+  auto mine_h = TestShipBuilder(ctx.em, ShipType::STYPE_MINE, 3)
+                    .owned_by(1, 1)
+                    .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
+                    .with_destruct(10)
+                    .with_trigger_radius(10)
+                    .with_on(true)
+                    .build_handle();
+  Ship& mine = *mine_h;
+
+  // Mine in deep space or embarked in ship cannot trigger or detonate
+  mine.enter_deep_space();
+  test::expect_false(check_mine_proximity_trigger(mine, ctx.em));
+  test::expect_false(domine(mine, true, ctx.em).has_value());
+  mine.dock_into_carrier(shipnum_t{1});
+  test::expect_false(check_mine_proximity_trigger(mine, ctx.em));
+  test::expect_false(domine(mine, true, ctx.em).has_value());
+  mine.enter_star_orbit(1);
+
+  // Non-mine or dead mine fails domine
+  test::expect_false(domine(attacker, true, ctx.em).has_value());
+  mine.alive() = false;
+  test::expect_false(domine(mine, true, ctx.em).has_value());
+  mine.alive() = true;
+
+  // Greenhouse gas (OTYPE_GREEN) is immune to mine detonation against ships
+  TestShipBuilder(ctx.em, ShipType::OTYPE_GREEN, 4)
+      .owned_by(2, 1)
+      .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
+      .build();
+  const auto victims = detonate_mine_against_ships(mine, ctx.em);
+  for (const auto& v : victims) {
+    test::expect_eq(v.shot.target_display.find("Greenhouse"),
+                    std::string::npos);
+  }
+
+  // Inactive mine fails natural domine (detonate = false) but succeeds when
+  // forced (detonate = true)
+  mine.on() = false;
+  test::expect_false(domine(mine, false, ctx.em).has_value());
+  test::expect_true(domine(mine, true, ctx.em).has_value());
+
+  std::println(std::cout,
+               "  ✓ critical hit subsystem destruction and mine guards passed");
 }
 
 int main() {
@@ -382,6 +562,7 @@ int main() {
   test_penetration_factor_domain();
   test_do_collateral_casualties();
   test_shoot_ship_to_ship_and_cew_caliber();
+  test_critical_hit_systems_and_mine_guards();
 
   std::println(std::cout, "\n✅ All shootblast tests passed!");
   return 0;

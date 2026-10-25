@@ -44,7 +44,8 @@ shoot_ship_to_ship(EntityManager& em, const Ship& attacker, Ship& target,
                    const weapon_range_t range, const bool ignore) {
   if (cew_strength <= 0) return std::nullopt;
 
-  if (!(attacker.alive() || ignore) || !target.alive()) return std::nullopt;
+  if (!attacker.alive() && !ignore) return std::nullopt;
+  if (!target.alive()) return std::nullopt;
   if (attacker.whatorbits() == ScopeLevel::LEVEL_SHIP ||
       attacker.whatorbits() == ScopeLevel::LEVEL_UNIV)
     return std::nullopt;
@@ -164,7 +165,7 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
                      weapon_power_t strength, Coordinates target_sector,
                      SectorMap& smap, bool ignore, guntype_t caliber) {
   if (strength <= 0) return std::nullopt;
-  if (!(ship.alive() || ignore)) return std::nullopt;
+  if (!ship.alive() && !ignore) return std::nullopt;
   if (ship.has_switch() && !ship.on()) return std::nullopt;
   if (ship.whatorbits() != ScopeLevel::LEVEL_PLAN) return std::nullopt;
   if (!pl.is_valid(target_sector)) return std::nullopt;
@@ -597,8 +598,7 @@ double p_factor(double attacker_tech, double defender_tech) {
 
 bool check_mine_proximity_trigger(const Ship& mine,
                                   EntityManager& entity_manager) {
-  if (mine.type() != ShipType::STYPE_MINE || !mine.alive() ||
-      mine.owner() == 0 || !mine.on()) {
+  if (mine.type() != ShipType::STYPE_MINE || !mine.alive() || !mine.on()) {
     return false;
   }
   if (mine.whatorbits() != ScopeLevel::LEVEL_STAR &&
@@ -606,11 +606,7 @@ bool check_mine_proximity_trigger(const Ship& mine,
     return false;
   }
 
-  const auto* mine_data = mine.as<MineShip>();
-  if (!mine_data) {
-    return false;
-  }
-
+  const auto& mine_data = *mine.as<MineShip>();
   const auto& race = *entity_manager.peek_race(mine.owner());
   const ShipList scoped_ships =
       (mine.whatorbits() == ScopeLevel::LEVEL_STAR)
@@ -619,14 +615,14 @@ bool check_mine_proximity_trigger(const Ship& mine,
                                          mine.pnumorbits());
 
   for (const auto& s : scoped_ships) {
-    if (s.number() == mine.number() || !s.alive()) {
+    if (s.number() == mine.number()) {
       continue;
     }
     if (s.owner() == mine.owner() || race.is_allied_with(s.owner())) {
       continue;
     }
     double range = mine.coordinates().distance_to(s.coordinates());
-    if (range <= static_cast<double>(mine_data->trigger_radius())) {
+    if (range <= static_cast<double>(mine_data.trigger_radius())) {
       return true;
     }
   }
@@ -636,11 +632,6 @@ bool check_mine_proximity_trigger(const Ship& mine,
 std::vector<MineShipVictimReport>
 detonate_mine_against_ships(Ship& mine, EntityManager& entity_manager) {
   std::vector<MineShipVictimReport> victim_reports;
-  if (mine.whatorbits() != ScopeLevel::LEVEL_STAR &&
-      mine.whatorbits() != ScopeLevel::LEVEL_PLAN) {
-    return victim_reports;
-  }
-
   std::vector<shipnum_t> victims;
   const ShipList scoped_ships =
       (mine.whatorbits() == ScopeLevel::LEVEL_STAR)
@@ -649,8 +640,7 @@ detonate_mine_against_ships(Ship& mine, EntityManager& entity_manager) {
                                          mine.pnumorbits());
 
   for (const auto& s : scoped_ships) {
-    if (s.number() != mine.number() && s.alive() &&
-        s.type() != ShipType::OTYPE_CANIST &&
+    if (s.number() != mine.number() && s.type() != ShipType::OTYPE_CANIST &&
         s.type() != ShipType::OTYPE_GREEN) {
       victims.push_back(s.number());
     }
@@ -658,7 +648,6 @@ detonate_mine_against_ships(Ship& mine, EntityManager& entity_manager) {
 
   for (shipnum_t victim_num : victims) {
     entity_manager.mutate_ship(victim_num, [&](Ship& s) {
-      if (!s.alive()) return;
       const player_t victim_owner = s.owner();
       const governor_t victim_governor = s.governor();
       if (auto s2sresult = shoot_ship_to_ship(
@@ -700,8 +689,7 @@ detonate_mine_against_planet(Ship& mine, EntityManager& entity_manager) {
 
 std::optional<MineDetonationReport> domine(Ship& ship, bool detonate,
                                            EntityManager& entity_manager) {
-  if (ship.type() != ShipType::STYPE_MINE || !ship.alive() ||
-      ship.owner() == 0) {
+  if (ship.type() != ShipType::STYPE_MINE || !ship.alive()) {
     return std::nullopt;
   }
 

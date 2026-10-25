@@ -94,6 +94,24 @@ void test_victory_dispatch() {
   test::expect_contains(out, "\"gov_password\":\"govsec2\"");
   g.set_ui_mode(UiMode::ASCII);
 
+  // 6. God, Guest, and dissolved races mark no_count=true in
+  // create_victory_list and compute_power_blocks aggregates allied member power
+  TestWorldBuilder(ctx)
+      .add_race("Deity", 100.0, false, player_t{3})
+      .add_race("Visitor", 100.0, false, player_t{4})
+      .add_race("Fallen", 100.0, false, player_t{5});
+  ctx.em.mutate_race(3, [](Race& r) { r.God = true; });
+  ctx.em.mutate_race(4, [](Race& r) { r.Guest = true; });
+  ctx.em.mutate_race(5, [](Race& r) { r.dissolved = true; });
+  const auto vics = create_victory_list(ctx.em);
+  test::expect_eq(vics.size(), 5U);
+
+  ctx.em.mutate_block(1, [](Block& b) {
+    b.invite(player_t{1});
+    b.pledge(player_t{1});
+  });
+  compute_power_blocks(ctx.em);
+
   ctx.verify_universe_invariants();
 }
 

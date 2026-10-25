@@ -96,6 +96,7 @@ Volleys penetrating defensive hull armor inflict structural destruction and inte
   $$P(\text{Casualty or Gun Loss}) = \frac{\text{Inflicted Damage Percentage}}{100}$$
   Each carried colonist, troop, primary gun, and secondary gun is evaluated independently.
 - **Battery Depletion & Caliber Reset**: When collateral damage destroys the last remaining gun in a battery, its count reaches zero and its caliber automatically resets to None. If the depleted battery was the ship's active battery, offensive kinetic fire and kinetic retaliation are immediately disabled until repaired.
+- **Laser Safe-Power Clamping**: When a vessel armed with defensive laser fire sustains structural damage, its programmed laser retaliation strength is automatically clamped to the ship's maximum safe operating threshold ($\lfloor (1 - \text{Damage}/100) \times \text{Tech} / 4 \rfloor$) so damaged emitters do not overload.
 
 ---
 

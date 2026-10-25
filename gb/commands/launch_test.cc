@@ -370,12 +370,22 @@ void test_launch_mcdc_undock_observers_and_json() {
                                {"undock", std::format("#{}", univ_s1.value)});
   test::expect_contains(g.out.str(), "You need 1 universe action point.");
 
+  // Deity bypasses Universe AP requirement when undocking in LEVEL_UNIV
+  g.set_god(true);
+  ctx.assert_dispatch_success(g, {"undock", std::format("#{}", univ_s1.value)},
+                              0, 0);
+  g.set_god(false);
+  ctx.em.mutate_ship(univ_s1, [&](Ship& s1) {
+    ctx.em.mutate_ship(univ_s2, [&](Ship& s2) { s1.moor_together(s2); });
+  });
+
   ctx.em.mutate_universe([](Universe& u) { u.set_AP(1, 5); });
   ctx.assert_dispatch_success(g, {"undock", std::format("#{}", univ_s1.value)},
                               0, 1);
   test::expect_contains(g.out.str(), "undocked from");
 
-  // Insufficient Star AP when undocking moored ship in LEVEL_PLAN
+  // Insufficient Star AP when undocking moored ship in LEVEL_PLAN (and Deity
+  // bypass for both undock and planet launch)
   g.set_level(ScopeLevel::LEVEL_PLAN);
   const auto plan_s2 = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                            .owned_by(1, 1)
@@ -389,10 +399,18 @@ void test_launch_mcdc_undock_observers_and_json() {
   ctx.assert_dispatch_rejected(g, {"undock", "#1"});
   test::expect_contains(g.out.str(), "You don't have 1 action points there.");
 
+  g.set_god(true);
+  ctx.assert_dispatch_success(g, {"undock", "#1"}, 0, 0);
+  ctx.em.mutate_ship(1, [](Ship& s1) {
+    s1.land_on_planet(1, 1, {5, 5});
+    s1.add_fuel(100.0);
+  });
+  ctx.assert_dispatch_success(g, {"launch", "#1"}, 0, 0);
+  g.set_god(false);
+
   // 3. Foreign player with sectors on planet receives launch observation
   // telegram, and UiMode::JSON renders launch_ship envelope
   ctx.em.mutate_star(1, [](Star& st) { st.AP(1) = 10; });
-  (void)ctx.em.unmoor_ships(1);
   ctx.em.mutate_ship(1, [](Ship& s1) {
     s1.land_on_planet(1, 1, {5, 5});
     s1.add_fuel(100.0);

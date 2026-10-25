@@ -442,17 +442,22 @@ void test_land_planet_preconditions_and_crashes() {
   ctx.assert_dispatch_success(g, {"land", "#1", "3,3"}, 1);
   test::expect_eq(ctx.em.peek_planet(1, 1)->info(2).destruct, 0);
 
-  // 4. Crash from insufficient fuel (persists ship destruction & deducts 1 AP)
+  // 4. Crash from insufficient fuel with Deity AP bypass on uncolonized planet
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(1).numsectsowned = 0; });
+  ctx.em.mutate_star(1, [](Star& st) { st.AP(1) = 0; });
+  g.set_god(true);
   const auto crash_fuel_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                                  .owned_by(1, 1)
                                  .in_planet_orbit(1, 1)
                                  .with_fuel(0.0)
                                  .build();
   ctx.assert_dispatch_success(
-      g, {"land", std::format("#{}", crash_fuel_id.value), "5,5"}, 1);
+      g, {"land", std::format("#{}", crash_fuel_id.value), "5,5"}, 0);
   test::expect_contains(g.out.str(), "while the landing required");
   test::expect_throws<EntityNotFoundError>(
       [&]() { ctx.em.peek_ship(crash_fuel_id); });
+  g.set_god(false);
+  ctx.em.mutate_star(1, [](Star& st) { st.AP(1) = 10; });
 
   // 5. Crash from 100% hull damage (persists ship destruction & deducts 1 AP)
   const auto crash_dmg_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)

@@ -607,7 +607,7 @@ void test_transporter_edge_cases() {
       g, {"load", std::format("#{}", send_id.value), "r", "10"});
   test::expect_contains(g.out.str(), "Target device is damaged");
 
-  // 2. Target device not receiving (off)
+  // 2. Target device not receiving (off and non-transporter type)
   ctx.em.mutate_ship(recv_id, [](Ship& s) {
     s.admin_override_damage(0);
     s.on() = false;
@@ -617,9 +617,39 @@ void test_transporter_edge_cases() {
       g, {"load", std::format("#{}", send_id.value), "r", "10"});
   test::expect_contains(g.out.str(), "The target device is not receiving");
 
-  // 3. Origin device damaged
-  ctx.em.mutate_ship(recv_id, [](Ship& s) { s.on() = true; });
-  ctx.em.mutate_ship(send_id, [](Ship& s) { s.admin_override_damage(25); });
+  ctx.em.mutate_ship(recv_id, [](Ship& s) {
+    s.on() = true;
+    s.type() = ShipType::STYPE_POD;
+  });
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"load", std::format("#{}", send_id.value), "r", "10"});
+  test::expect_contains(g.out.str(), "The target device is not receiving");
+
+  // 3. Origin device damaged, wrong planet scope, and not landed
+  ctx.em.mutate_ship(recv_id,
+                     [](Ship& s) { s.type() = ShipType::OTYPE_TRANSDEV; });
+  ctx.em.mutate_ship(send_id, [&](Ship& s) {
+    auto& trans = static_cast<TransporterShip&>(s);
+    const auto wrong_star =
+        execute_transporter_transfer(ctx.em, trans, 2, 1, 1.0, false);
+    test::expect_false(wrong_star.has_value());
+    test::expect_eq(wrong_star.error(), TransporterError::WrongPlanetScope);
+
+    const auto wrong_plan =
+        execute_transporter_transfer(ctx.em, trans, 1, 2, 1.0, false);
+    test::expect_false(wrong_plan.has_value());
+    test::expect_eq(wrong_plan.error(), TransporterError::WrongPlanetScope);
+
+    s.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
+    const auto not_landed =
+        execute_transporter_transfer(ctx.em, trans, 1, 1, 1.0, false);
+    test::expect_false(not_landed.has_value());
+    test::expect_eq(not_landed.error(), TransporterError::OriginNotLanded);
+
+    s.land_on_planet(1, 1, {5, 5});
+    s.admin_override_damage(25);
+  });
   g.out.str("");
   ctx.assert_dispatch_success(
       g, {"load", std::format("#{}", send_id.value), "r", "10"});
@@ -658,7 +688,7 @@ void test_transporter_edge_cases() {
   ctx.assert_dispatch_success(
       g, {"load", std::format("#{}", send_id.value), "r", "10"});
   test::expect_contains(g.out.str(), "Zap");
-  test::expect_eq(ctx.em.peek_ship(recv_id)->resource(), 60);
+  test::expect_eq(ctx.em.peek_ship(recv_id)->resource(), 70);
   test::expect_eq(ctx.em.peek_ship(recv_id)->fuel(), 30.0);
   test::expect_eq(ctx.em.peek_ship(recv_id)->destruct(), 15);
   test::expect_eq(ctx.em.peek_ship(recv_id)->crystals(), 5);
@@ -733,6 +763,19 @@ void test_docking_and_validation_edge_cases() {
   test::expect_contains(g.out.str(),
                         "Change scope to the planet this ship is landed on");
   g.set_level(ScopeLevel::LEVEL_PLAN);
+  ctx.em.mutate_ship(wrong_plan_id, [&](Ship& s) {
+    const auto wrong_star =
+        validate_ship_docking(ctx.em, s, 1, ScopeLevel::LEVEL_PLAN, 2, 1);
+    test::expect_false(wrong_star.has_value());
+    test::expect_eq(wrong_star.error().reason,
+                    ShipDockingErrorReason::WrongPlanetScope);
+
+    const auto wrong_plan =
+        validate_ship_docking(ctx.em, s, 1, ScopeLevel::LEVEL_PLAN, 1, 2);
+    test::expect_false(wrong_plan.has_value());
+    test::expect_eq(wrong_plan.error().reason,
+                    ShipDockingErrorReason::WrongPlanetScope);
+  });
 
   // 4. Negative load on Von Neumann machine rejection
   shipnum_t vn_id = TestShipBuilder(ctx.em, ShipType::OTYPE_VN)
@@ -816,13 +859,19 @@ void test_docking_and_validation_edge_cases() {
       g, {"load", std::format("#{}", shuttle_id.value), "r", "50"});
   test::expect_eq(ctx.em.peek_ship(shuttle_id)->resource(), 60);
 
+  // Overloaded shuttle moored in orbit (not inside carrier hangar) is allowed
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"load", std::format("#{}", carrier_id.value), "r", "10"});
+  test::expect_eq(ctx.em.peek_ship(shuttle_id)->resource(), 50);
+
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"load", std::format("#{}", shuttle_id.value), "z", "10"});
   test::expect_contains(g.out.str(), "No such commodity");
 
-  // 9. Overloaded destination ship, missing destshipno, bogus destshipno, and
-  // un-docked destination ship
+  // 9. Overloaded destination ship in carrier, missing destshipno, dead
+  // destination ship, and un-docked destination ship
   ctx.em.mutate_ship(shuttle_id,
                      [&](Ship& s) { s.dock_into_carrier(carrier_id); });
   g.out.str("");

@@ -1123,11 +1123,13 @@ execute_planet_cargo_transfer(EntityManager& em, Ship& s, player_t player,
         p.adjust_sector_population(sect, player, civ_delta, mil_delta);
         const bool is_now_empty = sect.is_empty();
 
-        if (was_empty && !is_now_empty && amt < 0) {
-          result.sector_event = (cargo == ShipCargoType::Crew)
-                                    ? PlanetSectorEvent::Colonized
-                                    : PlanetSectorEvent::Occupied;
-        } else if (!was_empty && is_now_empty) {
+        if (was_empty) {
+          if (!is_now_empty) {
+            result.sector_event = (cargo == ShipCargoType::Crew)
+                                      ? PlanetSectorEvent::Colonized
+                                      : PlanetSectorEvent::Occupied;
+          }
+        } else if (is_now_empty) {
           result.sector_event = PlanetSectorEvent::Evacuated;
         }
         break;
@@ -1226,7 +1228,7 @@ validate_ship_docking(EntityManager& em, Ship& s, player_t player,
   em.with_ship(*s.destshipno(), [&](const Ship& s2) {
     const bool mutually_docked = (s.whatorbits() == ScopeLevel::LEVEL_SHIP ||
                                   s2.destshipno() == s.number());
-    if (!s2.alive() || !mutually_docked) {
+    if (!mutually_docked) {
       s.launch_to_orbit(s.whatorbits());
       outcome = std::unexpected(ShipDockingError{
           .reason = ShipDockingErrorReason::TargetNotDocked,
@@ -1322,7 +1324,7 @@ execute_ship_to_ship_cargo_transfer(EntityManager& em, Ship& s,
     result.target_ship_display = std::format("{}", s2);
     result.target_owner = s2.owner();
     result.target_governor = s2.governor();
-    result.notify_target_owner = (s2.owner() != s.owner() && amt < 0);
+    result.notify_target_owner = (s2.owner() != s.owner());
   });
 
   result.resulting_popn = s.popn();
@@ -1352,7 +1354,7 @@ execute_transporter_transfer(EntityManager& em, TransporterShip& s,
   std::optional<std::expected<TransporterTransferResult, TransporterError>>
       outcome;
   em.mutate_ship(*s.target_ship(), [&](Ship& s2) {
-    if (!s2.alive() || s2.type() != ShipType::OTYPE_TRANSDEV || !s2.on()) {
+    if (s2.type() != ShipType::OTYPE_TRANSDEV || !s2.on()) {
       outcome = std::unexpected(TransporterError::TargetNotReceiving);
       return;
     }
@@ -1585,7 +1587,7 @@ launch_single_ship(EntityManager& em, Ship& s, player_t player, bool god) {
     });
   }
 
-  if (!s.docked() && s.whatorbits() != ScopeLevel::LEVEL_SHIP) {
+  if (!s.docked()) {
     return std::unexpected(LaunchError{
         .reason = LaunchErrorReason::NotLandedOrDocked,
         .ship_display = std::format("{}", s),

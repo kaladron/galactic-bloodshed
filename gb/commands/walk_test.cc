@@ -151,6 +151,21 @@ void test_walk_role_and_domain_errors() {
   ctx.assert_dispatch_rejected(g, {"walk", "1", "k"});
   test::expect_contains(g.out.str(), "You don't have 1 action points there.");
 
+  // 10. Deity bypasses Star AP check and walks into unowned sector while
+  // another player owns sectors on the planet (notifying observers)
+  ctx.em.mutate_race(1, [](Race& r) { r.God = true; });
+  ctx.em.mutate_planet_and_sectors(1, 1, [](Planet& p, SectorMap& smap) {
+    smap.get(Coordinates{5, 6}).clear_owner();
+    smap.get(Coordinates{0, 0}).set_owner(2);
+    smap.get(Coordinates{0, 0}).set_popn_exact(10);
+    p.sync_demographics(smap);
+  });
+  ctx.setup_game_obj(g);
+  g.set_god(true);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"walk", "1", "k"});
+  test::expect_eq(ctx.em.peek_ship(1)->land_coords(), Coordinates(5, 6));
+
   ctx.verify_universe_invariants();
 }
 
@@ -267,6 +282,95 @@ void test_walk_afv_and_sector_combat() {
   test::expect_contains(g.out.str(), "You have nothing to attack with!");
   test::expect_eq(ctx.em.peek_ship(unarmed_afv)->land_coords(),
                   Coordinates(2, 0));
+
+  // Attacking AFV destroyed in duel against superior defending AFV
+  TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
+      .owned_by(2, 1)
+      .landed_on(1, 1, Coordinates(3, 1))
+      .with_guns(guntype_t::HEAVY, 10)
+      .with_retaliate(10)
+      .with_destruct(100)
+      .with_tech(500.0)
+      .with_armor(50)
+      .with_crew(5, 0)
+      .with_fuel(50.0)
+      .build();
+  shipnum_t doomed_afv = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
+                             .owned_by(1, 1)
+                             .landed_on(1, 1, Coordinates(3, 0))
+                             .with_guns(guntype_t::LIGHT, 1)
+                             .with_retaliate(1)
+                             .with_destruct(1)
+                             .with_tech(1.0)
+                             .with_armor(0)
+                             .with_damage(99)
+                             .with_crew(1, 0)
+                             .with_fuel(50.0)
+                             .build();
+  ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
+    smap.get(Coordinates{3, 1}).set_condition(SectorType::SEC_MOUNT);
+  });
+  ctx.assert_dispatch_success(
+      g, {"walk", std::format("{}", doomed_afv.value), "k"});
+  test::expect_throws<EntityNotFoundError>(
+      [&] { (void)ctx.em.peek_ship(doomed_afv); });
+
+  // Attacking AFV fights strong garrison: hull survives (damage_ceiling < 100)
+  // while ammo or crew is exhausted
+  ctx.em.mutate_race(1, [](Race& r) {
+    r.morale = 100;
+    r.likes[SectorType::SEC_MOUNT] = 1.0;
+  });
+  ctx.em.mutate_race(2, [](Race& r) {
+    r.tech = 25.0;
+    r.fighters = 1;
+    r.morale = 100;
+    r.likes[SectorType::SEC_MOUNT] = 1.0;
+  });
+  const shipnum_t garrison_afv = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
+                                     .owned_by(1, 1)
+                                     .landed_on(1, 1, Coordinates(4, 0))
+                                     .with_guns(guntype_t::LIGHT, 1)
+                                     .with_retaliate(1)
+                                     .with_destruct(2)
+                                     .with_tech(130.0)
+                                     .with_armor(99)
+                                     .with_crew(1, 0)
+                                     .with_fuel(100.0)
+                                     .build();
+  bool saw_crew_killed = false;
+  bool saw_crew_survived = false;
+  for (int attempt = 0; attempt < 40 && (!saw_crew_killed || !saw_crew_survived);
+       ++attempt) {
+    ctx.em.mutate_ship(garrison_afv, [](Ship& s) {
+      s.alive() = 1;
+      s.repair_damage(100);
+      s.popn() = 1;
+      s.destruct() = 2;
+      s.set_primary_battery(1, guntype_t::LIGHT);
+      s.set_land_coords(Coordinates{4, 0});
+    });
+    ctx.em.mutate_planet_and_sectors(1, 1, [](Planet& p, SectorMap& smap) {
+      auto& sect = smap.get(Coordinates{4, 1});
+      sect.set_condition(SectorType::SEC_MOUNT);
+      sect.set_owner(2);
+      sect.set_popn_exact(10000);
+      sect.set_troops(1000);
+      p.sync_demographics(smap);
+    });
+    ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 50; });
+    ctx.assert_dispatch_success(
+        g, {"walk", std::format("{}", garrison_afv.value), "k"});
+    const auto* s = ctx.em.peek_ship(garrison_afv);
+    test::expect_true(s->alive());
+    if (s->popn() == 0) {
+      saw_crew_killed = true;
+    } else {
+      saw_crew_survived = true;
+    }
+  }
+  test::expect_true(saw_crew_killed);
+  test::expect_true(saw_crew_survived);
 
   ctx.verify_universe_invariants();
 }

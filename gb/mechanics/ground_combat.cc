@@ -11,16 +11,23 @@ module gb.mechanics;
 
 namespace {
 
+bool is_mutually_allied(EntityManager& em, const Race& race,
+                        player_t other_owner) {
+  if (other_owner == 0 || other_owner == race.Playernum) {
+    return true;
+  }
+  const auto& alien = *em.peek_race(other_owner);
+  return race.is_allied_with(other_owner) &&
+         alien.is_allied_with(race.Playernum);
+}
+
 bool is_hostile_defending_afv(EntityManager& em, const Race& attacker_race,
                               const Ship& ship, Coordinates target_coords) {
-  if (ship.owner() == attacker_race.Playernum ||
-      ship.type() != ShipType::OTYPE_AFV || !ship.is_landed() ||
+  if (ship.type() != ShipType::OTYPE_AFV || !ship.is_landed() ||
       ship.retal_strength() == 0 || ship.land_coords() != target_coords) {
     return false;
   }
-  const auto& alien_race = *em.peek_race(ship.owner());
-  return !attacker_race.is_allied_with(ship.owner()) ||
-         !alien_race.is_allied_with(attacker_race.Playernum);
+  return !is_mutually_allied(em, attacker_race, ship.owner());
 }
 
 void resolve_afv_sector_engagement(
@@ -504,7 +511,7 @@ execute_sector_ground_assault(EntityManager& em, starnum_t snum,
         }
 
         sect.clear_owner_if_empty();
-        res.stop_movement = (!res.attacker_won || sect2.is_empty());
+        res.stop_movement = !res.attacker_won;
         planet.sync_demographics(smap);
       });
 
@@ -601,7 +608,7 @@ std::expected<MovePopnResult, MovePopnError> execute_planet_sector_movement(
       res.required_ap = ap_cost;
       return res;
     }
-    if (!god && ap_cost > 0) {
+    if (!god) {
       em.mutate_star(snum, [&](Star& s) { s.AP(player) -= ap_cost; });
     }
 
@@ -740,24 +747,14 @@ void engage_defending_afvs(EntityManager& em, const Race& attacker_race,
   }
 }
 
-bool is_mutually_allied(EntityManager& em, const Race& race,
-                        player_t other_owner) {
-  if (other_owner == 0 || other_owner == race.Playernum) {
-    return true;
-  }
-  const auto& alien = *em.peek_race(other_owner);
-  return race.is_allied_with(other_owner) &&
-         alien.is_allied_with(race.Playernum);
+bool can_afv_operate(const Ship& ship) {
+  return ship.alive() && ship.popn() > 0;
 }
 
 void engage_sector_defenders(EntityManager& em, const Race& attacker_race,
                              Ship& ship, const Star& star, Planet& planet,
                              Sector& sect, Coordinates new_coords,
                              WalkResult& res) {
-  if (!ship.popn() || !ship.alive() ||
-      is_mutually_allied(em, attacker_race, sect.get_owner())) {
-    return;
-  }
   if (!ship.retal_strength()) {
     res.unarmed_against_garrison = true;
     return;
@@ -793,12 +790,7 @@ void engage_sector_defenders(EntityManager& em, const Race& attacker_race,
 
 void advance_afv_to_sector(EntityManager& em, const Race& attacker_race,
                            Ship& ship, const Star& star, const Planet& planet,
-                           const Sector& sect, Coordinates new_coords,
-                           WalkResult& res) {
-  if (!ship.alive() || !ship.popn() ||
-      !is_mutually_allied(em, attacker_race, sect.get_owner())) {
-    return;
-  }
+                           Coordinates new_coords, WalkResult& res) {
   res.advanced = true;
   res.ship_display = std::format("{}", ship);
   res.location_display = dispshiploc(em, ship);
@@ -848,13 +840,24 @@ execute_afv_walk(EntityManager& em, shipnum_t shipno, char direction,
   em.mutate_ship(shipno, [&](Ship& ship) {
     engage_defending_afvs(em, attacker_race, ship, snum, pnum, *new_coords,
                           res.afv_duel_shots);
+    if (!can_afv_operate(ship)) {
+      return;
+    }
     em.mutate_planet_and_sectors(
         snum, pnum, [&](Planet& planet, SectorMap& smap) {
           auto& sect = smap.get(*new_coords);
-          engage_sector_defenders(em, attacker_race, ship, star, planet, sect,
-                                  *new_coords, res);
-          planet.sync_demographics(smap);
-          advance_afv_to_sector(em, attacker_race, ship, star, planet, sect,
+          if (!is_mutually_allied(em, attacker_race, sect.get_owner())) {
+            engage_sector_defenders(em, attacker_race, ship, star, planet, sect,
+                                    *new_coords, res);
+            planet.sync_demographics(smap);
+            if (!can_afv_operate(ship)) {
+              return;
+            }
+            if (!sect.is_empty()) {
+              return;
+            }
+          }
+          advance_afv_to_sector(em, attacker_race, ship, star, planet,
                                 *new_coords, res);
         });
   });

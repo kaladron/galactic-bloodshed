@@ -267,6 +267,38 @@ void test_mech_defend_mcdc() {
   test::expect_false(defend_res.rounds[0].people_counterattack.has_value());
   test::expect_true(ctx.em.peek_ship(hostile_afv1)->alive());
 
+  // Mutual alliance: Player 2 reciprocates alliance -> AFVs do not attack
+  ctx.em.mutate_race(2, [](Race& r) { r.declare_alliance_with(player_t{1}); });
+  population_t allied_civs = 50;
+  const auto allied_res =
+      mech_defend(ctx.em, *ctx.em.peek_race(1), &allied_civs,
+                  PopulationType::CIV, p_earth, Coordinates{3, 3}, target_sect);
+  test::expect_eq(allied_civs, 50u);
+  test::expect_true(allied_res.rounds.empty());
+
+  // Defending AFV exhausts ammo while entering troops survive (`(civ + mil) > 0 && ship.retal_strength() == 0`)
+  ctx.em.mutate_race(2, [](Race& r) {
+    r.rescind_alliance_with(player_t{1});
+    r.tech = 1.0;
+  });
+  TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
+      .owned_by(2, 1)
+      .landed_on(1, 1, Coordinates{5, 5})
+      .with_crew(1, 0)
+      .with_guns(guntype_t::LIGHT, 1)
+      .with_retaliate(1)
+      .with_destruct(1)
+      .with_tech(1.0)
+      .with_armor(10)
+      .build();
+  population_t entering_troops = 500;
+  const auto ammo_res =
+      mech_defend(ctx.em, *ctx.em.peek_race(1), &entering_troops,
+                  PopulationType::MIL, p_earth, Coordinates{5, 5}, target_sect);
+  test::expect_gt(entering_troops, 0u);
+  test::expect_eq(ammo_res.rounds.size(), 1u);
+  test::expect_true(ammo_res.rounds[0].people_counterattack.has_value());
+
   std::println(std::cout, "  ✓ mech_defend_mcdc passed");
 }
 

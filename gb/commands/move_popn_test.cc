@@ -94,6 +94,17 @@ void test_move_popn_insufficient_ap() {
   ctx.assert_dispatch_rejected(g, {"move", "5,5", "k", "500"});
   test::expect_contains(g.out.str(), "action points");
 
+  // Deity bypasses Star AP check even when AP is 0
+  ctx.em.mutate_race(1, [](Race& r) { r.God = true; });
+  ctx.setup_game_obj(g, 1, 1);
+  g.set_god(true);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(1);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"move", "5,5", "k", "100"});
+  test::expect_eq(ctx.em.peek_star(1)->AP(1), 0u);
+
   ctx.verify_universe_invariants();
 }
 

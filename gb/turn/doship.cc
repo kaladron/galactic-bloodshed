@@ -21,11 +21,9 @@ void do_repair(Ship& ship, EntityManager& entity_manager) {
       return 0;
     }
     // Check if docked with a station
-    if (ship.docked() && ship.destshipno() &&
-        (ship.whatdest() == ScopeLevel::LEVEL_SHIP ||
-         ship.whatorbits() == ScopeLevel::LEVEL_SHIP)) {
-      const auto* dest_ship = entity_manager.peek_ship(*ship.destshipno());
-      if (dest_ship && dest_ship->type() == ShipType::STYPE_STATION) {
+    if (ship.is_docked()) {
+      if (entity_manager.peek_ship(*ship.destshipno())->type() ==
+          ShipType::STYPE_STATION) {
         return 0;
       }
     }
@@ -61,7 +59,7 @@ void do_habitat(Ship& ship, EntityManager& entity_manager) {
                         ship.available_resource_capacity());
     fuse = 20.0 * static_cast<double>(add);
     ship.add_resource(add);
-    static_cast<void>(ship.consume_up_to_fuel(fuse));
+    ship.consume_fuel(fuse);
 
     for (auto nested_ship :
          ShipList::in_carrier(entity_manager, ship.number())) {
@@ -168,110 +166,107 @@ void do_pod(SporePodShip& ship, EntityManager& entity_manager) {
   }
 }
 
-void do_canister(CanisterShip& ship, EntityManager& entity_manager,
-                 TurnStats& stats) {
-  if (ship.type() != ShipType::OTYPE_CANIST ||
-      ship.whatorbits() != ScopeLevel::LEVEL_PLAN || ship.is_landed() ||
-      !ship.alive()) {
+namespace {
+
+void do_atmosphere_canister(CanisterShip& ship, EntityManager& entity_manager,
+                            TurnStats& stats, bool is_greenhouse) {
+  if (ship.whatorbits() != ScopeLevel::LEVEL_PLAN || ship.is_landed()) {
     return;
   }
 
   ship.set_count(ship.count() + 1);
   if (ship.count() < DISSIPATE) {
-    stats.set_temp_add(
-        ship.storbits(), ship.pnumorbits(),
-        std::max(-100,
-                 stats.temp_add(ship.storbits(), ship.pnumorbits()) - 10));
-  } else { /* timer expired; destroy canister */
-    entity_manager.kill_ship(ship.owner(), ship);
+    const int current = stats.temp_add(ship.storbits(), ship.pnumorbits());
+    const int updated = is_greenhouse ? std::min(100, current + 10)
+                                      : std::max(-100, current - 10);
+    stats.set_temp_add(ship.storbits(), ship.pnumorbits(), updated);
+    return;
+  }
 
-    const std::string telegram =
-        GB::presentation::render_atmosphere_device_dissipated(
-            prin_ship_orbits(entity_manager, ship), false);
+  /* timer expired; destroy canister */
+  entity_manager.kill_ship(ship.owner(), ship);
 
-    const auto& star = *entity_manager.peek_star(ship.storbits());
-    const auto& planet =
-        *entity_manager.peek_planet(ship.storbits(), ship.pnumorbits());
-    for (const Race& race : RaceList::readonly(entity_manager)) {
-      if (planet.info(race.Playernum).numsectsowned)
-        push_telegram(entity_manager, race.Playernum,
-                      star.governor(race.Playernum), telegram);
+  const std::string telegram =
+      GB::presentation::render_atmosphere_device_dissipated(
+          prin_ship_orbits(entity_manager, ship), is_greenhouse);
+
+  const auto& star = *entity_manager.peek_star(ship.storbits());
+  const auto& planet =
+      *entity_manager.peek_planet(ship.storbits(), ship.pnumorbits());
+  for (const Race& race : RaceList::readonly(entity_manager)) {
+    if (planet.info(race.Playernum).numsectsowned) {
+      push_telegram(entity_manager, race.Playernum,
+                    star.governor(race.Playernum), telegram);
     }
   }
+}
+
+constexpr bool is_in_star_system(const Ship& s) noexcept {
+  return s.whatorbits() == ScopeLevel::LEVEL_STAR ||
+         s.whatorbits() == ScopeLevel::LEVEL_PLAN;
+}
+
+constexpr bool is_targeting_orbited_planet(const Ship& ship) noexcept {
+  return ship.whatorbits() == ScopeLevel::LEVEL_PLAN &&
+         ship.whatdest() == ScopeLevel::LEVEL_PLAN &&
+         ship.deststar() == ship.storbits() &&
+         ship.destpnum() == ship.pnumorbits();
+}
+
+}  // namespace
+
+void do_canister(CanisterShip& ship, EntityManager& entity_manager,
+                 TurnStats& stats) {
+  do_atmosphere_canister(ship, entity_manager, stats, false);
 }
 
 void do_greenhouse(CanisterShip& ship, EntityManager& entity_manager,
                    TurnStats& stats) {
-  if (ship.type() != ShipType::OTYPE_GREEN ||
-      ship.whatorbits() != ScopeLevel::LEVEL_PLAN || ship.is_landed() ||
-      !ship.alive()) {
-    return;
-  }
-
-  ship.set_count(ship.count() + 1);
-  if (ship.count() < DISSIPATE) {
-    stats.set_temp_add(
-        ship.storbits(), ship.pnumorbits(),
-        std::min(100, stats.temp_add(ship.storbits(), ship.pnumorbits()) + 10));
-  } else { /* timer expired; destroy canister */
-    entity_manager.kill_ship(ship.owner(), ship);
-    const std::string telegram =
-        GB::presentation::render_atmosphere_device_dissipated(
-            prin_ship_orbits(entity_manager, ship), true);
-
-    const auto& star = *entity_manager.peek_star(ship.storbits());
-    const auto& planet =
-        *entity_manager.peek_planet(ship.storbits(), ship.pnumorbits());
-    for (const Race& race : RaceList::readonly(entity_manager)) {
-      if (planet.info(race.Playernum).numsectsowned)
-        push_telegram(entity_manager, race.Playernum,
-                      star.governor(race.Playernum), telegram);
-    }
-  }
+  do_atmosphere_canister(ship, entity_manager, stats, true);
 }
 
 void do_mirror(SpaceMirrorShip& ship, EntityManager& entity_manager,
                TurnStats& stats) {
+  if (!is_in_star_system(ship)) {
+    return;
+  }
+
   switch (ship.aimed_level()) {
     case ScopeLevel::LEVEL_SHIP: { /* ship aimed at is a legal ship now */
-      if (!ship.aimed_ship()) break;
       /* if in the same system */
       entity_manager.mutate_ship(*ship.aimed_ship(), [&](Ship& target) {
-        if ((ship.whatorbits() == ScopeLevel::LEVEL_STAR ||
-             ship.whatorbits() == ScopeLevel::LEVEL_PLAN) &&
-            (target.whatorbits() == ScopeLevel::LEVEL_STAR ||
-             target.whatorbits() == ScopeLevel::LEVEL_PLAN) &&
-            ship.storbits() == target.storbits() && target.alive()) {
-          double range = ship.coordinates().distance_to(target.coordinates());
-          const auto body = std::max<ship_size_t>(1, target.shipbody());
-          auto max_dmg = round_rand((2.0 / static_cast<double>(body)) *
-                                    static_cast<double>(ship.intensity()) /
-                                    (range / PLORBITSIZE + 1.0));
-          auto i = uniform_rand(0, max_dmg);
-          const auto dmg_res = target.apply_damage(i);
-          const std::string telegram =
-              GB::presentation::render_mirror_ship_strike(
-                  {.mirror_display = std::format("{}", ship),
-                   .target_display = std::format("{}", target),
-                   .damage_applied = dmg_res.damage_applied,
-                   .destroyed = dmg_res.destroyed});
-          if (dmg_res.destroyed) {
-            entity_manager.kill_ship(ship.owner(), target);
-          }
-          push_telegram(entity_manager, target.owner(), target.governor(),
+        if (!is_in_star_system(target) ||
+            ship.storbits() != target.storbits()) {
+          return;
+        }
+        double range = ship.coordinates().distance_to(target.coordinates());
+        const auto body = std::max<ship_size_t>(1, target.shipbody());
+        auto max_dmg = round_rand((2.0 / static_cast<double>(body)) *
+                                  static_cast<double>(ship.intensity()) /
+                                  (range / PLORBITSIZE + 1.0));
+        auto i = uniform_rand(0, max_dmg);
+        const auto dmg_res = target.apply_damage(i);
+        const std::string telegram =
+            GB::presentation::render_mirror_ship_strike(
+                {.mirror_display = std::format("{}", ship),
+                 .target_display = std::format("{}", target),
+                 .damage_applied = dmg_res.damage_applied,
+                 .destroyed = dmg_res.destroyed});
+        if (dmg_res.destroyed) {
+          entity_manager.kill_ship(ship.owner(), target);
+        }
+        push_telegram(entity_manager, target.owner(), target.governor(),
+                      telegram);
+        if (target.owner() != ship.owner() ||
+            target.governor() != ship.governor()) {
+          push_telegram(entity_manager, ship.owner(), ship.governor(),
                         telegram);
-          if (target.owner() != ship.owner() ||
-              target.governor() != ship.governor()) {
-            push_telegram(entity_manager, ship.owner(), ship.governor(),
-                          telegram);
-          }
         }
       });
       break;
     }
     case ScopeLevel::LEVEL_PLAN: {
-      if (ship.whatorbits() == ScopeLevel::LEVEL_UNIV ||
-          ship.aimed_star() != ship.storbits() || !ship.aimed_planet()) {
+      if (ship.aimed_star() != ship.storbits()) {
         break;
       }
       const planetnum_t target_planet = *ship.aimed_planet();
@@ -295,8 +290,7 @@ void do_mirror(SpaceMirrorShip& ship, EntityManager& entity_manager,
     case ScopeLevel::LEVEL_STAR:
       /* have to be in the same system as the star; otherwise
          it's not too fair.. */
-      if (ship.whatorbits() > ScopeLevel::LEVEL_UNIV &&
-          ship.aimed_star() == ship.storbits()) {
+      if (ship.aimed_star() == ship.storbits()) {
         entity_manager.mutate_star(ship.storbits(), [&](Star& star) {
           star.stability() += uniform_rand(0, 1);
         });
@@ -350,9 +344,8 @@ void do_ap(Ship& ship, EntityManager& entity_manager) {
 
 void do_oap(Ship& ship, TurnStats& stats) {
   /* "intimidate" the planet below, for enslavement purposes. */
-  if (ship.type() != ShipType::STYPE_OAP ||
-      ship.whatorbits() != ScopeLevel::LEVEL_PLAN || ship.is_landed() ||
-      !ship.alive() || !ship.active() || !ship.on()) {
+  if (ship.whatorbits() != ScopeLevel::LEVEL_PLAN || ship.is_landed() ||
+      !ship.active() || !ship.on()) {
     return;
   }
   stats.set_intimidated(ship.storbits(), ship.pnumorbits(), true);
@@ -373,12 +366,11 @@ bool process_ship_supernova(Ship& ship, const Star& star,
 }
 
 void synchronize_docked_carrier_ownership(Ship& ship, EntityManager& em) {
-  if (ship.whatorbits() == ScopeLevel::LEVEL_SHIP && ship.destshipno()) {
-    if (const auto* carrier = em.peek_ship(*ship.destshipno())) {
-      if (ship.owner() != carrier->owner()) {
-        ship.owner() = carrier->owner();
-        ship.governor() = carrier->governor();
-      }
+  if (auto carrier_num = ship.carrier_id()) {
+    const auto& carrier = *em.peek_ship(*carrier_num);
+    if (ship.owner() != carrier.owner()) {
+      ship.owner() = carrier.owner();
+      ship.governor() = carrier.governor();
     }
   }
 }
@@ -435,10 +427,7 @@ void dispatch_ship_subsystems(Ship& ship, bool update,
                               EntityManager& entity_manager, TurnStats& stats) {
   /* bombard the planet */
   if (ship.can_bombard() && ship.bombard() &&
-      ship.whatorbits() == ScopeLevel::LEVEL_PLAN &&
-      ship.whatdest() == ScopeLevel::LEVEL_PLAN &&
-      ship.deststar() == ship.storbits() &&
-      ship.destpnum() == ship.pnumorbits()) {
+      is_targeting_orbited_planet(ship)) {
     /* ship bombards planet */
     stats.mark_inhabited(ship.storbits(), ship.pnumorbits());
   }
@@ -518,6 +507,9 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
 
   if (ship.active()) {
     moveship(entity_manager, ship, update, true, false);
+    if (!ship.alive()) {
+      return;
+    }
   }
 
   ship.size() = ship.calculate_size(); /* for debugging */
@@ -540,7 +532,7 @@ bool intercept_missile_by_pdn(Ship& missile, EntityManager& entity_manager) {
       entity_manager, missile.storbits(), missile.pnumorbits());
 
   for (const Ship& s : scoped_ships) {
-    if (s.alive() && s.type() == ShipType::OTYPE_PLANDEF) {
+    if (s.type() == ShipType::OTYPE_PLANDEF) {
       /* attack the PDN instead */
       missile.set_coordinates(s.coordinates());
       missile.set_ship_destination(s.number());
@@ -635,13 +627,11 @@ void execute_missile_ship_strike(Ship& missile, EntityManager& entity_manager) {
 }
 
 void domissile(Ship& ship, EntityManager& entity_manager) {
-  if (!ship.alive() || ship.owner() == 0) return;
+  if (!ship.alive()) return;
   if (!ship.on() || ship.docked()) return;
 
   /* check to see if it has arrived at its destination */
-  if (ship.whatdest() == ScopeLevel::LEVEL_PLAN &&
-      ship.whatorbits() == ScopeLevel::LEVEL_PLAN &&
-      ship.destpnum() == ship.pnumorbits()) {
+  if (is_targeting_orbited_planet(ship)) {
     if (intercept_missile_by_pdn(ship, entity_manager)) {
       return;
     }
@@ -652,7 +642,7 @@ void domissile(Ship& ship, EntityManager& entity_manager) {
 }
 
 void doabm(Ship& ship, EntityManager& entity_manager) {
-  if (!ship.alive() || ship.owner() == 0) return;
+  if (!ship.alive()) return;
   if (!ship.on() || !ship.retaliate() || !ship.destruct()) return;
 
   if (ship.is_landed()) {
@@ -664,7 +654,6 @@ void doabm(Ship& ship, EntityManager& entity_manager) {
     std::vector<shipnum_t> threats;
     for (const auto& target : ShipList::readonly_on_planet(
              entity_manager, planet.star_id(), planet.planet_order())) {
-      if (!target.alive()) continue;
       if (target.type() != ShipType::STYPE_MISSILE &&
           target.type() != ShipType::STYPE_MINE) {
         continue;
@@ -687,7 +676,7 @@ void doabm(Ship& ship, EntityManager& entity_manager) {
       if (!ship.destruct()) break;  // Exit if out of destruct
 
       entity_manager.mutate_ship(threat_num, [&](Ship& target) {
-        if (!target.alive() || !ship.destruct()) return;
+        if (!target.alive()) return;
 
         /* attack the missile/mine */
         const weapon_power_t numdest = std::min(

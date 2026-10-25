@@ -258,23 +258,26 @@ Space Mirrors (`+`) are massive orbital reflector arrays capable of heating plan
 - **Stellar Destabilization (Aimed at Star)**: When aimed at its host star, a space mirror reflects concentrated radiation back into the stellar core, increasing stellar instability by $0$ or $1$ per turn update toward the $> 15$ nova threshold.
 
 ### Atmosphere Processors
-Atmosphere Processors perform large-scale planetary geoengineering by converting ambient gases into breathable atmosphere:
-- **Atmospheric Modification**: Active processors operating on planetary surfaces modify local atmospheric gas concentrations (methane, oxygen, carbon dioxide, helium, nitrogen, sulfur) by calibrated per-segment increments.
+Atmosphere Processors (`Y`) perform large-scale planetary geoengineering by converting ambient gases into breathable atmosphere:
+- **Atmospheric Modification**: Landed, online processors consume $3.0$ fuel per turn update (automatically shutting down and dispatching an out-of-fuel telegram if fuel drops below $3.0$) and shift each atmospheric gas toward the owner's racial preference scaled by $\frac{50}{50 + N_{\text{sectors}}} \times r_{\text{crew}}$.
 - **Safety Clamping**: Planetary atmospheric concentrations and toxicity ratings are strictly bounded within $[0\%, 100\%]$ to prevent ecological collapse or unphysical gas densities.
 
 ### Orbital Habitats and Population Incubators
-Orbital Habitats function as specialized bioship incubators capable of generating civilian population in deep space or orbit:
-- **Incubator Operations**: Active habitats consume stored fuel and raw minerals to synthesize life-support biomass and incubate new colonists: $\Delta \text{Population} = \left\lfloor \text{Incubation Rate} \times \frac{\text{Current Population}}{\text{Maximum Crew Capacity}} \right\rfloor$.
-- **Dynamic Displacement**: As new colonists are generated, the ship's operational mass increases proportionally based on the biological body mass of the incubated species ($`M_{\text{race}}`$).
+Orbital Habitats (`H`) function as residential space colonies and industrial hubs:
+- **Fuel-to-Resource Synthesis**: When switched online (`order <habitat> on`), manned habitats convert propellant into mineral resources at $20.0$ fuel per resource unit:
+  $$\Delta \text{Resources} = \min\left(\left\lfloor \frac{\text{Fuel} \times r_{\text{crew}} \times (1 - 0.01 \times \text{Damage})}{20} \right\rfloor,\; \text{Available Resource Capacity}\right)$$
+  and automatically trigger any Weapon Plants (`W`) docked inside their hangar bay to manufacture `destruct` directly into the Habitat's munitions magazine.
+- **Population Reproduction**: Crewed habitats reproduce civilian colonists at the owning species' racial birthrate ($\Delta \text{Population} = \text{round\_rand}(\text{Population} \times \text{Birthrate})$), dynamically increasing vessel displacement by $\Delta \text{Population} \times M_{\text{race}}$.
 
 ### Weapon Plants and Munitions Manufacturing
-Weapon Plants are automated manufacturing modules that convert raw industrial resources into destructive ordnance (`destruct`):
-- **Munitions Synthesis**: Each turn segment, operational weapon plants produce new destructive ordnance: $\Delta \text{Destruct} = \min\Big(\text{Available Crew Staffing}, \text{Stored Resources}, \text{Stored Fuel} \times 2, \text{Unallocated Ammo Capacity}\Big)$.
-- **Resource Depletion**: Synthesizing ammo consumes resources and fuel at a $1:1$ resource and $0.5:1$ fuel ratio, dynamically adjusting total vessel mass.
+Weapon Plants (`W`) convert raw industrial resources and propellant into destructive ordnance (`destruct`) on planetary surfaces or inside Habitat hangars:
+- **Munitions Synthesis**: Each turn update, operational weapon plants produce new destructive ordnance scaled by crew staffing and hull efficiency, capped at $\lfloor \text{Tech}_{\text{empire}} / 2 \rfloor$:
+  $$\Delta \text{Destruct} = \min\Big(\text{round\_rand}(\text{Available Batches} \times r_{\text{crew}} \times \eta_{\text{hull}}),\; \lfloor \text{Tech}_{\text{empire}} / 2 \rfloor,\; \text{Stored Resources},\; \lfloor \text{Stored Fuel} \rfloor\Big)$$
+- **Resource Depletion**: Each unit of `destruct` produced consumes $1$ resource unit and $1.0$ fuel unit (`RES_COST_WPLANT = 1`, `FUEL_COST_WPLANT = 1.0`), dynamically adjusting vessel mass.
 
 ### Biological Spore Pods and Climate Modifiers
-- **Spore Pods**: Bio-seeding craft capable of dispersing alien spores across planetary sectors. In multi-planet star systems, unmanned biological pods select target worlds across the system to initiate planetary seeding.
-- **Canisters and Greenhouses**: Specialized payload canisters and greenhouse modules release dense greenhouse agents to raise planetary temperatures or stabilize atmospheric pressure.
+- **Spore Pods (`p`)**: Bio-seeding craft grown by mesomorphic races. In star orbit, a pod warms by $\text{round\_rand}(T_{\text{star}} / S)$ per segment until reaching `POD_THRESHOLD` ($18$), when it explodes and attempts to seed a random planet in the system ($25\%$ `SPORE_SUCCESS_RATE`). In planetary orbit, a pod deteriorates by $\text{round\_rand}(1 / S)$ until reaching `POD_DECAY` ($4$).
+- **Dust Canisters (`g`) and Greenhouse Gases (`h`)**: Spaceborne canisters in planetary orbit lower planetary temperature by $10^\circ$ per update (clamped at $-100^\circ$), while greenhouse gas devices raise planetary temperature by $10^\circ$ per update (clamped at $+100^\circ$), dissipating after `DISSIPATE` ($80$) updates.
 
 ---
 

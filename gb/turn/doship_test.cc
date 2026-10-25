@@ -562,7 +562,7 @@ void test_execute_missile_ship_strike() {
     test::expect_false(m.alive());
   });
   test::expect_throws<EntityNotFoundError>(
-      [&] { (void)ctx.em.peek_ship(target_id); });
+      [&] { ctx.em.peek_ship(target_id); });
 }
 
 void test_domissile_integration() {
@@ -596,6 +596,8 @@ void test_domissile_integration() {
   ctx.em.mutate_ship(pdn_id, [&](Ship& s) { ctx.em.kill_ship(1, s); });
 
   // 2. Missile arrives at planet without PDN -> strikes planet surface
+  ctx.em.mutate_planet(
+      1, 1, [](Planet& p) { p.info(player_t{2}).numsectsowned = 5; });
   ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
     smap.get(Coordinates{2, 2}).colonize(2, 500);
   });
@@ -639,7 +641,7 @@ void test_domissile_integration() {
     test::expect_false(m.alive());
   });
   test::expect_throws<EntityNotFoundError>(
-      [&] { (void)ctx.em.peek_ship(victim_id); });
+      [&] { ctx.em.peek_ship(victim_id); });
 }
 
 void test_check_mine_proximity_trigger() {
@@ -783,10 +785,9 @@ void test_detonate_mine_against_ships() {
   });
 
   test::expect_throws<EntityNotFoundError>(
-      [&] { (void)ctx.em.peek_ship(target_id); });
+      [&] { ctx.em.peek_ship(target_id); });
 
-  test::expect_throws<EntityNotFoundError>(
-      [&] { (void)ctx.em.peek_ship(dead_id); });
+  test::expect_throws<EntityNotFoundError>([&] { ctx.em.peek_ship(dead_id); });
 
   const auto* can = ctx.em.peek_ship(can_id);
   test::expect_eq(can->damage(), 0);
@@ -889,8 +890,7 @@ void test_domine_trigger_and_detonation() {
     test::expect_false(report->ship_victims.empty());
   });
 
-  test::expect_throws<EntityNotFoundError>(
-      [&] { (void)ctx.em.peek_ship(enemy_id); });
+  test::expect_throws<EntityNotFoundError>([&] { ctx.em.peek_ship(enemy_id); });
 
   // 3. Forced detonation (detonate = true) in planet orbit detonates without
   // proximity
@@ -919,7 +919,7 @@ void test_domine_trigger_and_detonation() {
   });
 
   test::expect_throws<EntityNotFoundError>(
-      [&] { (void)ctx.em.peek_ship(plan_target_id); });
+      [&] { ctx.em.peek_ship(plan_target_id); });
 }
 
 void test_doabm_intercept() {
@@ -2040,11 +2040,17 @@ void test_doship_pipeline_types() {
 void test_doship_mcdc_branches() {
   TestContext ctx;
   ctx.with_standard_universe();
+  TurnStats stats{};
 
-  // 1. do_repair partial repair branch when 0 < ship.resource() < cost
+  // 1. do_repair partial repair branch and docked-to-non-station branch
+  shipnum_t carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
+                             .owned_by(1)
+                             .in_star_orbit(1)
+                             .build();
   shipnum_t battleship_id = TestShipBuilder(ctx.em, ShipType::STYPE_DREADNT)
                                 .owned_by(1)
                                 .in_star_orbit(1)
+                                .docked_to(carrier_id, 1)
                                 .with_crew(200, 0)
                                 .with_max_crew(200)
                                 .with_resource(1)
@@ -2056,7 +2062,8 @@ void test_doship_mcdc_branches() {
     test::expect_le(s.damage(), 50);
   });
 
-  // 2. do_ap out-of-fuel notification and non-god do_god guard
+  // 2. do_ap out-of-fuel notification, offline/unlanded guards, and non-god
+  // do_god guard
   shipnum_t ap_id = TestShipBuilder(ctx.em, ShipType::OTYPE_AP)
                         .owned_by(1)
                         .landed_on(1, 1, {0, 0})
@@ -2070,6 +2077,11 @@ void test_doship_mcdc_branches() {
     do_ap(s, ctx.em);
     test::expect_true(s.notified());
     test::expect_false(s.on());
+    // Offline landed AP (is_landed = T, on = F)
+    do_ap(s, ctx.em);
+    // Unlanded AP (is_landed = F)
+    s.enter_planet_orbit(1, 1);
+    do_ap(s, ctx.em);
   });
 
   // 3. do_pod in deep space (LEVEL_UNIV) is a no-op
@@ -2083,20 +2095,144 @@ void test_doship_mcdc_branches() {
     test::expect_true(pod.alive());
   });
 
-  // 4. doabm early-return guards (offline, unlanded, zero destruct)
+  // 4. do_mirror MC/DC branches (planet orbit, deep space, target states,
+  // governor mismatch)
+  shipnum_t target_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                            .owned_by(1, 2)
+                            .in_planet_orbit(1, 1)
+                            .with_size(10)
+                            .build();
+  shipnum_t mirror_id = TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR)
+                            .owned_by(1, 1)
+                            .in_planet_orbit(1, 1)
+                            .with_aim(AimedAtData::at_ship(target_id, 50))
+                            .build();
+  ctx.em.mutate_as<SpaceMirrorShip>(mirror_id, [&](SpaceMirrorShip& mirror) {
+    // Target in planet orbit, same owner but different governor
+    do_mirror(mirror, ctx.em, stats);
+
+    // Target in different star system
+    ctx.em.mutate_ship(target_id, [](Ship& t) { t.enter_star_orbit(2); });
+    do_mirror(mirror, ctx.em, stats);
+
+    // Target in deep space
+    ctx.em.mutate_ship(target_id, [](Ship& t) { t.enter_deep_space(); });
+    do_mirror(mirror, ctx.em, stats);
+
+    // Mirror aimed at different star
+    mirror.aim_at_star(2);
+    do_mirror(mirror, ctx.em, stats);
+
+    // Mirror in deep space
+    mirror.enter_deep_space();
+    do_mirror(mirror, ctx.em, stats);
+  });
+
+  // 5. dispatch_ship_subsystems bombard & repair_capacity MC/DC vectors
+  ctx.em.mutate_ship(carrier_id, [&](Ship& s) {
+    s.enter_planet_orbit(1, 1);
+    s.bombard() = 0;
+    dispatch_ship_subsystems(s, false, ctx.em, stats);
+
+    s.bombard() = 1;
+    s.set_star_destination(1);  // whatdest != LEVEL_PLAN
+    dispatch_ship_subsystems(s, false, ctx.em, stats);
+
+    s.set_planet_destination(2, 1);  // deststar != storbits
+    dispatch_ship_subsystems(s, false, ctx.em, stats);
+
+    s.set_planet_destination(1, 2);  // destpnum != pnumorbits
+    dispatch_ship_subsystems(s, false, ctx.em, stats);
+
+    s.enter_star_orbit(1);  // whatorbits != LEVEL_PLAN
+    dispatch_ship_subsystems(s, false, ctx.em, stats);
+    s.clear_destination();
+  });
+
+  // Damaged offline factory has damage() > 0 && repair_capacity() == 0
+  shipnum_t factory_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
+                             .owned_by(1)
+                             .in_star_orbit(1)
+                             .with_damage(48)
+                             .with_on(false)
+                             .build();
+  ctx.em.mutate_ship(factory_id, [&](Ship& f) {
+    dispatch_ship_subsystems(f, false, ctx.em, stats);
+    test::expect_eq(f.damage(), 48);
+  });
+
+  // 6. domissile and doabm MC/DC guards (offline, docked, retaliate=0,
+  // destruct=0, mine threat, one-way alliance)
+  shipnum_t m_guard_id = TestShipBuilder(ctx.em, ShipType::STYPE_MISSILE)
+                             .owned_by(2)
+                             .in_planet_orbit(1, 1)
+                             .with_destruct(10)
+                             .with_on(false)
+                             .build();
+  ctx.em.mutate_ship(m_guard_id, [&](Ship& m) {
+    m.alive() = false;
+    domissile(m, ctx.em);
+    m.alive() = true;
+    domissile(m, ctx.em);  // !on
+    m.on() = true;
+    m.land_on_planet(1, 1, {0, 0});
+    domissile(m, ctx.em);  // docked()
+    m.enter_planet_orbit(1, 1);
+  });
+
+  TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
+      .owned_by(2)
+      .in_planet_orbit(1, 1)
+      .with_size(1)
+      .build();
+  // One-way alliance: Player 1 allies with Player 2, but Player 2 does NOT ally
+  // with Player 1
+  ctx.em.mutate_race(1, [](Race& r) { r.declare_alliance_with(2); });
+
   shipnum_t abm_id = TestShipBuilder(ctx.em, ShipType::OTYPE_ABM)
                          .owned_by(1)
-                         .in_planet_orbit(1, 1)
+                         .landed_on(1, 1, {0, 0})
+                         .with_crew(10, 1)
+                         .with_max_crew(10)
+                         .with_guns(guntype_t::HEAVY, 5, ActiveBattery::PRIMARY)
                          .with_destruct(10)
                          .with_retaliate(5)
                          .with_on(false)
                          .build();
   ctx.em.mutate_ship(abm_id, [&](Ship& abm) {
+    abm.alive() = false;
     doabm(abm, ctx.em);
-    abm.on() = 1;
-    doabm(abm, ctx.em);  // Still in orbit (not landed)
-    test::expect_eq(abm.destruct(), 10);
+    abm.alive() = true;
+    doabm(abm, ctx.em);  // !on
+    abm.on() = true;
+    abm.retaliate() = 0;
+    doabm(abm, ctx.em);  // !retaliate
+    abm.retaliate() = 5;
+    abm.consume_destruct(10);
+    doabm(abm, ctx.em);  // !destruct
+    abm.add_destruct(10);
+    doabm(abm, ctx.em);  // Fires at mine and m_guard_id under one-way alliance
+    test::expect_lt(abm.destruct(), 10);
   });
+
+  // 7. Bug #4 regression test: Expendable probe lost in deep space out-of-fuel
+  // during moveship must not increment power stats
+  shipnum_t doomed_probe_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
+                                  .owned_by(2)
+                                  .in_deep_space({500.0, 500.0})
+                                  .with_fuel(0.0)
+                                  .with_speed(9)
+                                  .build();
+  TurnStats hazard_stats{};
+  {
+    auto barrier = ctx.em.create_deletion_barrier();
+    ctx.em.mutate_ship(doomed_probe_id, [&](Ship& probe) {
+      probe.set_star_destination(1);
+      doship(probe, /*update=*/true, ctx.em, hazard_stats);
+      test::expect_false(probe.alive());
+    });
+  }
+  test::expect_eq(hazard_stats.power_stats(player_t{2}).ships_owned, 0U);
 }
 
 }  // namespace

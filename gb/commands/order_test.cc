@@ -265,6 +265,10 @@ void test_order_specialty_ships() {
 
   ctx.assert_dispatch_success(
       g, {"order", std::format("#{}", missile_id.value), "scatter"});
+  ctx.assert_dispatch_success(g, {"order", std::format("#{}", missile_id.value),
+                                  "impact", "badcoords"});
+  ctx.assert_dispatch_success(
+      g, {"order", std::format("#{}", missile_id.value), "evade", "on"});
   ctx.em.clear_cache();
   missile = ctx.em.peek_ship(missile_id)->as<MissileShip>();
   test::expect_ne(missile, nullptr);
@@ -310,6 +314,8 @@ void test_order_specialty_ships() {
   ctx.assert_dispatch_success(
       g, {"order", std::format("#{}", trans_id.value), "transport", "1"});
   ctx.assert_dispatch_success(
+      g, {"order", std::format("#{}", trans_id.value), "transport", "#1"});
+  ctx.assert_dispatch_success(
       g, {"order", std::format("#{}", trans_id.value), "switch"});
   ctx.em.clear_cache();
   const auto* trans = ctx.em.peek_ship(trans_id)->as<TransporterShip>();
@@ -317,7 +323,7 @@ void test_order_specialty_ships() {
 
   g.out.str("");
   ctx.assert_dispatch_success(
-      g, {"order", std::format("#{}", trans_id.value), "transport", "30"});
+      g, {"order", std::format("#{}", trans_id.value), "transport", "#30"});
   test::expect_contains(g.out.str(), "cannot transport to itself");
   ctx.em.clear_cache();
   test::expect_eq(
@@ -398,6 +404,12 @@ void test_order_specialty_ships() {
   test::expect_eq(terra->shipclass(), "1234c");
   test::expect_eq(terra->index(), 0U);
 
+  ctx.assert_dispatch_success(
+      g, {"order", std::format("#{}", terra_id.value), "move", "s"});
+  ctx.em.clear_cache();
+  test::expect_eq(
+      ctx.em.peek_ship(terra_id)->as<TerraformerShip>()->shipclass(), "s");
+
   // Move truncation after 'c' and invalid move characters
   g.out.str("");
   ctx.assert_dispatch_success(
@@ -414,6 +426,11 @@ void test_order_specialty_ships() {
       g, {"order", std::format("#{}", terra_id.value), "move", "12x"});
   test::expect_contains(g.out.str(), "is not a valid move direction");
 
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"order", std::format("#{}", terra_id.value), "move", "120"});
+  test::expect_contains(g.out.str(), "is not a valid move direction");
+
   std::println(std::cout, "    ✓ Specialty ship orders verified");
 }
 
@@ -428,15 +445,19 @@ void test_order_factory_activation_and_errors() {
   g.set_snum(1);
   g.set_pnum(1);
 
-  // 1. Landed Factory on Earth activated via "order #60 on"
+  // 1. Landed Factory on Earth (starts damaged at 75% like newly built
+  // factories; can be turned off while offline and activated while damaged)
   auto f1 = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY, 60)
                 .owned_by(1)
                 .named("PlanetFact")
                 .landed_on(1, 1, {0, 0})
                 .with_crew(5, 0)
+                .with_damage(75)
                 .with_on(false)
                 .build_handle();
   f1->build_cost() = 50;
+
+  ctx.assert_dispatch_success(g, {"order", "#60", "off"});
 
   const auto initial_res = ctx.em.peek_planet(1, 1)->info(1).resource;
   g.out.str("");
@@ -508,12 +529,10 @@ void test_order_factory_activation_and_errors() {
   ctx.assert_dispatch_success(g, {"order", "#64", "evade", "on"});
   test::expect_contains(g.out.str(), "has no crew");
 
-  // 5. Capability & validation rejection paths on a Factory (#60) and Missile
-  // (#10)
+  // 5. Capability & validation rejection paths on a Factory (#60)
   ctx.assert_dispatch_success(g, {"order", "#60", "defense", "on"});
   ctx.assert_dispatch_success(g, {"order", "#60", "scatter"});
   ctx.assert_dispatch_success(g, {"order", "#60", "impact", "1,1"});
-  ctx.assert_dispatch_success(g, {"order", "#10", "impact", "badcoords"});
   ctx.assert_dispatch_success(g, {"order", "#60", "jump", "on"});
   ctx.assert_dispatch_success(g, {"order", "#60", "protect", "#1"});
   ctx.assert_dispatch_success(g, {"order", "#60", "switch"});
@@ -523,6 +542,8 @@ void test_order_factory_activation_and_errors() {
   ctx.assert_dispatch_success(g, {"order", "#60", "focus", "on"});
   ctx.assert_dispatch_success(g, {"order", "#60", "laser", "on", "5"});
   ctx.assert_dispatch_success(g, {"order", "#1", "merchant", "99"});
+  ctx.assert_dispatch_success(g, {"order", "#1", "merchant", "-1"});
+  ctx.assert_dispatch_success(g, {"order", "#1", "merchant", "bad"});
   ctx.assert_dispatch_success(g, {"order", "#60", "speed", "5"});
   ctx.assert_dispatch_success(g, {"order", "#1", "speed", "abc"});
   ctx.assert_dispatch_success(g, {"order", "#60", "salvo", "1"});
@@ -533,6 +554,10 @@ void test_order_factory_activation_and_errors() {
   ctx.assert_dispatch_success(g, {"order", "#60", "trigger", "5"});
   ctx.assert_dispatch_success(g, {"order", "#60", "transport", "1"});
   ctx.assert_dispatch_success(g, {"order", "#60", "aim", "/Sol"});
+  ctx.assert_dispatch_success(g, {"order", "#60", "evade", "on"});
+  ctx.assert_dispatch_success(g, {"order", "#1", "protect", "bad"});
+  ctx.assert_dispatch_success(g, {"order", "#1", "protect", "2bad"});
+  ctx.assert_dispatch_success(g, {"order", "#1", "protect", "0"});
 
   // Telescope (#45) aimed at ship (#1) and out-of-range star (/Vega)
   ctx.assert_dispatch_success(g, {"order", "#45", "aim", "#1"});
@@ -559,8 +584,8 @@ void test_navigation_and_combat_order_mcdc_and_json() {
   g.set_snum(1);
   g.set_pnum(1);
 
-  // 1. Navigate with turns == 0 disables navigation rather than leaving on=true
-  // with turns=0; bearing >= 360 wraps modulo 360
+  // 1. Navigate with turns == 0 or invalid args disables navigation;
+  // bearing >= 360 wraps modulo 360
   ctx.assert_dispatch_success(g, {"order", "#1", "navigate", "450", "3"});
   ctx.em.clear_cache();
   test::expect_true(ctx.em.peek_ship(1)->navigate().on);
@@ -572,8 +597,13 @@ void test_navigation_and_combat_order_mcdc_and_json() {
   test::expect_false(ctx.em.peek_ship(1)->navigate().on);
   test::expect_eq(ctx.em.peek_ship(1)->navigate().turns, 0U);
 
-  // 2. Destination edge cases: unexplored system planet, invalid place,
-  // out-of-range target ship, docked ship, missing destination arg
+  ctx.assert_dispatch_success(g, {"order", "#1", "navigate", "bad", "3"});
+  ctx.assert_dispatch_success(g, {"order", "#1", "navigate", "90", "bad"});
+
+  // 2. Destination edge cases: explored vs unexplored foreign system planet,
+  // invalid place, out-of-range target ship, docked ship, missing arg
+  ctx.assert_dispatch_success(
+      g, {"order", "#1", "destination", "/Vega/Vega Prime"});
   ctx.em.mutate_star(2, [](Star& vega) { vega.clear_all_explored(); });
   g.out.str("");
   ctx.assert_dispatch_success(
@@ -599,7 +629,8 @@ void test_navigation_and_combat_order_mcdc_and_json() {
   ctx.assert_dispatch_success(g, {"order", "#1", "destination"});
 
   // 3. Jump edge cases: no hyperdrive, destination not star/planet, unmounted
-  // charging display, and insufficient max_fuel_capacity warning
+  // charging display, long-range mounted crystal jump (dist > distfac), and
+  // insufficient max_fuel_capacity warning
   const auto no_hd_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 71)
                             .owned_by(1, 1)
                             .in_planet_orbit(1, 1)
@@ -616,6 +647,12 @@ void test_navigation_and_combat_order_mcdc_and_json() {
   g.out.str("");
   ctx.assert_dispatch_success(g, {"order", "#1", "jump", "on"});
   test::expect_contains(g.out.str(), "Destination must be star or planet.");
+
+  ctx.em.mutate_ship(1, [](Ship& s) {
+    s.set_coordinates({50000.0, 0.0});
+    s.set_star_destination(2);
+  });
+  ctx.assert_dispatch_success(g, {"order", "#1", "jump"});
 
   ctx.em.mutate_ship(1, [](Ship& s) {
     s.mounted() = false;
@@ -643,6 +680,11 @@ void test_navigation_and_combat_order_mcdc_and_json() {
   test::expect_contains(g.out.str(), "You do not have a crystal mounted.");
   ctx.em.mutate_ship(1, [](Ship& s) { s.mounted() = true; });
   ctx.assert_dispatch_success(g, {"order", "#1", "laser", "on"});
+  ctx.assert_dispatch_success(g, {"order", "#1", "laser", "on", "bad"});
+  ctx.assert_dispatch_success(g, {"order", "#1", "laser"});
+  ctx.assert_dispatch_success(g, {"order", "#1", "focus"});
+  ctx.assert_dispatch_success(g, {"order", "#1", "defense"});
+  ctx.assert_dispatch_success(g, {"order", "#1", "evade"});
 
   g.out.str("");
   ctx.assert_dispatch_success(
@@ -854,6 +896,8 @@ void test_special_ship_order_mcdc_and_notices() {
   test::expect_contains(g.out.str(), "No longer receiving.");
   ctx.assert_dispatch_success(
       g, {"order", std::format("#{}", trans_id), "transport"});
+  ctx.assert_dispatch_success(
+      g, {"order", std::format("#{}", trans_id), "evade", "on"});
 
   const auto mine_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE, 86)
                            .owned_by(1, 1)
@@ -873,6 +917,8 @@ void test_special_ship_order_mcdc_and_notices() {
   ctx.assert_dispatch_success(g, {"order", std::format("#{}", mine_id), "off"});
   ctx.assert_dispatch_success(
       g, {"order", std::format("#{}", mine_id), "trigger"});
+  ctx.assert_dispatch_success(
+      g, {"order", std::format("#{}", mine_id), "trigger", "0"});
   ctx.assert_dispatch_success(
       g, {"order", std::format("#{}", mine_id), "trigger", "bad"});
 

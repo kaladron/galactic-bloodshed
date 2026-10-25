@@ -1190,17 +1190,16 @@ struct std::formatter<UniverseCoordinates, CharT> {
  */
 export constexpr std::optional<shipnum_t>
 string_to_shipnum(std::string_view s) {
-  while (s.size() > 1 && s.front() == '#') {
+  if (s.starts_with('#')) {
     s.remove_prefix(1);
   }
-
-  if (!s.empty() && std::isdigit(s.front())) {
-    int val = std::stoi(std::string(s.begin(), s.end()));
-    if (val > 0) {
-      return shipnum_t{static_cast<shipnum_t::value_type>(val)};
-    }
+  shipnum_t::value_type val = 0;
+  const auto* end = s.data() + s.size();
+  const auto [ptr, ec] = std::from_chars(s.data(), end, val);
+  if (ec == std::errc{} && ptr == end && val > 0) {
+    return shipnum_t{val};
   }
-  return {};
+  return std::nullopt;
 }
 
 /// \brief Parses a 2D sector coordinate range string ("x,y" or "xl:xh,yl:yh")

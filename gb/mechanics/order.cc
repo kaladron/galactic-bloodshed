@@ -152,8 +152,7 @@ std::expected<OrderUpdate, OrderError> order_jump(const command_t& argv,
     ship.hyper_drive().on = 0;
     return OrderUpdate{};
   }
-  if (ship.whatdest() != ScopeLevel::LEVEL_STAR &&
-      ship.whatdest() != ScopeLevel::LEVEL_PLAN) {
+  if (!ship.has_celestial_destination()) {
     return std::unexpected(OrderError{
         .reason = OrderErrorReason::DestinationMustBeStarOrPlanet,
     });
@@ -170,10 +169,7 @@ std::expected<OrderUpdate, OrderError> order_protect(const command_t& argv,
                                                      Ship& ship) {
   std::optional<shipnum_t> target_ship{std::nullopt};
   if (argv.size() > 3) {
-    if (auto target_num = string_to_shipnum(argv[3]);
-        target_num && *target_num > 0) {
-      target_ship = *target_num;
-    }
+    target_ship = string_to_shipnum(argv[3]);
   }
   if (target_ship == ship.number()) {
     return std::unexpected(OrderError{
@@ -262,8 +258,7 @@ set_ship_follow_destination(EntityManager& em, Ship& ship,
 std::expected<OrderUpdate, OrderError>
 set_celestial_destination(EntityManager& em, Ship& ship, const Place& where) {
   /* to foil cheaters */
-  if (where.level != ScopeLevel::LEVEL_UNIV && ship.storbits() != where.snum &&
-      where.level != ScopeLevel::LEVEL_STAR &&
+  if (where.level == ScopeLevel::LEVEL_PLAN && ship.storbits() != where.snum &&
       !em.peek_star(where.snum)->is_explored_by(ship.owner())) {
     return std::unexpected(OrderError{
         .reason = OrderErrorReason::SystemUnexplored,
@@ -596,10 +591,7 @@ std::expected<OrderUpdate, OrderError> order_transport(const command_t& argv,
   }
   std::optional<shipnum_t> target{std::nullopt};
   if (argv.size() > 3) {
-    auto res = scn::scan<shipnum_t::value_type>(argv[3], "{}");
-    if (res && res->value() > 0) {
-      target = shipnum_t{res->value()};
-    }
+    target = string_to_shipnum(argv[3]);
   }
   if (target == ship.number()) {
     transporter->set_target_ship(std::nullopt);
@@ -895,7 +887,7 @@ std::string format_combat_options(const Ship& ship) {
   if (ship.focus()) out += "/focus";
   if (ship.retaliate()) out += std::format("/salvo {}", ship.retaliate());
   if (ship.protect().planet) out += "/defense";
-  if (ship.protect().on && ship.protect().ship) {
+  if (ship.protect().on) {
     out += std::format("/prot {}", *ship.protect().ship);
   }
   return out;
@@ -930,7 +922,7 @@ std::string format_specialty_options(EntityManager& em, const Ship& ship) {
         std::min<std::size_t>(terraform->index(), moves.size());
     const std::string_view remaining = moves.substr(idx);
     out += std::format("/move {}", remaining);
-    if (!remaining.empty() && remaining.back() == 'c') {
+    if (remaining.ends_with('c')) {
       out += std::format("{}c", moves.substr(0, idx));
     }
   }
@@ -964,7 +956,7 @@ struct HyperdriveJumpInfo {
 
 HyperdriveJumpInfo compute_hyperdrive_jump_info(EntityManager& em,
                                                 const Ship& ship) {
-  if (!ship.hyper_drive().on || !ship.has_celestial_destination()) {
+  if (!ship.hyper_drive().on) {
     return HyperdriveJumpInfo{};
   }
   const auto& dest_star = *em.peek_star(ship.deststar());

@@ -41,7 +41,7 @@ All kinetic guns consume $1$ unit of stored destructive ordnance (`destruct`) pe
 Energy weapons draw power directly from the ship's fuel reserves ($2.0\text{ fuel per strength point}$):
 - **Combat Lasers**: Direct-fire optical beams delivering instantaneous, high-precision strikes. When equipped with optical focus lenses, lasers achieve pinpoint armor penetration.
 - **Concentrated Energy Weapons (CEW)**: High-yield plasma and charged particle projectors that fire tunable beam discharges with calibrated focus ranges.
-- **Radiative Firing Mode**: Ships configured to fire in radiative mode (`order <ship> mode rad`) direct ionizing radiation into target hulls, disabling operational computers and inflicting severe radiation sickness on enemy crews without destroying the ship chassis.
+- **Radiative Firing Mode**: Ships and mines configured to fire in radiative mode (`order <ship> radiative`, toggled back via `order <ship> explosive`) direct ionizing radiation into target hulls, disabling operational computers and inflicting severe radiation sickness on enemy crews without destroying the ship chassis.
 
 ### Guided Ordnance and Area Denial
 - **Guided Missiles (`^`)**: Self-propelled kinetic warheads that close with target ships at point-blank range ($`D_{\text{effective}} = 0`$) before detonating their destructive payload.

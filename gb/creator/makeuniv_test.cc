@@ -156,12 +156,44 @@ void test_universe_generator_custom_names() {
   std::println(std::cout, "  ✓ Custom star and planet name injection passed");
 }
 
+void test_universe_generator_partial_planetless_and_name_cap() {
+  std::println(std::cout,
+               "Test: UniverseGenerator partial planetless chance & name cap");
+
+  const auto tmp_names =
+      std::filesystem::temp_directory_path() / "test_1005_names.txt";
+  {
+    std::ofstream out(tmp_names);
+    for (int i = 1; i <= 1005; ++i) {
+      out << "StarName_" << i << "\r\n";
+    }
+  }
+
+  Database db(":memory:");
+  GB::creator::UniverseConfig config{
+      .num_stars = 5,
+      .min_planets = 1,
+      .max_planets = 2,
+      .planetless_chance_percent = 1,
+      .auto_name_stars = true,
+      .auto_name_planets = false,
+      .star_names_file = tmp_names.string(),
+  };
+
+  GB::creator::UniverseGenerator generator(config);
+  auto result = generator.generate(db);
+  test::expect_eq(result.num_stars, 5);
+
+  std::filesystem::remove(tmp_names);
+}
+
 }  // namespace
 
 int main() {
   test_universe_generator_in_memory();
   test_universe_generator_planetless_stars();
   test_universe_generator_custom_names();
+  test_universe_generator_partial_planetless_and_name_cap();
 
   std::println(std::cout, "\n✅ All UniverseGenerator tests passed!");
   return 0;

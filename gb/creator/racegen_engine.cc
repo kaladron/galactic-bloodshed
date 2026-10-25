@@ -152,9 +152,6 @@ double sector_compat_covariance(SectorType a, SectorType b) {
 }
 
 double planet_compat_cov_multiplier(PlanetType planet, SectorType sector) {
-  if (sector < SectorType::SEC_SEA || sector > SectorType::SEC_PLATED) {
-    return 1.0;
-  }
   // TODO(C++26): Use std::inplace_vector when it lands in libc++ and make
   // constexpr when P3372 (constexpr containers and adaptors) lands.
   static const std::flat_map<PlanetType, SectorCompatibilities> cov_map = {
@@ -396,9 +393,6 @@ RacegenEngine::RacegenEngine() {
 RaceEnrollmentSpec
 RacegenEngine::create_default_spec(bool metamorph) const noexcept {
   RaceEnrollmentSpec spec{};
-  spec.name = "Unknown";
-  spec.password = "XXXX";
-  spec.address = "Unknown";
   spec.home_planet_type = PlanetType::EARTH;
   spec.is_god = false;
   spec.is_guest = false;
@@ -542,22 +536,17 @@ std::vector<std::string> RacegenEngine::validate(const RaceEnrollmentSpec& spec,
     errors.push_back("Metamorphs are required to have one sex.");
   }
 
-  // 3. Name validation
-  if (spec.name.empty()) {
-    errors.push_back("Use a non-empty name.");
-  }
-
-  // 4. Privileges
+  // 3. Privileges
   if (is_player && (spec.is_god || spec.is_guest)) {
     errors.push_back("Players may not create non-normal races.");
   }
 
-  // 5. Home planet validity
+  // 4. Home planet validity
   if (!is_habitable_home_planet(spec.home_planet_type)) {
     errors.push_back("Home planet type out of valid range.");
   }
 
-  // 6. Sector compatibilities
+  // 5. Sector compatibilities
   const bool is_jovian = (spec.home_planet_type == PlanetType::GASGIANT);
 
   if (!is_jovian && spec.sector_compatibilities.plated != 1.0) {
@@ -580,17 +569,19 @@ std::vector<std::string> RacegenEngine::validate(const RaceEnrollmentSpec& spec,
     }
   }
 
-  // 7. Rigorous checking
+  // 6. Rigorous checking
   if (rigorous) {
+    if (spec.name.empty()) {
+      errors.push_back("Use a non-empty name.");
+    }
+
     if (spec.password.length() < MIN_PASSWORD_LENGTH) {
       errors.push_back(std::format(
           "Passwords are required to be at least {} characters long.",
           MIN_PASSWORD_LENGTH));
-    } else if (spec.password == "XXXX") {
-      errors.push_back("You must change your password from the default.");
     }
 
-    if (spec.address == "Unknown" || spec.address.empty()) {
+    if (spec.address.empty()) {
       errors.push_back("You must change your email address.");
     }
 

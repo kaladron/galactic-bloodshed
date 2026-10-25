@@ -160,15 +160,7 @@ void test_validation_rules() {
                     "should reject absorb on normal race");
   spec.absorb = false;
 
-  // 3. Name validation
-  spec.name = "";
-  errors = engine.validate(spec, true, false);
-  test::expect_true(!errors.empty() &&
-                        errors[0].contains("Use a non-empty name"),
-                    "should reject empty name");
-  spec.name = "Terrans";
-
-  // 4. Non-habitable planet (Asteroid)
+  // 3. Non-habitable planet (Asteroid)
   spec.home_planet_type = PlanetType::ASTEROID;
   errors = engine.validate(spec, true, false);
   test::expect_true(
@@ -177,7 +169,7 @@ void test_validation_rules() {
       "should reject asteroid as home planet");
   spec.home_planet_type = PlanetType::EARTH;
 
-  // 5. Jovian sector restrictions
+  // 4. Jovian sector restrictions
   spec.sector_compatibilities.gas = 0.5;
   errors = engine.validate(spec, true, false);
   test::expect_true(
@@ -187,21 +179,29 @@ void test_validation_rules() {
       "should reject gas compatibility on non-Jovian planet");
   spec.sector_compatibilities.gas = 0.0;
 
-  // 6. Rigorous: default password
-  spec.password = "XXXX";
+  // 5. Rigorous: empty name
+  spec.name = "";
+  errors = engine.validate(spec, true, true);
+  test::expect_true(!errors.empty() &&
+                        errors[0].contains("Use a non-empty name"),
+                    "should reject empty name in rigorous mode");
+  spec.name = "Terrans";
+
+  // 6. Rigorous: short/empty password
+  spec.password = "";
   errors = engine.validate(spec, true, true);
   test::expect_true(
       !errors.empty() &&
-          errors[0].contains("change your password from the default"),
-      "should reject default password XXXX in rigorous mode");
+          errors[0].contains("Passwords are required to be at least"),
+      "should reject empty password in rigorous mode");
   spec.password = "validpass";
 
-  // 7. Rigorous: default address
-  spec.address = "Unknown";
+  // 7. Rigorous: empty address
+  spec.address = "";
   errors = engine.validate(spec, true, true);
   test::expect_true(!errors.empty() &&
                         errors[0].contains("change your email address"),
-                    "should reject default address Unknown in rigorous mode");
+                    "should reject empty address in rigorous mode");
   spec.address = "player@game.org";
 
   // 8. Rigorous: negative points remaining
@@ -334,6 +334,63 @@ void test_archetypes_valid_and_within_budget() {
   }
 }
 
+void test_player_privilege_validation() {
+  GB::creator::RacegenEngine engine;
+  auto spec = engine.create_default_spec(false);
+  spec.name = "Olympians";
+  spec.sector_compatibilities.land = 1.0;
+
+  spec.is_god = true;
+  auto errors = engine.validate(spec, /*is_player=*/true, /*rigorous=*/false);
+  test::expect_true(
+      !errors.empty() &&
+          errors[0].contains("Players may not create non-normal races"),
+      "player validation must reject God race");
+  test::expect_true(
+      engine.validate(spec, /*is_player=*/false, /*rigorous=*/false).empty(),
+      "admin validation must allow God race");
+
+  spec.is_god = false;
+  spec.is_guest = true;
+  errors = engine.validate(spec, /*is_player=*/true, /*rigorous=*/false);
+  test::expect_true(
+      !errors.empty() &&
+          errors[0].contains("Players may not create non-normal races"),
+      "player validation must reject Guest race");
+}
+
+void test_jovian_and_terrestrial_sector_validation() {
+  GB::creator::RacegenEngine engine;
+
+  // 1. Jovian race with non-gas sector compatibility is rejected
+  auto jovian = engine.create_default_spec(false);
+  jovian.name = "Jovians";
+  jovian.home_planet_type = PlanetType::GASGIANT;
+  jovian.sector_compatibilities = {.land = 0.5, .gas = 1.0, .plated = 0.0};
+  auto errors = engine.validate(jovian, /*is_player=*/true, /*rigorous=*/false);
+  test::expect_true(
+      !errors.empty() &&
+          errors[0].contains(
+              "Jovian races may have no compatibility other than gas"),
+      "Jovian race must reject non-gas sector compatibility");
+
+  // 2. Terrestrial race with only plated compatibility is rejected in rigorous
+  // validation
+  auto terran = engine.create_default_spec(false);
+  terran.name = "Terrans";
+  terran.password = "validpass";
+  terran.address = "player@game.org";
+  errors = engine.validate(terran, /*is_player=*/true, /*rigorous=*/true);
+  test::expect_true(
+      std::ranges::any_of(errors,
+                          [](const std::string& e) {
+                            return e.contains(
+                                "at least one sector type besides plated");
+                          }),
+      "rigorous validation must reject terrestrial race with only plated "
+      "compatibility");
+}
+
 }  // namespace
 
 int main() {
@@ -343,6 +400,8 @@ int main() {
   test_sector_compatibility_costs();
   test_validation_rules();
   test_archetypes_valid_and_within_budget();
+  test_player_privilege_validation();
+  test_jovian_and_terrestrial_sector_validation();
 
   std::println(std::cout, "✅ All RacegenEngine tests passed!");
   return 0;

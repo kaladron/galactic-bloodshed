@@ -19,8 +19,7 @@ void test_default_session_state() {
   std::ostringstream out;
   GB::creator::RacegenSession session(in, out);
 
-  test::expect_eq(session.spec().name, "Unknown",
-                  "default name must be Unknown");
+  test::expect_true(session.spec().name.empty(), "default name must be empty");
   test::expect_eq(session.spec().home_planet_type, PlanetType::EARTH,
                   "default planet must be Earth");
   test::expect_false(session.spec().metamorph, "default race must be Normal");
@@ -528,6 +527,14 @@ void test_archetype_lookup_and_command() {
   test::expect_true(out.str().contains("Jovian Gas Floater"),
                     "preset table must include Jovian Gas Floater");
 
+  // 2.5. Loading an archetype when name is still empty adopts archetype name,
+  // and 'rand' suffix is supported
+  test::expect_true(GB::creator::find_archetype("3x") == nullptr,
+                    "trailing non-digits in numeric index must return nullptr");
+  test::expect_true(session.execute_command("archetype 3 rand"));
+  test::expect_eq(session.spec().name, "Metamorphic Colossus",
+                  "empty default name must be replaced by archetype name");
+
   // 3. Preserve customized identity/credentials when loading an archetype
   session.execute_command("modify name CustomEmpire");
   session.execute_command("modify password secretpass");
@@ -560,6 +567,52 @@ void test_archetype_lookup_and_command() {
   test::expect_eq(session.spec().home_planet_type, PlanetType::GASGIANT);
 }
 
+void test_modify_field_abbreviations_and_input_validation() {
+  std::istringstream in;
+  std::ostringstream out;
+  GB::creator::RacegenSession session(in, out);
+
+  // Fractional fertilize input (0 <= f <= 1.0 scales by 100)
+  test::expect_true(session.execute_command("modify fert 0.5"));
+  test::expect_eq(session.spec().fertilize, 50);
+  test::expect_true(session.execute_command("modify fert 0"));
+  test::expect_eq(session.spec().fertilize, 0);
+
+  // Invalid numeric and trailing-character inputs for double and int fields
+  test::expect_false(session.modify_field("mass", "abc"));
+  test::expect_false(session.modify_field("mass", "1.5kg"));
+  test::expect_false(session.modify_field("fight", "abc"));
+  test::expect_false(session.modify_field("fight", "10x"));
+}
+
+void test_enroll_guest_and_validation_failure() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  GB::creator::EnrollmentService service(em);
+
+  std::istringstream in;
+  std::ostringstream out;
+  GB::creator::RacegenSession session(in, out, &service);
+
+  // Normal player with an invalid spec fails validation on enroll
+  session.mutable_spec().home_planet_type = PlanetType::ASTEROID;
+  auto fail_res = session.enroll();
+  test::expect_false(fail_res.success);
+  test::expect_true(fail_res.message.contains("validation errors"));
+  session.mutable_spec().home_planet_type = PlanetType::EARTH;
+
+  // Guest race with valid fields passes validation check inside enroll
+  session.mutable_spec().is_guest = true;
+  session.modify_field("name", "Visitors");
+  session.modify_field("pass", "guestpass");
+  session.modify_field("addr", "guest@galaxy.org");
+  session.modify_field("land", "100%");
+  auto guest_res = session.enroll();
+  test::expect_false(guest_res.success,
+                     "first enrolled race in empty DB still requires God");
+}
+
 }  // namespace
 
 int main() {
@@ -585,6 +638,8 @@ int main() {
   test_standalone_save_and_load_race_spec();
   test_default_racegen_json_filename();
   test_archetype_lookup_and_command();
+  test_modify_field_abbreviations_and_input_validation();
+  test_enroll_guest_and_validation_failure();
 
   std::println(std::cout, "✅ All RacegenSession tests passed!");
   return 0;

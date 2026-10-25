@@ -96,15 +96,14 @@ void UniverseGenerator::load_name_lists() {
 }
 
 std::string UniverseGenerator::next_star_name(starnum_t snum) {
-  if (config_.auto_name_stars && !star_names_.empty() &&
-      star_name_cursor_ < star_indices_.size()) {
+  if (config_.auto_name_stars && star_name_cursor_ < star_indices_.size()) {
     return star_names_[star_indices_[star_name_cursor_++]];
   }
   return std::format("Star {}", snum.value);
 }
 
 std::string UniverseGenerator::next_planet_name(planetnum_t pnum) {
-  if (config_.auto_name_planets && !planet_names_.empty() &&
+  if (config_.auto_name_planets &&
       planet_name_cursor_ < planet_indices_.size()) {
     return planet_names_[planet_indices_[planet_name_cursor_++]];
   }

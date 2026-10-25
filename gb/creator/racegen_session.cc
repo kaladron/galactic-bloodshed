@@ -292,7 +292,7 @@ bool RacegenSession::apply_archetype(std::string_view query, bool randomize) {
   RaceEnrollmentSpec loaded =
       arch->to_enrollment_spec(arch->default_planet, randomize);
 
-  if (!saved_name.empty() && saved_name != "New Empire") {
+  if (!saved_name.empty()) {
     loaded.name = std::move(saved_name);
   }
   loaded.password = std::move(saved_pass);
@@ -326,7 +326,7 @@ bool RacegenSession::do_archetype(std::string_view args) {
   auto last_space = trimmed.find_last_of(" \t");
   if (last_space != std::string_view::npos) {
     std::string_view suffix = trim(trimmed.substr(last_space));
-    if (iequals(suffix, "random") || iequals(suffix, "rand")) {
+    if (to_lower(suffix).starts_with("rand")) {
       randomize = true;
       query = trim(trimmed.substr(0, last_space));
     }
@@ -414,11 +414,8 @@ bool RacegenSession::do_load(std::string_view args) {
     target_file = std::string(DEFAULT_RACEGEN_FILENAME);
   } else {
     target_file = std::string(filename);
-    if (!target_file.ends_with(".json") &&
-        !std::filesystem::exists(target_file)) {
-      if (std::filesystem::exists(target_file + ".json")) {
-        target_file += ".json";
-      }
+    if (!target_file.ends_with(".json")) {
+      target_file += ".json";
     }
   }
 
@@ -532,7 +529,7 @@ bool RacegenSession::modify_field(std::string_view field_name,
       if (backup.metamorph) {
         spec_.number_sexes = 2;
       }
-      if (spec_.iq == 0 && spec_.iq_limit > 0) {
+      if (spec_.iq == 0) {
         spec_.iq = spec_.iq_limit;
         spec_.iq_limit = 0;
       }
@@ -542,7 +539,7 @@ bool RacegenSession::modify_field(std::string_view field_name,
       spec_.pods = true;
       spec_.collective_iq = true;
       spec_.number_sexes = 1;
-      if (spec_.iq_limit == 0 && spec_.iq > 0) {
+      if (spec_.iq_limit == 0) {
         spec_.iq_limit = spec_.iq;
         spec_.iq = 0;
       }
@@ -591,7 +588,7 @@ bool RacegenSession::modify_field(std::string_view field_name,
     }
     if (auto num = parse_number<double>(num_str)) {
       double f = *num;
-      if (f <= 1.0 && f > 0.0) {
+      if (f <= 1.0) {
         f *= 100.0;
       }
       spec_.fertilize = static_cast<fertilize_t>(std::round(f));

@@ -1461,7 +1461,8 @@ launch_from_carrier(EntityManager& em, Ship& s) {
 
 std::expected<LaunchShipResult, LaunchError>
 undock_moored_ship(EntityManager& em, Ship& s, player_t player, bool god) {
-  const auto* s2_peek = em.peek_ship(*s.destshipno());
+  const shipnum_t partner_id = *s.destshipno();
+  const auto* s2_peek = em.peek_ship(partner_id);
 
   const bool use_univ_ap = (s2_peek->whatorbits() == ScopeLevel::LEVEL_UNIV);
   if (use_univ_ap) {
@@ -1480,7 +1481,12 @@ undock_moored_ship(EntityManager& em, Ship& s, player_t player, bool god) {
 
   const std::string s_str = std::format("{}", s);
   const std::string s2_str = std::format("{}", *s2_peek);
-  (void)em.unmoor_ships(s.number());
+  s.undock_from_ship();
+  em.mutate_ship(partner_id, [&](Ship& s2) {
+    if (s2.destshipno() == s.number()) {
+      s2.undock_from_ship();
+    }
+  });
 
   if (!god) {
     if (use_univ_ap) {
@@ -1698,14 +1704,15 @@ land_spaceborne_on_carrier(EntityManager& em, Ship& s, const Ship& carrier) {
         .ship_size = s.size(),
     });
   }
-  if (s.number() == carrier.number()) {
+
+  s.consume_fuel(fuel);
+  if (!em.dock_carrier(s.number(), carrier.number())) {
+    s.add_fuel(fuel);
     return std::unexpected(LandError{
         .reason = LandErrorReason::CannotDockIntoParasite,
     });
   }
 
-  s.consume_fuel(fuel);
-  (void)em.dock_carrier(s.number(), carrier.number());
   return LandShipResult{
       .mode = LandMode::LandedOnCarrier,
       .ship_display = std::format("{}", s),

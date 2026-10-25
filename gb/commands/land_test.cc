@@ -499,10 +499,12 @@ void test_land_json_and_remaining_conditions() {
   ctx.em.mutate_ship(carrier_id,
                      [](Ship& c) { c.set_coordinates({2.0, 0.0}); });
 
-  // Self-landing rejected in spaceborne mode
+  // Self-landing rejected in spaceborne mode without consuming fuel
+  const double carrier_fuel_before = ctx.em.peek_ship(carrier_id)->fuel();
   ctx.assert_dispatch_rejected(g, {"land", std::format("#{}", carrier_id.value),
                                    std::format("#{}", carrier_id.value)});
   test::expect_contains(g.out.str(), "Cannot dock a ship into its own");
+  test::expect_eq(ctx.em.peek_ship(carrier_id)->fuel(), carrier_fuel_before);
 
   const double carrier_base_mass = ctx.em.peek_ship(carrier_id)->mass();
   ctx.assert_dispatch_success(

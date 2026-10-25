@@ -571,6 +571,18 @@ void test_empire_turn_bulletins() {
   test::expect_contains(multi_victory, "Lesser winners:\n+++ [ 3] Gamma");
 }
 
+void test_detect_terminal_capabilities() {
+  using GB::presentation::detect_terminal_capabilities;
+  test::expect_false(detect_terminal_capabilities("").ansi_sgr);
+  test::expect_false(detect_terminal_capabilities("dumb").ansi_sgr);
+  const auto xterm = detect_terminal_capabilities("XTERM-256color");
+  test::expect_true(xterm.ansi_sgr && xterm.color && xterm.utf8);
+  const auto vt = detect_terminal_capabilities("vt100");
+  test::expect_true(vt.ansi_sgr && !vt.color);
+  const auto unknown = detect_terminal_capabilities("adm3a");
+  test::expect_false(unknown.ansi_sgr || unknown.color);
+}
+
 }  // namespace
 
 int main() {
@@ -580,5 +592,6 @@ int main() {
   test_planet_turn_bulletins();
   test_ship_combat_turn_bulletins();
   test_empire_turn_bulletins();
+  test_detect_terminal_capabilities();
   return 0;
 }

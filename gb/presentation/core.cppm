@@ -71,17 +71,17 @@ struct TerminalCapabilities {
 detect_terminal_capabilities(std::string_view term) noexcept {
   auto contains_ci = [](std::string_view haystack,
                         std::string_view needle) constexpr noexcept {
-    if (needle.empty() || haystack.size() < needle.size()) {
+    if (haystack.size() < needle.size()) {
       return false;
     }
     for (std::size_t i = 0; i <= haystack.size() - needle.size(); ++i) {
       bool match = true;
       for (std::size_t j = 0; j < needle.size(); ++j) {
         char a = haystack[i + j];
-        char b = needle[j];
-        if (a >= 'A' && a <= 'Z') a = static_cast<char>(a - 'A' + 'a');
-        if (b >= 'A' && b <= 'Z') b = static_cast<char>(b - 'A' + 'a');
-        if (a != b) {
+        if (a >= 'A' && a <= 'Z') {
+          a = static_cast<char>(a - 'A' + 'a');
+        }
+        if (a != needle[j]) {
           match = false;
           break;
         }
@@ -94,16 +94,19 @@ detect_terminal_capabilities(std::string_view term) noexcept {
   if (term.empty() || contains_ci(term, "dumb")) {
     return {};
   }
+  constexpr std::array<std::string_view, 12> COLOR_TERMS = {
+      "color", "xterm",     "rxvt",  "tmux",    "screen",  "linux",
+      "ansi",  "alacritty", "kitty", "wezterm", "ghostty", "foot"};
+  constexpr std::array<std::string_view, 3> VT_TERMS = {"vt100", "vt102",
+                                                        "vt220"};
   const bool color =
-      contains_ci(term, "color") || contains_ci(term, "xterm") ||
-      contains_ci(term, "rxvt") || contains_ci(term, "tmux") ||
-      contains_ci(term, "screen") || contains_ci(term, "linux") ||
-      contains_ci(term, "ansi") || contains_ci(term, "alacritty") ||
-      contains_ci(term, "kitty") || contains_ci(term, "wezterm") ||
-      contains_ci(term, "ghostty") || contains_ci(term, "foot");
-  const bool ansi_sgr = color || contains_ci(term, "vt100") ||
-                        contains_ci(term, "vt102") ||
-                        contains_ci(term, "vt220");
+      std::ranges::any_of(COLOR_TERMS, [&](std::string_view pat) {
+        return contains_ci(term, pat);
+      });
+  const bool ansi_sgr =
+      color || std::ranges::any_of(VT_TERMS, [&](std::string_view pat) {
+        return contains_ci(term, pat);
+      });
   return TerminalCapabilities{
       .ansi_sgr = ansi_sgr,
       .color = color,

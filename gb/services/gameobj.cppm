@@ -229,6 +229,9 @@ public:
   /// fails.
   [[nodiscard]] bool check_commandable(const Ship& ship);
 
+  /// Emits the diagnostic message for a CommandableError on `ship` to `out`.
+  void report_commandable_error(const Ship& ship, CommandableError error);
+
   /// Renders a view model or command result to `out` via the active
   /// polymorphic Presenter.
   template <typename ViewModel>

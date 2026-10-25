@@ -201,14 +201,28 @@ ShipHandle ShipList::acquire_handle(EntityManager& em, shipnum_t num) {
   return ShipHandle(em.get_ship(num));
 }
 
+namespace {
+std::expected<void, CommandableError>
+check_scope_commandable(const Ship& ship, const ScopeContext& ctx,
+                        bool require_active) noexcept {
+  const auto check =
+      validate_commandable(ship, ctx.player, ctx.governor, ctx.god);
+  if (!check &&
+      (require_active || check.error() != CommandableError::ShipIrradiated)) {
+    return check;
+  }
+  return {};
+}
+}  // namespace
+
 std::expected<ShipHandle, CommandableError>
 resolve_explicit_ship(EntityManager& em, const ScopeContext& ctx,
                       std::string_view filter, bool require_active) {
   if (!GB::is_ship_number_filter(filter)) {
     return std::unexpected(CommandableError::NotOwner);
   }
-  const auto shipno = GB::parse_ship_selection(filter);
-  if (!shipno || *shipno <= 0) {
+  const auto shipno = string_to_shipnum(filter);
+  if (!shipno) {
     return std::unexpected(CommandableError::NotOwner);
   }
   const Ship* ship = nullptr;
@@ -217,10 +231,8 @@ resolve_explicit_ship(EntityManager& em, const ScopeContext& ctx,
   } catch (const EntityNotFoundError&) {
     return std::unexpected(CommandableError::NotOwner);
   }
-  const auto check =
-      validate_commandable(*ship, ctx.player, ctx.governor, ctx.god);
-  if (!check &&
-      (require_active || check.error() != CommandableError::ShipIrradiated)) {
+  if (const auto check = check_scope_commandable(*ship, ctx, require_active);
+      !check) {
     return std::unexpected(check.error());
   }
   return ShipList::acquire_handle(em, *shipno);
@@ -252,21 +264,19 @@ ScopedCommandableShips::ScopedCommandableShips(GameObj& g,
                                                bool require_active)
     : ScopedCommandableShips(g.entity_manager, g.scope_context(), filter,
                              require_active) {
-  if (GB::is_ship_number_filter(filter) && begin() == end()) {
-    if (const auto shipno = GB::parse_ship_selection(filter);
-        shipno && *shipno > 0) {
-      try {
-        const Ship& ship = *g.entity_manager.peek_ship(*shipno);
-        const auto check =
-            validate_commandable(ship, g.player(), g.governor(), g.god());
-        if (!check && (require_active ||
-                       check.error() != CommandableError::ShipIrradiated)) {
-          (void)g.check_commandable(ship);
-        }
-      } catch (const EntityNotFoundError&) {
-        g.out << std::format("You don't own ship #{}.\n", *shipno);
-      }
+  if (!GB::is_ship_number_filter(filter)) return;
+  const auto shipno = string_to_shipnum(filter);
+  if (!shipno) return;
+  if (begin() != end()) return;
+  try {
+    const Ship& ship = *g.entity_manager.peek_ship(*shipno);
+    if (const auto check =
+            check_scope_commandable(ship, g.scope_context(), require_active);
+        !check) {
+      g.report_commandable_error(ship, check.error());
     }
+  } catch (const EntityNotFoundError&) {
+    g.out << std::format("You don't own ship #{}.\n", *shipno);
   }
 }
 
@@ -283,13 +293,8 @@ void ScopedCommandableShips::Iterator::advance_to_valid() {
   while (it_ != end_) {
     try {
       const Ship& ship = *em_->peek_ship(*it_);
-      const auto check =
-          validate_commandable(ship, ctx_.player, ctx_.governor, ctx_.god);
-      const bool commandable =
-          check.has_value() ||
-          (!require_active_ &&
-           check.error() == CommandableError::ShipIrradiated);
-      if (commandable && GB::ship_matches_filter(filter_, ship)) {
+      if (check_scope_commandable(ship, ctx_, require_active_) &&
+          GB::ship_matches_filter(filter_, ship)) {
         return;
       }
     } catch (const EntityNotFoundError&) {

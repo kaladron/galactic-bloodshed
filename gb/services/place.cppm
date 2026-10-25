@@ -134,6 +134,13 @@ Place::ascend_parent_scope(EntityManager& em, const ScopeContext& ctx,
   return getplace2(em, ctx, string, ignore_explore);
 }
 
+[[nodiscard]] constexpr bool
+should_check_exploration(const ScopeContext& ctx,
+                         bool ignore_explore) noexcept {
+  if (ctx.god) return false;
+  return !ignore_explore;
+}
+
 std::expected<void, PlaceError> Place::descend_from_universe(
     EntityManager& em, const ScopeContext& ctx, std::string_view star_name,
     std::string_view remaining, const bool ignore_explore) {
@@ -141,14 +148,16 @@ std::expected<void, PlaceError> Place::descend_from_universe(
     if (star_name != star.get_name()) continue;
     level = ScopeLevel::LEVEL_STAR;
     snum = star.star_id();
-    if (ignore_explore || star.is_explored_by(ctx.player) || ctx.god) {
-      if (remaining.starts_with('/')) remaining.remove_prefix(1);
-      return getplace2(em, ctx, remaining, ignore_explore);
+    if (should_check_exploration(ctx, ignore_explore)) {
+      if (!star.is_explored_by(ctx.player)) {
+        return std::unexpected(PlaceError{
+            .kind = PlaceErrorKind::StarUnexplored,
+            .target = star.get_name(),
+        });
+      }
     }
-    return std::unexpected(PlaceError{
-        .kind = PlaceErrorKind::StarUnexplored,
-        .target = star.get_name(),
-    });
+    if (remaining.starts_with('/')) remaining.remove_prefix(1);
+    return getplace2(em, ctx, remaining, ignore_explore);
   }
   return std::unexpected(PlaceError{
       .kind = PlaceErrorKind::NoSuchStar,
@@ -165,14 +174,16 @@ std::expected<void, PlaceError> Place::descend_from_star(
     if (planet_name != star.get_planet_name(i)) continue;
     level = ScopeLevel::LEVEL_PLAN;
     pnum = i;
-    if (ignore_explore || planet.info(ctx.player).explored || ctx.god) {
-      if (remaining.starts_with('/')) remaining.remove_prefix(1);
-      return getplace2(em, ctx, remaining, ignore_explore);
+    if (should_check_exploration(ctx, ignore_explore)) {
+      if (!planet.info(ctx.player).explored) {
+        return std::unexpected(PlaceError{
+            .kind = PlaceErrorKind::PlanetUnexplored,
+            .target = star.get_planet_name(i),
+        });
+      }
     }
-    return std::unexpected(PlaceError{
-        .kind = PlaceErrorKind::PlanetUnexplored,
-        .target = star.get_planet_name(i),
-    });
+    if (remaining.starts_with('/')) remaining.remove_prefix(1);
+    return getplace2(em, ctx, remaining, ignore_explore);
   }
   return std::unexpected(PlaceError{
       .kind = PlaceErrorKind::NoSuchPlanet,

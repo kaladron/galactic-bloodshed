@@ -51,22 +51,27 @@ std::expected<void, CommandableError> validate_commandable(const Ship& ship,
   return {};
 }
 
+void GameObj::report_commandable_error(const Ship& ship,
+                                       CommandableError error) {
+  switch (error) {
+    case CommandableError::NotOwner:
+    case CommandableError::NotAuthorizedGovernor:
+      out << std::format("You don't own ship #{}.\n", ship.number());
+      break;
+    case CommandableError::ShipDead:
+      out << std::format("{} has been destroyed.\n", ship);
+      break;
+    case CommandableError::ShipIrradiated:
+      out << std::format("{} is irradiated {}% and inactive.\n", ship,
+                         ship.rad());
+      break;
+  }
+}
+
 bool GameObj::check_commandable(const Ship& ship) {
   const auto result = validate_commandable(ship, player_, governor_, god_);
   if (!result) {
-    switch (result.error()) {
-      case CommandableError::NotOwner:
-      case CommandableError::NotAuthorizedGovernor:
-        out << std::format("You don't own ship #{}.\n", ship.number());
-        break;
-      case CommandableError::ShipDead:
-        out << std::format("{} has been destroyed.\n", ship);
-        break;
-      case CommandableError::ShipIrradiated:
-        out << std::format("{} is irradiated {}% and inactive.\n", ship,
-                           ship.rad());
-        break;
-    }
+    report_commandable_error(ship, result.error());
     return false;
   }
 

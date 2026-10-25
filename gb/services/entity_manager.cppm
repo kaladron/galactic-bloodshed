@@ -73,6 +73,20 @@ class EntityHandle {
   std::function<void()> release_fn;
   bool dirty = false;
 
+  void reset() {
+    if (!entity) return;
+    if (dirty) {
+      if (std::uncaught_exceptions() == 0) {
+        save_fn(*entity);
+      }
+    }
+    if (release_fn) {
+      release_fn();
+    }
+    entity = nullptr;
+    dirty = false;
+  }
+
 public:
   EntityHandle(EntityManager* mgr, T* ent, std::function<void(const T&)> save,
                std::function<void()> release = {}, bool initial_dirty = false)
@@ -80,12 +94,7 @@ public:
         release_fn(std::move(release)), dirty(initial_dirty) {}
 
   ~EntityHandle() {
-    if (dirty && entity && save_fn && std::uncaught_exceptions() == 0) {
-      save_fn(*entity);
-    }
-    if (entity && release_fn) {
-      release_fn();
-    }
+    reset();
   }
 
   // Delete copy, allow move with proper nulling of moved-from source
@@ -98,12 +107,7 @@ public:
         dirty(std::exchange(other.dirty, false)) {}
   EntityHandle& operator=(EntityHandle&& other) noexcept {
     if (this != &other) {
-      if (dirty && entity && save_fn) {
-        save_fn(*entity);
-      }
-      if (entity && release_fn) {
-        release_fn();
-      }
+      reset();
       manager = other.manager;
       entity = std::exchange(other.entity, nullptr);
       save_fn = std::move(other.save_fn);
@@ -145,7 +149,7 @@ public:
 
   // Force save without waiting for destructor
   void save() {
-    if (entity && dirty && save_fn) {
+    if (dirty) {
       save_fn(*entity);
       dirty = false;
     }
@@ -202,17 +206,19 @@ export class EntityManager {
 
   // Internal handle access (used by mutate_* methods, EntityList, and
   // DeferredWriteScope) Throws EntityNotFoundError if entity not found
-  EntityHandle<Race> get_race(player_t player);
-  EntityHandle<Ship> get_ship(shipnum_t num);
-  EntityHandle<Planet> get_planet(starnum_t star, planetnum_t pnum);
-  EntityHandle<Star> get_star(starnum_t num);
-  EntityHandle<Commod> get_commod(int id);
-  EntityHandle<Block> get_block(player_t id);
-  EntityHandle<Power> get_power(player_t id);
-  EntityHandle<Universe> get_universe();
-  EntityHandle<ServerState> get_server_state();
-  EntityHandle<ShipExam> get_ship_exam(ShipType ship_type);
-  EntityHandle<SectorMap> get_sectormap(starnum_t star, planetnum_t pnum);
+  [[nodiscard]] EntityHandle<Race> get_race(player_t player);
+  [[nodiscard]] EntityHandle<Ship> get_ship(shipnum_t num);
+  [[nodiscard]] EntityHandle<Planet> get_planet(starnum_t star,
+                                                planetnum_t pnum);
+  [[nodiscard]] EntityHandle<Star> get_star(starnum_t num);
+  [[nodiscard]] EntityHandle<Commod> get_commod(int id);
+  [[nodiscard]] EntityHandle<Block> get_block(player_t id);
+  [[nodiscard]] EntityHandle<Power> get_power(player_t id);
+  [[nodiscard]] EntityHandle<Universe> get_universe();
+  [[nodiscard]] EntityHandle<ServerState> get_server_state();
+  [[nodiscard]] EntityHandle<ShipExam> get_ship_exam(ShipType ship_type);
+  [[nodiscard]] EntityHandle<SectorMap> get_sectormap(starnum_t star,
+                                                      planetnum_t pnum);
 
 public:
   explicit EntityManager(Database& database);

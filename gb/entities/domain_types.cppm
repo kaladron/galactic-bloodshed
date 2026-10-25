@@ -1190,7 +1190,7 @@ struct std::formatter<UniverseCoordinates, CharT> {
  */
 export constexpr std::optional<shipnum_t>
 string_to_shipnum(std::string_view s) {
-  if (s.starts_with('#')) {
+  while (s.starts_with('#')) {
     s.remove_prefix(1);
   }
   shipnum_t::value_type val = 0;

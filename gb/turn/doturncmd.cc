@@ -143,7 +143,7 @@ static void process_stars_and_planets(TurnState& state, bool update) {
         star_handle->set_planet_name(pnum, std::format("NULL-{}", pnum));
       }
     }
-    if (star_handle->get_name().empty() || star_handle->get_name()[0] == '\0') {
+    if (star_handle->get_name().empty()) {
       star_handle->set_name(std::format("NULL-{}", star));
     }
   }
@@ -191,11 +191,10 @@ void process_market_transactions(EntityManager& entity_manager) {
       const player_t bidder = *c.bidder();
       const starnum_t star_to = *c.star_to();
       const planetnum_t planet_to = *c.planet_to();
-      const auto* bidder_race = entity_manager.peek_race(bidder);
-      const auto* owner_race = entity_manager.peek_race(c.owner());
+      const auto& bidder_race = *entity_manager.peek_race(bidder);
+      const auto& owner_race = *entity_manager.peek_race(c.owner());
 
-      if (bidder_race && owner_race &&
-          (bidder_race->governor(c.bidder_gov()).money >= c.bid())) {
+      if (bidder_race.governor(c.bidder_gov()).money >= c.bid()) {
         auto [cost, dist] =
             shipping_cost(entity_manager, star_to, c.star_from(), c.bid());
 
@@ -213,18 +212,18 @@ void process_market_transactions(EntityManager& entity_manager) {
           planet.deposit_commodity(c.type(), c.amount(), bidder);
         });
 
-        const auto* star = entity_manager.peek_star(star_to);
+        const auto& star = *entity_manager.peek_star(star_to);
         const GB::presentation::MarketLotSettlementNotice notice{
             .lot = c.id(),
             .type = c.type(),
             .amount = c.amount(),
             .bid = c.bid(),
             .seller = c.owner(),
-            .seller_name = owner_race->name,
+            .seller_name = owner_race.name,
             .buyer = bidder,
-            .buyer_name = bidder_race->name,
-            .star_name = star ? star->get_name() : "unknown",
-            .planet_name = star ? star->get_planet_name(planet_to) : "unknown",
+            .buyer_name = bidder_race.name,
+            .star_name = star.get_name(),
+            .planet_name = star.get_planet_name(planet_to),
         };
         push_telegram(
             entity_manager, bidder, c.bidder_gov(),
@@ -271,9 +270,6 @@ static void process_ship_turns(TurnState& state, bool update) {
     if (update) {
       for (const Ship& s : ShipList::readonly(
                state.entity_manager, ShipList::IterationType::AllAlive)) {
-        if (s.owner() == 0) {
-          continue;
-        }
         if (s.requires_maintenance()) {
           state.entity_manager.mutate_race(s.owner(), [&](Race& r) {
             if (s.popn()) {
@@ -415,9 +411,6 @@ void calculate_victory_scores(EntityManager& entity_manager) {
 
   for (const Ship& ship :
        ShipList::readonly(entity_manager, ShipList::IterationType::AllAlive)) {
-    if (ship.owner() == 0) {
-      continue;
-    }
     victory[ship.owner()].shipcost += ship.build_cost();
     victory[ship.owner()].shiptech += ship.tech();
     victory[ship.owner()].res += ship.resource();
@@ -457,7 +450,7 @@ void advance_race_technology(Race& race, const TurnStats& stats,
 
 void update_victory_progress(Race& race, int planet_count) {
   const int threshold = std::max(1, planet_count * VICTORY_PERCENT / 100);
-  if (race.controlled_planets > 0 && race.controlled_planets >= threshold) {
+  if (race.controlled_planets >= threshold) {
     race.victory_turns++;
   } else {
     race.victory_turns = 0;
@@ -532,25 +525,22 @@ bool compute_governed_status(const Race& race, EntityManager& entity_manager) {
     return false;
   }
 
-  const auto* gov_ship = entity_manager.peek_ship(*race.Gov_ship);
-  if (!gov_ship || !gov_ship->alive() || !gov_ship->docked()) {
+  const auto& gov_ship = *entity_manager.peek_ship(*race.Gov_ship);
+  if (!gov_ship.docked()) {
     return false;
   }
 
-  // Check if docked at a planet
-  if (gov_ship->whatdest() == ScopeLevel::LEVEL_PLAN) {
+  // Check if landed on a planet
+  if (gov_ship.whatdest() == ScopeLevel::LEVEL_PLAN) {
     return true;
   }
 
   // Check if docked at a habitat that's orbiting a planet or star
-  if (gov_ship->whatorbits() == ScopeLevel::LEVEL_SHIP &&
-      gov_ship->destshipno()) {
-    const auto* habitat = entity_manager.peek_ship(*gov_ship->destshipno());
-    if (habitat && habitat->type() == ShipType::STYPE_HABITAT &&
-        (habitat->whatorbits() == ScopeLevel::LEVEL_PLAN ||
-         habitat->whatorbits() == ScopeLevel::LEVEL_STAR)) {
-      return true;
-    }
+  if (gov_ship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
+    const auto& habitat = *entity_manager.peek_ship(*gov_ship.destshipno());
+    return habitat.type() == ShipType::STYPE_HABITAT &&
+           (habitat.whatorbits() == ScopeLevel::LEVEL_PLAN ||
+            habitat.whatorbits() == ScopeLevel::LEVEL_STAR);
   }
 
   return false;
@@ -620,15 +610,15 @@ void update_von_neumann_target(EntityManager& em, TurnStats& stats) {
   stats.VN_brain.most_mad = std::nullopt;
   stats.VN_brain.total_mad = 0;
 
-  const auto* sdata = em.peek_universe();
-  if (!sdata) return;
+  const auto& sdata = *em.peek_universe();
+  std::uint32_t max_hits = 0;
 
   for (const Race& race : RaceList::readonly(em)) {
     const player_t player = race.Playernum;
-    const std::uint32_t hits = sdata->vn_hits(player);
+    const std::uint32_t hits = sdata.vn_hits(player);
     stats.VN_brain.total_mad += hits;
-    if (hits > 0 && (!stats.VN_brain.most_mad ||
-                     sdata->vn_hits(*stats.VN_brain.most_mad) <= hits)) {
+    if (hits > 0 && hits >= max_hits) {
+      max_hits = hits;
       stats.VN_brain.most_mad = player;
     }
   }
@@ -652,7 +642,7 @@ VictoryResult handle_victory(EntityManager& em, bool victory_enabled) {
       result.game_over = true;
       big_winners.insert(player);
       announcement.big_winners.push_back({.player = player, .name = race.name});
-    } else if (planet_count > 0 && race.controlled_planets >= threshold) {
+    } else if (race.controlled_planets >= threshold) {
       lesser_winners.insert(player);
       announcement.lesser_winners.push_back(
           {.player = player, .name = race.name});
@@ -673,54 +663,39 @@ VictoryResult handle_victory(EntityManager& em, bool victory_enabled) {
 }
 
 void check_technological_discoveries(EntityManager& em, Race& r) {
-  if (!r.discoveries.hyperdrive && r.tech >= TECH_HYPER_DRIVE) {
-    push_telegram_race(em, r.Playernum,
-                       "You have discovered HYPERDRIVE technology.\n");
-    r.discoveries.hyperdrive = true;
-  }
-  if (!r.discoveries.laser && r.tech >= TECH_LASER) {
-    push_telegram_race(em, r.Playernum,
-                       "You have discovered LASER technology.\n");
-    r.discoveries.laser = true;
-  }
-  if (!r.discoveries.cew && r.tech >= TECH_CEW) {
-    push_telegram_race(em, r.Playernum,
-                       "You have discovered CEW technology.\n");
-    r.discoveries.cew = true;
-  }
-  if (!r.discoveries.vn && r.tech >= TECH_VN) {
-    push_telegram_race(em, r.Playernum, "You have discovered VN technology.\n");
-    r.discoveries.vn = true;
-  }
-  if (!r.discoveries.tractor_beam && r.tech >= TECH_TRACTOR_BEAM) {
-    push_telegram_race(em, r.Playernum,
-                       "You have discovered TRACTOR BEAM technology.\n");
-    r.discoveries.tractor_beam = true;
-  }
-  if (!r.discoveries.transporter && r.tech >= TECH_TRANSPORTER) {
-    push_telegram_race(em, r.Playernum,
-                       "You have discovered TRANSPORTER technology.\n");
-    r.discoveries.transporter = true;
-  }
-  if (!r.discoveries.avpm && r.tech >= TECH_AVPM) {
-    push_telegram_race(em, r.Playernum,
-                       "You have discovered AVPM technology.\n");
-    r.discoveries.avpm = true;
-  }
-  if (!r.discoveries.cloak && r.tech >= TECH_CLOAK) {
-    push_telegram_race(em, r.Playernum,
-                       "You have discovered CLOAK technology.\n");
-    r.discoveries.cloak = true;
-  }
-  if (!r.discoveries.wormhole && r.tech >= TECH_WORMHOLE) {
-    push_telegram_race(em, r.Playernum,
-                       "You have discovered WORMHOLE technology.\n");
-    r.discoveries.wormhole = true;
-  }
-  if (!r.discoveries.crystal && r.tech >= TECH_CRYSTAL) {
-    push_telegram_race(em, r.Playernum,
-                       "You have discovered CRYSTAL technology.\n");
-    r.discoveries.crystal = true;
+  struct TechDiscoverySpec {
+    bool TechDiscoveries::* flag;
+    double threshold;
+    std::string_view message;
+  };
+
+  constexpr std::array<TechDiscoverySpec, 10> TECH_DISCOVERY_SPECS = {{
+      {&TechDiscoveries::hyperdrive, TECH_HYPER_DRIVE,
+       "You have discovered HYPERDRIVE technology.\n"},
+      {&TechDiscoveries::laser, TECH_LASER,
+       "You have discovered LASER technology.\n"},
+      {&TechDiscoveries::cew, TECH_CEW,
+       "You have discovered CEW technology.\n"},
+      {&TechDiscoveries::vn, TECH_VN, "You have discovered VN technology.\n"},
+      {&TechDiscoveries::tractor_beam, TECH_TRACTOR_BEAM,
+       "You have discovered TRACTOR BEAM technology.\n"},
+      {&TechDiscoveries::transporter, TECH_TRANSPORTER,
+       "You have discovered TRANSPORTER technology.\n"},
+      {&TechDiscoveries::avpm, TECH_AVPM,
+       "You have discovered AVPM technology.\n"},
+      {&TechDiscoveries::cloak, TECH_CLOAK,
+       "You have discovered CLOAK technology.\n"},
+      {&TechDiscoveries::wormhole, TECH_WORMHOLE,
+       "You have discovered WORMHOLE technology.\n"},
+      {&TechDiscoveries::crystal, TECH_CRYSTAL,
+       "You have discovered CRYSTAL technology.\n"},
+  }};
+
+  for (const auto& spec : TECH_DISCOVERY_SPECS) {
+    if (!(r.discoveries.*(spec.flag)) && r.tech >= spec.threshold) {
+      push_telegram_race(em, r.Playernum, spec.message);
+      r.discoveries.*(spec.flag) = true;
+    }
   }
 }
 
@@ -810,11 +785,17 @@ ScheduleCalculation compute_segment_schedule(const ServerState& state,
   return result;
 }
 
+namespace {
+bool is_turn_suppressed(bool forced) {
+  return !forced && std::filesystem::exists(PKGSTATEDIR "nogo");
+}
+}  // namespace
+
 void do_update(EntityManager& entity_manager, SessionRegistry& session_registry,
                bool force) {
   std::time_t clk = std::time(nullptr);
 
-  bool fakeit = (!force && std::filesystem::exists(PKGSTATEDIR "nogo"));
+  bool fakeit = is_turn_suppressed(force);
 
   std::string update_msg =
       std::format("{}\nDOING UPDATE...\n", format_timestamp(clk));
@@ -871,11 +852,10 @@ void do_segment(EntityManager& entity_manager,
                 SessionRegistry& session_registry, int override, int segment) {
   std::time_t clk = std::time(nullptr);
 
-  const auto* state_ptr = entity_manager.peek_server_state();
-  if (!state_ptr) return;
-  if (!override && state_ptr->segments <= 1) return;
+  const auto& server_state = *entity_manager.peek_server_state();
+  if (!override && server_state.segments <= 1) return;
 
-  bool fakeit = (!override && std::filesystem::exists(PKGSTATEDIR "nogo"));
+  bool fakeit = is_turn_suppressed(override != 0);
 
   std::string movement_msg =
       std::format("{}\nDOING MOVEMENT...\n", format_timestamp(clk));
@@ -918,10 +898,9 @@ void do_segment(EntityManager& entity_manager,
 
 void do_next_thing(EntityManager& entity_manager,
                    SessionRegistry& session_registry) {
-  const auto* state = entity_manager.peek_server_state();
-  if (!state) return;
+  const auto& state = *entity_manager.peek_server_state();
 
-  if (state->nsegments_done < state->segments)
+  if (state.nsegments_done < state.segments)
     do_segment(entity_manager, session_registry, 0, 1);
   else
     do_update(entity_manager, session_registry, false);

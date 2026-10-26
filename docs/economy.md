@@ -100,7 +100,7 @@ Empires allocate research funding on a world using the `technology` command (`te
 During each full turn update:
 1. **Treasury Solvency Check**: The star system governor's treasury must contain sufficient funds to cover the configured investment budget. If the treasury lacks funds, research fails for that turn and zero scientific progress occurs.
 2. **Fund Deduction**: The investment amount is deducted from the governor's treasury and logged under research expenditures.
-3. **Research Output Formula**: Scientific breakthroughs scale with financial funding and local planetary population: $`\Delta \text{Tech} = \frac{\text{Investment Funding}}{100} \times \left(1.0 + \log_{10}\left(\max(1, \text{Population})\right)\right)`$.
+3. **Research Output Formula**: Scientific breakthroughs scale logarithmically with financial funding and local planetary population ($`0.01 \times \log_{10}\left(\text{Investment} \times \frac{\text{Population}}{10{,}000} + 1\right)`$), in addition to the empire's passive intelligence gain ($`\text{IQ} / 100`$) each update.
 4. **Imperial Discovery**: Generated research points are added directly to the empire's global technology rating, unlocking advanced vessel blueprints, energy weapon calibers, and planetary terraforming systems.
 
 ---
@@ -141,19 +141,19 @@ Empires trade surplus commodities with other star systems and foreign powers thr
 flowchart TD
     List["1. Seller Lists Commodity Lot\nQuantity, Price, Origin Star & World"] --> Transit["2. One-Turn Delivery Transit\nLot Enters Active Market Roster"]
     Transit --> Bid["3. Buyers Place Bids\nTarget Destination World Selected"]
-    Bid --> Clearance{"4. Turn Update Clearance\nBidder Funds >= (Bid + Freight Fee)?"}
-    Clearance -->|Yes| Success["Transfer Funds to Seller Treasury\nCharge Freight Fee to Buyer\nDeliver Goods to Destination Stockpile"]
-    Clearance -->|No| Cancel["Bid Rejected\nLot Remains on Market"]
+    Bid --> Clearance{"4. Turn Update Clearance\nBidder Funds >= Bid Price?"}
+    Clearance -->|Yes| Success["Transfer Bid to Seller Treasury\nDeduct Freight Fee via Maintenance\nDeliver Goods to Destination Stockpile"]
+    Clearance -->|No| Cancel["Bid Cleared\nLot Remains on Market"]
 ```
 
 ### Freight Shipping Fees
-Transporting bulky commodities across interstellar distances incurs freight costs proportional to Cartesian spatial distance:
+Transporting bulky commodities across interstellar distances incurs freight costs based on the Euclidean distance between the origin and destination star systems, quantized down to $10{,}000$-unit increments ($r_{\text{dist}} = \lfloor \text{Distance} / 10{,}000 \rfloor \times 10{,}000$) with distance constant $\text{MERCHANT\_LENGTH} = 200{,}000$:
 
 $$\text{Distance} = \sqrt{(x_{\text{dest}} - x_{\text{origin}})^2 + (y_{\text{dest}} - y_{\text{origin}})^2}$$
 
-$$\text{Freight Fee} = \left\lfloor \frac{\text{Distance} \times \text{Bid Price}}{1000} \right\rfloor$$
+$$\text{Freight Fee} = \text{round}\left(\left(1 - e^{-r_{\text{dist}} / 200{,}000}\right) \times \text{Bid Price}\right)$$
 
-The winning bidder pays both the agreed lot price (transferred to the seller's governor) and the freight fee (deducted as logistical shipping expense).
+The winning bidder pays the agreed lot price directly from their governor's treasury (transferred to the seller's governor), while the freight fee is charged via `deduct_maintenance` (so any freight shortfall beyond remaining cash incurs the standard $1$-morale-per-$10$-deficit maintenance penalty).
 
 ---
 

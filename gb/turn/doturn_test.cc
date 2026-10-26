@@ -1392,7 +1392,8 @@ void test_doturn_mcdc_branches() {
   test::expect_eq(calc.next_update_time, 20'000);
   test::expect_eq(calc.next_segment_time, 10'900);
 
-  // 3. compute_governed_status with deep-space habitat and non-habitat carrier
+  // 3. compute_governed_status with deep-space/star-orbit habitat and
+  // non-habitat carrier
   shipnum_t deep_hab_id =
       TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT).owned_by(1).build();
   ctx.em.mutate_ship(deep_hab_id, [](Ship& s) { s.enter_deep_space(); });
@@ -1410,8 +1411,65 @@ void test_doturn_mcdc_branches() {
     r.Gov_ship = gov_id;
     test::expect_false(compute_governed_status(r, ctx.em));
   });
+  ctx.em.mutate_ship(deep_hab_id, [](Ship& s) { s.enter_star_orbit(1); });
+  test::expect_true(compute_governed_status(*ctx.em.peek_race(1), ctx.em));
   ctx.em.mutate_ship(gov_id, [&](Ship& s) { s.dock_into_carrier(carrier_id); });
   test::expect_false(compute_governed_status(*ctx.em.peek_race(1), ctx.em));
+
+  // 4. update_von_neumann_target where player 1 has more hits than player 2
+  ctx.em.mutate_universe([](Universe& u) {
+    u.set_vn_hits(1, 30);
+    u.set_vn_hits(2, 10);
+  });
+  TurnStats stats{};
+  update_von_neumann_target(ctx.em, stats);
+  test::expect_eq(stats.VN_brain.most_mad, player_t{1});
+
+  // 5. Asteroid majority ownership + uninhabited planet with orbiting ship +
+  // missiles targeting star vs planet during do_turn(update=true)
+  ctx.em.mutate_planet(1, 1, [](Planet& p) {
+    p.type() = PlanetType::ASTEROID;
+    p.info(1).numsectsowned = 20;
+  });
+  ctx.em.mutate_planet(2, 1, [](Planet& p) {
+    p.popn() = 0;
+    p.info(1).popn = 0;
+    p.info(2).popn = 0;
+  });
+  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+      .owned_by(1)
+      .in_planet_orbit(2, 1)
+      .build();
+  TestShipBuilder(ctx.em, ShipType::STYPE_MISSILE)
+      .owned_by(1)
+      .in_star_orbit(1)
+      .with_on(false)
+      .build();
+  TestShipBuilder(ctx.em, ShipType::STYPE_MISSILE)
+      .owned_by(1)
+      .in_planet_orbit(1, 1)
+      .targeting_planet(1, 1)
+      .with_on(false)
+      .build();
+
+  RecordingSessionRegistry reg;
+  do_turn(ctx.em, reg, true);
+
+  // 6. do_segment override when segments <= 1 and nogo turn suppression
+  ctx.em.mutate_server_state([](ServerState& s) {
+    s.segments = 1;
+    s.nsegments_done = 1;
+  });
+  do_segment(ctx.em, reg, /*override=*/1, /*segment=*/1);
+
+  std::filesystem::path nogo_path{PKGSTATEDIR "nogo"};
+  std::filesystem::create_directories(nogo_path.parent_path());
+  {
+    std::ofstream nogo_file(nogo_path);
+    nogo_file << "1\n";
+  }
+  do_update(ctx.em, reg, /*force=*/false);
+  std::filesystem::remove(nogo_path);
 }
 
 }  // namespace

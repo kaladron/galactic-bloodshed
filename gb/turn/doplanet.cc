@@ -34,11 +34,11 @@ advance_ground_vehicle(Ship& ship, const Planet& planet,
   }
   if (ship.shipclass()[terraform->index()] == 'c') {
     terraform->set_index(0); /* reset the orders */
-    if (ship.shipclass().empty() || ship.shipclass()[0] == 'c') {
+    if (ship.shipclass().starts_with('c')) {
       ship.on() = 0;
       return std::unexpected(GroundMovementError::EmptyOrders);
     }
-    if (ship.shipclass()[0] == 's') {
+    if (ship.shipclass().starts_with('s')) {
       ship.on() = 0;
       return std::unexpected(GroundMovementError::Stopped);
     }
@@ -49,13 +49,9 @@ advance_ground_vehicle(Ship& ship, const Planet& planet,
       calculate_ground_step(planet, order, ship.land_coords());
 
   const std::size_t next_idx = terraform->index() + 1;
-  const bool has_next = (next_idx < ship.shipclass().size() &&
-                         ship.shipclass()[next_idx] != '\0');
-  if (has_next) {
+  if (next_idx < ship.shipclass().size()) {
     terraform->set_index(next_idx);
-    const std::size_t after_next = next_idx + 1;
-    const bool is_exhausted = (after_next >= ship.shipclass().size() ||
-                               ship.shipclass()[after_next] == '\0');
+    const bool is_exhausted = (next_idx + 1 >= ship.shipclass().size());
     if (is_exhausted && !ship.notified()) {
       ship.notified() = 1;
       const std::string teleg_buf =
@@ -64,10 +60,8 @@ advance_ground_vehicle(Ship& ship, const Planet& planet,
       push_telegram(entity_manager, ship.owner(), ship.governor(), teleg_buf);
     }
   } else if (bounced) {
-    if (terraform->index() < ship.shipclass().size()) {
-      ship.shipclass()[terraform->index()] =
-          reflect_polar_order(ship.shipclass()[terraform->index()]);
-    }
+    ship.shipclass()[terraform->index()] =
+        reflect_polar_order(ship.shipclass()[terraform->index()]);
   }
   ship.set_land_coords(destination);
   return destination;
@@ -77,6 +71,16 @@ bool moveship_onplanet(Ship& ship, const Planet& planet,
                        EntityManager& entity_manager) {
   return advance_ground_vehicle(ship, planet, entity_manager).has_value();
 }
+
+namespace {
+
+void maybe_increase_planet_toxicity(Planet& planet) {
+  if (planet.toxic() < 100 && success(50)) {
+    planet.toxic() += 1;
+  }
+}
+
+}  // namespace
 
 std::expected<bool, GroundActionError>
 execute_terraforming(Ship& ship, Planet& planet, SectorMap& smap,
@@ -118,9 +122,7 @@ execute_terraforming(Ship& ship, Planet& planet, SectorMap& smap,
     /* only condition can be terraformed, type doesn't change */
     s.terraform(race.likesbest);
     ship.consume_fuel(FUEL_COST_TERRA);
-    if (success(50) && (planet.toxic() < 100)) {
-      planet.toxic() += 1;
-    }
+    maybe_increase_planet_toxicity(planet);
     if ((ship.fuel() < static_cast<double>(FUEL_COST_TERRA)) &&
         (!ship.notified())) {
       ship.notified() = 1;
@@ -167,9 +169,7 @@ execute_plowing(Ship& ship, Planet& planet, SectorMap& smap,
                   std::format(" K{} is full of zealots!!!", ship.number()));
   }
   ship.consume_fuel(FUEL_COST_PLOW);
-  if (success(50) && (planet.toxic() < 100)) {
-    planet.toxic() += 1;
-  }
+  maybe_increase_planet_toxicity(planet);
   return adjust;
 }
 
@@ -303,10 +303,7 @@ void process_weapon_plant_turn(EntityManager& entity_manager, Ship& ship,
 
 bool execute_berserker_bombardment(EntityManager& entity_manager, Ship& ship,
                                    Planet& planet) {
-  if (ship.whatdest() != ScopeLevel::LEVEL_PLAN ||
-      ship.whatorbits() != ScopeLevel::LEVEL_PLAN || ship.is_landed() ||
-      ship.storbits() != ship.deststar() ||
-      ship.pnumorbits() != ship.destpnum()) {
+  if (!is_targeting_orbited_planet(ship) || ship.is_landed()) {
     return false;
   }
 
@@ -347,6 +344,7 @@ std::optional<RecoveryReport>
 recover_conquered_stockpiles(EntityManager& entity_manager, const Star& star,
                              Planet& planet) {
   std::vector<player_t> owners;
+  std::vector<player_t> defeated;
   Stockpile total_stolen;
 
   for (const Race& race : RaceList::readonly(entity_manager)) {
@@ -355,6 +353,7 @@ recover_conquered_stockpiles(EntityManager& entity_manager, const Star& star,
     if (cinfo.numsectsowned > 0) {
       owners.push_back(race.Playernum);
     } else if (!race.God) { /* Can't steal from God */
+      defeated.push_back(race.Playernum);
       total_stolen += cinfo.stockpile();
     }
   }
@@ -374,12 +373,8 @@ recover_conquered_stockpiles(EntityManager& entity_manager, const Star& star,
   }
 
   // 2. Drain stockpiles from defeated non-god races
-  for (const Race& race : RaceList::readonly(entity_manager)) {
-    if (!planet.has_info(race.Playernum)) continue;
-    auto& cinfo = planet.info(race);
-    if (cinfo.numsectsowned == 0 && !race.God && !cinfo.stockpile().empty()) {
-      cinfo.drain_stockpile();
-    }
+  for (const player_t victim : defeated) {
+    planet.info(victim).drain_stockpile();
   }
 
   const planetnum_t planetnum = planet.planet_order();
@@ -450,7 +445,7 @@ void process_planetary_ships(EntityManager& entity_manager, Planet& planet,
   for (auto ship_handle : ShipList::on_planet(entity_manager, planet.star_id(),
                                               planet.planet_order())) {
     auto& ship = *ship_handle;
-    if (ship.alive() && !ship.rad()) {
+    if (!ship.rad()) {
       /* planet level functions - do these here because they use the sector map
               or affect planet production */
       switch (ship.type()) {
@@ -526,7 +521,8 @@ build_automated_waste_can(EntityManager& entity_manager, const Star& star,
 
 double est_production(const Sector& s, EntityManager& entity_manager) {
   const auto& race = *entity_manager.peek_race(s.get_owner());
-  return (race.metabolism * (double)s.get_eff() * (double)s.get_eff() / 200.0);
+  const double eff = static_cast<double>(s.get_eff());
+  return race.metabolism * eff * eff / 200.0;
 }
 
 std::optional<IslandDiscovery>
@@ -570,7 +566,7 @@ process_island_exploration(EntityManager& entity_manager, const Star& star,
         }
         exploration.explore_sector(planet, s, p);
       }
-      allexp = (allexp || all_sectors_explored_for_player);
+      allexp = all_sectors_explored_for_player;
     }
   }
 

@@ -321,7 +321,7 @@ int replicate_machines(EntityManager& em, AutonomousShip& parent,
                                  : ShipType::OTYPE_VN;
   const auto& tmpl = ship_template(shipbuild);
   const resource_t cost = tmpl.build_cost;
-  if (cost <= 0 || parent.resource() < cost) {
+  if (parent.resource() < cost) {
     return 0;
   }
 
@@ -348,9 +348,7 @@ int replicate_machines(EntityManager& em, AutonomousShip& parent,
 /// otherwise.
 bool attempt_planet_landing(EntityManager& em, AutonomousShip& ship,
                             const Planet& planet, SectorMap& smap) {
-  if (!ship.is_busy() || ship.whatdest() != ScopeLevel::LEVEL_PLAN ||
-      ship.deststar() != ship.storbits() ||
-      ship.destpnum() != ship.pnumorbits()) {
+  if (!ship.is_busy() || !is_targeting_orbited_planet(ship)) {
     return false;
   }
 

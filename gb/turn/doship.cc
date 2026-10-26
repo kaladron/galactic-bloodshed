@@ -206,14 +206,14 @@ constexpr bool is_in_star_system(const Ship& s) noexcept {
          s.whatorbits() == ScopeLevel::LEVEL_PLAN;
 }
 
-constexpr bool is_targeting_orbited_planet(const Ship& ship) noexcept {
+}  // namespace
+
+bool is_targeting_orbited_planet(const Ship& ship) noexcept {
   return ship.whatorbits() == ScopeLevel::LEVEL_PLAN &&
          ship.whatdest() == ScopeLevel::LEVEL_PLAN &&
          ship.deststar() == ship.storbits() &&
          ship.destpnum() == ship.pnumorbits();
 }
-
-}  // namespace
 
 void do_canister(CanisterShip& ship, EntityManager& entity_manager,
                  TurnStats& stats) {

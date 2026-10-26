@@ -214,8 +214,8 @@ $$\text{Population}_{\text{master}} \le \left\lfloor \frac{\text{Population}_{\t
 a planetary **slave revolt** is immediately triggered.
 
 ### Consequences of a Slave Revolt
-1. **Urban and Ecological Devastation**: Uprisings ignite widespread fighting across the world, completely devastating $`N_{\text{devastated}} = \left\lfloor \frac{\text{Population}_{\text{total}}}{1000} \right\rfloor + 1`$ random populated sectors into ruined wasteland.
-2. **Regional Intimidation Backlash**: Master-owned sectors located within intimidated star systems suffer a $50\%$ probability of devastation.
+1. **Urban and Ecological Devastation**: Uprisings ignite widespread fighting across the world, sampling $`N_{\text{draws}} = \left\lfloor \frac{\text{Population}_{\text{total}}}{1000} \right\rfloor`$ random sectors and completely devastating any drawn sector occupied by civilians or troops into ruined wasteland.
+2. **Regional Intimidation Backlash**: Master-owned sectors located on intimidated worlds (where an active Orbital Assault Platform is in orbit) suffer a $50\%$ probability of devastation.
 3. **Liberation**: Imperial shackles are broken, immediately restoring the subjugated population to free citizen status.
 
 ---

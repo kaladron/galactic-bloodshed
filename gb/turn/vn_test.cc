@@ -692,6 +692,7 @@ int main() {
     vn_data.deststar = 1;
     vn_data.destpnum = 1;
     vn_data.whatdest = ScopeLevel::LEVEL_PLAN;
+    vn_data.whatorbits = ScopeLevel::LEVEL_PLAN;
     vn_data.dock_state = DockState::Spaceborne;
     vn_data.special = MindData{
         .progenitor = player_t{1},
@@ -933,6 +934,7 @@ int main() {
     orbiting_vn_data.deststar = 1;
     orbiting_vn_data.destpnum = 1;
     orbiting_vn_data.whatdest = ScopeLevel::LEVEL_PLAN;
+    orbiting_vn_data.whatorbits = ScopeLevel::LEVEL_PLAN;
     orbiting_vn_data.dock_state = DockState::Spaceborne;
     orbiting_vn_data.special = MindData{.busy = true};
     orbiting_vn_data.max_fuel = ship_template(ShipType::OTYPE_VN).max_fuel;
@@ -979,7 +981,7 @@ int main() {
       test::expect_eq(single_res.second_closest, starnum_t{1});
     }
 
-    // 2. select_berserker_destination without most_mad or mounted hyperdrive
+    // 2. select_berserker_destination without most_mad, hyperdrive, or mounted
     {
       TurnStats no_mad_stats{};
       auto bers_ship = ShipFactory::create(ship_struct{
@@ -992,6 +994,10 @@ int main() {
       auto* bers = bers_ship->as<BerserkerShip>();
       select_berserker_destination(em, *bers, no_mad_stats);
       test::expect_eq(bers->target(), std::nullopt);
+      test::expect_false(bers->hyper_drive().on);
+
+      bers->hyper_drive().has = false;
+      select_berserker_destination(em, *bers, no_mad_stats);
       test::expect_false(bers->hyper_drive().on);
     }
 
@@ -1044,8 +1050,7 @@ int main() {
       test::expect_contains(tele.back().message, "resources stolen from [1]");
     }
 
-    // 5. replicate_machines insufficient resources & attempt_planet_landing
-    // guards
+    // 5. replicate_machines coin flip, attempt_planet_landing, and planet_doVN
     {
       Planet planet(1, 1, PlanetType::EARTH, Coordinates{5, 5});
       SectorMap smap(planet);
@@ -1060,11 +1065,35 @@ int main() {
           .destpnum = 1,
           .pnumorbits = 1,
           .whatdest = ScopeLevel::LEVEL_PLAN,
+          .whatorbits = ScopeLevel::LEVEL_PLAN,
           .type = ShipType::OTYPE_VN,
       });
       auto* vn = vn_ship->as<VonNeumannShip>();
       test::expect_eq(replicate_machines(em, *vn, planet, stats), 0);
       test::expect_false(attempt_planet_landing(em, *vn, planet, smap));
+
+      vn->set_busy(false);
+      test::expect_false(attempt_planet_landing(em, *vn, planet, smap));
+
+      vn->land_on_planet(1, 1, {0, 0});
+      planet_doVN(*vn_ship, planet, smap, em, stats);
+
+      auto bers_landed = ShipFactory::create(ship_struct{
+          .number = 905,
+          .owner = 1,
+          .special = MindData{.busy = true},
+          .storbits = 1,
+          .pnumorbits = 1,
+          .whatorbits = ScopeLevel::LEVEL_PLAN,
+          .type = ShipType::OTYPE_BERS,
+          .dock_state = DockState::Landed,
+      });
+      planet_doVN(*bers_landed, planet, smap, em, stats);
+
+      stats.VN_brain.total_mad = 200;
+      for (int i = 0; i < 20; ++i) {
+        replicate_machines(em, *vn, planet, stats);
+      }
     }
 
     std::println(std::cout, "  ✓ VN MC/DC branch extensions passed");

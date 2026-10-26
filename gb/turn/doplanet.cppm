@@ -123,8 +123,7 @@ export struct RecoveryReport {
   Stockpile total_stolen{};
 
   [[nodiscard]] bool empty() const noexcept {
-    return recipients.empty() || allocated_shares.empty() ||
-           total_stolen.empty();
+    return allocated_shares.empty();
   }
 
   [[nodiscard]] bool operator==(const RecoveryReport&) const noexcept = default;

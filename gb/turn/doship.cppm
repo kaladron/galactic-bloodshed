@@ -141,3 +141,9 @@ export bool evaluate_ship_hazards(Ship& ship, EntityManager& entity_manager);
 export void dispatch_ship_subsystems(Ship& ship, bool update,
                                      EntityManager& entity_manager,
                                      TurnStats& stats);
+
+/// \brief Checks whether a ship is currently in orbit around a planet and has
+/// that exact planet set as its active destination.
+export [[nodiscard]] bool
+is_targeting_orbited_planet(const Ship& ship) noexcept;
+

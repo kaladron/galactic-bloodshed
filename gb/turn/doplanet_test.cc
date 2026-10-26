@@ -383,6 +383,32 @@ void test_execute_terraforming() {
                   SectorType::SEC_LAND);
   test::expect_eq(ship.fuel(), initial_fuel - FUEL_COST_TERRA);
 
+  // 3b. Successful terraforming at toxic<100 (until toxicity increments) and
+  // at toxic=100 dropping fuel below FUEL_COST_TERRA
+  planet.toxic() = 0;
+  for (int i = 0; i < 20 && planet.toxic() == 0; ++i) {
+    ship.set_land_coords({2, 2});
+    ship.as<TerraformerShip>()->set_index(0);
+    smap.get(Coordinates{2, 3}).set_condition(SectorType::SEC_DESERT);
+    ship.add_fuel(static_cast<double>(FUEL_COST_TERRA));
+    auto res_tox = execute_terraforming(ship, planet, smap, em);
+    test::expect_true(res_tox.has_value() && *res_tox);
+  }
+  test::expect_gt(planet.toxic().value(), 0);
+
+  planet.toxic() = 100;
+  for (bool already_notified : {false, true}) {
+    ship.set_land_coords({2, 2});
+    ship.as<TerraformerShip>()->set_index(0);
+    smap.get(Coordinates{2, 3}).set_condition(SectorType::SEC_DESERT);
+    ship.consume_fuel(ship.fuel());
+    ship.add_fuel(static_cast<double>(FUEL_COST_TERRA));
+    ship.notified() = already_notified;
+    auto res_exact = execute_terraforming(ship, planet, smap, em);
+    test::expect_true(res_exact.has_value() && *res_exact);
+    test::expect_true(ship.notified());
+  }
+
   // 4. Insufficient fuel
   ship.consume_fuel(ship.fuel());
   ship.notified() = 0;
@@ -2812,9 +2838,17 @@ void test_moveplanet_and_ground_mcdc() {
     auto res_stop_cycle = advance_ground_vehicle(s, planet, ctx.em);
     test::expect_false(res_stop_cycle.has_value());
     test::expect_eq(res_stop_cycle.error(), GroundMovementError::Stopped);
+
+    // Exhausted orders when already notified
+    s.on() = 1;
+    s.notified() = true;
+    s.shipclass() = "24";
+    s.as<TerraformerShip>()->set_index(0);
+    test::expect_true(advance_ground_vehicle(s, planet, ctx.em).has_value());
   });
 
-  // 2. execute_terraforming NotLanded, NoCrew, and MovementFailed guards
+  // 2. execute_terraforming NotLanded, NoCrew, MovementFailed, toxic=100, and
+  // post-terraform low fuel notifications
   ctx.em.mutate_planet(1, 1, [&](Planet& p) {
     ctx.em.mutate_sectormap(1, 1, [&](SectorMap& smap) {
       ctx.em.mutate_ship(terra_id, [&](Ship& s) {
@@ -2838,7 +2872,55 @@ void test_moveplanet_and_ground_mcdc() {
     });
   });
 
-  // 3. moveplanet updates orbital position + orbiting ship and guards invalid
+  // 3. process_planetary_ships OTYPE_BERS branches & non-Info player stats
+  shipnum_t bers_id = TestShipBuilder(ctx.em, ShipType::OTYPE_BERS)
+                          .owned_by(1)
+                          .in_planet_orbit(1, 1)
+                          .with_destruct(0)
+                          .build();
+  ctx.em.mutate_planet(1, 1, [&](Planet& p) {
+    ctx.em.mutate_sectormap(1, 1, [&](SectorMap& smap) {
+      TurnStats stats{};
+      // destruct == 0 -> planet_doVN
+      process_planetary_ships(ctx.em, p, smap, stats);
+
+      // destruct > 0, bombard == false -> planet_doVN
+      ctx.em.mutate_ship(bers_id, [](Ship& b) {
+        b.add_destruct(10);
+        b.bombard() = false;
+      });
+      process_planetary_ships(ctx.em, p, smap, stats);
+
+      // destruct > 0, bombard == true, not targeting orbited planet ->
+      // execute_berserker_bombardment returns false
+      ctx.em.mutate_ship(bers_id, [](Ship& b) {
+        b.bombard() = true;
+        b.set_star_destination(2);
+      });
+      process_planetary_ships(ctx.em, p, smap, stats);
+
+      // process_planet_economy & send_planet_turn_telegrams when !has_info(2)
+      // but mob > 0 or !prod.empty()
+      stats.add_mob_points(2, 10);
+      stats.record_production(2, Stockpile{.resources = 5});
+      p.info_map().erase(2);
+      send_planet_turn_telegrams(ctx.em, *ctx.em.peek_star(1), p, std::nullopt,
+                                 stats);
+      p.info_map().erase(2);
+      process_planet_economy(ctx.em, *ctx.em.peek_star(1), p, smap, stats);
+      test::expect_eq(p.info(2).mob_points, 10U);
+
+      p.expltimer() = 0;
+      p.info(1).numsectsowned = 1;
+      smap.get({0, 0}).set_owner(0);
+      test::expect_false(
+          process_island_exploration(ctx.em, *ctx.em.peek_star(1), p, smap,
+                                     stats)
+              .has_value());
+    });
+  });
+
+  // 4. moveplanet updates orbital position + orbiting ship and guards invalid
   // radius/gravity
   shipnum_t orbiter_id =
       TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
@@ -2855,6 +2937,10 @@ void test_moveplanet_and_ground_mcdc() {
                         ->coordinates()
                         .distance_to(expected_coords),
                     1e-9);
+
+    ctx.em.mutate_star(1, [](Star& st) { st.gravity() = 0.0; });
+    test::expect_throws<std::domain_error>(
+        [&]() { moveplanet(ctx.em, *ctx.em.peek_star(1), p); });
 
     p.set_system_coordinates({0.0, 0.0});
     test::expect_throws<std::domain_error>(

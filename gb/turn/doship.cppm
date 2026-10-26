@@ -146,4 +146,3 @@ export void dispatch_ship_subsystems(Ship& ship, bool update,
 /// that exact planet set as its active destination.
 export [[nodiscard]] bool
 is_targeting_orbited_planet(const Ship& ship) noexcept;
-

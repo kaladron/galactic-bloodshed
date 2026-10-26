@@ -38,7 +38,7 @@ auto ship_name = g.entity_manager.with_ship(target_ship_no, [](const Ship& ship)
   return ship.name();
 });
 if (!ship_name) {
-  g.out << "Ship not found.\n";
+  g.print("Ship not found.\n");
   return false;
 }
 ```
@@ -49,11 +49,11 @@ if (!ship_name) {
 
 ### Validated/internal IDs
 
-When the ID came from game state (e.g. `g.player`, `g.snum()`, an iteration index), it is guaranteed valid. No try/catch:
+When the ID came from game state (e.g. `g.player()`, `g.snum()`, an iteration index), it is guaranteed valid. No try/catch:
 
 ```cpp
 const auto& star = *g.entity_manager.peek_star(g.snum());   // safe
-g.entity_manager.mutate_race(g.player, [](Race& race) {     // safe
+g.entity_manager.mutate_race(g.player(), [](Race& race) {   // safe
   race.tech += 10.5;
 });
 ```
@@ -68,7 +68,7 @@ try {
     ship.fuel() += 10.0;
   });
 } catch (const EntityNotFoundError&) {
-  g.out << "Ship not found.\n";
+  g.print("Ship not found.\n");
   return false;
 }
 ```

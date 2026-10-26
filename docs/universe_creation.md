@@ -34,10 +34,10 @@ Each spatial grid cell permits at most one star system. Candidate star coordinat
 
 ## 2. Stellar Classification and Radiation Physics
 
-Each generated star is assigned a name from historical astronomical catalogs, unique galactic coordinates $(x, y)$, and an intrinsic **stellar luminosity** rating $L_\text{star}$ ($0.1 \le L_\text{star} \le 2.0$).
+Each generated star is assigned a name from historical astronomical catalogs, unique galactic coordinates $(x, y)$, and an intrinsic **stellar luminosity** rating $`L_\text{star}`$ ($`0.1 \le L_\text{star} \le 2.0`$).
 
 ### Heliocentric Orbital Distance
-Planets orbit their parent star in concentric, coplanar tracks. Orbital distances $d_\text{orbit}$ increase outward from the primary:
+Planets orbit their parent star in concentric, coplanar tracks. Orbital distances $`d_\text{orbit}`$ increase outward from the primary:
 
 $$d_\text{orbit} = d_\text{base} + n \cdot \Delta d + \text{jitter}$$
 
@@ -52,15 +52,15 @@ where:
 - $`\lambda = 1315.0`$ is the galactic solar radiant flux coefficient.
 - $`d_0`$ is the inner stellar corona buffer distance.
 
-Planetary equilibrium surface temperature $T_{\text{surf}}$ is computed by superimposing solar flux onto the cosmic thermal floor:
+Planetary equilibrium surface temperature $`T_{\text{surf}}`$ is computed by superimposing solar flux onto the cosmic thermal floor:
 
 $$T_{\text{surf}} = \max\left(T_{\text{cosmic}}, T_{\text{radiant}} + T_{\text{ambient}}\right)$$
 
 - **Cosmic Thermal Floor**: $`T_{\text{cosmic}} = -269^\circ\text{C}`$ ($\approx 4\text{ K}$, representing deep-space microwave background equilibrium).
 - **Thermal Classification Zones**:
-  Every orbital body first undergoes a $10\%$ random roll to form as a fragmented **Asteroid** regardless of distance. Remaining bodies are classified by surface temperature $T_{\text{surf}}$ across seven thermal bands:
+  Every orbital body first undergoes a $10\%$ random roll to form as a fragmented **Asteroid** regardless of distance. Remaining bodies are classified by surface temperature $`T_{\text{surf}}`$ across seven thermal bands:
 
-| Thermal Zone | Temperature Range ($T_{\text{surf}}$) | Planetary Type Distribution |
+| Thermal Zone | Temperature Range ($`T_{\text{surf}}`$) | Planetary Type Distribution |
 | :--- | :--- | :--- |
 | **1. Coronal Vaporization Zone** | $> 400^\circ\text{C}$ | $100\%$ Asteroid |
 | **2. Scorched Inner Zone** | $101^\circ\text{C}$ to $400^\circ\text{C}$ | $60\%$ Airless (Mars), $40\%$ Desert |
@@ -93,7 +93,7 @@ Each star system supports between 1 and 10 planets, classified into eight fundam
 
 Planets model their surface geography using two-dimensional toroidal-cylindrical coordinate grids:
 
-- **Horizontal Cylindrical Wrapping**: The planetary surface wraps continuously from east to west. Moving off the eastern margin of the grid reappears at the western edge ($x_{\text{wrapped}} = x \pmod W$).
+- **Horizontal Cylindrical Wrapping**: The planetary surface wraps continuously from east to west. Moving off the eastern margin of the grid reappears at the western edge ($`x_{\text{wrapped}} = x \pmod W`$).
 - **Polar Latitudinal Limits**: The northern and southern borders represent planetary poles and do not wrap ($0 \le y < H$).
 - **Topological Biome Seeding**:
   - Mountain peaks, plains, oceanic basins, and forests are clustered using cellular growth algorithms.

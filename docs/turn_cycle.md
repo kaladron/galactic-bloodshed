@@ -81,7 +81,7 @@ $$\text{Deficit} = \text{Total Maintenance Obligations} - \text{Governor Treasur
 
 $$\Delta \text{Morale} = -\left\lfloor \frac{\text{Deficit}}{10} \right\rfloor$$
 
-Civilian morale is bounded within $[0, 100]$. If a governor cannot meet maintenance obligations, the treasury is emptied to $0$ and the morale penalty is immediately applied.
+Civilian morale is an unbounded signed integer whose combat and victory impact is evaluated along an arctangent normalization curve ($\frac{\arctan(\text{Morale} / 10{,}000)}{\pi} + 0.5$). If a governor cannot meet maintenance obligations, the treasury is emptied to $0$ and the morale penalty is immediately applied.
 
 ---
 
@@ -92,8 +92,10 @@ Open market lots on the Interstellar Exchange are evaluated and cleared during t
 ### Transaction Process
 
 1. **Delivery Delay**: Commodities placed on the exchange require one update to register before bids are eligible for fulfillment.
-2. **Affordability Check**: The highest bidder must possess sufficient funds to pay the bid price plus interstellar freight shipping costs.
-3. **Freight Cost Calculation**: Shipping tariffs scale with Euclidean distance: $`\text{Distance} = \sqrt{(x_2 - x_1)^2 + (y_2 - y_1)^2}`$, resulting in $\text{Shipping Fee} = \left\lfloor \frac{\text{Distance} \times \text{Bid Price}}{1000} \right\rfloor$.
+2. **Affordability Check**: The highest bidder must possess sufficient funds to pay the bid price.
+3. **Freight Cost Calculation**: Shipping tariffs scale with the Euclidean distance between the origin and destination star systems ($`\text{Distance} = \sqrt{(x_2 - x_1)^2 + (y_2 - y_1)^2}`$), quantized down to $10{,}000$-unit increments ($`r_{\text{dist}} = \lfloor \text{Distance} / 10{,}000 \rfloor \times 10{,}000`$):
+   $$\text{Shipping Fee} = \operatorname{round}\!\left(\left(1 - e^{-r_{\text{dist}} / 200{,}000}\right) \times \text{Bid Price}\right)$$
+   The bid price is transferred from the buyer's governor treasury to the seller's governor treasury, and the shipping fee is charged via the buyer's maintenance accounting.
 4. **Deposit & Stockpile**: Commodities are delivered directly to the designated destination planet's resource reserves.
 
 ---
@@ -131,9 +133,9 @@ Crossing technology rating thresholds unlocks new capabilities and dispatches br
 | **Laser Weapons** | $100.0$ | Naval laser cannons and orbital fire platforms |
 | **Von Neumann AI** | $100.0$ | Self-replicating autonomous machines |
 | **Continuous Energy Weapons (CEW)** | $150.0$ | Heavy continuous beam batteries |
-| **Anti-Vector Plasma Missiles (AVPM)** | $250.0$ | Guided anti-vector orbital defense munitions |
+| **Audio-Vibratory-Physio-Molecular Transporter (AVPM)** | $250.0$ | Instantaneous planetary matter transmission (`[` transporter units) |
 | **Tractor Beams** | $999.0$ | Gravitational capture and towing beams |
-| **Transporters** | $999.0$ | Matter transmission and rapid orbital disembarkation |
+| **Transporters** | $999.0$ | Advanced orbital matter transmission |
 | **Cloaking Devices** | $999.0$ | Optical and subspace sensor cloaking |
 | **Wormhole Stabilization** | $999.0$ | Artificial wormhole navigation |
 
@@ -141,16 +143,18 @@ Crossing technology rating thresholds unlocks new capabilities and dispatches br
 
 ## 8. Victory Points & Galactic Supremacy
 
-Each update, victory scores are evaluated across all active empires based on territorial dominion, naval power, stockpile reserves, and treasury wealth:
+Each update, victory scores (`victory` command) are evaluated across all active empires based on territorial dominion, naval power, stockpile reserves, treasury wealth, and racial morale:
 
-$$\text{Raw Score} = \frac{1}{1000} \Big( 50 \times N_{\text{sectors}} + 10 \times (\text{Fleet Build Cost} + 5 \times \text{Fleet Tech}) + 2 \times (\text{Resources} + \text{Destruct}) + \text{Fuel} + 5 \times \text{Treasury} \Big)$$
+$$\text{Scaled Score} = \left\lfloor \frac{1000 \times N_{\text{sectors}} + 333 \times \left(\text{Fleet Build Cost} + \lfloor 0.10 \times \text{Fleet Tech} \rfloor\right) + 100 \times (\text{Resources} + \text{Destruct}) + 15 \times \text{Fuel} + 5 \times \text{Treasury}}{10{,}000} \right\rfloor$$
 
-$$\text{Final Victory Score} = \left\lfloor \text{Raw Score} \times \left(\frac{\text{Morale}}{100.0}\right) \right\rfloor$$
+$$\text{Final Victory Score} = \operatorname{round}\!\left(\text{Scaled Score} \times \left(\frac{\arctan(\text{Morale} / 10{,}000)}{\pi} + 0.5\right)\right)$$
 
-### Victory Conditions
+### Planetary Control and Victory Conditions
 
-- **Lesser Winner**: Controlling at least $50\%$ of the galaxy's habitable planets triggers universal translation capabilities (all empires decipher communications).
-- **Galactic Domination (Big Winner)**: Maintaining control of at least $60\%$ of all planets for $5$ consecutive turn updates triggers final game victory and concludes the simulation.
+An empire **controls** a non-asteroid planet when it owns strictly more than $50\%$ of that planet's surface sectors:
+
+- **Universal Translation Milestone**: Controlling at least $5\%$ of all non-asteroid planets in the galaxy triggers a cryptological breakthrough, granting all other empires $100\%$ translation knowledge of the ascendant empire's dialect.
+- **Galactic Domination (Big Winner & Lesser Winners)**: Maintaining control of at least $10\%$ of all non-asteroid planets for $5$ consecutive full turn updates achieves **Big Winner** supremacy and concludes the game. Any other empire that also controls at least $10\%$ of non-asteroid planets on the final update is recognized as a **Lesser Winner**.
 
 ---
 

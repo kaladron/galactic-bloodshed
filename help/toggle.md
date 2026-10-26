@@ -22,6 +22,8 @@ toggle will list all available options and their values.
 		compatibility	controls whether or not explored planets have
 					the compatibility displayed on orbit
 					maps.
+		color		whether or not to use ANSI terminal colors in
+					maps, orbit displays, and reports.
 
 ## See Also
    map, highlight

@@ -44,10 +44,10 @@ Empires can decommission obsolete, damaged, or surplus naval hulls to recover vi
 
 $$\text{Reclaimed Mineral Stockpile} = \left\lfloor \frac{\text{Hull Construction Cost}}{2} \right\rfloor + \text{Stored Cargo Minerals}$$
 
-- **Commodity & Personnel Recovery**: Decommissioning returns $100\%$ of carried propellant, destructive munitions, warp crystals, civilian crew, and military ground troops.
+- **Commodity & Personnel Recovery**: Decommissioning returns $100\%$ of carried propellant, destructive munitions, warp crystals, civilian crew, and military ground troops ($1\text{ Star AP}$ in stellar or planetary scope; $0\text{ AP}$ in deep space).
 - **Stockpile Depositories**:
-  - When decommissioned while landed on a planetary surface, all reclaimed minerals and commodities are deposited directly into local planetary colony stockpiles, and carried personnel rejoin the civilian workforce.
-  - When decommissioned inside a carrier's hangar or while moored to another vessel, recovered assets are transferred to the host/moored vessel. Unmoored vessels scuttled in open space yield no recoverable materials.
+  - When decommissioned while landed on a planetary surface, all reclaimed minerals and commodities are deposited directly into local planetary colony stockpiles, while carried civilian crew return to the landing sector's civilian population and military troops return to the sector's troop garrison.
+  - When decommissioned inside a carrier's hangar or while moored to another vessel, recovered assets are transferred to the host/moored vessel (clamped by cargo and joint berthing capacities). Unmoored vessels scuttled in open space yield no recoverable materials.
 - For complete operational rules, multi-tier berthing, and hazardous waste constraints, see [Starships, Orbital Hierarchies, and Naval Mechanics](ships.md).
 
 ---
@@ -98,7 +98,7 @@ Empires allocate research funding on a world using the `technology` command (`te
 
 ### Research Processing Lifecycle
 During each full turn update:
-1. **Treasury Solvency Check**: The star system governor's treasury must contain sufficient funds to cover the configured investment budget. If the treasury lacks funds, research fails for that turn and zero scientific progress occurs.
+1. **Treasury Solvency Check**: The star system governor's treasury must contain sufficient funds to cover the displaced investment budget. If the treasury lacks funds, research fails for that turn and zero scientific progress occurs.
 2. **Fund Deduction**: The investment amount is deducted from the governor's treasury and logged under research expenditures.
 3. **Research Output Formula**: Scientific breakthroughs scale logarithmically with financial funding and local planetary population ($`0.01 \times \log_{10}\left(\text{Investment} \times \frac{\text{Population}}{10{,}000} + 1\right)`$), in addition to the empire's passive intelligence gain ($`\text{IQ} / 100`$) each update.
 4. **Imperial Discovery**: Generated research points are added directly to the empire's global technology rating, unlocking advanced vessel blueprints, energy weapon calibers, and planetary terraforming systems.
@@ -133,7 +133,7 @@ When a deficit occurs, the governor's treasury is emptied to zero, and the resul
 
 ## 5. Interstellar Market and Freight Logistics
 
-Empires trade surplus commodities with other star systems and foreign powers through the Interstellar Exchange.
+Empires trade surplus commodities with other star systems and foreign powers through the Interstellar Exchange (`sell` and `bid`).
 
 ### Market Lifecycle
 
@@ -146,14 +146,16 @@ flowchart TD
     Clearance -->|No| Cancel["Bid Cleared\nLot Remains on Market"]
 ```
 
+- **Placing Bids (`bid [<lot> <bid>]`)**: Viewing open market lots (`bid` with no arguments) lists all lots and current high bids. Placing a bid (`bid <lot> <bid>`, costing $1\text{ Star AP}$ at planetary scope) requires a positive bid amount that strictly exceeds the lot's current minimum bid and does not exceed the governor's available treasury. Whenever a new bid supersedes a previous high bidder, the outbid governor receives an immediate notification (delivered live to their active session or persisted as a telegram if offline).
+
 ### Freight Shipping Fees
-Transporting bulky commodities across interstellar distances incurs freight costs based on the Euclidean distance between the origin and destination star systems, quantized down to $10{,}000$-unit increments ($r_{\text{dist}} = \lfloor \text{Distance} / 10{,}000 \rfloor \times 10{,}000$) with distance constant $\text{MERCHANT\_LENGTH} = 200{,}000$:
+Transporting bulky commodities across interstellar distances incurs freight costs based on the Euclidean distance between the origin and destination star systems, quantized down to $10{,}000$-unit increments ($`r_{\text{dist}} = \lfloor \text{Distance} / 10{,}000 \rfloor \times 10{,}000`$) with characteristic freight distance scale $`L_{\text{freight}} = 200{,}000`$:
 
 $$\text{Distance} = \sqrt{(x_{\text{dest}} - x_{\text{origin}})^2 + (y_{\text{dest}} - y_{\text{origin}})^2}$$
 
-$$\text{Freight Fee} = \text{round}\left(\left(1 - e^{-r_{\text{dist}} / 200{,}000}\right) \times \text{Bid Price}\right)$$
+$$\text{Freight Fee} = \operatorname{round}\left(\left(1 - e^{-r_{\text{dist}} / 200{,}000}\right) \times \text{Bid Price}\right)$$
 
-The winning bidder pays the agreed lot price directly from their governor's treasury (transferred to the seller's governor), while the freight fee is charged via `deduct_maintenance` (so any freight shortfall beyond remaining cash incurs the standard $1$-morale-per-$10$-deficit maintenance penalty).
+The winning bidder pays the agreed lot price directly from their governor's treasury (transferred to the seller's governor), while the freight fee is charged through governor maintenance accounting (so any freight shortfall beyond remaining cash incurs the standard $1$-morale-per-$10$-deficit maintenance penalty).
 
 ---
 

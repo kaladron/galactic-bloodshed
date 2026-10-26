@@ -22,8 +22,8 @@ Empires can deploy covert operatives to ignite internal rebellions on enemy worl
 flowchart TD
     Infiltrate["Covert Infiltration Order (insurgency <race> <money>)"] --> Assess["Stage 1: Evaluate Planetary Insurgency Odds (x)"]
     Assess --> TaxRate["1. Per-Capita Funding & Tax Rate\nMoney * Target Tax / Target Planet Pop"]
-    Assess --> Morale["2. Morale & System Population Modifiers\nmorale_factor(Morale Diff) * morale_factor(Pop Diff / 50)"]
-    Assess --> Garrison["3. Planetary Troop Balance\nmorale_factor(10 * Effective Troop Diff) / 50"]
+    Assess --> Morale["2. Morale & System Population Modifiers\nM(Morale Diff) * M(Pop Diff / 50)"]
+    Assess --> Garrison["3. Planetary Troop Balance\nM(10 * Effective Troop Diff) / 50"]
     
     TaxRate --> Calc["Success Chance = 200 * atan(x) / pi"]
     Morale --> Calc
@@ -35,16 +35,16 @@ flowchart TD
 ```
 
 ### Stage 1: Planetary Insurgency Success Chance
-First, the command computes raw insurgency strength $x$ using the arctangent normalization curve $\text{morale\_factor}(\Delta) = \frac{\arctan(\Delta / 10000)}{\pi} + 0.5$:
+First, the command computes raw insurgency strength $x$ using the arctangent normalization curve $`M(\Delta) = \frac{\arctan(\Delta / 10{,}000)}{\pi} + 0.5`$ and the insurgency funding factor $`K_{\text{insurg}}`$:
 
-$$x = \left(\text{INSURG\_FACTOR} \times \frac{\text{Money} \times \text{Tax}_{\text{target}}}{\text{Pop}_{\text{target, planet}}}\right) \times \frac{M_{\text{morale}} \times M_{\text{pop}} \times M_{\text{troops}}}{50.0}$$
+$$x = \left(K_{\text{insurg}} \times \frac{\text{Money} \times \text{Tax}_{\text{target}}}{\text{Pop}_{\text{target, planet}}}\right) \times \frac{M_{\text{morale}} \times M_{\text{pop}} \times M_{\text{troops}}}{50.0}$$
 
-- **Empire Morale ($M_{\text{morale}}$)**: $\text{morale\_factor}(\text{Morale}_{\text{instigator}} - \text{Morale}_{\text{target}})$.
-- **Star-System Civilian Balance ($M_{\text{pop}}$, `POPULATION_DIFF_SCALE = 50.0`)**: $\text{morale\_factor}\!\left(\frac{\text{Pop}_{\text{instigator, system}} - \text{Pop}_{\text{target, system}}}{50.0}\right)$, where a $500{,}000$-civilian differential across the star system equals $\pm 10{,}000$ morale.
-- **Planetary Troop Balance ($M_{\text{troops}}$, `TROOP_STRENGTH_SCALE = 10.0`)**: $\text{morale\_factor}\!\left(10.0 \times (\text{Fighters}_{\text{instigator}} \cdot \text{Troops}_{\text{instigator}} - \text{Fighters}_{\text{target}} \cdot \text{Troops}_{\text{target}})\right)$, where a $1{,}000$-unit effective troop differential on the planet equals $\pm 10{,}000$ morale.
-- **Odds Normalization & Percentage Conversion (`INSURGENCY_ODDS_DIVISOR = 50.0`, `ATAN_TO_PERCENT_SCALE = 200.0`)**: Dividing by $50.0$ normalizes $x$, and $\text{round\_rand}\!\left(\frac{200.0 \cdot \arctan(x)}{\pi}\right)\%$ maps $\arctan(x) \in [0, \pi/2)$ onto $[0\%, 100\%)$.
+- **Empire Morale ($`M_{\text{morale}}`$)**: $`M(\text{Morale}_{\text{instigator}} - \text{Morale}_{\text{target}})`$.
+- **Star-System Civilian Balance ($`M_{\text{pop}}`$)**: $`M\!\left(\frac{\text{Pop}_{\text{instigator, system}} - \text{Pop}_{\text{target, system}}}{50.0}\right)`$, where a $500{,}000$-civilian differential across the star system equals $\pm 10{,}000$ morale.
+- **Planetary Troop Balance ($`M_{\text{troops}}`$)**: $`M\!\left(10.0 \times (\text{Fighters}_{\text{instigator}} \cdot \text{Troops}_{\text{instigator}} - \text{Fighters}_{\text{target}} \cdot \text{Troops}_{\text{target}})\right)`$, where a $1{,}000$-unit effective troop differential on the planet equals $\pm 10{,}000$ morale.
+- **Odds Normalization & Percentage Conversion**: Dividing by $50.0$ normalizes $x$, and $\operatorname{round}\!\left(\frac{200.0 \cdot \arctan(x)}{\pi}\right)\%$ maps $\arctan(x) \in [0, \pi/2)$ onto $[0\%, 100\%)$.
 
-### Stage 2: Sector-by-Sector Uprising (`Planet::revolt`)
+### Stage 2: Sector-by-Sector Uprising
 When the Stage 1 roll succeeds, each populated sector owned by the target empire is evaluated individually:
 - **Taxation Grievances**: Each populated sector rolls against the target governor's active planetary tax rate ($\text{Tax}\%$). Higher tax rates directly increase the probability of a sector joining the uprising.
 - **Garrison Suppression Formula**: When a sector's population attempts to revolt, a random uprising roll $R \in [1, \text{Population}]$ is compared against the defending garrison's suppression threshold:
@@ -55,7 +55,7 @@ $$\text{Suppression Threshold} = 10 \times \text{Fighters}_{\text{race}} \times 
 
 ### Consequences of a Successful Insurgency
 1. **Sector Defection & Tax Inheritance**: Every revolting sector immediately transfers ownership to the instigating empire, and the instigator inherits the target's planetary tax rate.
-2. **Garrison Elimination**: All defending military troops ($\text{Troops}_{\text{sector}}$) stationed in each revolting sector are wiped out.
+2. **Garrison Elimination**: All defending military troops ($`\text{Troops}_{\text{sector}}`$) stationed in each revolting sector are wiped out.
 3. **Civilian Casualties & Demographic Sync**: Street fighting inflicts random civilian casualties between $0$ and $\text{Population} - 1$, and planetary civilian, military, sector ownership, and mobilization totals are immediately reconciled across both empires.
 
 ---

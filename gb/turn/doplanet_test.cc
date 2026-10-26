@@ -2913,10 +2913,9 @@ void test_moveplanet_and_ground_mcdc() {
       p.expltimer() = 0;
       p.info(1).numsectsowned = 1;
       smap.get({0, 0}).set_owner(0);
-      test::expect_false(
-          process_island_exploration(ctx.em, *ctx.em.peek_star(1), p, smap,
-                                     stats)
-              .has_value());
+      test::expect_false(process_island_exploration(
+                             ctx.em, *ctx.em.peek_star(1), p, smap, stats)
+                             .has_value());
     });
   });
 

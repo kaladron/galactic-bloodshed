@@ -63,9 +63,9 @@ flowchart LR
 ```
 
 - **Natural Seasonal Drift**: Planetary surface temperatures experience natural atmospheric fluctuations of $\pm 5^{\circ}\text{C}$ around their stellar baseline.
-- **Orbital Space Mirrors (`+`)**: Giant orbital reflector arrays in the same star system aimed at a planet focus solar energy into the upper atmosphere to warm freezing worlds (with beam intensity $\in [0, 100]$ attenuating as $I_{\text{effective}} = \lfloor 50 \times \text{Intensity} / \text{Range} \rfloor$ beyond planetary orbit range $\text{Range} > 50$):
+- **Orbital Space Mirrors (`+`)**: Giant orbital reflector arrays in the same star system aimed at a planet focus solar energy into the upper atmosphere to warm freezing worlds (with beam intensity $\in [0, 100]$ attenuating as $`I_{\text{effective}} = \lfloor 50 \times \text{Intensity} / \text{Range} \rfloor`$ beyond planetary orbit range $\text{Range} > 50$):
 
-$$\Delta T = \text{round\_rand}\!\left(\left(1 - 0.01 \times \text{Damage}\right) \times I_{\text{effective}}\right)$$
+$$\Delta T = \operatorname{round}\!\left(\left(1 - 0.01 \times \text{Damage}\right) \times I_{\text{effective}}\right)$$
 
 Mirror intensity is clamped to $[0, 100]$.
 
@@ -82,7 +82,7 @@ If the host star is undergoing a nova collapse, extreme radiation sweeps across 
 Populated sectors extract raw minerals and petroleum:
 - **Mineral Yield**: Populated sectors extract mineral ore based on racial metabolism and sector efficiency:
 
-$$\text{Yield} = \min\left(\text{Sector Reserves}, \left\lfloor \text{Metabolism} \times \text{UniformRandom}(1, \text{Efficiency}) \right\rfloor\right)$$
+$$\text{Yield} = \min\left(\text{Sector Reserves}, \left\lfloor \text{Metabolism} \times \operatorname{Uniform}(1, \text{Efficiency}) \right\rfloor\right)$$
 
 - **Propellant Synthesis**: Extracting minerals simultaneously generates refined fuel. Sectors classified as Gas Fields yield double fuel output ($2 \times \text{Yield}$).
 - **Munitions Diversion**: If a sector has undergone military mobilization, extracted minerals are automatically refined into destructive ordnance (`destruct`) rather than raw minerals.

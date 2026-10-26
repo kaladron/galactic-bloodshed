@@ -31,7 +31,7 @@ flowchart LR
 ### Orbital Space Mirrors (`+`)
 Space Mirrors are massive orbital reflector arrays designed to capture and redirect stellar radiation within their star system:
 - **Planetary Heating**: Aimed directly at a planet in the same star system (`order <ship> aim <planet>`, `order <ship> intensity <0..100>`), mirrors focus concentrated solar energy into the upper atmosphere to warm surface temperatures and melt ice sheets (cooling requires dust canisters `g`).
-- **Thermal Redirection Formula**: Within planetary orbit range ($\text{Range} \le 50$), effective intensity equals $\text{Intensity}$; beyond $\text{Range} > 50$, $I_{\text{effective}} = \lfloor 50 \times \text{Intensity} / \text{Range} \rfloor$. Accounting for hull damage, $\Delta T = \text{round\_rand}\!\left((1 - 0.01 \times \text{Damage}) \times I_{\text{effective}}\right)$.
+- **Thermal Redirection Formula**: Within planetary orbit range ($\text{Range} \le 50$), effective intensity equals $\text{Intensity}$; beyond $\text{Range} > 50$, $`I_{\text{effective}} = \lfloor 50 \times \text{Intensity} / \text{Range} \rfloor`$. Accounting for hull damage, $`\Delta T = \operatorname{round}\!\left((1 - 0.01 \times \text{Damage}) \times I_{\text{effective}}\right)`$.
 
 ### Atmospheric Aerosol Canisters
 - **Greenhouse Gas Canisters (`h`)**: Injected into the troposphere to trap infrared radiation, raising global planetary temperatures.
@@ -65,7 +65,7 @@ Transforming hostile planetary terrain into arable land is accomplished through 
 ```mermaid
 flowchart LR
     Hostile["Hostile Terrain\n(Desert, Ice, Mountain, Wasteland)"] --> Terraform["Terraform Device (T)\nAutonomous Surface Conditioning Vehicle"]
-    Terraform --> Arable["Ideal Species Biosphere\n(Likesbest Sector Type)"]
+    Terraform --> Arable["Ideal Species Biosphere\n(Preferred Sector Terrain)"]
     
     Arable --> Plow["Space Plow (K)\nMechanical Topsoil Cultivator"]
     Plow --> Fertile["100% Agricultural Fertility\nMaximum Biomass & Food Production"]
@@ -73,7 +73,7 @@ flowchart LR
 
 ### Terraform Devices (`T`)
 Terraform Devices are autonomous ground vehicles programmed with sequential movement routes across the planetary grid:
-- **Surface Conditioning**: As the device traverses sectors, it systematically terraforms hostile biomes (deserts, glaciers, volcanic crags) into the owning species' preferred habitat classification (`likesbest`).
+- **Surface Conditioning**: As the device traverses sectors, it systematically terraforms hostile biomes (deserts, glaciers, volcanic crags) into the owning species' preferred habitat terrain classification.
 - **Wasteland Reclamation**: Converts radioactive wastelands into clean, habitable landmasses.
 - **Colony Reset**: Terraforming a sector completely clears any existing colony, resetting ownership, population, troops, sector efficiency, and mobilization to zero.
 
@@ -105,7 +105,7 @@ flowchart TD
 ### Environmental Disaster Thresholds
 When planetary toxicity exceeds **$30\%$ Toxicity**, the world enters ecological crisis:
 - Severe industrial catastrophes trigger spontaneously during turn updates.
-- Random populated sectors are atomically incinerated into radioactive wastelands (`SectorType::SEC_WASTED`), destroying civilian populations, wiping out ground infrastructure, and destroying resource veins.
+- Random populated sectors are atomically incinerated into radioactive wastelands (`%`), destroying civilian populations, wiping out ground infrastructure, and destroying resource veins.
 
 ---
 

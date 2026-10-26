@@ -78,7 +78,7 @@ Galactic Bloodshed uses **C++26 modules** to enforce architectural boundaries. S
 ### Core Subsystem Modules (7-Tier Module DAG)
 
 - **Tier 1: `gb.entities`** (Domain Model) - `gb/entities/entities.cppm` (`gb_entities` target)
-  - Pure in-memory domain entities (`Race`, `Star`, `Planet`, `Ship`, `Sector`, `SectorMap`, `Universe`, `Commod`, `Power`, `Block`) with zero database, Glaze, or service dependencies
+  - Pure in-memory domain entities (`Race`, `Star`, `Planet`, `Ship`, `Sector`, `SectorMap`, `Universe`, `Commod`, `Power`, `Block`, `NewsItem`, `TelegramItem`, `ServerState`, `ShipExam`) with zero database, Glaze, or service dependencies
   - Polymorphic specialized ship hierarchy (`gb/entities/ship/`) with compile-time checked downcasting via `Ship::as<T>()`, `ShipFactory` deserialization, and encapsulated typed members (eliminating raw variant unpacking):
     - Base: `Ship` (`ship_base.cppm`)
     - Autonomous / Replicating: `AutonomousShip` $\to$ (`VonNeumannShip`, `BerserkerShip`) (`ship_subclasses.cppm`)
@@ -90,58 +90,68 @@ Galactic Bloodshed uses **C++26 modules** to enforce architectural boundaries. S
     - Geoengineering: `TerraformerShip` $\to$ `GroundPlowShip` (surface order queues and plowing)
     - Cargo Transfer: `TransporterShip` (target recipient vessels)
     - Ecological Containment: `ToxicWasteShip` (planetary toxin harvesting and storage)
-  - Type-safe IDs (`player_t`, `governor_t`, `shipnum_t`, `starnum_t`, `planetnum_t`, `commodnum_t` — all entity and governor primary keys are uniformly 1-based `>= 1`, while sector `(x, y)` coordinates remain 0-based), semantic metric aliases (`armor_t`, `damage_t`, `speed_t`, `radiation_t`, `fuel_t`, `gun_count_t`, `bearing_t`, `hangar_t`, `ship_size_t`, `weapon_power_t`), sparse `std::flat_map` / `std::flat_set` per-player and per-governor containers, `Coordinates`
+  - Type-safe IDs (`player_t`, `governor_t`, `shipnum_t`, `starnum_t`, `planetnum_t`, `commodnum_t`, `news_id_t`, `telegram_id_t` — all entity and governor primary keys are uniformly 1-based `>= 1`, while sector `(x, y)` coordinates remain 0-based), semantic metric aliases (`armor_t`, `damage_t`, `speed_t`, `radiation_t`, `fuel_t`, `gun_count_t`, `bearing_t`, `hangar_t`, `ship_size_t`, `weapon_power_t`, `resource_t`, `money_t`, `population_t`, `ap_t`), sparse `std::flat_map` / `std::flat_set` per-player and per-governor containers, `Coordinates`
   - First-class domain methods and computed predicates (`Ship::is_docked()`, `Ship::refuel_from_gas_giant()`, `Ship::process_radiation()`, `Ship::prepare_for_flight()`, `Planet::update_toxicity()`, `Planet::process_toxic_environmental_damage()`, `Planet::select_victim_to_steal_from()`, `SectorMap::process_supernova_devastation()`, `AutonomousShip::mine_sector()`, `AutonomousShip::roam_to_adjacent_sector()`)
   - Configuration constants (`Tweakables`), random utilities (`rand.cppm`), ship templates (`ship_templates.cppm`), and ship filters (`shipfilter.cppm`)
 
 - **Tier 1: `dallib`** (Data Access Layer) - `gb/dal/dallib.cppm` (`dallib` target)
-  - `Database`, `JsonStore`, `TelegramItem`, and `initialize_schema()`
+  - `Database`, `JsonStore`, and `initialize_schema()`
   - Only layer with direct dependency on SQLite3
 
 - **Tier 2: `gb.repositories`** (Repository Pattern) - `gb/repositories/repositories.cppm` (`gb_repositories` target)
   - Persistence mapping layer between `EntityManager` and `dallib`
-  - Specific repositories for races, ships, planets, stars, sectors, commodities, power, and blocks
+  - Specific `Repository<T>` adapters for races, ships, planets, stars, sectors, commodities, power, blocks, news, telegrams, universe, server state, and ship examination logs
   - `gb.repositories` exports zero Glaze headers; `glz::meta<T>` schemas are isolated inside `gb.repositories.glaze` (`gb/repositories/glaze_schemas.cppm`) and `.cc` implementation units
 
 - **Tier 3: `gb.services`** (Service Layer) - `gb/services/services.cppm` (`gb_services` target)
   - `EntityManager`: Central entity lifecycle, caching, and monadic transaction coordinator (`entity_manager.cppm`), using `struct EntityManager::Storage` PIMPL so `gb.repositories` is never exported in `gb.services`'s public interface
-  - `GameObj`: Per-command execution context, `check_commandable(const Ship&)`, and AP deduction helpers (`gameobj.cppm`)
+  - `GameObj`: Per-command execution context, `UiMode` (`ASCII` or `JSON`), zero-locale `OutputBuffer` (`g.out`, `g.present()`, `g.print()`), `check_commandable(const Ship&)`, and AP deduction helpers (`gameobj.cppm`)
   - `Place`: Hierarchical scope path parser and formatter (`place.cppm`)
   - `RaceList`, `StarList`, `PlanetList`, `ShipList`, `CommodList`, `BlockList`: RAII and readonly collection views (`entitylists.cppm`)
-  - `SessionRegistry` & Notification routing (`session_registry.cppm`, `notification.cppm`, `tele.cppm`, `prompt.cppm`)
+  - `SessionRegistry` (with transactional `SocketOutbox` staging live cross-player messages until `EntityManager::Transaction::commit()`) & Notification routing (`session_registry.cppm`, `notification.cppm`, `tele.cppm`, `prompt.cppm`)
 
-- **Tier 4: `gb.mechanics`** (Shared Stateless Game Rules) - `gb/mechanics/mechanics.cppm` (`gb_mechanics` target)
-  - Multi-entity rules shared between interactive player commands (`commands`) and the turn engine (`gb.turn`):
-    - `:navigation`: `moveship`, `do_merchant`, `followable`, `msg_OOF`, `autonav`, `dock`, `land`, `launch`, `fuel`, `order`
-    - `:combat`: `shoot_ship_to_ship`, `shoot_planet_to_ship`, `shoot_ship_to_planet`, `resolve_ground_attack`, `domine`, `detonate_mine`
-    - `:construction`: `can_build_at_planet`, `can_build_on_ship`, `create_new_ship`, `build_cost`, `get_build_tech`
+- **Tier 4: `gb.mechanics` & `gb.presentation`** (Shared Game Rules & Dual-Mode Presentation)
+  - **`gb.mechanics`** (`gb/mechanics/mechanics.cppm`, `gb_mechanics` target): Multi-entity stateless rules returning structured domain results without formatting strings or touching player output:
+    - `:navigation`: `moveship`, `do_merchant`, `followable`, `msg_OOF`, `autonav`, `dock`, `land`, `launch`, `fuel`, `order`, `load`/`unload` cargo transfers
+    - `:combat`: `shoot_ship_to_ship`, `shoot_planet_to_ship`, `shoot_ship_to_planet`, `execute_ship_boarding`, `execute_landed_ship_boarding`, `execute_sector_ground_assault`, `execute_afv_walk`, `domine`, `trigger_mine`
+    - `:construction`: `can_build_at_planet`, `can_build_on_ship`, `create_new_ship`, `configure_factory_blueprint`, `modify_factory_attribute`, `upgrade_single_ship`
     - `:visibility`: `in_range`, `can_see_ship`, `optical_range`, `ships_at_star`, `get4args`
     - `:victory`: `create_victory_list`, `compute_power_blocks`
+  - **`gb.presentation`** (`gb/presentation/presentation.cppm`, `gb_presentation` target): Dual-mode (`UiMode::ASCII` via `std::format`/`tabulate` and `UiMode::JSON` via `glaze`) view models, result renderers, and telegram/news bulletin formatters:
+    - `gb.presentation.core`: `UiMode`, `OutputBuffer`, `present_to`, `to_json_envelope`, ANSI color/inverse terminal helpers
+    - `gb.presentation.planet_views`: Planetary maps (`map`), orbital maps (`orbit`), surveys, sector analysis, production, routes, and planetary turn bulletins
+    - `gb.presentation.navigation`: Navigation reports, course/order results, docking/landing/launching, cargo transfer summaries, and scope changes
+    - `gb.presentation.construction`: Ship construction, factory blueprints (`make`/`modify`), and in-service retrofits (`upgrade`)
+    - `gb.presentation.ship_ops`: Ship rosters (`report`, `ship`, `stats`, `stock`, `weapons`, `factories`), crystal mounting, jettison, and scrapping
+    - `gb.presentation.combat`: Tactical sweeps, ship/planet gunnery, boarding/ground combat reports, mine detonations, and combat/autonomous turn bulletins
+    - `gb.presentation.empire_views`: Power/block standings, colonies, governors, market (`bid`/`sell`), diplomacy, communications (`read`/`send`/`post`), and victory announcements
+    - `gb.presentation.production`: Stockpile and production summaries
 
 - **Tier 5: `gb.turn`** (Turn Simulation Engine) - `gb/turn/turn.cppm` (`gb_turn` target)
-  - Multi-pass simulation pipeline (`:turnstats`, `:bombard`, `:doplanet`, `:dosector`, `:doship`, `:vn`, `:doturncmd`)
+  - Multi-pass simulation pipeline (`:turnstats`, `:bombard`, `:doplanet`, `:dosector`, `:doship`, `:vn`, `:doturncmd`), delegating all bulletin formatting to `gb.presentation` (zero `std::stringstream` or `tabulate` imports)
 
 - **Tier 6: `commands` & `gb.creator`** (Application & Onboarding Layers)
-  - **`commands`** (`gb/commands/commands.cppm`): 89 player command implementations authored with declarative `CommandDescriptor`s (`command_spec.cppm`) and domain handlers
+  - **`commands`** (`gb/commands/commands.cppm`): Individual player command implementations authored with declarative `CommandDescriptor`s (`command_spec.cppm`), delegating domain rules to `gb.mechanics` and rendering all output through `g.present(...)` (`gb.presentation`)
   - **`gb.creator`** (`gb/creator/creator.cppm`): Procedural galaxy generation (`UniverseGenerator`), player registration (`EnrollmentService`), and 1400-point species design (`RacegenEngine`, `RaceArchetype`)
 
 - **Tier 7: `gb.server`** (Server & Networking) - `gb/server/server_module.cppm` (`gb_server` target)
-  - Asio-backed TCP server (`Server`), client sessions (`Session`), authentication (`auth`), notifications (`notification`), and startup configuration (`server_config`)
+  - Asio-backed TCP server (`Server`), client sessions (`Session` with Telnet `IAC`/`TTYPE` terminal negotiation), authentication (`auth`), notifications (`notification`), and startup configuration (`server_config`)
 
 ### Strict 3-Tier Domain Logic Placement Rule
 
 Every game function must reside in the lowest tier capable of expressing its inputs:
 1. **`gb.entities` (`gb/entities/`)**: Pure in-memory operations on a single entity or small value set (`Planet`, `SectorMap`, `Sector`, `Ship`, `Race`) that do **not** touch `EntityManager`, `TurnStats`, or `push_telegram`. Single-entity logic is exposed as member methods (e.g., `Planet::update_toxicity()`, `Ship::refuel_from_gas_giant()`, `AutonomousShip::mine_sector()`) without redundant C-style free function wrappers.
-2. **`gb.mechanics` (`gb/mechanics/`)**: Multi-entity domain operations requiring `EntityManager` or `SessionRegistry` that are invoked by both interactive player commands and turn processing (e.g., `moveship`, `shoot_ship_to_ship`, `compute_power_blocks`).
-3. **`gb.turn` (`gb/turn/`)**: Turn-only batch passes that orchestrate `EntityManager` iterations, accumulate `TurnStats`, and dispatch turn-end telegram bulletins (`doplanet`, `dosector`, `doship`, `do_VN`, `doturncmd`).
+2. **`gb.mechanics` (`gb/mechanics/`)**: Multi-entity domain operations requiring `EntityManager` or `SessionRegistry` that are invoked by both interactive player commands and turn processing (e.g., `moveship`, `shoot_ship_to_ship`, `compute_power_blocks`), returning structured domain result records.
+3. **`gb.turn` (`gb/turn/`)**: Turn-only batch passes that orchestrate `EntityManager` iterations, accumulate `TurnStats`, and dispatch turn-end telegram bulletins via `gb.presentation` (`doplanet`, `dosector`, `doship`, `do_VN`, `doturncmd`).
 
 ### Module Dependencies (Strict Acyclic DAG)
 
 ```
-gb.server       --> commands, gb.turn, gb.mechanics, gb.services, gb.entities, dallib, asio
-commands        --> gb.turn, gb.mechanics, gb.services, gb.entities, scnlib, tabulate
+gb.server       --> commands, gb.turn, gb.presentation, gb.mechanics, gb.services, gb.entities, dallib, asio
+commands        --> gb.turn, gb.presentation, gb.mechanics, gb.services, gb.entities, scnlib
 gb.creator      --> gb.services, gb.repositories, gb.entities, dallib, tabulate
-gb.turn         --> gb.mechanics, gb.services, gb.entities, dallib, tabulate
+gb.turn         --> gb.presentation, gb.mechanics, gb.services, gb.entities, dallib
+gb.presentation --> gb.mechanics, gb.services, gb.entities, tabulate, glaze
 gb.mechanics    --> gb.services, gb.entities, scnlib
 gb.services     --> PUBLIC: gb.entities, dallib | PRIVATE: gb.repositories
 gb.repositories --> gb.entities, dallib, glaze
@@ -263,16 +273,21 @@ public:
 
 **Specific Repositories**
 
-Each game entity type has its own repository:
+Each game entity type has its own `Repository<T>` adapter backed by `JsonStore` + Glaze:
 
-- **`RaceRepository`**: Player races
-- **`ShipRepository`**: Spacecraft
-- **`PlanetRepository`**: Planets
-- **`StarRepository`**: Star systems
-- **`SectorRepository`**: Planet surface sectors
-- **`CommodRepository`**: Commodity market
-- **`BlockRepository`**: Communication blocks
-- **`PowerRepository`**: Power reports
+- **`RaceRepository`**: Player races (`tbl_race`)
+- **`ShipRepository`**: Spacecraft (`tbl_ship`)
+- **`PlanetRepository`**: Planets (`tbl_planet`)
+- **`StarRepository`**: Star systems (`tbl_star`)
+- **`SectorRepository`**: Planet surface sector maps (`tbl_sector`)
+- **`CommodRepository`**: Commodity market lots (`tbl_commod`)
+- **`BlockRepository`**: Alliance power blocks (`tbl_block`)
+- **`PowerRepository`**: Imperial power reports (`tbl_power`)
+- **`NewsRepository`**: Galactic news dispatches (`tbl_news`, `Repository<NewsItem>`)
+- **`TelegramRepository`**: Governor telegrams (`tbl_telegram`, `Repository<TelegramItem>`)
+- **`UniverseRepository`**: Galaxy-wide state (`tbl_universe`)
+- **`ServerStateRepository`**: Turn/segment schedule state (`tbl_server_state`)
+- **`ShipExamRepository`**: Ship class examination blueprints (`tbl_ship_exam`)
 
 **Example: ShipRepository**
 ```cpp
@@ -331,18 +346,15 @@ struct meta<Ship> {
 
 ### Layer 3: Service Layer
 **Location**: `gb/services/`  
-**Modules**: 
-- `gb.services` - Core game services (`EntityManager`, `GameObj`, `Place`, `EntityLists`, `SessionRegistry`)
-- `session` - Asio session management (`gb/server/session.cppm`)
+**Module**: `gb.services` - Core game services (`EntityManager`, `GameObj`, `Place`, `EntityLists`, `SessionRegistry`, `notification`, `tele`, `prompt`)
 
-Services contain business logic and coordinate operations across multiple repositories.
+Services coordinate persistence, transactions, caching, and cross-session notification routing across multiple repositories.
 
 #### Responsibilities
-- Implement game rules and business logic
-- Coordinate multi-entity operations
-- Enforce game constraints
-- Provide high-level game operations
-- Transaction management for complex operations
+- Manage entity identity, caching, and RAII persistence
+- Coordinate multi-entity operations and SQLite transactions (`EntityManager::Transaction`)
+- Stage and flush cross-player socket notifications (`SessionRegistry` transactional `SocketOutbox`)
+- Provide offline notification fallback (`warn_player`, `warn_race`, `notify_star`) to `tbl_telegram`
 
 #### Key Component: EntityManager
 
@@ -375,11 +387,12 @@ public:
   template <typename Fn>
   decltype(auto) mutate_ship_exam(ShipType ship_type, Fn&& fn);
 
-  // Direct read-only access (throws EntityNotFoundError on invalid internal IDs)
-  const Race* peek_race(player_t player);
-  const Ship* peek_ship(shipnum_t num);
-  const Planet& peek_planet(starnum_t star, planetnum_t pnum);
-  const Star& peek_star(starnum_t num);
+  // Direct read-only access (throws EntityNotFoundError when missing)
+  [[nodiscard]] const Race* peek_race(player_t player);
+  [[nodiscard]] const Ship* peek_ship(shipnum_t num);
+  [[nodiscard]] const Planet* peek_planet(starnum_t star, planetnum_t pnum);
+  [[nodiscard]] const Star* peek_star(starnum_t num);
+  [[nodiscard]] const SectorMap* peek_sectormap(starnum_t star, planetnum_t pnum);
 
   // Monadic scoped peeks (safe inspection with zero-cost lambda execution)
   template <typename Fn>
@@ -430,33 +443,32 @@ auto name = g.entity_manager.with_ship(target_ship_no, [](const Ship& ship) {
 });
 ```
 
-2. **Direct Peeks (`peek_*`)**: Used when accessing validated internal IDs (e.g. `g.player`, `g.snum()`). Lookups throw `EntityNotFoundError` on missing internal IDs to fail fast against database corruption:
+2. **Direct Peeks (`peek_*`)**: Used when accessing validated internal IDs (e.g. `g.player()`, `g.snum()`). Lookups throw `EntityNotFoundError` on missing IDs to fail fast against database corruption:
 ```cpp
-const auto* race = g.entity_manager.peek_race(g.player);
-g.out << std::format("Race: {}\n", race->name);
+const auto& star = *g.entity_manager.peek_star(g.snum());
 ```
 
-#### Service Layer Responsibilities In Practice
-- Coordinate repositories behind a game-specific API.
-- Preserve identity/caching guarantees for loaded entities.
-- Support batch flushing after turn processing (`DeferredWriteScope`).
-- Host game-facing persistence operations like entity deletion, news/telegram posting, and other multi-entity actions.
-- Avoid exposing DAL internals upward.
-
-#### Design Principles
-- **Business logic centralization**: All game rules in one place
-- **Transaction management**: Ensures data consistency
-- **Coordination**: Orchestrates multiple repositories
-- **No direct database access**: Only uses repositories
-- **Domain-driven**: Methods reflect game concepts
+#### Transactional `SocketOutbox` & Offline Notification Fallback
+- **`SessionRegistry` Outbox**: Live cross-player notifications (`notify_race`, `notify_star`, `warn_player`, `warn_race`) are staged in `SessionRegistry`'s transactional `SocketOutbox` (`begin_outbox()`, `commit_outbox()`, `rollback_outbox()`). If a command transaction rolls back, staged socket notifications are discarded without ever reaching connected clients; on commit, staged notifications are flushed after the SQLite transaction commits.
+- **Offline Telegram Fallback**: `warn_player(em, reg, player, governor, msg)` checks whether `(player, governor)` currently has an active connected session. If online, it delivers a live socket notification; if offline, it persists a `TelegramItem` in `tbl_telegram` so tactical alerts, boarding reports, and market outbid notices are never dropped.
 
 ---
 
-### Layer 4: Application Layer (Commands)
+### Layer 4: Presentation Layer (`gb.presentation`) & Dual-Mode Rendering
+**Location**: `gb/presentation/`  
+**Module**: `gb.presentation` (`gb.presentation.core`, `gb.presentation.planet_views`, `gb.presentation.navigation`, `gb.presentation.construction`, `gb.presentation.ship_ops`, `gb.presentation.combat`, `gb.presentation.empire_views`, `gb.presentation.production`)
+
+All player-facing output formatting—including 2D ASCII maps (`map`, `orbit`), `tabulate` tables, ANSI color/reverse-video sequences, Glaze JSON command envelopes, and telegram/news bulletins—is isolated in `gb.presentation`:
+- **Zero Stream Coupling**: `GameObj::out` is a zero-locale `std::string`-backed `OutputBuffer` (`gb.presentation.core`). Neither `gb.mechanics`, `gb.turn`, nor `commands` imports `tabulate` or formats `std::stringstream` output.
+- **Dual-Mode Dispatch (`UiMode::ASCII` & `UiMode::JSON`)**: Command handlers construct strongly typed ViewModel or Result structs and pass them to `g.present(view_model)`. `present_to(out, g.ui_mode(), view_model)` dispatches via ADL to `render_for_mode(mode, view_model)`, emitting human-readable ASCII/ANSI text in `UiMode::ASCII` or a structured Glaze JSON envelope (`{"type": "...", "data": {...}}`) in `UiMode::JSON`.
+
+---
+
+### Layer 5: Application Layer (Commands)
 **Location**: `gb/commands/`  
 **Module**: `commands` (standalone module with `:spec` partition)
 
-The application layer handles player interaction, input parsing, command dispatch, and formatted output.
+The application layer handles player interaction, input parsing, command dispatch, and delegating output to `gb.presentation`.
 
 #### Core Concepts
 
@@ -467,68 +479,65 @@ The application layer handles player interaction, input parsing, command dispatc
    - **Action Point (AP) Costs**: Specifies whether a command is free, costs fixed AP (deducted from Star or Universe), or computes dynamic costs per action.
    - **Syntax & Argument Requirements**: Defines minimum argument counts and usage syntax strings.
 
-2. **Centralized Dispatch & Transactional APs**:
-   The dispatch pipeline (`dispatch_command()`) centralizes all preconditions before invoking the command handler:
+2. **Centralized Dispatch, Atomic Transactions, & `SocketOutbox`**:
+   The dispatch pipeline (`dispatch_command()`) centralizes all preconditions and transaction boundaries around the command handler:
    - Verifies permissions, valid scope, and minimum arguments.
    - Pre-checks that the player has sufficient AP to pay the command's fixed cost.
+   - Opens an `EntityManager::Transaction` (`BEGIN IMMEDIATE`) and `SessionRegistry::begin_outbox()`.
    - Invokes the command handler (`bool (*)(const command_t& argv, GameObj& g)`).
-   - Deducts fixed AP **only** when the handler returns `true`. If the handler returns `false` due to domain errors or invalid input, no AP is deducted.
-   - Dynamic commands (e.g. multi-ship combat or movement) deduct AP per-action using atomic helpers (`g.deduct_ap()` / `g.deduct_univ_ap()`).
+   - Deducts fixed AP **only** when the handler returns `true`, commits the SQLite transaction, and flushes `SessionRegistry::commit_outbox()`. If the handler returns `false` or throws an exception, the transaction and `SocketOutbox` are rolled back with 0 AP deducted.
 
 3. **Command Lifecycle**:
 
 ```mermaid
 flowchart TD
-    Cmd[Player Inputs Command String] --> Parse[Server Parses argv]
-    Parse --> Lookup[Registry Resolves CommandDescriptor]
-    Lookup --> Roles{Role Check}
-    Roles -- Fail --> ErrRole[Output Permission Error]
-    Roles -- Pass --> Scope{Scope Check}
-    Scope -- Fail --> ErrScope[Output Scope Error]
-    Scope -- Pass --> APPre{Fixed AP Pre-check}
-    APPre -- Insufficient --> ErrAP[Output Insufficient AP]
-    APPre -- Pass --> Exec[Execute Handler]
+    Cmd["Player Inputs Command String"] --> Parse["Server Parses argv"]
+    Parse --> Lookup["Registry Resolves CommandDescriptor"]
+    Lookup --> Roles{"Role Check"}
+    Roles -- Fail --> ErrRole["Present Permission Error"]
+    Roles -- Pass --> Scope{"Scope Check"}
+    Scope -- Fail --> ErrScope["Present Scope Error"]
+    Scope -- Pass --> APPre{"Fixed AP Pre-check"}
+    APPre -- Insufficient --> ErrAP["Present Insufficient AP"]
+    APPre -- Pass --> Txn["Begin SQLite Transaction & SocketOutbox"]
+    Txn --> Exec["Execute Handler & g.present(...)"]
     
-    Exec --> Result{Return true?}
-    Result -- false --> NoAP[No AP Deducted]
-    Result -- true --> CheckModel{AP Model}
+    Exec --> Result{"Return true?"}
+    Result -- false --> Rollback["Commit/Rollback & 0 AP Deducted"]
+    Result -- true --> CheckModel{"AP Model"}
     
-    CheckModel -- Fixed Star / Univ --> DeductFixed[Dispatcher Deducts Fixed AP]
-    CheckModel -- Dynamic --> DoneDyn[Done - AP deducted per action via g.deduct_ap]
-    CheckModel -- Free --> DoneFree[Done - 0 AP]
+    CheckModel -- "Fixed Star / Univ" --> DeductFixed["Deduct Fixed AP, Commit DB & Flush Outbox"]
+    CheckModel -- Dynamic --> DoneDyn["Commit DB & Flush Outbox (AP deducted per action)"]
+    CheckModel -- Free --> DoneFree["Commit DB & Flush Outbox (0 AP)"]
 ```
 
 #### Command Pattern Example
 
-Command handlers focus strictly on domain logic and output formatting, while their descriptor pairs them with their validation rules:
+Command handlers validate arguments, invoke `gb.mechanics` or `EntityManager`, and render structured results via `g.present(...)`:
 
 ```cpp
 namespace GB::commands {
 
-bool examine(const command_t& argv, GameObj& g) {
-  auto shipno = string_to_shipnum(argv[1]);
-  if (!shipno) {
-    g.out << "Specify a valid ship number.\n";
+bool tax(const command_t& argv, GameObj& g) {
+  const auto& star = *g.entity_manager.peek_star(g.snum());
+  if (!star.control(g.player(), g.governor())) {
+    g.present(GB::presentation::CommandError{"You are not authorized to do that here."});
     return false;
   }
-  const auto* ship = g.entity_manager.peek_ship(*shipno);
-  if (!ship) {
-    g.out << "Ship not found.\n";
-    return false;
-  }
-  g.out << std::format("Ship #{}: {}\n", ship->number(), ship->name());
+  // Mutate and present structured result via gb.presentation
+  g.present(GB::presentation::TaxResult{...});
   return true;
 }
 
-export constexpr CommandDescriptor examine_cmd{
-    .name = "examine",
-    .roles = {},
-    .scopes = AllowedScopes::ship_only(),
+export constexpr CommandDescriptor tax_cmd{
+    .name = "tax",
+    .roles = {.no_guests = true},
+    .scopes = AllowedScopes::planet_only(),
     .ap = APCost::free(),
-    .min_args = 2,
-    .syntax = "examine <ship>",
-    .description = "Examine ship systems and cargo",
-    .handler = &examine,
+    .min_args = 1,
+    .syntax = "tax [<rate>]",
+    .description = "Inspect or set planetary tax rate",
+    .handler = &tax,
 };
 
 } // namespace GB::commands
@@ -538,8 +547,8 @@ export constexpr CommandDescriptor examine_cmd{
 - **Declarative constraints**: Validation rules are declared in metadata rather than written procedurally in handlers.
 - **Uniform signature**: Every command handler conforms to `bool (*)(const command_t& argv, GameObj& g)`.
 - **Fail-safe AP transactions**: AP is never lost on failed commands or invalid arguments.
-- **Thin handlers**: Handlers focus purely on user interaction and service layer delegation.
-- **No direct data access**: All state mutation goes through `EntityManager` RAII handles.
+- **Thin handlers**: Handlers focus purely on argument validation, mechanics delegation, and `g.present(...)`.
+- **No direct data access**: All state mutation goes through `EntityManager` monadic `mutate_*` methods.
 
 ---
 
@@ -687,6 +696,10 @@ graph TD
         Commands --> Spec
     end
 
+    subgraph PresentationLayer ["Tier 5: Presentation Layer (gb.presentation)"]
+        Presentation["gb.presentation (:core, :navigation, :galaxy, :planet, :ship, :diplomacy, :empire, :session)"]
+    end
+
     subgraph TurnLayer ["Tier 5: Turn Simulation Engine (gb.turn)"]
         Turn["gb.turn (:turnstats, :bombard, :doplanet, :dosector, :doship, :vn, :doturncmd)"]
     end
@@ -697,30 +710,36 @@ graph TD
 
     subgraph ServicesLayer ["Tier 3: Service Layer (gb.services)"]
         EntityMgr["EntityManager (PIMPL Storage)"]
-        GameObjPart["GameObj & Place & EntityLists"]
-        SessionRegPart["SessionRegistry & Notification Routing"]
+        GameObjPart["GameObj (OutputBuffer, UiMode) & Place & EntityLists"]
+        SessionRegPart["SessionRegistry (Transactional Outbox) & Notification Routing"]
     end
 
     subgraph ReposLayer ["Tier 2: Repository Layer (gb.repositories)"]
-        Repos["gb.repositories (RaceRepository, ShipRepository, ...)"]
+        Repos["gb.repositories (RaceRepository, ShipRepository, NewsRepository, TelegramRepository, ...)"]
         GlazeSchemas["gb.repositories.glaze (Internal Glaze Schemas)"]
         Repos -.-> GlazeSchemas
     end
 
     subgraph FoundationLayer ["Tier 1: Domain Entities & DAL"]
-        Entities["gb.entities (Race, Star, Planet, Ship, Sector, Coordinates)"]
+        Entities["gb.entities (Race, Star, Planet, Ship, Sector, Power, Block, NewsItem, TelegramItem)"]
         DAL["dallib (Database, JsonStore, Schema)"]
         SQLite[("SQLite3 Storage")]
         DAL --> SQLite
     end
 
     Server --> Commands
+    Server --> Presentation
     Server --> Turn
     Server --> ServicesLayer
 
+    Commands --> Presentation
     Commands --> Turn
     Commands --> Mechanics
     Commands --> ServicesLayer
+
+    Presentation --> Mechanics
+    Presentation --> ServicesLayer
+    Presentation --> Entities
 
     Creator --> ServicesLayer
     Creator --> Repos
@@ -781,15 +800,15 @@ initialize_schema(db);
 // Create service boundary
 EntityManager entity_manager(db);
 
-// Commands receive EntityManager via GameObj
-GameObj game_context{
-  .player = current_player,
-  .entity_manager = entity_manager,
-  .out = player_output_stream
-};
+// Commands receive EntityManager and SessionRegistry via GameObj
+GameObj game_context(entity_manager, session_registry);
+game_context.set_player(current_player);
+game_context.set_governor(current_governor);
+game_context.set_ui_mode(UiMode::ASCII);  // or UiMode::JSON
+game_context.race = entity_manager.peek_race(current_player);
 
-// Execute command
-GB::commands::examine(command_args, game_context);
+// Execute command via descriptor dispatch
+GB::commands::dispatch_command(game_context, GB::commands::examine_cmd, command_args);
 ```
 
 ### Benefits
@@ -894,11 +913,12 @@ Each layer and class has one clear purpose:
 - **DAL**: Database operations only
 - **Repositories**: Entity persistence only
 - **Services**: Business logic only
-- **Commands**: User interaction only
+- **Presentation**: View-model rendering (`ASCII` and `JSON`) only
+- **Commands**: User input validation and command orchestration only
 
 ### Dependency Inversion
 High-level modules don't depend on low-level modules:
-- Commands depend on services (abstractions)
+- Commands depend on services and presentation view models (abstractions)
 - Services depend on repositories (abstractions)
 - Repositories depend on DAL (abstractions)
 - No layer knows implementation details of layers below
@@ -907,11 +927,11 @@ High-level modules don't depend on low-level modules:
 Easy to extend without modifying:
 - New repositories added without changing DAL
 - New services added without changing repositories
-- New commands added without changing services
+- New commands and view models added without changing services
 
 ### Interface Segregation
 Clients only depend on what they use:
-- Commands only see service interface
+- Commands only see service and presentation interfaces
 - Services only see repository interface
 - Repositories only see DAL interface
 
@@ -996,26 +1016,26 @@ class Repository {
 
 ### ❌ Don't Mix Concerns
 ```cpp
-// BAD: Command contains database code
+// BAD: Command contains database code and inline string formatting
 void command(const command_t& argv, GameObj& g) {
   Ship ship;
   // ... database access
   // ... business logic
-  // ... output formatting
+  // ... inline string formatting
   // All mixed together - NO!
 }
 
 // GOOD: Separated concerns
 void command(const command_t& argv, GameObj& g) {
-  const auto* ship = g.entity_manager.peek_ship(num);  // Data access
-  bool can_do = check_rules(*ship);                   // Business logic
-  g.out << format_ship(ship);               // Presentation
+  const auto* ship = g.entity_manager.peek_ship(num);     // Data access
+  bool can_do = check_rules(*ship);                       // Business logic
+  g.present(GB::presentation::build_ship_report(*ship));  // Presentation
 }
 ```
 
 ## Iterator Cleanup Direction
 
-The persistence API is intentionally moving toward two distinct iteration modes:
+The persistence API uses two distinct iteration modes:
 
 1. **Readonly iteration** for reporting, scans, and validation.
 2. **Writable iteration** for mutation with RAII persistence.
@@ -1023,9 +1043,9 @@ The persistence API is intentionally moving toward two distinct iteration modes:
 ### Target Patterns
 
 ```cpp
-for (const Race& race : RaceList::readonly(entity_manager)) {
+for (const Race* race : RaceList::readonly(entity_manager)) {
   // Read-only traversal
-  g.out << std::format("Race: {}\n", race.name);
+  g.print("Race: {}\n", race->name);
 }
 
 for (auto race_handle : RaceList{entity_manager}) {
@@ -1062,8 +1082,8 @@ gb/
 ├── entities/                    # Tier-1 Domain Entities & Types (gb.entities)
 │   ├── entities.cppm           # Domain entities module interface
 │   ├── types.cppm              # Strong ID types & semantic metric aliases
-│   ├── domain_types.cppm       # Coordinates, Stockpile, ServerState
-│   ├── race.cppm / .cc         # Race & alliance block domain models
+│   ├── domain_types.cppm       # Coordinates, Stockpile, ServerState, NewsItem, TelegramItem
+│   ├── race.cppm / .cc         # Race, Power & Block domain models
 │   ├── star.cppm / .cc         # Star system domain model
 │   ├── planet.cppm / .cc       # Planet domain model & toxicity/plunder math
 │   ├── sector.cppm / .cc       # Sector & SectorMap domain models
@@ -1079,18 +1099,18 @@ gb/
 ├── repositories/                # Tier-2 Repository DAL Adapters (gb.repositories)
 │   ├── repositories.cppm       # Repositories module interface (zero Glaze imports)
 │   ├── glaze_schemas.cppm      # Internal Glaze serialization traits (gb.repositories.glaze)
-│   ├── *_repository.cc         # Out-of-line entity persistence & JSON mapping
+│   ├── *_repository.cc         # Out-of-line entity persistence & JSON mapping (incl. News & Telegram)
 │   └── *_test.cc               # Repository unit tests
 │
 ├── services/                    # Tier-3 Domain Services & Orchestration (gb.services)
 │   ├── services.cppm           # Services module interface
 │   ├── entity_manager.cppm/.cc # Central lifecycle & PIMPL repository storage
-│   ├── gameobj.cppm / .cc      # Per-command execution context
+│   ├── gameobj.cppm / .cc      # Per-command execution context (OutputBuffer, UiMode)
 │   ├── entitylists.cppm / .cc  # RAII & readonly collection iteration views
 │   ├── place.cppm / .cc        # Hierarchical scope path parser & formatter
 │   ├── prompt.cppm / .cc       # Contextual prompt formatting
-│   ├── session_registry.cppm   # Cross-cutting notification interface
-│   ├── notification.cppm / .cc # Broadcast & player notification routing
+│   ├── session_registry.cppm   # Cross-cutting notification & transactional SocketOutbox interface
+│   ├── notification.cppm / .cc # Broadcast & player notification routing (with offline telegram fallback)
 │   └── *_test.cc               # Service unit tests
 │
 ├── mechanics/                   # Tier-4 Shared Stateless Game Rules (gb.mechanics)
@@ -1100,6 +1120,18 @@ gb/
 │   ├── construction.cppm / .cc # Ship construction & tech formulas
 │   ├── visibility.cppm / .cc   # Optical range, sighting, target resolution
 │   └── victory.cppm / .cc      # Victory rankings & alliance power block calculation
+│
+├── presentation/                # Tier-5 Presentation & View-Model Layer (gb.presentation)
+│   ├── presentation.cppm       # Presentation module aggregator
+│   ├── core.cppm               # ViewModel concept, AnsiColor, TableBuilder, JSON serializer
+│   ├── navigation.cppm / .cc   # Scope, orbit, walk, launch, land, dock, radar views
+│   ├── galaxy.cppm / .cc       # Star, survey, map,tech, victory, power, block views
+│   ├── planet.cppm / .cc       # Planet map, production, toxicity, sector, route views
+│   ├── ship.cppm / .cc         # Ship status, tactical, build, order, weapon views
+│   ├── diplomacy.cppm / .cc    # Diplomatic relations,insurgency, declaration views
+│   ├── empire.cppm / .cc       # Profile, treasury, governor, market, AP views
+│   ├── session.cppm / .cc      # Help, news, telegram, toggle, motto views
+│   └── *_test.cc               # Presentation view-model & dual-mode unit tests
 │
 ├── turn/                        # Tier-5 Turn Simulation Engine (gb.turn)
 │   ├── turn.cppm               # Turn engine module interface
@@ -1124,8 +1156,8 @@ gb/
 │
 ├── commands/                    # Tier-6 Player Commands (commands)
 │   ├── commands.cppm           # Commands module interface
-│   ├── command_spec.cppm       # CommandDescriptor specification
-│   ├── *.cc                    # 89 individual player commands
+│   ├── command_spec.cppm       # CommandDescriptor specification & transactional dispatch
+│   ├── *.cc                    # Individual player command translation units
 │   └── *_test.cc               # 4-way command unit test matrix
 │
 ├── creator/                     # Tier-6 Universe Generation & Onboarding (gb.creator)

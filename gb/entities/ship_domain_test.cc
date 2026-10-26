@@ -1635,7 +1635,8 @@ void test_moveship_and_followable() {
 
     // Sublight approach within same star orbit (dest.level == LEVEL_STAR,
     // storbits == dest.star)
-    s1.set_coordinates(star0_coords + SystemCoordinates{DIST_TO_LAND * 2.0, 0.0});
+    s1.set_coordinates(star0_coords +
+                       SystemCoordinates{DIST_TO_LAND * 2.0, 0.0});
     s1.set_star_destination(1);
     moveship(ctx.em, s1, true, true, false);
 
@@ -1870,9 +1871,11 @@ void test_moveship_and_followable() {
                             .with_speed(9)
                             .build();
   ctx.em.mutate_ship(probe_id, [&](Ship& probe) {
-    // Crewless probe explores star 1 on arrival, then runs out of fuel in deep space
+    // Crewless probe explores star 1 on arrival, then runs out of fuel in deep
+    // space
     probe.enter_deep_space();
-    probe.set_coordinates(star0_coords + SystemCoordinates{SYSTEMSIZE * 0.5, 0.0});
+    probe.set_coordinates(star0_coords +
+                          SystemCoordinates{SYSTEMSIZE * 0.5, 0.0});
     probe.set_star_destination(1);
     moveship(ctx.em, probe, true, true, false);
     test::expect_eq(probe.whatorbits(), ScopeLevel::LEVEL_STAR);

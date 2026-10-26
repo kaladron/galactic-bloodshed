@@ -6,8 +6,9 @@ The **commands** module (`gb/commands/`) implements all player-facing commands i
 
 ### Module Structure
 
-- **Module Interface**: `commands.cppm` - Exports all command functions
-- **Command Implementation**: `*.cc` - One file per command (e.g., `autoreport.cc`, `bless.cc`)
+- **Module Interface**: `commands.cppm` - Exports all command functions and `CommandDescriptor` instances
+- **Command Specification & Dispatch**: `command_spec.cppm` - Defines `CommandDescriptor`, role/scope/AP policies, and transactional `dispatch_command()`
+- **Command Implementation**: `*.cc` - One file per command (e.g., `autoreport.cc`, `bless.cc`, `pledge.cc`, `unpledge.cc`)
 - **Unit Tests**: `*_test.cc` - One test file per command or logical group
 
 ## Command Function Signature
@@ -15,12 +16,12 @@ The **commands** module (`gb/commands/`) implements all player-facing commands i
 All commands follow this pattern:
 
 ```cpp
-void commandname(const command_t& argv, GameObj& g);
+bool commandname(const command_t& argv, GameObj& g);
 ```
 
 **Parameters:**
-- `argv` - Command arguments (argv[0] is command name, argv[1+] are arguments)
-- `g` - Game object
+- `argv` - Command arguments (`argv[0]` is command name, `argv[1+]` are arguments; omit `argv` parameter name if unused)
+- `g` - Game object (`g.entity_manager`, `g.present(...)`, `g.print(...)`, `g.out`)
 
 ---
 
@@ -42,8 +43,8 @@ void commandname(const command_t& argv, GameObj& g);
 
 Examples:
 - `autoreport_test.cc` - Tests for `autoreport.cc`
-- `bless_test.cc` - Tests for `bless.cc` (to be created)
-- `toggle_test.cc` - Tests for `toggle.cc` (to be created)
+- `bless_test.cc` - Tests for `bless.cc`
+- `toggle_test.cc` - Tests for `toggle.cc`
 
 ### Test File Template
 
@@ -138,21 +139,8 @@ Each test file needs a target in `gb/CMakeLists.txt`:
 
 ```cmake
 add_executable(commandname_test commands/commandname_test.cc)
-target_link_libraries(commandname_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
+target_link_libraries(commandname_test PRIVATE dallib gb_entities gb_services gb_presentation commands test SQLite::SQLite3 glaze::glaze)
 add_test(NAME commandname_test COMMAND commandname_test)
-```
-
-Example for existing tests:
-
-```cmake
-# Action command tests - Phase 4.3
-add_executable(autoreport_test commands/autoreport_test.cc)
-target_link_libraries(autoreport_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME autoreport_test COMMAND autoreport_test)
-
-add_executable(capital_test commands/capital_test.cc)
-target_link_libraries(capital_test PRIVATE dallib gblib commands SQLite::SQLite3 glaze::glaze)
-add_test(NAME capital_test COMMAND capital_test)
 ```
 
 ---

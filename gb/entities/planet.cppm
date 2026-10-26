@@ -302,8 +302,7 @@ public:
     }
   }
   Planet(starnum_t star_id, planetnum_t planet_order,
-         PlanetType type = PlanetType::EARTH,
-         Coordinates dimensions = {10, 10})
+         PlanetType type = PlanetType::EARTH, Coordinates dimensions = {10, 10})
       : Planet(planet_struct{
             .dimensions = dimensions,
             .type = type,

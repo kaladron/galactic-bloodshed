@@ -37,15 +37,16 @@ Kinetic batteries fire high-velocity physical warheads stored in ship cargo hold
 
 All kinetic guns consume $1$ unit of stored destructive ordnance (`destruct`) per gun discharged in a volley.
 
-### Directed-Energy Weapons
-Energy weapons draw power directly from the ship's fuel reserves ($2.0\text{ fuel per strength point}$):
-- **Combat Lasers**: Direct-fire optical beams delivering instantaneous, high-precision strikes. When equipped with optical focus lenses, lasers achieve pinpoint armor penetration.
-- **Concentrated Energy Weapons (CEW)**: High-yield plasma and charged particle projectors that fire tunable beam discharges with calibrated focus ranges.
+### Directed-Energy Weapons (`fire` and `cew`)
+Energy weapons draw power directly from the ship's fuel reserves ($2.0\text{ fuel per strength point}$) and require an operational crystal mounted in the drive core:
+- **Combat Lasers**: Direct-fire optical beams delivering instantaneous, high-precision strikes. When equipped with optical focus lenses (`order <ship> focus`), lasers achieve enhanced pinpoint armor penetration.
+- **Confined Energy Weapons (`cew <ship> <target> [<strength>]`)**: High-yield plasma and charged particle projectors that fire tunable beam discharges at a calibrated optimal targeting range. Unlike standard kinetic batteries or lasers that engage any target up to maximum range, a CEW strike requires the target to lie at the ship's calibrated focus distance and can target either spaceborne vessels or planetary surface sectors (`<x,y>`).
+- **Crystal Overload Explosions**: Firing a crystal-mounted laser or CEW at strengths exceeding the hull's safe operating envelope ($\lfloor (1 - \text{Damage}/100) \times \text{Tech} / 4 \rfloor$) risks overheating and shattering the focus crystal. A crystal overload destroys the mounted crystal and can trigger a catastrophic internal core explosion that inflicts severe structural damage or destroys the firing ship outright.
 - **Radiative Firing Mode**: Ships and mines configured to fire in radiative mode (`order <ship> radiative`, toggled back via `order <ship> explosive`) direct ionizing radiation into target hulls, disabling operational computers and inflicting severe radiation sickness on enemy crews without destroying the ship chassis.
 
-### Guided Ordnance and Area Denial
+### Guided Ordnance and Area Denial (`detonate`)
 - **Guided Missiles (`^`)**: Self-propelled kinetic warheads that close with target ships at point-blank range ($`D_{\text{effective}} = 0`$) before detonating their destructive payload.
-- **Proximity Space Mines (`!`)**: Autonomous area-denial munitions that monitor local space and detonate their full explosive charge when unallied vessels enter proximity ($`D_{\text{effective}} = D^2 / 200`$).
+- **Proximity and Command-Detonated Space Mines (`!`)**: Area-denial munitions that either detonate autonomously when unallied vessels enter proximity or are triggered manually via `detonate <mine>` ($0\text{ AP}$). Upon detonation, a mine expends its full destructive payload against all vessels in the surrounding system or orbital track using radial blast attenuation ($`D_{\text{effective}} = D^2 / 200`$). If detonated in low planetary orbit, the blast also irradiates and devastates underlying planetary surface sectors.
 - **Anti-Ballistic Missiles (ABM `&`)**: Point defense platforms that track and intercept incoming hostile missiles and mines before impact.
 
 ---
@@ -75,13 +76,13 @@ Maximum kinetic weapon range scales logarithmically with imperial scientific tec
 
 $$R_{\text{max}} = \log_{10}(\text{Technology} + 1) \times \text{System Scale}$$
 
-Targets positioned beyond $R_{\text{max}}$ cannot be engaged by kinetic batteries.
+Targets positioned beyond $`R_{\text{max}}`$ cannot be engaged by kinetic batteries.
 
 ### Hit Probability and Combat Multipliers
 The probability of scoring hits depends on relative scientific technology, attacker gunnery precision, target evasion throttling, target physical displacement size, and the weapon caliber multiplier $K$:
 - **Effective 50% Hit Factor**: The tracking baseline where fire control achieves a $50\%$ hit probability scales inversely with caliber:
   $$c = \frac{a \times b}{K}$$
-  where $a$ scales with fire control technology and target displacement profile ($a \propto \text{Target Size}^{1/3}$), and $b$ accounts for relative speeds and evasive maneuvering. Light guns ($K = 1$) maintain high tracking precision over longer effective baselines, while heavy spinal mounts ($K = 3$) require closer range or larger targets to ensure hits.
+  where $a$ scales with fire control technology and target displacement profile ($`a \propto \text{Target Size}^{1/3}`$), and $b$ accounts for relative speeds and evasive maneuvering. Light guns ($K = 1$) maintain high tracking precision over longer effective baselines, while heavy spinal mounts ($K = 3$) require closer range or larger targets to ensure hits.
 - Higher imperial technology provides superior fire control computers, increasing penetration odds.
 - Small strike craft (such as Fighters and Shuttles) utilize agile thrusters to evade incoming heavy gun fire.
 - Massive dreadnoughts and space stations present large target profiles, absorbing higher proportions of volleys.
@@ -135,7 +136,7 @@ When attacked, a defending warship evaluates automated counter-fire immediately 
 When struck, the vessel immediately returns fire before subsequent tactical orders are executed.
 
 ### Escort Screening and Fleet Protection
-Allied warships stationed in the same planetary or stellar orbit can be assigned to protect critical flagships, freighters, or carriers using `order <ship> protect <flagship_id>`:
+Allied warships stationed in the same planetary or stellar orbit can be assigned to protect critical flagships, freighters, or carriers using `order <ship> protect <flagship>`:
 - When the protected vessel sustains hostile fire, all active escort warships in the orbital sector immediately unleash coordinated broadside counter-volleys against the attacking vessel.
 - Armored Fighting Vehicles (AFVs) on planetary surfaces are immune to naval escort retaliation.
 
@@ -157,36 +158,38 @@ $$N_{\text{guns}} = \min\left(20, \left\lfloor \frac{\text{Total Mobilization Po
 Ground populations maneuver across adjacent planetary sectors using `move` (for civilians) and `deploy` (for military troops).
 - **Directional Paths**: Movement commands accept multi-step compass paths (`h`, `j`, `k`, `l`, `y`, `u`, `b`, `n`) traversing toroidal east/west seams and polar boundaries.
 - **Population Quantities**: Omitting the quantity moves the entire sector population. Passing a negative number $-N$ moves all but $N$ personnel.
-- **Action Point (AP) Costs**: Tactical maneuver costs scale logarithmically with group size, with an additional surcharge for assaulting foreign-occupied sectors:
+- **Action Point (AP) Costs**: Tactical maneuver costs scale logarithmically with group size (using base movement cost multiplier $`K_{\text{move}} = 1`$), with an additional surcharge for assaulting foreign-occupied sectors:
   - **Civilian Movement (`move`)**:
-    $$\text{AP} = \text{MOVE\_FACTOR} \times \left(\lfloor \ln(1 + \text{Personnel}) \rfloor + \text{Assault}\right) + 1$$
+    $$\text{AP} = K_{\text{move}} \times \left(\lfloor \ln(1 + \text{Personnel}) \rfloor + \text{Assault}\right) + 1$$
   - **Military Deployment (`deploy`)**:
-    $$\text{AP} = \text{MOVE\_FACTOR} \times \left(\lfloor \log_{10}(1 + \text{Troops}) \rfloor + \text{Assault}\right) + 1$$
+    $$\text{AP} = K_{\text{move}} \times \left(\lfloor \log_{10}(1 + \text{Troops}) \rfloor + \text{Assault}\right) + 1$$
   where $\text{Assault} = 1$ when entering an enemy-occupied sector, and $0$ when traversing friendly or unowned territory.
 - **Colonization and Abandonment**: Moving population into an unowned sector immediately colonizes it, claiming territory and adding mobilization points. Vacating all personnel from an origin sector abandons it, resetting sector ownership to neutral ($0$) and updating planetary records atomically.
 
 ### Ground Assault Resolution
 When entering an enemy sector, troops or armed civilians execute a ground assault:
-- **Mechanized Perimeter Defense**: Defending Armored Fighting Vehicles (AFVs `R`) in the target sector automatically open fire on advancing unallied forces before ground engagement resolves, expending up to $\max(0, \lfloor \log_{10}(\text{Strength}_{\text{def}} + 1) \rfloor - 1)$ units of `destruct` per exchange:
+- **Mechanized Perimeter Defense**: Defending Armored Fighting Vehicles (AFVs `R`) in the target sector automatically open fire on advancing unallied forces before ground engagement resolves, expending up to $`\max(0, \lfloor \log_{10}(\text{Strength}_{\text{def}} + 1) \rfloor - 1)`$ units of destructive ordnance per exchange:
   - **AFV Combat Strength**:
-    $$\text{Strength}_{\text{mech}} = 3.0 \times \text{Tech}_{\text{ship}} \times S_{\text{retal}} \times \frac{\text{Armor} + 1}{100} \times \frac{100 - \text{Damage}}{100} \times (1.0 + \text{Compatibility}_{\text{mech\_owner}}) \times \text{MoraleFactor}(\Delta \text{Morale})$$
+    $$\text{Strength}_{\text{mech}} = 3.0 \times \text{Tech}_{\text{ship}} \times S_{\text{retal}} \times \frac{\text{Armor} + 1}{100} \times \frac{100 - \text{Damage}}{100} \times (1.0 + \text{Compatibility}_{\text{mech\_owner}}) \times M(\Delta \text{Morale})$$
   - **Ground Garrison Combat Strength against AFVs**:
-    $$\text{Strength}_{\text{garrison}} = \frac{10 \times \text{Troops} \times \text{Fighters} + \text{Civilians}}{100} \times \frac{\text{Tech}_{\text{garrison}}}{100} \times (1.0 + \text{Compatibility}_{\text{garrison}}) \times (1.0 + \text{Defense}_{\text{terrain}}) \times \text{MoraleFactor}(\Delta \text{Morale})$$
-  - Surviving ground troops immediately counter-attack the AFV; if the AFV exhausts its `destruct` ammunition ($S_{\text{retal}} = 0$), its defensive firepower drops to zero and counter-attacking troops can inflict up to $100\%$ structural damage.
+    $$\text{Strength}_{\text{garrison}} = \frac{10 \times \text{Troops} \times \text{Fighters} + \text{Civilians}}{100} \times \frac{\text{Tech}_{\text{garrison}}}{100} \times (1.0 + \text{Compatibility}_{\text{garrison}}) \times (1.0 + \text{Defense}_{\text{terrain}}) \times M(\Delta \text{Morale})$$
+    where $`M(\Delta \text{Morale}) = 0.5 + \frac{\arctan(\Delta \text{Morale} / 10{,}000)}{\pi}`$ is the arctangent morale multiplier.
+  - Surviving ground troops immediately counter-attack the AFV; if the AFV exhausts its destructive ammunition ($`S_{\text{retal}} = 0`$), its defensive firepower drops to zero and counter-attacking troops can inflict up to $100\%$ structural damage.
 - **Ground Assault Combat Strength Factors**: Attacker and defender combat strengths in sector-to-sector or landing assaults evaluate personnel count, military fighter ratings ($10\times$ civilian weight), environmental terrain compatibility, sector defensive fortification factors, and morale differentials:
-  $$\text{Strength}_{\text{atk}} = \text{Personnel} \times \text{Fighters}_{\text{atk}} \times (\text{Military} \text{ ? } 10 : 1) \times (1.0 + \text{Compatibility}_{\text{atk}}) \times (1.0 + \text{Defense}_{\text{atk}}) \times \text{MoraleFactor}(\text{Morale}_{\text{atk}} - \text{Morale}_{\text{def}})$$
-  $$\text{Strength}_{\text{def}} = (\text{Civilians}_{\text{def}} + 10 \times \text{Troops}_{\text{def}}) \times \text{Fighters}_{\text{def}} \times (1.0 + \text{Compatibility}_{\text{def}}) \times (1.0 + \text{Defense}_{\text{def}}) \times \text{MoraleFactor}(\text{Morale}_{\text{def}} - \text{Morale}_{\text{atk}})$$
-- **Assault Victory**: If defending forces are eliminated, the attacker captures the sector. Victorious civilians or military personnel occupy the territory.
+  $$\text{Strength}_{\text{atk}} = \text{Personnel} \times \text{Fighters}_{\text{atk}} \times (\text{Military} \text{ ? } 10 : 1) \times (1.0 + \text{Compatibility}_{\text{atk}}) \times (1.0 + \text{Defense}_{\text{atk}}) \times M(\text{Morale}_{\text{atk}} - \text{Morale}_{\text{def}})$$
+  $$\text{Strength}_{\text{def}} = (\text{Civilians}_{\text{def}} + 10 \times \text{Troops}_{\text{def}}) \times \text{Fighters}_{\text{def}} \times (1.0 + \text{Compatibility}_{\text{def}}) \times (1.0 + \text{Defense}_{\text{def}}) \times M(\text{Morale}_{\text{def}} - \text{Morale}_{\text{atk}})$$
+- **Assault Victory**: If defending forces are eliminated and at least one attacker survives (or Metamorph attackers absorb fallen defenders), the attacker captures the sector.
 - **Metamorph Flesh Absorption**: Species with the Metamorph genetic trait absorb fallen alien corpses:
-  - Victorious metamorph attackers absorb random casualties as new citizens ($\text{Absorbed} \in [0, \text{Defenders}_{\text{killed}}]$).
+  - Victorious metamorph attackers absorb random casualties as new citizens ($`\text{Absorbed} \in [0, \text{Defenders}_{\text{killed}}]`$).
   - Defending metamorphs that successfully repel an invasion absorb fallen attackers into their population.
+- **Mutual Annihilation**: If all attacking personnel and all defending personnel perish in the exchange (and zero Metamorphs are absorbed), the sector becomes unowned wilderness.
 - **Assault Repulse**: If defenders survive, surviving attackers retreat to their origin sector with reciprocal morale adjustments.
 
 ### Orbital Disembarkation Assaults (`unload`)
 When a landed starship unloads civilian personnel (`c`) or military troops (`m`) onto a sector controlled by a foreign empire (`unload <ship> c|m <amount>`), the disembarking force launches an immediate amphibious ground assault against the defending sector garrison:
 - **Landing Craft Cover Bonus**: The landing craft's hull armor plating and structural integrity ($1.0 - \text{Damage}/100$) provide protective cover for the disembarking troops, pitted against the defender's terrain defense multiplier and environmental terrain affinity.
 - **Diplomatic & Linguistic Contact**: Both empires gain $+5\%$ mutual translation knowledge (up to $100\%$).
-- **Sector Capture & Biomass Absorption**: If all defenders are eliminated, the disembarking force captures the sector (with Metamorph attackers absorbing fallen defenders into the sector population), and planetary demographic summaries resynchronize atomically.
+- **Sector Capture, Mutual Annihilation & Biomass Absorption**: If all defenders are eliminated and at least one attacker (or absorbed Metamorph) survives, the disembarking force captures the sector; if both sides suffer total annihilation, the sector reverts to unowned wilderness. Planetary demographic summaries resynchronize atomically.
 - **Repulsed Disembarkation**: If the defending garrison holds the sector, surviving attackers retreat back aboard the landing craft (restoring ship crew and troop mass), while defending Metamorphs absorb fallen attackers.
 
 ### Amphibious Boarding Operations and Ship Capture
@@ -217,27 +220,27 @@ flowchart TD
 #### Boarding Combat Resolution
 1. **Prerequisites**: Target ship must be landed on a planet sector owned by the boarding player. Boarding is prohibited on worlds enslaved by foreign empires.
 2. **Boarding Strength**:
-   $$\text{Strength}_{\text{atk}} = \text{Boarders} \times (\text{Military} \text{ ? } (\text{Fighters} \times 10) : 1) \times 0.01 \times \text{Tech}_{\text{atk}} \times (\text{Preference}_{\text{terrain}} + 0.01) \times (\text{Defense}_{\text{terrain}} + 1.0) \times \text{MoraleFactor}(\text{Morale}_{\text{atk}} - \text{Morale}_{\text{def}})$$
+   $$\text{Strength}_{\text{atk}} = \text{Boarders} \times (\text{Military} \text{ ? } (\text{Fighters} \times 10) : 1) \times 0.01 \times \text{Tech}_{\text{atk}} \times (\text{Preference}_{\text{terrain}} + 0.01) \times (\text{Defense}_{\text{terrain}} + 1.0) \times M(\text{Morale}_{\text{atk}} - \text{Morale}_{\text{def}})$$
 3. **Ship Defensive Strength**: Defending crew leverage internal ship bulkheads, armor plating, and ship systems:
-   $$\text{Strength}_{\text{def}} = (\text{Crew}_{\text{civ}} + \text{Crew}_{\text{mil}} \times 10 \times \text{Fighters}_{\text{def}}) \times 0.01 \times \text{Tech}_{\text{def}} \times (\text{Armor}_{\text{eff}} + 0.01) \times 0.01 \times (100 - \text{Damage}) \times \text{MoraleFactor}(\text{Morale}_{\text{def}} - \text{Morale}_{\text{atk}})$$
+   $$\text{Strength}_{\text{def}} = (\text{Crew}_{\text{civ}} + \text{Crew}_{\text{mil}} \times 10 \times \text{Fighters}_{\text{def}}) \times 0.01 \times \text{Tech}_{\text{def}} \times (\text{Armor}_{\text{eff}} + 0.01) \times 0.01 \times (100 - \text{Damage}) \times M(\text{Morale}_{\text{def}} - \text{Morale}_{\text{atk}})$$
 4. **Casualties and Collateral Hull Damage**: Both boarding parties and defending crews suffer proportional casualties. Internal firefights inflict up to $25\%$ collateral structural damage on the vessel, risking hull destruction if damage reaches $100\%$.
-5. **Booby Traps on Crewless Vessels**: Unmanned robot craft or abandoned vessels storing destructive munitions (`destruct`) trigger internal anti-tamper booby traps:
-   $$\text{Explosion Severity} = \min(100, \text{UniformRandom}(0, 10 \times \text{Destruct}))$$
+5. **Booby Traps on Crewless Vessels**: Unmanned robot craft or abandoned vessels storing destructive munitions trigger internal anti-tamper booby traps, rolling a uniform random explosion severity in $[0, 10 \times \text{Destruct}]$ capped at $100\%$:
+   $$\text{Explosion Severity} = \min(100, \operatorname{Uniform}(0, 10 \times \text{Destruct}))$$
    Each boarder faces a percentage chance equal to the explosion severity of being killed in the blast, and the vessel sustains equal structural damage.
-6. **Vessel Seizure & Crew Integration**:
-   - If defending crew is eliminated and the hull survives, the vessel transfers to the conqueror.
-   - Surviving boarders crew the ship up to operational capacity (`max_crew_capacity` for civilians, `available_mil` for troops), with excess personnel returning to the planetary sector.
+6. **Vessel Seizure, Mutual Annihilation & Crew Integration**:
+   - If defending crew is eliminated, the hull survives, and at least one boarder survives, the vessel transfers to the conqueror. If all defending crew and all boarders perish in the firefight or booby-trap blast, the uncrewed vessel remains with its original owner.
+   - Surviving boarders crew the ship up to operational berthing capacity, with excess personnel returning to the planetary sector.
    - Planetary population totals and sector garrison counts decrement accurately to reflect personnel transferred into space and casualties sustained.
-   - Docked parasite ships and carried cargo pods transfer to the new owner.
+   - All docked parasite craft at any hangar nesting depth transfer recursively to the new owner and governor.
 
 ### Spaceborne Boarding Assaults (`assault`)
 Warships operating in deep space, star orbit, or planetary orbit can execute spaceborne boarding assaults against hostile vessels within docking range ($D \le 10.0$) via `assault <ship> <target> [<boarders>] [civ|mil]`:
 - **Maneuvering Fuel & Action Point Cost**: Executing an assault consumes $1$ Action Point (universe AP in deep space, star AP in orbit) and burns maneuvering propellant:
   $$\text{Fuel Burn} = 0.05 + 0.05 \times D \times \sqrt{\text{Mass}_{\text{attacker}}}$$
-- **Defensive Fire Phase**: Before boarding airlocks link, the target vessel fires a defensive volley (`fire-from-dock`) against the approaching attacker. If either ship is destroyed during defensive fire, the boarding operation terminates.
+- **Defensive Fire Phase**: Before boarding airlocks link, the target vessel fires an automated defensive volley against the approaching attacker using either its active kinetic gun battery (if loaded with destructive ordnance) or its armed combat lasers (if equipped with a mounted crystal and propellant). If either ship is destroyed during defensive fire, the boarding operation terminates immediately.
 - **Moored Vessel Decoupling**: If the target ship is spaceborne-moored alongside a partner vessel, the assault automatically decouples the mooring tether before boarding combat begins. (Landed ships and parasite craft inside carrier hangars cannot be space-assaulted.)
-- **Boarding Combat & Booby Traps**: Boarding parties fight defending crews with proportional casualties and collateral hull damage (up to $25\%$ structural damage per side). Unmanned robot craft rigged with destructive ordnance (`destruct`) detonate internal booby traps against the boarding ship:
-  $$\text{Booby Trap Damage} = \min(100, \text{UniformRandom}(0, 10 \times \text{Destruct}))$$
+- **Boarding Combat & Booby Traps**: Boarding parties fight defending crews with proportional casualties and collateral hull damage (up to $25\%$ structural damage per side). If both the defending crew and all boarding personnel perish, the uncrewed target vessel remains with its original owner. Unmanned robot craft rigged with destructive ordnance detonate internal booby traps against the boarding ship:
+  $$\text{Booby Trap Damage} = \min(100, \operatorname{Uniform}(0, 10 \times \text{Destruct}))$$
   inflicting direct hull damage on the attacking vessel.
 
 ---
@@ -257,7 +260,7 @@ flowchart TD
 ```
 
 ### Orbital Bombardment Firepower and Blast Geometry
-Effective orbital bombardment power (`bombard <ship> [<x,y> [<strength>]]`) is bounded by the ship's maximum retaliation strength (either active gun battery count or armed laser strength, clamped by stored `destruct` or `fuel / 2`) and costs $1$ Star AP per firing ship:
+Effective orbital bombardment power (`bombard <ship> [<x,y> [<strength>]]`) is bounded by the ship's maximum retaliation strength (either active gun battery count or armed laser strength, clamped by stored destructive ordnance or half of stored fuel) and costs $1$ Star AP per firing ship:
 - **Blast Radius**: A bombardment strike of strength $S$ affects all planetary sectors within toroidal Euclidean distance:
   $$r = 0.4 \times S$$
   If target coordinates `<x,y>` are omitted, a random sector on the planet is targeted.
@@ -269,10 +272,10 @@ Effective orbital bombardment power (`bombard <ship> [<x,y> [<strength>]]`) is b
 ### Surface Devastation, Nuclear Fallout, and Retaliation
 - **Entrenched Troop Fortification Shelter**: Civilian populations suffer casualties whenever $\text{Factor}(d) > 0$, reduced by half on plated sectors. Entrenched military troops are sheltered from bombardment casualties unless the local blast intensity exceeds five times the sector's natural terrain defense bonus:
   $$\text{Factor}(d) > 5.0 \times \text{Defense}_{\text{terrain}}$$
-- **Terraforming Stripping**: High-intensity blasts ($\text{Factor}(d) \ge 5.0$) have a $1$-in-$11$ chance of stripping surface terraforming or plating back to the sector's underlying geological type if a random roll ($[0, 6]$) equals or exceeds $\text{Defense}_{\text{terrain}}$.
-- **Wasteland Conversion & Fallout**: Sectors where $\text{round}(\text{Factor}(d))$ exceeds terrain fortification times a random roll ($[0, 10]$) are converted into radioactive wasteland (`SEC_WASTED`), eliminating civilian populations and increasing planetary atmospheric toxicity:
+- **Terraforming Stripping**: High-intensity blasts ($\text{Factor}(d) \ge 5.0$) have a $1$-in-$11$ chance of stripping surface terraforming or plating back to the sector's underlying geological type if a random roll ($[0, 6]$) equals or exceeds $`\text{Defense}_{\text{terrain}}`$.
+- **Wasteland Conversion & Fallout**: Sectors where $\operatorname{round}(\text{Factor}(d))$ exceeds terrain fortification times a random roll ($[0, 10]$) are converted into radioactive wasteland (`%`), eliminating civilian populations and increasing planetary atmospheric toxicity:
   $$\Delta \text{Toxicity} = (100 - \text{Toxicity}) \times \frac{N_{\text{destroyed}}}{N_{\text{total\_sectors}}}$$
-- **Surface-to-Orbit & Orbital Protector Retaliation**: Whenever an orbital bombardment destroys one or more sectors ($N_{\text{destroyed}} > 0$) on an unenslaved planet, every empire whose sectors were devastated immediately fires its planetary surface defense batteries ($\min(\text{Guns}, \text{Destruct})$) back at the bombarding vessel, followed by counter-fire from all active ships in orbit configured with planetary protection orders (`order <ship> protect`).
+- **Surface-to-Orbit & Orbital Protector Retaliation**: Whenever an orbital bombardment destroys one or more sectors ($`N_{\text{destroyed}} > 0`$) on an unenslaved planet, every empire whose sectors were devastated immediately fires its planetary surface defense batteries ($\min(\text{Guns}, \text{Destruct})$) back at the bombarding vessel, followed by counter-fire from all active ships in orbit configured with planetary protection orders (`order <ship> protect`).
 
 ### Point Defense Networks (PDNs) and Strategic Deterrence
 Point Defense Networks (PDNs `P`) are heavy defensive grid installations stationed on planetary surfaces:

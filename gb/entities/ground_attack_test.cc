@@ -276,7 +276,8 @@ void test_mech_defend_mcdc() {
   test::expect_eq(allied_civs, 50u);
   test::expect_true(allied_res.rounds.empty());
 
-  // Defending AFV exhausts ammo while entering troops survive (`(civ + mil) > 0 && ship.retal_strength() == 0`)
+  // Defending AFV exhausts ammo while entering troops survive (`(civ + mil) > 0
+  // && ship.retal_strength() == 0`)
   ctx.em.mutate_race(2, [](Race& r) {
     r.rescind_alliance_with(player_t{1});
     r.tech = 1.0;

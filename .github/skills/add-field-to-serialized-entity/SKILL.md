@@ -12,7 +12,7 @@ Persisted entities round-trip through Glaze JSON in `tbl_<entity>`. Adding a fie
 
 ### 1. Add the field to the struct
 
-In the appropriate `gblib-*.cppm` (or `types.cppm`) — e.g. `gblib-race.cppm`, `gblib-ships.cppm`, `gblib-types.cppm` for `ServerState`:
+In the appropriate `gb/entities/*.cppm` (e.g. `race.cppm`, `ship_base.cppm`, `domain_types.cppm` for `ServerState`):
 
 ```cpp
 export struct ServerState {
@@ -26,7 +26,7 @@ Always use a default initializer (`{false}`, `{0}`, `{}`). Glaze deserializes ex
 
 ### 2. Update the Glaze meta
 
-Find `glz::meta<EntityType>` (typically in `gb/repositories/gblib-repositories.cppm` or beside the struct). Add the new field to the `object(...)` list:
+Find `glz::meta<EntityType>` in `gb/repositories/glaze_schemas.cppm`. Add the new field to the `object(...)` list:
 
 ```cpp
 namespace glz {
@@ -48,7 +48,7 @@ For strong-ID fields (`player_t`, `governor_t`), no special handling is needed; 
 
 ### 3. (Optional) Add or change a SQL index
 
-If the new field is queried by the application, add an `IF NOT EXISTS` index in `gb/dal/Schema.cppm::initialize_schema`:
+If the new field is queried by the application, add an `IF NOT EXISTS` index in `gb/dal/schema.cc::initialize_schema`:
 
 ```cpp
 db.exec("CREATE INDEX IF NOT EXISTS idx_xxx_nogo "
@@ -61,12 +61,12 @@ Most flag-style fields do not need an index.
 
 Replace any old source-of-truth (file flag, hardcoded constant, removed field) with the new field. For migrations from filesystem state to a DB field, this is where you swap `stat(...)` checks for `state.nogo` reads.
 
-Use the standard EntityManager pattern:
+Use the standard EntityManager monadic mutation pattern:
 
 ```cpp
-auto state_handle = em.get_server_state();
-auto& state = *state_handle;
-state.nogo = true;
+em.mutate_server_state([](ServerState& state) {
+  state.nogo = true;
+});
 ```
 
 Read-only checks should use `peek_*`.
@@ -84,10 +84,9 @@ Use the clang-query-refactoring skill or grep to find every site that read or wr
 In a `*_test.cc` exercising round-trip:
 
 ```cpp
-{
-  auto h = em.get_server_state();
-  h->nogo = true;
-}
+em.mutate_server_state([](ServerState& state) {
+  state.nogo = true;
+});
 em.clear_cache();                              // drop the cache
 const auto* s = em.peek_server_state();
 assert(s->nogo == true);                       // came back from JSON

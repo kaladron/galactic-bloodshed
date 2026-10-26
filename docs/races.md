@@ -44,7 +44,7 @@ flowchart LR
 
 ### Metabolism ($M$)
 Metabolism represents the biological vigor, industriousness, and physical energy of the species:
-- **Industrial Extraction**: Higher metabolism yields higher mineral extraction and fuel refining per sector: $\text{Yield} = \min\left(\text{Reserves}, \left\lfloor \text{Metabolism} \times \text{UniformRandom}(1, \text{Efficiency}) \right\rfloor\right)$.
+- **Industrial Extraction**: Higher metabolism yields higher mineral extraction and fuel refining per sector: $\text{Yield} = \min\left(\text{Reserves}, \left\lfloor \text{Metabolism} \times \operatorname{Uniform}(1, \text{Efficiency}) \right\rfloor\right)$.
 - **Infrastructure Development**: Increases the rate at which colonists upgrade sector efficiency toward $100\%$ (plated status).
 - **Tax Strain**: High taxation depresses effective metabolism: $`\text{Metabolism}_{\text{effective}} = \text{Metabolism}_{\text{base}} \times \left(1 - \frac{\text{Tax Rate}}{100}\right)`$.
 

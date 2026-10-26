@@ -36,7 +36,7 @@ flowchart TD
 | **Carrier Hangars** | Host ship hangar capacity | Fuel-free parasite transportation, fighter staging, automated probe deployment. |
 
 > [!TIP]
-> **Planetary Orbital Entrainment**: Planets move along heliocentric orbits according to Kepler's Third Law ($T^2 \propto r^3$) during each full turn update. Starships stationed in planetary orbit (`LEVEL_PLAN`) are automatically shifted along the orbit with the planet, maintaining orbital lock without expending propellant. See [Planetary Mechanics](planets.md) for Keplerian formulas.
+> **Planetary Orbital Entrainment**: Planets move along heliocentric orbits according to Kepler's Third Law ($T^2 \propto r^3$) during each full turn update. Starships stationed in low planetary orbit are automatically shifted along the orbit with the planet, maintaining orbital lock without expending propellant. See [Planetary Mechanics](planets.md) for Keplerian formulas.
 
 ---
 
@@ -78,7 +78,7 @@ Impulse thrusters consume fuel during each movement segment proportional to engi
 
 $$\text{Fuel Burn}_{\text{segment}} = \frac{\text{EvadeMultiplier} \times \text{Speed} \times \text{Mass}_{\text{total}} \times 0.02}{\text{Segments}}, \quad \text{EvadeMultiplier} = \begin{cases} 0.5 & \text{normal cruise} \\ 1.0 & \text{evasive maneuvers (`evade`)} \end{cases}$$
 
-- **Normal Cruise vs. Evasive Maneuvers (`evade`)**: During standard straight-line cruise, impulse thrusters burn fuel at half the maximum thruster rate ($\text{EvadeMultiplier} = 0.5$, historically written as $0.5 \times (1 + \mathbb{I}_{\text{evade}})$). Enabling evasive maneuvers (`order <ship> evade on`) doubles propellant consumption to the full $1.0\times$ base rate ($\text{EvadeMultiplier} = 1.0$) to power continuous jinking thrusters.
+- **Normal Cruise vs. Evasive Maneuvers (`evade`)**: During standard straight-line cruise, impulse thrusters burn fuel at half the maximum thruster rate ($\text{EvadeMultiplier} = 0.5$, historically written as $`0.5 \times (1 + \mathbb{I}_{\text{evade}})`$). Enabling evasive maneuvers (`order <ship> evade on`) doubles propellant consumption to the full $1.0\times$ base rate ($\text{EvadeMultiplier} = 1.0$) to power continuous jinking thrusters.
 - **Deep-Space Stranding & Vessel Loss**: When a vessel lacks the propellant required for its next sub-light movement segment, it halts and transmits an out-of-fuel alert. If the vessel is stranded in interstellar deep space and is either a low-cost hull ($\text{Build Cost} \le 50$, such as an uncrewed space probe or light craft) or an automated Von Neumann machine or Berserker, it is permanently lost in deep space and destroyed. Higher-value capital vessels ($\text{Build Cost} > 50$) in deep space, as well as any vessel that exhausts its fuel within a star system or planetary orbit, survive intact and drift awaiting refueling or towing.
 
 ### Vessel Pursuit and Sensor Tracking (`destination #<ship>`)
@@ -86,7 +86,7 @@ A spaceborne vessel can be ordered to shadow and follow another target vessel (`
 1. The pursuing vessel is active and the target vessel is alive and not berthed inside a carrier hangar.
 2. The target vessel belongs to the same empire, an allied empire, or lies within sensor tracking range:
 
-$$R_{\text{track}} = 4.0 \times \text{logscale}(\lfloor \text{Tech} + 1 \rfloor) \times \text{SystemSize}$$
+$$R_{\text{track}} = 4.0 \times \log_{10}(\lfloor \text{Tech} + 1 \rfloor) \times \text{SystemSize}$$
 
 ---
 
@@ -110,22 +110,22 @@ Launching a vessel from a planetary surface into low orbit requires expending es
 
 $$\text{Launch Fuel Cost} = \text{Gravity} \times \text{Mass}_{\text{total}} \times 0.18$$
 
-- **Pre-Launch Fuel & AP Verification**: Fuel sufficiency ($\text{Fuel}_{\text{ship}} \ge \text{Launch Fuel Cost}$) is verified before deducting $1\text{ Star AP}$ or altering the vessel's surface coordinates. A vessel without sufficient escape propellant remains safely grounded on its sector with its action points intact.
-- **Orbital Insertion Jitter**: Upon liftoff, the vessel ascends into low planetary orbit (`LEVEL_PLAN`) with a continuous randomized coordinate offset $\Delta x, \Delta y \in [-2.5, +2.5)$ ($\pm D_{\text{land}} / 4$, where $D_{\text{land}} = 10.0$) relative to the planet's center and marks the planet as explored.
+- **Pre-Launch Fuel & AP Verification**: Fuel sufficiency ($`\text{Fuel}_{\text{ship}} \ge \text{Launch Fuel Cost}`$) is verified before deducting $1\text{ Star AP}$ or altering the vessel's surface coordinates. A vessel without sufficient escape propellant remains safely grounded on its sector with its action points intact.
+- **Orbital Insertion Jitter**: Upon liftoff, the vessel ascends into low planetary orbit with a continuous randomized coordinate offset $\Delta x, \Delta y \in [-2.5, +2.5)$ ($`\pm D_{\text{land}} / 4`$, where $`D_{\text{land}} = 10.0`$) relative to the planet's center and marks the planet as explored.
 - **Atmospheric Canister Deployment**: Launching a **Dust Canister** (`g`) or **Greenhouse Gas Canister** (`h`) resets its internal dissipation timer to $0$ and disperses climate-altering aerosols or greenhouse gases into the planet's upper atmosphere.
 
 ### Planetary Landing Operations
 Vessels equipped with atmospheric landing gear (`Land` capability) and maneuvering thrusters ($\text{Max Speed} > 0$) within landing range ($D \le 10.0$) can descend from low orbit to touch down on a specific surface sector $[x, y]$:
-- **Pre-Descent Validation**: Orbital range ($D \le 10.0$) and sector coordinate bounds ($0 \le x < X_{\max}, 0 \le y < Y_{\max}$) are validated prior to deducting $1\text{ Star AP}$.
+- **Pre-Descent Validation**: Orbital range ($D \le 10.0$) and sector coordinate bounds ($`0 \le x < X_{\max}, 0 \le y < Y_{\max}`$) are validated prior to deducting $1\text{ Star AP}$.
 - **Controlled De-Orbit Burn**: Touchdown requires firing deceleration thrusters proportional to local surface gravity and total ship mass:
 
 $$\text{Landing Fuel Cost} = \text{Gravity} \times \text{Mass}_{\text{total}} \times 0.0145$$
 
 - **Hostile Surface Defense Fire**: Before touchdown, any enemy empire at war with the ship's owner that possesses planetary population, surface defense guns, and destructive munitions fires a defensive salvo of strength $\min(\text{Guns}, \text{Destruct})$ at the descending vessel. If the ship is destroyed during descent, the landing aborts.
 - **Crash Landing & Impact Detonation**: A surviving vessel crashes on the target sector if either:
-  1. **Propellant Exhaustion**: $\text{Fuel}_{\text{ship}} < \text{Landing Fuel Cost}$, or
-  2. **Structural Failure**: The vessel is damaged ($\text{Damage}\% > 0$) and rolls $d_{100} \le \text{Damage}\%$ on $1\text{--}100$.
-  When a vessel crashes, it is destroyed on impact and its onboard munitions detonate on the target sector with heavy-caliber bombardment force equivalent to $\text{round\_rand}(\text{Destruct} / 3)$, devastating surrounding surface sectors.
+  1. **Propellant Exhaustion**: $`\text{Fuel}_{\text{ship}} < \text{Landing Fuel Cost}`$, or
+  2. **Structural Failure**: The vessel is damaged ($\text{Damage}\% > 0$) and rolls $`d_{100} \le \text{Damage}\%`$ on $1\text{--}100$.
+  When a vessel crashes, it is destroyed on impact and its onboard munitions detonate on the target sector with heavy-caliber bombardment force equivalent to $\operatorname{round}(\text{Destruct} / 3)$, devastating surrounding surface sectors.
 - **Gas Giant Hazards**: Gas giant worlds possess no solid surface; vessels cannot land on gas giants, though orbiting vessels can safely skim gas giant upper atmospheres to harvest free propellant during turn updates.
 
 ### Carrier Recovery, Surface Mothership Loading, and Mooring
@@ -145,7 +145,9 @@ $$\text{Approach Fuel Cost} = 0.05 + \text{Distance} \times 0.025 \times \sqrt{\
    - **Fuel Cost**: Consumes $0.0\text{ propellant}$ (transferred via ground gantry cranes).
 
 3. **Spaceborne Mooring (`dock <ship1> <ship2>`)**:
-   - Symmetrically tethers two spaceborne vessels within proximity ($D \le 1.0$) in the same orbital frame for boarding assaults or cargo transfer.
+   - Symmetrically tethers two spaceborne vessels within docking range ($D \le 10.0$) in the same orbital frame for boarding assaults or cargo transfer.
+   - Costs $0\text{ AP}$ in interstellar deep space and $1\text{ Star AP}$ in stellar or planetary orbit, burning maneuvering propellant:
+     $$\text{Docking Fuel Cost} = 0.05 + 0.05 \times D \times \sqrt{\text{Mass}_{\text{ship}}}$$
    - Neither ship enters the other's hangar; both retain independent displacement and external orbital coordinates.
    - Decoupling (`undock` or `launch`) cleanly detaches both vessels without hazard.
 
@@ -172,7 +174,7 @@ flowchart TD
 
 ### Multi-Stage Flight Simulation
 When issuing `fuel <ship> <destination>`, the flight computer executes a multi-segment simulation without altering the ship's current operational state:
-1. **Lift-Off Stage**: If currently landed, calculates the required surface launch propellant based on local planetary gravity and current vessel mass.
+1. **Lift-Off Stage**: If currently landed, calculates the required surface launch propellant ($`\text{Gravity} \times \text{Mass}_{\text{total}} \times 0.18`$, accounting for carried crew and troop mass $`M_{\text{race}}`$). If the vessel's fuel reserves are insufficient to overcome planetary gravity, the flight computer immediately aborts the simulation and warns that the ship cannot launch from the planet.
 2. **Sub-Light Cruising Stage**: Simulates segment-by-segment thrust, tracking propellant depletion, mass reduction over time, and time-to-destination across continuous Cartesian coordinates.
 3. **Deceleration & Insertion Stage**: Evaluates the deceleration required to match destination orbital velocity or system coordinates.
 4. **Landing Stage**: If the destination is a planetary surface, computes the final descent propellant cost.
@@ -198,19 +200,19 @@ flowchart TD
 A starship can execute FTL jumps only if it satisfies all of the following requirements:
 1. **Technological Breakthrough**: The owning empire has achieved **Technology Level $50.0+$** (Hyperdrive Discovery).
 2. **Jump-Capable Chassis**: The hull class supports hyperjump engines (e.g. Explorers, Destroyers, Cruisers, Battleships, Dreadnaughts, Carriers, Orbital Assault Platforms).
-3. **Mounted Warp Crystal**: The vessel must have an active warp crystal mounted in its drive core (`mounted = true`).
+3. **Mounted Warp Crystal**: The vessel must have an active warp crystal mounted in its drive core.
 4. **Pre-Charged Drive**: The hyperdrive must be pre-charged and primed before jump initiation.
 
 ### Jump Propellant Calculation and Drive Charging
-The fuel required to open a hyperspace conduit scales with the Euclidean distance to the destination star ($`D_{\text{jump}}`$), the vessel's technology-scaled jump distance factor ($D_{\text{fac}} = 200 \times (\text{Tech} + 100)$), and the square root of total vessel mass:
+The fuel required to open a hyperspace conduit scales with the Euclidean distance to the destination star ($`D_{\text{jump}}`$), the vessel's technology-scaled jump distance factor ($`D_{\text{fac}} = 200 \times (\text{Tech} + 100)`$), and the square root of total vessel mass:
 
 $$D_{\text{jump}} = \sqrt{(X_{\text{dest}} - X_{\text{origin}})^2 + (Y_{\text{dest}} - Y_{\text{origin}})^2}$$
 
-- **Crystal-Mounted Long-Range Jumps ($D_{\text{jump}} > D_{\text{fac}}$ and `mounted = true`)**:
+- **Crystal-Mounted Long-Range Jumps ($`D_{\text{jump}} > D_{\text{fac}}`$ with a mounted crystal)**:
 
 $$\text{Jump Fuel Cost} = 5.0 \times \sqrt{\text{Mass}_{\text{total}}} \times \left(\frac{D_{\text{jump}}}{D_{\text{fac}}}\right)$$
 
-- **Short-Range or Unmounted Jumps ($D_{\text{jump}} \le D_{\text{fac}}$ or `mounted = false`)**:
+- **Short-Range or Unmounted Jumps ($`D_{\text{jump}} \le D_{\text{fac}}`$ or without a mounted crystal)**:
 
 $$\text{Jump Fuel Cost} = 5.0 \times \sqrt{\text{Mass}_{\text{total}}} \times \left(\frac{D_{\text{jump}}}{D_{\text{fac}}}\right)^2$$
 
@@ -233,8 +235,8 @@ Advanced scientific vessels (such as Tractor-Repulsor Beam Platforms `-`) utiliz
 ### Astrometric Distance Calculation (`distance` / `dist`)
 The `distance` command (`distance <from> <to>`) evaluates the Euclidean spatial separation between any two astrometric objects across continuous coordinate space:
 
-- **Stars**: Measured using heliocentric global coordinates $(X_s, Y_s)$.
-- **Planets**: Measured using absolute system coordinates $X_p = X_s + x_p$, $Y_p = Y_s + y_p$.
+- **Stars**: Measured using heliocentric global coordinates $`(X_s, Y_s)`$.
+- **Planets**: Measured using absolute system coordinates $`X_p = X_s + x_p`$, $`Y_p = Y_s + y_p`$.
 - **Ships**: Measured using the vessel's continuous universe position $(X, Y)$.
 - **Security & Sensor Invisibility**: Probing distances to or from foreign vessels is strictly prohibited (`"Nice try."`), preventing players from triangulating enemy fleet movements in sensor shadow.
 - **Euclidean Separation**:
@@ -242,7 +244,7 @@ The `distance` command (`distance <from> <to>`) evaluates the Euclidean spatial 
 $$D = \sqrt{(X_{\text{to}} - X_{\text{from}})^2 + (Y_{\text{to}} - Y_{\text{from}})^2}$$
 
 ### Map Centering (`center`)
-The `center` command (`center <star>`) resets the commander's global navigational map viewport to center on the designated star system. Subsequent tactical displays and sector maps align with the targeted star's coordinates $(X_s, Y_s)$. Attempting to center the map viewport on a ship (`#ship`) or unscoped universe root is rejected.
+The `center` command (`center <star>`) resets the commander's global navigational map viewport to center on the designated star system. Subsequent tactical displays and sector maps align with the targeted star's coordinates $`(X_s, Y_s)`$. Attempting to center the map viewport on a ship (`#ship`) or unscoped universe root is rejected.
 
 ---
 
@@ -250,16 +252,16 @@ The `center` command (`center <star>`) resets the commander's global navigationa
 
 ### Automated Planetary Shipping Routes (`route`)
 Each planet supports up to $4$ independent automated merchant shipping routes (`1` through `4`) per empire:
-- **Activation & Destination (`route <1..4> activate|deactivate|<planet>`)**: Routes must be activated and pointed at a destination planet (`LEVEL_PLAN`). Merchant vessels assigned to route $N$ (`order #<ship> merchant <N>`) automatically receive launch, transit, and landing orders during movement segments and turn updates.
+- **Activation & Destination (`route <1..4> activate|deactivate|<planet>`)**: Routes must be activated and pointed at a destination planet. Merchant vessels assigned to route $N$ (`order #<ship> merchant <N>`) automatically receive launch, transit, and landing orders during movement segments and turn updates.
 - **Touchdown Coordinates (`route <1..4> land <x,y>`)**: Arriving merchant ships descend onto the configured surface sector $[x, y]$ if the sector is owned by the empire or unowned and the vessel carries sufficient landing propellant.
 - **Automated Cargo Manifests (`route <1..4> load|unload <fdrx>`)**: Upon touchdown, merchant ships automatically embark (`load`) and debark (`unload`) the maximum available quantities of the configured commodities (`f` Fuel, `d` Destruct, `r` Resources, `x` Crystals) before ascending toward the next stop in the loop.
 
 ### Armored Fighting Vehicle (AFV) Surface Movement (`walk`)
-Landed **Armored Fighting Vehicles** (`OTYPE_AFV`) traverse adjacent planetary surface sectors directly using the `walk <ship> <direction>` command (`1` Star AP, $1.0\text{ Fuel}$ per sector step):
+Landed **Armored Fighting Vehicles** (`R`) traverse adjacent planetary surface sectors directly using the `walk <ship> <direction>` command (`1` Star AP, $1.0\text{ Fuel}$ per sector step):
 1. **Terrain & Precondition Checks**: The AFV must be landed, crewed ($\text{Crew} > 0$), carry at least $1.0\text{ Fuel}$, and move onto a valid adjacent sector whose terrain condition is compatible with the owning race.
 2. **AFV-vs-AFV Surface Duels**: If the destination sector contains non-allied landed AFVs with active retaliation strength, each defending AFV fires a conventional gun salvo at the advancing AFV and the advancing AFV retaliates using its pre-damage gun strength until one side is destroyed or exhausts its ammunition.
-3. **Mechanized Assault on Sector Population**: If the advancing AFV survives any defending AFVs and the sector is owned by a non-allied empire, the AFV engages the defending civilians and troops in repeated mechanized ground combat rounds until either the sector population is wiped out (clearing sector ownership and synchronizing planetary demographics) or the AFV loses its offensive capability.
-4. **Occupation**: Once the destination sector is friendly, allied, or cleared of hostile ownership, the AFV advances onto the new coordinates and expends $1.0\text{ Fuel}$.
+3. **Mechanized Assault on Sector Population**: If the advancing AFV survives any defending AFVs and the sector is owned by a foreign empire that does not share a **mutual bilateral alliance** with the AFV's owner, the AFV engages the defending civilians and troops in repeated mechanized ground combat rounds until either the sector population is wiped out (clearing sector ownership and synchronizing planetary demographics) or the AFV loses its offensive capability.
+4. **Occupation**: Once the destination sector is friendly, mutually allied, or cleared of hostile ownership, the AFV advances onto the new coordinates and expends $1.0\text{ Fuel}$.
 
 ---
 

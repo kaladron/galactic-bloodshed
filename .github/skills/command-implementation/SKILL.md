@@ -42,7 +42,9 @@ bool commandname(const command_t& argv, GameObj& g);
 
 module;
 
-import gblib;
+import gb.entities;
+import gb.presentation;
+import gb.services;
 import std;
 
 module commands;
@@ -53,7 +55,7 @@ bool commandname(const command_t& argv, GameObj& g) {
   // 1. Argument parsing & domain validation (early return false on failure)
   // 2. Entity access via g.entity_manager (peek_* or with_*)
   // 3. Game logic / state mutation via monadic mutate_* pattern
-  // 4. Player output via g.out
+  // 4. Player output via g.present(ViewModel) or g.print(...)
   return true;
 }
 
@@ -73,13 +75,10 @@ export constexpr CommandDescriptor commandname_cmd{
 
 ## Output Rules
 
-- **All** player output goes through `g.out`. Never use `printf`, `std::cout`, `std::print`.
-- Use `std::format` for interpolation; never concatenate with `+`.
+- **All** structured player output goes through `g.present(view_model)` using a ViewModel in `gb.presentation`; simple diagnostic/error messages use `g.print(...)` (or `g.out.append(...)`). Never use `printf`, `std::cout`, `std::print`, or `std::stringstream`.
+- Use `g.print(...)` or `std::format` for interpolation; never concatenate with `+`.
 - End every line with `\n`.
-- For tables, format header and rows with the same width spec:
-  ```cpp
-  g.out << std::format("{:<15} {:>5} {:>5}\n", "Name", "Crew", "Tech");
-  ```
+- For tabular reports, define a ViewModel in `gb.presentation` and format ASCII tables using `TableBuilder`.
 
 ## Registering a New Command
 
@@ -93,9 +92,9 @@ export constexpr CommandDescriptor commandname_cmd{
    PRIVATE commands/commandname.cc
    ```
 
-3. **Register descriptor** in `gb/commands/registry.cc`:
+3. **Register descriptor** in `gb/server/GB_server.cc::getCommands()`:
    ```cpp
-   reg(commandname_cmd);
+   {"commandname", &GB::commands::commandname_cmd},
    ```
 
 4. **Add 4-way unit tests** in `gb/commands/commandname_test.cc` (see `command-test-matrix` skill).
@@ -105,21 +104,21 @@ export constexpr CommandDescriptor commandname_cmd{
 - ❌ Suffixing handlers with `_impl` or writing redundant forwarding stubs — use direct `bool commandname(...)`.
 - ❌ Using `[[maybe_unused]]` for unused parameters — omit the parameter name instead (`const command_t&`).
 - ❌ Writing procedural permission or scope checks inside the handler — declare them in `CommandDescriptor`.
-- ❌ Direct console I/O (`printf`, `std::cout`, `std::print`).
+- ❌ Direct console I/O (`printf`, `std::cout`, `std::print`) or inline `std::stringstream` / `tabulate` in commands.
 - ❌ Repository or `getstar()`/`putship()` calls — go through `g.entity_manager`.
-- ❌ Inline `*g.entity_manager.get_xxx(...)` — use the two-step handle pattern.
+- ❌ Direct `get_xxx(...)` handles — use `mutate_xxx(id, lambda)` for scoped persistence.
 - ❌ Null-checking `peek_star/peek_planet/peek_sectormap` results — they throw `EntityNotFoundError`.
-- ❌ Hardcoded paths or magic numbers — use `gb/files.h` constants and `gblib:tweakables`.
+- ❌ Hardcoded paths or magic numbers — use `gb/entities/files.h` constants and `gb.entities` tweakables.
 - ❌ Hungarian `k` constant prefixes (e.g. `kCommandCmd`) — use `commandname_cmd`.
 
 ## Checklist
 
 - [ ] File starts with `// SPDX-License-Identifier: Apache-2.0`
-- [ ] `module;` / `import gblib;` / `import std;` / `module commands;` header
+- [ ] `module;` / `import gb.entities;` / `import gb.presentation;` / `import gb.services;` / `import std;` / `module commands;` header
 - [ ] Wrapped in `namespace GB::commands { ... }`
 - [ ] Domain argument parsing with usage/error output and early `return false`
-- [ ] Entity mutations use the two-step `get_*` handle pattern
-- [ ] All output through `g.out` using `std::format`
-- [ ] `CommandDescriptor` exported in `commands.cppm`, listed in `CMakeLists.txt`, registered in `registry.cc`
+- [ ] Entity mutations use the monadic `mutate_*` pattern
+- [ ] All output through `g.present(...)` or `g.print(...)`
+- [ ] `CommandDescriptor` exported in `commands.cppm`, listed in `CMakeLists.txt`, registered in `GB_server.cc`
 - [ ] 4-Way test suite added in `gb/commands/<name>_test.cc`
 - [ ] Builds clean with `ninja -C build` and passes `(cd build && ctest)`

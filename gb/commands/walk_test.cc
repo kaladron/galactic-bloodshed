@@ -340,8 +340,8 @@ void test_walk_afv_and_sector_combat() {
                                      .build();
   bool saw_crew_killed = false;
   bool saw_crew_survived = false;
-  for (int attempt = 0; attempt < 40 && (!saw_crew_killed || !saw_crew_survived);
-       ++attempt) {
+  for (int attempt = 0;
+       attempt < 40 && (!saw_crew_killed || !saw_crew_survived); ++attempt) {
     ctx.em.mutate_ship(garrison_afv, [](Ship& s) {
       s.alive() = 1;
       s.repair_damage(100);

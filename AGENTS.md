@@ -167,6 +167,7 @@ cmake --build build --clean-first
 │   ├── repositories/     # Repository pattern implementations (gb.repositories)
 │   ├── services/         # Service layer (EntityManager, GameObj, Place) (gb.services)
 │   ├── mechanics/        # Shared stateless multi-entity game rules (gb.mechanics)
+│   ├── presentation/     # Dual-mode (ASCII & JSON) ViewModels & rendering (gb.presentation)
 │   ├── turn/             # Turn simulation engine & passes (gb.turn)
 │   ├── server/           # Asio server, session, auth, notification (gb.server)
 │   ├── commands/         # Player command implementations (commands)
@@ -183,11 +184,12 @@ cmake --build build --clean-first
 
 ### Module Architecture
 The codebase uses a 7-Tier C++26 Module DAG with the following structure:
-- **`dallib`** (Tier 1): Data Access Layer module (`Database`, `JsonStore`, `Schema`, `TelegramItem`)
-- **`gb.entities`** (Tier 1): Pure in-memory domain models (`Race`, `Star`, `Planet`, `Ship`, `Sector`, `SectorMap`, `Universe`), strong IDs, `Coordinates`, `Tweakables`
-- **`gb.repositories`** (Tier 2): Repository DAL adapters (`RaceRepository`, `ShipRepository`, `PlanetRepository`, `StarRepository`, `SectorRepository`, etc.)
-- **`gb.services`** (Tier 3): Core game services (`EntityManager`, `GameObj`, `Place`, `EntityLists`, `do_prompt`, `SessionRegistry`, `DeferredWriteScope`)
+- **`dallib`** (Tier 1): Data Access Layer module (`Database`, `JsonStore`, `Schema`)
+- **`gb.entities`** (Tier 1): Pure in-memory domain models (`Race`, `Power`, `Block`, `Star`, `Planet`, `Ship`, `Sector`, `SectorMap`, `Universe`, `NewsItem`, `TelegramItem`), strong IDs, `Coordinates`, `Tweakables`
+- **`gb.repositories`** (Tier 2): Repository DAL adapters (`RaceRepository`, `ShipRepository`, `PlanetRepository`, `StarRepository`, `SectorRepository`, `NewsRepository`, `TelegramRepository`, etc.)
+- **`gb.services`** (Tier 3): Core game services (`EntityManager`, `GameObj` with `OutputBuffer` and `UiMode`, `Place`, `EntityLists`, `do_prompt`, `SessionRegistry` with transactional `SocketOutbox`, `DeferredWriteScope`)
 - **`gb.mechanics`** (Tier 4): Shared stateless multi-entity game rules (`:navigation`, `:combat`, `:construction`, `:visibility`, `:victory`)
+- **`gb.presentation`** (Tier 5): Dual-mode (`UiMode::ASCII` and `UiMode::JSON`) view models and presentation rendering (`:core`, `:navigation`, `:galaxy`, `:planet`, `:ship`, `:diplomacy`, `:empire`, `:session`)
 - **`gb.turn`** (Tier 5): Turn simulation engine (`TurnStats`, `doplanet`, `doship`, `dosector`, `do_VN`, `doturncmd`, `do_update`, `do_segment`)
 - **`commands` & `gb.creator`** (Tier 6): Player command implementations (`GB::commands`) and universe generation/enrollment (`gb.creator`)
 - **`gb.server`** (Tier 7): Server networking, session management, authentication, and notifications
@@ -204,6 +206,7 @@ Every source file MUST follow this exact pattern:
 module;
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import std;  // Prefer std over std.compat for new code
 
@@ -220,7 +223,7 @@ bool example(const command_t& argv, GameObj& g) {
 ### Core Patterns
 
 #### Command Implementation Pattern
-Commands use declarative metadata (`CommandDescriptor`) paired with a thin domain handler (`bool (*)(const command_t&, GameObj&)`). Preconditions, scopes, and fixed AP pre-checks/deductions are handled automatically by `dispatch_command()`.
+Commands use declarative metadata (`CommandDescriptor`) paired with a thin domain handler (`bool (*)(const command_t&, GameObj&)`). Preconditions, scopes, transactional `DeferredWriteScope` and `SessionRegistry` outbox boundaries, and fixed AP pre-checks/deductions are handled automatically by `dispatch_command()`.
 
 ```cpp
 namespace GB::commands {
@@ -230,7 +233,7 @@ bool commandname(const command_t& argv, GameObj& g) {
     // 1. Domain argument parsing and validation
     auto target = parse_target(argv[1]);
     if (!target) {
-        g.out << "Invalid target specified.\n";
+        g.print("Invalid target specified.\n");
         return false;
     }
     
@@ -239,11 +242,11 @@ bool commandname(const command_t& argv, GameObj& g) {
     
     // 3. Mutate entities via scoped monadic mutation (auto-saves on lambda exit)
     g.entity_manager.mutate_planet(g.snum(), g.pnum(), [](Planet& planet) {
-        planet.popn += 1000;
+        planet.popn() += 1000;
     });
     
-    // 4. Player output through g.out
-    g.out << "Success: planet population updated.\n";
+    // 4. Player output through ViewModels (g.present) or formatted text (g.print)
+    g.present(GB::presentation::PlanetUpdateReport{.star = star.get_name(), .popn_added = 1000});
     return true;
 }
 
@@ -268,7 +271,7 @@ All entity mutations MUST go through `EntityManager::mutate_*()` methods. Callin
 ```cpp
 // ✅ CORRECT - Scoped mutation with automatic persistence
 g.entity_manager.mutate_planet(g.snum(), g.pnum(), [](Planet& planet) {
-    planet.popn += 1000;  // Modifications happen here
+    planet.popn() += 1000;  // Modifications happen here
 }); // Auto-save occurs when lambda exits
 ```
 
@@ -279,23 +282,25 @@ g.entity_manager.mutate_planet(g.snum(), g.pnum(), [](Planet& planet) {
 - Use `std::optional` for maybe-values and always check `.has_value()` before dereferencing
 - `EntityNotFoundError` exceptions from `peek_star()`, `peek_planet()`, and `peek_sectormap()`, as well as `SqliteError` exceptions from relational constraint violations (`SQLITE_CONSTRAINT_FOREIGNKEY`, `SQLITE_CONSTRAINT_CHECK`), indicate programming errors or data corruption and must propagate without being caught or silenced in domain/command code
 
-#### Output Formatting
+#### Output Formatting & ViewModels (`gb.presentation`)
 ```cpp
-// All user output goes through g.out
-g.out << std::format("Player {} has {} ships\n", player_id, ship_count);
+// Structured command output uses ViewModels in gb.presentation via g.present():
+g.present(GB::presentation::build_ship_report(*ship));
 
-// For tables, use consistent formatting
-g.out << std::format("{:<15} {:>5} {:>5}\n", "Name", "Crew", "Tech");
-g.out << std::format("{:<15} {:>5} {:>5}\n", name, crew, tech);
+// Simple diagnostic or error messages use g.print() (or g.out.append()):
+g.print("Player {} has {} ships\n", player_id, ship_count);
+
+// Tabular output in ASCII mode is built inside gb.presentation using TableBuilder
+// (never use third-party tabulate or raw std::stringstream in commands or turn passes).
 ```
 
 ## 🔧 Common Tasks
 
 ### Adding a New Command
 
-1. **Export in `gb/commands/commands.cppm`**:
+1. **Export descriptor in `gb/commands/commands.cppm`**:
    ```cpp
-   export void newcommand(const command_t&, GameObj&);
+   export extern const CommandDescriptor newcommand_cmd;
    ```
 
 2. **Create `gb/commands/newcommand.cc`** following the template above
@@ -305,10 +310,10 @@ g.out << std::format("{:<15} {:>5} {:>5}\n", name, crew, tech);
    PRIVATE commands/newcommand.cc
    ```
 
-4. **Register in `gb/GB_server.cc::getCommands()`**:
+4. **Register in `gb/server/GB_server.cc::getCommands()`**:
    ```cpp
-   {"newcommand", GB::commands::newcommand},
-   {"nc", GB::commands::newcommand},  // Optional alias
+   {"newcommand", &GB::commands::newcommand_cmd},
+   {"nc", &GB::commands::newcommand_cmd},  // Optional alias
    ```
 
 ### Accessing Game Data
@@ -322,7 +327,7 @@ Use entity list helpers when scanning collections managed by `EntityManager`:
 ```cpp
 // Read-only iteration: prefer ::readonly(...)
 for (const Race* race : RaceList::readonly(g.entity_manager)) {
-  g.out << std::format("{}\n", race->name);
+  g.print("{}\n", race->name);
 }
 
 // Mutable iteration: use the writable list form
@@ -381,12 +386,12 @@ The `EntityManager` provides centralized, RAII-based entity lifecycle management
 **Read-Only Access (peek methods - no auto-save):**
 ```cpp
 // Read race data (no modifications, no auto-save)
-const auto* race = g.entity_manager.peek_race(g.player);
+const auto* race = g.entity_manager.peek_race(g.player());
 if (!race) {
-    g.out << "Race not found.\n";
+    g.print("Race not found.\n");
     return;
 }
-g.out << std::format("Race: {}\n", race->name);
+g.print("Race: {}\n", race->name);
 
 // Read star data - throws EntityNotFoundError if not found
 const auto& star = *g.entity_manager.peek_star(star_id);
@@ -402,10 +407,10 @@ const auto* smap = g.entity_manager.peek_sectormap(star_id, planet_num);
 
 **Read-Write Access (monadic mutate methods - automatic persistence):**
 
-For **validated/internal IDs** (e.g., `g.player`), no try/catch is needed:
+For **validated/internal IDs** (e.g., `g.player()`), no try/catch is needed:
 ```cpp
-// Validated ID path: g.player is always valid
-g.entity_manager.mutate_race(g.player, [](Race& race) {
+// Validated ID path: g.player() is always valid
+g.entity_manager.mutate_race(g.player(), [](Race& race) {
   race.tech += 10.5;  // Guaranteed valid, no null check
 });
 // Auto-saves when lambda completes
@@ -420,7 +425,7 @@ try {
     race.tech += 10.5;
   });
 } catch (const EntityNotFoundError&) {
-  g.out << "Player not found.\n";
+  g.print("Player not found.\n");
   return;
 }
 ```
@@ -451,19 +456,23 @@ The `GameObj& g` parameter provides:
 - `g.player()` - Current player number (`player_t`, 1-indexed)
 - `g.governor()` - Current governor number (`governor_t`)
 - `g.race` - **Pointer to current player's race** (already populated by `process_command()`, always valid)
-- `g.level` - Current scope level (UNIV/STAR/PLAN/SHIP)
+- `g.level()` - Current scope level (`LEVEL_UNIV`, `LEVEL_STAR`, `LEVEL_PLAN`, `LEVEL_SHIP`)
 - `g.snum()` - Current star number (`starnum_t`, 1-indexed)
 - `g.pnum()` - Current planet number (`planetnum_t`, 1-indexed)
-- `g.shipno` - Current ship number (`shipnum_t`, 1-indexed)
-- `g.out` - Output stream to player
+- `g.shipno()` - Current ship number (`shipnum_t`, 1-indexed)
+- `g.ui_mode()` - Current session rendering mode (`UiMode::ASCII` or `UiMode::JSON`)
+- `g.present(view_model)` - Renders a `gb.presentation` ViewModel to `g.out` according to `g.ui_mode()` and `g.color_enabled()`
+- `g.print(fmt, args...)` - Appends formatted plain text to `g.out`
+- `g.out` - Per-command `OutputBuffer` (lightweight `std::string` wrapper with `.str()`, `.view()`, `.clear()`, `.append()`)
 - `g.entity_manager` - Centralized entity access service
+- `g.session_registry` - Cross-session notification and transactional `SocketOutbox` registry
 
 **Key Pattern**: `g.race` is pre-populated before any command executes in production:
 - For **read-only** access to current player's race: Use `g.race->field` directly.
 - For **modifications** to current player's race: Use `g.entity_manager.mutate_race(g.player(), [](Race& race) { ... })`.
 - For **other entities with validated IDs**: No try/catch needed; IDs are pre-validated by game logic.
 - For **user-input IDs**: Wrap in try/catch to handle `EntityNotFoundError` or use `with_*`.
-- **In tests**: Set `g.race = entity_manager.peek_race(g.player());` after creating GameObj to match production behavior.
+- **In tests**: Use `ctx.setup_game_obj(g, player, gov)` after creating `GameObj` to match production behavior.
 
 ### Writing Unit & Integration Tests
 
@@ -495,7 +504,7 @@ void test_something() {
 
 Key features of `TestContext`:
 - **In-memory DB & Schema**: Automatically sets up `db(":memory:")` and runs `initialize_schema(db)`.
-- **Standard Universe**: `ctx.with_standard_universe()` provisions a 2-player solar system (Sol/Earth, Vega/Vega Prime, Federation/Klingons, APs, alliance blocks) satisfying all domain invariants.
+- **Standard Universe**: `ctx.with_standard_universe()` provisions a 4-player solar system (Sol/Earth, Vega/Vega Prime, Antares/Antares Prime, Federation/Klingons/Romulans/Cardassians, APs, alliance blocks) satisfying all domain invariants.
 - **Populated Planets**: `ctx.with_populated_planet(snum, pnum, owner, popn)` colonizes and aligns planet and sectormap populations.
 - **TestShipBuilder**: Fluent builder populated with canonical template defaults (`ShipTemplate`), preventing magic numbers.
 - **Automatic GameObj Setup**: `ctx.setup_game_obj(g, player, gov)` configures scope, IDs, and assigns `g.race`.
@@ -508,7 +517,7 @@ See [`.github/skills/database-test-pattern/SKILL.md`](.github/skills/database-te
 
 ### DO NOT:
 - ❌ Use `#include` for C++ or C headers — always use C++26 modules (`import std;`, `import gb.entities;`, etc.)
-- ❌ Use `printf`, `std::cout`, or direct console I/O
+- ❌ Use `printf`, `std::cout`, `std::stringstream`, or direct console I/O in commands or services
 - ❌ Use raw `new`/`delete` or manual memory management
 - ❌ Add external dependencies without approval
 - ❌ Hardcode file paths or magic numbers
@@ -519,12 +528,12 @@ See [`.github/skills/database-test-pattern/SKILL.md`](.github/skills/database-te
 - ❌ Drop, shorten, or consolidate away existing test cases, assertions, or explanatory comments during modernization
 
 ### ALWAYS:
-- ✅ Use fine-grained module imports (`import gb.entities;`, `import gb.services;`, `import gb.mechanics;`, etc.) and prefer `import std;` over `import std.compat;`
+- ✅ Use fine-grained module imports (`import gb.entities;`, `import gb.services;`, `import gb.mechanics;`, `import gb.presentation;`, etc.) and prefer `import std;` over `import std.compat;`
 - ✅ For tests, also add `import test;` and `import dallib;`
-- ✅ Write all output through `g.out`
+- ✅ Emit structured command output via `g.present(view_model)` and simple diagnostic messages via `g.print(...)`
 - ✅ Check `std::optional` values before use
 - ✅ Use early returns with clear error messages
-- ✅ Use `std::format` for string formatting
+- ✅ Use `std::format` / `g.print` for string formatting
 - ✅ End output lines with `\n`
 - ✅ Use existing constants from `gb.entities` (`tweakables.cppm`)
 - ✅ Dereference `peek_star()`, `peek_planet()`, and `peek_sectormap()` results directly - they throw on not-found
@@ -562,10 +571,10 @@ Before submitting any code:
 
 - [ ] File starts with `// SPDX-License-Identifier: Apache-2.0`
 - [ ] Uses module imports, not `#include` headers
-- [ ] All output goes through `g.out`
+- [ ] All player output goes through `g.present(...)` or `g.print(...)` (`g.out`)
 - [ ] Error handling uses early returns
 - [ ] `std::optional` values are checked before use
-- [ ] String formatting uses `std::format`
+- [ ] String formatting uses `std::format` / `g.print`
 - [ ] No hardcoded paths or magic numbers
 - [ ] Command is registered in `GB_server.cc` if applicable
 - [ ] File is added to `CMakeLists.txt` if new
@@ -579,6 +588,7 @@ Before submitting any code:
 module;
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import std;  // Prefer std over std.compat for new code
 
@@ -592,9 +602,9 @@ bool commandname(const command_t& argv, GameObj& g)
 
 ### Output Examples
 ```cpp
-g.out << "Simple message\n";
-g.out << std::format("Formatted: {} at {}\n", value, location);
-g.out << std::format("{:<15} {:>5}\n", "Name", "Value");  // Table header
+g.print("Simple message\n");
+g.print("Formatted: {} at {}\n", value, location);
+g.present(GB::presentation::build_ship_report(*ship));
 ```
 
 ### File Path Constants

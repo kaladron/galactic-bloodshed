@@ -6,7 +6,7 @@ user-invocable: false
 
 # Entity Domain Methods & Computed Predicates
 
-Game entities (`Ship`, `Planet`, `Star`, `Race`, `block`) encapsulate their internal data and expose rich domain member methods, computed predicates, and structured manifests.
+Game entities (`Ship`, `Planet`, `Star`, `Race`, `Power`, `Block`) encapsulate their internal data and expose rich domain member methods, computed predicates, and structured manifests.
 
 ## 1. Computed Predicates Over Stored State
 
@@ -29,10 +29,10 @@ Derived conditions are computed dynamically on the entity from ground-truth stat
 ```cpp
 // ✅ Query computed states directly on the entity
 if (ship.is_docked()) {
-  g.out << "Ship is currently docked.\n";
+  g.print("Ship is currently docked.\n");
 }
 if (ship.hyper_drive().is_ready()) {
-  g.out << "Hyperdrive ready for jump.\n";
+  g.print("Hyperdrive ready for jump.\n");
 }
 ```
 
@@ -69,7 +69,7 @@ race.declare_war_on(target_player);
 race.make_peace_with(target_player);
 ```
 
-### Alliance `block` Methods
+### Alliance `Block` Methods
 
 ```cpp
 // Read-only queries

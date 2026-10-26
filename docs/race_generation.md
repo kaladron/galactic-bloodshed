@@ -77,7 +77,7 @@ The cost of each biological attribute $a$ is determined by a hybrid exponential-
 
 $$\text{Cost}(a) = \left\lfloor \exp\left(e_\text{fudge} \cdot (a - e_\text{hinge})\right) \cdot e_\text{factor} + a \cdot l_\text{factor} + l_\text{fudge} \right\rfloor$$
 
-where $e_\text{factor}, e_\text{fudge}, e_\text{hinge}, l_\text{factor}$, and $l_\text{fudge}$ are mathematically tuned parameters ensuring that default racial traits sum to exactly $0$ attribute points.
+where $`e_\text{factor}, e_\text{fudge}, e_\text{hinge}, l_\text{factor}`$, and $`l_\text{fudge}`$ are mathematically tuned parameters ensuring that default racial traits sum to exactly $0$ attribute points.
 
 ### Biological Covariance and Synergies
 Attributes do not exist in isolation; physical and evolutionary tradeoffs alter point costs:
@@ -108,7 +108,7 @@ A custom species must define its ecological affinity for planetary biomes ($0\%$
 8. **Plated**: Tectonic bedrock complexes (**mandatory $100\%$** for all non-Jovian species).
 
 ### Base Compatibility Cost
-For each settleable biome $i$ with compatibility percentage $c_i \in [0, 100\%]$:
+For each settleable biome $i$ with compatibility percentage $`c_i \in [0, 100\%]`$:
 
 $$\text{Cost}(c_i) = \left\lfloor c_i \times 0.5 + 10.8 \times \ln(1.0 + c_i) \right\rfloor$$
 

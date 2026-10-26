@@ -95,13 +95,13 @@ flowchart TD
 ```
 
 ### 1. Keplerian Orbital Period ($T$)
-The time required for a world to complete one full revolution around its star depends on its orbital radius ($r$) and the central star's gravitational mass ($M_{\text{star}}$):
+The time required for a world to complete one full revolution around its star depends on its orbital radius ($r$) and the central star's gravitational mass ($`M_{\text{star}}`$):
 
 $$r = \sqrt{x_{\text{planet}}^2 + y_{\text{planet}}^2}$$
 
 $$T = r \times \sqrt{\frac{r}{G_{\text{system}} \times M_{\text{star}}}}$$
 
-where $G_{\text{system}} = 10^{-4}$ represents the galactic system gravitational constant. Inner planets closer to their parent star traverse their orbits at high angular velocities, while outer worlds and gas giants require dozens or hundreds of turns to complete a revolution.
+where $`G_{\text{system}} = 10^{-4}`$ represents the galactic system gravitational constant. Inner planets closer to their parent star traverse their orbits at high angular velocities, while outer worlds and gas giants require dozens or hundreds of turns to complete a revolution.
 
 ### 2. Angular Phase Step and Direction of Motion
 During each **full turn update**, the orbital engine computes the planet's current angular phase $\theta = \operatorname{atan2}(y, x)$ and advances it by the angular step $\Delta \theta = -\frac{1}{T}$:
@@ -121,7 +121,7 @@ $$\Delta x = x_{\text{new}} - x_{\text{planet}}, \quad \Delta y = y_{\text{new}}
 
 ### 4. Orbital Entrainment of Stationed Ships
 Whenever a planet shifts along its orbital arc by $(\Delta x, \Delta y)$, the game engine automatically entrains all vessels currently stationed in planetary orbit:
-- All starships, orbital habitats, space stations, and fuel tankers in planetary orbit (`whatorbits = LEVEL_PLAN`) have their coordinates adjusted by the exact displacement vector:
+- All starships, orbital habitats, space stations, and fuel tankers in low planetary orbit have their coordinates adjusted by the exact displacement vector:
 
 $$\mathbf{x}_{\text{ship}} \leftarrow \mathbf{x}_{\text{ship}} + (\Delta x, \Delta y)$$
 
@@ -147,7 +147,7 @@ During each full turn update, surface temperature evolves according to:
 $$T_{\text{surface}} = T_{\text{base}} + \Delta T_{\text{mirrors}} \pm 5^{\circ}\text{C}$$
 
 - **Seasonal Atmospheric Drift**: Natural stochastic fluctuations of $\pm 5^{\circ}\text{C}$ simulate seasonal weather shifts and atmospheric turbulence.
-- **Orbital Space Mirrors**: Giant orbital reflector arrays in the same star system aimed at a planet focus stellar energy into the upper atmosphere to warm freezing worlds and melt glaciated biospheres (with intensity $\in [0, 100]$ attenuating as $I_{\text{effective}} = \lfloor 50 \times \text{Intensity} / \text{Range} \rfloor$ when $\text{Range} > 50$): $`\Delta T_{\text{mirrors}} = \text{round\_rand}\!\left((1 - 0.01 \times \text{Damage}) \times I_{\text{effective}}\right)`$.
+- **Orbital Space Mirrors**: Giant orbital reflector arrays in the same star system aimed at a planet focus stellar energy into the upper atmosphere to warm freezing worlds and melt glaciated biospheres (with intensity $\in [0, 100]$ attenuating as $`I_{\text{effective}} = \lfloor 50 \times \text{Intensity} / \text{Range} \rfloor`$ when $\text{Range} > 50$): $`\Delta T_{\text{mirrors}} = \operatorname{round}\!\left((1 - 0.01 \times \text{Damage}) \times I_{\text{effective}}\right)`$.
 
 ---
 

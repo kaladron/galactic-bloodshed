@@ -1,6 +1,6 @@
 ---
 name: module-file-template
-description: 'Apply the C++26 module file structure used throughout this codebase. Use when creating any new .cc, .cppm, or test file, deciding between import gblib/import std vs include, choosing module partition names, or fixing module-related build errors. Covers global module fragment, import order, partition syntax, and when (rarely) #include is allowed.'
+description: 'Apply the C++26 module file structure used throughout this codebase. Use when creating any new .cc, .cppm, or test file, deciding between module imports vs include, choosing module partition names, or fixing module-related build errors. Covers global module fragment, import order, partition syntax, and when (rarely) #include is allowed.'
 user-invocable: false
 ---
 
@@ -15,9 +15,11 @@ This codebase uses C++ Modules end-to-end. Every new translation unit follows a 
 
 module;                       // Global module fragment begins
 
-#include "gb/files.h"         // (optional) legacy headers ONLY here
+#include "gb/entities/files.h"  // (optional) legacy headers ONLY here
 
-import gblib;                 // Project module
+import gb.entities;           // Domain entities module
+import gb.presentation;       // Presentation view-model module
+import gb.services;           // Service module
 import std;                   // Standard library
 
 module commands;              // Module/partition this file belongs to
@@ -31,20 +33,20 @@ Rules:
 
 1. SPDX header on line 1.
 2. `module;` opens the global module fragment. **Only place** `#include` may appear is between `module;` and any `import`.
-3. `import gblib;` first, then `import std;` (prefer over `import std.compat;` in new code).
+3. Project module imports (`import gb.entities;`, `import gb.services;`, etc.) first, then `import std;` (prefer over `import std.compat;` in new code).
 4. `module <name>;` declares which named module/partition this file implements. Must come **after** all imports.
-5. Tests typically also need `import dallib;`.
+5. Tests typically also need `import dallib;` and `import test;`.
 
 ## Module Interface Partition (.cppm)
 
 ```cpp
 // SPDX-License-Identifier: Apache-2.0
 
-export module gblib:partition_name;   // Or: export module dallib;
+export module gb.services:partition_name;   // Or: export module dallib;
 
 import std;
-import :types;                         // Other partitions of same module
-import :services;
+import gb.entities;
+import :other_partition;                    // Other partitions of same module
 
 export class Foo { /* ... */ };
 export void bar();
@@ -53,7 +55,7 @@ export void bar();
 Rules:
 
 - Single `export module ...` declaration per file.
-- Within `gblib`, partitions are referenced as `:partition` (e.g. `:types`, `:ships`).
+- Within a module, partitions are referenced as `:partition` (e.g. `:core`, `:galaxy` in `gb.presentation`).
 - Mark every public symbol with `export`. Internal helpers stay unmarked.
 - No `#include` in interface partitions except inside `module;` if a legacy header is unavoidable.
 
@@ -63,31 +65,33 @@ Rules:
 // SPDX-License-Identifier: Apache-2.0
 
 import dallib;
-import gblib;
+import gb.entities;
+import gb.services;
+import test;
 import std;
 
 #include <cassert>
 
 int main() {
-  Database db(":memory:");
-  initialize_schema(db);
+  TestContext ctx;
+  ctx.with_standard_universe();
   // ... assertions ...
   std::println("Test passed!");
   return 0;
 }
 ```
 
-`<cassert>` may be included after the imports (assert is a macro, so import std doesn't expose it). See the database-test-pattern skill for the full test pattern.
+`<cassert>` may be included after the imports (assert is a macro, so `import std` doesn't expose it). See the `database-test-pattern` skill for the full test pattern.
 
 ## When `#include` Is Allowed
 
 Only for legacy artifacts that have not yet been modularized:
 
-- `gb/files.h` (path constants, file-name macros)
+- `gb/entities/files.h` (path constants, file-name macros)
 - `gb/buffers.h` (legacy buffer macros)
 - `<cassert>` in tests
 
-Anything else should be reached via `import gblib`, `import dallib`, `import std`, or `import commands`.
+Anything else should be reached via fine-grained module imports (`import gb.entities`, `import gb.services`, `import gb.mechanics`, `import gb.presentation`, `import gb.turn`, `import dallib`, `import std`, or `import commands`).
 
 ## Adding a Source File to the Build
 
@@ -103,9 +107,9 @@ target_sources(commands PRIVATE
 Module interface partitions are added with `FILE_SET CXX_MODULES`:
 
 ```cmake
-target_sources(gblib PUBLIC
+target_sources(gb_services PUBLIC
   FILE_SET CXX_MODULES FILES
-    gblib-foo.cppm
+    services/foo.cppm
 )
 ```
 
@@ -132,7 +136,7 @@ Match the pattern of nearby entries — don't invent a new shape.
 
 - [ ] SPDX header on line 1
 - [ ] Includes (if any) are inside `module;` fragment
-- [ ] `import gblib;` before `import std;`
+- [ ] Project module imports (`import gb.entities;`, etc.) before `import std;`
 - [ ] `import std;` (not `import std.compat;`) for new code
 - [ ] Single `module <name>;` after imports
 - [ ] All public `.cppm` symbols are `export`-ed

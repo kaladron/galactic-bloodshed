@@ -19,7 +19,7 @@ There are **two modes** that match the two `EntityManager` access modes:
 
 ```cpp
 for (const Race* race : RaceList::readonly(em)) {
-  g.out << std::format("{}: tech {}\n", race->name, race->tech);
+  g.print("{}: tech {}\n", race->name, race->tech);
 }
 ```
 

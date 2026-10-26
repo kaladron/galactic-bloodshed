@@ -106,10 +106,14 @@ flowchart TD
    - **Uncrewed Vessels**: Starships must be completely evacuated ($0\text{ crew}$ and $0\text{ troops}$). Military personnel and colonists cannot be gifted or conscripted into foreign service.
    - **Empty Hangars**: Carriers and transport vessels cannot contain any loaded or docked parasite craft.
 5. **Action Point Costs**:
-   - Vessels located in deep space (`LEVEL_UNIV`) require **5 Universe Action Points**.
-   - Vessels in stellar space or planetary orbit (`LEVEL_STAR` or `LEVEL_PLAN`) require **5 Star Action Points** in that star system.
+   - Vessels located in interstellar deep space require **5 Universe Action Points**.
+   - Vessels in stellar space or planetary orbit require **5 Star Action Points** in that star system.
 6. **Automatic Astrogational Intelligence**: When transferred in orbit, the recipient empire immediately gains discovery and exploration status for that star system (and planet if in planetary orbit). Surface sector ownership is unaffected.
 7. **Galactic Bulletin**: Every successful ship gift publishes an interstellar diplomatic bulletin to the galactic news feed.
+
+### Astrogational Telemetry Transfers (`dump`)
+Empires can share their explored star and planet survey records with another civilization using the `dump <race>` command ($1\text{ Star AP}$):
+- Transfers exploration and colony awareness for every star system and planet currently known to the donor empire, and alerts the recipient empire via telegram.
 
 ---
 
@@ -159,7 +163,7 @@ Membership in a power block is strictly bilateral and requires concurrent mutual
 3. **Pending States**:
    - **Invited**: The leader has extended an offer, but the candidate has not yet pledged.
    - **Pledged**: The candidate has proclaimed allegiance, but the leader has not yet issued an invitation.
-4. **Unilateral Termination**: Either party can dissolve membership instantly without confirmation from the other: the leader via `uninvite <race>` or the member via `unpledge <leader>`.
+4. **Unilateral Termination & Immediate Power Recalculation**: Either party can dissolve membership instantly without confirmation from the other: the leader via `uninvite <race>` or the member via `unpledge <leader>`. Executing `invite`, `uninvite`, `pledge`, or `unpledge` immediately recomputes coalition power totals across all blocks and posts a diplomatic declaration bulletin.
 
 ### Non-Exclusive Membership & Multiple Allegiances
 
@@ -204,7 +208,7 @@ System ownership is non-cumulative across turns: total controlled systems are re
 
 When inspecting a power block roster via `block <leader>`, foreign demographic and economic statistics (population, troops, treasury, starships, planets, minerals, fuel, and munitions) are not shown as raw database values. Instead, they are filtered through your empire's cryptographic knowledge of that specific race:
 
-$$\text{Reported Metric} = \text{estimate}(\text{Actual Metric}, \text{Translation Matrix Knowledge } \%)$$
+$$\text{Reported Metric} = \operatorname{Estimate}(\text{Actual Metric}, \text{Translation Matrix Knowledge } \%)$$
 
 Your knowledge percentage is determined by your bilateral translation matrix ($`\text{Translate}\%`$). As your cryptographers decipher a foreign empire's dialect, your intelligence estimates approach exact fidelity ($100\%$).
 
@@ -218,8 +222,8 @@ Interstellar diplomacy relies on secure communication networks and cryptological
 flowchart LR
     Empire["Imperial Communications"] --> Direct["Private Telegrams\nEncrypted Messages to Foreign Leaders"]
     Empire --> Broadcast["Public Broadcasts\nGlobal Bulletins to Entire Galaxy"]
-    Empire --> Trans{"Dominion Milestone Check\nControls >= 50% Habitable Planets?"}
-    Trans -->|Yes| Universal["Universal Translation Achieved!\nInstantly Decipher All Foreign Communications"]
+    Empire --> Trans{"Dominion Milestone Check\nControls >= 5% Non-Asteroid Planets?"}
+    Trans -->|Yes| Universal["Universal Translation Achieved!\nAll Empires Decipher Ascendant Dialect"]
     Trans -->|No| Standard["Standard Encrypted Intelligence"]
 ```
 
@@ -228,10 +232,10 @@ flowchart LR
 - **Galactic Broadcasts**: System-wide or galaxy-wide public proclamations (`announce` command).
 - **Combat & Disaster Bulletins**: Automated intelligence bulletins alerting players to fleet battles, supernova collapses, and slave uprisings.
 
-### Universal Translation Milestone (Lesser Winner)
-When an ascendant empire achieves control of at least **$50\%$ of all habitable planets** in the galaxy:
-- The empire achieves a cryptological breakthrough, mastering **Universal Translation**.
-- All foreign empires across the galaxy decipher the dominant empire's communications ($100\%$ translation matrix), signaling imminent galactic hegemony.
+### Universal Translation Milestone
+When an ascendant empire achieves control of at least **$5\%$ of all non-asteroid planets** in the galaxy (where controlling a planet requires owning strictly more than $50\%$ of its sectors):
+- The empire triggers a galactic linguistic milestone: **Universal Translation**.
+- All foreign empires across the galaxy decipher the ascendant empire's communications ($100\%$ translation matrix), signaling rising galactic hegemony.
 
 ---
 

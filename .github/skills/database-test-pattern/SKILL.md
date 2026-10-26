@@ -187,7 +187,7 @@ Add to `gb/CMakeLists.txt`:
 ```cmake
 add_executable(commandname_test commands/commandname_test.cc)
 target_link_libraries(commandname_test
-  PRIVATE dallib gblib commands test SQLite::SQLite3 glaze::glaze)
+  PRIVATE dallib gb_entities gb_services gb_presentation commands test SQLite::SQLite3 glaze::glaze)
 add_test(NAME commandname_test COMMAND commandname_test)
 ```
 

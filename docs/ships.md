@@ -28,6 +28,11 @@ flowchart TD
 | **Planetary Scope** | In low orbit around a world or landed on the planetary surface | Planetary bombardment, cargo loading/unloading, ground troop deployment, surface mining |
 | **Carrier Hangars** | Docked inside a host carrier or space station | Parasite craft transport, carrier protection, hangar bay maintenance |
 
+### Ship Command Target Selectors
+Commands that operate on starships (`order`, `launch`, `land`, `dock`, `undock`, `load`, `unload`, `dump`, `scrap`, `mount`, `dismount`, `fire`, `bombard`, `cew`, `detonate`) accept two selector forms:
+- **Explicit Ship Number (`#123` or `123`)**: Resolves a single ship by its unique galactic registry number regardless of current scope, verifying ownership and governor jurisdiction.
+- **Ship-Type Character List (`dBC` or `*`)**: Iterates over all alive, authorized vessels matching the specified hull letters within the player's current spatial scope (or `*` for all ship classes at the current scope).
+
 ---
 
 ## 2. Carrier Docking and Fleet Ownership
@@ -38,9 +43,10 @@ Capital vessels and space stations (such as Fleet Carriers, Mobile Factories, an
 Naval operations distinguish between two forms of ship-to-ship connection:
 
 1. **Carrier Hangar Docking (`land <craft> <carrier>`)**:
-   - **Internal Stature**: The smaller vessel lands inside the host vessel's internal hangars, transitioning to the internal ship reference frame (`LEVEL_SHIP`).
-   - **Displacement & Propulsion**: The carrier absorbs the parasite vessel's physical size into its active hangar usage ($\Delta \text{Hangar} = \text{Size}_{\text{craft}}$) and incorporates the parasite's entire mass into its operational displacement.
+   - **Internal Stature**: The smaller vessel lands inside the host vessel's internal hangars, transitioning to the internal ship reference frame.
+   - **Displacement & Propulsion**: The carrier absorbs the parasite vessel's physical size into its active hangar usage ($`\Delta \text{Hangar} = \text{Size}_{\text{craft}}`$) and incorporates the parasite's entire mass into its operational displacement.
    - **Movement & Command**: Carried craft do not consume propellant during travel; they move alongside the host carrier and operate under the carrier's commanding empire and governor.
+   - **Recursive Ownership Synchronization**: Whenever a carrier is captured, gifted, or reassigned to another governor, ownership and governor assignment propagate **recursively** to all nested parasite craft across arbitrary hangar nesting depths.
    - **Debarkation**: Carried craft launch back into the parent carrier's orbital scope via `launch <craft>`.
    - **Destruction Cascade**: If a carrier is destroyed or scuttled, all parasite vessels berthed in its hangars are eliminated in the explosion.
 
@@ -69,7 +75,7 @@ Starships and orbital structures are constructed through three distinct manufact
    - **Pre-Programmed Assembly**: Landed, online Mobile Factories (`F`) manufacture ships matching their locked blueprint specifications using planetary resource stockpiles, deploying completed hulls directly onto the factory's surface sector.
 
 3. **Shipboard Construction (`build <type> [count]`)**:
-   - **Hangar Assembly**: Carriers, Habitats, and Orbital Stations assemble smaller vessels directly inside their internal hangars ($\Delta \text{Hangar} = \text{Size}_{\text{ship}}$) using onboard resource stores.
+   - **Hangar Assembly**: Carriers, Habitats, and Orbital Stations assemble smaller vessels directly inside their internal hangars ($`\Delta \text{Hangar} = \text{Size}_{\text{ship}}`$) using onboard resource stores.
    - **External Orbital Deployment**: Spaceborne Shuttles and Cargo ships construct large orbital structures (such as Space Stations, Habitats, and Orbital Mirrors) directly into the surrounding orbital reference frame without consuming internal hangar capacity.
 
 ### Custom Ship Design and Factory Programming (`make` and `modify`)
@@ -82,17 +88,19 @@ Mobile Factories (`F`) can be programmed to manufacture custom-engineered starsh
   - **Propulsion Systems**: Sublight `speed` rating ($0\text{--}9$), `hyperdrive` toggle, and crystal drive `mount` toggle.
   - **Kinetic Gun Batteries**: `primary` and `secondary` batteries can be configured for weapon `caliber` (`light`, `medium`, or `heavy`) and gun count (`strength`).
   - **Directed Energy & Confined Energy Weapons**: Standard combat `laser` toggle, plus Confined Energy Weapon (`cew`) `strength` and optimal targeting `range`.
-- **Technological Complexity Scaling**: Customizing a hull beyond its baseline template increases its **Design Complexity**. An empire can only program designs whose complexity does not exceed its current technological level ($\text{Tech}_{\text{empire}} \ge \text{Complexity}$).
-- **Resource Cost Ceiling**: Each structural upgrade, weapon battery, and speed enhancement increases the hull's construction cost (`build_cost`). A factory blueprint cannot exceed the architectural manufacturing ceiling of $65,535$ resource units per vessel.
+- **Technological Complexity Scaling**: Customizing a hull beyond its baseline template increases its **Design Complexity**. An empire can only program designs whose complexity does not exceed its current technological level ($`\text{Tech}_{\text{empire}} \ge \text{Complexity}`$).
+- **Resource Cost Ceiling**: Each structural upgrade, weapon battery, and speed enhancement increases the hull's construction cost. A factory blueprint cannot exceed the architectural manufacturing ceiling of $65,535$ resource units per vessel.
 
 ### In-Service Vessel Retrofitting (`upgrade`)
-Active starships that support field modification (`modifiable` template trait, excluding factories) can be retrofitted in service at ship scope (`upgrade <characteristic> [value]`):
+Active starships whose hull templates permit field modification (excluding factories) can be retrofitted in service at ship scope (`upgrade <characteristic> [value]`):
 
 - **Undamaged Hull Precondition**: A vessel cannot be retrofitted while sustaining hull damage ($\text{Damage} > 0\%$). All structural damage must be repaired before field upgrades can proceed.
 - **Monotonic Attribute Scaling**: Unlike offline factory blueprints, in-service upgrades are strictly **non-decreasing**—an attribute (`crew`, `cargo`, `hangar`, `fuel`, `destruct`, `armor`, `speed`, `primary`, `secondary`, or `cew`) can only be increased above its current value, and weapon calibers cannot be downgraded to a smaller bore.
-- **Retrofit Resource Cost**: Field retrofitting consumes twice the incremental construction cost delta directly from the vessel's onboard mineral cargo bay (with a minimum expenditure of $1$ resource unit for mortal empires):
+- **Automatic Weapon Battery Activation**: When an unarmed vessel is retrofitted with a primary or secondary kinetic gun battery, fire control automatically switches the ship's active weapon selector to the newly installed battery.
+- **Retrofit Resource Cost & Deity Exemptions**: Field retrofitting consumes twice the incremental construction cost delta directly from the vessel's onboard mineral cargo bay (with a minimum expenditure of $1$ resource unit for mortal empires):
   $$\text{Retrofit Cost} = \max\Big(1,\; 2 \times (\text{Cost}_{\text{upgraded}} - \text{Cost}_{\text{current}})\Big)$$
-- **Carrier Hangar & Displacement Synchronization**: Expanding crew berths, cargo bays, fuel tanks, munitions magazines, or hangar volume increases the vessel's physical size ($\text{Size}_{\text{ship}}$) and structural base mass ($\text{Base Mass}$). If the vessel is berthed inside a carrier or station hangar, the retrofit is rejected if the expanded hull size would exceed the host carrier's remaining hangar capacity; otherwise, the host carrier's occupied hangar volume and total operational mass are updated synchronously.
+  Deity empires bypass technological complexity checks and resource cost deductions when upgrading vessels.
+- **Carrier Hangar & Displacement Synchronization**: Expanding crew berths, cargo bays, fuel tanks, munitions magazines, or hangar volume increases the vessel's physical size ($`\text{Size}_{\text{ship}}`$) and structural base mass ($\text{Base Mass}$). If the vessel is berthed inside a carrier or station hangar, the retrofit is rejected if the expanded hull size would exceed the host carrier's remaining hangar capacity; otherwise, the host carrier's occupied hangar volume and total operational mass are updated synchronously.
 
 ### Cargo and Personnel Logistics (`load` and `unload`)
 Landed vessels, moored vessels, and carrier-berthed craft transfer raw materials (`r`), propellant (`f`), munitions (`d`), warp crystals (`x`), civilian crew (`c`), and military troops (`m`) using `load` and `unload`:
@@ -101,18 +109,18 @@ $$\text{Transferred Amount} = \min\Big(\text{Requested Amount},\; \text{Availabl
 
 - **Symmetric Transfer Semantics**: `unload` is the exact directional inverse of `load`. Omitting the numeric amount on either command automatically transfers the maximum stock allowed by the source inventory and destination capacity.
 - **Planetary Surface Logistics**:
-  - **Colony Stockpiles vs. Surface Sectors**: Minerals, propellant, munitions, and crystals are exchanged with the empire's planetary stockpile (`plinfo`), whereas civilian crew and military troops embark from and disembark onto the specific surface sector $[x, y]$ where the ship is landed.
+  - **Colony Stockpiles vs. Surface Sectors**: Minerals, propellant, munitions, and crystals are exchanged with the empire's planetary stockpile, whereas civilian crew and military troops embark from and disembark onto the specific surface sector $[x, y]$ where the ship is landed.
   - **Colonization & Sector Abandonment**: Unloading crew or troops onto an unowned sector claims the sector for the ship's empire. Loading the last remaining civilian and troop off an owned sector automatically abandons the sector back to unowned status.
   - **Hostile Sector Disembarkation**: Unloading crew or troops onto a sector owned by a foreign empire triggers an immediate amphibious ground assault; see [Orbital Disembarkation Assaults](combat.md) for combat resolution and capture rules.
 - **Atomic Mass Conservation**: Transferring commodities decrements mass from the donor and increments mass on the recipient instantaneously by the exact physical displacement of the transferred commodity:
   - **Refined Minerals**: $\pm 0.10 \text{ mass units per unit}$
   - **Destructive Munitions**: $\pm 0.15 \text{ mass units per unit}$
   - **Liquid Propellant**: $\pm 0.05 \text{ mass units per unit}$
-  - **Living Crew & Troops**: $\pm M_{\text{race}} \text{ mass units per individual}$
+  - **Living Crew & Troops**: $`\pm M_{\text{race}}`$ $\text{mass units per individual}$
   - **Warp Crystals**: $0.0 \text{ mass units}$
-- **Berthing & Cargo Clamping**: Transfers strictly respect the recipient ship's physical volume limits (`max_resource`, `max_fuel`, `max_destruct`, and `max_crew`). Any excess requested beyond available capacity remains at the source, preventing commodity destruction or silent cargo loss.
-- **Automatic Crystal Mounting and Disarming**: Loading warp crystals (`x`) onto a hyperdrive-capable vessel that does not yet have a crystal mounted automatically mounts the first crystal into the drive core (`mounted = true`). Conversely, unloading crystals beyond the vessel's unmounted crystal reserves automatically disarms the mounted crystal (`mounted = false`) and deactivates any active hyperdrive or combat laser.
-- **Shuttle Hull-Strapping**: Light personnel shuttles (`s`) operating outside carrier hangars can strap mineral resources directly to their external hull beyond their internal cargo bay (`25` resource units). An overloaded shuttle cannot launch or land inside a carrier until excess cargo is jettisoned or unloaded.
+- **Berthing & Cargo Clamping**: Transfers strictly respect the recipient ship's physical volume limits (maximum resource, fuel, destruct, and crew capacities). Any excess requested beyond available capacity remains at the source, preventing commodity destruction or silent cargo loss.
+- **Automatic Crystal Mounting and Disarming**: Loading warp crystals (`x`) onto a hyperdrive-capable vessel that does not yet have a crystal mounted automatically mounts the first crystal into the drive core. Conversely, unloading crystals beyond the vessel's unmounted crystal reserves automatically dismounts the drive crystal and deactivates any active hyperdrive or combat laser.
+- **Shuttle Hull-Strapping**: Light personnel shuttles (`s`) operating outside carrier hangars can strap mineral resources directly to their external hull beyond their internal cargo bay ($25$ resource units). An overloaded shuttle cannot launch or land inside a carrier until excess cargo is jettisoned or unloaded.
 - **Audio-Vibratory-Physio-Molecular Transporters (`[`)**: Landed, operational transporter devices automatically beam all loaded cargo (minerals, fuel, destruct, crystals, civilian crew, and military troops) instantaneously to their configured receiving transporter, notifying foreign recipients via imperial telegram.
 
 ### Vessel Decommissioning and Material Reclamation (`scrap`)
@@ -120,11 +128,12 @@ When starships become obsolete, structurally compromised, or surplus to imperial
 
 $$\text{Reclaimed Mineral Resources} = \left\lfloor \frac{\text{Base Hull Construction Cost}}{2} \right\rfloor + \text{Stored Cargo Resources}$$
 
-- **Full Commodity & Personnel Conservation**: Decommissioning recovers $100\%$ of carried propellant reserves, destructive munitions (`destruct`), warp crystals, living civilian crew, and military ground troops.
+- **Action Point Cost**: Decommissioning a vessel in stellar or planetary scope costs $1\text{ Star AP}$, whereas scuttling a vessel in interstellar deep space costs $0\text{ AP}$.
+- **Full Commodity & Personnel Conservation**: Decommissioning recovers $100\%$ of carried propellant reserves, destructive munitions, warp crystals, living civilian crew, and military ground troops.
 - **Salvage Disposition by Reference Frame**:
-  - **Carrier Hangars**: Reclaimed minerals, propellant, munitions, crystals, and personnel are transferred directly into the host carrier's inventory (clamped by carrier storage capacities). The parasite craft is dismantled, immediately freeing its hangar volume ($\Delta \text{Hangar} = -\text{Size}_{\text{craft}}$) and reducing the host carrier's operational displacement.
-  - **Moored Alongside Vessel**: Salvaged materials and personnel are transferred into the moored partner vessel's inventory.
-  - **Landed on Planetary Surface**: Salvaged minerals, propellant, munitions, and crystals are deposited into local planetary colony stockpiles. Carried civilian crew and military personnel disembark into the planetary population.
+  - **Carrier Hangars**: Reclaimed minerals, propellant, munitions, crystals, and personnel are transferred directly into the host carrier's inventory (with crew and troops clamped to the host carrier's remaining joint berthing capacity $`\text{Max Crew} - (\text{Crew} + \text{Troops})`$). The parasite craft is dismantled, immediately freeing its hangar volume ($`\Delta \text{Hangar} = -\text{Size}_{\text{craft}}`$) and reducing the host carrier's operational displacement.
+  - **Moored Alongside Vessel**: Salvaged materials and personnel are transferred into the moored partner vessel's inventory, respecting the partner's cargo and joint berthing capacity ceilings.
+  - **Landed on Planetary Surface**: Salvaged minerals, propellant, munitions, and crystals are deposited into local planetary colony stockpiles. Carried civilian crew return to the landing sector's civilian population, and carried military troops return to the landing sector's troop garrison, updating planetary demographic totals synchronously.
   - **Unmoored Deep Space**: Scuttling an unmoored vessel in space permanently loses all hull materials, cargo, and carried personnel to the void.
 - **Ecological Containment Hazards**: Dismantling a **Toxic Waste Canister** on a planetary surface immediately ruptures containment seals, releasing all trapped toxicity points directly back into the world's biosphere.
 
@@ -157,11 +166,11 @@ $$\text{Civilian Crew} + \text{Military Troops} \le \text{Maximum Berthing Capac
 
 $$\Delta \text{Mass} = -(\Delta \text{Crew} + \Delta \text{Troops}) \times M_{\text{race}}$$
 
-#### Strategic Warp Crystals and Drive Racks
-Strategic warp crystals are required to power faster-than-light hyperspace jump drives and direct-fire combat lasers:
+#### Strategic Warp Crystals and Drive Racks (`mount` and `dismount`)
+Strategic warp crystals are required to power faster-than-light hyperspace jump drives, direct-fire combat lasers, and crystal-focused energy weapons:
 - **Zero Displacement**: Warp crystals possess zero physical mass, allowing ships to carry strategic reserves without incurring propulsion penalties.
-- **Drive Racks (`mount` command)**: Jump-capable warships and assault transports are equipped with internal drive racks. A crystal must be explicitly mounted into the drive core (`mount <ship>`) before hyperdrives can be charged or combat lasers activated.
-- **Shatter Risks**: Executing long-range hyperspace jumps or drawing peak power for combat lasers stresses the crystal matrix, carrying risks of matrix degradation or sudden crystallization shatter.
+- **Drive Racks (`mount` and `dismount`)**: Jump-capable warships and crystal-equipped vessels possess internal drive racks. Issuing `mount <ship>` installs an onboard crystal into the drive core so hyperdrives can be charged or combat lasers activated. Issuing `dismount <ship>` removes the crystal back into general shipboard crystal storage, safely discharging any accumulated hyperdrive charge and powering down active combat lasers.
+- **Shatter & Overload Risks**: Executing long-range hyperspace jumps or drawing excessive power for combat lasers and Confined Energy Weapons stresses the crystal matrix, carrying risks of crystal fracture or catastrophic core overload.
 
 ---
 
@@ -212,7 +221,7 @@ $$P(\text{Immobilized}) = \frac{\text{Radiation Level}}{100}$$
 
 $$\text{Crew}_{\text{new}} = \left\lfloor \text{Crew}_{\text{old}} \times 0.80 \right\rfloor, \quad \text{Troops}_{\text{new}} = \left\lfloor \text{Troops}_{\text{old}} \times 0.80 \right\rfloor$$
 
-- **Natural Decontamination**: Radiation dissipates gradually over time during update passes: $\Delta \text{Radiation} = -\text{UniformRandom}\Big(0, \min\big(\text{Radiation}, \text{Base Decontamination Rate}\big)\Big)$.
+- **Natural Decontamination**: Radiation dissipates gradually over time during update passes by a uniform random reduction between $0$ and $\min(\text{Radiation}, \text{Base Decontamination Rate})$.
 
 ### 2. Supernova Blast Waves
 Vessels caught in a star system undergoing a nova collapse suffer extreme radiant heat and physical shockwave damage:
@@ -251,33 +260,33 @@ Certain starship classes are equipped with advanced scientific, industrial, or b
 
 ### Space Mirrors and Solar Redirection
 Space Mirrors (`+`) are massive orbital reflector arrays capable of heating planetary biospheres, damaging enemy vessels with focused thermal beams, or destabilizing stars during full turn updates:
-- **Aiming and Intensity**: Aiming a space mirror (`order <ship> aim <target>`) consumes $0.3$ maneuvering fuel and resets beam intensity to $0$. Beam intensity is configured within $[0, 100]$ via `order <ship> intensity <0..100>`. The mirror must be in the same star system as its target to take effect.
-- **Planetary Thermal Modification**: When aimed at a planet in the same star system, the mirror focuses stellar energy into the target world's atmosphere to raise surface temperature (cooling requires dust canisters `g`, as mirror intensity is non-negative). Within planetary orbit range ($\text{Range} \le 50$), effective intensity equals $\text{Intensity}$; beyond $\text{Range} > 50$, it attenuates inversely with distance ($I_{\text{effective}} = \lfloor 50 \times \text{Intensity} / \text{Range} \rfloor$). Hull damage reduces mirror efficiency:
-  $$\Delta T = \text{round\_rand}\!\left(\left(1 - 0.01 \times \text{Damage}\right) \times I_{\text{effective}}\right)$$
-- **Thermal Beam Weapon (Aimed at Ship)**: When aimed at a vessel in the same star system, maximum hull damage is $\text{Max Damage} = \text{round\_rand}\!\left(\frac{2}{\max(1, \text{Target Body Size})} \times \frac{\text{Intensity}}{\text{Range}/50 + 1}\right)$, and actual damage applied is drawn uniformly from $[0, \text{Max Damage}]$.
+- **Aiming and Intensity**: Aiming a space mirror (`order <ship> aim <target>`) consumes $0.3$ maneuvering fuel while **preserving** the mirror's currently configured beam intensity. Beam intensity is adjusted within $[0, 100]$ via `order <ship> intensity <0..100>`. The mirror must be in the same star system as its target to take effect.
+- **Planetary Thermal Modification**: When aimed at a planet in the same star system, the mirror focuses stellar energy into the target world's atmosphere to raise surface temperature (cooling requires dust canisters `g`, as mirror intensity is non-negative). Within planetary orbit range ($\text{Range} \le 50$), effective intensity equals $\text{Intensity}$; beyond $\text{Range} > 50$, it attenuates inversely with distance ($`I_{\text{effective}} = \lfloor 50 \times \text{Intensity} / \text{Range} \rfloor`$). Hull damage reduces mirror efficiency via stochastic rounding:
+  $$\Delta T = \operatorname{round}\!\left(\left(1 - 0.01 \times \text{Damage}\right) \times I_{\text{effective}}\right)$$
+- **Thermal Beam Weapon (Aimed at Ship)**: When aimed at a vessel in the same star system, maximum hull damage is $`\text{Max Damage} = \operatorname{round}\!\left(\frac{2}{\max(1, \text{Target Body Size})} \times \frac{\text{Intensity}}{\text{Range}/50 + 1}\right)`$, and actual damage applied is drawn uniformly from $[0, \text{Max Damage}]$.
 - **Stellar Destabilization (Aimed at Star)**: When aimed at its host star, a space mirror reflects concentrated radiation back into the stellar core, increasing stellar instability by $0$ or $1$ per turn update toward the $> 15$ nova threshold.
 
 ### Atmosphere Processors
 Atmosphere Processors (`Y`) perform large-scale planetary geoengineering by converting ambient gases into breathable atmosphere:
-- **Atmospheric Modification**: Landed, online processors consume $3.0$ fuel per turn update (automatically shutting down and dispatching an out-of-fuel telegram if fuel drops below $3.0$) and shift each atmospheric gas toward the owner's racial preference scaled by $\frac{50}{50 + N_{\text{sectors}}} \times r_{\text{crew}}$.
+- **Atmospheric Modification**: Landed, online processors consume $3.0$ fuel per turn update (automatically shutting down and dispatching an out-of-fuel telegram if fuel drops below $3.0$) and shift each atmospheric gas toward the owner's racial preference scaled by $`\frac{50}{50 + N_{\text{sectors}}} \times r_{\text{crew}}`$.
 - **Safety Clamping**: Planetary atmospheric concentrations and toxicity ratings are strictly bounded within $[0\%, 100\%]$ to prevent ecological collapse or unphysical gas densities.
 
 ### Orbital Habitats and Population Incubators
 Orbital Habitats (`H`) function as residential space colonies and industrial hubs:
 - **Fuel-to-Resource Synthesis**: When switched online (`order <habitat> on`), manned habitats convert propellant into mineral resources at $20.0$ fuel per resource unit:
   $$\Delta \text{Resources} = \min\left(\left\lfloor \frac{\text{Fuel} \times r_{\text{crew}} \times (1 - 0.01 \times \text{Damage})}{20} \right\rfloor,\; \text{Available Resource Capacity}\right)$$
-  and automatically trigger any Weapon Plants (`W`) docked inside their hangar bay to manufacture `destruct` directly into the Habitat's munitions magazine.
-- **Population Reproduction**: Crewed habitats reproduce civilian colonists at the owning species' racial birthrate ($\Delta \text{Population} = \text{round\_rand}(\text{Population} \times \text{Birthrate})$), dynamically increasing vessel displacement by $\Delta \text{Population} \times M_{\text{race}}$.
+  and automatically trigger any Weapon Plants (`W`) docked inside their hangar bay to manufacture destructive ordnance directly into the Habitat's munitions magazine.
+- **Population Reproduction**: Crewed habitats reproduce civilian colonists at the owning species' racial birthrate ($\Delta \text{Population} = \operatorname{round}(\text{Population} \times \text{Birthrate})$), dynamically increasing vessel displacement by $`\Delta \text{Population} \times M_{\text{race}}`$.
 
 ### Weapon Plants and Munitions Manufacturing
-Weapon Plants (`W`) convert raw industrial resources and propellant into destructive ordnance (`destruct`) on planetary surfaces or inside Habitat hangars:
-- **Munitions Synthesis**: Each turn update, operational weapon plants produce new destructive ordnance scaled by crew staffing and hull efficiency, capped at $\lfloor \text{Tech}_{\text{empire}} / 2 \rfloor$:
-  $$\Delta \text{Destruct} = \min\Big(\text{round\_rand}(\text{Available Batches} \times r_{\text{crew}} \times \eta_{\text{hull}}),\; \lfloor \text{Tech}_{\text{empire}} / 2 \rfloor,\; \text{Stored Resources},\; \lfloor \text{Stored Fuel} \rfloor\Big)$$
-- **Resource Depletion**: Each unit of `destruct` produced consumes $1$ resource unit and $1.0$ fuel unit (`RES_COST_WPLANT = 1`, `FUEL_COST_WPLANT = 1.0`), dynamically adjusting vessel mass.
+Weapon Plants (`W`) convert raw industrial resources and propellant into destructive ordnance on planetary surfaces or inside Habitat hangars:
+- **Munitions Synthesis**: Each turn update, operational weapon plants produce new destructive ordnance scaled by crew staffing and hull efficiency, capped at $`\lfloor \text{Tech}_{\text{empire}} / 2 \rfloor`$:
+  $$\Delta \text{Destruct} = \min\Big(\operatorname{round}(\text{Available Batches} \times r_{\text{crew}} \times \eta_{\text{hull}}),\; \lfloor \text{Tech}_{\text{empire}} / 2 \rfloor,\; \text{Stored Resources},\; \lfloor \text{Stored Fuel} \rfloor\Big)$$
+- **Resource Depletion**: Each unit of destructive ordnance produced consumes $1$ resource unit and $1.0$ fuel unit, dynamically adjusting vessel mass.
 
 ### Biological Spore Pods and Climate Modifiers
-- **Spore Pods (`p`)**: Bio-seeding craft grown by mesomorphic races. In star orbit, a pod warms by $\text{round\_rand}(T_{\text{star}} / S)$ per segment until reaching `POD_THRESHOLD` ($18$), when it explodes and attempts to seed a random planet in the system ($25\%$ `SPORE_SUCCESS_RATE`). In planetary orbit, a pod deteriorates by $\text{round\_rand}(1 / S)$ until reaching `POD_DECAY` ($4$).
-- **Dust Canisters (`g`) and Greenhouse Gases (`h`)**: Spaceborne canisters in planetary orbit lower planetary temperature by $10^\circ$ per update (clamped at $-100^\circ$), while greenhouse gas devices raise planetary temperature by $10^\circ$ per update (clamped at $+100^\circ$), dissipating after `DISSIPATE` ($80$) updates.
+- **Spore Pods (`p`)**: Bio-seeding craft grown by mesomorphic races. In star orbit, a pod warms by $`\operatorname{round}(T_{\text{star}} / S)`$ per segment until reaching its thermal germination threshold ($18$), when it bursts and attempts to seed a random planet in the system ($25\%$ spore germination probability). In planetary orbit, a pod deteriorates by $\operatorname{round}(1 / S)$ until reaching its orbital decay limit ($4$).
+- **Dust Canisters (`g`) and Greenhouse Gases (`h`)**: Spaceborne canisters in planetary orbit lower planetary temperature by $10^\circ$ per update (clamped at $-100^\circ$), while greenhouse gas devices raise planetary temperature by $10^\circ$ per update (clamped at $+100^\circ$), dissipating after $80$ updates.
 
 ---
 

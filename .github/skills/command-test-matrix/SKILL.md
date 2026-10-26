@@ -24,7 +24,8 @@ Every player command test in `gb/commands/*_test.cc` must implement the **4-Way 
 
 import commands;
 import dallib;
-import gblib;
+import gb.entities;
+import gb.services;
 import test;
 import std;
 
@@ -34,51 +35,49 @@ namespace {
 
 void test_command_matrix() {
   TestContext ctx;
+  ctx.with_standard_universe();
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
 
   // 1. Setup entities (Race, Star, Planet, Ship)
-  ctx.setup_game_obj(g, player_t{1}, governor_t{1});
+  ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
   g.set_pnum(1);
 
   // Set initial star AP to 20
-  {
-    auto star_handle = ctx.em.get_star(1);
-    star_handle->AP(player_t{1}) = 20;
-  }
+  ctx.em.mutate_star(1, [](Star& star) {
+    star.AP(1) = 20;
+  });
 
   // --- Case 1: Happy Path ---
   assert(GB::commands::dispatch_command(g, GB::commands::example_cmd, {"example", "arg"}));
-  assert(ctx.em.peek_star(1)->AP(player_t{1}) == 19); // 1 AP deducted
+  assert(ctx.em.peek_star(1)->AP(1) == 19); // 1 AP deducted
 
   // --- Case 2: Insufficient AP ---
-  {
-    auto star_handle = ctx.em.get_star(1);
-    star_handle->AP(player_t{1}) = 0;
-  }
-  g.out.str("");
+  ctx.em.mutate_star(1, [](Star& star) {
+    star.AP(1) = 0;
+  });
+  g.out.clear();
   assert(!GB::commands::dispatch_command(g, GB::commands::example_cmd, {"example", "arg"}));
-  assert(ctx.em.peek_star(1)->AP(player_t{1}) == 0); // 0 AP deducted
+  assert(ctx.em.peek_star(1)->AP(1) == 0); // 0 AP deducted
 
   // Reset AP for subsequent tests
-  {
-    auto star_handle = ctx.em.get_star(1);
-    star_handle->AP(player_t{1}) = 20;
-  }
+  ctx.em.mutate_star(1, [](Star& star) {
+    star.AP(1) = 20;
+  });
 
   // --- Case 3: Invalid Scope / Role ---
   g.set_level(ScopeLevel::LEVEL_UNIV);
-  g.out.str("");
+  g.out.clear();
   assert(!GB::commands::dispatch_command(g, GB::commands::example_cmd, {"example", "arg"}));
-  assert(ctx.em.peek_star(1)->AP(player_t{1}) == 20); // 0 AP deducted
+  assert(ctx.em.peek_star(1)->AP(1) == 20); // 0 AP deducted
   g.set_level(ScopeLevel::LEVEL_PLAN);
 
   // --- Case 4: Domain Error / Bad Arguments ---
-  g.out.str("");
+  g.out.clear();
   assert(!GB::commands::dispatch_command(g, GB::commands::example_cmd, {"example", "invalid_arg"}));
-  assert(ctx.em.peek_star(1)->AP(player_t{1}) == 20); // 0 AP deducted
+  assert(ctx.em.peek_star(1)->AP(1) == 20); // 0 AP deducted
 }
 
 }  // namespace
@@ -94,4 +93,4 @@ int main() {
 
 1. **Always verify AP invariant**: When a command fails or is rejected, assert that AP is unmodified (`initial == final`).
 2. **Use `dispatch_command` directly or `ctx.dispatch()`**: Run tests through the dispatch pipeline to exercise full validation.
-3. **Respect EntityHandle lifetime rule**: Always use `{ auto h = ctx.em.get_...(); h->mutate(); }` blocks to ensure changes persist before subsequent reads.
+3. **Mutate via `ctx.em.mutate_*()`**: Always use monadic `mutate_*` calls to ensure changes persist before subsequent reads.

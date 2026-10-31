@@ -414,6 +414,25 @@ public:
   }
 
   /**
+   * Returns a quantized numeric estimate of `data` based on this race's
+   * translation capability toward `target`, or `std::nullopt` when
+   * translation is 10% or lower.
+   */
+  template <typename T>
+    requires(std::is_arithmetic_v<T> || std::convertible_to<T, int>)
+  [[nodiscard]] std::optional<std::int64_t>
+  estimate_value(const T data, const player_t target) const noexcept {
+    return estimate_int64(static_cast<std::int64_t>(data), target);
+  }
+
+  template <typename T>
+    requires(std::is_arithmetic_v<T> || std::convertible_to<T, int>)
+  [[nodiscard]] std::optional<std::int64_t>
+  estimate_value(const T data, const Race& target) const noexcept {
+    return estimate_value(data, target.Playernum);
+  }
+
+  /**
    * Provides translated estimates of numeric values based on this race's
    * translation capability toward `target`. Values are rounded based on
    * translation level and formatted with K (thousands) or M (millions)
@@ -423,27 +442,43 @@ public:
     requires(std::is_arithmetic_v<T> || std::convertible_to<T, int>)
   [[nodiscard]] std::string estimate(const T data,
                                      const player_t target) const {
-    const int trans = translation_for(target);
-    if (trans > 10) {
-      int k = 101 - std::min(trans, 100);
-      int est = (std::abs(static_cast<int>(data)) / k) * k;
-      if (est < 1000) return std::format("{}", est);
-      if (est < 10000) {
-        return std::format("{:.1f}K", static_cast<double>(est) / 1000.);
-      }
-      if (est < 1000000) {
-        return std::format("{:.0f}K", static_cast<double>(est) / 1000.);
-      }
-
-      return std::format("{:.1f}M", static_cast<double>(est) / 1000000.);
-    }
-    return "?";
+    return format_estimate_int64(static_cast<std::int64_t>(data), target);
   }
 
   template <typename T>
     requires(std::is_arithmetic_v<T> || std::convertible_to<T, int>)
   [[nodiscard]] std::string estimate(const T data, const Race& target) const {
     return estimate(data, target.Playernum);
+  }
+
+private:
+  [[nodiscard]] std::optional<std::int64_t>
+  estimate_int64(const std::int64_t data,
+                 const player_t target) const noexcept {
+    const int trans = translation_for(target);
+    if (trans <= 10) {
+      return std::nullopt;
+    }
+    const std::int64_t k = 101 - std::min(trans, 100);
+    return (std::abs(data) / k) * k;
+  }
+
+  [[nodiscard]] std::string format_estimate_int64(const std::int64_t data,
+                                                  const player_t target) const {
+    const auto est_opt = estimate_int64(data, target);
+    if (!est_opt) {
+      return "?";
+    }
+    const std::int64_t est = *est_opt;
+    if (est < 1000) return std::format("{}", est);
+    if (est < 10000) {
+      return std::format("{:.1f}K", static_cast<double>(est) / 1000.);
+    }
+    if (est < 1000000) {
+      return std::format("{:.0f}K", static_cast<double>(est) / 1000.);
+    }
+
+    return std::format("{:.1f}M", static_cast<double>(est) / 1000000.);
   }
 };
 

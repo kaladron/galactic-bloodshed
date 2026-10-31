@@ -68,3 +68,20 @@ export PlanetMapViewModel build_planet_map(EntityManager& em, starnum_t snum,
                                            player_t playernum,
                                            governor_t governor,
                                            const Race& race);
+
+/// Returns true if `player` (or `god`) has an active ship with visual sight
+/// in star system `snum`.
+export [[nodiscard]] bool has_system_sight(EntityManager& em, starnum_t snum,
+                                           player_t player, bool god = false);
+
+/// Returns true if `player` (or `god`) has an active ship with visual sight
+/// at planet `(snum, pnum)`.
+export [[nodiscard]] bool has_planet_sight(EntityManager& em, starnum_t snum,
+                                           planetnum_t pnum, player_t player,
+                                           bool god = false);
+
+/// Returns true if `ship` is visible to `viewer` (given `god` privilege and
+/// `has_sight_at_location` for the ship's current star or planet scope).
+export [[nodiscard]] bool
+is_ship_visible_to(const Ship& ship, player_t viewer, bool god,
+                   bool has_sight_at_location) noexcept;

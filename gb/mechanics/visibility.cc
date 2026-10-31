@@ -177,3 +177,39 @@ char desshow(const player_t Playernum, const governor_t Governor, const Race& r,
   }
   return s.condition_symbol();
 }
+
+bool has_system_sight(EntityManager& em, const starnum_t snum,
+                      const player_t player, const bool god) {
+  if (god) return true;
+  for (const Ship& s : ShipList::readonly(em, snum)) {
+    if (s.owner() == player && s.has_sight()) return true;
+  }
+  return false;
+}
+
+bool has_planet_sight(EntityManager& em, const starnum_t snum,
+                      const planetnum_t pnum, const player_t player,
+                      const bool god) {
+  if (god) return true;
+  for (const Ship& s : ShipList::readonly(em, snum, pnum)) {
+    if (s.owner() == player && s.has_sight()) return true;
+  }
+  return false;
+}
+
+bool is_ship_visible_to(const Ship& ship, const player_t viewer, const bool god,
+                        const bool has_sight_at_location) noexcept {
+  if (!ship.alive()) return false;
+  if (ship.owner() == viewer || god) return true;
+  if (ship.type() == ShipType::OTYPE_CANIST ||
+      ship.type() == ShipType::OTYPE_GREEN) {
+    return false;
+  }
+  if (ship.type() == ShipType::STYPE_MINE && !ship.is_landed()) {
+    return false;
+  }
+  if (ship.whatorbits() == ScopeLevel::LEVEL_UNIV) {
+    return false;
+  }
+  return has_sight_at_location;
+}

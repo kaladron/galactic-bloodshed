@@ -7,6 +7,7 @@ module;
 
 import std;
 import gb.entities;
+import gb.mechanics;
 import gb.presentation.planet_views;
 import gb.services;
 import scnlib;
@@ -183,23 +184,6 @@ build_ship_entry(const GameObj& g, EntityManager& em, const Place& where,
       .standout = (ship.owner() == r.governor(g.governor()).toggle.highlight),
       .shipno = ship.number(),
   };
-}
-
-bool has_system_sight(EntityManager& em, starnum_t snum, player_t player,
-                      bool god) {
-  if (god) return true;
-  for (const Ship& s : ShipList::readonly(em, snum)) {
-    if (s.owner() == player && s.has_sight()) return true;
-  }
-  return false;
-}
-
-bool has_planet_sight(EntityManager& em, starnum_t snum, planetnum_t pnum,
-                      player_t player) {
-  for (const Ship& s : ShipList::readonly(em, snum, pnum)) {
-    if (s.owner() == player && s.has_sight()) return true;
-  }
-  return false;
 }
 
 }  // namespace

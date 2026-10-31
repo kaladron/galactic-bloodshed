@@ -443,4 +443,27 @@ struct StarGroundAssaultNews {
 [[nodiscard]] std::string
 render_star_ground_assault_news(const StarGroundAssaultNews& vm);
 
+/// Canonical envelope payload for transient combat mechanics ("type":
+/// "combat_event").
+template <typename Detail>
+struct CombatEventView {
+  std::string kind{};
+  std::string summary{};
+  Detail detail{};
+};
+
+/// Formats a transient combat mechanics result into the canonical
+/// "combat_event" JSON stanza.
+template <typename Detail>
+[[nodiscard]] std::string render_json_combat_event(std::string_view kind,
+                                                   std::string_view summary,
+                                                   const Detail& detail) {
+  return render_json_envelope("combat_event",
+                              CombatEventView<Detail>{
+                                  .kind = std::string(kind),
+                                  .summary = std::string(summary),
+                                  .detail = detail,
+                              });
+}
+
 }  // namespace GB::presentation

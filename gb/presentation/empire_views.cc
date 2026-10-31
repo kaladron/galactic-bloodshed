@@ -7,6 +7,7 @@ module gb.presentation.empire_views;
 
 import gb.entities;
 import gb.services;
+import gb.mechanics;
 import tabulate;
 import std;
 
@@ -1816,6 +1817,304 @@ std::string render_json_update_result(const UpdateResult& vm) {
 std::string render_for_mode(UiMode mode, const UpdateResult& vm) {
   return mode == UiMode::JSON ? render_json_update_result(vm)
                               : render_update_result(vm);
+}
+
+[[nodiscard]] DiplomaticRelation
+resolve_diplomatic_relation(const Race& subject, player_t other) noexcept {
+  if (subject.is_allied_with(other)) {
+    return DiplomaticRelation::Allied;
+  }
+  if (subject.is_at_war_with(other)) {
+    return DiplomaticRelation::AtWar;
+  }
+  return DiplomaticRelation::Neutral;
+}
+
+[[nodiscard]] bool mortal_can_see_market_dest(const Commod& commod,
+                                              player_t player) noexcept {
+  if (!commod.has_bid()) {
+    return false;
+  }
+  if (commod.bidder() != player) {
+    return false;
+  }
+  return true;
+}
+
+RaceView project_race_view(EntityManager& em, const ScopeContext& viewer,
+                           player_t target_player, std::optional<int> rank) {
+  const auto& viewer_race = *em.peek_race(viewer.player);
+  const auto& target_race = *em.peek_race(target_player);
+
+  const bool is_self = (target_player == viewer.player);
+  const Percentage know =
+      is_self ? Percentage{100} : viewer_race.translation_for(target_player);
+
+  const bool is_god = viewer.can_see(is_self) ? target_race.God : false;
+
+  RaceStatsView stats_view{};
+  if (viewer.can_see(is_self)) {
+    stats_view.is_metamorph = target_race.Metamorph;
+    stats_view.fertilize = target_race.fertilize.value();
+    stats_view.temp = target_race.temp.value();
+    stats_view.birthrate = target_race.birthrate;
+    stats_view.mass = target_race.mass;
+    stats_view.fighters = target_race.fighters;
+    stats_view.metabolism = target_race.metabolism;
+    stats_view.number_sexes = target_race.number_sexes;
+    stats_view.adventurism = target_race.adventurism;
+    stats_view.iq = target_race.IQ;
+    stats_view.tech = target_race.tech;
+    stats_view.morale = target_race.morale;
+    stats_view.gun_range = static_cast<std::int64_t>(target_race.gun_range());
+    stats_view.space_tele_range = static_cast<std::int64_t>(
+        tele_range(ShipType::OTYPE_STELE, target_race.tech));
+    stats_view.ground_tele_range = static_cast<std::int64_t>(
+        tele_range(ShipType::OTYPE_GTELE, target_race.tech));
+    stats_view.conditions = target_race.conditions;
+    stats_view.best_sector = target_race.likesbest;
+  } else {
+    if (viewer.can_see(know > 50)) {
+      stats_view.is_metamorph = target_race.Metamorph;
+    }
+    if (viewer.can_see(know > 80)) {
+      stats_view.best_sector = target_race.likesbest;
+    }
+    stats_view.fertilize =
+        viewer_race.estimate_value(target_race.fertilize, target_player);
+    stats_view.temp =
+        viewer_race.estimate_value(target_race.temp, target_player);
+    stats_view.fighters =
+        viewer_race.estimate_value(target_race.fighters, target_player);
+    stats_view.number_sexes =
+        viewer_race.estimate_value(target_race.number_sexes, target_player);
+    stats_view.iq = viewer_race.estimate_value(target_race.IQ, target_player);
+    stats_view.morale =
+        viewer_race.estimate_value(target_race.morale, target_player);
+    stats_view.gun_range =
+        viewer_race.estimate_value(target_race.gun_range(), target_player);
+    stats_view.space_tele_range = viewer_race.estimate_value(
+        tele_range(ShipType::OTYPE_STELE, target_race.tech), target_player);
+    stats_view.ground_tele_range = viewer_race.estimate_value(
+        tele_range(ShipType::OTYPE_GTELE, target_race.tech), target_player);
+    stats_view.birthrate =
+        viewer_race.estimate_value(target_race.birthrate * 100.0, target_player)
+            .transform([](std::int64_t v) { return static_cast<double>(v); });
+    stats_view.adventurism =
+        viewer_race
+            .estimate_value(target_race.adventurism * 100.0, target_player)
+            .transform([](std::int64_t v) { return static_cast<double>(v); });
+    stats_view.mass =
+        viewer_race.estimate_value(target_race.mass, target_player)
+            .transform([](std::int64_t v) { return static_cast<double>(v); });
+    stats_view.metabolism =
+        viewer_race.estimate_value(target_race.metabolism, target_player)
+            .transform([](std::int64_t v) { return static_cast<double>(v); });
+    stats_view.tech =
+        viewer_race.estimate_value(target_race.tech, target_player)
+            .transform([](std::int64_t v) { return static_cast<double>(v); });
+    if (viewer.can_see(know > 10)) {
+      ConditionValues cond_values{};
+      for (AtmosphereConditions cond : all_atmosphere_conditions) {
+        cond_values[cond] = static_cast<int>(
+            viewer_race
+                .estimate_value(target_race.conditions[cond], target_player)
+                .value_or(0));
+      }
+      stats_view.conditions = cond_values;
+    }
+  }
+
+  const auto& power = *em.peek_power(target_player);
+  RacePowerStandingsView standings{
+      .rank = rank,
+  };
+  if (viewer.can_see(is_self)) {
+    standings.victory_score = target_race.victory_score;
+    standings.troops = power.troops();
+    standings.popn = power.popn();
+    standings.money = power.money();
+    standings.ships = power.ships_owned();
+    standings.planets = power.planets_owned();
+    standings.resource = power.resource();
+    standings.fuel = power.fuel();
+    standings.destruct = power.destruct();
+  } else {
+    standings.victory_score =
+        viewer_race.estimate_value(target_race.victory_score, target_player);
+    standings.troops =
+        viewer_race.estimate_value(power.troops(), target_player);
+    standings.popn = viewer_race.estimate_value(power.popn(), target_player);
+    standings.money = viewer_race.estimate_value(power.money(), target_player);
+    standings.ships =
+        viewer_race.estimate_value(power.ships_owned(), target_player);
+    standings.planets =
+        viewer_race.estimate_value(power.planets_owned(), target_player);
+    standings.resource =
+        viewer_race.estimate_value(power.resource(), target_player);
+    standings.fuel = viewer_race.estimate_value(power.fuel(), target_player);
+    standings.destruct =
+        viewer_race.estimate_value(power.destruct(), target_player);
+  }
+  std::optional<RacePowerStandingsView> standings_view = std::move(standings);
+
+  std::optional<RaceSelfDetailsView> self_view = std::nullopt;
+  if (viewer.can_see(is_self)) {
+    RaceSelfDetailsView self{
+        .gov_ship = (target_race.Gov_ship.value_or(shipnum_t{0}) == 0)
+                        ? std::nullopt
+                        : target_race.Gov_ship,
+        .updates_active = target_race.turn,
+        .sector_compat = target_race.likes,
+        .discoveries = target_race.discoveries,
+        .vote_update_go = target_race.votes,
+    };
+    for (auto [gov_id, gov] : target_race.active_governors()) {
+      self.governors.push_back(GovernorSummaryView{
+          .id = gov_id,
+          .name = gov.name,
+          .money = gov.money,
+          .income = gov.income,
+          .maintain = gov.maintain,
+          .cost_tech = gov.cost_tech,
+          .cost_market = gov.cost_market,
+          .profit_market = gov.profit_market,
+          .last_login = gov.login,
+          .default_level = gov.deflevel,
+          .default_star = gov.defsystem,
+          .default_planet = gov.defplanetnum,
+          .home_star = gov.homesystem,
+          .home_planet = gov.homeplanetnum,
+      });
+    }
+    self_view = std::move(self);
+  }
+
+  return RaceView{
+      .player = target_player,
+      .name = target_race.name,
+      .dissolved = target_race.dissolved,
+      .is_god = is_god,
+      .is_guest = target_race.Guest,
+      .personal_info = target_race.info,
+      .know_pct = know,
+      .you_to_them = resolve_diplomatic_relation(viewer_race, target_player),
+      .them_to_you = resolve_diplomatic_relation(target_race, viewer.player),
+      .stats = std::move(stats_view),
+      .standings = std::move(standings_view),
+      .self = std::move(self_view),
+  };
+}
+
+BlockView project_block_view(EntityManager& em, const ScopeContext& viewer,
+                             player_t block_id) {
+  const auto& viewer_race = *em.peek_race(viewer.player);
+  const auto& blk = *em.peek_block(block_id);
+
+  std::vector<player_t> members;
+  std::vector<player_t> invited;
+  std::vector<player_t> pledged;
+
+  for (player_t p = 1; p <= em.num_races(); ++p) {
+    if (blk.is_member(p)) {
+      members.push_back(p);
+    }
+    if (blk.is_invited(p)) {
+      invited.push_back(p);
+    }
+    if (blk.is_pledged(p)) {
+      pledged.push_back(p);
+    }
+  }
+
+  const bool is_self_block = (block_id == viewer.player);
+  const Percentage know =
+      is_self_block ? Percentage{100} : viewer_race.translation_for(block_id);
+
+  RacePowerStandingsView standings{};
+  if (viewer.can_see(is_self_block)) {
+    standings.victory_score = blk.VPs();
+    standings.money = blk.money();
+    standings.popn = blk.popn();
+    standings.ships = blk.ships_owned();
+    standings.planets = blk.systems_owned();
+    standings.resource = blk.resource();
+    standings.fuel = blk.fuel();
+    standings.destruct = blk.destruct();
+  } else {
+    standings.victory_score = viewer_race.estimate_value(blk.VPs(), block_id);
+    standings.money = viewer_race.estimate_value(blk.money(), block_id);
+    standings.popn = viewer_race.estimate_value(blk.popn(), block_id);
+    standings.ships = viewer_race.estimate_value(blk.ships_owned(), block_id);
+    standings.planets =
+        viewer_race.estimate_value(blk.systems_owned(), block_id);
+    standings.resource = viewer_race.estimate_value(blk.resource(), block_id);
+    standings.fuel = viewer_race.estimate_value(blk.fuel(), block_id);
+    standings.destruct = viewer_race.estimate_value(blk.destruct(), block_id);
+  }
+
+  return BlockView{
+      .block_id = block_id,
+      .name = blk.name(),
+      .motto = blk.motto(),
+      .members = std::move(members),
+      .invited = std::move(invited),
+      .pledged = std::move(pledged),
+      .know_pct = know,
+      .standings = std::move(standings),
+  };
+}
+
+MarketLotView
+project_market_lot_view(EntityManager& em, const ScopeContext& viewer,
+                        const Commod& commod,
+                        std::optional<starnum_t> shipping_dest_star) {
+  money_t ship_cost{0};
+  if (shipping_dest_star.has_value()) {
+    ship_cost = std::get<0>(shipping_cost(em, *shipping_dest_star,
+                                          commod.star_from(), commod.bid()));
+  }
+
+  std::optional<starnum_t> dest_star = std::nullopt;
+  std::optional<planetnum_t> dest_planet = std::nullopt;
+  const bool can_see_dest = mortal_can_see_market_dest(commod, viewer.player);
+  if (viewer.can_see(can_see_dest)) {
+    dest_star = commod.star_to();
+    dest_planet = commod.planet_to();
+  }
+
+  return MarketLotView{
+      .id = commod.id(),
+      .active = !commod.deliver(),
+      .type = commod.type(),
+      .amount = commod.amount(),
+      .owner = commod.owner(),
+      .bidder = commod.bidder().value_or(player_t{0}),
+      .bid = commod.bid(),
+      .cost_per_unit = commod.cost_per_unit(),
+      .shipping_cost = ship_cost,
+      .dest_star = dest_star,
+      .dest_planet = dest_planet,
+  };
+}
+
+MarketLotView project_deleted_market_lot_view(commodnum_t id) {
+  return MarketLotView{
+      .id = id,
+      .active = false,
+  };
+}
+
+std::string render_json_race_view(const RaceView& vm) {
+  return render_json_envelope("race", vm);
+}
+
+std::string render_json_block_view(const BlockView& vm) {
+  return render_json_envelope("block", vm);
+}
+
+std::string render_json_market_lot_view(const MarketLotView& vm) {
+  return render_json_envelope("market_lot", vm);
 }
 
 }  // namespace GB::presentation

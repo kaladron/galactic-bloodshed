@@ -1201,6 +1201,335 @@ void test_canonical_ship_view_projectors() {
   test::expect_contains(json_deleted, R"("alive":false)");
 }
 
+void test_canonical_race_block_market_combat_views() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  ctx.em.mutate_power(1, [](Power& p) {
+    p = Power{{
+        .id = 1,
+        .troops = 1000,
+        .popn = 50000,
+        .resource = 5000,
+        .fuel = 2500,
+        .destruct = 100,
+        .ships_owned = 15,
+        .planets_owned = 3,
+        .money = 20000,
+    }};
+  });
+  ctx.em.mutate_power(2, [](Power& p) {
+    p = Power{{
+        .id = 2,
+        .troops = 2000,
+        .popn = 60000,
+        .resource = 7000,
+        .fuel = 3000,
+        .destruct = 500,
+        .ships_owned = 25,
+        .planets_owned = 4,
+        .money = 15000,
+    }};
+  });
+
+  ctx.em.mutate_block(1, [](Block& b) {
+    b = Block{{
+        .Playernum = 1,
+        .name = "FederationBloc",
+        .motto = "Peace and exploration",
+        .invited = {player_t{1}, player_t{2}},
+        .pledged = {player_t{1}},
+        .popn = 80000,
+        .resource = 9000,
+        .fuel = 4000,
+        .destruct = 200,
+        .ships_owned = 25,
+        .systems_owned = 5,
+        .VPs = 120,
+        .money = 35000,
+    }};
+  });
+  ctx.em.mutate_block(2, [](Block& b) {
+    b = Block{{
+        .Playernum = 2,
+        .name = "KlingonEmpire",
+        .motto = "Honor in combat",
+        .invited = {player_t{2}},
+        .pledged = {player_t{2}},
+        .popn = 60000,
+        .resource = 7000,
+        .fuel = 3000,
+        .destruct = 500,
+        .ships_owned = 30,
+        .systems_owned = 4,
+        .VPs = 95,
+        .money = 15000,
+    }};
+  });
+
+  const ScopeContext viewer1{
+      .player = 1,
+      .governor = 0,
+      .god = false,
+  };
+
+  // 1. project_race_view for self (player 1 inspecting player 1)
+  // First with Gov_ship unset (nullopt / 0)
+  auto race1_view = GB::presentation::project_race_view(ctx.em, viewer1, 1,
+                                                        std::optional<int>{1});
+  test::expect_eq(race1_view.player, 1);
+  test::expect_eq(race1_view.name, "Federation");
+  test::expect_false(race1_view.dissolved);
+  test::expect_false(race1_view.is_god);
+  test::expect_false(race1_view.is_guest);
+  test::expect_eq(race1_view.know_pct, 100);
+  test::expect_eq(race1_view.you_to_them,
+                  GB::presentation::DiplomaticRelation::Neutral);
+  test::expect_eq(race1_view.them_to_you,
+                  GB::presentation::DiplomaticRelation::Neutral);
+
+  // Verify self details when Gov_ship == nullopt
+  test::expect_true(race1_view.self.has_value());
+  test::expect_false(race1_view.self->gov_ship.has_value());
+  test::expect_false(race1_view.self->governors.empty());
+  test::expect_eq(race1_view.self->governors[0].id, 1);
+
+  // Exact stats for self
+  test::expect_true(race1_view.stats.birthrate.has_value());
+  test::expect_true(race1_view.stats.conditions.has_value());
+  test::expect_true(race1_view.stats.best_sector.has_value());
+
+  // Exact standings for self
+  test::expect_true(race1_view.standings.has_value());
+  test::expect_eq(race1_view.standings->rank, 1);
+  test::expect_eq(race1_view.standings->troops, 1000);
+  test::expect_eq(race1_view.standings->popn, 50000);
+  test::expect_eq(race1_view.standings->money, 20000);
+  test::expect_eq(race1_view.standings->ships, 15);
+  test::expect_eq(race1_view.standings->planets, 3);
+  test::expect_eq(race1_view.standings->resource, 5000);
+  test::expect_eq(race1_view.standings->fuel, 2500);
+  test::expect_eq(race1_view.standings->destruct, 100);
+
+  // Now set Gov_ship != 0 with an actual ship in tbl_ship
+  const auto gov_ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+                               .owned_by(1)
+                               .in_star_orbit(1)
+                               .build();
+  ctx.em.mutate_race(1, [gov_ship_id](Race& r) { r.Gov_ship = gov_ship_id; });
+  race1_view = GB::presentation::project_race_view(ctx.em, viewer1, 1,
+                                                   std::optional<int>{1});
+  test::expect_true(race1_view.self->gov_ship.has_value());
+  test::expect_eq(race1_view.self->gov_ship.value(), gov_ship_id);
+
+  // 2. project_race_view for foreign mortal at different translation thresholds
+  // Target race 2 has Metamorph set
+  ctx.em.mutate_race(2, [](Race& r) {
+    r.Metamorph = true;
+    r.likesbest = SectorType::SEC_LAND;
+  });
+
+  // A. know <= 10
+  ctx.em.mutate_race(1, [](Race& r) { r.translate[2] = Percentage{5}; });
+  const auto race2_know5 =
+      GB::presentation::project_race_view(ctx.em, viewer1, 2);
+  test::expect_false(race2_know5.self.has_value());
+  test::expect_false(race2_know5.stats.is_metamorph.has_value());
+  test::expect_false(race2_know5.stats.best_sector.has_value());
+  test::expect_false(race2_know5.stats.conditions.has_value());
+  test::expect_false(race2_know5.stats.fertilize.has_value());
+  test::expect_false(race2_know5.stats.birthrate.has_value());
+  test::expect_false(race2_know5.stats.temp.has_value());
+  test::expect_false(race2_know5.stats.mass.has_value());
+  test::expect_false(race2_know5.stats.tech.has_value());
+  test::expect_true(race2_know5.standings.has_value());
+  test::expect_false(race2_know5.standings->troops.has_value());
+
+  // B. 10 < know <= 50
+  ctx.em.mutate_race(1, [](Race& r) { r.translate[2] = Percentage{30}; });
+  const auto race2_know30 =
+      GB::presentation::project_race_view(ctx.em, viewer1, 2);
+  test::expect_false(race2_know30.self.has_value());
+  test::expect_false(race2_know30.stats.is_metamorph.has_value());
+  test::expect_false(race2_know30.stats.best_sector.has_value());
+  test::expect_true(race2_know30.stats.conditions.has_value());
+  test::expect_true(race2_know30.stats.fertilize.has_value());
+  test::expect_true(race2_know30.stats.birthrate.has_value());
+  test::expect_true(race2_know30.stats.temp.has_value());
+  test::expect_true(race2_know30.stats.mass.has_value());
+  test::expect_true(race2_know30.stats.tech.has_value());
+  test::expect_true(race2_know30.standings->troops.has_value());
+
+  // C. 50 < know <= 80
+  ctx.em.mutate_race(1, [](Race& r) { r.translate[2] = Percentage{60}; });
+  const auto race2_know60 =
+      GB::presentation::project_race_view(ctx.em, viewer1, 2);
+  test::expect_true(race2_know60.stats.is_metamorph.has_value());
+  test::expect_true(race2_know60.stats.is_metamorph.value());
+  test::expect_false(race2_know60.stats.best_sector.has_value());
+
+  // D. know > 80
+  ctx.em.mutate_race(1, [](Race& r) { r.translate[2] = Percentage{90}; });
+  const auto race2_know90 =
+      GB::presentation::project_race_view(ctx.em, viewer1, 2);
+  test::expect_true(race2_know90.stats.is_metamorph.has_value());
+  test::expect_true(race2_know90.stats.best_sector.has_value());
+  test::expect_eq(race2_know90.stats.best_sector.value(), SectorType::SEC_LAND);
+
+  // 3. Diplomatic stances: Neutral, Allied, AtWar
+  // Viewer declares alliance with player 2
+  ctx.em.mutate_race(1, [](Race& r) { r.declare_alliance_with(2); });
+  auto dip_view = GB::presentation::project_race_view(ctx.em, viewer1, 2);
+  test::expect_eq(dip_view.you_to_them,
+                  GB::presentation::DiplomaticRelation::Allied);
+  test::expect_eq(dip_view.them_to_you,
+                  GB::presentation::DiplomaticRelation::Neutral);
+
+  // Player 2 declares war on viewer
+  ctx.em.mutate_race(2, [](Race& r) { r.declare_war_on(1); });
+  dip_view = GB::presentation::project_race_view(ctx.em, viewer1, 2);
+  test::expect_eq(dip_view.you_to_them,
+                  GB::presentation::DiplomaticRelation::Allied);
+  test::expect_eq(dip_view.them_to_you,
+                  GB::presentation::DiplomaticRelation::AtWar);
+
+  // Viewer declares war on player 2 (rescinding alliance first)
+  ctx.em.mutate_race(1, [](Race& r) {
+    r.rescind_alliance_with(2);
+    r.declare_war_on(2);
+  });
+  dip_view = GB::presentation::project_race_view(ctx.em, viewer1, 2);
+  test::expect_eq(dip_view.you_to_them,
+                  GB::presentation::DiplomaticRelation::AtWar);
+  test::expect_eq(dip_view.them_to_you,
+                  GB::presentation::DiplomaticRelation::AtWar);
+
+  // 4. project_block_view
+  // Self block (id = 1)
+  const auto block1_view =
+      GB::presentation::project_block_view(ctx.em, viewer1, 1);
+  test::expect_eq(block1_view.block_id, 1);
+  test::expect_eq(block1_view.name, "FederationBloc");
+  test::expect_eq(block1_view.motto, "Peace and exploration");
+  test::expect_eq(block1_view.know_pct, 100);
+  test::expect_eq(block1_view.members, std::vector<player_t>{1});
+  test::expect_eq(block1_view.invited, (std::vector<player_t>{1, 2}));
+  test::expect_eq(block1_view.pledged, std::vector<player_t>{1});
+  test::expect_true(block1_view.standings.has_value());
+  test::expect_eq(block1_view.standings->victory_score, 120);
+  test::expect_eq(block1_view.standings->money, 35000);
+  test::expect_eq(block1_view.standings->popn, 80000);
+  test::expect_eq(block1_view.standings->ships, 25);
+  test::expect_eq(block1_view.standings->planets, 5);
+  test::expect_eq(block1_view.standings->resource, 9000);
+  test::expect_eq(block1_view.standings->fuel, 4000);
+  test::expect_eq(block1_view.standings->destruct, 200);
+  test::expect_false(block1_view.standings->troops.has_value());
+
+  // Foreign block (id = 2) at know = 90
+  const auto block2_view =
+      GB::presentation::project_block_view(ctx.em, viewer1, 2);
+  test::expect_eq(block2_view.block_id, 2);
+  test::expect_eq(block2_view.name, "KlingonEmpire");
+  test::expect_eq(block2_view.know_pct, 90);
+  test::expect_true(block2_view.standings.has_value());
+  test::expect_true(block2_view.standings->victory_score.has_value());
+  test::expect_false(block2_view.standings->troops.has_value());
+
+  // Foreign block at know <= 10
+  ctx.em.mutate_race(1, [](Race& r) { r.translate[2] = Percentage{5}; });
+  const auto block2_low =
+      GB::presentation::project_block_view(ctx.em, viewer1, 2);
+  test::expect_false(block2_low.standings->victory_score.has_value());
+
+  // 5. project_market_lot_view and project_deleted_market_lot_view
+  auto commod_handle = ctx.em.create_commod({
+      .owner = 2,
+      .type = CommodType::RESOURCE,
+      .amount = 100,
+      .bid = 500,
+      .star_from = 1,
+      .planet_from = 1,
+  });
+
+  // A. No shipping dest star, no bid
+  const auto lot1 = GB::presentation::project_market_lot_view(ctx.em, viewer1,
+                                                              *commod_handle);
+  test::expect_eq(lot1.id, commod_handle->id());
+  test::expect_true(lot1.active);
+  test::expect_eq(lot1.shipping_cost, 0);
+  test::expect_false(lot1.dest_star.has_value());
+  test::expect_false(lot1.dest_planet.has_value());
+
+  // B. With shipping dest star (Vega = 2) at distance >= 10000
+  ctx.em.mutate_star(2, [](Star& s) { s.set_coordinates({20000.0, 0.0}); });
+  const auto lot_shipping = GB::presentation::project_market_lot_view(
+      ctx.em, viewer1, *commod_handle, std::optional<starnum_t>{2});
+  test::expect_gt(lot_shipping.shipping_cost, 0);
+
+  // C. Foreign bidder (bidder = 3, destination hidden from viewer1)
+  commod_handle->place_bid(3, 1, 600, 2, 1);
+  const auto lot_foreign_bid = GB::presentation::project_market_lot_view(
+      ctx.em, viewer1, *commod_handle);
+  test::expect_eq(lot_foreign_bid.bidder, 3);
+  test::expect_eq(lot_foreign_bid.bid, 600);
+  test::expect_false(lot_foreign_bid.dest_star.has_value());
+  test::expect_false(lot_foreign_bid.dest_planet.has_value());
+
+  // D. Self bidder (bidder = 1, destination visible to viewer1)
+  commod_handle->place_bid(1, 1, 700, 1, 1);
+  const auto lot_self_bid = GB::presentation::project_market_lot_view(
+      ctx.em, viewer1, *commod_handle);
+  test::expect_eq(lot_self_bid.bidder, 1);
+  test::expect_eq(lot_self_bid.bid, 700);
+  test::expect_true(lot_self_bid.dest_star.has_value());
+  test::expect_eq(lot_self_bid.dest_star.value(), 1);
+  test::expect_true(lot_self_bid.dest_planet.has_value());
+  test::expect_eq(lot_self_bid.dest_planet.value(), 1);
+
+  // E. project_deleted_market_lot_view
+  const auto deleted_lot =
+      GB::presentation::project_deleted_market_lot_view(commod_handle->id());
+  test::expect_eq(deleted_lot.id, commod_handle->id());
+  test::expect_false(deleted_lot.active);
+
+  // 6. JSON rendering with raw string literals R"(...)"
+  const std::string race_json =
+      GB::presentation::render_json_race_view(race1_view);
+  test::expect_contains(race_json, R"("type":"race")");
+  test::expect_contains(race_json, R"("name":"Federation")");
+  test::expect_contains(race_json, R"("stats":)");
+  test::expect_contains(race_json, R"("standings":)");
+  test::expect_contains(race_json, R"("self":)");
+
+  const std::string block_json =
+      GB::presentation::render_json_block_view(block1_view);
+  test::expect_contains(block_json, R"("type":"block")");
+  test::expect_contains(block_json, R"("name":"FederationBloc")");
+  test::expect_contains(block_json, R"("members":[1])");
+
+  const std::string market_json =
+      GB::presentation::render_json_market_lot_view(lot_self_bid);
+  test::expect_contains(market_json, R"("type":"market_lot")");
+  test::expect_contains(market_json, R"("active":true)");
+  test::expect_contains(market_json, R"("bid":700)");
+
+  const std::string combat_json = GB::presentation::render_json_combat_event(
+      "bombard", "B9 Nemesis bombarded /Sol/Earth\n",
+      BombardResult{
+          .ship_display = "B9 Nemesis",
+          .location_display = "/Sol/Earth",
+          .previous_sector_owner = 2,
+          .sectors_destroyed = 3,
+      });
+  test::expect_contains(combat_json, R"("type":"combat_event")");
+  test::expect_contains(combat_json, R"("kind":"bombard")");
+  test::expect_contains(combat_json,
+                        R"("summary":"B9 Nemesis bombarded /Sol/Earth\n")");
+  test::expect_contains(combat_json, R"("ship_display":"B9 Nemesis")");
+  test::expect_contains(combat_json, R"("sectors_destroyed":3)");
+}
+
 }  // namespace
 
 int main() {
@@ -1214,5 +1543,6 @@ int main() {
   test_canonical_session_message_error_views();
   test_canonical_star_planet_sector_projectors();
   test_canonical_ship_view_projectors();
+  test_canonical_race_block_market_combat_views();
   return 0;
 }

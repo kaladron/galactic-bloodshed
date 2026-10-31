@@ -790,11 +790,14 @@ render_unpledge_self_notification(const UnpledgeResult& vm);
 [[nodiscard]] std::string
 render_unpledge_declaration_news(const UnpledgeResult& vm);
 
-/// Diplomatic stance declared via `declare <race> <alliance|neutral|war>`.
+/// Diplomatic stance declared via `declare <race> <alliance|neutral|war>`
+/// or between two empires.
 enum class DiplomaticRelation : std::uint8_t {
-  Alliance,
   Neutral,
-  War,
+  Allied,
+  AtWar,
+  Alliance = Allied,
+  War = AtWar,
 };
 
 /// News bulletin flavor variant when declaring war (`declare <race> war`).
@@ -1283,5 +1286,144 @@ struct UpdateResult {
 [[nodiscard]] std::string render_update_result(const UpdateResult& vm);
 [[nodiscard]] std::string render_json_update_result(const UpdateResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode, const UpdateResult& vm);
+
+/// Fog-of-war filtered biological and technological characteristics of a race.
+/// Numeric values use std::int64_t when quantized through
+/// Race::estimate_value(), or exact values when viewer.can_see(target_player ==
+/// viewer.player).
+struct RaceStatsView {
+  std::optional<bool> is_metamorph{std::nullopt};
+  std::optional<std::int64_t> fertilize{std::nullopt};
+  std::optional<std::int64_t> temp{std::nullopt};
+  std::optional<double> birthrate{std::nullopt};
+  std::optional<double> mass{std::nullopt};
+  std::optional<std::int64_t> fighters{std::nullopt};
+  std::optional<double> metabolism{std::nullopt};
+  std::optional<std::int64_t> number_sexes{std::nullopt};
+  std::optional<double> adventurism{std::nullopt};
+  std::optional<std::int64_t> iq{std::nullopt};
+  std::optional<double> tech{std::nullopt};
+  std::optional<std::int64_t> morale{std::nullopt};
+  std::optional<std::int64_t> gun_range{std::nullopt};
+  std::optional<std::int64_t> space_tele_range{std::nullopt};
+  std::optional<std::int64_t> ground_tele_range{std::nullopt};
+  std::optional<ConditionValues> conditions{std::nullopt};
+  std::optional<SectorType> best_sector{std::nullopt};
+};
+
+/// Fog-of-war filtered empire power and stockpile metrics.
+struct RacePowerStandingsView {
+  std::optional<int> rank{std::nullopt};
+  std::optional<std::int64_t> victory_score{std::nullopt};
+  std::optional<std::int64_t> troops{std::nullopt};
+  std::optional<std::int64_t> popn{std::nullopt};
+  std::optional<std::int64_t> money{std::nullopt};
+  std::optional<std::int64_t> ships{std::nullopt};
+  std::optional<std::int64_t> planets{std::nullopt};
+  std::optional<std::int64_t> resource{std::nullopt};
+  std::optional<std::int64_t> fuel{std::nullopt};
+  std::optional<std::int64_t> destruct{std::nullopt};
+};
+
+/// Active governor summary visible to the owning empire (or deity).
+struct GovernorSummaryView {
+  governor_t id{0};
+  std::string name{};
+  money_t money{0};
+  money_t income{0};
+  money_t maintain{0};
+  money_t cost_tech{0};
+  money_t cost_market{0};
+  money_t profit_market{0};
+  std::time_t last_login{0};
+  ScopeLevel default_level{ScopeLevel::LEVEL_UNIV};
+  starnum_t default_star{0};
+  planetnum_t default_planet{0};
+  starnum_t home_star{0};
+  planetnum_t home_planet{0};
+};
+
+/// Private empire details visible only when viewer.can_see(target ==
+/// viewer.player).
+struct RaceSelfDetailsView {
+  std::optional<shipnum_t> gov_ship{std::nullopt};
+  turn_t updates_active{0};
+  SectorCompatibilities sector_compat{};
+  TechDiscoveries discoveries{};
+  bool vote_update_go{false};
+  std::vector<GovernorSummaryView> governors{};
+};
+
+/// Canonical view model for a race/empire ("type": "race").
+struct RaceView {
+  player_t player{0};
+  std::string name{};
+  bool dissolved{false};
+  bool is_god{false};
+  bool is_guest{false};
+  std::string personal_info{};
+  Percentage know_pct{0};
+  DiplomaticRelation you_to_them{DiplomaticRelation::Neutral};
+  DiplomaticRelation them_to_you{DiplomaticRelation::Neutral};
+  RaceStatsView stats{};
+  std::optional<RacePowerStandingsView> standings{std::nullopt};
+  std::optional<RaceSelfDetailsView> self{std::nullopt};
+};
+
+/// Canonical view model for an alliance block ("type": "block").
+struct BlockView {
+  player_t block_id{0};
+  std::string name{};
+  std::string motto{};
+  std::vector<player_t> members{};
+  std::vector<player_t> invited{};
+  std::vector<player_t> pledged{};
+  Percentage know_pct{0};
+  std::optional<RacePowerStandingsView> standings{std::nullopt};
+};
+
+/// Canonical view model for a commodity market lot ("type": "market_lot").
+struct MarketLotView {
+  commodnum_t id{0};
+  bool active{true};
+  CommodType type{CommodType::RESOURCE};
+  resource_t amount{0};
+  player_t owner{0};
+  player_t bidder{0};
+  money_t bid{0};
+  double cost_per_unit{0.0};
+  money_t shipping_cost{0};
+  std::optional<starnum_t> dest_star{std::nullopt};
+  std::optional<planetnum_t> dest_planet{std::nullopt};
+};
+
+/// Projects canonical RaceView under viewer scope and fog-of-war rules.
+[[nodiscard]] RaceView
+project_race_view(EntityManager& em, const ScopeContext& viewer,
+                  player_t target_player,
+                  std::optional<int> rank = std::nullopt);
+
+/// Projects canonical BlockView under viewer scope and fog-of-war rules.
+[[nodiscard]] BlockView project_block_view(EntityManager& em,
+                                           const ScopeContext& viewer,
+                                           player_t block_id);
+
+/// Projects canonical MarketLotView under viewer scope and fog-of-war rules.
+[[nodiscard]] MarketLotView project_market_lot_view(
+    EntityManager& em, const ScopeContext& viewer, const Commod& commod,
+    std::optional<starnum_t> shipping_dest_star = std::nullopt);
+
+/// Projects a tombstone MarketLotView representing a completed/deleted market
+/// lot.
+[[nodiscard]] MarketLotView project_deleted_market_lot_view(commodnum_t id);
+
+/// Formats a canonical RaceView into its JSON envelope string.
+[[nodiscard]] std::string render_json_race_view(const RaceView& vm);
+
+/// Formats a canonical BlockView into its JSON envelope string.
+[[nodiscard]] std::string render_json_block_view(const BlockView& vm);
+
+/// Formats a canonical MarketLotView into its JSON envelope string.
+[[nodiscard]] std::string render_json_market_lot_view(const MarketLotView& vm);
 
 }  // namespace GB::presentation

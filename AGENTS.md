@@ -294,6 +294,12 @@ g.print("Player {} has {} ships\n", player_id, ship_count);
 // (never use third-party tabulate or raw std::stringstream in commands or turn passes).
 ```
 
+##### Fog-of-War View Projection Pattern (`ScopeContext::can_see`)
+When projecting canonical ViewModels (`StarView`, `PlanetView`, `SectorGridView`, `ShipView`, `RaceView`, `MarketLotView`), never scatter `if (viewer.god)` checks across projector functions or helper predicates:
+- **Use `viewer.can_see(bool mortal_visible)`**: Gate all visibility tiers through `ScopeContext::can_see(bool)` (e.g., `if (viewer.can_see(race.tech >= TECH_SEE_STABILITY))`, `if (viewer.can_see(ship.owner() == viewer.player))`). Because deity viewers always unlock the same data tier as an authorized mortal, centralizing `if (god) return true;` inside `ScopeContext::can_see` guarantees deity visibility everywhere without per-projector `god` branches or redundant god-mode test cases for each view.
+- **Keep mortal helpers `ScopeContext`-free**: Multi-condition mortal visibility helpers (e.g., `mortal_can_see_planet`, `mortal_can_see_aliens`) must accept only domain types (`player_t`, `const Planet&`, `const Race&`, `const plinfo&`) and **never** `ScopeContext`, making it a compile error to bypass `viewer.can_see(...)`.
+- **Use raw string literals in JSON tests**: Prefer raw string literals (`R"("type":"sectors")"` instead of `"\"type\":\"sectors\""`) when asserting JSON substrings in unit tests.
+
 ## 🔧 Common Tasks
 
 ### Adding a New Command

@@ -685,6 +685,296 @@ void test_canonical_session_message_error_views() {
   test::expect_contains(g.out.str(), "\"command\":\"upgrade\"");
 }
 
+void test_canonical_star_planet_sector_projectors() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  const ScopeContext viewer1{
+      .player = 1,
+      .governor = 0,
+      .god = false,
+  };
+  const ScopeContext god_viewer{
+      .player = 1,
+      .governor = 0,
+      .god = true,
+  };
+
+  // 0. ScopeContext::can_see combinator (deity always sees; mortal delegates)
+  test::expect_true(viewer1.can_see(true));
+  test::expect_false(viewer1.can_see(false));
+  test::expect_true(god_viewer.can_see(true));
+  test::expect_true(god_viewer.can_see(false));
+
+  // 1. project_star_view
+  // Mark Star 2 (Vega) and Vega Prime unexplored by Player 1:
+  ctx.em.mutate_star(2, [](Star& s) { s.clear_explored_by(1); });
+  ctx.em.mutate_planet(2, 1, [](Planet& p) {
+    p.explored() = false;
+    p.info(1).explored = false;
+  });
+
+  // Unexplored star for mortal (Vega = 2)
+  const auto sv_unexplored =
+      GB::presentation::project_star_view(ctx.em, viewer1, 2);
+  test::expect_eq(sv_unexplored.snum, 2);
+  test::expect_eq(sv_unexplored.name, "Vega");
+  test::expect_false(sv_unexplored.explored);
+  test::expect_false(sv_unexplored.details.has_value());
+  const std::string sv_json_unexp =
+      GB::presentation::render_json_star_view(sv_unexplored);
+  test::expect_contains(sv_json_unexp, R"("type":"star")");
+  test::expect_contains(sv_json_unexp, R"("name":"Vega")");
+  test::expect_contains(sv_json_unexp, R"("explored":false)");
+
+  // Explored star for mortal with low tech (Sol = 1, tech = 5 <
+  // TECH_SEE_STABILITY)
+  ctx.em.mutate_race(1, [](Race& r) { r.tech = 5.0; });
+  const auto sv_low_tech =
+      GB::presentation::project_star_view(ctx.em, viewer1, 1);
+  test::expect_true(sv_low_tech.explored);
+  test::expect_true(sv_low_tech.details.has_value());
+  test::expect_false(sv_low_tech.details->stability.has_value());
+  test::expect_eq(sv_low_tech.details->planets.size(), 1);
+
+  // Explored star for mortal with high tech (Sol = 1, tech = 20 >=
+  // TECH_SEE_STABILITY)
+  ctx.em.mutate_race(1, [](Race& r) { r.tech = 20.0; });
+  const auto sv_high_tech =
+      GB::presentation::project_star_view(ctx.em, viewer1, 1);
+  test::expect_true(sv_high_tech.details->stability.has_value());
+  const std::string sv_json_exp =
+      GB::presentation::render_json_star_view(sv_high_tech);
+  test::expect_contains(sv_json_exp, R"("type":"star")");
+  test::expect_contains(sv_json_exp, R"("explored":true)");
+
+  // 2. project_planet_view
+  // Unseen planet for mortal (Vega Prime = star 2, planet 1)
+  const auto pv_blind =
+      GB::presentation::project_planet_view(ctx.em, viewer1, 2, 1);
+  test::expect_eq(pv_blind.snum, 2);
+  test::expect_eq(pv_blind.pnum, 1);
+  test::expect_eq(pv_blind.star_name, "Vega");
+  test::expect_eq(pv_blind.name, "Vega Prime");
+  test::expect_false(pv_blind.explored);
+  test::expect_false(pv_blind.environment.has_value());
+  test::expect_false(pv_blind.colony.has_value());
+  const std::string pv_json_blind =
+      GB::presentation::render_json_planet_view(pv_blind);
+  test::expect_contains(pv_json_blind, R"("type":"planet")");
+  test::expect_contains(pv_json_blind, R"("explored":false)");
+
+  // Orbiting ship sight on unexplored planet (place ship in orbit of Vega
+  // Prime)
+  ctx.em.mutate_race(1, [](Race& r) { r.tech = 5.0; });  // < TECH_EXPLORE
+  TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+      .owned_by(1)
+      .in_planet_orbit(2, 1)
+      .with_crew(10, 0)
+      .build();
+
+  const auto pv_orbit =
+      GB::presentation::project_planet_view(ctx.em, viewer1, 2, 1);
+  test::expect_false(pv_orbit.explored);
+  test::expect_true(pv_orbit.environment.has_value());
+  test::expect_true(pv_orbit.environment->aliens_unknown);
+  test::expect_true(pv_orbit.environment->aliens.empty());
+  test::expect_false(pv_orbit.colony.has_value());
+
+  // Orbiting ship sight on unexplored planet with high tech (reveals aliens)
+  ctx.em.mutate_race(1, [](Race& r) { r.tech = 15.0; });  // >= TECH_EXPLORE
+  const auto pv_orbit_high_tech =
+      GB::presentation::project_planet_view(ctx.em, viewer1, 2, 1);
+  test::expect_false(pv_orbit_high_tech.environment->aliens_unknown);
+
+  // Mortal with numsectsowned > 0 on an unexplored planet
+  ctx.em.mutate_planet(2, 1, [](Planet& p) {
+    p.info(1).explored = false;
+    p.info(1).numsectsowned = 1;
+  });
+  const auto pv_unexp_owned =
+      GB::presentation::project_planet_view(ctx.em, viewer1, 2, 1);
+  test::expect_true(pv_unexp_owned.environment.has_value());
+  test::expect_true(pv_unexp_owned.colony.has_value());
+  ctx.em.mutate_planet(2, 1, [](Planet& p) { p.info(1).numsectsowned = 0; });
+
+  // Explored & colonized planet (Earth = star 1, planet 1)
+  // Without crystal discovery:
+  ctx.em.mutate_race(1, [](Race& r) {
+    r.discoveries.crystal = false;
+    r.tech = TECH_EXPLORE;
+  });
+  ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
+    smap.get(Coordinates{0, 0}).set_crystals(5);
+  });
+  const auto pv_no_crystal =
+      GB::presentation::project_planet_view(ctx.em, viewer1, 1, 1);
+  test::expect_true(pv_no_crystal.environment.has_value());
+  test::expect_false(pv_no_crystal.environment->crystal_sectors.has_value());
+  test::expect_true(pv_no_crystal.colony.has_value());
+
+  // With crystal discovery, routes, and alien presence:
+  ctx.em.mutate_race(1, [](Race& r) {
+    r.discoveries.crystal = true;
+    r.declare_war_on(2);
+  });
+  // Add active route, inactive configured route, route without planet, and
+  // route without star:
+  ctx.em.mutate_planet(1, 1, [](Planet& p) {
+    p.mark_explored_by(1);
+    auto& rt1 = p.info(1).route_at(1);
+    rt1.set = true;
+    rt1.set_destination(2, 1);
+    rt1.dest_coords = Coordinates{3, 4};
+    rt1.load = CommodityManifest::parse("fr");
+    rt1.unload = CommodityManifest::parse("dx");
+
+    auto& rt2 = p.info(1).route_at(2);
+    rt2.set = false;
+    rt2.set_destination(2, 1);
+    rt2.dest_coords = Coordinates{5, 6};
+
+    auto& rt3 = p.info(1).route_at(3);
+    rt3.set = true;
+    rt3.dest_star = 2;
+    rt3.dest_planet = std::nullopt;
+
+    auto& rt4 = p.info(1).route_at(4);
+    rt4.set = true;
+    rt4.dest_star = std::nullopt;
+    rt4.dest_planet = std::nullopt;
+
+    // Alien presence: player 2 owns 1 sector
+    p.info(2).numsectsowned = 1;
+  });
+  ctx.em.mutate_sectormap(
+      1, 1, [](SectorMap& smap) { smap.get(Coordinates{1, 0}).set_owner(2); });
+
+  const auto pv_full =
+      GB::presentation::project_planet_view(ctx.em, viewer1, 1, 1);
+  test::expect_true(pv_full.explored);
+  test::expect_true(pv_full.environment.has_value());
+  test::expect_true(pv_full.environment->crystal_sectors.has_value());
+  test::expect_eq(*pv_full.environment->crystal_sectors, 1);
+  test::expect_false(pv_full.environment->aliens_unknown);
+  test::expect_eq(pv_full.environment->aliens.size(), 1);
+  test::expect_eq(pv_full.environment->aliens[0].player, 2);
+  test::expect_true(pv_full.environment->aliens[0].at_war);
+
+  test::expect_true(pv_full.colony.has_value());
+  test::expect_eq(pv_full.colony->routes.size(), 4);
+  test::expect_true(pv_full.colony->routes[0].active);
+  test::expect_eq(pv_full.colony->routes[0].dest_star_name, "Vega");
+  test::expect_eq(pv_full.colony->routes[0].dest_planet_name, "Vega Prime");
+  test::expect_true(pv_full.colony->routes[0].load.fuel);
+  test::expect_true(pv_full.colony->routes[0].load.resources);
+  test::expect_true(pv_full.colony->routes[0].unload.destruct);
+  test::expect_true(pv_full.colony->routes[0].unload.crystals);
+  test::expect_false(pv_full.colony->routes[1].active);
+  test::expect_true(pv_full.colony->routes[2].active);
+  test::expect_eq(pv_full.colony->routes[2].dest_star_name, "Vega");
+  test::expect_eq(pv_full.colony->routes[2].dest_planet_name, "");
+  test::expect_true(pv_full.colony->routes[3].active);
+  test::expect_eq(pv_full.colony->routes[3].dest_star_name, "");
+
+  // Test neutral alien presence:
+  ctx.em.mutate_race(1, [](Race& r) { r.make_peace_with(2); });
+  const auto pv_neutral =
+      GB::presentation::project_planet_view(ctx.em, viewer1, 1, 1);
+  test::expect_false(pv_neutral.environment->aliens[0].at_war);
+
+  const std::string pv_json_full =
+      GB::presentation::render_json_planet_view(pv_full);
+  test::expect_contains(pv_json_full, R"("type":"planet")");
+  test::expect_contains(pv_json_full, R"("star_name":"Sol")");
+  test::expect_contains(pv_json_full, R"("colony":)");
+  test::expect_contains(pv_json_full, R"("routes":)");
+
+  // 3. project_sector_grid_view
+  // Unseen planet returns std::nullopt (Star 3, Planet 1 for mortal viewer1)
+  ctx.em.mutate_planet(3, 1, [](Planet& p) {
+    p.info(1).explored = false;
+    p.info(1).numsectsowned = 0;
+  });
+  const auto grid_mortal_unseen =
+      GB::presentation::project_sector_grid_view(ctx.em, viewer1, 3, 1);
+  test::expect_false(grid_mortal_unseen.has_value());
+
+  // Full grid on Earth (1, 1)
+  const auto grid_full =
+      GB::presentation::project_sector_grid_view(ctx.em, viewer1, 1, 1);
+  test::expect_true(grid_full.has_value());
+  test::expect_false(grid_full->partial);
+  test::expect_eq(grid_full->snum, 1);
+  test::expect_eq(grid_full->pnum, 1);
+
+  // Sparse coordinate filter on Earth
+  // Sector {0, 0} is owned by player 1 with crystals
+  // Sector {1, 0} is owned by player 2 (foreign)
+  // Sector {2, 0} is unowned (set owner to 0)
+  ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
+    smap.get(Coordinates{2, 0}).set_owner(0);
+    smap.get(Coordinates{2, 0}).set_crystals(0);
+  });
+  // Add landed visible ship at {0, 0}
+  TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+      .owned_by(1)
+      .landed_on(1, 1, Coordinates{0, 0})
+      .with_crew(10, 0)
+      .build();
+  // Add orbiting (unlanded) ship at planet 1, 1
+  TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+      .owned_by(1)
+      .in_planet_orbit(1, 1)
+      .with_crew(10, 0)
+      .build();
+  // Add foreign invisible landed canister at {0, 0}
+  TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST)
+      .owned_by(2)
+      .landed_on(1, 1, Coordinates{0, 0})
+      .build();
+
+  const std::flat_set<Coordinates> filter{Coordinates{0, 0}, Coordinates{1, 0},
+                                          Coordinates{2, 0}};
+  const auto grid_filtered = GB::presentation::project_sector_grid_view(
+      ctx.em, viewer1, 1, 1, &filter);
+  test::expect_true(grid_filtered.has_value());
+  test::expect_true(grid_filtered->partial);
+  test::expect_eq(grid_filtered->sectors.size(), 3);
+
+  // Sector {0, 0}: owned by player 1, has landed ship, has crystals
+  const auto& sec0 = grid_filtered->sectors[0];
+  test::expect_eq(sec0.coords, (Coordinates{0, 0}));
+  test::expect_eq(sec0.owner, 1);
+  test::expect_eq(sec0.ships.size(), 1);
+  test::expect_eq(sec0.ships[0].owner, 1);
+  test::expect_true(sec0.details.has_value());
+  test::expect_true(sec0.details->crystals);
+  test::expect_true(sec0.details->mobilization.has_value());
+
+  // Sector {1, 0}: owned by player 2 (foreign) -> mobilization hidden from
+  // mortal
+  const auto& sec1 = grid_filtered->sectors[1];
+  test::expect_eq(sec1.coords, (Coordinates{1, 0}));
+  test::expect_eq(sec1.owner, 2);
+  test::expect_false(sec1.details->mobilization.has_value());
+
+  // Sector {2, 0}: unowned -> owner nullopt, mobilization nullopt, crystals
+  // false
+  const auto& sec2 = grid_filtered->sectors[2];
+  test::expect_eq(sec2.coords, (Coordinates{2, 0}));
+  test::expect_false(sec2.owner.has_value());
+  test::expect_false(sec2.details->mobilization.has_value());
+  test::expect_false(sec2.details->crystals);
+
+  // JSON rendering of sector grid view
+  const std::string grid_json =
+      GB::presentation::render_json_sector_grid_view(*grid_filtered);
+  test::expect_contains(grid_json, R"("type":"sectors")");
+  test::expect_contains(grid_json, R"("partial":true)");
+  test::expect_contains(grid_json, R"("sectors":)");
+}
+
 }  // namespace
 
 int main() {
@@ -696,5 +986,6 @@ int main() {
   test_empire_turn_bulletins();
   test_detect_terminal_capabilities();
   test_canonical_session_message_error_views();
+  test_canonical_star_planet_sector_projectors();
   return 0;
 }

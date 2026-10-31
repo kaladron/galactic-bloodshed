@@ -662,4 +662,197 @@ struct TechnologyViewModel {
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const TechnologyViewModel& vm);
 
+/// Lightweight summary of a planet within a star system.
+struct StarPlanetStubView {
+  planetnum_t pnum{0};
+  std::string name{};
+  bool explored{false};
+  bool inhabited{false};
+
+  [[nodiscard]] bool
+  operator==(const StarPlanetStubView&) const noexcept = default;
+};
+
+/// Explored details of a star system.
+struct StarExploredView {
+  double gravity{0.0};
+  int temperature_class{0};
+  std::optional<int> stability{std::nullopt};
+  ap_t ap{0};
+  governor_t governor{1};
+  bool inhabited{false};
+  std::vector<StarPlanetStubView> planets{};
+
+  [[nodiscard]] bool
+  operator==(const StarExploredView&) const noexcept = default;
+};
+
+/// Canonical view model for a star system.
+struct StarView {
+  starnum_t snum{0};
+  std::string name{};
+  UniverseCoordinates coordinates{0.0, 0.0};
+  bool explored{false};
+  std::optional<StarExploredView> details{std::nullopt};
+
+  [[nodiscard]] bool operator==(const StarView&) const noexcept = default;
+};
+
+/// Alien presence on a surveyed planet.
+struct PlanetAlienView {
+  player_t player{0};
+  bool at_war{false};
+
+  [[nodiscard]] bool
+  operator==(const PlanetAlienView&) const noexcept = default;
+};
+
+/// Environmental and survey data for a planet.
+struct PlanetEnvironmentView {
+  PlanetType type{PlanetType::EARTH};
+  char type_symbol{' '};
+  std::string type_name{};
+  Coordinates dimensions{0, 0};
+  double gravity{0.0};
+  ConditionValues conditions{};
+  temperature_t temp{0};
+  temperature_t normal_temp{0};
+  Percentage toxicity{0};
+  double compatibility{0.0};
+  Percentage avg_fertility{0};
+  resource_t avg_resource{0};
+  resource_t total_resources{0};
+  std::optional<sector_count_t> crystal_sectors{std::nullopt};
+  std::optional<player_t> slaved_to{std::nullopt};
+  bool aliens_unknown{false};
+  std::vector<PlanetAlienView> aliens{};
+
+  [[nodiscard]] bool
+  operator==(const PlanetEnvironmentView&) const noexcept = default;
+};
+
+/// Single shipping route on a colonized planet.
+struct ColonyRouteView {
+  int route_number{0};
+  bool active{false};
+  std::optional<starnum_t> dest_star{std::nullopt};
+  std::optional<planetnum_t> dest_planet{std::nullopt};
+  std::string dest_star_name{};
+  std::string dest_planet_name{};
+  Coordinates dest_coords{0, 0};
+  CommodityManifest load{};
+  CommodityManifest unload{};
+
+  [[nodiscard]] bool
+  operator==(const ColonyRouteView&) const noexcept = default;
+};
+
+/// Colony-specific details visible to the planet owner/governor or deity.
+struct ColonyView {
+  governor_t governor{1};
+  bool autoreport{false};
+  sector_count_t sectors_owned{0};
+  population_t popn{0};
+  population_t troops{0};
+  population_t total_popn{0};
+  population_t total_troops{0};
+  population_t maxpopn{0};
+  gun_count_t guns{0};
+  Stockpile stockpile{};
+  Stockpile last_production{};
+  money_t prod_money{0};
+  double prod_tech{0.0};
+  double est_production{0.0};
+  money_t tech_invest{0};
+  Percentage tax{0};
+  Percentage target_tax{0};
+  Percentage mobilization{0};
+  Percentage target_mobilization{0};
+  std::uint32_t mob_points{0};
+  std::optional<Percentage> tox_thresh{std::nullopt};
+  std::vector<ColonyRouteView> routes{};
+
+  [[nodiscard]] bool operator==(const ColonyView&) const noexcept = default;
+};
+
+/// Canonical view model for a planet.
+struct PlanetView {
+  starnum_t snum{0};
+  planetnum_t pnum{0};
+  std::string star_name{};
+  std::string name{};
+  SystemCoordinates system_coords{0.0, 0.0};
+  bool explored{false};
+  std::optional<PlanetEnvironmentView> environment{std::nullopt};
+  std::optional<ColonyView> colony{std::nullopt};
+
+  [[nodiscard]] bool operator==(const PlanetView&) const noexcept = default;
+};
+
+/// Landed ship on a sector.
+struct SectorLandedShipView {
+  shipnum_t id{0};
+  char type_letter{' '};
+  player_t owner{0};
+
+  [[nodiscard]] bool
+  operator==(const SectorLandedShipView&) const noexcept = default;
+};
+
+/// Detailed survey data of a sector.
+struct SectorSurveyDetailsView {
+  SectorType geological_type{SectorType::SEC_LAND};
+  Percentage eff{0};
+  Percentage fert{0};
+  std::optional<Percentage> mobilization{std::nullopt};
+  resource_t resource{0};
+  bool crystals{false};
+  population_t popn{0};
+  population_t troops{0};
+  population_t maxpopn{0};
+
+  [[nodiscard]] bool
+  operator==(const SectorSurveyDetailsView&) const noexcept = default;
+};
+
+/// Canonical view model for a single sector.
+struct SectorView {
+  Coordinates coords{0, 0};
+  SectorType condition{SectorType::SEC_LAND};
+  std::optional<player_t> owner{std::nullopt};
+  std::vector<SectorLandedShipView> ships{};
+  std::optional<SectorSurveyDetailsView> details{std::nullopt};
+
+  [[nodiscard]] bool operator==(const SectorView&) const noexcept = default;
+};
+
+/// Canonical view model for a grid of sectors on a planet.
+struct SectorGridView {
+  starnum_t snum{0};
+  planetnum_t pnum{0};
+  Coordinates dimensions{0, 0};
+  bool partial{false};
+  std::vector<SectorView> sectors{};
+
+  [[nodiscard]] bool operator==(const SectorGridView&) const noexcept = default;
+};
+
+[[nodiscard]] StarView project_star_view(EntityManager& em,
+                                         const ScopeContext& viewer,
+                                         starnum_t snum);
+
+[[nodiscard]] PlanetView project_planet_view(EntityManager& em,
+                                             const ScopeContext& viewer,
+                                             starnum_t snum, planetnum_t pnum);
+
+[[nodiscard]] std::optional<SectorGridView> project_sector_grid_view(
+    EntityManager& em, const ScopeContext& viewer, starnum_t snum,
+    planetnum_t pnum,
+    const std::flat_set<Coordinates>* coords_filter = nullptr);
+
+[[nodiscard]] std::string render_json_star_view(const StarView& vm);
+[[nodiscard]] std::string render_json_planet_view(const PlanetView& vm);
+[[nodiscard]] std::string
+render_json_sector_grid_view(const SectorGridView& vm);
+
 }  // namespace GB::presentation

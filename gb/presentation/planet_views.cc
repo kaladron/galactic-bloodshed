@@ -1164,4 +1164,312 @@ std::string render_for_mode(UiMode mode, const TechnologyViewModel& vm) {
                               : render_technology(vm);
 }
 
+namespace {
+
+bool mortal_can_see_planet(EntityManager& em, player_t player, starnum_t snum,
+                           planetnum_t pnum, const plinfo& pinfo) {
+  if (pinfo.explored != 0) return true;
+  if (pinfo.numsectsowned > 0) return true;
+  return has_planet_sight(em, snum, pnum, player, false);
+}
+
+bool mortal_can_see_aliens(const Planet& planet, const Race& race) noexcept {
+  if (planet.explored()) return true;
+  return race.tech >= TECH_EXPLORE;
+}
+
+bool is_route_configured(const plroute& rt) noexcept {
+  if (rt.set) return true;
+  return rt.has_destination();
+}
+
+}  // namespace
+
+StarView project_star_view(EntityManager& em, const ScopeContext& viewer,
+                           starnum_t snum) {
+  const auto& star = *em.peek_star(snum);
+  const auto& race = *em.peek_race(viewer.player);
+  const bool explored = viewer.can_see(star.is_explored_by(viewer.player));
+
+  std::optional<StarExploredView> details = std::nullopt;
+  if (explored) {
+    std::optional<int> stability = std::nullopt;
+    if (viewer.can_see(race.tech >= TECH_SEE_STABILITY)) {
+      stability = star.stability();
+    }
+
+    std::vector<StarPlanetStubView> planets;
+    planets.reserve(static_cast<std::size_t>(star.numplanets()));
+    for (const Planet& pl : PlanetList::readonly(em, snum, star)) {
+      const planetnum_t pnum = pl.planet_order();
+      const auto& pinfo = pl.info(viewer.player);
+      planets.push_back(StarPlanetStubView{
+          .pnum = pnum,
+          .name = star.get_planet_name(pnum),
+          .explored = (pinfo.explored != 0),
+          .inhabited = (pinfo.numsectsowned > 0),
+      });
+    }
+
+    details = StarExploredView{
+        .gravity = star.gravity(),
+        .temperature_class = star.temperature(),
+        .stability = stability,
+        .ap = star.AP(viewer.player),
+        .governor = star.governor(viewer.player),
+        .inhabited = star.is_inhabited_by(viewer.player),
+        .planets = std::move(planets),
+    };
+  }
+
+  return StarView{
+      .snum = snum,
+      .name = star.get_name(),
+      .coordinates = star.coordinates(),
+      .explored = explored,
+      .details = std::move(details),
+  };
+}
+
+PlanetView project_planet_view(EntityManager& em, const ScopeContext& viewer,
+                               starnum_t snum, planetnum_t pnum) {
+  const auto& star = *em.peek_star(snum);
+  const auto& planet = *em.peek_planet(snum, pnum);
+  const auto& race = *em.peek_race(viewer.player);
+  const auto& pinfo = planet.info(viewer.player);
+  const bool explored = (pinfo.explored != 0);
+
+  std::optional<PlanetEnvironmentView> environment = std::nullopt;
+  std::optional<ColonyView> colony = std::nullopt;
+
+  if (viewer.can_see(
+          mortal_can_see_planet(em, viewer.player, snum, pnum, pinfo))) {
+    const auto* smap = em.peek_sectormap(snum, pnum);
+    int total_fert = 0;
+    resource_t total_resource = 0;
+    int crystal_count = 0;
+    for (const auto& s : *smap) {
+      total_fert += s.get_fert();
+      total_resource += s.get_resource();
+      if (s.get_crystals() > 0) {
+        ++crystal_count;
+      }
+    }
+
+    const int num_sects = std::max(1, planet.num_sectors());
+    const bool aliens_unknown =
+        !viewer.can_see(mortal_can_see_aliens(planet, race));
+
+    std::vector<PlanetAlienView> aliens;
+    if (!aliens_unknown) {
+      for (const auto& [other_player, other_info] : planet.info_map()) {
+        if (other_player != viewer.player) {
+          if (other_info.numsectsowned > 0) {
+            aliens.push_back(PlanetAlienView{
+                .player = other_player,
+                .at_war = race.is_at_war_with(other_player),
+            });
+          }
+        }
+      }
+    }
+
+    std::optional<sector_count_t> crystal_sectors = std::nullopt;
+    if (viewer.can_see(race.discoveries.crystal)) {
+      crystal_sectors = static_cast<sector_count_t>(crystal_count);
+    }
+
+    environment = PlanetEnvironmentView{
+        .type = planet.type(),
+        .type_symbol = planet_type_symbol(planet.type()),
+        .type_name = std::string(planet.type_name()),
+        .dimensions = planet.dimensions(),
+        .gravity = planet.gravity(),
+        .conditions = planet.conditions(),
+        .temp = planet.temp(),
+        .normal_temp = planet.rtemp(),
+        .toxicity = planet.toxic(),
+        .compatibility = planet.compatibility(race),
+        .avg_fertility = Percentage{total_fert / num_sects},
+        .avg_resource = total_resource / num_sects,
+        .total_resources = planet.total_resources(),
+        .crystal_sectors = crystal_sectors,
+        .slaved_to = planet.slaved_to(),
+        .aliens_unknown = aliens_unknown,
+        .aliens = std::move(aliens),
+    };
+
+    if (viewer.can_see(pinfo.numsectsowned > 0)) {
+      std::vector<ColonyRouteView> routes;
+      for (int r = 1; r <= MAX_ROUTES; ++r) {
+        const auto& rt = pinfo.route_at(r);
+        if (!is_route_configured(rt)) {
+          continue;
+        }
+        std::string dest_star_name;
+        std::string dest_planet_name;
+        if (rt.dest_star.has_value()) {
+          const auto* s = em.peek_star(*rt.dest_star);
+          dest_star_name = s->get_name();
+          if (rt.dest_planet.has_value()) {
+            dest_planet_name = s->get_planet_name(*rt.dest_planet);
+          }
+        }
+        routes.push_back(ColonyRouteView{
+            .route_number = r,
+            .active = rt.set,
+            .dest_star = rt.dest_star,
+            .dest_planet = rt.dest_planet,
+            .dest_star_name = std::move(dest_star_name),
+            .dest_planet_name = std::move(dest_planet_name),
+            .dest_coords = rt.dest_coords,
+            .load = rt.load,
+            .unload = rt.unload,
+        });
+      }
+
+      colony = ColonyView{
+          .governor = star.governor(viewer.player),
+          .autoreport = (pinfo.autorep != 0),
+          .sectors_owned = pinfo.numsectsowned,
+          .popn = pinfo.popn,
+          .troops = pinfo.troops,
+          .total_popn = planet.popn(),
+          .total_troops = planet.troops(),
+          .maxpopn = planet.maxpopn(),
+          .guns = pinfo.guns,
+          .stockpile = pinfo.stockpile(),
+          .last_production =
+              Stockpile{
+                  .resources = pinfo.prod_res,
+                  .destruct = pinfo.prod_dest,
+                  .fuel = pinfo.prod_fuel,
+                  .crystals = pinfo.prod_crystals,
+              },
+          .prod_money = pinfo.prod_money,
+          .prod_tech = pinfo.prod_tech,
+          .est_production = pinfo.est_production,
+          .tech_invest = pinfo.tech_invest,
+          .tax = pinfo.tax,
+          .target_tax = pinfo.newtax,
+          .mobilization = pinfo.comread,
+          .target_mobilization = pinfo.mob_set,
+          .mob_points = pinfo.mob_points,
+          .tox_thresh = pinfo.tox_thresh,
+          .routes = std::move(routes),
+      };
+    }
+  }
+
+  return PlanetView{
+      .snum = snum,
+      .pnum = pnum,
+      .star_name = star.get_name(),
+      .name = star.get_planet_name(pnum),
+      .system_coords = planet.system_coordinates(),
+      .explored = explored,
+      .environment = std::move(environment),
+      .colony = std::move(colony),
+  };
+}
+
+std::optional<SectorGridView>
+project_sector_grid_view(EntityManager& em, const ScopeContext& viewer,
+                         starnum_t snum, planetnum_t pnum,
+                         const std::flat_set<Coordinates>* coords_filter) {
+  const auto& planet = *em.peek_planet(snum, pnum);
+  const auto& pinfo = planet.info(viewer.player);
+  if (!viewer.can_see(
+          mortal_can_see_planet(em, viewer.player, snum, pnum, pinfo))) {
+    return std::nullopt;
+  }
+
+  const auto* smap = em.peek_sectormap(snum, pnum);
+  const auto& race = *em.peek_race(viewer.player);
+  const double compat = planet.compatibility(race);
+
+  std::flat_map<Coordinates, std::vector<SectorLandedShipView>> landed_ships;
+  for (const Ship& s : ShipList::readonly_on_planet(em, snum, pnum)) {
+    if (!s.is_landed()) continue;
+    if (!viewer.can_see(is_ship_visible_to(s, viewer.player, false, true))) {
+      continue;
+    }
+    landed_ships[s.land_coords()].push_back(SectorLandedShipView{
+        .id = s.number(),
+        .type_letter = s.type_letter(),
+        .owner = s.owner(),
+    });
+  }
+
+  std::vector<SectorView> sectors;
+  for (const Sector& s : *smap) {
+    if (coords_filter != nullptr) {
+      if (!coords_filter->contains(s.coords())) {
+        continue;
+      }
+    }
+
+    std::optional<player_t> owner = std::nullopt;
+    if (s.get_owner() != 0) {
+      owner = s.get_owner();
+    }
+
+    std::optional<Percentage> mob = std::nullopt;
+    if (viewer.can_see(s.get_owner() == viewer.player)) {
+      mob = s.get_mobilization();
+    }
+
+    bool can_crystals = false;
+    if (s.get_crystals() > 0) {
+      can_crystals = viewer.can_see(race.discoveries.crystal);
+    }
+    const population_t maxpopn = maxsupport(race, s, compat, planet.toxic());
+
+    std::vector<SectorLandedShipView> ships;
+    if (const auto it = landed_ships.find(s.coords());
+        it != landed_ships.end()) {
+      ships = it->second;
+    }
+
+    sectors.push_back(SectorView{
+        .coords = s.coords(),
+        .condition = s.get_condition(),
+        .owner = owner,
+        .ships = std::move(ships),
+        .details =
+            SectorSurveyDetailsView{
+                .geological_type = s.get_type(),
+                .eff = s.get_eff(),
+                .fert = s.get_fert(),
+                .mobilization = mob,
+                .resource = s.get_resource(),
+                .crystals = can_crystals,
+                .popn = s.get_popn(),
+                .troops = s.get_troops(),
+                .maxpopn = maxpopn,
+            },
+    });
+  }
+
+  return SectorGridView{
+      .snum = snum,
+      .pnum = pnum,
+      .dimensions = planet.dimensions(),
+      .partial = (coords_filter != nullptr),
+      .sectors = std::move(sectors),
+  };
+}
+
+std::string render_json_star_view(const StarView& vm) {
+  return render_json_envelope("star", vm);
+}
+
+std::string render_json_planet_view(const PlanetView& vm) {
+  return render_json_envelope("planet", vm);
+}
+
+std::string render_json_sector_grid_view(const SectorGridView& vm) {
+  return render_json_envelope("sectors", vm);
+}
+
 }  // namespace GB::presentation

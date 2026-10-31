@@ -46,6 +46,13 @@ export struct ScopeContext {
   starnum_t snum{0};
   planetnum_t pnum{0};
   shipnum_t shipno{0};
+
+  /// Returns true if the viewer has deity privileges or the mortal visibility
+  /// condition holds.
+  [[nodiscard]] constexpr bool can_see(bool mortal_visible) const noexcept {
+    if (god) return true;
+    return mortal_visible;
+  }
 };
 
 /// Lightweight, zero-locale string buffer for command and error output.

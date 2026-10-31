@@ -8,6 +8,8 @@ module gb.presentation.empire_views;
 import gb.entities;
 import gb.services;
 import gb.mechanics;
+import gb.presentation.planet_views;
+import gb.presentation.ship_ops;
 import tabulate;
 import std;
 
@@ -2115,6 +2117,81 @@ std::string render_json_block_view(const BlockView& vm) {
 
 std::string render_json_market_lot_view(const MarketLotView& vm) {
   return render_json_envelope("market_lot", vm);
+}
+
+[[nodiscard]] std::optional<starnum_t>
+resolve_shipping_dest_star(const ScopeContext& viewer) noexcept {
+  if (viewer.level == ScopeLevel::LEVEL_STAR) {
+    return viewer.snum;
+  }
+  if (viewer.level == ScopeLevel::LEVEL_PLAN) {
+    return viewer.snum;
+  }
+  return std::nullopt;
+}
+
+std::string render_dirty_entities_json(EntityManager& em,
+                                       const ScopeContext& viewer,
+                                       const DirtyEntitySet& dirty) {
+  std::string out;
+
+  for (starnum_t snum : dirty.stars) {
+    const StarView sv = project_star_view(em, viewer, snum);
+    if (sv.details.has_value()) {
+      out += render_json_star_view(sv);
+    }
+  }
+
+  for (const auto& [snum, pnum] : dirty.planets) {
+    const PlanetView pv = project_planet_view(em, viewer, snum, pnum);
+    if (pv.environment.has_value()) {
+      out += render_json_planet_view(pv);
+    }
+  }
+
+  for (const auto& [planet_key, coords] : dirty.sectors) {
+    const auto grid_opt = project_sector_grid_view(em, viewer, planet_key.first,
+                                                   planet_key.second, &coords);
+    if (grid_opt.has_value()) {
+      out += render_json_sector_grid_view(*grid_opt);
+    }
+  }
+
+  SightContext sight{};
+  for (shipnum_t ship_id : dirty.ships) {
+    const auto& ship = *em.peek_ship(ship_id);
+    const auto ship_opt = project_ship_view(em, viewer, ship, &sight);
+    if (ship_opt.has_value()) {
+      out += render_json_ship_view(*ship_opt);
+    }
+  }
+  for (shipnum_t ship_id : dirty.deleted_ships) {
+    out += render_json_ship_view(project_deleted_ship_view(ship_id));
+  }
+
+  for (player_t race_id : dirty.races) {
+    const bool is_self = (race_id == viewer.player);
+    if (viewer.can_see(is_self)) {
+      out += render_json_race_view(project_race_view(em, viewer, race_id));
+    }
+  }
+
+  for (player_t block_id : dirty.blocks) {
+    out += render_json_block_view(project_block_view(em, viewer, block_id));
+  }
+
+  const auto shipping_dest = resolve_shipping_dest_star(viewer);
+  for (commodnum_t commod_id : dirty.commods) {
+    const auto& commod = *em.peek_commod(static_cast<int>(commod_id.value));
+    out += render_json_market_lot_view(
+        project_market_lot_view(em, viewer, commod, shipping_dest));
+  }
+  for (commodnum_t commod_id : dirty.deleted_commods) {
+    out +=
+        render_json_market_lot_view(project_deleted_market_lot_view(commod_id));
+  }
+
+  return out;
 }
 
 }  // namespace GB::presentation

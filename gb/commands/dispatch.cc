@@ -3,6 +3,7 @@
 module;
 
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import std;
 
@@ -85,6 +86,14 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
     return false;
   }
 
+  bool track_json_deltas = false;
+  if (g.ui_mode() == UiMode::JSON) {
+    if (g.player() > 0) {
+      track_json_deltas = true;
+      g.entity_manager.begin_mutation_tracking();
+    }
+  }
+
   std::optional<EntityManager::Transaction> txn;
   if (desc.transactional) {
     txn.emplace(g.entity_manager.begin_transaction());
@@ -95,6 +104,10 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
   try {
     success = desc.handler(argv, g);
   } catch (...) {
+    if (track_json_deltas) {
+      g.entity_manager.clear_dirty_entities();
+      g.entity_manager.stop_mutation_tracking();
+    }
     if (txn) {
       g.session_registry.rollback_outbox();
       txn->rollback();
@@ -123,6 +136,17 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
     } else {
       g.session_registry.rollback_outbox();
       txn->rollback();
+    }
+  }
+
+  if (track_json_deltas) {
+    g.entity_manager.stop_mutation_tracking();
+    if (success) {
+      const auto dirty = g.entity_manager.take_dirty_entities();
+      g.out << GB::presentation::render_dirty_entities_json(
+          g.entity_manager, g.scope_context(), dirty);
+    } else {
+      g.entity_manager.clear_dirty_entities();
     }
   }
 

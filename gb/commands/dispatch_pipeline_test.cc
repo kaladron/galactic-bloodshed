@@ -3,6 +3,7 @@
 import commands;
 import dallib;
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import test;
 import std;
@@ -18,6 +19,12 @@ bool mock_failure_handler(const command_t&, GameObj& g) {
   g.out << "handler failed\n";
   return false;
 }
+
+shipnum_t g_vis_sid{0};
+shipnum_t g_invis_sid{0};
+shipnum_t g_del_sid{0};
+commodnum_t g_c1_id{0};
+commodnum_t g_c2_id{0};
 
 void test_role_god_only() {
   TestContext ctx;
@@ -467,6 +474,335 @@ void test_edge_cases_and_socket_outbox() {
   ctx.verify_universe_invariants();
 }
 
+void test_json_dirty_entity_auto_emission() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 1);
+  g.set_snum(1);
+  g.set_pnum(1);
+
+  // 1. ASCII mode: mutations are not tracked or emitted as JSON
+  g.set_ui_mode(UiMode::ASCII);
+  GB::commands::CommandDescriptor ascii_cmd{
+      .name = "ascii_cmd",
+      .scopes = GB::commands::AllowedScopes::any(),
+      .handler = [](const command_t&, GameObj& game) -> bool {
+        game.entity_manager.mutate_star(1, [](Star& s) { s.gravity() = 2.0; });
+        return true;
+      },
+  };
+  g.out.clear();
+  test::expect_true(
+      GB::commands::dispatch_command(g, ascii_cmd, {"ascii_cmd"}));
+  test::expect_true(g.out.str().empty());
+
+  // 2. JSON mode with player == 0: tracking disabled
+  g.set_ui_mode(UiMode::JSON);
+  g.set_player(0);
+  g.race = nullptr;
+  g.out.clear();
+  test::expect_true(
+      GB::commands::dispatch_command(g, ascii_cmd, {"ascii_cmd"}));
+  test::expect_true(g.out.str().empty());
+  ctx.setup_game_obj(g, 1, 1);
+
+  // 3. JSON mode with no mutations: dirty is empty, nothing emitted
+  GB::commands::CommandDescriptor noop_cmd{
+      .name = "noop_cmd",
+      .scopes = GB::commands::AllowedScopes::any(),
+      .handler = [](const command_t&, GameObj&) -> bool { return true; },
+  };
+  g.out.clear();
+  test::expect_true(GB::commands::dispatch_command(g, noop_cmd, {"noop_cmd"}));
+  test::expect_true(g.out.str().empty());
+
+  // 4. Command returns false: dirty entities cleared, nothing emitted
+  GB::commands::CommandDescriptor fail_cmd{
+      .name = "fail_cmd",
+      .scopes = GB::commands::AllowedScopes::any(),
+      .handler = [](const command_t&, GameObj& game) -> bool {
+        game.entity_manager.mutate_star(1, [](Star& s) { s.gravity() = 3.0; });
+        return false;
+      },
+  };
+  g.out.clear();
+  test::expect_false(GB::commands::dispatch_command(g, fail_cmd, {"fail_cmd"}));
+  test::expect_true(g.out.str().empty());
+
+  // 5. Exception handling:
+  // 5a. UiMode::JSON with exception cleans up dirty entities and stops tracking
+  GB::commands::CommandDescriptor throw_json_cmd{
+      .name = "throw_json",
+      .scopes = GB::commands::AllowedScopes::any(),
+      .handler = [](const command_t&, GameObj& game) -> bool {
+        game.entity_manager.mutate_star(1, [](Star& s) { s.gravity() = 4.0; });
+        throw std::runtime_error("json boom");
+      },
+  };
+  test::expect_throws<std::runtime_error>([&]() {
+    GB::commands::dispatch_command(g, throw_json_cmd, {"throw_json"});
+  });
+
+  // 5b. UiMode::ASCII with exception (track_json_deltas == false)
+  g.set_ui_mode(UiMode::ASCII);
+  test::expect_throws<std::runtime_error>([&]() {
+    GB::commands::dispatch_command(g, throw_json_cmd, {"throw_json"});
+  });
+  g.set_ui_mode(UiMode::JSON);
+
+  // 6. Explored vs Unexplored Star and Planet
+  // Make Star 2 and Planet 2,1 unexplored by player 1
+  ctx.em.mutate_star(2, [](Star& s) { s.clear_explored_by(1); });
+  ctx.em.mutate_planet(2, 1, [](Planet& p) {
+    p.info(1).explored = 0;
+    p.info(1).numsectsowned = 0;
+  });
+
+  GB::commands::CommandDescriptor star_planet_cmd{
+      .name = "star_planet_cmd",
+      .scopes = GB::commands::AllowedScopes::any(),
+      .handler = [](const command_t&, GameObj& game) -> bool {
+        // Star 1 (explored) and Star 2 (unexplored)
+        game.entity_manager.mutate_star(1, [](Star& s) { s.gravity() = 1.1; });
+        game.entity_manager.mutate_star(2, [](Star& s) { s.gravity() = 1.2; });
+        // Planet 1,1 (explored) and Planet 2,1 (unexplored)
+        game.entity_manager.mutate_planet(1, 1,
+                                          [](Planet& p) { p.toxic() = 25; });
+        game.entity_manager.mutate_planet(2, 1,
+                                          [](Planet& p) { p.toxic() = 30; });
+        return true;
+      },
+  };
+  g.out.clear();
+  test::expect_true(
+      GB::commands::dispatch_command(g, star_planet_cmd, {"star_planet_cmd"}));
+  std::string out = g.out.str();
+  test::expect_contains(out, R"("type":"star")");
+  test::expect_contains(out, R"("name":"Sol")");
+  test::expect_false(out.contains(R"("name":"Vega")"));
+  test::expect_contains(out, R"("type":"planet")");
+  test::expect_contains(out, R"("name":"Earth")");
+  test::expect_false(out.contains(R"("name":"Vega Prime")"));
+
+  // 7. Explored vs Unexplored Sectors
+  GB::commands::CommandDescriptor sector_cmd{
+      .name = "sector_cmd",
+      .scopes = GB::commands::AllowedScopes::any(),
+      .handler = [](const command_t&, GameObj& game) -> bool {
+        // Sector on explored star/planet (1, 1)
+        game.entity_manager.mutate_sectormap(
+            1, 1, [](SectorMap& sm) { sm.get({0, 0}).set_fert(80); });
+        // Sector on unexplored star/planet (2, 1)
+        game.entity_manager.mutate_sectormap(
+            2, 1, [](SectorMap& sm) { sm.get({0, 0}).set_fert(70); });
+        return true;
+      },
+  };
+  g.out.clear();
+  test::expect_true(
+      GB::commands::dispatch_command(g, sector_cmd, {"sector_cmd"}));
+  out = g.out.str();
+  test::expect_contains(out, R"("type":"sectors")");
+  test::expect_contains(out, R"("snum":1)");
+  test::expect_false(out.contains(R"("snum":2)"));
+
+  // 8. Ships: visible, invisible, and deleted
+  g_vis_sid = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
+                  .owned_by(1)
+                  .in_planet_orbit(1, 1)
+                  .build();
+
+  g_invis_sid = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
+                    .owned_by(2)
+                    .in_deep_space()
+                    .build();
+
+  g_del_sid = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
+                  .owned_by(1)
+                  .in_planet_orbit(1, 1)
+                  .build();
+
+  GB::commands::CommandDescriptor ship_cmd{
+      .name = "ship_cmd",
+      .scopes = GB::commands::AllowedScopes::any(),
+      .handler = [](const command_t&, GameObj& game) -> bool {
+        // Mutate visible ship
+        game.entity_manager.mutate_ship(g_vis_sid,
+                                        [](Ship& s) { s.add_fuel(10.0); });
+        // Mutate invisible ship
+        game.entity_manager.mutate_ship(g_invis_sid,
+                                        [](Ship& s) { s.add_fuel(5.0); });
+        // Delete third ship
+        {
+          auto barrier = game.entity_manager.create_deletion_barrier();
+          game.entity_manager.delete_ship(g_del_sid);
+        }
+        return true;
+      },
+  };
+  g.out.clear();
+  test::expect_true(GB::commands::dispatch_command(g, ship_cmd, {"ship_cmd"}));
+  out = g.out.str();
+  test::expect_contains(out, std::format(R"("id":{})", g_vis_sid.value));
+  test::expect_false(
+      out.contains(std::format(R"("id":{})", g_invis_sid.value)));
+  test::expect_contains(
+      out, std::format(R"("id":{},"alive":false)", g_del_sid.value));
+
+  // 9. Races: self vs foreign
+  GB::commands::CommandDescriptor race_cmd{
+      .name = "race_cmd",
+      .scopes = GB::commands::AllowedScopes::any(),
+      .handler = [](const command_t&, GameObj& game) -> bool {
+        game.entity_manager.mutate_race(1, [](Race& r) { r.morale = 50; });
+        game.entity_manager.mutate_race(2, [](Race& r) { r.morale = 60; });
+        return true;
+      },
+  };
+  g.set_god(false);
+  g.out.clear();
+  test::expect_true(GB::commands::dispatch_command(g, race_cmd, {"race_cmd"}));
+  out = g.out.str();
+  test::expect_contains(out, R"("type":"race")");
+  test::expect_contains(out, R"("player":1)");
+  test::expect_false(out.contains(R"("player":2)"));
+
+  // 10. Block mutation
+  GB::commands::CommandDescriptor block_cmd{
+      .name = "block_cmd",
+      .scopes = GB::commands::AllowedScopes::any(),
+      .handler = [](const command_t&, GameObj& game) -> bool {
+        game.entity_manager.mutate_block(
+            1, [](Block& b) { b.name() = "AlliedForces"; });
+        return true;
+      },
+  };
+  g.out.clear();
+  test::expect_true(
+      GB::commands::dispatch_command(g, block_cmd, {"block_cmd"}));
+  out = g.out.str();
+  test::expect_contains(out, R"("type":"block")");
+  test::expect_contains(out, R"("name":"AlliedForces")");
+
+  // 11. Commod mutation and deletion across ScopeLevels (LEVEL_STAR,
+  // LEVEL_PLAN, LEVEL_UNIV) Setup Star 2 position far enough for shipping cost
+  // calculation
+  ctx.em.mutate_star(2, [](Star& s) { s.set_coordinates({20000.0, 0.0}); });
+
+  {
+    auto commod1 = ctx.em.create_commod({
+        .owner = 2,
+        .type = CommodType::RESOURCE,
+        .amount = 100,
+        .bid = 500,
+        .bidder = 1,
+        .star_from = 1,
+        .planet_from = 1,
+        .star_to = 1,
+        .planet_to = 1,
+    });
+    g_c1_id = commodnum_t{commod1->id()};
+  }
+
+  {
+    auto commod2 = ctx.em.create_commod({
+        .owner = 1,
+        .type = CommodType::FUEL,
+        .amount = 200,
+        .bid = 300,
+        .star_from = 1,
+        .planet_from = 1,
+    });
+    g_c2_id = commodnum_t{commod2->id()};
+  }
+
+  // 11a. LEVEL_STAR scope with star 2 as viewer location (calculates shipping
+  // cost)
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(2);
+  GB::commands::CommandDescriptor commod_star_cmd{
+      .name = "commod_star",
+      .scopes = GB::commands::AllowedScopes::any(),
+      .handler = [](const command_t&, GameObj& game) -> bool {
+        game.entity_manager.mutate_commod(g_c1_id.value,
+                                          [](Commod& c) { c.set_bid(550); });
+        return true;
+      },
+  };
+  g.out.clear();
+  test::expect_true(
+      GB::commands::dispatch_command(g, commod_star_cmd, {"commod_star"}));
+  out = g.out.str();
+  test::expect_contains(out, R"("type":"market_lot")");
+  test::expect_contains(out, std::format(R"("id":{})", g_c1_id.value));
+  test::expect_contains(out, R"("dest_star":1)");
+  test::expect_contains(out, R"("dest_planet":1)");
+  test::expect_false(out.contains(R"("shipping_cost":0)"));
+
+  // 11b. LEVEL_PLAN scope
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(2);
+  g.set_pnum(1);
+  GB::commands::CommandDescriptor commod_plan_cmd{
+      .name = "commod_plan",
+      .scopes = GB::commands::AllowedScopes::any(),
+      .handler = [](const command_t&, GameObj& game) -> bool {
+        game.entity_manager.mutate_commod(g_c1_id.value,
+                                          [](Commod& c) { c.set_bid(600); });
+        return true;
+      },
+  };
+  g.out.clear();
+  test::expect_true(
+      GB::commands::dispatch_command(g, commod_plan_cmd, {"commod_plan"}));
+  out = g.out.str();
+  test::expect_contains(out, R"("type":"market_lot")");
+  test::expect_contains(out, R"("dest_star":1)");
+
+  // 11c. LEVEL_UNIV scope with active and deleted commod
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  GB::commands::CommandDescriptor commod_univ_cmd{
+      .name = "commod_univ",
+      .scopes = GB::commands::AllowedScopes::any(),
+      .handler = [](const command_t&, GameObj& game) -> bool {
+        game.entity_manager.mutate_commod(g_c1_id.value,
+                                          [](Commod& c) { c.set_bid(700); });
+        {
+          auto barrier = game.entity_manager.create_deletion_barrier();
+          game.entity_manager.delete_commod(g_c2_id.value);
+        }
+        return true;
+      },
+  };
+  g.out.clear();
+  test::expect_true(
+      GB::commands::dispatch_command(g, commod_univ_cmd, {"commod_univ"}));
+  out = g.out.str();
+  test::expect_contains(out, std::format(R"("id":{})", g_c1_id.value));
+  test::expect_contains(out, R"("shipping_cost":0)");
+  test::expect_contains(
+      out, std::format(R"("id":{},"active":false)", g_c2_id.value));
+
+  // 12. Fixed AP deduction mutates star and emits updated StarView
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(1);
+  GB::commands::CommandDescriptor ap_cmd{
+      .name = "ap_cmd",
+      .scopes = GB::commands::AllowedScopes::any(),
+      .ap = GB::commands::APCost::fixed_star(5),
+      .handler = [](const command_t&, GameObj&) -> bool { return true; },
+  };
+  g.out.clear();
+  test::expect_true(GB::commands::dispatch_command(g, ap_cmd, {"ap_cmd"}));
+  out = g.out.str();
+  test::expect_contains(out, R"("type":"star")");
+  test::expect_contains(out, R"("name":"Sol")");
+
+  ctx.verify_universe_invariants();
+}
+
 }  // namespace
 
 int main() {
@@ -480,6 +816,7 @@ int main() {
   test_fixed_univ_ap_transactions();
   test_dispatch_by_command_name();
   test_edge_cases_and_socket_outbox();
+  test_json_dirty_entity_auto_emission();
 
   std::println(std::cout, "✓ dispatch_pipeline_test passed!");
   return 0;

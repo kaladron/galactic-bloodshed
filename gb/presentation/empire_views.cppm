@@ -1426,4 +1426,10 @@ project_race_view(EntityManager& em, const ScopeContext& viewer,
 /// Formats a canonical MarketLotView into its JSON envelope string.
 [[nodiscard]] std::string render_json_market_lot_view(const MarketLotView& vm);
 
+/// Renders all modified entities captured during a JSON command execution
+/// into their canonical JSON envelopes.
+[[nodiscard]] std::string
+render_dirty_entities_json(EntityManager& em, const ScopeContext& viewer,
+                           const DirtyEntitySet& dirty);
+
 }  // namespace GB::presentation

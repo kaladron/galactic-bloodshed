@@ -24,7 +24,7 @@ void setup_test_world(TestContext& ctx) {
   });
 
   // Create a landed ship to load cargo onto
-  TestShipBuilder(ctx.em, ShipType::STYPE_CARGO, 1)
+  TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
       .owned_by(1, 1)
       .named("CargoHauler")
       .landed_on(1, 1, {5, 5})
@@ -164,7 +164,7 @@ void test_load_transporter() {
   g.set_pnum(1);
 
   // Target receiver transporter ship 2
-  const auto trans2_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV, 2)
+  const auto trans2_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV)
                              .owned_by(1)
                              .named("TransporterReceiver")
                              .with_alive(true)
@@ -176,7 +176,7 @@ void test_load_transporter() {
 
   // Source transmitter transporter ship 3
   const auto trans1_id =
-      TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV, 3)
+      TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV)
           .owned_by(1)
           .named("TransporterSender")
           .with_alive(true)
@@ -563,7 +563,7 @@ void test_transporter_edge_cases() {
   g.set_snum(1);
   g.set_pnum(1);
 
-  const auto recv_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV, 10)
+  const auto recv_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV)
                            .owned_by(2, 1)
                            .named("AlienReceiver")
                            .with_alive(true)
@@ -581,7 +581,7 @@ void test_transporter_edge_cases() {
                            .with_max_crew(100)
                            .build();
 
-  const auto send_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV, 11)
+  const auto send_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV)
                            .owned_by(1, 1)
                            .named("SenderDevice")
                            .with_alive(true)

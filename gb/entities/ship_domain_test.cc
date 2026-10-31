@@ -1196,18 +1196,17 @@ void test_mirror_aim_and_formatting_helpers() {
   TestContext ctx;
   ctx.with_standard_universe();
 
-  const auto mirror_id = TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR, 1)
+  const auto mirror_id = TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR)
                              .owned_by(1)
                              .named("SolarMirror")
                              .in_star_orbit(1)
                              .build();
-  const auto target_ship_id =
-      TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER, 2)
-          .owned_by(1)
-          .named("TargetCraft")
-          .in_planet_orbit(1, 1)
-          .build();
-  const auto child_ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER, 3)
+  const auto target_ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)
+                                  .owned_by(1)
+                                  .named("TargetCraft")
+                                  .in_planet_orbit(1, 1)
+                                  .build();
+  const auto child_ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
                                  .owned_by(1)
                                  .named("Parasite")
                                  .build();
@@ -1232,8 +1231,9 @@ void test_mirror_aim_and_formatting_helpers() {
   test::expect_eq(prin_ship_orbits(ctx.em, *ctx.em.peek_ship(child_ship_id)),
                   "/Sol/Earth");
   test::expect_eq(dispshiploc_brief(ctx.em, *ctx.em.peek_ship(child_ship_id)),
-                  "#2");
-  test::expect_eq(dispshiploc(ctx.em, *ctx.em.peek_ship(child_ship_id)), "#2");
+                  std::format("#{}", target_ship_id));
+  test::expect_eq(dispshiploc(ctx.em, *ctx.em.peek_ship(child_ship_id)),
+                  std::format("#{}", target_ship_id));
 
   ctx.em.mutate_ship(mirror_id, [](Ship& m) {
     m.enter_deep_space();
@@ -1412,7 +1412,7 @@ void test_blueprint_complexity_defense_and_capture() {
   test::expect_false(std::get<0>(crash_ship.roll_landing_crash(1.0)));
 
   // getdefense() spaceborne vs landed
-  const auto carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER, 10)
+  const auto carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
                               .owned_by(1, 1)
                               .in_planet_orbit(1, 1)
                               .build();
@@ -1424,12 +1424,10 @@ void test_blueprint_complexity_defense_and_capture() {
   test::expect_true(getdefense(ctx.em, *ctx.em.peek_ship(carrier_id)) >= 0);
 
   // capture_stuff() and doown() recursive capture of 2-level nested craft
-  const auto shuttle_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 11)
-                              .owned_by(2, 2)
-                              .build();
-  const auto f1_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER, 12)
-                         .owned_by(2, 2)
-                         .build();
+  const auto shuttle_id =
+      TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE).owned_by(2, 2).build();
+  const auto f1_id =
+      TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER).owned_by(2, 2).build();
   ctx.em.mutate_ship(shuttle_id,
                      [&](Ship& s) { s.dock_into_carrier(carrier_id); });
   ctx.em.mutate_ship(f1_id, [&](Ship& f) { f.dock_into_carrier(shuttle_id); });
@@ -1475,7 +1473,7 @@ void test_moveship_and_followable() {
 
   // 1. followable() checks: alive, active, carrier-docked, same owner, allied,
   // range
-  const auto s1_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER, 20)
+  const auto s1_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
                          .owned_by(1, 1)
                          .in_star_orbit(1)
                          .with_crew(50, 0)
@@ -1483,7 +1481,7 @@ void test_moveship_and_followable() {
                          .with_speed(9)
                          .with_tech(100.0)
                          .build();
-  const auto s2_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER, 21)
+  const auto s2_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
                          .owned_by(2, 1)
                          .in_star_orbit(1)
                          .with_crew(50, 0)
@@ -1865,7 +1863,7 @@ void test_moveship_and_followable() {
     test::expect_true(s1.alive());
   });
 
-  const auto probe_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE, 22)
+  const auto probe_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
                             .owned_by(1, 1)
                             .with_fuel(100.0)
                             .with_speed(9)
@@ -1888,7 +1886,7 @@ void test_moveship_and_followable() {
     test::expect_false(probe.alive());
   });
 
-  const auto vn_id = TestShipBuilder(ctx.em, ShipType::OTYPE_VN, 23)
+  const auto vn_id = TestShipBuilder(ctx.em, ShipType::OTYPE_VN)
                          .owned_by(1, 1)
                          .with_fuel(500.0)
                          .with_speed(9)

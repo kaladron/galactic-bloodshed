@@ -314,7 +314,7 @@ void test_playernum_indexing(EntityManager& em) {
 
 void populate_ships(EntityManager& em, JsonStore&) {
   for (shipnum_t i = 1; i <= 3; i++) {
-    TestShipBuilder(em, ShipType::STYPE_SHUTTLE, i)
+    TestShipBuilder(em, ShipType::STYPE_SHUTTLE)
         .named(std::format("Ship{}", i))
         .owned_by(1, 1)
         .in_star_orbit(1)

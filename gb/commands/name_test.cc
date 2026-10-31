@@ -15,16 +15,16 @@ void test_name_ship_persistence() {
   TestContext ctx;
   ctx.with_standard_universe();
 
-  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 1)
-      .owned_by(1, 1)
-      .named("Old Ship Name")
-      .build();
+  const auto ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                           .owned_by(1, 1)
+                           .named("Old Ship Name")
+                           .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(1);
+  g.set_shipno(ship_id);
 
   std::println(std::cout, "  Testing: Rename ship to 'USS Enterprise'");
   {
@@ -33,7 +33,7 @@ void test_name_ship_persistence() {
     std::println(std::cout, "    ✓ Output message correct");
 
     ctx.em.clear_cache();
-    const auto* saved = ctx.em.peek_ship(1);
+    const auto* saved = ctx.em.peek_ship(ship_id);
     test::expect_ne(saved, nullptr);
     test::expect_eq(saved->name(), "USS Enterprise");
     std::println(std::cout, "    ✓ Database: ship name = '{}'", saved->name());
@@ -253,13 +253,15 @@ void test_name_factory_class() {
   TestContext ctx;
   ctx.with_standard_universe();
 
-  TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY, 1).owned_by(1, 1).build();
-  ctx.em.mutate_ship(1, [](Ship& f) {
+  const auto fac_id =
+      TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY).owned_by(1, 1).build();
+  ctx.em.mutate_ship(fac_id, [](Ship& f) {
     f.on() = false;
     f.shipclass() = "Basic";
   });
 
-  TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER, 2).owned_by(1, 1).build();
+  const auto non_fac_id =
+      TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER).owned_by(1, 1).build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -268,21 +270,21 @@ void test_name_factory_class() {
 
   // TEST: Name class at factory off-line -> success
   {
-    g.set_shipno(1);
+    g.set_shipno(fac_id);
     g.out.str("");
     ctx.assert_dispatch_success(g, {"name", "class", "Battleship"});
     test::expect_contains(g.out.str(), "Class set.");
 
     ctx.em.clear_cache();
-    const auto* saved = ctx.em.peek_ship(1);
+    const auto* saved = ctx.em.peek_ship(fac_id);
     test::expect_ne(saved, nullptr);
     test::expect_eq(saved->shipclass(), "Battleship");
   }
 
   // TEST: Name class when factory is on-line -> error
   {
-    ctx.em.mutate_ship(1, [](Ship& f) { f.on() = true; });
-    g.set_shipno(1);
+    ctx.em.mutate_ship(fac_id, [](Ship& f) { f.on() = true; });
+    g.set_shipno(fac_id);
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "class", "Cruiser"});
     test::expect_contains(g.out.str(), "This factory is already on line.");
@@ -290,7 +292,7 @@ void test_name_factory_class() {
 
   // TEST: Name class at non-factory ship -> error
   {
-    g.set_shipno(2);
+    g.set_shipno(non_fac_id);
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "class", "Destroyer"});
     test::expect_contains(g.out.str(), "You are not at a factory!");
@@ -315,7 +317,8 @@ void test_name_permissions_scope_and_json() {
   TestContext ctx;
   ctx.with_standard_universe();
 
-  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 1).owned_by(1, 1).build();
+  const auto ship_id =
+      TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE).owned_by(1, 1).build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -387,7 +390,7 @@ void test_name_permissions_scope_and_json() {
   {
     g.set_ui_mode(UiMode::JSON);
     g.set_level(ScopeLevel::LEVEL_SHIP);
-    g.set_shipno(1);
+    g.set_shipno(ship_id);
     g.out.str("");
     ctx.assert_dispatch_success(g, {"name", "ship", "Defiant"});
     test::expect_contains(g.out.str(), "\"type\":\"name\"");

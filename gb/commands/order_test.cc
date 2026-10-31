@@ -19,7 +19,7 @@ void setup_test_world(TestContext& ctx) {
 
   // Ship 1: Player 1 Battleship (can bombard, has hyperdrive, lasers, primary &
   // secondary guns)
-  auto s1 = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE, 1)
+  auto s1 = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
                 .owned_by(1)
                 .named("TestShip")
                 .in_planet_orbit(1, 1)
@@ -169,21 +169,23 @@ void test_order_combat_and_movement_options() {
   ctx.assert_dispatch_success(g, {"order", "#1", "merchant", "off"});
 
   // Protect another ship vs self-protect rejection
-  const auto s2_id = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER, 2)
+  const auto s2_id = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)
                          .owned_by(1)
                          .named("EscortTarget")
                          .in_planet_orbit(1, 1)
                          .with_crew(20, 0)
                          .with_speed(5)
                          .build();
-  ctx.assert_dispatch_success(g, {"order", "#1", "protect", "#2"});
+  ctx.assert_dispatch_success(
+      g, {"order", "#1", "protect", std::format("#{}", s2_id)});
   ctx.em.clear_cache();
   test::expect_true(ctx.em.peek_ship(1)->protect().on);
   test::expect_eq(ctx.em.peek_ship(1)->protect().ship, s2_id);
 
   // Follow ship destination, then redirect to a star or planet and verify
   // destshipno is cleared
-  ctx.assert_dispatch_success(g, {"order", "#1", "destination", "#2"});
+  ctx.assert_dispatch_success(
+      g, {"order", "#1", "destination", std::format("#{}", s2_id)});
   ctx.em.clear_cache();
   test::expect_eq(ctx.em.peek_ship(1)->whatdest(), ScopeLevel::LEVEL_SHIP);
   test::expect_eq(ctx.em.peek_ship(1)->destshipno(), s2_id);
@@ -200,7 +202,8 @@ void test_order_combat_and_movement_options() {
   ctx.assert_dispatch_success(g, {"order", "#1", "destination", "/Vega"});
   ctx.assert_dispatch_success(g, {"order", "#1", "jump", "on"});
   test::expect_true(ctx.em.peek_ship(1)->hyper_drive().on);
-  ctx.assert_dispatch_success(g, {"order", "#1", "destination", "#2"});
+  ctx.assert_dispatch_success(
+      g, {"order", "#1", "destination", std::format("#{}", s2_id)});
   ctx.em.clear_cache();
   test::expect_eq(ctx.em.peek_ship(1)->whatdest(), ScopeLevel::LEVEL_SHIP);
   test::expect_eq(ctx.em.peek_ship(1)->destshipno(), s2_id);
@@ -248,7 +251,7 @@ void test_order_specialty_ships() {
   g.set_pnum(1);
 
   // 1. Missile orders (impact and scatter)
-  const auto missile_id = TestShipBuilder(ctx.em, ShipType::STYPE_MISSILE, 10)
+  const auto missile_id = TestShipBuilder(ctx.em, ShipType::STYPE_MISSILE)
                               .owned_by(1)
                               .named("Tomahawk")
                               .in_planet_orbit(1, 1)
@@ -275,7 +278,7 @@ void test_order_specialty_ships() {
   test::expect_true(missile->is_scatter());
 
   // 2. Mine orders (trigger radius, explosive, radiative, switch)
-  const auto mine_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE, 20)
+  const auto mine_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
                            .owned_by(1)
                            .named("ProximityMine")
                            .in_planet_orbit(1, 1)
@@ -305,7 +308,7 @@ void test_order_specialty_ships() {
   test::expect_eq(mine->on(), 0);
 
   // 3. Transporter orders (target ship, self-target rejection, switch)
-  const auto trans_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV, 30)
+  const auto trans_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV)
                             .owned_by(1)
                             .named("Transporter")
                             .landed_on(1, 1, {1, 1})
@@ -322,8 +325,9 @@ void test_order_specialty_ships() {
   test::expect_eq(trans->target_ship(), shipnum_t{1});
 
   g.out.str("");
-  ctx.assert_dispatch_success(
-      g, {"order", std::format("#{}", trans_id.value), "transport", "#30"});
+  ctx.assert_dispatch_success(g, {"order", std::format("#{}", trans_id.value),
+                                  "transport",
+                                  std::format("#{}", trans_id.value)});
   test::expect_contains(g.out.str(), "cannot transport to itself");
   ctx.em.clear_cache();
   test::expect_eq(
@@ -331,7 +335,7 @@ void test_order_specialty_ships() {
       std::nullopt);
 
   // 4. Space Mirror aim & intensity, plus Telescope survey
-  const auto mirror_id = TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR, 40)
+  const auto mirror_id = TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR)
                              .owned_by(1)
                              .named("Helios")
                              .in_planet_orbit(1, 1)
@@ -361,7 +365,7 @@ void test_order_specialty_ships() {
   test::expect_eq(mirror_ship_aim->aimed_star(), std::nullopt);
   test::expect_eq(mirror_ship_aim->aimed_planet(), std::nullopt);
 
-  const auto tele_id = TestShipBuilder(ctx.em, ShipType::OTYPE_STELE, 45)
+  const auto tele_id = TestShipBuilder(ctx.em, ShipType::OTYPE_STELE)
                            .owned_by(1)
                            .named("Hubble")
                            .in_planet_orbit(1, 1)
@@ -390,7 +394,7 @@ void test_order_specialty_ships() {
   g.set_pnum(1);
 
   // 5. Terraformer move sequence (valid, cycling, truncation, invalid)
-  const auto terra_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TERRA, 50)
+  const auto terra_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TERRA)
                             .owned_by(1)
                             .named("TerraDev")
                             .in_planet_orbit(1, 1)
@@ -447,7 +451,7 @@ void test_order_factory_activation_and_errors() {
 
   // 1. Landed Factory on Earth (starts damaged at 75% like newly built
   // factories; can be turned off while offline and activated while damaged)
-  auto f1 = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY, 60)
+  auto f1 = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
                 .owned_by(1)
                 .named("PlanetFact")
                 .landed_on(1, 1, {0, 0})
@@ -456,27 +460,29 @@ void test_order_factory_activation_and_errors() {
                 .with_on(false)
                 .build_handle();
   f1->build_cost() = 50;
+  const auto f1_id = f1->number();
+  const std::string f1_arg = std::format("#{}", f1_id);
 
-  ctx.assert_dispatch_success(g, {"order", "#60", "off"});
+  ctx.assert_dispatch_success(g, {"order", f1_arg, "off"});
 
   const auto initial_res = ctx.em.peek_planet(1, 1)->info(1).resource;
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"order", "#60", "on"});
+  ctx.assert_dispatch_success(g, {"order", f1_arg, "on"});
   test::expect_contains(g.out.str(),
                         "Factory activated at a cost of 100 resources");
   ctx.em.clear_cache();
-  test::expect_eq(ctx.em.peek_ship(60)->on(), 1);
+  test::expect_eq(ctx.em.peek_ship(f1_id)->on(), 1);
   test::expect_eq(ctx.em.peek_planet(1, 1)->info(1).resource,
                   initial_res - 100);
 
   // Cannot turn off an online factory
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"order", "#60", "off"});
+  ctx.assert_dispatch_success(g, {"order", f1_arg, "off"});
   test::expect_contains(g.out.str(),
                         "You can't deactivate a factory once it's online");
 
-  // 2. Factory inside a Habitat activated via "order #62 on"
-  auto hab = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT, 61)
+  // 2. Factory inside a Habitat activated via order on
+  auto hab = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
                  .owned_by(1)
                  .named("AlphaHab")
                  .in_planet_orbit(1, 1)
@@ -485,84 +491,96 @@ void test_order_factory_activation_and_errors() {
                  .with_max_hanger(200)
                  .with_hanger(20)
                  .build();
-  (void)hab;
 
-  auto f2 = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY, 62)
+  auto f2 = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
                 .owned_by(1)
                 .named("HabFact")
-                .docked_to(61, 1)
+                .docked_to(hab, 1)
                 .with_crew(5, 0)
                 .with_size(20)
                 .with_on(false)
                 .build_handle();
   f2->build_cost() = 20;
+  const auto f2_id = f2->number();
 
   g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(61);
+  g.set_shipno(hab);
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"order", "#62", "on"});
+  ctx.assert_dispatch_success(g, {"order", std::format("#{}", f2_id), "on"});
   test::expect_contains(g.out.str(), "Factory activated");
   ctx.em.clear_cache();
-  test::expect_eq(ctx.em.peek_ship(62)->on(), 1);
+  test::expect_eq(ctx.em.peek_ship(f2_id)->on(), 1);
 
   // 3. Irradiated ship cannot be given orders
-  TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER, 63)
-      .owned_by(1)
-      .named("RadShip")
-      .in_planet_orbit(1, 1)
-      .with_active(false)
-      .with_radiation(75)
-      .build();
+  const auto rad_id = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)
+                          .owned_by(1)
+                          .named("RadShip")
+                          .in_planet_orbit(1, 1)
+                          .with_active(false)
+                          .with_radiation(75)
+                          .build();
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"order", "#63", "evade", "on"});
+  ctx.assert_dispatch_success(
+      g, {"order", std::format("#{}", rad_id), "evade", "on"});
   test::expect_contains(g.out.str(), "is irradiated");
 
   // 4. Crewless ship (non-robotic) cannot be given orders
-  TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER, 64)
-      .owned_by(1)
-      .named("GhostShip")
-      .in_planet_orbit(1, 1)
-      .with_crew(0, 0)
-      .build();
+  const auto ghost_id = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)
+                            .owned_by(1)
+                            .named("GhostShip")
+                            .in_planet_orbit(1, 1)
+                            .with_crew(0, 0)
+                            .build();
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"order", "#64", "evade", "on"});
+  ctx.assert_dispatch_success(
+      g, {"order", std::format("#{}", ghost_id), "evade", "on"});
   test::expect_contains(g.out.str(), "has no crew");
 
-  // 5. Capability & validation rejection paths on a Factory (#60)
-  ctx.assert_dispatch_success(g, {"order", "#60", "defense", "on"});
-  ctx.assert_dispatch_success(g, {"order", "#60", "scatter"});
-  ctx.assert_dispatch_success(g, {"order", "#60", "impact", "1,1"});
-  ctx.assert_dispatch_success(g, {"order", "#60", "jump", "on"});
-  ctx.assert_dispatch_success(g, {"order", "#60", "protect", "#1"});
-  ctx.assert_dispatch_success(g, {"order", "#60", "switch"});
-  ctx.assert_dispatch_success(g, {"order", "#60", "destination", "/Sol"});
-  ctx.assert_dispatch_success(g, {"order", "#60", "bombard", "on"});
-  ctx.assert_dispatch_success(g, {"order", "#60", "retaliate", "on"});
-  ctx.assert_dispatch_success(g, {"order", "#60", "focus", "on"});
-  ctx.assert_dispatch_success(g, {"order", "#60", "laser", "on", "5"});
+  // 5. Capability & validation rejection paths on a Factory
+  ctx.assert_dispatch_success(g, {"order", f1_arg, "defense", "on"});
+  ctx.assert_dispatch_success(g, {"order", f1_arg, "scatter"});
+  ctx.assert_dispatch_success(g, {"order", f1_arg, "impact", "1,1"});
+  ctx.assert_dispatch_success(g, {"order", f1_arg, "jump", "on"});
+  ctx.assert_dispatch_success(g, {"order", f1_arg, "protect", "#1"});
+  ctx.assert_dispatch_success(g, {"order", f1_arg, "switch"});
+  ctx.assert_dispatch_success(g, {"order", f1_arg, "destination", "/Sol"});
+  ctx.assert_dispatch_success(g, {"order", f1_arg, "bombard", "on"});
+  ctx.assert_dispatch_success(g, {"order", f1_arg, "retaliate", "on"});
+  ctx.assert_dispatch_success(g, {"order", f1_arg, "focus", "on"});
+  ctx.assert_dispatch_success(g, {"order", f1_arg, "laser", "on", "5"});
   ctx.assert_dispatch_success(g, {"order", "#1", "merchant", "99"});
   ctx.assert_dispatch_success(g, {"order", "#1", "merchant", "-1"});
   ctx.assert_dispatch_success(g, {"order", "#1", "merchant", "bad"});
-  ctx.assert_dispatch_success(g, {"order", "#60", "speed", "5"});
+  ctx.assert_dispatch_success(g, {"order", f1_arg, "speed", "5"});
   ctx.assert_dispatch_success(g, {"order", "#1", "speed", "abc"});
-  ctx.assert_dispatch_success(g, {"order", "#60", "salvo", "1"});
+  ctx.assert_dispatch_success(g, {"order", f1_arg, "salvo", "1"});
   ctx.assert_dispatch_success(g, {"order", "#1", "salvo", "abc"});
-  ctx.assert_dispatch_success(g, {"order", "#60", "primary"});
+  ctx.assert_dispatch_success(g, {"order", f1_arg, "primary"});
   ctx.assert_dispatch_success(g, {"order", "#1", "primary", "abc"});
-  ctx.assert_dispatch_success(g, {"order", "#60", "move", "12"});
-  ctx.assert_dispatch_success(g, {"order", "#60", "trigger", "5"});
-  ctx.assert_dispatch_success(g, {"order", "#60", "transport", "1"});
-  ctx.assert_dispatch_success(g, {"order", "#60", "aim", "/Sol"});
-  ctx.assert_dispatch_success(g, {"order", "#60", "evade", "on"});
+  ctx.assert_dispatch_success(g, {"order", f1_arg, "move", "12"});
+  ctx.assert_dispatch_success(g, {"order", f1_arg, "trigger", "5"});
+  ctx.assert_dispatch_success(g, {"order", f1_arg, "transport", "1"});
+  ctx.assert_dispatch_success(g, {"order", f1_arg, "aim", "/Sol"});
+  ctx.assert_dispatch_success(g, {"order", f1_arg, "evade", "on"});
   ctx.assert_dispatch_success(g, {"order", "#1", "protect", "bad"});
   ctx.assert_dispatch_success(g, {"order", "#1", "protect", "2bad"});
   ctx.assert_dispatch_success(g, {"order", "#1", "protect", "0"});
 
-  // Telescope (#45) aimed at ship (#1) and out-of-range star (/Vega)
-  ctx.assert_dispatch_success(g, {"order", "#45", "aim", "#1"});
-  ctx.assert_dispatch_success(g, {"order", "#45", "aim", "/Vega"});
-  ctx.assert_dispatch_success(g, {"order", "#45", "aim", "/Vega/Vega Prime"});
+  // Telescope aimed at ship (#1) and out-of-range star (/Vega)
+  const auto tele_id = TestShipBuilder(ctx.em, ShipType::OTYPE_STELE)
+                           .owned_by(1)
+                           .in_planet_orbit(1, 1)
+                           .with_crew(2, 0)
+                           .with_fuel(50.0)
+                           .with_tech(200.0)
+                           .build();
+  ctx.assert_dispatch_success(
+      g, {"order", std::format("#{}", tele_id), "aim", "#1"});
+  ctx.assert_dispatch_success(
+      g, {"order", std::format("#{}", tele_id), "aim", "/Vega"});
+  ctx.assert_dispatch_success(
+      g, {"order", std::format("#{}", tele_id), "aim", "/Vega/Vega Prime"});
 
   std::println(std::cout,
                "    ✓ Factory activation and error conditions verified");
@@ -614,7 +632,7 @@ void test_navigation_and_combat_order_mcdc_and_json() {
   ctx.assert_dispatch_success(g, {"order", "#1", "destination", "/NoSuchStar"});
   test::expect_contains(g.out.str(), "No such star");
 
-  const auto far_enemy_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER, 70)
+  const auto far_enemy_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
                                 .owned_by(2, 1)
                                 .in_star_orbit(2)
                                 .with_crew(50, 0)
@@ -631,7 +649,7 @@ void test_navigation_and_combat_order_mcdc_and_json() {
   // 3. Jump edge cases: no hyperdrive, destination not star/planet, unmounted
   // charging display, long-range mounted crystal jump (dist > distfac), and
   // insufficient max_fuel_capacity warning
-  const auto no_hd_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 71)
+  const auto no_hd_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                             .owned_by(1, 1)
                             .in_planet_orbit(1, 1)
                             .with_crew(5, 0)
@@ -715,7 +733,7 @@ void test_navigation_and_combat_order_mcdc_and_json() {
   ctx.em.clear_cache();
   test::expect_eq(ctx.em.peek_ship(1)->fire_laser(), 0);
 
-  const auto omcl_id = TestShipBuilder(ctx.em, ShipType::OTYPE_OMCL, 72)
+  const auto omcl_id = TestShipBuilder(ctx.em, ShipType::OTYPE_OMCL)
                            .owned_by(1, 1)
                            .in_planet_orbit(1, 1)
                            .with_crew(10, 0)
@@ -751,7 +769,7 @@ void test_special_ship_order_mcdc_and_notices() {
   // 1. SpaceMirrorShip preserves configured intensity across aim updates, and
   // tests fuel shortage, docked mirror rejection, missing/invalid aim arg,
   // OTYPE_GTELE / OTYPE_TRACT zero-fuel aiming, and intensity edge cases
-  const auto mirror_id = TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR, 80)
+  const auto mirror_id = TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR)
                              .owned_by(1, 1)
                              .named("MirrorTest")
                              .in_planet_orbit(1, 1)
@@ -804,7 +822,7 @@ void test_special_ship_order_mcdc_and_notices() {
   test::expect_contains(g.out.str(), "Not enough maneuvering fuel");
 
   // Ground telescope (OTYPE_GTELE) and Tractor (OTYPE_TRACT) aim without fuel
-  const auto gtele_id = TestShipBuilder(ctx.em, ShipType::OTYPE_GTELE, 81)
+  const auto gtele_id = TestShipBuilder(ctx.em, ShipType::OTYPE_GTELE)
                             .owned_by(1, 1)
                             .landed_on(1, 1, {0, 0})
                             .with_crew(2, 0)
@@ -814,7 +832,7 @@ void test_special_ship_order_mcdc_and_notices() {
   ctx.assert_dispatch_success(
       g, {"order", std::format("#{}", gtele_id), "aim", "/Sol/Earth"});
 
-  const auto tract_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TRACT, 82)
+  const auto tract_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TRACT)
                             .owned_by(1, 1)
                             .in_planet_orbit(1, 1)
                             .with_crew(5, 0)
@@ -833,7 +851,7 @@ void test_special_ship_order_mcdc_and_notices() {
   test::expect_eq(ctx.em.peek_ship(1)->notified(), 0);
 
   // 3. OTYPE_GR (Gamma Ray Laser) explosive/radiative mode and display
-  const auto gr_id = TestShipBuilder(ctx.em, ShipType::OTYPE_GR, 83)
+  const auto gr_id = TestShipBuilder(ctx.em, ShipType::OTYPE_GR)
                          .owned_by(1, 1)
                          .landed_on(1, 1, {1, 1})
                          .with_crew(5, 0)
@@ -849,7 +867,7 @@ void test_special_ship_order_mcdc_and_notices() {
 
   // 4. Terraformer move sequence length truncation, default move, and cycling
   // display when index > 0
-  const auto terra_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TERRA, 84)
+  const auto terra_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TERRA)
                             .owned_by(1, 1)
                             .in_planet_orbit(1, 1)
                             .with_crew(10, 0)
@@ -885,7 +903,7 @@ void test_special_ship_order_mcdc_and_notices() {
   test::expect_contains(g.out.str(),
                         "This ship does not have an on/off setting.");
 
-  const auto trans_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV, 85)
+  const auto trans_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV)
                             .owned_by(1, 1)
                             .landed_on(1, 1, {2, 2})
                             .with_on(true)
@@ -899,7 +917,7 @@ void test_special_ship_order_mcdc_and_notices() {
   ctx.assert_dispatch_success(
       g, {"order", std::format("#{}", trans_id), "evade", "on"});
 
-  const auto mine_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE, 86)
+  const auto mine_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
                            .owned_by(1, 1)
                            .in_planet_orbit(1, 1)
                            .with_damage(20)
@@ -934,7 +952,7 @@ void test_special_ship_order_mcdc_and_notices() {
   // Factory activation errors: transported inside non-Habitat, Habitat lacking
   // resources, Habitat lacking hangar space, orbiting factory, planet lacking
   // resources
-  auto f_err = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY, 87)
+  auto f_err = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
                    .owned_by(1, 1)
                    .docked_to(1, 1)
                    .with_crew(5, 0)
@@ -943,12 +961,15 @@ void test_special_ship_order_mcdc_and_notices() {
                    .with_on(false)
                    .build_handle();
   f_err->build_cost() = 50;
+  const auto f_err_id = f_err->number();
+  const std::string f_err_arg = std::format("#{}", f_err_id);
+
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"order", "#87", "on"});
+  ctx.assert_dispatch_success(g, {"order", f_err_arg, "on"});
   test::expect_contains(g.out.str(),
                         "The factory is currently being transported.");
 
-  const auto hab_id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT, 88)
+  const auto hab_id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
                           .owned_by(1, 1)
                           .in_planet_orbit(1, 1)
                           .with_crew(50, 0)
@@ -956,27 +977,27 @@ void test_special_ship_order_mcdc_and_notices() {
                           .with_max_hanger(20)
                           .with_hanger(20)
                           .build();
-  ctx.em.mutate_ship(87, [&](Ship& s) { s.dock_into_carrier(hab_id); });
+  ctx.em.mutate_ship(f_err_id, [&](Ship& s) { s.dock_into_carrier(hab_id); });
   g.set_shipno(hab_id);
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"order", "#87", "on"});
+  ctx.assert_dispatch_success(g, {"order", f_err_arg, "on"});
   test::expect_contains(g.out.str(), "You don't have");
 
   ctx.em.mutate_ship(hab_id, [](Ship& s) { s.resource() = 1000; });
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"order", "#87", "on"});
+  ctx.assert_dispatch_success(g, {"order", f_err_arg, "on"});
   test::expect_contains(g.out.str(), "Not enough hanger space free on Habitat");
 
   g.set_level(ScopeLevel::LEVEL_PLAN);
-  ctx.em.mutate_ship(87, [](Ship& s) { s.enter_planet_orbit(1, 1); });
+  ctx.em.mutate_ship(f_err_id, [](Ship& s) { s.enter_planet_orbit(1, 1); });
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"order", "#87", "on"});
+  ctx.assert_dispatch_success(g, {"order", f_err_arg, "on"});
   test::expect_contains(g.out.str(), "You cannot activate the factory here.");
 
-  ctx.em.mutate_ship(87, [](Ship& s) { s.land_on_planet(1, 1, {0, 0}); });
+  ctx.em.mutate_ship(f_err_id, [](Ship& s) { s.land_on_planet(1, 1, {0, 0}); });
   ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(1).resource = 0; });
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"order", "#87", "on"});
+  ctx.assert_dispatch_success(g, {"order", f_err_arg, "on"});
   test::expect_contains(g.out.str(),
                         "resources on the planet to activate this factory");
 
@@ -984,7 +1005,7 @@ void test_special_ship_order_mcdc_and_notices() {
   ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(1).resource = 500; });
   g.out.str("");
   g.set_ui_mode(UiMode::JSON);
-  ctx.assert_dispatch_success(g, {"order", "#87", "on"});
+  ctx.assert_dispatch_success(g, {"order", f_err_arg, "on"});
   test::expect_contains(g.out.str(), "\"type\":\"order_update\"");
   test::expect_contains(g.out.str(), "\"factory_activation_cost\":100");
   g.set_ui_mode(UiMode::ASCII);

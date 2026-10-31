@@ -18,17 +18,17 @@ void test_upgrade_command() {
   ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 10; });
 
   const auto type = ShipType::STYPE_FIGHTER;
-  TestShipBuilder(ctx.em, type, 1)
-      .owned_by(1, 1)
-      .named("Upgradeable")
-      .in_star_orbit(1, 100.0, 200.0)
-      .with_fuel(10.0)
-      .with_resource(500)
-      .with_guns(shipdata_primary(ShipType::STYPE_BATTLE),
-                 ship_template(type).max_guns)
-      .with_armor(ship_template(type).base_armor)
-      .with_max_speed(5)
-      .build();
+  const auto ship_id = TestShipBuilder(ctx.em, type)
+                           .owned_by(1, 1)
+                           .named("Upgradeable")
+                           .in_star_orbit(1, 100.0, 200.0)
+                           .with_fuel(10.0)
+                           .with_resource(500)
+                           .with_guns(shipdata_primary(ShipType::STYPE_BATTLE),
+                                      ship_template(type).max_guns)
+                           .with_armor(ship_template(type).base_armor)
+                           .with_max_speed(5)
+                           .build();
 
   // Create GameObj for command execution
   auto& registry = get_test_session_registry();
@@ -54,7 +54,7 @@ void test_upgrade_command() {
   ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(1);
+  g.set_shipno(ship_id);
   g.set_snum(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "2"});
@@ -70,10 +70,10 @@ void test_upgrade_command() {
   {
     ctx.setup_game_obj(g);
     g.set_level(ScopeLevel::LEVEL_SHIP);
-    g.set_shipno(1);
+    g.set_shipno(ship_id);
     g.set_snum(1);
 
-    const auto* ship_before = ctx.em.peek_ship(1);
+    const auto* ship_before = ctx.em.peek_ship(ship_id);
     test::expect_ne(ship_before, nullptr);
     int initial_armor = ship_before->armor();
     int target_armor = initial_armor + 2;
@@ -90,7 +90,7 @@ void test_upgrade_command() {
     // Clear cache to force reload from database
     ctx.em.clear_cache();
 
-    const auto* ship_after = ctx.em.peek_ship(1);
+    const auto* ship_after = ctx.em.peek_ship(ship_id);
     test::expect_ne(ship_after, nullptr);
     const auto* star_after = ctx.em.peek_star(1);
     test::expect_eq(star_after->AP(1), 9);  // 1 Star AP deducted
@@ -111,10 +111,10 @@ void test_upgrade_command() {
   {
     ctx.setup_game_obj(g);
     g.set_level(ScopeLevel::LEVEL_SHIP);
-    g.set_shipno(1);
+    g.set_shipno(ship_id);
     g.set_snum(1);
 
-    const auto* ship_before = ctx.em.peek_ship(1);
+    const auto* ship_before = ctx.em.peek_ship(ship_id);
     test::expect_ne(ship_before, nullptr);
     int initial_speed = ship_before->max_speed();
     int target_speed = initial_speed + 1;
@@ -130,7 +130,7 @@ void test_upgrade_command() {
 
     ctx.em.clear_cache();
 
-    const auto* ship_after = ctx.em.peek_ship(1);
+    const auto* ship_after = ctx.em.peek_ship(ship_id);
     test::expect_ne(ship_after, nullptr);
     const auto* star_after = ctx.em.peek_star(1);
     test::expect_eq(star_after->AP(1), 8);  // Another 1 Star AP deducted
@@ -150,7 +150,7 @@ void test_upgrade_command() {
   {
     ctx.em.clear_cache();
 
-    const auto* ship_check = ctx.em.peek_ship(1);
+    const auto* ship_check = ctx.em.peek_ship(ship_id);
     test::expect_ne(ship_check, nullptr);
 
     // Values should still reflect upgrades
@@ -171,17 +171,17 @@ void test_upgrade_numeric_attributes_and_validations() {
   // Cruiser supports crew, cargo, hanger, fuel, destruct, primary, secondary,
   // cew, laser, jump, mount.
   const auto type = ShipType::STYPE_CRUISER;
-  TestShipBuilder(ctx.em, type, 1)
-      .owned_by(1, 1)
-      .named("CruiserOne")
-      .in_star_orbit(1, 100.0, 200.0)
-      .with_fuel(100.0)
-      .with_resource(5000)
-      .with_armor(ship_template(type).base_armor)
-      .with_max_speed(ship_template(type).base_speed)
-      .build();
+  const auto ship_id = TestShipBuilder(ctx.em, type)
+                           .owned_by(1, 1)
+                           .named("CruiserOne")
+                           .in_star_orbit(1, 100.0, 200.0)
+                           .with_fuel(100.0)
+                           .with_resource(5000)
+                           .with_armor(ship_template(type).base_armor)
+                           .with_max_speed(ship_template(type).base_speed)
+                           .build();
 
-  ctx.em.mutate_ship(1, [](Ship& s) {
+  ctx.em.mutate_ship(ship_id, [](Ship& s) {
     s.build_cost() = static_cast<resource_t>(cost(s));
     s.size() = s.calculate_size();
     s.set_mass(s.base_mass() + s.resource() * MASS_RESOURCE +
@@ -192,7 +192,7 @@ void test_upgrade_numeric_attributes_and_validations() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(1);
+  g.set_shipno(ship_id);
   g.set_snum(1);
 
   // Negative value rejected
@@ -208,40 +208,41 @@ void test_upgrade_numeric_attributes_and_validations() {
       "That characteristic either doesn't exist or can't be modified.");
 
   // Downgrade rejected when build_cost exceeds candidate cost
-  ctx.em.mutate_ship(1, [](Ship& s) { s.build_cost() += 500; });
-  const auto cur_armor = ctx.em.peek_ship(1)->armor();
+  ctx.em.mutate_ship(ship_id, [](Ship& s) { s.build_cost() += 500; });
+  const auto cur_armor = ctx.em.peek_ship(ship_id)->armor();
   g.out.str("");
   ctx.assert_dispatch_rejected(g,
                                {"upgrade", "armor", std::to_string(cur_armor)});
   test::expect_contains(g.out.str(), "You cannot downgrade ships!");
-  ctx.em.mutate_ship(
-      1, [](Ship& s) { s.build_cost() = static_cast<resource_t>(cost(s)); });
+  ctx.em.mutate_ship(ship_id, [](Ship& s) {
+    s.build_cost() = static_cast<resource_t>(cost(s));
+  });
 
   // Upgrade crew, cargo, hanger, fuel, destruct
-  const auto target_crew = ctx.em.peek_ship(1)->max_crew() + 10;
+  const auto target_crew = ctx.em.peek_ship(ship_id)->max_crew() + 10;
   ctx.assert_dispatch_success(
       g, {"upgrade", "crew", std::to_string(target_crew)}, 1);
-  test::expect_eq(ctx.em.peek_ship(1)->max_crew(), target_crew);
+  test::expect_eq(ctx.em.peek_ship(ship_id)->max_crew(), target_crew);
 
-  const auto target_cargo = ctx.em.peek_ship(1)->max_resource() + 20;
+  const auto target_cargo = ctx.em.peek_ship(ship_id)->max_resource() + 20;
   ctx.assert_dispatch_success(
       g, {"upgrade", "cargo", std::to_string(target_cargo)}, 1);
-  test::expect_eq(ctx.em.peek_ship(1)->max_resource(), target_cargo);
+  test::expect_eq(ctx.em.peek_ship(ship_id)->max_resource(), target_cargo);
 
-  const auto target_hanger = ctx.em.peek_ship(1)->max_hanger() + 5;
+  const auto target_hanger = ctx.em.peek_ship(ship_id)->max_hanger() + 5;
   ctx.assert_dispatch_success(
       g, {"upgrade", "hanger", std::to_string(target_hanger)}, 1);
-  test::expect_eq(ctx.em.peek_ship(1)->max_hanger(), target_hanger);
+  test::expect_eq(ctx.em.peek_ship(ship_id)->max_hanger(), target_hanger);
 
-  const auto target_fuel = ctx.em.peek_ship(1)->max_fuel() + 25;
+  const auto target_fuel = ctx.em.peek_ship(ship_id)->max_fuel() + 25;
   ctx.assert_dispatch_success(
       g, {"upgrade", "fuel", std::to_string(target_fuel)}, 1);
-  test::expect_eq(ctx.em.peek_ship(1)->max_fuel(), target_fuel);
+  test::expect_eq(ctx.em.peek_ship(ship_id)->max_fuel(), target_fuel);
 
-  const auto target_destruct = ctx.em.peek_ship(1)->max_destruct() + 15;
+  const auto target_destruct = ctx.em.peek_ship(ship_id)->max_destruct() + 15;
   ctx.assert_dispatch_success(
       g, {"upgrade", "destruct", std::to_string(target_destruct)}, 1);
-  test::expect_eq(ctx.em.peek_ship(1)->max_destruct(), target_destruct);
+  test::expect_eq(ctx.em.peek_ship(ship_id)->max_destruct(), target_destruct);
 
   std::println(std::cout,
                "    ✓ Crew, cargo, hanger, fuel, destruct upgrades verified");
@@ -254,17 +255,17 @@ void test_upgrade_weapons_and_systems() {
   ctx.em.mutate_race(1, [](Race& r) { r.tech = 25000.0; });
 
   const auto type = ShipType::STYPE_CRUISER;
-  TestShipBuilder(ctx.em, type, 1)
-      .owned_by(1, 1)
-      .named("CruiserWeapons")
-      .in_star_orbit(1, 100.0, 200.0)
-      .with_fuel(100.0)
-      .with_resource(15000)
-      .with_armor(ship_template(type).base_armor)
-      .with_max_speed(ship_template(type).base_speed)
-      .build();
+  const auto ship_id = TestShipBuilder(ctx.em, type)
+                           .owned_by(1, 1)
+                           .named("CruiserWeapons")
+                           .in_star_orbit(1, 100.0, 200.0)
+                           .with_fuel(100.0)
+                           .with_resource(15000)
+                           .with_armor(ship_template(type).base_armor)
+                           .with_max_speed(ship_template(type).base_speed)
+                           .build();
 
-  ctx.em.mutate_ship(1, [](Ship& s) {
+  ctx.em.mutate_ship(ship_id, [](Ship& s) {
     s.max_resource() = 20000;
     s.set_primary_battery({.count = 2, .caliber = guntype_t::LIGHT});
     s.set_secondary_battery({.count = 1, .caliber = guntype_t::LIGHT});
@@ -278,7 +279,7 @@ void test_upgrade_weapons_and_systems() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(1);
+  g.set_shipno(ship_id);
   g.set_snum(1);
 
   // Primary battery validation & upgrades
@@ -305,24 +306,24 @@ void test_upgrade_weapons_and_systems() {
   // Upgrade primary caliber from light -> medium -> heavy, and strength -> 4
   ctx.assert_dispatch_success(g, {"upgrade", "primary", "caliber", "medium"},
                               1);
-  test::expect_eq(ctx.em.peek_ship(1)->primary_battery().caliber,
+  test::expect_eq(ctx.em.peek_ship(ship_id)->primary_battery().caliber,
                   guntype_t::MEDIUM);
 
   ctx.assert_dispatch_success(g, {"upgrade", "primary", "caliber", "heavy"}, 1);
-  test::expect_eq(ctx.em.peek_ship(1)->primary_battery().caliber,
+  test::expect_eq(ctx.em.peek_ship(ship_id)->primary_battery().caliber,
                   guntype_t::HEAVY);
 
   ctx.assert_dispatch_success(g, {"upgrade", "primary", "strength", "4"}, 1);
-  test::expect_eq(ctx.em.peek_ship(1)->primary_battery().count, 4U);
+  test::expect_eq(ctx.em.peek_ship(ship_id)->primary_battery().count, 4U);
 
   // Secondary battery upgrades
   ctx.assert_dispatch_success(g, {"upgrade", "secondary", "caliber", "medium"},
                               1);
-  test::expect_eq(ctx.em.peek_ship(1)->secondary_battery().caliber,
+  test::expect_eq(ctx.em.peek_ship(ship_id)->secondary_battery().caliber,
                   guntype_t::MEDIUM);
 
   ctx.assert_dispatch_success(g, {"upgrade", "secondary", "strength", "3"}, 1);
-  test::expect_eq(ctx.em.peek_ship(1)->secondary_battery().count, 3U);
+  test::expect_eq(ctx.em.peek_ship(ship_id)->secondary_battery().count, 3U);
 
   // Boolean systems & CEW before tech discoveries
   g.out.str("");
@@ -354,17 +355,17 @@ void test_upgrade_weapons_and_systems() {
   });
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(1);
+  g.set_shipno(ship_id);
   g.set_snum(1);
 
   ctx.assert_dispatch_success(g, {"upgrade", "mount"}, 1);
-  test::expect_true(ctx.em.peek_ship(1)->mount());
+  test::expect_true(ctx.em.peek_ship(ship_id)->mount());
 
   ctx.assert_dispatch_success(g, {"upgrade", "hyperdrive"}, 1);
-  test::expect_true(ctx.em.peek_ship(1)->hyper_drive().has);
+  test::expect_true(ctx.em.peek_ship(ship_id)->hyper_drive().has);
 
   ctx.assert_dispatch_success(g, {"upgrade", "laser"}, 1);
-  test::expect_true(ctx.em.peek_ship(1)->laser());
+  test::expect_true(ctx.em.peek_ship(ship_id)->laser());
 
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "laser"});
@@ -373,10 +374,10 @@ void test_upgrade_weapons_and_systems() {
       "That characteristic either doesn't exist or can't be modified.");
 
   ctx.assert_dispatch_success(g, {"upgrade", "cew", "strength", "50"}, 1);
-  test::expect_eq(ctx.em.peek_ship(1)->cew(), 50);
+  test::expect_eq(ctx.em.peek_ship(ship_id)->cew(), 50);
 
   ctx.assert_dispatch_success(g, {"upgrade", "cew", "range", "100"}, 1);
-  test::expect_eq(ctx.em.peek_ship(1)->cew_range(), 100);
+  test::expect_eq(ctx.em.peek_ship(ship_id)->cew_range(), 100);
 
   std::println(std::cout,
                "    ✓ Batteries, CEW, mount, hyperdrive, and laser verified");
@@ -390,51 +391,52 @@ void test_upgrade_preconditions_and_carrier_hangar() {
   ctx.em.mutate_race(1, [](Race& r) { r.tech = 25000.0; });
 
   // Ship 1: Carrier in star orbit
-  TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER, 1)
-      .owned_by(1, 1)
-      .named("FleetCarrier")
-      .in_star_orbit(1, 100.0, 200.0)
-      .with_resource(1000)
-      .build();
+  const auto carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
+                              .owned_by(1, 1)
+                              .named("FleetCarrier")
+                              .in_star_orbit(1, 100.0, 200.0)
+                              .with_resource(1000)
+                              .build();
 
   // Ship 2: Cruiser berthed inside Carrier (Ship 1)
   const auto ctype = ShipType::STYPE_CRUISER;
-  TestShipBuilder(ctx.em, ctype, 2)
-      .owned_by(1, 1)
-      .named("DockedCruiser")
-      .with_resource(2000)
-      .with_armor(ship_template(ctype).base_armor)
-      .build();
+  const auto cruiser_id = TestShipBuilder(ctx.em, ctype)
+                              .owned_by(1, 1)
+                              .named("DockedCruiser")
+                              .with_resource(2000)
+                              .with_armor(ship_template(ctype).base_armor)
+                              .build();
 
-  ctx.em.mutate_ship(2, [](Ship& s) {
-    s.dock_into_carrier(1);
+  ctx.em.mutate_ship(cruiser_id, [carrier_id](Ship& s) {
+    s.dock_into_carrier(carrier_id);
     s.max_resource() = 5000;
     s.build_cost() = static_cast<resource_t>(cost(s));
     s.size() = s.calculate_size();
     s.set_mass(s.base_mass() + s.resource() * MASS_RESOURCE);
   });
 
-  const auto initial_cruiser_size = ctx.em.peek_ship(2)->size();
-  const auto initial_cruiser_mass = ctx.em.peek_ship(2)->mass();
-  ctx.em.mutate_ship(1, [initial_cruiser_size, initial_cruiser_mass](Ship& c) {
+  const auto initial_cruiser_size = ctx.em.peek_ship(cruiser_id)->size();
+  const auto initial_cruiser_mass = ctx.em.peek_ship(cruiser_id)->mass();
+  ctx.em.mutate_ship(carrier_id, [initial_cruiser_size,
+                                  initial_cruiser_mass](Ship& c) {
     c.max_hanger() = initial_cruiser_size + 1;  // Only 1 unit of free hangar
     c.hanger() = initial_cruiser_size;
     c.set_mass(c.base_mass() + initial_cruiser_mass);
   });
 
   // Ship 3: Factory (cannot upgrade)
-  TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY, 3)
-      .owned_by(1, 1)
-      .named("Factory")
-      .in_star_orbit(1, 100.0, 200.0)
-      .build();
+  const auto factory_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
+                              .owned_by(1, 1)
+                              .named("Factory")
+                              .in_star_orbit(1, 100.0, 200.0)
+                              .build();
 
   // Ship 4: Spore Pod (not modifiable)
-  TestShipBuilder(ctx.em, ShipType::STYPE_POD, 4)
-      .owned_by(1, 1)
-      .named("Pod")
-      .in_star_orbit(1, 100.0, 200.0)
-      .build();
+  const auto pod_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
+                          .owned_by(1, 1)
+                          .named("Pod")
+                          .in_star_orbit(1, 100.0, 200.0)
+                          .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -442,26 +444,27 @@ void test_upgrade_preconditions_and_carrier_hangar() {
 
   // Factory rejection
   g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(3);
+  g.set_shipno(factory_id);
   g.set_snum(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "5"});
   test::expect_contains(g.out.str(), "You can't upgrade factories.");
 
   // Pod rejection
-  g.set_shipno(4);
+  g.set_shipno(pod_id);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "5"});
   test::expect_contains(g.out.str(), "This ship cannot be upgraded.");
 
   // Damaged ship rejection
-  ctx.em.mutate_ship(
-      2, [](Ship& s) { test::expect_false(s.apply_damage(10).destroyed); });
-  g.set_shipno(2);
+  ctx.em.mutate_ship(cruiser_id, [](Ship& s) {
+    test::expect_false(s.apply_damage(10).destroyed);
+  });
+  g.set_shipno(cruiser_id);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "10"});
   test::expect_contains(g.out.str(), "You cannot upgrade damaged ships.");
-  ctx.em.mutate_ship(2, [](Ship& s) { s.repair_damage(10); });
+  ctx.em.mutate_ship(cruiser_id, [](Ship& s) { s.repair_damage(10); });
 
   // Carrier hangar overflow rejection when expanding hanger by +50
   g.out.str("");
@@ -469,17 +472,17 @@ void test_upgrade_preconditions_and_carrier_hangar() {
   test::expect_contains(g.out.str(), "Not enough free hanger space on");
 
   // Expand carrier max_hanger and verify docked cruiser upgrade updates carrier
-  ctx.em.mutate_ship(1, [](Ship& c) { c.max_hanger() = 500; });
+  ctx.em.mutate_ship(carrier_id, [](Ship& c) { c.max_hanger() = 500; });
   ctx.assert_dispatch_success(g, {"upgrade", "hanger", "80"}, 1);
-  const auto new_cruiser_size = ctx.em.peek_ship(2)->size();
+  const auto new_cruiser_size = ctx.em.peek_ship(cruiser_id)->size();
   test::expect_gt(new_cruiser_size, initial_cruiser_size);
-  test::expect_eq(ctx.em.peek_ship(1)->hanger(), new_cruiser_size);
+  test::expect_eq(ctx.em.peek_ship(carrier_id)->hanger(), new_cruiser_size);
 
   // Insufficient tech rejection
   ctx.em.mutate_race(1, [](Race& r) { r.tech = 0.1; });
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(2);
+  g.set_shipno(cruiser_id);
   g.set_snum(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "20"});
@@ -488,10 +491,10 @@ void test_upgrade_preconditions_and_carrier_hangar() {
 
   // Insufficient onboard resources rejection
   ctx.em.mutate_race(1, [](Race& r) { r.tech = 25000.0; });
-  ctx.em.mutate_ship(2, [](Ship& s) { s.resource() = 0; });
+  ctx.em.mutate_ship(cruiser_id, [](Ship& s) { s.resource() = 0; });
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(2);
+  g.set_shipno(cruiser_id);
   g.set_snum(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "20"});
@@ -514,15 +517,15 @@ void test_upgrade_json_god_mode_and_edge_cases() {
 
   // Ship 1: Unarmed Cruiser owned by player 1
   const auto ctype = ShipType::STYPE_CRUISER;
-  TestShipBuilder(ctx.em, ctype, 1)
-      .owned_by(1, 1)
-      .named("UnarmedCruiser")
-      .in_star_orbit(1, 100.0, 200.0)
-      .with_resource(5000)
-      .with_armor(ship_template(ctype).base_armor)
-      .build();
+  const auto ship1_id = TestShipBuilder(ctx.em, ctype)
+                            .owned_by(1, 1)
+                            .named("UnarmedCruiser")
+                            .in_star_orbit(1, 100.0, 200.0)
+                            .with_resource(5000)
+                            .with_armor(ship_template(ctype).base_armor)
+                            .build();
 
-  ctx.em.mutate_ship(1, [](Ship& s) {
+  ctx.em.mutate_ship(ship1_id, [](Ship& s) {
     s.max_resource() = 5000;
     s.set_primary_battery({.count = 0, .caliber = guntype_t::NONE});
     s.set_secondary_battery({.count = 0, .caliber = guntype_t::NONE});
@@ -534,12 +537,12 @@ void test_upgrade_json_god_mode_and_edge_cases() {
   });
 
   // Ship 2: Cruiser owned by player 2 (non-commandable by player 1)
-  TestShipBuilder(ctx.em, ctype, 2)
-      .owned_by(2, 1)
-      .named("EnemyCruiser")
-      .in_star_orbit(1, 100.0, 200.0)
-      .with_resource(5000)
-      .build();
+  const auto ship2_id = TestShipBuilder(ctx.em, ctype)
+                            .owned_by(2, 1)
+                            .named("EnemyCruiser")
+                            .in_star_orbit(1, 100.0, 200.0)
+                            .with_resource(5000)
+                            .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -555,13 +558,14 @@ void test_upgrade_json_god_mode_and_edge_cases() {
 
   // Non-commandable ship rejection (owned by player 2)
   g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(2);
+  g.set_shipno(ship2_id);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "5"});
-  test::expect_contains(g.out.str(), "You don't own ship #2.");
+  test::expect_contains(g.out.str(),
+                        std::format("You don't own ship #{}.", ship2_id));
 
   // Switch to Ship 1
-  g.set_shipno(1);
+  g.set_shipno(ship1_id);
 
   // 1. NoCaliberDefined when upgrading battery strength with NONE caliber
   g.out.str("");
@@ -588,7 +592,7 @@ void test_upgrade_json_god_mode_and_edge_cases() {
 
   // 4. Upgrading secondary battery when active_battery is NONE activates
   // SECONDARY
-  ctx.em.mutate_ship(1, [](Ship& s) {
+  ctx.em.mutate_ship(ship1_id, [](Ship& s) {
     s.set_secondary_battery({.count = 1, .caliber = guntype_t::LIGHT});
     s.active_battery() = ActiveBattery::NONE;
     s.build_cost() = static_cast<resource_t>(cost(s));
@@ -596,12 +600,12 @@ void test_upgrade_json_god_mode_and_edge_cases() {
   ctx.assert_dispatch_success(g, {"upgrade", "secondary", "caliber", "medium"},
                               1);
   ctx.assert_dispatch_success(g, {"upgrade", "secondary", "strength", "2"}, 1);
-  test::expect_eq(ctx.em.peek_ship(1)->active_battery(),
+  test::expect_eq(ctx.em.peek_ship(ship1_id)->active_battery(),
                   ActiveBattery::SECONDARY);
 
   // Reset to primary-only with active_battery NONE and verify PRIMARY
   // activation
-  ctx.em.mutate_ship(1, [](Ship& s) {
+  ctx.em.mutate_ship(ship1_id, [](Ship& s) {
     s.set_primary_battery({.count = 1, .caliber = guntype_t::LIGHT});
     s.set_secondary_battery({.count = 0, .caliber = guntype_t::NONE});
     s.active_battery() = ActiveBattery::NONE;
@@ -609,19 +613,21 @@ void test_upgrade_json_god_mode_and_edge_cases() {
     s.to_struct().base_mass = s.base_mass();
     s.build_cost() = static_cast<resource_t>(cost(s));
   });
-  const double base_mass_before = ctx.em.peek_ship(1)->to_struct().base_mass;
+  const double base_mass_before =
+      ctx.em.peek_ship(ship1_id)->to_struct().base_mass;
   ctx.assert_dispatch_success(g, {"upgrade", "primary", "caliber", "medium"},
                               1);
   ctx.assert_dispatch_success(g, {"upgrade", "primary", "strength", "2"}, 1);
-  test::expect_eq(ctx.em.peek_ship(1)->active_battery(),
+  test::expect_eq(ctx.em.peek_ship(ship1_id)->active_battery(),
                   ActiveBattery::PRIMARY);
-  test::expect_gt(ctx.em.peek_ship(1)->to_struct().base_mass, base_mass_before);
+  test::expect_gt(ctx.em.peek_ship(ship1_id)->to_struct().base_mass,
+                  base_mass_before);
 
   // 5. "resource" alias for "cargo" and 2-arg no-op upgrade (net_cost = 1)
-  const auto cur_res_cap = ctx.em.peek_ship(1)->max_resource();
+  const auto cur_res_cap = ctx.em.peek_ship(ship1_id)->max_resource();
   ctx.assert_dispatch_success(
       g, {"upgrade", "resource", std::to_string(cur_res_cap + 10)}, 1);
-  test::expect_eq(ctx.em.peek_ship(1)->max_resource(), cur_res_cap + 10);
+  test::expect_eq(ctx.em.peek_ship(ship1_id)->max_resource(), cur_res_cap + 10);
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"upgrade", "armor"}, 1);
@@ -635,18 +641,18 @@ void test_upgrade_json_god_mode_and_edge_cases() {
   });
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(1);
+  g.set_shipno(ship1_id);
   g.set_snum(1);
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
-  const auto res_before_god = ctx.em.peek_ship(1)->resource();
+  const auto res_before_god = ctx.em.peek_ship(ship1_id)->resource();
   ctx.assert_dispatch_success(g, {"upgrade", "armor", "50"}, 1);
   test::expect_contains(g.out.str(), "\"type\":\"ship_upgrade\"");
   test::expect_contains(g.out.str(), "\"old_cost\":0");
   test::expect_contains(g.out.str(), "\"new_cost\":0");
   test::expect_contains(g.out.str(), "\"net_cost\":0");
-  test::expect_eq(ctx.em.peek_ship(1)->armor(), 50);
-  test::expect_eq(ctx.em.peek_ship(1)->resource(), res_before_god);
+  test::expect_eq(ctx.em.peek_ship(ship1_id)->armor(), 50);
+  test::expect_eq(ctx.em.peek_ship(ship1_id)->resource(), res_before_god);
 
   std::println(std::cout,
                "    ✓ JSON output, God mode, battery activation, and edge "

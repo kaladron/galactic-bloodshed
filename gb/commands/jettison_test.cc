@@ -19,7 +19,7 @@ void setup_test_world(TestContext& ctx) {
       .add_planet(1, PlanetType::EARTH);
 
   // Create a ship with cargo
-  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 1)
+  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
       .owned_by(1, 1)
       .named("CargoShip")
       .in_star_orbit(1)
@@ -183,22 +183,25 @@ void test_jettison_domain_errors() {
 
   // 7. Crewless boobytrapped pod: partial destruct jettison vs full destruct
   // jettison
-  TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST, 2)
-      .owned_by(1, 1)
-      .in_star_orbit(1)
-      .with_destruct(10)
-      .with_crew(0, 0)
-      .build();
-  ctx.em.mutate_ship(2, [](Ship& s) { s.max_crew() = 0; });
+  const auto ship2_id = TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST)
+                            .owned_by(1, 1)
+                            .in_star_orbit(1)
+                            .with_destruct(10)
+                            .with_crew(0, 0)
+                            .build();
+  ctx.em.mutate_ship(ship2_id, [](Ship& s) { s.max_crew() = 0; });
 
-  ctx.assert_dispatch_success(g, {"jettison", "#2", "d", "4"});
+  ctx.assert_dispatch_success(
+      g, {"jettison", std::format("#{}", ship2_id), "d", "4"});
   test::expect_contains(g.out.str(), "still boobytrapped.");
 
-  ctx.assert_dispatch_success(g, {"jettison", "#2", "d"});
+  ctx.assert_dispatch_success(g,
+                              {"jettison", std::format("#{}", ship2_id), "d"});
   test::expect_contains(g.out.str(), "no longer boobytrapped.");
 
   // 8. Jettison when available amount is 0 (NothingToJettison)
-  ctx.assert_dispatch_rejected(g, {"jettison", "#2", "d"});
+  ctx.assert_dispatch_rejected(g,
+                               {"jettison", std::format("#{}", ship2_id), "d"});
 
   // 9. Explicit unowned/non-existent ship reports diagnostic
   ctx.assert_dispatch_rejected(g, {"jettison", "#999", "r"});

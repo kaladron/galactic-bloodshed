@@ -47,7 +47,7 @@ int main() {
 
   // Create Berserker Ship
   auto ship_handle =
-      TestShipBuilder(ctx.em, ShipType::OTYPE_BERS, 1)
+      TestShipBuilder(ctx.em, ShipType::OTYPE_BERS)
           .owned_by(1)
           .with_alive(true)
           .with_on(true)
@@ -62,7 +62,7 @@ int main() {
   test::expect_gt(destroyed, 0);
 
   // Test 2: PDN presence prevents bombardment
-  TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF, 2)
+  TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF)
       .owned_by(2)
       .with_alive(true)
       .with_on(true)
@@ -118,7 +118,7 @@ int main() {
         check_orbital_pdn_defense(ctx.em, orbit_planet, player_t{1}));
 
     // 2. Friendly PDN does not block friendly bombardment
-    auto f_handle = TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF, 201)
+    auto f_handle = TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF)
                         .owned_by(1)
                         .with_alive(true)
                         .in_planet_orbit(1, 3)
@@ -128,7 +128,7 @@ int main() {
         check_orbital_pdn_defense(ctx.em, orbit_planet, player_t{1}));
 
     // 3. Enemy non-PDN does not block bombardment
-    auto c_handle = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO, 202)
+    auto c_handle = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
                         .owned_by(2)
                         .with_alive(true)
                         .in_planet_orbit(1, 3)
@@ -138,18 +138,18 @@ int main() {
         check_orbital_pdn_defense(ctx.em, orbit_planet, player_t{1}));
 
     // 4. Dead enemy PDN does not block bombardment
-    TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF, 203)
-        .owned_by(2)
-        .with_alive(true)
-        .in_planet_orbit(1, 3)
-        .build();
-    ctx.em.mutate_ship(203, [&](Ship& s) { ctx.em.kill_ship(1, s); });
+    const auto dead_pdn_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF)
+                                 .owned_by(2)
+                                 .with_alive(true)
+                                 .in_planet_orbit(1, 3)
+                                 .build();
+    ctx.em.mutate_ship(dead_pdn_id, [&](Ship& s) { ctx.em.kill_ship(1, s); });
 
     test::expect_false(
         check_orbital_pdn_defense(ctx.em, orbit_planet, player_t{1}));
 
     // 5. Active hostile PDN blocks bombardment
-    auto h_handle = TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF, 204)
+    auto h_handle = TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF)
                         .owned_by(2)
                         .with_alive(true)
                         .in_planet_orbit(1, 3)
@@ -163,7 +163,7 @@ int main() {
   // Test 6: Ship::bombardment_strength unit tests
   // =========================================================================
   {
-    auto test_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_BERS, 301)
+    auto test_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_BERS)
                          .owned_by(1)
                          .with_guns(guntype_t::HEAVY, 40)
                          .with_destruct(500)
@@ -194,7 +194,7 @@ int main() {
     test::expect_eq(test_ship->bombardment_strength(), 0U);
 
     // Non-combat ship with 0 guns (e.g. Spore Pod) -> 0
-    auto pod_test_ship = TestShipBuilder(ctx.em, ShipType::STYPE_POD, 302)
+    auto pod_test_ship = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
                              .owned_by(1)
                              .with_destruct(100)
                              .build_handle();
@@ -218,7 +218,7 @@ int main() {
 
     // 1. General berserker prioritizes war target (Race 2 at (2, 2)) over Race
     // 3
-    auto gen_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_BERS, 401)
+    auto gen_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_BERS)
                         .owned_by(1)
                         .in_planet_orbit(1, 4)
                         .build_handle();
@@ -229,7 +229,7 @@ int main() {
 
     // 2. Programmed berserker specifically targeting Race 3 prioritizes Race 3
     // at (1, 1)
-    auto prog_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_BERS, 402)
+    auto prog_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_BERS)
                          .owned_by(1)
                          .in_planet_orbit(1, 4)
                          .with_special(MindData{.target_player = player_t{3}})
@@ -245,7 +245,7 @@ int main() {
     race4.Guest = false;
     races.save(race4);
 
-    auto neutral_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_BERS, 403)
+    auto neutral_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_BERS)
                             .owned_by(4)
                             .in_planet_orbit(1, 4)
                             .build_handle();
@@ -263,7 +263,7 @@ int main() {
   {
     ctx.em.purge_all_telegrams();
     const auto& star = *ctx.em.peek_star(starnum_t{1});
-    auto alert_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_BERS, 501)
+    auto alert_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_BERS)
                           .owned_by(1)
                           .named("Nemesis")
                           .in_planet_orbit(1, 1)

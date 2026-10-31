@@ -562,9 +562,8 @@ private:
 /// with canonical template defaults from ShipTemplate.
 export class TestShipBuilder {
 public:
-  explicit TestShipBuilder(
-      EntityManager& em, ShipType type = ShipType::STYPE_BATTLE,
-      std::optional<shipnum_t> explicit_number = std::nullopt);
+  explicit TestShipBuilder(EntityManager& em,
+                           ShipType type = ShipType::STYPE_BATTLE);
 
   TestShipBuilder& owned_by(player_t owner, governor_t gov = 1);
   TestShipBuilder& named(std::string_view name);
@@ -625,7 +624,7 @@ public:
   EntityHandle<Ship> build_handle();
 
 private:
-  void init(ShipType type, std::optional<shipnum_t> explicit_number);
+  void init(ShipType type);
 
   EntityManager& em_;
   ship_struct ship_{};

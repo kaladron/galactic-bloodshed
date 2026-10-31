@@ -15,12 +15,12 @@ namespace {
 void test_tax_happy_paths() {
   TestContext ctx;
   ctx.with_standard_universe();
-  TestShipBuilder(ctx.em, ShipType::OTYPE_GOV, 100)
-      .owned_by(1, 1)
-      .landed_on(1, 1, Coordinates{0, 0})
-      .with_crew(100, 0)
-      .build();
-  ctx.em.mutate_race(1, [](Race& r) { r.Gov_ship = 100; });
+  const auto gov_id = TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
+                          .owned_by(1, 1)
+                          .landed_on(1, 1, Coordinates{0, 0})
+                          .with_crew(100, 0)
+                          .build();
+  ctx.em.mutate_race(1, [gov_id](Race& r) { r.Gov_ship = gov_id; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -57,17 +57,17 @@ void test_tax_happy_paths() {
 void test_tax_role_and_scope_rejections() {
   TestContext ctx;
   ctx.with_standard_universe();
-  TestShipBuilder(ctx.em, ShipType::OTYPE_GOV, 100)
-      .owned_by(1, 1)
-      .landed_on(1, 1, Coordinates{0, 0})
-      .with_crew(100, 0)
-      .build();
-  ctx.em.mutate_race(1, [](Race& r) { r.Gov_ship = 100; });
+  const auto gov_id = TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
+                          .owned_by(1, 1)
+                          .landed_on(1, 1, Coordinates{0, 0})
+                          .with_crew(100, 0)
+                          .build();
+  ctx.em.mutate_race(1, [gov_id](Race& r) { r.Gov_ship = gov_id; });
 
   // Make player 2 a guest race
-  ctx.em.mutate_race(2, [](Race& r) {
+  ctx.em.mutate_race(2, [gov_id](Race& r) {
     r.Guest = true;
-    r.Gov_ship = 100;
+    r.Gov_ship = gov_id;
   });
 
   auto& registry = get_test_session_registry();
@@ -104,11 +104,11 @@ void test_tax_role_and_scope_rejections() {
 void test_tax_domain_errors() {
   TestContext ctx;
   ctx.with_standard_universe();
-  TestShipBuilder(ctx.em, ShipType::OTYPE_GOV, 100)
-      .owned_by(1, 1)
-      .landed_on(1, 1, Coordinates{0, 0})
-      .with_crew(100, 0)
-      .build();
+  const auto gov_id = TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
+                          .owned_by(1, 1)
+                          .landed_on(1, 1, Coordinates{0, 0})
+                          .with_crew(100, 0)
+                          .build();
 
   // Ensure Gov_ship is std::nullopt (no government center active)
   ctx.em.mutate_race(1, [](Race& r) { r.Gov_ship = std::nullopt; });
@@ -125,7 +125,7 @@ void test_tax_domain_errors() {
   test::expect_contains(g.out.str(), "You have no government center active.");
 
   // 2. Domain error: Illegal value (>100 or <0)
-  ctx.em.mutate_race(1, [](Race& r) { r.Gov_ship = 100; });
+  ctx.em.mutate_race(1, [gov_id](Race& r) { r.Gov_ship = gov_id; });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"tax", "150"});
   test::expect_contains(g.out.str(), "Illegal value.");

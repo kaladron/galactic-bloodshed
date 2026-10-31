@@ -12,7 +12,7 @@ import std;
 
 namespace {
 
-void setup_test_world(TestContext& ctx) {
+std::pair<shipnum_t, shipnum_t> setup_test_world(TestContext& ctx) {
   ctx.with_standard_universe();
 
   ctx.em.mutate_race(1, [](Race& race) {
@@ -27,25 +27,27 @@ void setup_test_world(TestContext& ctx) {
     race2.leader().password = "othergov";
   });
 
-  TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER, 1)
-      .owned_by(1, 1)
-      .in_planet_orbit(1, 1)
-      .build();
-  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 2)
-      .owned_by(2, 1)
-      .in_planet_orbit(1, 1)
-      .build();
+  const auto s1 = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+                      .owned_by(1, 1)
+                      .in_planet_orbit(1, 1)
+                      .build();
+  const auto s2 = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                      .owned_by(2, 1)
+                      .in_planet_orbit(1, 1)
+                      .build();
 
   // Load race into EntityManager cache to ensure getracenum can find it
   const auto* loaded_race = ctx.em.peek_race(1);
   test::expect_ne(loaded_race, nullptr);
   test::expect_eq(loaded_race->password, "testpass");
   test::expect_eq(loaded_race->leader().password, "govpass");
+
+  return {s1, s2};
 }
 
 void test_dissolve_happy_path() {
   TestContext ctx;
-  setup_test_world(ctx);
+  const auto [ship1, ship2] = setup_test_world(ctx);
 
   // Create GameObj for command execution
   auto& registry = get_test_session_registry();
@@ -57,7 +59,8 @@ void test_dissolve_happy_path() {
   {
     ctx.assert_dispatch_success(g,
                                 {"dissolve", "testpass", "govpass", "waste"});
-    test::expect_contains(g.out.str(), "Ship #1, self-destruct enabled");
+    test::expect_contains(
+        g.out.str(), std::format("Ship #{}, self-destruct enabled", ship1));
 
     // Clear cache to force reload from database
     ctx.em.clear_cache();
@@ -67,10 +70,11 @@ void test_dissolve_happy_path() {
     test::expect_ne(saved_race, nullptr);
     test::expect_true(saved_race->dissolved);
 
-    // Verify ship #1 was destroyed (hard-deleted) while player 2's ship #2
-    // remains alive
-    test::expect_throws<EntityNotFoundError>([&]() { ctx.em.peek_ship(1); });
-    const auto* saved_ship2 = ctx.em.peek_ship(2);
+    // Verify ship was destroyed (hard-deleted) while player 2's ship remains
+    // alive
+    test::expect_throws<EntityNotFoundError>(
+        [&]() { ctx.em.peek_ship(ship1); });
+    const auto* saved_ship2 = ctx.em.peek_ship(ship2);
     test::expect_ne(saved_ship2, nullptr);
     test::expect_true(saved_ship2->alive());
 

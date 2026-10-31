@@ -17,23 +17,23 @@ void test_profile_dispatch() {
 
   TestContext ctx;
   ctx.with_standard_universe();
-  TestShipBuilder(ctx.em, ShipType::OTYPE_GOV, 100)
-      .owned_by(1, 1)
-      .landed_on(1, 1, Coordinates{0, 0})
-      .with_crew(100, 0)
-      .build();
-  ctx.em.mutate_race(1, [](Race& r) { r.Gov_ship = 100; });
+  const auto gov_id = TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
+                          .owned_by(1, 1)
+                          .landed_on(1, 1, Coordinates{0, 0})
+                          .with_crew(100, 0)
+                          .build();
+  ctx.em.mutate_race(1, [&](Race& r) { r.Gov_ship = gov_id; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
 
-  // 1. Profile for self (default baseline: capital #100, normal race, mortal)
+  // 1. Profile for self (default baseline: capital, normal race, mortal)
   ctx.assert_dispatch_success(g, {"profile"});
   std::string out = g.out.str();
   test::expect_contains(out, "Racial profile for Federation");
   test::expect_contains(out, "Default Scope: /Sol/Earth");
-  test::expect_contains(out, "Designated Capital: #100");
+  test::expect_contains(out, std::format("Designated Capital: #{}", gov_id));
   test::expect_contains(out, "Normal Race");
   std::println(std::cout, "    ✓ Baseline self profile verified");
 

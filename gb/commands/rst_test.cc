@@ -27,7 +27,7 @@ void setup_test_world(TestContext& ctx) {
       .build();
 
   // Ship 1: Shuttle in orbit of Sol
-  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 1)
+  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
       .owned_by(1)
       .named("Hermes")
       .in_star_orbit(1)
@@ -43,7 +43,7 @@ void setup_test_world(TestContext& ctx) {
       .build();
 
   // Ship 2: Factory ship on Earth
-  TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY, 2)
+  TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
       .owned_by(1)
       .named("Forge")
       .in_planet_orbit(1, 1)
@@ -147,16 +147,16 @@ void test_rst_dispatch() {
   std::println(std::cout, "    ✓ report error cases rejected");
 
   // 10. Spore Pod temperature suffix
-  TestShipBuilder(ctx.em, ShipType::STYPE_POD, 3)
-      .owned_by(1)
-      .named("PodAlpha")
-      .in_star_orbit(1)
-      .with_size(10)
-      .with_pod(88)
-      .build();
+  const auto pod_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
+                          .owned_by(1)
+                          .named("PodAlpha")
+                          .in_star_orbit(1)
+                          .with_size(10)
+                          .with_pod(88)
+                          .build();
 
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"stats", "#3"});
+  ctx.assert_dispatch_success(g, {"stats", std::format("#{}", pod_id)});
   test::expect_contains(g.out.str(), "10 (88)");
   std::println(std::cout, "    ✓ pod temperature suffix displayed");
 }
@@ -167,65 +167,65 @@ void test_rst_filters_scopes_and_json() {
 
   // Add ships covering Terra, Plow, unconfigured factories, canisters,
   // greenhouses, dead/foreign/governor-restricted ships, and carrier cargo.
-  TestShipBuilder(ctx.em, ShipType::OTYPE_TERRA, 3)
-      .owned_by(1)
-      .named("Terraformer")
-      .in_deep_space({5.0, 5.0})
-      .build();
-  TestShipBuilder(ctx.em, ShipType::OTYPE_PLOW, 4)
-      .owned_by(1)
-      .named("SpacePlow")
-      .in_star_orbit(1)
-      .build();
-  TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY, 5)
-      .owned_by(1)
-      .named("UnconfPod")
-      .in_star_orbit(1)
-      .with_build_type(ShipType::STYPE_POD)
-      .build();
-  TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY, 6)
-      .owned_by(1)
-      .named("UnconfFac")
-      .in_star_orbit(1)
-      .with_build_type(ShipType::OTYPE_FACTORY)
-      .build();
-  TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST, 7)
+  const auto terra_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TERRA)
+                            .owned_by(1)
+                            .named("Terraformer")
+                            .in_deep_space({5.0, 5.0})
+                            .build();
+  const auto plow_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PLOW)
+                           .owned_by(1)
+                           .named("SpacePlow")
+                           .in_star_orbit(1)
+                           .build();
+  const auto fac1_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
+                           .owned_by(1)
+                           .named("UnconfPod")
+                           .in_star_orbit(1)
+                           .with_build_type(ShipType::STYPE_POD)
+                           .build();
+  const auto fac2_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
+                           .owned_by(1)
+                           .named("UnconfFac")
+                           .in_star_orbit(1)
+                           .with_build_type(ShipType::OTYPE_FACTORY)
+                           .build();
+  TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST)
       .owned_by(1)
       .named("FreeCan")
       .in_star_orbit(1)
       .build();
-  TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST, 8)
+  TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST)
       .owned_by(1)
       .named("LandedCan")
       .landed_on(1, 1, {3, 4})
       .build();
-  TestShipBuilder(ctx.em, ShipType::OTYPE_GREEN, 9)
+  TestShipBuilder(ctx.em, ShipType::OTYPE_GREEN)
       .owned_by(1)
       .named("FreeGreen")
       .in_star_orbit(1)
       .build();
-  TestShipBuilder(ctx.em, ShipType::OTYPE_GREEN, 10)
+  TestShipBuilder(ctx.em, ShipType::OTYPE_GREEN)
       .owned_by(1)
       .named("DockedGreen")
       .docked_to(1, 1)
       .build();
-  TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER, 11)
+  TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
       .owned_by(1)
       .named("IrradiatedShip")
       .with_active(false)
       .with_radiation(50)
       .in_star_orbit(1)
       .build();
-  TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER, 12)
+  TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
       .owned_by(2)
       .named("EnemyShip")
       .in_star_orbit(1)
       .build();
-  TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER, 13)
-      .owned_by(1, 3)
-      .named("OtherGovShip")
-      .in_star_orbit(1)
-      .build();
+  const auto other_gov_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+                                .owned_by(1, 3)
+                                .named("OtherGovShip")
+                                .in_star_orbit(1)
+                                .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -247,17 +247,19 @@ void test_rst_filters_scopes_and_json() {
   // Subordinate governor 2 skips governor 3's ship
   g.out.str("");
   g.set_governor(2);
-  ctx.assert_dispatch_success(g, {"report", "#13"});
+  ctx.assert_dispatch_success(g, {"report", std::format("#{}", other_gov_id)});
   test::expect_true(!g.out.str().contains("OtherGovShip"));
   g.set_governor(1);
 
   // Weapons and factories on Terra, Plow, and unconfigured factories
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"weapons", "#3", "#4"});
+  ctx.assert_dispatch_success(g, {"weapons", std::format("#{}", terra_id),
+                                  std::format("#{}", plow_id)});
   test::expect_contains(g.out.str(), "Standard");
 
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"factories", "#5", "#6"});
+  ctx.assert_dispatch_success(g, {"factories", std::format("#{}", fac1_id),
+                                  std::format("#{}", fac2_id)});
   test::expect_contains(g.out.str(), "(No ship type specified yet)");
 
   // Ship scope: unscoped (shipno == 0) fails; scoped to #1 reports #1 + #10

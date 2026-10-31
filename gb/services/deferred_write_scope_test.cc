@@ -208,27 +208,26 @@ void test_deferred_write_rejects_nested_transaction(TestContext& ctx) {
 }
 
 void test_deferred_write_deletion_rollback_and_commit(TestContext& ctx) {
-  // Setup Race 5 with flagship #20, docked fighter #21, escort #22, and market
-  // lot #10
+  // Setup Race 5 with flagship, docked fighter, escort, and market lot #10
   Race r{};
   r.Playernum = 5;
   r.name = "AtomicDeleteRace";
   ctx.em.create_race(r);
 
-  TestShipBuilder(ctx.em, ShipType::OTYPE_GOV, shipnum_t{20})
-      .owned_by(5, 1)
-      .landed_on(2, 1, Coordinates{0, 0})
-      .build();
-  TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER, shipnum_t{21})
-      .owned_by(5, 1)
-      .docked_to(20, 2)
-      .build();
-  TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER, shipnum_t{22})
-      .owned_by(5, 1)
-      .in_star_orbit(2)
-      .build();
-  ctx.em.mutate_ship(22, [](Ship& s) { s.protect().ship = 20; });
-  ctx.em.mutate_race(5, [](Race& race) { race.Gov_ship = 20; });
+  const shipnum_t ship20_id = TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
+                                  .owned_by(5, 1)
+                                  .landed_on(2, 1, Coordinates{0, 0})
+                                  .build();
+  const shipnum_t ship21_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+                                  .owned_by(5, 1)
+                                  .docked_to(ship20_id, 2)
+                                  .build();
+  const shipnum_t ship22_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+                                  .owned_by(5, 1)
+                                  .in_star_orbit(2)
+                                  .build();
+  ctx.em.mutate_ship(ship22_id, [&](Ship& s) { s.protect().ship = ship20_id; });
+  ctx.em.mutate_race(5, [&](Race& race) { race.Gov_ship = ship20_id; });
 
   Commod c{{
       .id = 10,
@@ -246,12 +245,12 @@ void test_deferred_write_deletion_rollback_and_commit(TestContext& ctx) {
   }
   ctx.em.clear_cache();
 
-  // 1. Delete ship #20 (which recursively kills docked fighter #21 and scrubs
-  // Gov_ship and escort #22's protect().ship) and commod #10 inside
-  // DeferredWriteScope, then rollback
+  // 1. Delete ship20_id (which recursively kills docked fighter ship21_id and
+  // scrubs Gov_ship and escort ship22_id's protect().ship) and commod #10
+  // inside DeferredWriteScope, then rollback
   {
     auto scope = ctx.em.create_deferred_write_scope();
-    ctx.em.mutate_ship(20, [&](Ship& s) { ctx.em.kill_ship(5, s); });
+    ctx.em.mutate_ship(ship20_id, [&](Ship& s) { ctx.em.kill_ship(5, s); });
     {
       auto barrier = ctx.em.create_deletion_barrier();
       ctx.em.delete_commod(10);
@@ -260,34 +259,34 @@ void test_deferred_write_deletion_rollback_and_commit(TestContext& ctx) {
     // Within the scope before rollback, deleted entities are invisible and
     // foreign key references are scrubbed in memory
     test::expect_throws<EntityNotFoundError>(
-        [&]() { (void)ctx.em.peek_ship(20); });
+        [&]() { (void)ctx.em.peek_ship(ship20_id); });
     test::expect_throws<EntityNotFoundError>(
-        [&]() { (void)ctx.em.peek_ship(21); });
+        [&]() { (void)ctx.em.peek_ship(ship21_id); });
     test::expect_throws<EntityNotFoundError>(
         [&]() { (void)ctx.em.peek_commod(10); });
     test::expect_eq(ctx.em.peek_race(5)->Gov_ship, std::nullopt);
-    test::expect_eq(ctx.em.peek_ship(22)->protect().ship, std::nullopt);
+    test::expect_eq(ctx.em.peek_ship(ship22_id)->protect().ship, std::nullopt);
 
     scope.rollback();
   }
 
-  // Verify SQLite retained ships #20 and #21, commod #10, and all FK references
-  const auto* restored_ship = ctx.em.peek_ship(20);
+  // Verify SQLite retained ships and commod #10, and all FK references
+  const auto* restored_ship = ctx.em.peek_ship(ship20_id);
   test::expect_ne(restored_ship, nullptr);
   test::expect_true(restored_ship->alive());
-  const auto* restored_fighter = ctx.em.peek_ship(21);
+  const auto* restored_fighter = ctx.em.peek_ship(ship21_id);
   test::expect_ne(restored_fighter, nullptr);
-  test::expect_eq(restored_fighter->destshipno(), shipnum_t{20});
-  test::expect_eq(ctx.em.peek_race(5)->Gov_ship, shipnum_t{20});
-  test::expect_eq(ctx.em.peek_ship(22)->protect().ship, shipnum_t{20});
+  test::expect_eq(restored_fighter->destshipno(), ship20_id);
+  test::expect_eq(ctx.em.peek_race(5)->Gov_ship, ship20_id);
+  test::expect_eq(ctx.em.peek_ship(ship22_id)->protect().ship, ship20_id);
   const auto* restored_commod = ctx.em.peek_commod(10);
   test::expect_ne(restored_commod, nullptr);
   test::expect_eq(restored_commod->amount(), 250);
 
-  // 2. Delete ship #20 and commod #10 inside DeferredWriteScope and commit
+  // 2. Delete ship20_id and commod #10 inside DeferredWriteScope and commit
   {
     auto scope = ctx.em.create_deferred_write_scope();
-    ctx.em.mutate_ship(20, [&](Ship& s) { ctx.em.kill_ship(5, s); });
+    ctx.em.mutate_ship(ship20_id, [&](Ship& s) { ctx.em.kill_ship(5, s); });
     {
       auto barrier = ctx.em.create_deletion_barrier();
       ctx.em.delete_commod(10);
@@ -296,13 +295,13 @@ void test_deferred_write_deletion_rollback_and_commit(TestContext& ctx) {
 
   ctx.em.clear_cache();
   test::expect_throws<EntityNotFoundError>(
-      [&]() { (void)ctx.em.peek_ship(20); });
+      [&]() { (void)ctx.em.peek_ship(ship20_id); });
   test::expect_throws<EntityNotFoundError>(
-      [&]() { (void)ctx.em.peek_ship(21); });
+      [&]() { (void)ctx.em.peek_ship(ship21_id); });
   test::expect_throws<EntityNotFoundError>(
       [&]() { (void)ctx.em.peek_commod(10); });
   test::expect_eq(ctx.em.peek_race(5)->Gov_ship, std::nullopt);
-  test::expect_eq(ctx.em.peek_ship(22)->protect().ship, std::nullopt);
+  test::expect_eq(ctx.em.peek_ship(ship22_id)->protect().ship, std::nullopt);
 
   std::println(std::cout,
                "✓ test_deferred_write_deletion_rollback_and_commit passed");

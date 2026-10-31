@@ -221,59 +221,64 @@ void test_orbit_visibility_and_filtering() {
       .build();
 
   // Add canister, greenhouse, friendly mine, enemy mine, enemy fighter in star
-  TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST, 10)
-      .owned_by(1, 1)
-      .in_star_orbit(1, UniverseCoordinates{100.0, 200.0})
-      .build();
-  TestShipBuilder(ctx.em, ShipType::OTYPE_GREEN, 11)
-      .owned_by(1, 1)
-      .in_star_orbit(1, UniverseCoordinates{100.0, 200.0})
-      .build();
-  TestShipBuilder(ctx.em, ShipType::STYPE_MINE, 12)
-      .owned_by(1, 1)
-      .in_star_orbit(1, UniverseCoordinates{100.0, 200.0})
-      .build();
-  TestShipBuilder(ctx.em, ShipType::STYPE_MINE, 13)
-      .owned_by(2, 1)
-      .in_star_orbit(1, UniverseCoordinates{100.0, 200.0})
-      .build();
-  TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER, 14)
-      .owned_by(2, 1)
-      .in_star_orbit(1, UniverseCoordinates{100.0, 200.0})
-      .build();
+  const auto canist_id =
+      TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST)
+          .owned_by(1, 1)
+          .in_star_orbit(1, UniverseCoordinates{100.0, 200.0})
+          .build();
+  const auto green_id = TestShipBuilder(ctx.em, ShipType::OTYPE_GREEN)
+                            .owned_by(1, 1)
+                            .in_star_orbit(1, UniverseCoordinates{100.0, 200.0})
+                            .build();
+  const auto mine1_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
+                            .owned_by(1, 1)
+                            .in_star_orbit(1, UniverseCoordinates{100.0, 200.0})
+                            .build();
+  const auto mine2_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
+                            .owned_by(2, 1)
+                            .in_star_orbit(1, UniverseCoordinates{100.0, 200.0})
+                            .build();
+  const auto fighter_id =
+      TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+          .owned_by(2, 1)
+          .in_star_orbit(1, UniverseCoordinates{100.0, 200.0})
+          .build();
 
   // Add out-of-bounds ships (negative projected X and negative projected Y)
-  TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER, 15)
-      .owned_by(1, 1)
-      .in_star_orbit(1, UniverseCoordinates{-50000.0, 200.0})
-      .build();
-  TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER, 16)
-      .owned_by(1, 1)
-      .in_star_orbit(1, UniverseCoordinates{100.0, -50000.0})
-      .build();
+  const auto ob1_id =
+      TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+          .owned_by(1, 1)
+          .in_star_orbit(1, UniverseCoordinates{-50000.0, 200.0})
+          .build();
+  const auto ob2_id =
+      TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+          .owned_by(1, 1)
+          .in_star_orbit(1, UniverseCoordinates{100.0, -50000.0})
+          .build();
 
-  // Add enemy deep-space ship (#17), landed planet ship (#18), and enemy
-  // planet-orbiting ship (#19)
-  TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER, 17)
-      .owned_by(2, 1)
-      .in_deep_space(UniverseCoordinates{150.0, 250.0})
-      .build();
-  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 18)
-      .owned_by(1, 1)
-      .landed_on(1, 1, {0, 0})
-      .build();
-  TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER, 19)
-      .owned_by(2, 1)
-      .in_planet_orbit(1, 1, UniverseCoordinates{105.0, 205.0})
-      .build();
+  // Add enemy deep-space ship, landed planet ship, and enemy
+  // planet-orbiting ship
+  const auto deep_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+                           .owned_by(2, 1)
+                           .in_deep_space(UniverseCoordinates{150.0, 250.0})
+                           .build();
+  const auto land_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                           .owned_by(1, 1)
+                           .landed_on(1, 1, {0, 0})
+                           .build();
+  const auto plan_id =
+      TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+          .owned_by(2, 1)
+          .in_planet_orbit(1, 1, UniverseCoordinates{105.0, 205.0})
+          .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
 
-  // 1. Star scope with sight (ship #1 has crew): sees friendly mine (#12) and
-  // enemy fighter (#14), hides canister (#10), green (#11), enemy mine (#13),
-  // and out-of-bounds ships (#15, #16). Unexplored planet 2 renders '?' symbol.
+  // 1. Star scope with sight (ship #1 has crew): sees friendly mine and
+  // enemy fighter, hides canister, green, enemy mine,
+  // and out-of-bounds ships. Unexplored planet 2 renders '?' symbol.
   ctx.em.mutate_ship(1, [](Ship& s) { s.popn() = 1; });
   ctx.em.mutate_ship(3, [](Ship& s) { s.popn() = 1; });
   g.set_level(ScopeLevel::LEVEL_STAR);
@@ -282,29 +287,30 @@ void test_orbit_visibility_and_filtering() {
   ctx.assert_dispatch_success(g, {"orbit"});
   std::string star_out = g.out.str();
   test::expect_contains(star_out, "? HiddenWorld");
-  test::expect_contains(star_out, "+ #12");
-  test::expect_contains(star_out, "f #14");
-  test::expect_false(star_out.contains("#10"));
-  test::expect_false(star_out.contains("#11"));
-  test::expect_false(star_out.contains("#13"));
-  test::expect_false(star_out.contains("#15"));
-  test::expect_false(star_out.contains("#16"));
+  test::expect_contains(star_out, std::format("+ #{}", mine1_id));
+  test::expect_contains(star_out, std::format("f #{}", fighter_id));
+  test::expect_false(star_out.contains(std::format("#{}", canist_id)));
+  test::expect_false(star_out.contains(std::format("#{}", green_id)));
+  test::expect_false(star_out.contains(std::format("#{}", mine2_id)));
+  test::expect_false(star_out.contains(std::format("#{}", ob1_id)));
+  test::expect_false(star_out.contains(std::format("#{}", ob2_id)));
 
-  // 2. Star scope without sight (player 2 has no crewed ship if #14 is
-  // uncrewed): player 1 with ship #1 uncrewed cannot see enemy #14 unless god.
+  // 2. Star scope without sight (player 2 has no crewed ship if fighter is
+  // uncrewed): player 1 with ship #1 uncrewed cannot see enemy fighter unless
+  // god.
   ctx.em.mutate_ship(1, [](Ship& s) { s.popn() = 0; });
   g.out.str("");
   ctx.assert_dispatch_success(g, {"orbit"});
-  test::expect_false(g.out.str().contains("f #14"));
+  test::expect_false(g.out.str().contains(std::format("f #{}", fighter_id)));
 
   // God mode restores sight in star system without crewed ships
   g.set_god(true);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"orbit"});
-  test::expect_contains(g.out.str(), "f #14");
+  test::expect_contains(g.out.str(), std::format("f #{}", fighter_id));
   g.set_god(false);
 
-  // 3. Planet scope: landed ship (#18) is hidden; enemy ship (#19) is visible
+  // 3. Planet scope: landed ship is hidden; enemy ship is visible
   // when #3 has sight, hidden when #3 has no crew, and -s / -3 flags work.
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_snum(1);
@@ -312,8 +318,8 @@ void test_orbit_visibility_and_filtering() {
   g.out.str("");
   ctx.assert_dispatch_success(g, {"orbit"});
   test::expect_contains(g.out.str(), "s #3");
-  test::expect_contains(g.out.str(), "f #19");
-  test::expect_false(g.out.str().contains("#18"));
+  test::expect_contains(g.out.str(), std::format("f #{}", plan_id));
+  test::expect_false(g.out.str().contains(std::format("#{}", land_id)));
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"orbit", "-3"});
@@ -326,20 +332,20 @@ void test_orbit_visibility_and_filtering() {
   ctx.em.mutate_ship(3, [](Ship& s) { s.popn() = 0; });
   g.out.str("");
   ctx.assert_dispatch_success(g, {"orbit"});
-  test::expect_false(g.out.str().contains("f #19"));
+  test::expect_false(g.out.str().contains(std::format("f #{}", plan_id)));
 
-  // 4. Universe scope: enemy deep-space ship (#17) hidden unless god; -1 and
+  // 4. Universe scope: enemy deep-space ship hidden unless god; -1 and
   // -s flags filter universe stars and ships.
   g.set_level(ScopeLevel::LEVEL_UNIV);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"orbit"});
   test::expect_contains(g.out.str(), "C #2");
-  test::expect_false(g.out.str().contains("#17"));
+  test::expect_false(g.out.str().contains(std::format("#{}", deep_id)));
 
   g.set_god(true);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"orbit"});
-  test::expect_contains(g.out.str(), "C #17");
+  test::expect_contains(g.out.str(), std::format("C #{}", deep_id));
   g.set_god(false);
 
   g.out.str("");
@@ -357,7 +363,7 @@ void test_orbit_space_mirror_aiming() {
 
   // Space Mirror direction projection
   const auto mirror_id =
-      TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR, 4)
+      TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR)
           .owned_by(1)
           .named("SolarMirror")
           .with_alive(true)

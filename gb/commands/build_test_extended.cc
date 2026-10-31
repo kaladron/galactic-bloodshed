@@ -238,15 +238,14 @@ void test_insufficient_hanger_space() {
   BuildTestFixture fixture;
 
   // Create a small ship with limited hanger space
-  shipnum_t builder_num =
-      TestShipBuilder(fixture.em, ShipType::STYPE_HABITAT, 1)
-          .owned_by(1, 1)
-          .in_star_orbit(fixture.star_id)
-          .with_resource(10000)
-          .with_max_hanger(1)
-          .with_hanger(1)
-          .with_crew(100, 0)
-          .build();
+  shipnum_t builder_num = TestShipBuilder(fixture.em, ShipType::STYPE_HABITAT)
+                              .owned_by(1, 1)
+                              .in_star_orbit(fixture.star_id)
+                              .with_resource(10000)
+                              .with_max_hanger(1)
+                              .with_hanger(1)
+                              .with_crew(100, 0)
+                              .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(fixture.em, registry);
@@ -265,15 +264,14 @@ void test_ship_build_error_paths() {
   GameObj g(fixture.em, registry);
 
   // 1. Unlanded factory cannot build
-  shipnum_t factory_id =
-      TestShipBuilder(fixture.em, ShipType::OTYPE_FACTORY, 10)
-          .owned_by(1, 1)
-          .in_star_orbit(fixture.star_id)
-          .with_resource(1000)
-          .with_crew(100, 0)
-          .with_on(true)
-          .with_build_type(ShipType::OTYPE_PROBE)
-          .build();
+  shipnum_t factory_id = TestShipBuilder(fixture.em, ShipType::OTYPE_FACTORY)
+                             .owned_by(1, 1)
+                             .in_star_orbit(fixture.star_id)
+                             .with_resource(1000)
+                             .with_crew(100, 0)
+                             .with_on(true)
+                             .with_build_type(ShipType::OTYPE_PROBE)
+                             .build();
 
   fixture.init_game_obj(g, ScopeLevel::LEVEL_SHIP, factory_id);
   g.out.str("");
@@ -282,7 +280,7 @@ void test_ship_build_error_paths() {
 
   // 2. Landed shuttle cannot build
   shipnum_t shuttle_id =
-      TestShipBuilder(fixture.em, ShipType::STYPE_SHUTTLE, 11)
+      TestShipBuilder(fixture.em, ShipType::STYPE_SHUTTLE)
           .owned_by(1, 1)
           .landed_on(fixture.star_id, fixture.planet_id, {5, 5})
           .with_resource(1000)
@@ -295,7 +293,7 @@ void test_ship_build_error_paths() {
   test::expect_contains(g.out.str(), "This ships cannot build when landed.");
 
   // 3. Habitat ship build with autoload enabled and low tech error
-  shipnum_t hab_id = TestShipBuilder(fixture.em, ShipType::STYPE_HABITAT, 12)
+  shipnum_t hab_id = TestShipBuilder(fixture.em, ShipType::STYPE_HABITAT)
                          .owned_by(1, 1)
                          .in_star_orbit(fixture.star_id)
                          .with_resource(50000)
@@ -440,7 +438,7 @@ void test_planet_and_factory_mcdc_branches() {
 
   // 3. Factory validation and execution branches
   shipnum_t undesignated_fac =
-      TestShipBuilder(fixture.em, ShipType::OTYPE_FACTORY, 20)
+      TestShipBuilder(fixture.em, ShipType::OTYPE_FACTORY)
           .owned_by(1, 1)
           .landed_on(fixture.star_id, fixture.planet_id, {5, 5})
           .with_resource(1000)
@@ -467,7 +465,7 @@ void test_planet_and_factory_mcdc_branches() {
 
   // Designated factory: tech check, planet check, sector check, resource check,
   // AP check, and autoloading
-  shipnum_t fac_id = TestShipBuilder(fixture.em, ShipType::OTYPE_FACTORY, 21)
+  shipnum_t fac_id = TestShipBuilder(fixture.em, ShipType::OTYPE_FACTORY)
                          .owned_by(1, 1)
                          .landed_on(fixture.star_id, fixture.planet_id, {5, 5})
                          .with_resource(1000)
@@ -554,7 +552,7 @@ void test_non_factory_ship_mcdc_and_hangar_accounting() {
 
   // 1. Cargo ship landed vs in orbit
   shipnum_t cargo_landed =
-      TestShipBuilder(fixture.em, ShipType::STYPE_CARGO, 30)
+      TestShipBuilder(fixture.em, ShipType::STYPE_CARGO)
           .owned_by(1, 1)
           .landed_on(fixture.star_id, fixture.planet_id, {5, 5})
           .with_resource(50000)
@@ -567,7 +565,7 @@ void test_non_factory_ship_mcdc_and_hangar_accounting() {
 
   // 2. Non-factory ship validation errors: missing arg, invalid type, cannot
   // build on ship, zero count (3 args and 4 args)
-  shipnum_t hab_id = TestShipBuilder(fixture.em, ShipType::STYPE_HABITAT, 31)
+  shipnum_t hab_id = TestShipBuilder(fixture.em, ShipType::STYPE_HABITAT)
                          .owned_by(1, 1)
                          .in_star_orbit(fixture.star_id)
                          .with_resource(50000)
@@ -612,7 +610,7 @@ void test_non_factory_ship_mcdc_and_hangar_accounting() {
   test::expect_contains(g.out.str(), "You don't have 1 action points there.\n");
   fixture.em.mutate_star(fixture.star_id, [](Star& s) { s.AP(1) = 50; });
 
-  shipnum_t univ_hab = TestShipBuilder(fixture.em, ShipType::STYPE_HABITAT, 32)
+  shipnum_t univ_hab = TestShipBuilder(fixture.em, ShipType::STYPE_HABITAT)
                            .owned_by(1, 1)
                            .in_deep_space()
                            .with_resource(50000)
@@ -629,7 +627,7 @@ void test_non_factory_ship_mcdc_and_hangar_accounting() {
   // 4. Hangar space accounting across multi-ship build loop
   const auto probe_size =
       getship(ShipType::OTYPE_PROBE, *fixture.em.peek_race(1))->size();
-  shipnum_t tight_hab = TestShipBuilder(fixture.em, ShipType::STYPE_HABITAT, 33)
+  shipnum_t tight_hab = TestShipBuilder(fixture.em, ShipType::STYPE_HABITAT)
                             .owned_by(1, 1)
                             .in_star_orbit(fixture.star_id)
                             .with_resource(50000)

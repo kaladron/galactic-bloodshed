@@ -376,10 +376,10 @@ void test_prompt_json_mode() {
   ctx.em.mutate_universe([](Universe& u) { u.set_AP(player_t{1}, ap_t{42}); });
   ctx.em.mutate_star(1, [](Star& star) { star.AP(player_t{1}) = ap_t{17}; });
 
-  TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE, 10)
-      .owned_by(1, 1)
-      .in_planet_orbit(1, 1)
-      .build();
+  const auto ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
+                           .owned_by(1, 1)
+                           .in_planet_orbit(1, 1)
+                           .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -410,11 +410,12 @@ void test_prompt_json_mode() {
   test::expect_contains(out, "\"path\":\"/Sol/Earth\"");
 
   g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(10);
+  g.set_shipno(ship_id);
   out = do_prompt(g);
   test::expect_contains(out, "\"level\":3");
-  test::expect_contains(out, "\"ship\":\"#10\"");
-  test::expect_contains(out, "\"path\":\"/Sol/Earth/#10\"");
+  test::expect_contains(out, std::format("\"ship\":\"#{}\"", ship_id));
+  test::expect_contains(out,
+                        std::format("\"path\":\"/Sol/Earth/#{}\"", ship_id));
 
   ctx.verify_universe_invariants();
 }

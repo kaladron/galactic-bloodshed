@@ -11,7 +11,7 @@ import std;
 
 namespace {
 
-void setup_test_world(TestContext& ctx) {
+shipnum_t setup_test_world(TestContext& ctx) {
   TestWorldBuilder(ctx)
       .add_race("Explorers", 60.0, false, player_t{1})
       .add_race("Aliens", 50.0, false, player_t{2});
@@ -56,7 +56,7 @@ void setup_test_world(TestContext& ctx) {
       .with_stability(20)
       .build();
 
-  TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER, shipnum_t{1})
+  return TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
       .owned_by(player_t{1}, governor_t{1})
       .in_star_orbit(starnum_t{1})
       .build();
@@ -64,7 +64,7 @@ void setup_test_world(TestContext& ctx) {
 
 void test_explore_dispatch() {
   TestContext ctx;
-  setup_test_world(ctx);
+  const auto ship_id = setup_test_world(ctx);
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -111,8 +111,8 @@ void test_explore_dispatch() {
   ctx.assert_dispatch_rejected(g, {"explore", "/"});
   test::expect_contains(g.out.str(), "Bad scope '/'");
 
-  ctx.assert_dispatch_rejected(g, {"explore", "#1"});
-  test::expect_contains(g.out.str(), "Bad scope '#1'");
+  ctx.assert_dispatch_rejected(g, {"explore", std::format("#{}", ship_id)});
+  test::expect_contains(g.out.str(), std::format("Bad scope '#{}'", ship_id));
   std::println(std::cout, "    ✓ explore rejected invalid scopes");
 }
 

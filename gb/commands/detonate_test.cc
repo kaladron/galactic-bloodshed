@@ -108,11 +108,12 @@ void test_detonate_domain_errors() {
   test::expect_contains(g.out.str(), "You don't own ship #2.");
 
   // 2b. Owned ship is not a mine
-  TestShipBuilder(ctx.em, ShipType::STYPE_CARGO, 3)
-      .owned_by(1, 1)
-      .in_star_orbit(1)
-      .build();
-  ctx.assert_dispatch_rejected(g, {"detonate", "#3"});
+  const auto non_mine_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
+                               .owned_by(1, 1)
+                               .in_star_orbit(1)
+                               .build();
+  ctx.assert_dispatch_rejected(g,
+                               {"detonate", std::format("#{}", non_mine_id)});
 
   // 3. Mine is not activated (on = false)
   ctx.em.mutate_ship(1, [](Ship& s) { s.on() = false; });

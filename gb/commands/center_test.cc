@@ -77,13 +77,13 @@ void test_center_domain_errors() {
   ctx.assert_dispatch_rejected(g, {"center", "/Sol", "extra"});
   test::expect_contains(g.out.str(), "center: which star?");
 
-  // 3. Ship scope rejection (Ship #100 is Player 1 Government Center)
-  TestShipBuilder(ctx.em, ShipType::OTYPE_GOV, 100)
-      .owned_by(1, 1)
-      .landed_on(1, 1, Coordinates{0, 0})
-      .build();
+  // 3. Ship scope rejection (Player 1 Government Center)
+  const auto gov_id = TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
+                          .owned_by(1, 1)
+                          .landed_on(1, 1, Coordinates{0, 0})
+                          .build();
   g.out.str("");
-  ctx.assert_dispatch_rejected(g, {"center", "#100"});
+  ctx.assert_dispatch_rejected(g, {"center", std::format("#{}", gov_id)});
   test::expect_contains(g.out.str(), "CHEATER!!!");
 
   // 4. Universe scope rejection

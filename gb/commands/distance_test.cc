@@ -12,7 +12,13 @@ import std;
 
 namespace {
 
-void setup_distance_ships(TestContext& ctx) {
+struct DistanceShips {
+  shipnum_t ship1;
+  shipnum_t ship2;
+  shipnum_t ship3;
+};
+
+DistanceShips setup_distance_ships(TestContext& ctx) {
   ctx.with_standard_universe();
 
   // Set Earth to (60, 80) system coordinates for standard 3-4-5 Pythagorean
@@ -22,27 +28,32 @@ void setup_distance_ships(TestContext& ctx) {
   });
 
   // Ship 1: Player 1 at (0, 0)
-  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 1)
-      .owned_by(1, 1)
-      .in_star_orbit(1, UniverseCoordinates{0.0, 0.0})
-      .build();
+  const auto s1 = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                      .owned_by(1, 1)
+                      .in_star_orbit(1, UniverseCoordinates{0.0, 0.0})
+                      .build();
 
   // Ship 2: Player 1 at (30, 40) -> distance to ship 1 should be 50
-  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 2)
-      .owned_by(1, 1)
-      .in_star_orbit(1, UniverseCoordinates{30.0, 40.0})
-      .build();
+  const auto s2 = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                      .owned_by(1, 1)
+                      .in_star_orbit(1, UniverseCoordinates{30.0, 40.0})
+                      .build();
 
   // Ship 3: Player 2 (enemy)
-  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 3)
-      .owned_by(2, 1)
-      .in_star_orbit(1, UniverseCoordinates{100.0, 100.0})
-      .build();
+  const auto s3 = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                      .owned_by(2, 1)
+                      .in_star_orbit(1, UniverseCoordinates{100.0, 100.0})
+                      .build();
+
+  return {s1, s2, s3};
 }
 
 void test_distance_dispatch() {
   TestContext ctx;
-  setup_distance_ships(ctx);
+  const auto [ship1, ship2, ship3] = setup_distance_ships(ctx);
+  const std::string s1_arg = std::format("#{}", ship1);
+  const std::string s2_arg = std::format("#{}", ship2);
+  const std::string s3_arg = std::format("#{}", ship3);
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -69,7 +80,7 @@ void test_distance_dispatch() {
 
   // 4. Happy path: distance between two ships (0,0) and (30,40) -> 50
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"distance", "#1", "#2"});
+  ctx.assert_dispatch_success(g, {"distance", s1_arg, s2_arg});
   test::expect_contains(g.out.str(), "Distance = 50");
   std::println(std::cout, "    ✓ distance between ships calculated accurately");
 
@@ -83,7 +94,7 @@ void test_distance_dispatch() {
 
   // 6. Happy path: distance from planet to ship (60,80) to (0,0) -> 100
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"distance", "/Sol/Earth", "#1"});
+  ctx.assert_dispatch_success(g, {"distance", "/Sol/Earth", s1_arg});
   test::expect_contains(g.out.str(), "Distance = 100");
   std::println(std::cout,
                "    ✓ distance from planet to ship calculated accurately");
@@ -99,14 +110,14 @@ void test_distance_dispatch() {
 
   // 8. Happy path: distance from ship to planet (30,40) to (60,80) -> 50
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"distance", "#2", "/Sol/Earth"});
+  ctx.assert_dispatch_success(g, {"distance", s2_arg, "/Sol/Earth"});
   test::expect_contains(g.out.str(), "Distance = 50");
   std::println(std::cout,
                "    ✓ distance from ship to planet calculated accurately");
 
   // 9. Domain error: Foreign ship probe rejected when foreign ship is <to>
   g.out.str("");
-  ctx.assert_dispatch_rejected(g, {"distance", "#1", "#3"});
+  ctx.assert_dispatch_rejected(g, {"distance", s1_arg, s3_arg});
   test::expect_contains(g.out.str(), "Nice try");
   std::println(
       std::cout,
@@ -114,7 +125,7 @@ void test_distance_dispatch() {
 
   // 10. Domain error: Foreign ship probe rejected when foreign ship is <from>
   g.out.str("");
-  ctx.assert_dispatch_rejected(g, {"distance", "#3", "#1"});
+  ctx.assert_dispatch_rejected(g, {"distance", s3_arg, s1_arg});
   test::expect_contains(g.out.str(), "Nice try");
   std::println(std::cout,
                "    ✓ distance rejected query when foreign ship is origin");

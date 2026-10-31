@@ -16,11 +16,10 @@ import gb.services;
 import gb.repositories;
 import std;
 
-void TestShipBuilder::init(ShipType type,
-                           std::optional<shipnum_t> explicit_number) {
+void TestShipBuilder::init(ShipType type) {
   auto ship = ShipFactory::create_from_template(type, 1);
   ship_ = ship->to_struct();
-  ship_.number = explicit_number.value_or(0);
+  ship_.number = 0;
   ship_.on = true;
   ship_.tech = 100.0;
   ship_.fuel = ship_.max_fuel;
@@ -34,10 +33,8 @@ void TestShipBuilder::init(ShipType type,
   ship_.mass = temp_ship.local_mass(1.0);
 }
 
-TestShipBuilder::TestShipBuilder(EntityManager& em, ShipType type,
-                                 std::optional<shipnum_t> explicit_number)
-    : em_(em) {
-  init(type, explicit_number);
+TestShipBuilder::TestShipBuilder(EntityManager& em, ShipType type) : em_(em) {
+  init(type);
 }
 
 TestShipBuilder& TestShipBuilder::owned_by(player_t owner, governor_t gov) {

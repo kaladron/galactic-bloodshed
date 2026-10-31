@@ -130,16 +130,16 @@ void test_check_connect_success_and_clamping() {
   TestContext ctx;
   ctx.with_standard_universe();
 
-  TestShipBuilder(ctx.em, ShipType::OTYPE_GOV, 42)
-      .owned_by(1, 1)
-      .landed_on(1, 1, {0, 0})
-      .build();
+  const auto gov_id = TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
+                          .owned_by(1, 1)
+                          .landed_on(1, 1, {0, 0})
+                          .build();
 
-  ctx.em.mutate_race(1, [](Race& race) {
+  ctx.em.mutate_race(1, [&](Race& race) {
     race.name = "TestRace";
     race.password = "raceword";
     race.morale = 100;
-    race.Gov_ship = 42;
+    race.Gov_ship = gov_id;
     race.leader().name = "Gov1";
     race.leader().password = "govword";
     race.leader().deflevel = ScopeLevel::LEVEL_PLAN;
@@ -169,7 +169,8 @@ void test_check_connect_success_and_clamping() {
   // Verify login output
   std::string_view output = session->pending_output();
   test::expect_contains(output, "TestRace \"Gov1\" [1,1] logged on.");
-  test::expect_contains(output, "Government Center #42 is active.");
+  test::expect_contains(
+      output, std::format("Government Center #{} is active.", gov_id));
   test::expect_contains(output, "Morale: 100");
   test::expect_contains(output, "You have:");
 

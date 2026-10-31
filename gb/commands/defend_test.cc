@@ -40,7 +40,7 @@ void setup_test_world(TestContext& ctx) {
   });
 
   // Create first attacking enemy ship in planet orbit
-  TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY, 1)
+  TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
       .owned_by(2, 1)
       .named("Factory")
       .in_planet_orbit(1, 1)
@@ -48,7 +48,7 @@ void setup_test_world(TestContext& ctx) {
       .build();
 
   // Create second attacking enemy ship in planet orbit
-  TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY, 2)
+  TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
       .owned_by(2, 1)
       .named("Cargo")
       .in_planet_orbit(1, 1)

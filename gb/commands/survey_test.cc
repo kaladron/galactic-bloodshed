@@ -116,10 +116,10 @@ void test_survey_sectors_json_and_landed_ships() {
     r.appoint_governor(2);
     r.appoint_governor(3);
   });
-  TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE, 42)
-      .owned_by(1, 3)
-      .landed_on(2, 1, {0, 0})
-      .build();
+  const auto probe_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
+                            .owned_by(1, 3)
+                            .landed_on(2, 1, {0, 0})
+                            .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -135,14 +135,15 @@ void test_survey_sectors_json_and_landed_ships() {
   test::expect_contains(unauthorized_json, R"("type":"survey_sectors")");
   test::expect_contains(unauthorized_json, R"("ships":[]})");
 
-  // Governor 1 (leader) is authorized for all governors' ships -> sees #42
+  // Governor 1 (leader) is authorized for all governors' ships -> sees probe
   g.out.str("");
   g.out.clear();
   g.set_governor(1);
   ctx.assert_dispatch_success(g, {"survey", "-"});
   std::string authorized_json = g.out.str();
   test::expect_contains(authorized_json, R"("type":"survey_sectors")");
-  test::expect_contains(authorized_json, R"("shipno":42)");
+  test::expect_contains(authorized_json,
+                        std::format(R"("shipno":{})", probe_id));
   std::println(std::cout,
                "    ✓ JSON sector survey and ship authorization verified");
 }
@@ -200,7 +201,7 @@ void test_survey_location_and_scope_errors() {
   TestContext ctx;
   setup_test_world(ctx);
 
-  TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE, 10)
+  TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
       .owned_by(1, 1)
       .in_planet_orbit(1, 1)
       .build();
@@ -272,13 +273,12 @@ void test_survey_sector_presence_crystals_and_cloaking() {
   setup_test_world(ctx);
 
   // Planet (2, 1): player 1 owns 0 sectors initially.
-  // Place foreign ship (#50) and sightless ship (#51, canister) on planet (2,
-  // 1).
-  TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE, 50)
+  // Place foreign ship and sightless ship (canister) on planet (2, 1).
+  TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
       .owned_by(2, 1)
       .landed_on(2, 1, {0, 0})
       .build();
-  TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST, 51)
+  TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST)
       .owned_by(1, 1)
       .landed_on(2, 1, {0, 0})
       .build();
@@ -296,19 +296,20 @@ void test_survey_sector_presence_crystals_and_cloaking() {
   ctx.assert_dispatch_success(g, {"survey", "0:0,0:0"});
   test::expect_contains(g.out.str(), R"("ships":[]})");
 
-  // Add an orbiting probe (#53) owned by (1, 1): grants planetary presence
+  // Add an orbiting probe owned by (1, 1): grants planetary presence
   // via has_sight() while being skipped by !is_landed() in sector ship list
-  TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE, 53)
+  TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
       .owned_by(1, 1)
       .in_planet_orbit(2, 1)
       .build();
 
   // Add 11 landed probes on (0, 0) to exercise MAX_SHIPS_PER_SECTOR (10) cap
-  for (shipnum_t num = 60; num <= 70; ++num) {
-    TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE, num)
-        .owned_by(1, 1)
-        .landed_on(2, 1, {0, 0})
-        .build();
+  shipnum_t last_probe_id = 0;
+  for (int i = 0; i < 11; ++i) {
+    last_probe_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
+                        .owned_by(1, 1)
+                        .landed_on(2, 1, {0, 0})
+                        .build();
   }
 
   // Add crystals to sector (0, 0) on planet (1, 1)
@@ -363,7 +364,8 @@ void test_survey_sector_presence_crystals_and_cloaking() {
   g.out.str("");
   g.out.clear();
   ctx.assert_dispatch_success(g, {"survey", "0:0,0:0"});
-  test::expect_false(g.out.str().contains(R"("shipno":70)"));
+  test::expect_false(
+      g.out.str().contains(std::format(R"("shipno":{})", last_probe_id)));
 
   // Cloaked sector rendering branch in render_survey_sectors
   GB::presentation::SurveySectorViewModel cloaked_vm{

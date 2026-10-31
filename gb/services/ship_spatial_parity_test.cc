@@ -33,30 +33,30 @@ void test_star_spatial_parity(TestContext& ctx) {
   ShipRepository ships_repo(store);
 
   // Star 1 already exists in with_standard_universe(); add ships in orbit
-  TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE, 1)
-      .owned_by(1)
-      .in_star_orbit(1)
-      .with_alive(true)
-      .build();
+  const auto s1 = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
+                      .owned_by(1)
+                      .in_star_orbit(1)
+                      .with_alive(true)
+                      .build();
 
-  TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE, 2)
-      .owned_by(1)
-      .in_star_orbit(1)
-      .with_alive(true)
-      .build();
-  ctx.em.mutate_ship(2, [&](Ship& s) { ctx.em.kill_ship(1, s); });
+  const auto s2 = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
+                      .owned_by(1)
+                      .in_star_orbit(1)
+                      .with_alive(true)
+                      .build();
+  ctx.em.mutate_ship(s2, [&](Ship& s) { ctx.em.kill_ship(1, s); });
 
-  TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE, 3)
-      .owned_by(2)
-      .in_star_orbit(1)
-      .with_alive(true)
-      .build();
+  const auto s3 = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
+                      .owned_by(2)
+                      .in_star_orbit(1)
+                      .with_alive(true)
+                      .build();
 
   // 1. Query via ShipRepository indexed spatial queries
   auto indexed_alive = ships_repo.find_in_star(starnum_t{1});
 
   test::expect_eq(indexed_alive.size(), 2);
-  test::expect_eq(indexed_alive, (std::vector<shipnum_t>{1, 3}));
+  test::expect_eq(indexed_alive, (std::vector<shipnum_t>{s1, s3}));
 
   // 2. Query via ShipList::readonly_in_star
   std::vector<shipnum_t> shiplist_in_star_alive;
@@ -96,32 +96,32 @@ void test_planet_spatial_parity(TestContext& ctx) {
   ShipRepository ships_repo(store);
 
   // Planet (Star 1, Planet 1) already exists in with_standard_universe()
-  TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE, 10)
-      .owned_by(1)
-      .in_planet_orbit(1, 1)
-      .with_alive(true)
-      .build();
+  const auto p1 = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
+                      .owned_by(1)
+                      .in_planet_orbit(1, 1)
+                      .with_alive(true)
+                      .build();
 
-  TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE, 11)
-      .owned_by(1)
-      .in_planet_orbit(1, 1)
-      .with_alive(true)
-      .build();
+  const auto p2 = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
+                      .owned_by(1)
+                      .in_planet_orbit(1, 1)
+                      .with_alive(true)
+                      .build();
 
   // Destroyed ship on same planet (should be excluded)
-  TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE, 12)
-      .owned_by(1)
-      .in_planet_orbit(1, 1)
-      .with_alive(true)
-      .build();
-  ctx.em.mutate_ship(12, [&](Ship& s) { ctx.em.kill_ship(1, s); });
+  const auto p3 = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
+                      .owned_by(1)
+                      .in_planet_orbit(1, 1)
+                      .with_alive(true)
+                      .build();
+  ctx.em.mutate_ship(p3, [&](Ship& s) { ctx.em.kill_ship(1, s); });
 
   // 1. Query via ShipRepository indexed spatial query
   auto indexed_alive = ships_repo.find_on_planet(starnum_t{1}, planetnum_t{1});
 
   // 2. Verify results
   test::expect_eq(indexed_alive.size(), 2);
-  test::expect_eq(indexed_alive, (std::vector<shipnum_t>{10, 11}));
+  test::expect_eq(indexed_alive, (std::vector<shipnum_t>{p1, p2}));
 
   // 3. Query via ShipList::readonly_on_planet
   std::vector<shipnum_t> shiplist_on_planet;
@@ -155,42 +155,42 @@ void test_hangar_docked_parity(TestContext& ctx) {
   JsonStore store(ctx.db);
   ShipRepository ships_repo(store);
 
-  // Carrier ship 20 contains docked fighters s21 and s22
-  TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER, 20)
-      .owned_by(1)
-      .in_star_orbit(1)
-      .with_alive(true)
-      .build();
+  // Carrier ship contains docked fighters
+  const auto carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
+                              .owned_by(1)
+                              .in_star_orbit(1)
+                              .with_alive(true)
+                              .build();
 
-  TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER, 21)
-      .owned_by(1)
-      .docked_to(20, 1)
-      .with_alive(true)
-      .build();
+  const auto f1_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+                         .owned_by(1)
+                         .docked_to(carrier_id, 1)
+                         .with_alive(true)
+                         .build();
 
-  TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER, 22)
-      .owned_by(1)
-      .docked_to(20, 1)
-      .with_alive(true)
-      .build();
+  const auto f2_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+                         .owned_by(1)
+                         .docked_to(carrier_id, 1)
+                         .with_alive(true)
+                         .build();
 
   // 1. Query via ShipRepository indexed hangar query
-  auto indexed_hangar = ships_repo.find_in_hangar(shipnum_t{20});
+  auto indexed_hangar = ships_repo.find_in_hangar(carrier_id);
 
   // 2. Verify results
   test::expect_eq(indexed_hangar.size(), 2);
-  test::expect_eq(indexed_hangar, (std::vector<shipnum_t>{21, 22}));
+  test::expect_eq(indexed_hangar, (std::vector<shipnum_t>{f1_id, f2_id}));
 
   // 3. Verify ShipList::readonly_in_carrier
   std::vector<shipnum_t> shiplist_carrier;
-  for (const Ship& s : ShipList::readonly_in_carrier(ctx.em, shipnum_t{20})) {
+  for (const Ship& s : ShipList::readonly_in_carrier(ctx.em, carrier_id)) {
     shiplist_carrier.push_back(s.number());
   }
   test::expect_eq(indexed_hangar, shiplist_carrier);
 
   // 4. Verify ShipList::in_carrier (mutable)
   std::vector<shipnum_t> shiplist_carrier_mutable;
-  for (auto handle : ShipList::in_carrier(ctx.em, shipnum_t{20})) {
+  for (auto handle : ShipList::in_carrier(ctx.em, carrier_id)) {
     shiplist_carrier_mutable.push_back(handle->number());
   }
   test::expect_eq(indexed_hangar, shiplist_carrier_mutable);

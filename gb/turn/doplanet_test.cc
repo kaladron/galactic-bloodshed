@@ -852,7 +852,7 @@ void test_process_quarry_turn() {
   smap.get(Coordinates{3, 3}).set_condition(SectorType::SEC_LAND);
   smap.get(Coordinates{3, 3}).set_fert(50);
 
-  auto ship_handle = TestShipBuilder(em, ShipType::OTYPE_QUARRY, 42)
+  auto ship_handle = TestShipBuilder(em, ShipType::OTYPE_QUARRY)
                          .owned_by(1)
                          .with_fuel(50.0)
                          .with_max_fuel(100.0)
@@ -918,7 +918,7 @@ void test_process_weapon_plant_turn() {
   PlanetRepository planets(store);
   planets.save(planet);
 
-  auto ship_handle = TestShipBuilder(em, ShipType::OTYPE_WPLANT, 99)
+  auto ship_handle = TestShipBuilder(em, ShipType::OTYPE_WPLANT)
                          .owned_by(1)
                          .with_fuel(50.0)
                          .with_max_fuel(100.0)

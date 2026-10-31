@@ -14,23 +14,23 @@ void test_fix_ship_fuel_persistence() {
   TestContext ctx;
   ctx.with_standard_universe();
 
-  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 1)
-      .owned_by(1, 1)
-      .with_max_fuel(200.0)
-      .with_fuel(50.0)
-      .build();
+  const auto ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                           .owned_by(1, 1)
+                           .with_max_fuel(200.0)
+                           .with_fuel(50.0)
+                           .build();
 
   ctx.em.clear_cache();
   {
-    const auto* s = ctx.em.peek_ship(1);
+    const auto* s = ctx.em.peek_ship(ship_id);
     test::expect_ne(s, nullptr);
     test::expect_eq(s->fuel(), 50.0);
   }
 
-  ctx.em.mutate_ship(1, [](Ship& s) { s.admin_override_fuel(200.0); });
+  ctx.em.mutate_ship(ship_id, [](Ship& s) { s.admin_override_fuel(200.0); });
 
   ctx.em.clear_cache();
-  const auto* final_ship = ctx.em.peek_ship(1);
+  const auto* final_ship = ctx.em.peek_ship(ship_id);
   test::expect_ne(final_ship, nullptr);
   test::expect_eq(final_ship->fuel(), 200.0);
 
@@ -42,22 +42,22 @@ void test_fix_ship_damage_persistence() {
   TestContext ctx;
   ctx.with_standard_universe();
 
-  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 1)
-      .owned_by(1, 1)
-      .with_damage(75)
-      .build();
+  const auto ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                           .owned_by(1, 1)
+                           .with_damage(75)
+                           .build();
 
   ctx.em.clear_cache();
   {
-    const auto* s = ctx.em.peek_ship(1);
+    const auto* s = ctx.em.peek_ship(ship_id);
     test::expect_ne(s, nullptr);
     test::expect_eq(s->damage(), 75);
   }
 
-  ctx.em.mutate_ship(1, [](Ship& s) { s.admin_override_damage(0); });
+  ctx.em.mutate_ship(ship_id, [](Ship& s) { s.admin_override_damage(0); });
 
   ctx.em.clear_cache();
-  const auto* final_ship = ctx.em.peek_ship(1);
+  const auto* final_ship = ctx.em.peek_ship(ship_id);
   test::expect_ne(final_ship, nullptr);
   test::expect_eq(final_ship->damage(), 0);
 
@@ -69,17 +69,18 @@ void test_fix_ship_dead_persistence() {
   TestContext ctx;
   ctx.with_standard_universe();
 
-  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 1).owned_by(1, 1).build();
+  const auto ship_id =
+      TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE).owned_by(1, 1).build();
 
   ctx.em.clear_cache();
   {
-    const auto* s = ctx.em.peek_ship(1);
+    const auto* s = ctx.em.peek_ship(ship_id);
     test::expect_ne(s, nullptr);
     test::expect_true(s->alive());
     test::expect_eq(s->damage(), 0);
   }
 
-  ctx.em.mutate_ship(1, [&](Ship& s) {
+  ctx.em.mutate_ship(ship_id, [&](Ship& s) {
     s.admin_destroy();
     ctx.em.kill_ship(1, s);
   });
@@ -169,11 +170,11 @@ void test_fix_command_dispatch() {
   ctx.em.mutate_planet(1, 1, [](Planet& p) { p.temp() = 50; });
 
   // Create ship
-  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 1)
-      .owned_by(1, 1)
-      .with_max_fuel(200.0)
-      .with_fuel(50.0)
-      .build();
+  const auto ship1_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                            .owned_by(1, 1)
+                            .with_max_fuel(200.0)
+                            .with_fuel(50.0)
+                            .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -197,7 +198,7 @@ void test_fix_command_dispatch() {
 
   // 3. Deity happy path - ship fix and read-only inspection
   g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(1);
+  g.set_shipno(ship1_id);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"fix", "ship", "fuel", "200"});
   test::expect_contains(g.out.str(), "fuel = 200");
@@ -321,12 +322,14 @@ void test_fix_command_dispatch() {
   ctx.assert_dispatch_success(g, {"fix", "ship", "dead"});
   test::expect_contains(g.out.str(), "\"type\":\"fix\"");
   test::expect_contains(g.out.str(), "\"ship_destroyed\":true");
-  test::expect_throws<EntityNotFoundError>([&]() { ctx.em.peek_ship(1); });
+  test::expect_throws<EntityNotFoundError>(
+      [&]() { ctx.em.peek_ship(ship1_id); });
 
   // Also verify ASCII "destroyed" output on a second ship
   g.set_ui_mode(UiMode::ASCII);
-  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE, 2).owned_by(1, 1).build();
-  g.set_shipno(2);
+  const auto ship2_id =
+      TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE).owned_by(1, 1).build();
+  g.set_shipno(ship2_id);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"fix", "ship", "dead"});
   test::expect_contains(g.out.str(), "destroyed");

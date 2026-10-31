@@ -104,12 +104,15 @@ void test_validate_commandable() {
     r.appoint_governor(3);
   });
 
-  const auto ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER, 42)
+  const auto ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)
                            .owned_by(1, 2)
                            .named("Valkyrie")
                            .in_star_orbit(1)
                            .build();
   const Ship& base_ship = *ctx.em.peek_ship(ship_id);
+
+  const std::string not_owner_msg =
+      std::format("You don't own ship #{}.", ship_id);
 
   struct Case {
     std::string_view label;
@@ -119,23 +122,20 @@ void test_validate_commandable() {
     bool alive;
     bool active;
     std::optional<CommandableError> expected_error;
-    std::string_view expected_output;
+    std::string expected_output;
   };
 
   const std::array<Case, 9> cases{{
       {"assigned governor succeeds", 1, 2, false, true, true, std::nullopt, ""},
       {"race leader succeeds", 1, 1, false, true, true, std::nullopt, ""},
       {"wrong player fails NotOwner", 2, 1, false, true, true,
-       CommandableError::NotOwner, "You don't own ship #42."},
+       CommandableError::NotOwner, not_owner_msg},
       {"unauthorized governor fails NotAuthorizedGovernor", 1, 3, false, true,
-       true, CommandableError::NotAuthorizedGovernor,
-       "You don't own ship #42."},
+       true, CommandableError::NotAuthorizedGovernor, not_owner_msg},
       {"foreign dead ship fails NotOwner without leaking ship name", 2, 1,
-       false, false, false, CommandableError::NotOwner,
-       "You don't own ship #42."},
+       false, false, false, CommandableError::NotOwner, not_owner_msg},
       {"unauthorized dead ship fails NotAuthorizedGovernor", 1, 3, false, false,
-       false, CommandableError::NotAuthorizedGovernor,
-       "You don't own ship #42."},
+       false, CommandableError::NotAuthorizedGovernor, not_owner_msg},
       {"owned dead ship fails ShipDead before ShipIrradiated", 1, 2, false,
        false, false, CommandableError::ShipDead, "has been destroyed."},
       {"owned irradiated ship fails ShipIrradiated", 1, 2, false, true, false,

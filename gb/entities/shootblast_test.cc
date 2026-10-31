@@ -329,7 +329,7 @@ void test_shoot_ship_to_ship_and_cew_caliber() {
   TestContext ctx;
   ctx.with_standard_universe();
 
-  auto attacker_h = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER, 1)
+  auto attacker_h = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)
                         .owned_by(1, 1)
                         .named("Attacker")
                         .in_star_orbit(1, SystemCoordinates{10.0, 10.0})
@@ -342,7 +342,7 @@ void test_shoot_ship_to_ship_and_cew_caliber() {
   attacker.cew() = 20;
   attacker.cew_range() = 50;
 
-  auto target_h = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER, 2)
+  auto target_h = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
                       .owned_by(2, 1)
                       .named("Target")
                       .in_star_orbit(1, SystemCoordinates{12.0, 10.0})
@@ -371,12 +371,12 @@ void test_shoot_ship_to_ship_and_cew_caliber() {
       shoot_ship_to_ship(ctx.em, attacker, target, 10, 2, false).has_value());
   target.alive() = true;
 
-  attacker.dock_into_carrier(shipnum_t{2});
+  attacker.dock_into_carrier(target.number());
   test::expect_false(
       shoot_ship_to_ship(ctx.em, attacker, target, 10, 2, false).has_value());
   attacker.enter_star_orbit(1);
 
-  target.dock_into_carrier(shipnum_t{1});
+  target.dock_into_carrier(attacker.number());
   test::expect_false(
       shoot_ship_to_ship(ctx.em, attacker, target, 10, 2, false).has_value());
   target.enter_deep_space();
@@ -447,7 +447,7 @@ void test_critical_hit_systems_and_mine_guards() {
   TestContext ctx;
   ctx.with_standard_universe();
 
-  auto attacker_h = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER, 1)
+  auto attacker_h = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)
                         .owned_by(1, 1)
                         .in_star_orbit(1, SystemCoordinates{10.0, 10.0})
                         .with_size(100)
@@ -457,7 +457,7 @@ void test_critical_hit_systems_and_mine_guards() {
                         .build_handle();
   Ship& attacker = *attacker_h;
 
-  auto target_h = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER, 2)
+  auto target_h = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
                       .owned_by(2, 1)
                       .in_star_orbit(1, SystemCoordinates{10.0, 10.0})
                       .with_size(1)
@@ -469,7 +469,7 @@ void test_critical_hit_systems_and_mine_guards() {
   target.set_mass(10.0);
 
   auto crippled_attacker_h =
-      TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER, 5)
+      TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)
           .owned_by(1, 1)
           .in_star_orbit(1, SystemCoordinates{10.0, 10.0})
           .with_size(100)
@@ -507,7 +507,7 @@ void test_critical_hit_systems_and_mine_guards() {
   // 3. Mine proximity, greenhouse immunity, and domine guard clauses
   test::expect_false(check_mine_proximity_trigger(attacker, ctx.em));
 
-  auto mine_h = TestShipBuilder(ctx.em, ShipType::STYPE_MINE, 3)
+  auto mine_h = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
                     .owned_by(1, 1)
                     .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
                     .with_destruct(10)
@@ -520,7 +520,7 @@ void test_critical_hit_systems_and_mine_guards() {
   mine.enter_deep_space();
   test::expect_false(check_mine_proximity_trigger(mine, ctx.em));
   test::expect_false(domine(mine, true, ctx.em).has_value());
-  mine.dock_into_carrier(shipnum_t{1});
+  mine.dock_into_carrier(attacker.number());
   test::expect_false(check_mine_proximity_trigger(mine, ctx.em));
   test::expect_false(domine(mine, true, ctx.em).has_value());
   mine.enter_star_orbit(1);
@@ -532,7 +532,7 @@ void test_critical_hit_systems_and_mine_guards() {
   mine.alive() = true;
 
   // Greenhouse gas (OTYPE_GREEN) is immune to mine detonation against ships
-  TestShipBuilder(ctx.em, ShipType::OTYPE_GREEN, 4)
+  TestShipBuilder(ctx.em, ShipType::OTYPE_GREEN)
       .owned_by(2, 1)
       .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
       .build();

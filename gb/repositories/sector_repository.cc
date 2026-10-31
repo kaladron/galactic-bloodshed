@@ -110,13 +110,16 @@ SectorMap SectorRepository::load_map(const Planet& planet) {
   return smap;
 }
 
-bool SectorRepository::save_map(const SectorMap& map) {
-  bool all_saved = true;
-  for (auto [coord, sector] : map.indexed_dirty_sectors()) {
+bool SectorRepository::save_map(SectorMap& map,
+                                std::flat_set<Coordinates>* out_saved) {
+  bool success = true;
+  for (const auto& [coord, sector] : map.consume_dirty_sectors()) {
     if (!save_sector(sector, map.star_id(), map.planet_order(), coord.x,
                      coord.y)) {
-      all_saved = false;
+      success = false;
+    } else if (out_saved != nullptr) {
+      out_saved->insert(coord);
     }
   }
-  return all_saved;
+  return success;
 }

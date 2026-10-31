@@ -317,6 +317,7 @@ void test_sectormap_dirty_tracking_views_persistence(EntityManager& em,
     test::expect_eq(smap.dirty_count(), 1);
     test::expect_true(smap.is_dirty(Coordinates{1, 1}));
     sectors.save_map(smap);
+    test::expect_eq(smap.dirty_count(), 0);
   }
 
   em.clear_cache();
@@ -337,6 +338,7 @@ void test_sectormap_dirty_tracking_views_persistence(EntityManager& em,
 
     test::expect_gt(smap.dirty_count(), 0);
     sectors.save_map(smap);
+    test::expect_eq(smap.dirty_count(), 0);
   }
 
   {
@@ -357,11 +359,28 @@ void test_sectormap_dirty_tracking_views_persistence(EntityManager& em,
 
     test::expect_eq(smap.dirty_count(), 16);
     sectors.save_map(smap);
+    test::expect_eq(smap.dirty_count(), 0);
   }
 
   {
     SectorMap smap = sectors.load_map(test_planet);
     test::expect_eq(smap.get(Coordinates{2, 2}).get_popn(), 1234);
+  }
+
+  // 4. Test consume_dirty_sectors and out_saved tracking
+  {
+    SectorMap smap = sectors.load_map(test_planet);
+    test::expect_eq(smap.dirty_count(), 0);
+    smap.get(Coordinates{0, 1}).set_popn_exact(42);
+    smap.get(Coordinates{3, 2}).set_popn_exact(84);
+    test::expect_eq(smap.dirty_count(), 2);
+
+    std::flat_set<Coordinates> saved_coords;
+    sectors.save_map(smap, &saved_coords);
+    test::expect_eq(smap.dirty_count(), 0);
+    test::expect_eq(saved_coords.size(), 2);
+    test::expect_true(saved_coords.contains(Coordinates{0, 1}));
+    test::expect_true(saved_coords.contains(Coordinates{3, 2}));
   }
 
   std::println(std::cout,

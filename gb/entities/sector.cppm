@@ -637,6 +637,10 @@ public:
     return grid_[coord_to_idx(c)];
   }
 
+  [[nodiscard]] const Sector& get(int x, int y) const noexcept {
+    return get_const_ref(Coordinates{x, y});
+  }
+
   [[nodiscard]] const Sector&
   get_const_ref(const Coordinates c) const noexcept {
     return grid_[coord_to_idx(c)];
@@ -763,27 +767,29 @@ public:
     MapType* map_{nullptr};
   };
 
-  template <typename MapType, typename SectorRefType>
-  class IndexedDirtySectorsViewImpl {
+  class ConsumingDirtySectorsView {
   public:
     class Iterator {
     public:
       using iterator_category = std::forward_iterator_tag;
-      using value_type = std::pair<Coordinates, SectorRefType>;
+      using value_type = std::pair<Coordinates, const Sector&>;
       using difference_type = std::ptrdiff_t;
 
-      Iterator(MapType* map, int x, int y) : map_(map), x_(x), y_(y) {
+      Iterator(SectorMap* map, int x, int y) : map_(map), x_(x), y_(y) {
         advance_to_dirty();
       }
 
       value_type operator*() const {
-        return {Coordinates{x_, y_}, map_->get_const_ref(Coordinates{x_, y_})};
+        return {Coordinates{x_, y_}, map_->get(x_, y_)};
       }
+
       Iterator& operator++() {
+        map_->dirty_[map_->coord_to_idx(Coordinates{x_, y_})] = false;
         advance_next();
         advance_to_dirty();
         return *this;
       }
+
       bool operator==(const Iterator& other) const {
         return x_ == other.x_ && y_ == other.y_;
       }
@@ -796,6 +802,7 @@ public:
           ++y_;
         }
       }
+
       void advance_to_dirty() {
         while (y_ < map_->dimensions().y) {
           if (map_->is_dirty(Coordinates{x_, y_})) {
@@ -805,12 +812,12 @@ public:
         }
       }
 
-      MapType* map_{nullptr};
+      SectorMap* map_{nullptr};
       int x_{0};
       int y_{0};
     };
 
-    explicit IndexedDirtySectorsViewImpl(MapType& map) : map_(&map) {}
+    explicit ConsumingDirtySectorsView(SectorMap& map) : map_(&map) {}
     [[nodiscard]] Iterator begin() const {
       return Iterator(map_, 0, 0);
     }
@@ -819,7 +826,7 @@ public:
     }
 
   private:
-    MapType* map_{nullptr};
+    SectorMap* map_{nullptr};
   };
 
   auto indexed_sectors() {
@@ -830,8 +837,8 @@ public:
     return IndexedSectorsViewImpl<const SectorMap, const Sector&>(*this);
   }
 
-  [[nodiscard]] auto indexed_dirty_sectors() const {
-    return IndexedDirtySectorsViewImpl<const SectorMap, const Sector&>(*this);
+  [[nodiscard]] auto consume_dirty_sectors() noexcept {
+    return ConsumingDirtySectorsView(*this);
   }
 
   template <typename Pred>

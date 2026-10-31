@@ -50,11 +50,11 @@ get_entity_impl(EntityManager* manager, Key key,
                 SaveFn save_fn, ReleaseFn release_fn) {
   Entity* entity = peek_entity_impl(key, cache, std::move(find_fn));
   if (!entity) {
-    return {manager, nullptr, [](const Entity&) {}};
+    return {manager, nullptr, [](Entity&) {}};
   }
   refcount[key]++;
   return {manager, entity,
-          [manager, save_fn](const Entity& e) {
+          [manager, save_fn](Entity& e) {
             if (!manager->is_deferred_write()) {
               save_fn(e);
             }
@@ -84,10 +84,9 @@ void clear_cache_impl(std::unordered_map<Key, std::unique_ptr<Entity>>& cache,
 }
 
 template <typename Entity, typename Key, typename SaveFn>
-void flush_cache_impl(
-    const std::unordered_map<Key, std::unique_ptr<Entity>>& cache,
-    SaveFn save_fn) {
-  for (const auto& [key, entity] : cache) {
+void flush_cache_impl(std::unordered_map<Key, std::unique_ptr<Entity>>& cache,
+                      SaveFn save_fn) {
+  for (auto& [key, entity] : cache) {
     save_fn(*entity);
   }
 }
@@ -128,7 +127,12 @@ EntityHandle<Race> EntityManager::get_race(player_t player) {
   auto handle = get_entity_impl<Race>(
       this, player, race_cache, race_refcount,
       [this](player_t p) { return storage_->races.find_by_player(p); },
-      [this](const Race& r) { storage_->races.save(r); },
+      [this](Race& r) {
+        storage_->races.save(r);
+        if (tracking_mutations_) {
+          dirty_entities_.races.insert(r.Playernum);
+        }
+      },
       [this](player_t p) { release_race(p); });
   if (!handle.get()) {
     throw EntityNotFoundError(std::format("Race not found: player={}", player));
@@ -160,6 +164,9 @@ EntityHandle<Race> EntityManager::create_race(const Race& race_data) {
 
   // Save through repository (DAL)
   storage_->races.save(new_race);
+  if (tracking_mutations_) {
+    dirty_entities_.races.insert(player);
+  }
 
   // Auto-seed baseline block if not existing (or update name if uncustomized)
   if (auto existing_block = storage_->blocks.find_by_id(player);
@@ -194,10 +201,13 @@ EntityHandle<Ship> EntityManager::get_ship(shipnum_t num) {
   }
   ship_refcount[num]++;
   return {this, it->second.get(),
-          [this](const Ship& s) {
+          [this](Ship& s) {
             if (!is_deferred_write() &&
                 !std::ranges::contains(pending_ship_deletions_, s.number())) {
               storage_->ships.save(s);
+              if (tracking_mutations_) {
+                dirty_entities_.ships.insert(s.number());
+              }
             }
           },
           [this, num]() { release_ship(num); }};
@@ -232,6 +242,10 @@ void EntityManager::release_ship(shipnum_t num) {
     if (!is_deferred_write()) {
       pending_ship_deletions_.erase(it);
       storage_->ships.delete_ship(num);
+      if (tracking_mutations_) {
+        dirty_entities_.ships.erase(num);
+        dirty_entities_.deleted_ships.insert(num);
+      }
     }
   }
 }
@@ -249,6 +263,10 @@ EntityHandle<Ship> EntityManager::create_ship(std::unique_ptr<Ship> ship) {
 
   // Save immediately to database
   storage_->ships.save(*ship);
+  if (tracking_mutations_) {
+    dirty_entities_.deleted_ships.erase(num);
+    dirty_entities_.ships.insert(num);
+  }
 
   ship_cache.insert_or_assign(num, std::move(ship));
   return get_ship(num);
@@ -285,6 +303,10 @@ EntityHandle<Commod> EntityManager::create_commod(commod_struct init_data) {
 
   // Save through repository (DAL)
   storage_->commods.save(new_commod);
+  if (tracking_mutations_) {
+    dirty_entities_.deleted_commods.erase(commodnum_t{id});
+    dirty_entities_.commods.insert(commodnum_t{id});
+  }
 
   commod_cache.insert_or_assign(
       id, std::make_unique<Commod>(std::move(new_commod)));
@@ -300,7 +322,12 @@ EntityHandle<Planet> EntityManager::get_planet(starnum_t star,
       [this, star, pnum](auto) {
         return storage_->planets.find_by_location(star, pnum);
       },
-      [this](const Planet& p) { storage_->planets.save(p); },
+      [this, key](Planet& p) {
+        storage_->planets.save(p);
+        if (tracking_mutations_) {
+          dirty_entities_.planets.insert(key);
+        }
+      },
       [this, star, pnum](auto) { release_planet(star, pnum); });
   if (!handle.get()) {
     throw EntityNotFoundError(
@@ -332,7 +359,12 @@ EntityHandle<Star> EntityManager::get_star(starnum_t num) {
   auto handle = get_entity_impl<Star>(
       this, num, star_cache, star_refcount,
       [this](starnum_t n) { return storage_->stars.find_by_number(n); },
-      [this](const Star& s) { storage_->stars.save(s); },
+      [this, num](Star& s) {
+        storage_->stars.save(s);
+        if (tracking_mutations_) {
+          dirty_entities_.stars.insert(num);
+        }
+      },
       [this](starnum_t n) { release_star(n); });
   if (!handle.get()) {
     throw EntityNotFoundError(std::format("Star not found: star_id={}", num));
@@ -365,9 +397,12 @@ EntityHandle<Commod> EntityManager::get_commod(int id) {
         }
         return storage_->commods.find_by_id(i);
       },
-      [this](const Commod& c) {
+      [this, id](Commod& c) {
         if (!std::ranges::contains(pending_commod_deletions_, c.id())) {
           storage_->commods.save(c);
+          if (tracking_mutations_) {
+            dirty_entities_.commods.insert(commodnum_t{id});
+          }
         }
       },
       [this](int i) { release_commod(i); });
@@ -400,7 +435,12 @@ EntityHandle<Block> EntityManager::get_block(player_t id) {
   auto handle = get_entity_impl<Block>(
       this, id, block_cache, block_refcount,
       [this](player_t i) { return storage_->blocks.find_by_id(i); },
-      [this](const Block& b) { storage_->blocks.save(b); },
+      [this, id](Block& b) {
+        storage_->blocks.save(b);
+        if (tracking_mutations_) {
+          dirty_entities_.blocks.insert(id);
+        }
+      },
       [this](player_t i) { release_block(i); });
   if (!handle.get()) {
     throw EntityNotFoundError(std::format("Block not found: id={}", id));
@@ -427,7 +467,7 @@ EntityHandle<Power> EntityManager::get_power(player_t id) {
   auto handle = get_entity_impl<Power>(
       this, id, power_cache, power_refcount,
       [this](player_t i) { return storage_->powers.find_by_id(i); },
-      [this](const Power& p) { storage_->powers.save(p); },
+      [this](Power& p) { storage_->powers.save(p); },
       [this](player_t i) { release_power(i); });
   if (!handle.get()) {
     throw EntityNotFoundError(std::format("Power not found: id={}", id));
@@ -460,9 +500,12 @@ EntityHandle<Universe> EntityManager::get_universe() {
   }
   global_universe_refcount++;
   return {this, global_universe_cache.get(),
-          [this](const Universe& sd) {
+          [this](Universe& sd) {
             if (!is_deferred_write()) {
               storage_->universe_repo.save(sd);
+              if (tracking_mutations_) {
+                dirty_entities_.universe_dirty = true;
+              }
             }
           },
           [this]() { release_universe(); }};
@@ -508,9 +551,12 @@ EntityHandle<ServerState> EntityManager::get_server_state() {
   }
   server_state_refcount++;
   return {this, server_state_cache.get(),
-          [this](const ServerState& state) {
+          [this](ServerState& state) {
             if (!is_deferred_write()) {
               storage_->server_state_repo.save(state);
+              if (tracking_mutations_) {
+                dirty_entities_.server_state_dirty = true;
+              }
             }
           },
           [this]() { release_server_state(); }, created_default};
@@ -564,7 +610,7 @@ EntityHandle<ShipExam> EntityManager::get_ship_exam(ShipType ship_type) {
         return std::optional<ShipExam>(
             load_or_create_ship_exam(storage_->ship_exams, type));
       },
-      [this](const ShipExam& exam) { storage_->ship_exams.save(exam); },
+      [this](ShipExam& exam) { storage_->ship_exams.save(exam); },
       [this](ShipType type) { release_ship_exam(type); });
 }
 
@@ -713,31 +759,30 @@ std::vector<shipnum_t> EntityManager::ships_all() {
 void EntityManager::flush_all() {
   // Save all cached entities - entities now contain their own IDs
   flush_cache_impl<Race>(race_cache,
-                         [this](const Race& r) { storage_->races.save(r); });
-  flush_cache_impl<Ship>(ship_cache, [this](const Ship& s) {
+                         [this](Race& r) { storage_->races.save(r); });
+  flush_cache_impl<Ship>(ship_cache, [this](Ship& s) {
     if (!std::ranges::contains(pending_ship_deletions_, s.number())) {
       storage_->ships.save(s);
     }
   });
-  flush_cache_impl<Planet>(
-      planet_cache, [this](const Planet& p) { storage_->planets.save(p); });
+  flush_cache_impl<Planet>(planet_cache,
+                           [this](Planet& p) { storage_->planets.save(p); });
   flush_cache_impl<Star>(star_cache,
-                         [this](const Star& s) { storage_->stars.save(s); });
-  flush_cache_impl<SectorMap>(sectormap_cache, [this](const SectorMap& sm) {
+                         [this](Star& s) { storage_->stars.save(s); });
+  flush_cache_impl<SectorMap>(sectormap_cache, [this](SectorMap& sm) {
     storage_->sectors.save_map(sm);
   });
-  flush_cache_impl<Commod>(commod_cache, [this](const Commod& c) {
+  flush_cache_impl<Commod>(commod_cache, [this](Commod& c) {
     if (!std::ranges::contains(pending_commod_deletions_, c.id())) {
       storage_->commods.save(c);
     }
   });
   flush_cache_impl<Block>(block_cache,
-                          [this](const Block& b) { storage_->blocks.save(b); });
+                          [this](Block& b) { storage_->blocks.save(b); });
   flush_cache_impl<Power>(power_cache,
-                          [this](const Power& p) { storage_->powers.save(p); });
-  flush_cache_impl<ShipExam>(ship_exam_cache, [this](const ShipExam& e) {
-    storage_->ship_exams.save(e);
-  });
+                          [this](Power& p) { storage_->powers.save(p); });
+  flush_cache_impl<ShipExam>(
+      ship_exam_cache, [this](ShipExam& e) { storage_->ship_exams.save(e); });
 
   if (global_universe_cache) {
     storage_->universe_repo.save(*global_universe_cache);
@@ -1042,7 +1087,18 @@ EntityHandle<SectorMap> EntityManager::get_sectormap(starnum_t star,
         const auto& planet = *peek_planet(star, pnum);
         return std::optional<SectorMap>(storage_->sectors.load_map(planet));
       },
-      [this](const SectorMap& sm) { storage_->sectors.save_map(sm); },
+      [this, key](SectorMap& sm) {
+        if (tracking_mutations_) {
+          std::flat_set<Coordinates> saved;
+          storage_->sectors.save_map(sm, &saved);
+          if (!saved.empty()) {
+            auto& tracked = dirty_entities_.sectors[key];
+            tracked.insert(saved.begin(), saved.end());
+          }
+        } else {
+          storage_->sectors.save_map(sm);
+        }
+      },
       [this, star, pnum](auto) { release_sectormap(star, pnum); });
 }
 
@@ -1243,6 +1299,10 @@ void EntityManager::drain_pending_deletions() {
     ship_refcount.erase(num);
     if (!is_deferred_write()) {
       storage_->ships.delete_ship(num);
+      if (tracking_mutations_) {
+        dirty_entities_.ships.erase(num);
+        dirty_entities_.deleted_ships.insert(num);
+      }
     }
   }
   if (!is_deferred_write()) {
@@ -1261,6 +1321,10 @@ void EntityManager::drain_pending_deletions() {
     commod_refcount.erase(id);
     if (!is_deferred_write()) {
       storage_->commods.delete_commod(id);
+      if (tracking_mutations_) {
+        dirty_entities_.commods.erase(commodnum_t{id});
+        dirty_entities_.deleted_commods.insert(commodnum_t{id});
+      }
     }
   }
   if (!is_deferred_write()) {

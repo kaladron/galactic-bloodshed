@@ -341,6 +341,7 @@ int main() {
   test::expect_eq(dirty_test_map.dirty_count(), 16);
   test::expect_true(dirty_test_map.is_any_dirty());
   repo.save_map(dirty_test_map);
+  test::expect_eq(dirty_test_map.dirty_count(), 0);
 
   // Load map back from DB -> dirty count should be 0
   SectorMap fresh_map = repo.load_map(dp_planet);
@@ -355,8 +356,17 @@ int main() {
   test::expect_true(fresh_map.is_dirty(Coordinates{2, 2}));
   test::expect_false(fresh_map.is_dirty(Coordinates{0, 0}));
 
-  // Save map -> only the dirty sector (2, 2) is written
-  repo.save_map(fresh_map);
+  // Save map with out_saved tracking -> only the dirty sector (2, 2) is written
+  std::flat_set<Coordinates> saved_coords;
+  repo.save_map(fresh_map, &saved_coords);
+  test::expect_eq(fresh_map.dirty_count(), 0);
+  test::expect_eq(saved_coords.size(), 1);
+  test::expect_true(saved_coords.contains(Coordinates{2, 2}));
+
+  // Immediate subsequent save should save nothing and yield empty out_saved
+  std::flat_set<Coordinates> saved_coords2;
+  repo.save_map(fresh_map, &saved_coords2);
+  test::expect_true(saved_coords2.empty());
 
   // Reload and verify
   SectorMap reloaded_map = repo.load_map(dp_planet);

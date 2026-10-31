@@ -225,7 +225,8 @@ public:
 
   // Bulk operations for sector maps
   SectorMap load_map(const Planet& planet);
-  bool save_map(const SectorMap& map);
+  bool save_map(SectorMap& map,
+                std::flat_set<Coordinates>* out_saved = nullptr);
 
 protected:
   [[nodiscard]] std::optional<std::string>

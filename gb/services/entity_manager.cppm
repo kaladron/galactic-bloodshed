@@ -69,7 +69,7 @@ export template <typename T>
 class EntityHandle {
   EntityManager* manager;
   T* entity;
-  std::function<void(const T&)> save_fn;
+  std::function<void(T&)> save_fn;
   std::function<void()> release_fn;
   bool dirty = false;
 
@@ -88,7 +88,7 @@ class EntityHandle {
   }
 
 public:
-  EntityHandle(EntityManager* mgr, T* ent, std::function<void(const T&)> save,
+  EntityHandle(EntityManager* mgr, T* ent, std::function<void(T&)> save,
                std::function<void()> release = {}, bool initial_dirty = false)
       : manager(mgr), entity(ent), save_fn(std::move(save)),
         release_fn(std::move(release)), dirty(initial_dirty) {}
@@ -161,6 +161,35 @@ struct EntityListTraits;
 
 export class ShipList;
 
+export struct DirtyEntitySet {
+  std::flat_set<starnum_t> stars;
+  std::flat_set<std::pair<starnum_t, planetnum_t>> planets;
+  std::flat_map<std::pair<starnum_t, planetnum_t>, std::flat_set<Coordinates>>
+      sectors;
+  std::flat_set<shipnum_t> ships;
+  std::flat_set<shipnum_t> deleted_ships;
+  std::flat_set<player_t> races;
+  std::flat_set<player_t> blocks;
+  std::flat_set<commodnum_t> commods;
+  std::flat_set<commodnum_t> deleted_commods;
+  bool universe_dirty = false;
+  bool server_state_dirty = false;
+
+  void clear() noexcept {
+    stars.clear();
+    planets.clear();
+    sectors.clear();
+    ships.clear();
+    deleted_ships.clear();
+    races.clear();
+    blocks.clear();
+    commods.clear();
+    deleted_commods.clear();
+    universe_dirty = false;
+    server_state_dirty = false;
+  }
+};
+
 // Entity manager with caching and lifecycle management
 export class EntityManager {
   friend class DeferredWriteScope;
@@ -203,6 +232,8 @@ export class EntityManager {
   bool deletion_barrier_active_ = false;
   std::vector<shipnum_t> pending_ship_deletions_;
   std::vector<int> pending_commod_deletions_;
+  bool tracking_mutations_{false};
+  DirtyEntitySet dirty_entities_;
 
   // Internal handle access (used by mutate_* methods, EntityList, and
   // DeferredWriteScope) Throws EntityNotFoundError if entity not found
@@ -491,6 +522,23 @@ public:
 
   [[nodiscard]] bool is_deferred_write() const noexcept {
     return deferred_write_depth_ > 0;
+  }
+
+  void begin_mutation_tracking() noexcept {
+    tracking_mutations_ = true;
+    dirty_entities_.clear();
+  }
+  void stop_mutation_tracking() noexcept {
+    tracking_mutations_ = false;
+  }
+  void clear_dirty_entities() noexcept {
+    dirty_entities_.clear();
+  }
+  [[nodiscard]] DirtyEntitySet take_dirty_entities() noexcept {
+    return std::exchange(dirty_entities_, DirtyEntitySet{});
+  }
+  [[nodiscard]] bool is_tracking_mutations() const noexcept {
+    return tracking_mutations_;
   }
 
   // Transaction Unit of Work for atomic commands

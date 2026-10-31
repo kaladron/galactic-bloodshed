@@ -1204,6 +1204,160 @@ void test_entity_manager_create_race() {
       "  ✓ create_race correctly creates and auto-seeds block and power");
 }
 
+void test_entity_manager_mutation_tracking() {
+  std::println(std::cout,
+               "Test: EntityManager mutation tracking and DirtyEntitySet");
+
+  TestContext ctx;
+  ctx.with_standard_universe();
+  EntityManager& em = ctx.em;
+
+  // 1. Initial state
+  test::expect_false(em.is_tracking_mutations());
+  em.begin_mutation_tracking();
+  test::expect_true(em.is_tracking_mutations());
+
+  // 2. Track mutations on various entities
+  // Star
+  em.mutate_star(1, [](Star& s) { s.set_name("Sol Prime"); });
+  // Planet
+  em.mutate_planet(1, 1, [](Planet& p) { p.popn() = 12345; });
+  // SectorMap with dirty changes
+  em.mutate_sectormap(1, 1, [](SectorMap& sm) {
+    sm.get(Coordinates{0, 0}).set_popn_exact(999);
+    sm.get(Coordinates{1, 0}).set_popn_exact(888);
+  });
+  // SectorMap with NO dirty changes (should not add to dirty sectors)
+  em.mutate_sectormap(1, 1, [](SectorMap& /*sm*/) {
+    // No modifications
+  });
+  // Race
+  em.mutate_race(1, [](Race& r) { r.morale += 10; });
+  // Block
+  em.mutate_block(1, [](Block& b) { b.name() = "Modified Block"; });
+  // Universe
+  em.mutate_universe([](Universe& u) { u.set_AP(1, 75); });
+  // ServerState
+  em.mutate_server_state([](ServerState& ss) { ss.segments = 15; });
+
+  // Create & mutate ship
+  shipnum_t ship_id = 0;
+  {
+    auto sh = em.create_ship(ShipType::STYPE_SHUTTLE, 1);
+    ship_id = sh->number();
+  }
+  em.mutate_ship(ship_id, [](Ship& s) { s.name() = "MutatedShip1"; });
+
+  // Create & mutate commod
+  commodnum_t commod_id{0};
+  {
+    auto ch = em.create_commod(commod_struct{
+        .owner = 1, .amount = 100, .star_from = 1, .planet_from = 1});
+    commod_id = commodnum_t{ch->id()};
+  }
+  em.mutate_commod(commod_id.value, [](Commod& c) { c.set_amount(200); });
+
+  // Create race
+  player_t new_player{0};
+  {
+    Race new_r{};
+    new_r.name = "MutTrackers";
+    auto rh = em.create_race(new_r);
+    new_player = rh->Playernum;
+  }
+
+  // Inspect dirty entity set
+  DirtyEntitySet dirty = em.take_dirty_entities();
+  test::expect_true(dirty.stars.contains(1));
+  test::expect_true(dirty.planets.contains({1, 1}));
+  test::expect_true(dirty.sectors.contains({1, 1}));
+  test::expect_eq(dirty.sectors[{1, 1}].size(), 2);
+  test::expect_true(dirty.sectors[{1, 1}].contains(Coordinates{0, 0}));
+  test::expect_true(dirty.sectors[{1, 1}].contains(Coordinates{1, 0}));
+  test::expect_true(dirty.races.contains(1));
+  test::expect_true(dirty.races.contains(new_player));
+  test::expect_true(dirty.blocks.contains(1));
+  test::expect_true(dirty.ships.contains(ship_id));
+  test::expect_true(dirty.commods.contains(commod_id));
+  test::expect_true(dirty.universe_dirty);
+  test::expect_true(dirty.server_state_dirty);
+
+  // After take_dirty_entities(), EntityManager's dirty set is empty
+  DirtyEntitySet empty_set = em.take_dirty_entities();
+  test::expect_true(empty_set.stars.empty());
+  test::expect_false(empty_set.universe_dirty);
+  test::expect_false(empty_set.server_state_dirty);
+
+  // 3. Test ship and commod deletion superseding mutation
+  em.mutate_ship(ship_id, [](Ship& s) { s.name() = "MutatedShip2"; });
+  em.mutate_commod(commod_id.value, [](Commod& c) { c.set_amount(300); });
+  // Verify they are in dirty set
+  DirtyEntitySet pre_del = em.take_dirty_entities();
+  test::expect_true(pre_del.ships.contains(ship_id));
+  test::expect_true(pre_del.commods.contains(commod_id));
+
+  // Now delete them under DeletionBarrier
+  em.mutate_ship(ship_id, [](Ship& s) { s.name() = "MutatedShip3"; });
+  em.mutate_commod(commod_id.value, [](Commod& c) { c.set_amount(400); });
+  {
+    auto barrier = em.create_deletion_barrier();
+    em.delete_ship(ship_id);
+    em.delete_commod(commod_id.value);
+  }
+  // After barrier drain, deleted_ships / deleted_commods are populated and
+  // ships / commods are cleared
+  DirtyEntitySet post_del = em.take_dirty_entities();
+  test::expect_false(post_del.ships.contains(ship_id));
+  test::expect_true(post_del.deleted_ships.contains(ship_id));
+  test::expect_false(post_del.commods.contains(commod_id));
+  test::expect_true(post_del.deleted_commods.contains(commod_id));
+
+  // Test release_ship deletion when not in barrier (e.g. kill_ship on an alive
+  // ship)
+  shipnum_t ship2_id = 0;
+  {
+    auto sh2 = em.create_ship(ShipType::STYPE_SHUTTLE, 1);
+    ship2_id = sh2->number();
+  }
+  // Mutate ship2
+  em.mutate_ship(ship2_id, [](Ship& s) { s.name() = "Ship2"; });
+  // kill_ship without DeletionBarrier triggers immediate deletion via
+  // release_ship
+  em.mutate_ship(ship2_id, [&](Ship& s) { em.kill_ship(1, s); });
+  DirtyEntitySet post_kill = em.take_dirty_entities();
+  test::expect_false(post_kill.ships.contains(ship2_id));
+  test::expect_true(post_kill.deleted_ships.contains(ship2_id));
+
+  // 4. Test clear_dirty_entities()
+  em.mutate_star(1, [](Star& s) { s.set_name("Sol Clear"); });
+  em.clear_dirty_entities();
+  test::expect_true(em.take_dirty_entities().stars.empty());
+
+  // 5. Test stop_mutation_tracking()
+  em.stop_mutation_tracking();
+  test::expect_false(em.is_tracking_mutations());
+  em.mutate_star(1, [](Star& s) { s.set_name("Sol Stopped"); });
+  test::expect_true(em.take_dirty_entities().stars.empty());
+
+  // 6. Test DeferredWriteScope skips mutation tracking
+  em.begin_mutation_tracking();
+  {
+    auto scope = em.create_deferred_write_scope();
+    em.mutate_star(1, [](Star& s) { s.set_name("Sol Deferred"); });
+    em.mutate_planet(1, 1, [](Planet& p) { p.popn() = 55555; });
+    scope.commit();
+  }
+  // While deferred write scope was active, save_fn was not called, so dirty
+  // entities remained empty
+  DirtyEntitySet scope_dirty = em.take_dirty_entities();
+  test::expect_true(scope_dirty.stars.empty());
+  test::expect_true(scope_dirty.planets.empty());
+
+  std::println(
+      std::cout,
+      "  ✓ EntityManager mutation tracking and DirtyEntitySet verified");
+}
+
 int main() {
   test_entity_manager_basic();
   test_entity_manager_caching();
@@ -1231,6 +1385,7 @@ int main() {
   test_deletion_barrier();
   test_entity_manager_count_non_asteroid_planets();
   test_entity_manager_create_race();
+  test_entity_manager_mutation_tracking();
 
   std::println(std::cout, "\n✅ All EntityManager tests passed!");
   return 0;

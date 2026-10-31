@@ -975,6 +975,232 @@ void test_canonical_star_planet_sector_projectors() {
   test::expect_contains(grid_json, R"("sectors":)");
 }
 
+void test_canonical_ship_view_projectors() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  const ScopeContext viewer1{
+      .player = 1,
+      .governor = 0,
+      .god = false,
+  };
+
+  // Add active ships with crew for player 1 at Sol (star scope) and Earth
+  // (planet scope)
+  TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+      .owned_by(1)
+      .in_star_orbit(1)
+      .with_crew(10, 0)
+      .build();
+  TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+      .owned_by(1)
+      .landed_on(1, 1, Coordinates{0, 0})
+      .with_crew(10, 0)
+      .build();
+
+  // 1. SightContext memoization test (star and planet cache hit/miss)
+  GB::presentation::SightContext sight;
+  // Star sight miss then hit
+  test::expect_true(sight.has_star_sight(ctx.em, 1, 1));
+  test::expect_true(sight.has_star_sight(ctx.em, 1, 1));
+  // Planet sight miss then hit
+  test::expect_true(sight.has_planet_sight(ctx.em, 1, 1, 1));
+  test::expect_true(sight.has_planet_sight(ctx.em, 1, 1, 1));
+
+  // 2. project_deleted_ship_view
+  const auto deleted_view = GB::presentation::project_deleted_ship_view(99);
+  test::expect_eq(deleted_view.id, 99);
+  test::expect_false(deleted_view.alive);
+  test::expect_false(deleted_view.location.has_value());
+  test::expect_false(deleted_view.internal.has_value());
+
+  // 3. Dead ship returns deleted_view
+  const Ship dead_ship{ship_struct{.number = 99, .alive = false}};
+  const auto dead_view =
+      GB::presentation::project_ship_view(ctx.em, viewer1, dead_ship);
+  test::expect_true(dead_view.has_value());
+  test::expect_false(dead_view->alive);
+  test::expect_eq(dead_view->id, 99);
+
+  // 4. Contact visibility:
+  const auto s1_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+                         .owned_by(1)
+                         .in_star_orbit(1)
+                         .build();
+
+  // Deep space foreign ship (whatorbits == LEVEL_UNIV) -> invisible to foreign
+  // mortal
+  const auto univ_ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+                                .owned_by(2)
+                                .in_deep_space()
+                                .build();
+  const auto univ_proj = GB::presentation::project_ship_view(
+      ctx.em, viewer1, *ctx.em.peek_ship(univ_ship_id));
+  test::expect_false(univ_proj.has_value());
+
+  // Foreign visible ship in system orbit with star sight -> visible
+  const auto foreign_star_ship_id =
+      TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+          .owned_by(2)
+          .in_star_orbit(1)
+          .build();
+  const auto foreign_star_proj = GB::presentation::project_ship_view(
+      ctx.em, viewer1, *ctx.em.peek_ship(foreign_star_ship_id), &sight);
+  test::expect_true(foreign_star_proj.has_value());
+  test::expect_eq(foreign_star_proj->id, foreign_star_ship_id);
+  // Foreign ship: internal view must be nullopt
+  test::expect_false(foreign_star_proj->internal.has_value());
+  // Location view present (star scope)
+  test::expect_true(foreign_star_proj->location.has_value());
+  test::expect_eq(foreign_star_proj->location->level, ScopeLevel::LEVEL_STAR);
+  test::expect_eq(foreign_star_proj->location->snum, starnum_t{1});
+  test::expect_false(foreign_star_proj->location->pnum.has_value());
+
+  // Foreign landed ship with planet sight (planet scope)
+  const auto foreign_landed_ship_id =
+      TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+          .owned_by(2)
+          .landed_on(1, 1, Coordinates{0, 0})
+          .with_crew(10, 0)
+          .build();
+  const auto foreign_landed_proj = GB::presentation::project_ship_view(
+      ctx.em, viewer1, *ctx.em.peek_ship(foreign_landed_ship_id), &sight);
+  test::expect_true(foreign_landed_proj.has_value());
+  test::expect_true(foreign_landed_proj->location->landed);
+  test::expect_eq(foreign_landed_proj->location->level, ScopeLevel::LEVEL_PLAN);
+  test::expect_eq(foreign_landed_proj->location->snum, starnum_t{1});
+  test::expect_eq(foreign_landed_proj->location->pnum, planetnum_t{1});
+
+  // Foreign orbiting ship at planet (is_landed() == false, whatorbits ==
+  // LEVEL_PLAN)
+  const auto foreign_orbit_ship_id =
+      TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+          .owned_by(2)
+          .in_planet_orbit(1, 1)
+          .with_crew(10, 0)
+          .build();
+  const auto foreign_orbit_proj = GB::presentation::project_ship_view(
+      ctx.em, viewer1, *ctx.em.peek_ship(foreign_orbit_ship_id));
+  test::expect_true(foreign_orbit_proj.has_value());
+  test::expect_false(foreign_orbit_proj->location->landed);
+
+  // Foreign invisible ship (e.g. canister) -> returns nullopt
+  const auto foreign_invis_id = TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST)
+                                    .owned_by(2)
+                                    .landed_on(1, 1, Coordinates{0, 0})
+                                    .build();
+  const auto foreign_invis_proj = GB::presentation::project_ship_view(
+      ctx.em, viewer1, *ctx.em.peek_ship(foreign_invis_id), &sight);
+  test::expect_false(foreign_invis_proj.has_value());
+
+  // 5. SpaceMirrorShip targeting and orientation
+  const auto mirror_id = TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR)
+                             .owned_by(1)
+                             .in_star_orbit(1)
+                             .build();
+  ctx.em.mutate_as<SpaceMirrorShip>(
+      mirror_id, [](SpaceMirrorShip& m) { m.aim_at_planet(1, 1); });
+  const auto mirror_proj = GB::presentation::project_ship_view(
+      ctx.em, viewer1, *ctx.em.peek_ship(mirror_id));
+  test::expect_true(mirror_proj.has_value());
+  test::expect_true(mirror_proj->location->mirror_orientation.has_value());
+  test::expect_false(
+      foreign_star_proj->location->mirror_orientation.has_value());
+
+  // 6. Own ship internal view (owner viewing):
+  // - LEVEL_STAR destination
+  ctx.em.mutate_ship(s1_id, [](Ship& s) { s.set_star_destination(1); });
+  const auto s1_proj_star = GB::presentation::project_ship_view(
+      ctx.em, viewer1, *ctx.em.peek_ship(s1_id));
+  test::expect_true(s1_proj_star.has_value());
+  test::expect_true(s1_proj_star->internal.has_value());
+  test::expect_eq(s1_proj_star->internal->navigation.dest_level,
+                  ScopeLevel::LEVEL_STAR);
+  test::expect_eq(s1_proj_star->internal->navigation.dest_star, starnum_t{1});
+  test::expect_false(
+      s1_proj_star->internal->navigation.dest_planet.has_value());
+
+  // - LEVEL_PLAN destination
+  ctx.em.mutate_ship(s1_id, [](Ship& s) { s.set_planet_destination(1, 1); });
+  const auto s1_proj_plan = GB::presentation::project_ship_view(
+      ctx.em, viewer1, *ctx.em.peek_ship(s1_id));
+  test::expect_eq(s1_proj_plan->internal->navigation.dest_level,
+                  ScopeLevel::LEVEL_PLAN);
+  test::expect_eq(s1_proj_plan->internal->navigation.dest_star, starnum_t{1});
+  test::expect_eq(s1_proj_plan->internal->navigation.dest_planet,
+                  planetnum_t{1});
+
+  // - LEVEL_UNIV destination
+  ctx.em.mutate_ship(s1_id, [](Ship& s) { s.clear_destination(); });
+  const auto s1_proj_univ = GB::presentation::project_ship_view(
+      ctx.em, viewer1, *ctx.em.peek_ship(s1_id));
+  test::expect_eq(s1_proj_univ->internal->navigation.dest_level,
+                  ScopeLevel::LEVEL_UNIV);
+  test::expect_false(s1_proj_univ->internal->navigation.dest_star.has_value());
+  test::expect_false(
+      s1_proj_univ->internal->navigation.dest_planet.has_value());
+
+  // Own deep space ship (whatorbits == LEVEL_UNIV) -> snum and pnum nullopt
+  const auto own_univ_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+                               .owned_by(1)
+                               .in_deep_space()
+                               .build();
+  const auto own_univ_proj = GB::presentation::project_ship_view(
+      ctx.em, viewer1, *ctx.em.peek_ship(own_univ_id));
+  test::expect_true(own_univ_proj.has_value());
+  test::expect_eq(own_univ_proj->location->level, ScopeLevel::LEVEL_UNIV);
+  test::expect_false(own_univ_proj->location->snum.has_value());
+  test::expect_false(own_univ_proj->location->pnum.has_value());
+
+  // 7. Factory blueprints:
+  // - Non-factory ship has factory == nullopt
+  test::expect_false(s1_proj_univ->internal->factory.has_value());
+
+  // - Factory unconfigured with STYPE_POD
+  const auto factory_pod_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
+                                  .owned_by(1)
+                                  .in_star_orbit(1)
+                                  .build();
+  ctx.em.mutate_ship(factory_pod_id,
+                     [](Ship& s) { s.build_type() = ShipType::STYPE_POD; });
+  const auto fact_pod_proj = GB::presentation::project_ship_view(
+      ctx.em, viewer1, *ctx.em.peek_ship(factory_pod_id));
+  test::expect_true(fact_pod_proj.has_value());
+  test::expect_true(fact_pod_proj->internal.has_value());
+  test::expect_true(fact_pod_proj->internal->factory.has_value());
+  test::expect_false(fact_pod_proj->internal->factory->configured);
+
+  // - Factory unconfigured with OTYPE_FACTORY
+  ctx.em.mutate_ship(factory_pod_id,
+                     [](Ship& s) { s.build_type() = ShipType::OTYPE_FACTORY; });
+  const auto fact_fact_proj = GB::presentation::project_ship_view(
+      ctx.em, viewer1, *ctx.em.peek_ship(factory_pod_id));
+  test::expect_false(fact_fact_proj->internal->factory->configured);
+
+  // - Factory configured with STYPE_CRUISER
+  ctx.em.mutate_ship(factory_pod_id,
+                     [](Ship& s) { s.build_type() = ShipType::STYPE_CRUISER; });
+  const auto fact_cruiser_proj = GB::presentation::project_ship_view(
+      ctx.em, viewer1, *ctx.em.peek_ship(factory_pod_id));
+  test::expect_true(fact_cruiser_proj->internal->factory->configured);
+  test::expect_eq(fact_cruiser_proj->internal->factory->build_type,
+                  ShipType::STYPE_CRUISER);
+
+  // 8. JSON rendering of ShipView
+  const std::string json_ship =
+      GB::presentation::render_json_ship_view(*fact_cruiser_proj);
+  test::expect_contains(json_ship, R"("type":"ship")");
+  test::expect_contains(json_ship, R"("alive":true)");
+  test::expect_contains(json_ship, R"("location":)");
+  test::expect_contains(json_ship, R"("internal":)");
+  test::expect_contains(json_ship, R"("factory":)");
+
+  const std::string json_deleted =
+      GB::presentation::render_json_ship_view(deleted_view);
+  test::expect_contains(json_deleted, R"("type":"ship")");
+  test::expect_contains(json_deleted, R"("alive":false)");
+}
+
 }  // namespace
 
 int main() {
@@ -987,5 +1213,6 @@ int main() {
   test_detect_terminal_capabilities();
   test_canonical_session_message_error_views();
   test_canonical_star_planet_sector_projectors();
+  test_canonical_ship_view_projectors();
   return 0;
 }

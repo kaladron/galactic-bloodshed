@@ -529,4 +529,258 @@ std::string render_for_mode(UiMode mode, const RstViewModel& vm) {
   return mode == UiMode::JSON ? render_json_rst(vm) : render_rst(vm);
 }
 
+bool SightContext::has_star_sight(EntityManager& em, player_t player,
+                                  starnum_t snum) {
+  const auto key = std::make_pair(player, snum);
+  const auto it = star_cache_.find(key);
+  if (it != star_cache_.end()) {
+    return it->second;
+  }
+  const bool sight = ::has_system_sight(em, snum, player, false);
+  star_cache_.emplace(key, sight);
+  return sight;
+}
+
+bool SightContext::has_planet_sight(EntityManager& em, player_t player,
+                                    starnum_t snum, planetnum_t pnum) {
+  const auto key = std::make_tuple(player, snum, pnum);
+  const auto it = planet_cache_.find(key);
+  if (it != planet_cache_.end()) {
+    return it->second;
+  }
+  const bool sight = ::has_planet_sight(em, snum, pnum, player, false);
+  planet_cache_.emplace(key, sight);
+  return sight;
+}
+
+namespace {
+
+bool resolve_local_sight(EntityManager& em, const Ship& ship, player_t player,
+                         SightContext& sight) {
+  if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN) {
+    if (ship.is_landed()) {
+      return sight.has_planet_sight(em, player, ship.storbits(),
+                                    ship.pnumorbits());
+    }
+  }
+  return sight.has_star_sight(em, player, ship.storbits());
+}
+
+bool mortal_can_see_ship(EntityManager& em, const Ship& ship, player_t player,
+                         SightContext& sight) {
+  if (ship.owner() == player) {
+    return true;
+  }
+  if (ship.whatorbits() == ScopeLevel::LEVEL_UNIV) {
+    return false;
+  }
+  const bool local_sight = resolve_local_sight(em, ship, player, sight);
+  return is_ship_visible_to(ship, player, false, local_sight);
+}
+
+ShipFactoryBlueprintView project_factory_blueprint(const Ship& ship) {
+  const ShipType btype = ship.build_type();
+  if (btype == ShipType::STYPE_POD) {
+    return ShipFactoryBlueprintView{
+        .configured = false,
+        .build_type = ShipType::OTYPE_FACTORY,
+        .build_type_letter = ' ',
+    };
+  }
+  if (btype == ShipType::OTYPE_FACTORY) {
+    return ShipFactoryBlueprintView{
+        .configured = false,
+        .build_type = ShipType::OTYPE_FACTORY,
+        .build_type_letter = ' ',
+    };
+  }
+
+  const bool has_hd = (ship.hyper_drive().has != 0);
+  return ShipFactoryBlueprintView{
+      .configured = true,
+      .build_type = btype,
+      .build_type_letter = ship_template(btype).letter,
+      .build_cost = ship.build_cost(),
+      .complexity = ship.complexity(),
+      .base_mass = ship.base_mass(),
+      .size = ship.size(),
+      .armor = ship.armor(),
+      .max_crew = ship.max_crew_capacity(),
+      .max_fuel = ship.max_fuel_capacity(),
+      .max_resource = ship.max_resource_capacity(),
+      .max_hanger = ship.max_hanger(),
+      .max_destruct = ship.max_destruct_capacity(),
+      .has_hyperdrive = has_hd,
+      .has_mount = ship.mount(),
+      .max_speed = ship.max_speed(),
+      .primary = ship.primary_battery(),
+      .secondary = ship.secondary_battery(),
+      .has_laser = ship.laser(),
+      .cew_power = ship.cew(),
+      .cew_range = ship.cew_range(),
+      .on = ship.on(),
+  };
+}
+
+}  // namespace
+
+ShipView project_deleted_ship_view(shipnum_t id) {
+  return ShipView{.id = id, .alive = false};
+}
+
+std::optional<ShipView> project_ship_view(EntityManager& em,
+                                          const ScopeContext& viewer,
+                                          const Ship& ship,
+                                          SightContext* sight) {
+  if (!ship.alive()) {
+    return project_deleted_ship_view(ship.number());
+  }
+
+  SightContext local_sight{};
+  SightContext* active_sight = sight;
+  if (active_sight == nullptr) {
+    active_sight = &local_sight;
+  }
+
+  const bool mortal_visible =
+      mortal_can_see_ship(em, ship, viewer.player, *active_sight);
+  if (!viewer.can_see(mortal_visible)) {
+    return std::nullopt;
+  }
+
+  const ScopeLevel level = ship.whatorbits();
+  std::optional<starnum_t> snum = std::nullopt;
+  std::optional<planetnum_t> pnum = std::nullopt;
+  if (level == ScopeLevel::LEVEL_STAR) {
+    snum = ship.storbits();
+  } else if (level == ScopeLevel::LEVEL_PLAN) {
+    snum = ship.storbits();
+    pnum = ship.pnumorbits();
+  }
+
+  std::optional<int> mirror_orientation = std::nullopt;
+  if (const auto* mirror = ship.as<SpaceMirrorShip>()) {
+    mirror_orientation =
+        static_cast<int>(em.resolve_mirror_aim_direction(*mirror));
+  }
+
+  ShipLocationView loc_view{
+      .level = level,
+      .snum = snum,
+      .pnum = pnum,
+      .docked = ship.is_docked(),
+      .landed = ship.is_landed(),
+      .dest_shipno = ship.destshipno(),
+      .land_coords = ship.land_coords(),
+      .coordinates = ship.coordinates(),
+      .orbits_path = dispshiploc_brief(em, ship),
+      .mirror_orientation = mirror_orientation,
+  };
+
+  std::optional<ShipInternalView> internal_view = std::nullopt;
+  const bool is_owner = (ship.owner() == viewer.player);
+  if (viewer.can_see(is_owner)) {
+    ShipCargoView cargo{
+        .resource = ship.resource(),
+        .max_resource = ship.max_resource_capacity(),
+        .destruct = ship.destruct(),
+        .max_destruct = ship.max_destruct_capacity(),
+        .fuel = ship.fuel(),
+        .max_fuel = ship.max_fuel_capacity(),
+        .crystals = ship.crystals(),
+        .crew = ship.popn(),
+        .max_crew = ship.max_crew_capacity(),
+        .troops = ship.troops(),
+        .hanger = ship.hanger(),
+        .max_hanger = ship.max_hanger(),
+    };
+
+    const ScopeLevel dest_level = ship.whatdest();
+    std::optional<starnum_t> dest_star = std::nullopt;
+    std::optional<planetnum_t> dest_planet = std::nullopt;
+    if (dest_level == ScopeLevel::LEVEL_STAR) {
+      dest_star = ship.deststar();
+    } else if (dest_level == ScopeLevel::LEVEL_PLAN) {
+      dest_star = ship.deststar();
+      dest_planet = ship.destpnum();
+    }
+
+    ShipNavigationView navigation{
+        .max_speed = ship.max_speed_capacity(),
+        .has_mount = ship.mount(),
+        .crystal_mounted = ship.mounted(),
+        .hyper_drive = ship.hyper_drive(),
+        .dest_level = dest_level,
+        .dest_star = dest_star,
+        .dest_planet = dest_planet,
+        .dest_ship = ship.destshipno(),
+        .dest_path = format_ship_dest(em, ship),
+        .navigate = ship.navigate(),
+        .protect = ship.protect(),
+        .merchant_route = ship.merchant(),
+    };
+
+    const bool laser_on = (ship.fire_laser() > 0);
+    const bool laser_focused = ship.focus();
+    const double dmg_factor = 1.0 - (0.01 * static_cast<double>(ship.damage()));
+    const int safe_cew = static_cast<int>(dmg_factor * ship.tech() / 4.0);
+
+    ShipWeaponsView weapons{
+        .armor = ship.armor(),
+        .effective_armor = ship.effective_armor(),
+        .primary = ship.primary_battery(),
+        .secondary = ship.secondary_battery(),
+        .battery_summary = ship.battery_summary(),
+        .has_laser = ship.laser(),
+        .laser_on = laser_on,
+        .laser_focused = laser_focused,
+        .laser_strength = static_cast<int>(ship.fire_laser()),
+        .cew_power = ship.cew(),
+        .cew_range = ship.cew_range(),
+        .safe_cew = safe_cew,
+        .retaliate_salvo = ship.retaliate(),
+    };
+
+    std::optional<ShipFactoryBlueprintView> factory = std::nullopt;
+    if (ship.type() == ShipType::OTYPE_FACTORY) {
+      factory = project_factory_blueprint(ship);
+    }
+
+    internal_view = ShipInternalView{
+        .tech = ship.tech(),
+        .base_mass = ship.base_mass(),
+        .mass = ship.mass(),
+        .effective_cost = ship.effective_cost(),
+        .radiation = ship.rad(),
+        .on = ship.on(),
+        .cargo = std::move(cargo),
+        .navigation = std::move(navigation),
+        .weapons = std::move(weapons),
+        .factory = std::move(factory),
+        .special = ship.special(),
+    };
+  }
+
+  return ShipView{
+      .id = ship.number(),
+      .alive = true,
+      .owner = ship.owner(),
+      .governor = ship.governor(),
+      .name = ship.name(),
+      .shipclass = ship.shipclass(),
+      .type = ship.type(),
+      .type_letter = ship.type_letter(),
+      .size = ship.size(),
+      .speed = ship.speed(),
+      .damage = ship.damage(),
+      .active = ship.active(),
+      .location = std::move(loc_view),
+      .internal = std::move(internal_view),
+  };
+}
+
+std::string render_json_ship_view(const ShipView& vm) {
+  return render_json_envelope("ship", vm);
+}
+
 }  // namespace GB::presentation

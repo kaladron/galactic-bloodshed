@@ -555,6 +555,15 @@ public:
     return data_.on;
   }
 
+  [[nodiscard]] const SpecialData& special() const noexcept {
+    ensure_valid_special_data();
+    return data_.special;
+  }
+  SpecialData& special() noexcept {
+    ensure_valid_special_data();
+    return data_.special;
+  }
+
   // Merchant and weapons
   [[nodiscard]] int merchant() const {
     return data_.merchant;

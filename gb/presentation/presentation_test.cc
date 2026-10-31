@@ -583,6 +583,108 @@ void test_detect_terminal_capabilities() {
   test::expect_false(unknown.ansi_sgr || unknown.color);
 }
 
+void test_canonical_session_message_error_views() {
+  TestContext ctx;
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+
+  const GB::presentation::SessionView session_vm{
+      .player = player_t{1},
+      .governor = governor_t{2},
+      .race_name = "Terran",
+      .governor_name = "Admiral",
+      .god = false,
+      .ap = 50,
+      .global_ap = 100,
+      .scope =
+          GB::presentation::SessionScopeView{
+              .level = ScopeLevel::LEVEL_PLAN,
+              .snum = 1,
+              .pnum = 2,
+              .star = "Sol",
+              .planet = "Mars",
+              .path = "/Sol/Mars",
+          },
+      .viewport =
+          GB::presentation::SessionViewportView{
+              .universe_center = {10.0, 20.0},
+              .system_center = {5.0, 15.0},
+              .universe_zoom = 1.0,
+              .system_zoom = 2.0,
+          },
+  };
+
+  test::expect_eq(GB::presentation::render_session_prompt(session_vm),
+                  " ( [50] /Sol/Mars )\n");
+  test::expect_contains(GB::presentation::render_json_session(session_vm),
+                        "\"type\":\"session\"");
+  test::expect_eq(GB::presentation::render_for_mode(UiMode::ASCII, session_vm),
+                  " ( [50] /Sol/Mars )\n");
+  test::expect_contains(
+      GB::presentation::render_for_mode(UiMode::JSON, session_vm),
+      "\"type\":\"session\"");
+
+  g.present(session_vm);
+  test::expect_eq(g.out.str(), " ( [50] /Sol/Mars )\n");
+
+  g.out.str("");
+  g.set_ui_mode(UiMode::JSON);
+  g.present(session_vm);
+  test::expect_contains(g.out.str(), "\"type\":\"session\"");
+  test::expect_contains(g.out.str(), "\"race_name\":\"Terran\"");
+  test::expect_contains(g.out.str(), "\"path\":\"/Sol/Mars\"");
+
+  const auto msg_vm =
+      GB::presentation::make_output_message("Order executed.\n");
+  test::expect_eq(msg_vm.channel, GB::presentation::MessageChannel::Output);
+  test::expect_eq(msg_vm.message, "Order executed.\n");
+  test::expect_eq(GB::presentation::render_message(msg_vm),
+                  "Order executed.\n");
+  test::expect_contains(GB::presentation::render_json_message(msg_vm),
+                        "\"type\":\"message\"");
+  test::expect_eq(GB::presentation::render_for_mode(UiMode::ASCII, msg_vm),
+                  "Order executed.\n");
+  test::expect_contains(GB::presentation::render_for_mode(UiMode::JSON, msg_vm),
+                        "\"type\":\"message\"");
+
+  g.out.str("");
+  g.set_ui_mode(UiMode::ASCII);
+  g.present(msg_vm);
+  test::expect_eq(g.out.str(), "Order executed.\n");
+
+  g.out.str("");
+  g.set_ui_mode(UiMode::JSON);
+  g.present(msg_vm);
+  test::expect_contains(g.out.str(), "\"type\":\"message\"");
+  test::expect_contains(g.out.str(), "\"message\":\"Order executed.\\n\"");
+
+  const GB::presentation::ErrorView err_vm{
+      .code = "INVALID_SCOPE",
+      .command = "upgrade",
+      .message = "Cannot upgrade at star scope.\n",
+  };
+  test::expect_eq(GB::presentation::render_error(err_vm),
+                  "Cannot upgrade at star scope.\n");
+  test::expect_contains(GB::presentation::render_json_error(err_vm),
+                        "\"type\":\"error\"");
+  test::expect_eq(GB::presentation::render_for_mode(UiMode::ASCII, err_vm),
+                  "Cannot upgrade at star scope.\n");
+  test::expect_contains(GB::presentation::render_for_mode(UiMode::JSON, err_vm),
+                        "\"type\":\"error\"");
+
+  g.out.str("");
+  g.set_ui_mode(UiMode::ASCII);
+  g.present(err_vm);
+  test::expect_eq(g.out.str(), "Cannot upgrade at star scope.\n");
+
+  g.out.str("");
+  g.set_ui_mode(UiMode::JSON);
+  g.present(err_vm);
+  test::expect_contains(g.out.str(), "\"type\":\"error\"");
+  test::expect_contains(g.out.str(), "\"code\":\"INVALID_SCOPE\"");
+  test::expect_contains(g.out.str(), "\"command\":\"upgrade\"");
+}
+
 }  // namespace
 
 int main() {
@@ -593,5 +695,6 @@ int main() {
   test_ship_combat_turn_bulletins();
   test_empire_turn_bulletins();
   test_detect_terminal_capabilities();
+  test_canonical_session_message_error_views();
   return 0;
 }

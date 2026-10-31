@@ -388,15 +388,22 @@ void test_prompt_json_mode() {
 
   g.set_level(ScopeLevel::LEVEL_UNIV);
   std::string out = do_prompt(g);
-  test::expect_contains(out, "\"type\":\"prompt\"");
+  test::expect_contains(out, "\"type\":\"session\"");
   test::expect_contains(out, "\"ap\":42");
+  test::expect_contains(out, "\"global_ap\":42");
+  test::expect_contains(out, "\"race_name\":\"Federation\"");
+  test::expect_contains(out, "\"scope\":");
+  test::expect_contains(out, "\"viewport\":");
+  test::expect_contains(out, "\"toggles\":");
   test::expect_contains(out, "\"level\":0");
   test::expect_contains(out, "\"path\":\"/\"");
 
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
   out = do_prompt(g);
+  test::expect_contains(out, "\"type\":\"session\"");
   test::expect_contains(out, "\"ap\":17");
+  test::expect_contains(out, "\"global_ap\":42");
   test::expect_contains(out, "\"level\":1");
   test::expect_contains(out, "\"star\":\"Sol\"");
   test::expect_contains(out, "\"path\":\"/Sol\"");
@@ -404,6 +411,7 @@ void test_prompt_json_mode() {
   g.set_level(ScopeLevel::LEVEL_PLAN);
   g.set_pnum(1);
   out = do_prompt(g);
+  test::expect_contains(out, "\"type\":\"session\"");
   test::expect_contains(out, "\"level\":2");
   test::expect_contains(out, "\"star\":\"Sol\"");
   test::expect_contains(out, "\"planet\":\"Earth\"");
@@ -412,10 +420,21 @@ void test_prompt_json_mode() {
   g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_shipno(ship_id);
   out = do_prompt(g);
+  test::expect_contains(out, "\"type\":\"session\"");
   test::expect_contains(out, "\"level\":3");
   test::expect_contains(out, std::format("\"ship\":\"#{}\"", ship_id));
   test::expect_contains(out,
                         std::format("\"path\":\"/Sol/Earth/#{}\"", ship_id));
+
+  // Exercise build_session_view and do_prompt when g.race is nullptr
+  g.race = nullptr;
+  out = do_prompt(g);
+  test::expect_contains(out, "\"type\":\"session\"");
+  test::expect_contains(out, "\"race_name\":\"\"");
+  test::expect_contains(out, "\"governor_name\":\"\"");
+  const auto session_view = build_session_view(g);
+  test::expect_eq(session_view.race_name, "");
+  test::expect_eq(session_view.governor_name, "");
 
   ctx.verify_universe_invariants();
 }

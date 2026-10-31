@@ -13,10 +13,52 @@ import glaze.json;
 
 module gb.services;
 
-struct PromptJsonEnvelope {
-  std::string_view type{"prompt"};
-  const PromptViewModel* data{nullptr};
+struct SessionJsonEnvelope {
+  std::string_view type{"session"};
+  const SessionView* data{nullptr};
 };
+
+SessionView build_session_view(const GameObj& g) {
+  const PromptViewModel prompt = build_prompt(g);
+  const player_t player = g.player();
+  const governor_t governor = g.governor();
+  const auto* universe = g.entity_manager.peek_universe();
+
+  SessionView view{
+      .player = player,
+      .governor = governor,
+      .god = g.god(),
+      .ap = prompt.ap,
+      .global_ap = universe->get_AP(player),
+      .scope =
+          SessionScopeView{
+              .level = prompt.level,
+              .snum = g.snum(),
+              .pnum = g.pnum(),
+              .shipno = g.shipno(),
+              .star = prompt.star,
+              .planet = prompt.planet,
+              .ship = prompt.ship,
+              .path = prompt.path,
+          },
+      .viewport =
+          SessionViewportView{
+              .universe_center = g.universe_center(),
+              .system_center = g.system_center(),
+              .universe_zoom = g.zoom[1],
+              .system_zoom = g.zoom[0],
+          },
+  };
+
+  if (g.race != nullptr) {
+    view.race_name = g.race->name;
+    const auto& gov = g.race->governor(governor);
+    view.governor_name = gov.name;
+    view.toggles = gov.toggle;
+  }
+
+  return view;
+}
 
 PromptViewModel build_ship_prompt(EntityManager& em, const player_t player,
                                   const shipnum_t shipno) {
@@ -129,14 +171,15 @@ std::string format_ship_prompt(EntityManager& em, const player_t player,
  * \return Prompt string for display to the user
  */
 std::string do_prompt(const GameObj& g) {
-  const auto vm = build_prompt(g);
   if (g.ui_mode() == GB::presentation::UiMode::JSON) {
+    const auto vm = build_session_view(g);
     std::string out;
-    const PromptJsonEnvelope envelope{.data = &vm};
+    const SessionJsonEnvelope envelope{.data = &vm};
     if (const auto ec = glz::write_json(envelope, out); !ec) {
       out.push_back('\n');
     }
     return out;
   }
+  const auto vm = build_prompt(g);
   return std::format(" ( [{}] {} )\n", vm.ap, vm.path);
 }

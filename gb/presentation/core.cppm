@@ -16,6 +16,46 @@ import std;
 
 export namespace GB::presentation {
 
+using ::build_session_view;
+using ::SessionClockView;
+using ::SessionScopeView;
+using ::SessionView;
+using ::SessionViewportView;
+
+/// Logical channel classification for canonical `"message"` stanzas.
+enum class MessageChannel : std::uint8_t {
+  Output,           ///< Direct confirmation or diagnostic text from a command
+  Telegram,         ///< Stored or incoming player telegram
+  NewsDeclaration,  ///< Galactic news: diplomatic declarations
+  NewsCombat,       ///< Galactic news: combat headlines
+  NewsBusiness,     ///< Galactic news: commerce & transfers
+  NewsBulletin,     ///< Galactic news: public posts & nova bulletins
+  Announce,         ///< Live system-wide announce / shout / think
+  Broadcast,        ///< Live galaxy-wide broadcast
+  Page,             ///< Live governor page alert
+  Help,             ///< Manual / help topic content
+};
+
+/// Canonical `"message"` wire-protocol stanza
+/// (`{"type":"message","data":{...}}`).
+struct MessageView {
+  MessageChannel channel{MessageChannel::Output};
+  std::int64_t id{0};
+  std::time_t timestamp{0};
+  std::optional<player_t> sender_player{std::nullopt};
+  std::string sender{};
+  std::string topic{};
+  std::string message{};
+};
+
+/// Canonical `"error"` wire-protocol stanza
+/// (`{"type":"error","data":{...}}`).
+struct ErrorView {
+  std::string code{};
+  std::string command{};
+  std::string message{};
+};
+
 /// Wire-protocol JSON envelope wrapping a typed command result, view model, or
 /// asynchronous domain event without copying the payload.
 template <typename T>
@@ -36,6 +76,53 @@ template <typename T>
     out.push_back('\n');
   }
   return out;
+}
+
+[[nodiscard]] inline std::string render_session_prompt(const SessionView& vm) {
+  return std::format(" ( [{}] {} )\n", vm.ap, vm.scope.path);
+}
+
+[[nodiscard]] inline std::string render_json_session(const SessionView& vm) {
+  return render_json_envelope("session", vm);
+}
+
+[[nodiscard]] inline std::string render_for_mode(UiMode mode,
+                                                 const SessionView& vm) {
+  return mode == UiMode::JSON ? render_json_session(vm)
+                              : render_session_prompt(vm);
+}
+
+[[nodiscard]] inline std::string render_message(const MessageView& vm) {
+  return vm.message;
+}
+
+[[nodiscard]] inline std::string render_json_message(const MessageView& vm) {
+  return render_json_envelope("message", vm);
+}
+
+[[nodiscard]] inline std::string render_for_mode(UiMode mode,
+                                                 const MessageView& vm) {
+  return mode == UiMode::JSON ? render_json_message(vm) : render_message(vm);
+}
+
+[[nodiscard]] inline MessageView make_output_message(std::string text) {
+  return MessageView{
+      .channel = MessageChannel::Output,
+      .message = std::move(text),
+  };
+}
+
+[[nodiscard]] inline std::string render_error(const ErrorView& vm) {
+  return vm.message;
+}
+
+[[nodiscard]] inline std::string render_json_error(const ErrorView& vm) {
+  return render_json_envelope("error", vm);
+}
+
+[[nodiscard]] inline std::string render_for_mode(UiMode mode,
+                                                 const ErrorView& vm) {
+  return mode == UiMode::JSON ? render_json_error(vm) : render_error(vm);
 }
 
 /// Concept satisfied by any ViewModel that provides a non-member

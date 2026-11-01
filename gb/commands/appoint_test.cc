@@ -22,6 +22,7 @@ void test_appoint_validation_and_modes() {
     JsonStore store(ctx.db);
     RaceRepository races(store);
     races.save(race);
+    PowerRepository(store).save(Power{{.id = 1}});
   }
 
   auto& registry = get_test_session_registry();
@@ -65,15 +66,16 @@ void test_appoint_validation_and_modes() {
   ctx.assert_dispatch_success(g, {"appoint", "autopass"});
   test::expect_true(ctx.em.peek_race(1)->has_governor(3));
   test::expect_eq(ctx.em.peek_race(1)->governor(3).password, "autopass");
-  test::expect_contains(g.out.str(), "\"type\":\"appoint\"");
-  test::expect_contains(g.out.str(), "\"governor\":3");
-  test::expect_contains(g.out.str(), "\"auto_assigned\":true");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), "Governor 3 activated.");
+  test::expect_contains(g.out.str(), R"("type":"race")");
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"appoint", "4", "explicitpass"});
   test::expect_true(ctx.em.peek_race(1)->has_governor(4));
-  test::expect_contains(g.out.str(), "\"governor\":4");
-  test::expect_contains(g.out.str(), "\"auto_assigned\":false");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), "Governor activated.");
+  test::expect_contains(g.out.str(), R"("type":"race")");
   g.set_ui_mode(UiMode::ASCII);
 
   ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });

@@ -48,8 +48,10 @@ bool profile(const command_t& argv, GameObj& g) {
         .conditions = race.conditions,
         .sector_compat = race.likes,
         .discoveries = race.discoveries,
+        .race = GB::presentation::project_race_view(
+            g.entity_manager, g.scope_context(), race.Playernum),
     };
-    g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
+    g.present(vm);
     return true;
   }
 
@@ -99,8 +101,10 @@ bool profile(const command_t& argv, GameObj& g) {
           .morale = race.estimate(r.morale, p),
           .best_sector =
               (know > 80) ? std::string{sector_type_name(r.likesbest)} : " ? ",
+          .race = GB::presentation::project_race_view(g.entity_manager,
+                                                      g.scope_context(), p),
       };
-      g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
+      g.present(vm);
     });
   } catch (const EntityNotFoundError&) {
     g.out << "Race not found.\n";

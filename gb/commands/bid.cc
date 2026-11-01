@@ -31,9 +31,17 @@ std::optional<CommodType> parse_commod_type(std::string_view arg) {
 
 void present_commodities(GameObj& g, std::optional<CommodType> filter) {
   GB::presentation::CommodityMarketViewModel vm{.filter = filter};
+  const std::optional<starnum_t> shipping_dest_star =
+      (g.level() == ScopeLevel::LEVEL_STAR ||
+       g.level() == ScopeLevel::LEVEL_PLAN)
+          ? std::optional<starnum_t>{g.snum()}
+          : std::nullopt;
 
   for (const Commod& c : CommodList::readonly(g.entity_manager)) {
     if (filter && c.type() != *filter) continue;
+
+    vm.market_lots.push_back(GB::presentation::project_market_lot_view(
+        g.entity_manager, g.scope_context(), c, shipping_dest_star));
 
     std::string destination;
     if (c.has_bid() && c.bidder() == g.player()) {

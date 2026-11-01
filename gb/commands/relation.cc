@@ -47,8 +47,10 @@ bool relation(const command_t& argv, GameObj& g) {
             .yours = allied(race, r.Playernum),
             .theirs = allied(r, q),
         });
+        vm.races.push_back(GB::presentation::project_race_view(
+            g.entity_manager, g.scope_context(), r.Playernum));
       }
-      g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
+      g.present(vm);
     });
   } catch (const EntityNotFoundError&) {
     g.out << "Race not found.\n";

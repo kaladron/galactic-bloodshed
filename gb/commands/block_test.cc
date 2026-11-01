@@ -43,7 +43,8 @@ void test_block_dispatch() {
   races.save(race3);
   races.save(race4);
 
-  PowerRepository(store).save(Power{{
+  PowerRepository powers(store);
+  powers.save(Power{{
       .id = 1,
       .troops = 100,
       .popn = 1000,
@@ -51,6 +52,9 @@ void test_block_dispatch() {
       .planets_owned = 2,
       .money = 500,
   }});
+  powers.save(Power{{.id = 2}});
+  powers.save(Power{{.id = 3}});
+  powers.save(Power{{.id = 4}});
 
   // Create blocks for each player using designated initializers
   const Block block1{{
@@ -137,11 +141,18 @@ void test_block_dispatch() {
 
   g.set_ui_mode(UiMode::JSON);
   ctx.assert_dispatch_success(g, {"block"});
-  test::expect_contains(g.out.str(), "\"list_report\"");
+  test::expect_contains(g.out.str(), R"("type":"block")");
+  test::expect_contains(g.out.str(), R"("name":"ZeroVPBlock")");
+  g.out.str("");
   ctx.assert_dispatch_success(g, {"block", "player", "1"});
-  test::expect_contains(g.out.str(), "\"player_report\"");
+  test::expect_contains(g.out.str(), R"("type":"race")");
+  test::expect_contains(g.out.str(), R"("name":"TestRace1")");
+  g.out.str("");
   ctx.assert_dispatch_success(g, {"block", "1"});
-  test::expect_contains(g.out.str(), "\"detail_report\"");
+  test::expect_contains(g.out.str(), R"("type":"block")");
+  test::expect_contains(g.out.str(), R"("name":"ZeroVPBlock")");
+  test::expect_contains(g.out.str(), R"("type":"race")");
+  g.set_ui_mode(UiMode::ASCII);
 }
 
 }  // namespace

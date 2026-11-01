@@ -16,8 +16,9 @@ namespace {
 using GB::presentation::PowerRow;
 using GB::presentation::PowerViewModel;
 
-void add_power_row(PowerViewModel& vm, EntityManager& em, const Race& race,
-                   const Race& r, player_t i, int rank) {
+void add_power_row(PowerViewModel& vm, EntityManager& em,
+                   const ScopeContext& viewer, const Race& race, const Race& r,
+                   player_t i, int rank) {
   std::string alliance_them = race.is_allied_with(i)   ? "+"
                               : race.is_at_war_with(i) ? "-"
                                                        : " ";
@@ -31,6 +32,9 @@ void add_power_row(PowerViewModel& vm, EntityManager& em, const Race& race,
   } catch (const EntityNotFoundError&) {
     return;
   }
+
+  vm.races.push_back(GB::presentation::project_race_view(
+      em, viewer, i, rank > 0 ? std::optional<int>{rank} : std::nullopt));
 
   std::string know_col;
   if (race.God) {
@@ -88,7 +92,8 @@ bool power(const command_t& argv, GameObj& g) {
       const auto* r = g.entity_manager.peek_race(p);
       if (!r) continue;
       if (!r->dissolved && race->translation_for(p) >= 10) {
-        add_power_row(vm, g.entity_manager, *race, *r, p, rank);
+        add_power_row(vm, g.entity_manager, g.scope_context(), *race, *r, p,
+                      rank);
       }
     }
   } else {
@@ -97,10 +102,11 @@ bool power(const command_t& argv, GameObj& g) {
       g.out << "Race not found.\n";
       return false;
     }
-    add_power_row(vm, g.entity_manager, *race, *r, target_player.value(), 0);
+    add_power_row(vm, g.entity_manager, g.scope_context(), *race, *r,
+                  target_player.value(), 0);
   }
 
-  g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
+  g.present(vm);
   return true;
 }
 

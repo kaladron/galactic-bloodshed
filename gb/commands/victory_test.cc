@@ -86,12 +86,9 @@ void test_victory_dispatch() {
   g.out.str("");
   ctx.assert_dispatch_success(g, {"victory", "2"});
   out = g.out.str();
-  test::expect_contains(out, "\"type\":\"victory\"");
-  test::expect_contains(out, "\"is_god\":true");
-  test::expect_contains(out, "\"is_metamorph\":true");
-  test::expect_contains(out, "\"name\":\"Martians\"");
-  test::expect_contains(out, "\"password\":\"secret2\"");
-  test::expect_contains(out, "\"gov_password\":\"govsec2\"");
+  test::expect_contains(out, R"("type":"race")");
+  test::expect_contains(out, R"("name":"Terrans")");
+  test::expect_contains(out, R"("name":"Martians")");
   g.set_ui_mode(UiMode::ASCII);
 
   // 6. God, Guest, and dissolved races mark no_count=true in

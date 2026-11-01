@@ -52,9 +52,11 @@ bool victory(const command_t& argv, GameObj& g) {
     }
 
     vm.rows.push_back(std::move(row));
+    vm.races.push_back(GB::presentation::project_race_view(
+        g.entity_manager, g.scope_context(), vic.racenum, rank));
   }
 
-  g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
+  g.present(vm);
   return true;
 }
 

@@ -261,14 +261,8 @@ void test_bless_commodities() {
   const std::string race2_name = ctx.em.peek_race(2)->name;
   ctx.assert_dispatch_success(g, {"bless", race2_name, "action", "15"});
   test::expect_eq(ctx.em.peek_star(1)->AP(2), 165);
-  test::expect_contains(g.out.str(), "\"type\":\"bless\"");
-  test::expect_contains(g.out.str(), "\"target_player\":2");
-  test::expect_contains(
-      g.out.str(),
-      std::format(
-          "\"property\":{}",
-          std::to_underlying(GB::presentation::BlessProperty::ActionPoints)));
-  test::expect_contains(g.out.str(), "\"value\":15");
+  test::expect_contains(g.out.str(), R"("type":"star")");
+  test::expect_contains(g.out.str(), R"("name":"Sol")");
 
   ctx.verify_universe_invariants();
 }

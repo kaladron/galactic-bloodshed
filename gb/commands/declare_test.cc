@@ -62,9 +62,9 @@ void test_declare_dispatch() {
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"declare", "2", "alliance", "40"});
-  test::expect_contains(g.out.str(), R"("type":"declare")");
-  test::expect_contains(g.out.str(), R"("relation":1)");
-  test::expect_contains(g.out.str(), R"("translation_modifier":40)");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), "Good for you.");
+  test::expect_contains(g.out.str(), R"("type":"race")");
   g.set_ui_mode(UiMode::ASCII);
 
   // 6. Direct renderer coverage for rare_quip and

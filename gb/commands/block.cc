@@ -52,7 +52,13 @@ bool block(const command_t& argv, GameObj& g) {
       if (block_i.is_pledged(p) && !block_i.is_invited(p)) {
         report.pledged_blocks.push_back(block_i.Playernum());
       }
+      if (block_i.is_pledged(p) || block_i.is_invited(p)) {
+        vm.block_views.push_back(GB::presentation::project_block_view(
+            g.entity_manager, g.scope_context(), block_i.Playernum()));
+      }
     }
+    vm.member_views.push_back(GB::presentation::project_race_view(
+        g.entity_manager, g.scope_context(), p));
     vm.player_report = std::move(report);
   } else if (argv.size() > 1) {
     p = get_player(g.entity_manager, argv[1]);
@@ -68,12 +74,17 @@ bool block(const command_t& argv, GameObj& g) {
       return false;
     }
 
+    vm.block_views.push_back(GB::presentation::project_block_view(
+        g.entity_manager, g.scope_context(), p));
+
     BlockDetailReport report{
         .block_name = block_p->name(),
         .motto = block_p->motto(),
     };
     for (const Race& r : RaceList::readonly(g.entity_manager)) {
       if (!block_p->is_member(r.Playernum) || r.dissolved) continue;
+      vm.member_views.push_back(GB::presentation::project_race_view(
+          g.entity_manager, g.scope_context(), r.Playernum));
       try {
         g.entity_manager.with_power(r.Playernum, [&](const Power& p_info) {
           report.members.push_back(BlockMemberRow{
@@ -106,6 +117,9 @@ bool block(const command_t& argv, GameObj& g) {
       player_t i = block_i.Playernum();
       if (block_i.members() == 0) continue;
 
+      vm.block_views.push_back(GB::presentation::project_block_view(
+          g.entity_manager, g.scope_context(), i));
+
       report.blocks.push_back(BlockSummaryRow{
           .player = i,
           .name = block_i.name(),
@@ -124,7 +138,7 @@ bool block(const command_t& argv, GameObj& g) {
     vm.list_report = std::move(report);
   }
 
-  g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
+  g.present(vm);
   return true;
 }
 

@@ -131,13 +131,15 @@ void test_profile_dispatch() {
 
   // 7. JSON mode rendering for both self and other profile
   g.set_ui_mode(UiMode::JSON);
+  g.out.str("");
   ctx.assert_dispatch_success(g, {"profile"});
-  test::expect_contains(g.out.str(), "\"type\":\"profile_self\"");
-  test::expect_contains(g.out.str(), "\"race_name\":\"Federation\"");
+  test::expect_contains(g.out.str(), R"("type":"race")");
+  test::expect_contains(g.out.str(), R"("name":"Federation")");
 
+  g.out.str("");
   ctx.assert_dispatch_success(g, {"profile", "2"});
-  test::expect_contains(g.out.str(), "\"type\":\"profile_other\"");
-  test::expect_contains(g.out.str(), "\"race_name\":\"Klingons\"");
+  test::expect_contains(g.out.str(), R"("type":"race")");
+  test::expect_contains(g.out.str(), R"("name":"Klingons")");
   g.set_ui_mode(UiMode::ASCII);
   std::println(std::cout, "    ✓ JSON mode profile rendering verified");
 

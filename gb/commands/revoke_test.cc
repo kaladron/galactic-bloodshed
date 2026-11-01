@@ -24,6 +24,7 @@ void test_revoke_validation_and_transfers() {
     JsonStore store(ctx.db);
     RaceRepository races(store);
     races.save(race);
+    PowerRepository(store).save(Power{{.id = 1}});
   }
 
   auto& registry = get_test_session_registry();
@@ -122,10 +123,9 @@ void test_revoke_validation_and_transfers() {
   test::expect_eq(ctx.em.peek_star(1)->governor(1), governor_t{3});
   test::expect_eq(ctx.em.peek_ship(2)->governor(), governor_t{3});
   test::expect_eq(ctx.em.peek_commod(1)->governor(), governor_t{3});
-  test::expect_contains(g.out.str(), "\"type\":\"revoke\"");
-  test::expect_contains(g.out.str(), "\"revoked_governor\":2");
-  test::expect_contains(g.out.str(), "\"target_governor\":3");
-  test::expect_contains(g.out.str(), "\"money_transferred\":450");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), "Done.");
+  test::expect_contains(g.out.str(), R"("type":"race")");
 
   g.set_ui_mode(UiMode::ASCII);
   g.out.str("");

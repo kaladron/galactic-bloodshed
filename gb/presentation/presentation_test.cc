@@ -381,15 +381,6 @@ void test_bless_presentation() {
                            .star_name = "Sol"};
   test::expect_eq(render_bless_notification(ap_res),
                   "Deity gave you 30 action points at Sol.\n");
-  test::expect_eq(GB::presentation::render_for_mode(UiMode::ASCII, ap_res), "");
-  const std::string json =
-      GB::presentation::render_for_mode(UiMode::JSON, ap_res);
-  test::expect_contains(json, "\"type\":\"bless\"");
-  test::expect_contains(json, "\"target_player\":2");
-  test::expect_contains(
-      json, std::format("\"property\":{}",
-                        std::to_underlying(BlessProperty::ActionPoints)));
-  test::expect_contains(json, "\"value\":30");
 }
 
 void test_planet_turn_bulletins() {

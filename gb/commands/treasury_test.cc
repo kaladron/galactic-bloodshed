@@ -42,11 +42,10 @@ void test_treasury_dispatch() {
   test::expect_contains(g.out.str(), "You have: 50000");
 
   g.set_ui_mode(UiMode::JSON);
+  g.out.str("");
   ctx.assert_dispatch_success(g, {"treasury"});
-  test::expect_contains(g.out.str(), "\"type\":\"treasury\"");
-  test::expect_contains(g.out.str(), "\"total_income\":1250");
-  test::expect_contains(g.out.str(), "\"total_costs\":500");
-  test::expect_contains(g.out.str(), "\"money\":50000");
+  test::expect_contains(g.out.str(), R"("type":"race")");
+  test::expect_contains(g.out.str(), R"("name":"Bankers")");
   g.set_ui_mode(UiMode::ASCII);
 
   ctx.verify_universe_invariants();

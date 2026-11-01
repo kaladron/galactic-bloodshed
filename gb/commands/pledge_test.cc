@@ -61,8 +61,8 @@ void test_pledge_dispatch() {
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"pledge", "2"});
-  test::expect_contains(g.out.str(), R"("type":"pledge")");
-  test::expect_contains(g.out.str(), R"("block_name":"GalacticCoalition")");
+  test::expect_contains(g.out.str(), R"("type":"block")");
+  test::expect_contains(g.out.str(), R"("name":"GalacticCoalition")");
   g.set_ui_mode(UiMode::ASCII);
 
   // 3. Direct renderer checks for bandwagon and normal declaration news

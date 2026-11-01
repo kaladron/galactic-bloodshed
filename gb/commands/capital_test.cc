@@ -88,8 +88,8 @@ void test_capital_matrix() {
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"capital"}, /*expected_star_ap_deducted=*/0);
-  test::expect_contains(g.out.str(), R"("type":"capital")");
-  test::expect_contains(g.out.str(), R"("designated":false)");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), "Efficiency of governmental center:");
   g.set_ui_mode(UiMode::ASCII);
 
   // 3. Role Rejection: Governor 2 cannot designate capital

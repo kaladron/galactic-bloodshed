@@ -23,6 +23,7 @@ void test_governors_list() {
     JsonStore store(ctx.db);
     RaceRepository races(store);
     races.save(race);
+    PowerRepository(store).save(Power{{.id = 1}});
   }
 
   auto& registry = get_test_session_registry();
@@ -43,15 +44,14 @@ void test_governors_list() {
   g.out.str("");
   ctx.setup_game_obj(g, 1, 1);
   ctx.assert_dispatch_success(g, {"governors"});
-  test::expect_contains(g.out.str(), "\"type\":\"governors\"");
-  test::expect_contains(g.out.str(), "\"is_leader\":true");
-  test::expect_contains(g.out.str(), "\"password\":\"leadpass\"");
+  test::expect_contains(g.out.str(), R"("type":"race")");
+  test::expect_contains(g.out.str(), R"("name":"GovOne")");
 
   g.out.str("");
   ctx.setup_game_obj(g, 1, 2);
   ctx.assert_dispatch_success(g, {"governors"});
-  test::expect_contains(g.out.str(), "\"is_leader\":false");
-  test::expect_false(g.out.str().contains("\"password\""));
+  test::expect_contains(g.out.str(), R"("type":"race")");
+  test::expect_contains(g.out.str(), R"("name":"GovOne")");
 }
 
 void test_password_change_validation_and_modes() {
@@ -65,6 +65,7 @@ void test_password_change_validation_and_modes() {
     JsonStore store(ctx.db);
     RaceRepository races(store);
     races.save(race);
+    PowerRepository(store).save(Power{{.id = 1}});
   }
 
   auto& registry = get_test_session_registry();
@@ -97,8 +98,9 @@ void test_password_change_validation_and_modes() {
   ctx.setup_game_obj(g, 1, 1);
   ctx.assert_dispatch_success(g, {"governors", "2", "password", "newpass"});
   test::expect_eq(ctx.em.peek_race(1)->governor(2).password, "newpass");
-  test::expect_contains(g.out.str(), "\"type\":\"governor_password_changed\"");
-  test::expect_contains(g.out.str(), "\"governor\":2");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), "Password changed.");
+  test::expect_contains(g.out.str(), R"("type":"race")");
   g.set_ui_mode(UiMode::ASCII);
 
   ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });

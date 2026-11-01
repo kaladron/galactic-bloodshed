@@ -152,7 +152,7 @@ int main() {
 
     g.set_ui_mode(UiMode::JSON);
     ctx.assert_dispatch_success(g, {"bid", "r"});
-    test::expect_contains(g.out.str(), "\"type\":\"commodity_market\"");
+    test::expect_contains(g.out.str(), R"("type":"market_lot")");
     g.set_ui_mode(UiMode::ASCII);
   }
 
@@ -164,7 +164,9 @@ int main() {
 
     g.set_ui_mode(UiMode::JSON);
     ctx.assert_dispatch_success(g, {"bid", "1", std::to_string(new_bid)});
-    test::expect_contains(g.out.str(), "\"type\":\"bid\"");
+    test::expect_contains(g.out.str(), R"("type":"message")");
+    test::expect_contains(g.out.str(), "Bid accepted.");
+    test::expect_contains(g.out.str(), R"("type":"market_lot")");
     g.set_ui_mode(UiMode::ASCII);
 
     ctx.em.clear_cache();

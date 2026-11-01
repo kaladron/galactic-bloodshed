@@ -23,6 +23,8 @@ bool treasury(const command_t&, GameObj& g) {
       .cost_tech = gov.cost_tech,
       .maintain = gov.maintain,
       .money = gov.money,
+      .race = GB::presentation::project_race_view(
+          g.entity_manager, g.scope_context(), g.player()),
   });
   return true;
 }

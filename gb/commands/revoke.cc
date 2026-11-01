@@ -100,11 +100,7 @@ bool revoke(const command_t& argv, GameObj& g) {
     success = true;
   });
   if (success) {
-    g.present(GB::presentation::GovernorRevokedResult{
-        .revoked_governor = gov,
-        .target_governor = j,
-        .money_transferred = transferred,
-    });
+    g.present(GB::presentation::make_output_message("Done.\n"));
   }
   return success;
 }

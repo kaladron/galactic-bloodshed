@@ -25,7 +25,6 @@ void emit_blessing(GameObj& g, const BlessResult& result) {
   warn_player(g.session_registry, g.entity_manager, result.target_player,
               Race::leader_id,
               GB::presentation::render_bless_notification(result));
-  g.present(result);
 }
 
 void emit_planet_blessing(GameObj& g, player_t who, BlessProperty prop,

@@ -14,6 +14,161 @@ import std;
 
 export namespace GB::presentation {
 
+/// Diplomatic stance declared via `declare <race> <alliance|neutral|war>`
+/// or between two empires.
+enum class DiplomaticRelation : std::uint8_t {
+  Neutral,
+  Allied,
+  AtWar,
+  Alliance = Allied,
+  War = AtWar,
+};
+
+/// Fog-of-war filtered biological and technological characteristics of a race.
+/// Numeric values use std::int64_t when quantized through
+/// Race::estimate_value(), or exact values when viewer.can_see(target_player ==
+/// viewer.player).
+struct RaceStatsView {
+  std::optional<bool> is_metamorph{std::nullopt};
+  std::optional<std::int64_t> fertilize{std::nullopt};
+  std::optional<std::int64_t> temp{std::nullopt};
+  std::optional<double> birthrate{std::nullopt};
+  std::optional<double> mass{std::nullopt};
+  std::optional<std::int64_t> fighters{std::nullopt};
+  std::optional<double> metabolism{std::nullopt};
+  std::optional<std::int64_t> number_sexes{std::nullopt};
+  std::optional<double> adventurism{std::nullopt};
+  std::optional<std::int64_t> iq{std::nullopt};
+  std::optional<double> tech{std::nullopt};
+  std::optional<std::int64_t> morale{std::nullopt};
+  std::optional<std::int64_t> gun_range{std::nullopt};
+  std::optional<std::int64_t> space_tele_range{std::nullopt};
+  std::optional<std::int64_t> ground_tele_range{std::nullopt};
+  std::optional<ConditionValues> conditions{std::nullopt};
+  std::optional<SectorType> best_sector{std::nullopt};
+};
+
+/// Fog-of-war filtered empire power and stockpile metrics.
+struct RacePowerStandingsView {
+  std::optional<int> rank{std::nullopt};
+  std::optional<std::int64_t> victory_score{std::nullopt};
+  std::optional<std::int64_t> troops{std::nullopt};
+  std::optional<std::int64_t> popn{std::nullopt};
+  std::optional<std::int64_t> money{std::nullopt};
+  std::optional<std::int64_t> ships{std::nullopt};
+  std::optional<std::int64_t> planets{std::nullopt};
+  std::optional<std::int64_t> resource{std::nullopt};
+  std::optional<std::int64_t> fuel{std::nullopt};
+  std::optional<std::int64_t> destruct{std::nullopt};
+};
+
+/// Active governor summary visible to the owning empire (or deity).
+struct GovernorSummaryView {
+  governor_t id{0};
+  std::string name{};
+  money_t money{0};
+  money_t income{0};
+  money_t maintain{0};
+  money_t cost_tech{0};
+  money_t cost_market{0};
+  money_t profit_market{0};
+  std::time_t last_login{0};
+  ScopeLevel default_level{ScopeLevel::LEVEL_UNIV};
+  starnum_t default_star{0};
+  planetnum_t default_planet{0};
+  starnum_t home_star{0};
+  planetnum_t home_planet{0};
+};
+
+/// Private empire details visible only when viewer.can_see(target ==
+/// viewer.player).
+struct RaceSelfDetailsView {
+  std::optional<shipnum_t> gov_ship{std::nullopt};
+  turn_t updates_active{0};
+  SectorCompatibilities sector_compat{};
+  TechDiscoveries discoveries{};
+  bool vote_update_go{false};
+  std::vector<GovernorSummaryView> governors{};
+};
+
+/// Canonical view model for a race/empire ("type": "race").
+struct RaceView {
+  player_t player{0};
+  std::string name{};
+  bool dissolved{false};
+  bool is_god{false};
+  bool is_guest{false};
+  std::string personal_info{};
+  Percentage know_pct{0};
+  DiplomaticRelation you_to_them{DiplomaticRelation::Neutral};
+  DiplomaticRelation them_to_you{DiplomaticRelation::Neutral};
+  RaceStatsView stats{};
+  std::optional<RacePowerStandingsView> standings{std::nullopt};
+  std::optional<RaceSelfDetailsView> self{std::nullopt};
+};
+
+/// Canonical view model for an alliance block ("type": "block").
+struct BlockView {
+  player_t block_id{0};
+  std::string name{};
+  std::string motto{};
+  std::vector<player_t> members{};
+  std::vector<player_t> invited{};
+  std::vector<player_t> pledged{};
+  Percentage know_pct{0};
+  std::optional<RacePowerStandingsView> standings{std::nullopt};
+};
+
+/// Canonical view model for a commodity market lot ("type": "market_lot").
+struct MarketLotView {
+  commodnum_t id{0};
+  bool active{true};
+  CommodType type{CommodType::RESOURCE};
+  resource_t amount{0};
+  player_t owner{0};
+  player_t bidder{0};
+  money_t bid{0};
+  double cost_per_unit{0.0};
+  money_t shipping_cost{0};
+  std::optional<starnum_t> dest_star{std::nullopt};
+  std::optional<planetnum_t> dest_planet{std::nullopt};
+};
+
+/// Projects canonical RaceView under viewer scope and fog-of-war rules.
+[[nodiscard]] RaceView
+project_race_view(EntityManager& em, const ScopeContext& viewer,
+                  player_t target_player,
+                  std::optional<int> rank = std::nullopt);
+
+/// Projects canonical BlockView under viewer scope and fog-of-war rules.
+[[nodiscard]] BlockView project_block_view(EntityManager& em,
+                                           const ScopeContext& viewer,
+                                           player_t block_id);
+
+/// Projects canonical MarketLotView under viewer scope and fog-of-war rules.
+[[nodiscard]] MarketLotView project_market_lot_view(
+    EntityManager& em, const ScopeContext& viewer, const Commod& commod,
+    std::optional<starnum_t> shipping_dest_star = std::nullopt);
+
+/// Projects a tombstone MarketLotView representing a completed/deleted market
+/// lot.
+[[nodiscard]] MarketLotView project_deleted_market_lot_view(commodnum_t id);
+
+/// Formats a canonical RaceView into its JSON envelope string.
+[[nodiscard]] std::string render_json_race_view(const RaceView& vm);
+
+/// Formats a canonical BlockView into its JSON envelope string.
+[[nodiscard]] std::string render_json_block_view(const BlockView& vm);
+
+/// Formats a canonical MarketLotView into its JSON envelope string.
+[[nodiscard]] std::string render_json_market_lot_view(const MarketLotView& vm);
+
+/// Renders all modified entities captured during a JSON command execution
+/// into their canonical JSON envelopes.
+[[nodiscard]] std::string
+render_dirty_entities_json(EntityManager& em, const ScopeContext& viewer,
+                           const DirtyEntitySet& dirty);
+
 /// Single row in a `relation` racial relations report.
 struct RelationRow {
   player_t player{0};
@@ -29,14 +184,11 @@ struct RelationViewModel {
   player_t subject_player{0};
   std::string subject_race_name{};
   std::vector<RelationRow> rows{};
+  std::vector<RaceView> races{};
 };
 
 /// Renders a `RelationViewModel` for `UiMode::ASCII`.
 [[nodiscard]] std::string render_relation(const RelationViewModel& vm);
-
-/// Serializes a `RelationViewModel` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"relation","data":{...}}\n`).
-[[nodiscard]] std::string render_json_relation(const RelationViewModel& vm);
 
 /// Dispatches `RelationViewModel` rendering based on `mode`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
@@ -125,15 +277,11 @@ struct ProfileSelfViewModel {
   ConditionValues conditions{};
   SectorCompatibilities sector_compat{};
   TechDiscoveries discoveries{};
+  RaceView race{};
 };
 
 /// Renders a `ProfileSelfViewModel` for `UiMode::ASCII`.
 [[nodiscard]] std::string render_profile_self(const ProfileSelfViewModel& vm);
-
-/// Serializes a `ProfileSelfViewModel` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"profile_self","data":{...}}\n`).
-[[nodiscard]] std::string
-render_json_profile_self(const ProfileSelfViewModel& vm);
 
 /// Dispatches `ProfileSelfViewModel` rendering based on `mode`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
@@ -170,15 +318,11 @@ struct ProfileOtherViewModel {
   std::string other{};
   std::string morale{};
   std::string best_sector{};
+  RaceView race{};
 };
 
 /// Renders a `ProfileOtherViewModel` for `UiMode::ASCII`.
 [[nodiscard]] std::string render_profile_other(const ProfileOtherViewModel& vm);
-
-/// Serializes a `ProfileOtherViewModel` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"profile_other","data":{...}}\n`).
-[[nodiscard]] std::string
-render_json_profile_other(const ProfileOtherViewModel& vm);
 
 /// Dispatches `ProfileOtherViewModel` rendering based on `mode`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
@@ -242,14 +386,12 @@ struct BlockViewModel {
   std::optional<BlockPlayerReport> player_report{std::nullopt};
   std::optional<BlockDetailReport> detail_report{std::nullopt};
   std::optional<BlockListReport> list_report{std::nullopt};
+  std::vector<BlockView> block_views{};
+  std::vector<RaceView> member_views{};
 };
 
 /// Renders a `BlockViewModel` for `UiMode::ASCII`.
 [[nodiscard]] std::string render_block(const BlockViewModel& vm);
-
-/// Serializes a `BlockViewModel` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"block","data":{...}}\n`).
-[[nodiscard]] std::string render_json_block(const BlockViewModel& vm);
 
 /// Dispatches `BlockViewModel` rendering based on `mode`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
@@ -316,14 +458,11 @@ struct PowerViewModel {
   bool show_rank_header{true};
   bool is_god{false};
   std::vector<PowerRow> rows{};
+  std::vector<RaceView> races{};
 };
 
 /// Renders a `PowerViewModel` for `UiMode::ASCII`.
 [[nodiscard]] std::string render_power(const PowerViewModel& vm);
-
-/// Serializes a `PowerViewModel` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"power","data":{...}}\n`).
-[[nodiscard]] std::string render_json_power(const PowerViewModel& vm);
 
 /// Dispatches `PowerViewModel` rendering based on `mode`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
@@ -441,14 +580,11 @@ struct VictoryRow {
 struct VictoryViewModel {
   bool is_god{false};
   std::vector<VictoryRow> rows{};
+  std::vector<RaceView> races{};
 };
 
 /// Renders a `VictoryViewModel` for `UiMode::ASCII`.
 [[nodiscard]] std::string render_victory(const VictoryViewModel& vm);
-
-/// Serializes a `VictoryViewModel` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"victory","data":{...}}\n`).
-[[nodiscard]] std::string render_json_victory(const VictoryViewModel& vm);
 
 /// Dispatches `VictoryViewModel` rendering based on `mode`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
@@ -530,12 +666,11 @@ struct CommodityLotRow {
 struct CommodityMarketViewModel {
   std::optional<CommodType> filter{std::nullopt};
   std::vector<CommodityLotRow> rows{};
+  std::vector<MarketLotView> market_lots{};
 };
 
 [[nodiscard]] std::string
 render_commodity_market(const CommodityMarketViewModel& vm);
-[[nodiscard]] std::string
-render_json_commodity_market(const CommodityMarketViewModel& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const CommodityMarketViewModel& vm);
 
@@ -547,8 +682,6 @@ struct BidPlacedResult {
 };
 
 [[nodiscard]] std::string render_bid_placed_result(const BidPlacedResult& vm);
-[[nodiscard]] std::string
-render_json_bid_placed_result(const BidPlacedResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const BidPlacedResult& vm);
 [[nodiscard]] std::string render_outbid_telegram(int lot, resource_t amount,
@@ -565,7 +698,6 @@ struct SellResult {
 };
 
 [[nodiscard]] std::string render_sell_result(const SellResult& vm);
-[[nodiscard]] std::string render_json_sell_result(const SellResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode, const SellResult& vm);
 [[nodiscard]] std::string render_sell_market_news(int lot, resource_t amount,
                                                   CommodType type,
@@ -582,10 +714,10 @@ struct TreasuryViewModel {
   money_t cost_tech{0};
   money_t maintain{0};
   money_t money{0};
+  RaceView race{};
 };
 
 [[nodiscard]] std::string render_treasury(const TreasuryViewModel& vm);
-[[nodiscard]] std::string render_json_treasury(const TreasuryViewModel& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const TreasuryViewModel& vm);
 
@@ -622,7 +754,6 @@ struct PayResult {
 };
 
 [[nodiscard]] std::string render_pay_result(const PayResult& vm);
-[[nodiscard]] std::string render_json_pay_result(const PayResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode, const PayResult& vm);
 [[nodiscard]] std::string
 render_pay_recipient_telegram(std::string_view payer_name, player_t payer_id,
@@ -645,24 +776,12 @@ struct GovernorRow {
 struct GovernorsViewModel {
   bool is_leader{false};
   std::vector<GovernorRow> rows{};
+  RaceView race{};
 };
 
 [[nodiscard]] std::string render_governors(const GovernorsViewModel& vm);
-[[nodiscard]] std::string render_json_governors(const GovernorsViewModel& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const GovernorsViewModel& vm);
-
-/// Result of changing a governor's password (`governors <gov> password <pw>`).
-struct GovernorPasswordChangedResult {
-  governor_t governor{0};
-};
-
-[[nodiscard]] std::string render_governor_password_changed_result(
-    const GovernorPasswordChangedResult& vm);
-[[nodiscard]] std::string render_json_governor_password_changed_result(
-    const GovernorPasswordChangedResult& vm);
-[[nodiscard]] std::string
-render_for_mode(UiMode mode, const GovernorPasswordChangedResult& vm);
 
 /// Result of appointing a governor (`appoint [<gov>] <password>`).
 struct GovernorAppointedResult {
@@ -672,24 +791,9 @@ struct GovernorAppointedResult {
 
 [[nodiscard]] std::string
 render_governor_appointed_result(const GovernorAppointedResult& vm);
-[[nodiscard]] std::string
-render_json_governor_appointed_result(const GovernorAppointedResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const GovernorAppointedResult& vm);
 
-/// Result of revoking a governor (`revoke <gov> <password> [<target>]`).
-struct GovernorRevokedResult {
-  governor_t revoked_governor{0};
-  governor_t target_governor{0};
-  money_t money_transferred{0};
-};
-
-[[nodiscard]] std::string
-render_governor_revoked_result(const GovernorRevokedResult& vm);
-[[nodiscard]] std::string
-render_json_governor_revoked_result(const GovernorRevokedResult& vm);
-[[nodiscard]] std::string render_for_mode(UiMode mode,
-                                          const GovernorRevokedResult& vm);
 [[nodiscard]] std::string render_revoke_header_telegram(player_t player,
                                                         governor_t src_gov,
                                                         governor_t tgt_gov);
@@ -710,9 +814,6 @@ struct InviteResult {
   std::string target_name{};
 };
 
-[[nodiscard]] std::string render_invite_result(const InviteResult& vm);
-[[nodiscard]] std::string render_json_invite_result(const InviteResult& vm);
-[[nodiscard]] std::string render_for_mode(UiMode mode, const InviteResult& vm);
 [[nodiscard]] std::string
 render_invite_target_notification(const InviteResult& vm);
 [[nodiscard]] std::string
@@ -727,10 +828,6 @@ struct UninviteResult {
   std::string target_name{};
 };
 
-[[nodiscard]] std::string render_uninvite_result(const UninviteResult& vm);
-[[nodiscard]] std::string render_json_uninvite_result(const UninviteResult& vm);
-[[nodiscard]] std::string render_for_mode(UiMode mode,
-                                          const UninviteResult& vm);
 [[nodiscard]] std::string
 render_uninvite_target_notification(const UninviteResult& vm);
 [[nodiscard]] std::string
@@ -745,9 +842,6 @@ struct PledgeResult {
   bool bandwagon{false};
 };
 
-[[nodiscard]] std::string render_pledge_result(const PledgeResult& vm);
-[[nodiscard]] std::string render_json_pledge_result(const PledgeResult& vm);
-[[nodiscard]] std::string render_for_mode(UiMode mode, const PledgeResult& vm);
 [[nodiscard]] std::string
 render_pledge_block_notification(const PledgeResult& vm);
 [[nodiscard]] std::string
@@ -764,26 +858,12 @@ struct UnpledgeResult {
   bool taunt{false};
 };
 
-[[nodiscard]] std::string render_unpledge_result(const UnpledgeResult& vm);
-[[nodiscard]] std::string render_json_unpledge_result(const UnpledgeResult& vm);
-[[nodiscard]] std::string render_for_mode(UiMode mode,
-                                          const UnpledgeResult& vm);
 [[nodiscard]] std::string
 render_unpledge_block_notification(const UnpledgeResult& vm);
 [[nodiscard]] std::string
 render_unpledge_self_notification(const UnpledgeResult& vm);
 [[nodiscard]] std::string
 render_unpledge_declaration_news(const UnpledgeResult& vm);
-
-/// Diplomatic stance declared via `declare <race> <alliance|neutral|war>`
-/// or between two empires.
-enum class DiplomaticRelation : std::uint8_t {
-  Neutral,
-  Allied,
-  AtWar,
-  Alliance = Allied,
-  War = AtWar,
-};
 
 /// News bulletin flavor variant when declaring war (`declare <race> war`).
 enum class WarDeclarationNewsVariant : std::uint8_t {
@@ -816,24 +896,11 @@ struct DeclareResult {
 };
 
 [[nodiscard]] std::string render_declare_result(const DeclareResult& vm);
-[[nodiscard]] std::string render_json_declare_result(const DeclareResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode, const DeclareResult& vm);
 [[nodiscard]] std::string
 render_declare_target_notification(const DeclareResult& vm);
 [[nodiscard]] std::string
 render_declare_declaration_news(const DeclareResult& vm);
-
-/// Result of querying or designating a governmental center (`capital
-/// [<ship>]`).
-struct CapitalResult {
-  shipnum_t shipno{0};
-  bool designated{false};
-  double efficiency{0.0};
-};
-
-[[nodiscard]] std::string render_capital_result(const CapitalResult& vm);
-[[nodiscard]] std::string render_json_capital_result(const CapitalResult& vm);
-[[nodiscard]] std::string render_for_mode(UiMode mode, const CapitalResult& vm);
 
 /// Voter role classification when inspecting update votes (`vote`).
 enum class VoteViewerRole : std::uint8_t {
@@ -884,7 +951,6 @@ struct DissolveResult {
 };
 
 [[nodiscard]] std::string render_dissolve_result(const DissolveResult& vm);
-[[nodiscard]] std::string render_json_dissolve_result(const DissolveResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const DissolveResult& vm);
 [[nodiscard]] std::string
@@ -1098,9 +1164,6 @@ struct BlessResult {
 };
 
 [[nodiscard]] std::string render_bless_notification(const BlessResult& vm);
-[[nodiscard]] std::string render_bless_result(const BlessResult& vm);
-[[nodiscard]] std::string render_json_bless_result(const BlessResult& vm);
-[[nodiscard]] std::string render_for_mode(UiMode mode, const BlessResult& vm);
 
 /// View model for `help [<topic>]` documentation output.
 struct HelpViewModel {
@@ -1164,25 +1227,6 @@ struct HighlightResult {
 render_json_highlight_result(const HighlightResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const HighlightResult& vm);
-
-/// Result of setting an alliance block motto (`motto <motto text>`).
-struct MottoResult {
-  player_t block_id{0};
-  std::string motto{};
-};
-[[nodiscard]] std::string render_motto_result(const MottoResult& vm);
-[[nodiscard]] std::string render_json_motto_result(const MottoResult& vm);
-[[nodiscard]] std::string render_for_mode(UiMode mode, const MottoResult& vm);
-
-/// Result of updating race personal description (`personal <info text>`).
-struct PersonalResult {
-  player_t player{0};
-  std::string info{};
-};
-[[nodiscard]] std::string render_personal_result(const PersonalResult& vm);
-[[nodiscard]] std::string render_json_personal_result(const PersonalResult& vm);
-[[nodiscard]] std::string render_for_mode(UiMode mode,
-                                          const PersonalResult& vm);
 
 /// Governor configuration flag modified by `toggle <option>`.
 enum class ToggleOption : std::uint8_t {
@@ -1269,150 +1313,5 @@ struct UpdateResult {
 [[nodiscard]] std::string render_update_result(const UpdateResult& vm);
 [[nodiscard]] std::string render_json_update_result(const UpdateResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode, const UpdateResult& vm);
-
-/// Fog-of-war filtered biological and technological characteristics of a race.
-/// Numeric values use std::int64_t when quantized through
-/// Race::estimate_value(), or exact values when viewer.can_see(target_player ==
-/// viewer.player).
-struct RaceStatsView {
-  std::optional<bool> is_metamorph{std::nullopt};
-  std::optional<std::int64_t> fertilize{std::nullopt};
-  std::optional<std::int64_t> temp{std::nullopt};
-  std::optional<double> birthrate{std::nullopt};
-  std::optional<double> mass{std::nullopt};
-  std::optional<std::int64_t> fighters{std::nullopt};
-  std::optional<double> metabolism{std::nullopt};
-  std::optional<std::int64_t> number_sexes{std::nullopt};
-  std::optional<double> adventurism{std::nullopt};
-  std::optional<std::int64_t> iq{std::nullopt};
-  std::optional<double> tech{std::nullopt};
-  std::optional<std::int64_t> morale{std::nullopt};
-  std::optional<std::int64_t> gun_range{std::nullopt};
-  std::optional<std::int64_t> space_tele_range{std::nullopt};
-  std::optional<std::int64_t> ground_tele_range{std::nullopt};
-  std::optional<ConditionValues> conditions{std::nullopt};
-  std::optional<SectorType> best_sector{std::nullopt};
-};
-
-/// Fog-of-war filtered empire power and stockpile metrics.
-struct RacePowerStandingsView {
-  std::optional<int> rank{std::nullopt};
-  std::optional<std::int64_t> victory_score{std::nullopt};
-  std::optional<std::int64_t> troops{std::nullopt};
-  std::optional<std::int64_t> popn{std::nullopt};
-  std::optional<std::int64_t> money{std::nullopt};
-  std::optional<std::int64_t> ships{std::nullopt};
-  std::optional<std::int64_t> planets{std::nullopt};
-  std::optional<std::int64_t> resource{std::nullopt};
-  std::optional<std::int64_t> fuel{std::nullopt};
-  std::optional<std::int64_t> destruct{std::nullopt};
-};
-
-/// Active governor summary visible to the owning empire (or deity).
-struct GovernorSummaryView {
-  governor_t id{0};
-  std::string name{};
-  money_t money{0};
-  money_t income{0};
-  money_t maintain{0};
-  money_t cost_tech{0};
-  money_t cost_market{0};
-  money_t profit_market{0};
-  std::time_t last_login{0};
-  ScopeLevel default_level{ScopeLevel::LEVEL_UNIV};
-  starnum_t default_star{0};
-  planetnum_t default_planet{0};
-  starnum_t home_star{0};
-  planetnum_t home_planet{0};
-};
-
-/// Private empire details visible only when viewer.can_see(target ==
-/// viewer.player).
-struct RaceSelfDetailsView {
-  std::optional<shipnum_t> gov_ship{std::nullopt};
-  turn_t updates_active{0};
-  SectorCompatibilities sector_compat{};
-  TechDiscoveries discoveries{};
-  bool vote_update_go{false};
-  std::vector<GovernorSummaryView> governors{};
-};
-
-/// Canonical view model for a race/empire ("type": "race").
-struct RaceView {
-  player_t player{0};
-  std::string name{};
-  bool dissolved{false};
-  bool is_god{false};
-  bool is_guest{false};
-  std::string personal_info{};
-  Percentage know_pct{0};
-  DiplomaticRelation you_to_them{DiplomaticRelation::Neutral};
-  DiplomaticRelation them_to_you{DiplomaticRelation::Neutral};
-  RaceStatsView stats{};
-  std::optional<RacePowerStandingsView> standings{std::nullopt};
-  std::optional<RaceSelfDetailsView> self{std::nullopt};
-};
-
-/// Canonical view model for an alliance block ("type": "block").
-struct BlockView {
-  player_t block_id{0};
-  std::string name{};
-  std::string motto{};
-  std::vector<player_t> members{};
-  std::vector<player_t> invited{};
-  std::vector<player_t> pledged{};
-  Percentage know_pct{0};
-  std::optional<RacePowerStandingsView> standings{std::nullopt};
-};
-
-/// Canonical view model for a commodity market lot ("type": "market_lot").
-struct MarketLotView {
-  commodnum_t id{0};
-  bool active{true};
-  CommodType type{CommodType::RESOURCE};
-  resource_t amount{0};
-  player_t owner{0};
-  player_t bidder{0};
-  money_t bid{0};
-  double cost_per_unit{0.0};
-  money_t shipping_cost{0};
-  std::optional<starnum_t> dest_star{std::nullopt};
-  std::optional<planetnum_t> dest_planet{std::nullopt};
-};
-
-/// Projects canonical RaceView under viewer scope and fog-of-war rules.
-[[nodiscard]] RaceView
-project_race_view(EntityManager& em, const ScopeContext& viewer,
-                  player_t target_player,
-                  std::optional<int> rank = std::nullopt);
-
-/// Projects canonical BlockView under viewer scope and fog-of-war rules.
-[[nodiscard]] BlockView project_block_view(EntityManager& em,
-                                           const ScopeContext& viewer,
-                                           player_t block_id);
-
-/// Projects canonical MarketLotView under viewer scope and fog-of-war rules.
-[[nodiscard]] MarketLotView project_market_lot_view(
-    EntityManager& em, const ScopeContext& viewer, const Commod& commod,
-    std::optional<starnum_t> shipping_dest_star = std::nullopt);
-
-/// Projects a tombstone MarketLotView representing a completed/deleted market
-/// lot.
-[[nodiscard]] MarketLotView project_deleted_market_lot_view(commodnum_t id);
-
-/// Formats a canonical RaceView into its JSON envelope string.
-[[nodiscard]] std::string render_json_race_view(const RaceView& vm);
-
-/// Formats a canonical BlockView into its JSON envelope string.
-[[nodiscard]] std::string render_json_block_view(const BlockView& vm);
-
-/// Formats a canonical MarketLotView into its JSON envelope string.
-[[nodiscard]] std::string render_json_market_lot_view(const MarketLotView& vm);
-
-/// Renders all modified entities captured during a JSON command execution
-/// into their canonical JSON envelopes.
-[[nodiscard]] std::string
-render_dirty_entities_json(EntityManager& em, const ScopeContext& viewer,
-                           const DirtyEntitySet& dirty);
 
 }  // namespace GB::presentation

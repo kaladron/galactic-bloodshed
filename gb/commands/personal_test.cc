@@ -27,6 +27,8 @@ void test_personal_dispatch() {
 
   RaceRepository races(store);
   races.save(race1);
+  PowerRepository powers(store);
+  powers.save(Power{{.id = 1}});
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -41,8 +43,10 @@ void test_personal_dispatch() {
   test::expect_eq(updated_race->info, "Peaceful explorers of the galaxy");
   g.set_ui_mode(UiMode::JSON);
   ctx.assert_dispatch_success(g, {"personal", "Bold", "pioneers"});
-  test::expect_contains(g.out.str(), "\"type\":\"personal\"");
-  test::expect_contains(g.out.str(), "\"info\":\"Bold pioneers\"");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), "Personal information updated.");
+  test::expect_contains(g.out.str(), R"("type":"race")");
+  test::expect_contains(g.out.str(), R"("personal_info":"Bold pioneers")");
   g.set_ui_mode(UiMode::ASCII);
   std::println(std::cout, "    ✓ Leader successfully set personal info");
 

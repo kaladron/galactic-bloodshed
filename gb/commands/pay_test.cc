@@ -35,6 +35,9 @@ void test_pay_dispatch() {
   RaceRepository races(store);
   races.save(payer);
   races.save(payee);
+  PowerRepository powers(store);
+  powers.save(Power{{.id = 1}});
+  powers.save(Power{{.id = 2}});
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -91,10 +94,10 @@ void test_pay_dispatch() {
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"pay", "2", "1000"});
-  test::expect_contains(g.out.str(), "\"type\":\"pay\"");
-  test::expect_contains(g.out.str(), "\"amount\":1000");
-  test::expect_contains(g.out.str(), "\"recipient_id\":2");
-  test::expect_contains(g.out.str(), "\"recipient_name\":\"Payee\"");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), "1000 payed to Payee [2].");
+  test::expect_contains(g.out.str(), R"("type":"race")");
+  test::expect_contains(g.out.str(), R"("name":"Payer")");
   saved_payer = ctx.em.peek_race(1);
   saved_payee = ctx.em.peek_race(2);
   test::expect_ne(saved_payer, nullptr);

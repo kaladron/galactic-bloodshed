@@ -66,7 +66,9 @@ void test_sell_happy_paths() {
   // 4. Sell crystals in JSON mode (min(20, 10) = 10 AP)
   g.set_ui_mode(UiMode::JSON);
   ctx.assert_dispatch_success(g, {"sell", "x", "10"}, 10);
-  test::expect_contains(g.out.str(), "\"type\":\"sell\"");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), "Lot #4 - 10 units of crystals.");
+  test::expect_contains(g.out.str(), R"("type":"planet")");
   g.set_ui_mode(UiMode::ASCII);
   const auto* p4 = ctx.em.peek_planet(1, 1);
   test::expect_eq(p4->info(player_t{1}).crystals, 40);

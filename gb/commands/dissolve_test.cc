@@ -215,9 +215,10 @@ void test_dissolve_without_waste_and_json() {
     g.set_ui_mode(UiMode::JSON);
 
     ctx.assert_dispatch_success(g, {"dissolve", "testpass", "govpass", "keep"});
-    test::expect_contains(g.out.str(), R"("type":"dissolve")");
-    test::expect_contains(g.out.str(), R"("waste":false)");
-    test::expect_contains(g.out.str(), R"("destroyed_ships":[1])");
+    test::expect_contains(g.out.str(), R"("type":"message")");
+    test::expect_contains(g.out.str(), "Ship #1, self-destruct enabled");
+    test::expect_contains(g.out.str(), R"("type":"race")");
+    test::expect_contains(g.out.str(), R"("dissolved":true)");
     ctx.verify_universe_invariants();
   }
 }

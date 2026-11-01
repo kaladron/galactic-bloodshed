@@ -46,8 +46,6 @@ bool unpledge(const command_t& argv, GameObj& g) {
        GB::presentation::render_unpledge_declaration_news(result),
        NewsType::DECLARATION);
   compute_power_blocks(g.entity_manager);
-
-  g.present(result);
   return true;
 }
 

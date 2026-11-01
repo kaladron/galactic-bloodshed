@@ -56,8 +56,10 @@ void test_motto_database_persistence() {
   {
     g.set_ui_mode(UiMode::JSON);
     ctx.assert_dispatch_success(g, {"motto", "Victory", "or", "Death"});
-    test::expect_contains(g.out.str(), "\"type\":\"motto\"");
-    test::expect_contains(g.out.str(), "\"motto\":\"Victory or Death\"");
+    test::expect_contains(g.out.str(), R"("type":"message")");
+    test::expect_contains(g.out.str(), "Done.");
+    test::expect_contains(g.out.str(), R"("type":"block")");
+    test::expect_contains(g.out.str(), R"("motto":"Victory or Death")");
     g.set_ui_mode(UiMode::ASCII);
 
     // Verify database: motto should be changed

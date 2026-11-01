@@ -69,11 +69,11 @@ void test_relation_dispatch() {
 
   // 3. JSON mode rendering
   g.set_ui_mode(UiMode::JSON);
+  g.out.str("");
   ctx.assert_dispatch_success(g, {"relation"});
   out = g.out.str();
-  test::expect_contains(out, "\"type\":\"relation\"");
-  test::expect_contains(out, "\"subject_race_name\":\"Federation\"");
-  test::expect_contains(out, "\"is_known_morph\":true");
+  test::expect_contains(out, R"("type":"race")");
+  test::expect_contains(out, R"("name":"Klingons")");
   g.set_ui_mode(UiMode::ASCII);
   std::println(std::cout, "    ✓ JSON mode relations report generated");
 

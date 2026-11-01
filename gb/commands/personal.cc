@@ -6,7 +6,7 @@
 module;
 
 import gb.entities;
-import gb.presentation.empire_views;
+import gb.presentation.core;
 import gb.services;
 import std;
 
@@ -21,10 +21,8 @@ bool personal(const command_t& argv, GameObj& g) {
 
   g.entity_manager.mutate_race(playernum,
                                [&](Race& race) { race.info = message; });
-  g.present(GB::presentation::PersonalResult{
-      .player = playernum,
-      .info = std::move(message),
-  });
+  g.present(
+      GB::presentation::make_output_message("Personal information updated.\n"));
   return true;
 }
 

@@ -47,7 +47,6 @@ bool invite(const command_t& argv, GameObj& g) {
   warn_race(g.session_registry, g.entity_manager, Playernum, decl);
   post(g.entity_manager, decl, NewsType::DECLARATION);
   compute_power_blocks(g.entity_manager);
-  g.present(result);
   return true;
 }
 

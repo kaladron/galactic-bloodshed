@@ -61,8 +61,8 @@ void test_unpledge_dispatch() {
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"unpledge", "2"});
-  test::expect_contains(g.out.str(), R"("type":"unpledge")");
-  test::expect_contains(g.out.str(), R"("block_name":"LeaderBlock")");
+  test::expect_contains(g.out.str(), R"("type":"block")");
+  test::expect_contains(g.out.str(), R"("name":"LeaderBlock")");
   g.set_ui_mode(UiMode::ASCII);
 
   // 3. Direct renderer checks for taunt and normal declaration news

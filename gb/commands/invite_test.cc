@@ -84,12 +84,8 @@ int main() {
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"invite", "Klingons"});
-  test::expect_contains(g.out.str(), "\"type\":\"invite\"");
-  test::expect_contains(g.out.str(), "\"host_id\":1");
-  test::expect_contains(g.out.str(), "\"host_name\":\"Federation\"");
-  test::expect_contains(g.out.str(), "\"block_name\":\"TheAlliance\"");
-  test::expect_contains(g.out.str(), "\"target_id\":2");
-  test::expect_contains(g.out.str(), "\"target_name\":\"Klingons\"");
+  test::expect_contains(g.out.str(), R"("type":"block")");
+  test::expect_contains(g.out.str(), R"("name":"TheAlliance")");
   g.set_ui_mode(UiMode::ASCII);
   std::println(std::cout, "    ✓ Invite JSON mode verified");
 

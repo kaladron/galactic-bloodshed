@@ -6,7 +6,7 @@
 module;
 
 import gb.entities;
-import gb.presentation.empire_views;
+import gb.presentation.core;
 import gb.services;
 import std;
 
@@ -21,10 +21,7 @@ bool motto(const command_t& argv, GameObj& g) {
 
   g.entity_manager.mutate_block(g.player(),
                                 [&](Block& b) { b.motto() = message; });
-  g.present(GB::presentation::MottoResult{
-      .block_id = g.player(),
-      .motto = std::move(message),
-  });
+  g.present(GB::presentation::make_output_message("Done.\n"));
   return true;
 }
 

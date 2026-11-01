@@ -65,11 +65,8 @@ bool capital(const command_t& argv, GameObj& g) {
       const double efficiency = (static_cast<double>(s.popn()) /
                                  static_cast<double>(s.max_crew_capacity())) *
                                 (100.0 - static_cast<double>(s.damage()));
-      g.present(GB::presentation::CapitalResult{
-          .shipno = *shipno,
-          .designated = (argv.size() == 2),
-          .efficiency = efficiency,
-      });
+      g.present(GB::presentation::make_output_message(std::format(
+          "Efficiency of governmental center: {:.0f}%.\n", efficiency)));
       return true;
     });
   } catch (const EntityNotFoundError&) {

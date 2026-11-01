@@ -95,8 +95,9 @@ void test_power_dispatch() {
   test::expect_contains(g.out.str(), "VNs");
 
   g.set_ui_mode(UiMode::JSON);
+  g.out.str("");
   ctx.assert_dispatch_success(g, {"power"});
-  test::expect_contains(g.out.str(), "\"type\":\"power\"");
+  test::expect_contains(g.out.str(), R"("type":"race")");
 
   ctx.verify_universe_invariants();
 

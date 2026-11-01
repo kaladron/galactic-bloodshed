@@ -30,12 +30,15 @@ std::string render_relation(const RelationViewModel& vm) {
   return out;
 }
 
-std::string render_json_relation(const RelationViewModel& vm) {
-  return render_json_envelope("relation", vm);
-}
-
 std::string render_for_mode(UiMode mode, const RelationViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_relation(vm) : render_relation(vm);
+  if (mode == UiMode::JSON) {
+    std::string out{};
+    for (const auto& r : vm.races) {
+      out += render_json_race_view(r);
+    }
+    return out;
+  }
+  return render_relation(vm);
 }
 
 std::string render_who(const WhoViewModel& vm) {
@@ -221,12 +224,8 @@ std::string render_profile_self(const ProfileSelfViewModel& vm) {
   return out;
 }
 
-std::string render_json_profile_self(const ProfileSelfViewModel& vm) {
-  return render_json_envelope("profile_self", vm);
-}
-
 std::string render_for_mode(UiMode mode, const ProfileSelfViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_profile_self(vm)
+  return mode == UiMode::JSON ? render_json_race_view(vm.race)
                               : render_profile_self(vm);
 }
 
@@ -266,12 +265,8 @@ std::string render_profile_other(const ProfileOtherViewModel& vm) {
   return out;
 }
 
-std::string render_json_profile_other(const ProfileOtherViewModel& vm) {
-  return render_json_envelope("profile_other", vm);
-}
-
 std::string render_for_mode(UiMode mode, const ProfileOtherViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_profile_other(vm)
+  return mode == UiMode::JSON ? render_json_race_view(vm.race)
                               : render_profile_other(vm);
 }
 
@@ -347,12 +342,18 @@ std::string render_block(const BlockViewModel& vm) {
   return out;
 }
 
-std::string render_json_block(const BlockViewModel& vm) {
-  return render_json_envelope("block", vm);
-}
-
 std::string render_for_mode(UiMode mode, const BlockViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_block(vm) : render_block(vm);
+  if (mode == UiMode::JSON) {
+    std::string out{};
+    for (const auto& b : vm.block_views) {
+      out += render_json_block_view(b);
+    }
+    for (const auto& m : vm.member_views) {
+      out += render_json_race_view(m);
+    }
+    return out;
+  }
+  return render_block(vm);
 }
 
 std::string render_colonies(const ColoniesViewModel& vm) {
@@ -433,12 +434,15 @@ std::string render_power(const PowerViewModel& vm) {
   return out;
 }
 
-std::string render_json_power(const PowerViewModel& vm) {
-  return render_json_envelope("power", vm);
-}
-
 std::string render_for_mode(UiMode mode, const PowerViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_power(vm) : render_power(vm);
+  if (mode == UiMode::JSON) {
+    std::string out{};
+    for (const auto& r : vm.races) {
+      out += render_json_race_view(r);
+    }
+    return out;
+  }
+  return render_power(vm);
 }
 
 std::string render_tech_status(const TechStatusViewModel& vm) {
@@ -600,12 +604,15 @@ std::string render_victory(const VictoryViewModel& vm) {
   return out;
 }
 
-std::string render_json_victory(const VictoryViewModel& vm) {
-  return render_json_envelope("victory", vm);
-}
-
 std::string render_for_mode(UiMode mode, const VictoryViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_victory(vm) : render_victory(vm);
+  if (mode == UiMode::JSON) {
+    std::string out{};
+    for (const auto& r : vm.races) {
+      out += render_json_race_view(r);
+    }
+    return out;
+  }
+  return render_victory(vm);
 }
 
 std::string render_prompt(const PromptViewModel& vm) {
@@ -695,13 +702,15 @@ std::string render_commodity_market(const CommodityMarketViewModel& vm) {
                      table.str());
 }
 
-std::string render_json_commodity_market(const CommodityMarketViewModel& vm) {
-  return render_json_envelope("commodity_market", vm);
-}
-
 std::string render_for_mode(UiMode mode, const CommodityMarketViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_commodity_market(vm)
-                              : render_commodity_market(vm);
+  if (mode == UiMode::JSON) {
+    std::string out{};
+    for (const auto& lot : vm.market_lots) {
+      out += render_json_market_lot_view(lot);
+    }
+    return out;
+  }
+  return render_commodity_market(vm);
 }
 
 std::string render_bid_placed_result(const BidPlacedResult& vm) {
@@ -711,12 +720,9 @@ std::string render_bid_placed_result(const BidPlacedResult& vm) {
       vm.shipping_cost);
 }
 
-std::string render_json_bid_placed_result(const BidPlacedResult& vm) {
-  return render_json_envelope("bid", vm);
-}
-
 std::string render_for_mode(UiMode mode, const BidPlacedResult& vm) {
-  return mode == UiMode::JSON ? render_json_bid_placed_result(vm)
+  return mode == UiMode::JSON ? render_json_message(make_output_message(
+                                    render_bid_placed_result(vm)))
                               : render_bid_placed_result(vm);
 }
 
@@ -733,13 +739,10 @@ std::string render_sell_result(const SellResult& vm) {
   return std::format("Lot #{} - {} units of {}.\n", vm.lot, vm.amount, vm.type);
 }
 
-std::string render_json_sell_result(const SellResult& vm) {
-  return render_json_envelope("sell", vm);
-}
-
 std::string render_for_mode(UiMode mode, const SellResult& vm) {
-  return mode == UiMode::JSON ? render_json_sell_result(vm)
-                              : render_sell_result(vm);
+  return mode == UiMode::JSON
+             ? render_json_message(make_output_message(render_sell_result(vm)))
+             : render_sell_result(vm);
 }
 
 std::string render_sell_market_news(int lot, resource_t amount, CommodType type,
@@ -772,12 +775,9 @@ std::string render_treasury(const TreasuryViewModel& vm) {
   return std::format("{}\nYou have: {}\n", table.str(), vm.money);
 }
 
-std::string render_json_treasury(const TreasuryViewModel& vm) {
-  return render_json_envelope("treasury", vm);
-}
-
 std::string render_for_mode(UiMode mode, const TreasuryViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_treasury(vm) : render_treasury(vm);
+  return mode == UiMode::JSON ? render_json_race_view(vm.race)
+                              : render_treasury(vm);
 }
 
 GiveResult make_give_result(const Ship& ship, player_t recipient_id,
@@ -822,13 +822,10 @@ std::string render_pay_result(const PayResult& vm) {
                      vm.recipient_id);
 }
 
-std::string render_json_pay_result(const PayResult& vm) {
-  return render_json_envelope("pay", vm);
-}
-
 std::string render_for_mode(UiMode mode, const PayResult& vm) {
-  return mode == UiMode::JSON ? render_json_pay_result(vm)
-                              : render_pay_result(vm);
+  return mode == UiMode::JSON
+             ? render_json_message(make_output_message(render_pay_result(vm)))
+             : render_pay_result(vm);
 }
 
 std::string render_pay_recipient_telegram(std::string_view payer_name,
@@ -870,29 +867,9 @@ std::string render_governors(const GovernorsViewModel& vm) {
   return std::format("{}\n", table.str());
 }
 
-std::string render_json_governors(const GovernorsViewModel& vm) {
-  return render_json_envelope("governors", vm);
-}
-
 std::string render_for_mode(UiMode mode, const GovernorsViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_governors(vm)
+  return mode == UiMode::JSON ? render_json_race_view(vm.race)
                               : render_governors(vm);
-}
-
-std::string render_governor_password_changed_result(
-    const GovernorPasswordChangedResult& /*vm*/) {
-  return "Password changed.\n";
-}
-
-std::string render_json_governor_password_changed_result(
-    const GovernorPasswordChangedResult& vm) {
-  return render_json_envelope("governor_password_changed", vm);
-}
-
-std::string render_for_mode(UiMode mode,
-                            const GovernorPasswordChangedResult& vm) {
-  return mode == UiMode::JSON ? render_json_governor_password_changed_result(vm)
-                              : render_governor_password_changed_result(vm);
 }
 
 std::string
@@ -903,29 +880,10 @@ render_governor_appointed_result(const GovernorAppointedResult& vm) {
   return "Governor activated.\n";
 }
 
-std::string
-render_json_governor_appointed_result(const GovernorAppointedResult& vm) {
-  return render_json_envelope("appoint", vm);
-}
-
 std::string render_for_mode(UiMode mode, const GovernorAppointedResult& vm) {
-  return mode == UiMode::JSON ? render_json_governor_appointed_result(vm)
+  return mode == UiMode::JSON ? render_json_message(make_output_message(
+                                    render_governor_appointed_result(vm)))
                               : render_governor_appointed_result(vm);
-}
-
-std::string
-render_governor_revoked_result(const GovernorRevokedResult& /*vm*/) {
-  return "Done.\n";
-}
-
-std::string
-render_json_governor_revoked_result(const GovernorRevokedResult& vm) {
-  return render_json_envelope("revoke", vm);
-}
-
-std::string render_for_mode(UiMode mode, const GovernorRevokedResult& vm) {
-  return mode == UiMode::JSON ? render_json_governor_revoked_result(vm)
-                              : render_governor_revoked_result(vm);
 }
 
 std::string render_revoke_header_telegram(player_t player, governor_t src_gov,
@@ -953,19 +911,6 @@ std::string render_revoke_footer_telegram(player_t player, governor_t src_gov) {
                      player, src_gov);
 }
 
-std::string render_invite_result(const InviteResult& /*vm*/) {
-  return "";
-}
-
-std::string render_json_invite_result(const InviteResult& vm) {
-  return render_json_envelope("invite", vm);
-}
-
-std::string render_for_mode(UiMode mode, const InviteResult& vm) {
-  return mode == UiMode::JSON ? render_json_invite_result(vm)
-                              : render_invite_result(vm);
-}
-
 std::string render_invite_target_notification(const InviteResult& vm) {
   return std::format("{} [{}] has invited you to join {}\n", vm.host_name,
                      vm.host_id, vm.block_name);
@@ -976,19 +921,6 @@ std::string render_invite_declaration_news(const InviteResult& vm) {
                      vm.target_name, vm.target_id, vm.block_name, vm.host_id);
 }
 
-std::string render_uninvite_result(const UninviteResult& /*vm*/) {
-  return "";
-}
-
-std::string render_json_uninvite_result(const UninviteResult& vm) {
-  return render_json_envelope("uninvite", vm);
-}
-
-std::string render_for_mode(UiMode mode, const UninviteResult& vm) {
-  return mode == UiMode::JSON ? render_json_uninvite_result(vm)
-                              : render_uninvite_result(vm);
-}
-
 std::string render_uninvite_target_notification(const UninviteResult& vm) {
   return std::format("You have been blackballed from {} [{}]\n", vm.block_name,
                      vm.host_id);
@@ -997,19 +929,6 @@ std::string render_uninvite_target_notification(const UninviteResult& vm) {
 std::string render_uninvite_declaration_news(const UninviteResult& vm) {
   return std::format("{} [{}] has been blackballed from {} [{}]\n",
                      vm.target_name, vm.target_id, vm.block_name, vm.host_id);
-}
-
-std::string render_pledge_result(const PledgeResult& /*vm*/) {
-  return "";
-}
-
-std::string render_json_pledge_result(const PledgeResult& vm) {
-  return render_json_envelope("pledge", vm);
-}
-
-std::string render_for_mode(UiMode mode, const PledgeResult& vm) {
-  return mode == UiMode::JSON ? render_json_pledge_result(vm)
-                              : render_pledge_result(vm);
 }
 
 std::string render_pledge_block_notification(const PledgeResult& vm) {
@@ -1030,19 +949,6 @@ std::string render_pledge_declaration_news(const PledgeResult& vm) {
   return std::format("{} [{}] pledges allegiance to {} [{}].\n",
                      vm.pledger_name, vm.pledger_id, vm.block_name,
                      vm.block_id);
-}
-
-std::string render_unpledge_result(const UnpledgeResult& /*vm*/) {
-  return "";
-}
-
-std::string render_json_unpledge_result(const UnpledgeResult& vm) {
-  return render_json_envelope("unpledge", vm);
-}
-
-std::string render_for_mode(UiMode mode, const UnpledgeResult& vm) {
-  return mode == UiMode::JSON ? render_json_unpledge_result(vm)
-                              : render_unpledge_result(vm);
 }
 
 std::string render_unpledge_block_notification(const UnpledgeResult& vm) {
@@ -1083,12 +989,9 @@ std::string render_declare_result(const DeclareResult& vm) {
   std::unreachable();
 }
 
-std::string render_json_declare_result(const DeclareResult& vm) {
-  return render_json_envelope("declare", vm);
-}
-
 std::string render_for_mode(UiMode mode, const DeclareResult& vm) {
-  return mode == UiMode::JSON ? render_json_declare_result(vm)
+  return mode == UiMode::JSON ? render_json_message(make_output_message(
+                                    render_declare_result(vm)))
                               : render_declare_result(vm);
 }
 
@@ -1144,20 +1047,6 @@ std::string render_declare_declaration_news(const DeclareResult& vm) {
           vm.declarer_name, vm.declarer_id, vm.target_name, vm.target_id);
   }
   std::unreachable();
-}
-
-std::string render_capital_result(const CapitalResult& vm) {
-  return std::format("Efficiency of governmental center: {:.0f}%.\n",
-                     vm.efficiency);
-}
-
-std::string render_json_capital_result(const CapitalResult& vm) {
-  return render_json_envelope("capital", vm);
-}
-
-std::string render_for_mode(UiMode mode, const CapitalResult& vm) {
-  return mode == UiMode::JSON ? render_json_capital_result(vm)
-                              : render_capital_result(vm);
 }
 
 std::string render_vote(const VoteViewModel& vm) {
@@ -1216,12 +1105,9 @@ std::string render_dissolve_result(const DissolveResult& vm) {
   return out;
 }
 
-std::string render_json_dissolve_result(const DissolveResult& vm) {
-  return render_json_envelope("dissolve", vm);
-}
-
 std::string render_for_mode(UiMode mode, const DissolveResult& vm) {
-  return mode == UiMode::JSON ? render_json_dissolve_result(vm)
+  return mode == UiMode::JSON ? render_json_message(make_output_message(
+                                    render_dissolve_result(vm)))
                               : render_dissolve_result(vm);
 }
 
@@ -1609,19 +1495,6 @@ std::string render_bless_notification(const BlessResult& vm) {
                      std::get<int>(vm.value), vm.star_name);
 }
 
-std::string render_bless_result(const BlessResult&) {
-  return "";
-}
-
-std::string render_json_bless_result(const BlessResult& vm) {
-  return render_json_envelope("bless", vm);
-}
-
-std::string render_for_mode(UiMode mode, const BlessResult& vm) {
-  return mode == UiMode::JSON ? render_json_bless_result(vm)
-                              : render_bless_result(vm);
-}
-
 std::string render_help(const HelpViewModel& vm) {
   return vm.is_index ? vm.content
                      : std::format("{}----\nFinished.\n", vm.content);
@@ -1690,28 +1563,6 @@ std::string render_json_highlight_result(const HighlightResult& vm) {
 std::string render_for_mode(UiMode mode, const HighlightResult& vm) {
   return mode == UiMode::JSON ? render_json_highlight_result(vm)
                               : render_highlight_result(vm);
-}
-
-std::string render_motto_result(const MottoResult& /*vm*/) {
-  return "Done.\n";
-}
-std::string render_json_motto_result(const MottoResult& vm) {
-  return render_json_envelope("motto", vm);
-}
-std::string render_for_mode(UiMode mode, const MottoResult& vm) {
-  return mode == UiMode::JSON ? render_json_motto_result(vm)
-                              : render_motto_result(vm);
-}
-
-std::string render_personal_result(const PersonalResult& /*vm*/) {
-  return "Personal information updated.\n";
-}
-std::string render_json_personal_result(const PersonalResult& vm) {
-  return render_json_envelope("personal", vm);
-}
-std::string render_for_mode(UiMode mode, const PersonalResult& vm) {
-  return mode == UiMode::JSON ? render_json_personal_result(vm)
-                              : render_personal_result(vm);
 }
 
 std::string render_toggle_status(const ToggleStatusViewModel& vm) {

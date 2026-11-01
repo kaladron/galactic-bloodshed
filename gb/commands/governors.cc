@@ -44,13 +44,16 @@ bool governors(const command_t& argv, GameObj& g) {
       success = true;
     });
     if (success) {
-      g.present(
-          GB::presentation::GovernorPasswordChangedResult{.governor = gov});
+      g.present(GB::presentation::make_output_message("Password changed.\n"));
     }
     return success;
   }
 
-  GB::presentation::GovernorsViewModel vm{.is_leader = g.is_leader()};
+  GB::presentation::GovernorsViewModel vm{
+      .is_leader = g.is_leader(),
+      .race = GB::presentation::project_race_view(g.entity_manager,
+                                                  g.scope_context(), Playernum),
+  };
   g.entity_manager.with_race(Playernum, [&](const Race& race) {
     for (auto [i, g_entry] : race.active_governors()) {
       std::string login_time = std::ctime(&g_entry.login);

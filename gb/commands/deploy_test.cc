@@ -61,8 +61,11 @@ void test_deploy_happy_paths_and_json() {
   g.out.str("");
   g.set_ui_mode(UiMode::JSON);
   ctx.assert_dispatch_success(g, {"deploy", "5,5", "k", "100"});
-  test::expect_contains(g.out.str(), "\"type\":\"deploy\"");
-  test::expect_contains(g.out.str(), "\"moved_people\":100");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"(100 troops moved.)");
+  test::expect_contains(g.out.str(), R"("type":"sectors")");
+  test::expect_contains(g.out.str(), R"("type":"planet")");
+  test::expect_contains(g.out.str(), R"("type":"star")");
 
   ctx.verify_universe_invariants();
 }

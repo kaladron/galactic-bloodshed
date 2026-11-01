@@ -88,8 +88,11 @@ void test_disarm_command() {
   g.set_ui_mode(GB::presentation::UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"disarm", "5,5"});
-  test::expect_contains(g.out.str(), R"("type":"disarm")");
-  test::expect_contains(g.out.str(), R"("disarmed":60)");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"(60 troops disarmed)");
+  test::expect_contains(g.out.str(), R"("type":"sectors")");
+  test::expect_contains(g.out.str(), R"("troops":0)");
+  test::expect_contains(g.out.str(), R"("type":"planet")");
 
   ctx.verify_universe_invariants();
 }

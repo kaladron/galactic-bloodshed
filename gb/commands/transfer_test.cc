@@ -162,8 +162,12 @@ int main() {
     g.set_ui_mode(UiMode::JSON);
     g.out.str("");
     ctx.assert_dispatch_success(g, {"transfer", "Receiver", "&", "5"}, 1);
-    test::expect_contains(g.out.str(), "\"type\":\"transfer\"");
-    test::expect_contains(g.out.str(), "\"amount\":5");
+    test::expect_contains(g.out.str(), R"("type":"message")");
+    test::expect_contains(
+        g.out.str(), R"(5 crystal(s) transferred from player 1 to player #2)");
+    test::expect_contains(g.out.str(), R"("type":"planet")");
+    test::expect_contains(g.out.str(), R"("crystals":35)");
+    test::expect_false(g.out.str().contains(R"("crystals":20)"));
     g.set_ui_mode(UiMode::ASCII);
 
     ctx.em.clear_cache();

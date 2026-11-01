@@ -197,8 +197,9 @@ void test_walk_happy_path() {
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"walk", "1", "8"});
-  test::expect_contains(g.out.str(), R"("type":"walk")");
-  test::expect_contains(g.out.str(), R"("advanced":true)");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"("type":"ship")");
+  test::expect_contains(g.out.str(), R"("type":"star")");
 
   ctx.verify_universe_invariants();
 }

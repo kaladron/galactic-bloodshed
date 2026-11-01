@@ -125,8 +125,12 @@ void test_arm_command() {
   g.set_ui_mode(GB::presentation::UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"arm", "5,5"});
-  test::expect_contains(g.out.str(), R"("type":"arm")");
-  test::expect_contains(g.out.str(), R"("armed":900)");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"(900 population armed)");
+  test::expect_contains(g.out.str(), R"("type":"sectors")");
+  test::expect_contains(g.out.str(), R"("troops":1000)");
+  test::expect_contains(g.out.str(), R"("type":"planet")");
+  test::expect_contains(g.out.str(), R"("type":"race")");
 
   ctx.verify_universe_invariants();
 }

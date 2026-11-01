@@ -617,12 +617,9 @@ std::string render_arm_sector_result(const ArmSectorResult& vm) {
       vm.enlist_cost);
 }
 
-std::string render_json_arm_sector_result(const ArmSectorResult& vm) {
-  return render_json_envelope("arm", vm);
-}
-
 std::string render_for_mode(UiMode mode, const ArmSectorResult& vm) {
-  return mode == UiMode::JSON ? render_json_arm_sector_result(vm)
+  return mode == UiMode::JSON ? render_json_message(make_output_message(
+                                    render_arm_sector_result(vm)))
                               : render_arm_sector_result(vm);
 }
 
@@ -631,12 +628,9 @@ std::string render_disarm_sector_result(const DisarmSectorResult& vm) {
                      vm.disarmed, vm.final_popn, vm.final_troops);
 }
 
-std::string render_json_disarm_sector_result(const DisarmSectorResult& vm) {
-  return render_json_envelope("disarm", vm);
-}
-
 std::string render_for_mode(UiMode mode, const DisarmSectorResult& vm) {
-  return mode == UiMode::JSON ? render_json_disarm_sector_result(vm)
+  return mode == UiMode::JSON ? render_json_message(make_output_message(
+                                    render_disarm_sector_result(vm)))
                               : render_disarm_sector_result(vm);
 }
 
@@ -768,13 +762,9 @@ std::string render_move_popn_result(const MovePopnResult& res) {
   return out;
 }
 
-std::string render_json_move_popn_result(const MovePopnResult& res) {
-  return render_json_envelope(
-      res.what == PopulationType::CIV ? "move" : "deploy", res);
-}
-
 std::string render_for_mode(UiMode mode, const MovePopnResult& vm) {
-  return mode == UiMode::JSON ? render_json_move_popn_result(vm)
+  return mode == UiMode::JSON ? render_json_message(make_output_message(
+                                    render_move_popn_result(vm)))
                               : render_move_popn_result(vm);
 }
 
@@ -969,13 +959,10 @@ std::string render_walk_result(const WalkResult& res) {
   return out;
 }
 
-std::string render_json_walk_result(const WalkResult& res) {
-  return render_json_envelope("walk", res);
-}
-
 std::string render_for_mode(UiMode mode, const WalkResult& vm) {
-  return mode == UiMode::JSON ? render_json_walk_result(vm)
-                              : render_walk_result(vm);
+  return mode == UiMode::JSON
+             ? render_json_message(make_output_message(render_walk_result(vm)))
+             : render_walk_result(vm);
 }
 
 std::string format_capture_error(const CaptureError& err) {

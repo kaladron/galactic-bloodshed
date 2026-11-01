@@ -71,8 +71,11 @@ void test_move_popn_happy_paths() {
   g.out.str("");
   g.set_ui_mode(UiMode::JSON);
   ctx.assert_dispatch_success(g, {"move", "5,5", "k", "200"});
-  test::expect_contains(g.out.str(), "\"type\":\"move\"");
-  test::expect_contains(g.out.str(), "\"moved_people\":200");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"(200 population moved.)");
+  test::expect_contains(g.out.str(), R"("type":"sectors")");
+  test::expect_contains(g.out.str(), R"("type":"planet")");
+  test::expect_contains(g.out.str(), R"("type":"star")");
 
   ctx.verify_universe_invariants();
 }

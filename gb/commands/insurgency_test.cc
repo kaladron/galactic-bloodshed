@@ -223,8 +223,11 @@ void test_insurgency_domain_errors() {
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"insurgency", "2", "100"}, 10);
-  test::expect_contains(g.out.str(), "\"type\":\"insurgency\"");
-  test::expect_contains(g.out.str(), "\"money\":100");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"(100 money against)");
+  test::expect_contains(g.out.str(), R"("type":"planet")");
+  test::expect_contains(g.out.str(), R"("type":"race")");
+  test::expect_contains(g.out.str(), R"("type":"star")");
   g.set_ui_mode(UiMode::ASCII);
   std::println(std::cout, "    ✓ Domain error rejections verified");
 

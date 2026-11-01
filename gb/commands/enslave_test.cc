@@ -90,8 +90,11 @@ void test_enslave_repulsed_and_json() {
   g.set_ui_mode(GB::presentation::UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"enslave", "1"});
-  test::expect_contains(g.out.str(), R"("type":"enslave")");
-  test::expect_contains(g.out.str(), R"("enslaved":true)");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"(Enslavement successful.)");
+  test::expect_contains(g.out.str(), R"("type":"planet")");
+  test::expect_contains(g.out.str(), R"("slaved_to":1)");
+  test::expect_contains(g.out.str(), R"("type":"star")");
 
   ctx.verify_universe_invariants();
 }

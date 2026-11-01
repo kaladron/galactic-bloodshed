@@ -636,20 +636,6 @@ std::string render_for_mode(UiMode mode, const TaxStatusViewModel& vm) {
                               : render_tax_status(vm);
 }
 
-std::string render_repair_result(const RepairResult& vm) {
-  return std::format("{} sectors repaired at a cost of {} resources.\n",
-                     vm.sectors_repaired, vm.resource_cost);
-}
-
-std::string render_json_repair_result(const RepairResult& vm) {
-  return render_json_envelope("repair", vm);
-}
-
-std::string render_for_mode(UiMode mode, const RepairResult& vm) {
-  return mode == UiMode::JSON ? render_json_repair_result(vm)
-                              : render_repair_result(vm);
-}
-
 std::string render_enslave_result(const EnslaveResult& vm) {
   std::string out = std::format(
       "\nFor successful enslavement this ship and the other ships here\n"
@@ -674,12 +660,9 @@ std::string render_enslave_result(const EnslaveResult& vm) {
   return out;
 }
 
-std::string render_json_enslave_result(const EnslaveResult& vm) {
-  return render_json_envelope("enslave", vm);
-}
-
 std::string render_for_mode(UiMode mode, const EnslaveResult& vm) {
-  return mode == UiMode::JSON ? render_json_enslave_result(vm)
+  return mode == UiMode::JSON ? render_json_message(make_output_message(
+                                    render_enslave_result(vm)))
                               : render_enslave_result(vm);
 }
 
@@ -722,12 +705,9 @@ std::string render_transfer_result(const TransferResult& vm) {
                      vm.recipient);
 }
 
-std::string render_json_transfer_result(const TransferResult& vm) {
-  return render_json_envelope("transfer", vm);
-}
-
 std::string render_for_mode(UiMode mode, const TransferResult& vm) {
-  return mode == UiMode::JSON ? render_json_transfer_result(vm)
+  return mode == UiMode::JSON ? render_json_message(make_output_message(
+                                    render_transfer_result(vm)))
                               : render_transfer_result(vm);
 }
 
@@ -761,12 +741,9 @@ std::string render_insurgency_result(const InsurgencyResult& vm) {
   return out;
 }
 
-std::string render_json_insurgency_result(const InsurgencyResult& vm) {
-  return render_json_envelope("insurgency", vm);
-}
-
 std::string render_for_mode(UiMode mode, const InsurgencyResult& vm) {
-  return mode == UiMode::JSON ? render_json_insurgency_result(vm)
+  return mode == UiMode::JSON ? render_json_message(make_output_message(
+                                    render_insurgency_result(vm)))
                               : render_insurgency_result(vm);
 }
 

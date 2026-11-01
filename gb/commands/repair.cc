@@ -72,10 +72,8 @@ bool repair(const command_t& argv, GameObj& g) {
         });
       });
 
-  g.present(GB::presentation::RepairResult{
-      .sectors_repaired = sectors,
-      .resource_cost = cost,
-  });
+  g.present(GB::presentation::make_output_message(std::format(
+      "{} sectors repaired at a cost of {} resources.\n", sectors, cost)));
   return true;
 }
 

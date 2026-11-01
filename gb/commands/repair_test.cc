@@ -108,15 +108,22 @@ void test_repair_whole_planet_and_json() {
   g.set_pnum(1);
 
   ctx.assert_dispatch_success(g, {"repair"});
-  test::expect_contains(g.out.str(), R"("type":"repair")");
-  test::expect_contains(g.out.str(), R"("sectors_repaired":2)");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(),
+                        R"(2 sectors repaired at a cost of 20 resources.)");
+  test::expect_contains(g.out.str(), R"("type":"sectors")");
+  test::expect_contains(g.out.str(), R"("type":"planet")");
 
   // Repairing by explicit planet path when 1 wasted sector remains
   ctx.em.mutate_planet(1, 1,
                        [](Planet& p) { p.info(player_t{1}).resource = 100; });
   g.out.str("");
   ctx.assert_dispatch_success(g, {"repair", "/Test Star/Test Planet"});
-  test::expect_contains(g.out.str(), R"("sectors_repaired":1)");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(),
+                        R"(1 sectors repaired at a cost of 10 resources.)");
+  test::expect_contains(g.out.str(), R"("type":"sectors")");
+  test::expect_contains(g.out.str(), R"("type":"planet")");
 }
 
 void test_repair_scope_and_domain_errors() {
@@ -138,6 +145,10 @@ void test_repair_scope_and_domain_errors() {
   g.set_pnum(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"repair", "/NoSuchStar"});
+  test::expect_false(g.out.str().empty());
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"repair", "123"});
   test::expect_false(g.out.str().empty());
 
   g.out.str("");

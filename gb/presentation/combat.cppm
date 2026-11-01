@@ -213,10 +213,6 @@ struct TacticalViewModel {
 /// Formats an `ArmSectorResult` into its user-facing ASCII report.
 [[nodiscard]] std::string render_arm_sector_result(const ArmSectorResult& vm);
 
-/// Formats an `ArmSectorResult` into its JSON envelope string.
-[[nodiscard]] std::string
-render_json_arm_sector_result(const ArmSectorResult& vm);
-
 /// Open ADL dispatch for `ArmSectorResult`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const ArmSectorResult& vm);
@@ -224,10 +220,6 @@ render_json_arm_sector_result(const ArmSectorResult& vm);
 /// Formats a `DisarmSectorResult` into its user-facing ASCII report.
 [[nodiscard]] std::string
 render_disarm_sector_result(const DisarmSectorResult& vm);
-
-/// Formats a `DisarmSectorResult` into its JSON envelope string.
-[[nodiscard]] std::string
-render_json_disarm_sector_result(const DisarmSectorResult& vm);
 
 /// Open ADL dispatch for `DisarmSectorResult`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
@@ -253,10 +245,6 @@ render_sector_ground_assault_telegram(const SectorGroundAssaultResult& res);
 
 /// Formats a `MovePopnResult` into its user-facing ASCII report.
 [[nodiscard]] std::string render_move_popn_result(const MovePopnResult& res);
-
-/// Formats a `MovePopnResult` into its JSON envelope string.
-[[nodiscard]] std::string
-render_json_move_popn_result(const MovePopnResult& res);
 
 /// Open ADL dispatch for `MovePopnResult`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
@@ -300,9 +288,6 @@ render_json_defend_planet_result(const DefendPlanetResult& res);
 
 /// Formats a `WalkResult` into its user-facing ASCII report.
 [[nodiscard]] std::string render_walk_result(const WalkResult& res);
-
-/// Formats a `WalkResult` into its JSON envelope string.
-[[nodiscard]] std::string render_json_walk_result(const WalkResult& res);
 
 /// Open ADL dispatch for `WalkResult`.
 [[nodiscard]] std::string render_for_mode(UiMode mode, const WalkResult& vm);

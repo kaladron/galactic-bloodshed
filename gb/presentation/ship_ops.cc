@@ -281,14 +281,16 @@ std::string render_for_mode(UiMode mode, const JettisonResult& vm) {
 
 std::string render_for_mode(UiMode mode, const MountCrystalResult& vm) {
   if (mode == UiMode::JSON) {
-    return render_json_envelope("mount_crystal", vm);
+    return render_json_message(
+        make_output_message(render_mount_crystal_result(vm)));
   }
   return render_mount_crystal_result(vm);
 }
 
 std::string render_for_mode(UiMode mode, const DismountCrystalResult& vm) {
   if (mode == UiMode::JSON) {
-    return render_json_envelope("dismount_crystal", vm);
+    return render_json_message(
+        make_output_message(render_dismount_crystal_result(vm)));
   }
   return render_dismount_crystal_result(vm);
 }
@@ -302,7 +304,8 @@ std::string render_for_mode(UiMode mode, const GrantShipResult& vm) {
 
 std::string render_for_mode(UiMode mode, const ScrapShipResult& vm) {
   if (mode == UiMode::JSON) {
-    return render_json_envelope("scrap_ship", vm);
+    return render_json_message(
+        make_output_message(render_scrap_ship_result(vm)));
   }
   return render_scrap_ship_result(vm);
 }
@@ -522,12 +525,15 @@ std::string render_rst(const RstViewModel& vm) {
   return out;
 }
 
-std::string render_json_rst(const RstViewModel& vm) {
-  return render_json_envelope("rst", vm);
-}
-
 std::string render_for_mode(UiMode mode, const RstViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_rst(vm) : render_rst(vm);
+  if (mode == UiMode::JSON) {
+    std::string out;
+    for (const auto& sv : vm.ship_views) {
+      out += render_json_ship_view(sv);
+    }
+    return out;
+  }
+  return render_rst(vm);
 }
 
 bool SightContext::has_star_sight(EntityManager& em, player_t player,

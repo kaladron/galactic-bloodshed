@@ -647,10 +647,10 @@ void test_upgrade_json_god_mode_and_edge_cases() {
   g.out.str("");
   const auto res_before_god = ctx.em.peek_ship(ship1_id)->resource();
   ctx.assert_dispatch_success(g, {"upgrade", "armor", "50"}, 1);
-  test::expect_contains(g.out.str(), "\"type\":\"ship_upgrade\"");
-  test::expect_contains(g.out.str(), "\"old_cost\":0");
-  test::expect_contains(g.out.str(), "\"new_cost\":0");
-  test::expect_contains(g.out.str(), "\"net_cost\":0");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(),
+                        "Characteristic modified at a cost of 0 resources.");
+  test::expect_contains(g.out.str(), R"("type":"ship")");
   test::expect_eq(ctx.em.peek_ship(ship1_id)->armor(), 50);
   test::expect_eq(ctx.em.peek_ship(ship1_id)->resource(), res_before_god);
 

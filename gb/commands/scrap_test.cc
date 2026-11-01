@@ -369,7 +369,9 @@ void test_scrap_domain_errors() {
   g.set_ui_mode(GB::presentation::UiMode::JSON);
   ctx.assert_dispatch_success(g,
                               {"scrap", std::format("#{}", deep_ship.value)});
-  test::expect_contains(g.out.str(), "\"type\":\"scrap_ship\"");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"("type":"ship")");
+  test::expect_contains(g.out.str(), R"("alive":false)");
   test::expect_eq(ctx.em.peek_universe()->get_AP(player_t{1}), ap_t{1});
 }
 

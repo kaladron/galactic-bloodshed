@@ -163,12 +163,48 @@ void test_dismount_errors() {
   std::println(std::cout, "✓ dismount error cases passed");
 }
 
+void test_dismount_json_mode() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  const shipnum_t ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
+                                .owned_by(1, 1)
+                                .in_star_orbit(1)
+                                .with_mount(1)
+                                .with_crystals(1)
+                                .build();
+  ctx.em.mutate_ship(ship_id, [](Ship& s) {
+    s.mounted() = 1;
+    s.hyper_drive().charge = 50;
+    s.laser() = 1;
+    s.fire_laser() = 5;
+  });
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 1);
+  g.set_level(ScopeLevel::LEVEL_SHIP);
+  g.set_shipno(ship_id);
+  g.set_ui_mode(GB::presentation::UiMode::JSON);
+
+  ctx.assert_dispatch_success(g, {"dismount", std::format("#{}", ship_id)});
+
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), "Dismounted.");
+  test::expect_contains(g.out.str(), "Discharged.");
+  test::expect_contains(g.out.str(), "Laser deactivated.");
+  test::expect_contains(g.out.str(), R"("type":"ship")");
+
+  std::println(std::cout, "✓ dismount JSON mode test passed");
+}
+
 }  // namespace
 
 int main() {
   test_dismount_with_hyperdrive_and_laser();
   test_dismount_without_charge_or_active_laser();
   test_dismount_errors();
+  test_dismount_json_mode();
 
   std::println(std::cout, "\n✅ All dismount tests passed!");
   return 0;

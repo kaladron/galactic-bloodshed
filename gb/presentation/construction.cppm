@@ -47,25 +47,13 @@ render_initialized_ship_report(const InitializedShipReport& report);
 /// Formats a `FactorySpecsViewModel` into its ASCII specification table.
 [[nodiscard]] std::string render_factory_specs(const FactorySpecsViewModel& vm);
 
-/// Formats a `FactorySpecsViewModel` into its JSON envelope.
-[[nodiscard]] std::string
-render_json_factory_specs(const FactorySpecsViewModel& vm);
-
 /// Formats a `FactoryMakeResult` into its ASCII presentation string.
 [[nodiscard]] std::string
 render_factory_make_result(const FactoryMakeResult& vm);
 
-/// Formats a `FactoryMakeResult` into its JSON envelope.
-[[nodiscard]] std::string
-render_json_factory_make_result(const FactoryMakeResult& vm);
-
 /// Formats a `FactoryModifyResult` into its ASCII presentation string.
 [[nodiscard]] std::string
 render_factory_modify_result(const FactoryModifyResult& vm);
-
-/// Formats a `FactoryModifyResult` into its JSON envelope.
-[[nodiscard]] std::string
-render_json_factory_modify_result(const FactoryModifyResult& vm);
 
 /// Open ADL dispatch for `FactorySpecsViewModel`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
@@ -126,17 +114,9 @@ build_ship_specs_table_vm(const Race& race);
 [[nodiscard]] std::string
 render_ship_specs_table(const ShipSpecsTableViewModel& vm);
 
-/// Formats a `ShipSpecsTableViewModel` into its JSON envelope.
-[[nodiscard]] std::string
-render_json_ship_specs_table(const ShipSpecsTableViewModel& vm);
-
 /// Formats a `ShipSpecDetailViewModel` into its ASCII presentation string.
 [[nodiscard]] std::string
 render_ship_spec_detail(const ShipSpecDetailViewModel& vm);
-
-/// Formats a `ShipSpecDetailViewModel` into its JSON envelope.
-[[nodiscard]] std::string
-render_json_ship_spec_detail(const ShipSpecDetailViewModel& vm);
 
 /// Open ADL dispatch for `ShipSpecsTableViewModel`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
@@ -152,10 +132,6 @@ render_json_ship_spec_detail(const ShipSpecDetailViewModel& vm);
 /// Formats an `UpgradeShipResult` into its ASCII presentation string.
 [[nodiscard]] std::string
 render_upgrade_ship_result(const UpgradeShipResult& vm);
-
-/// Formats an `UpgradeShipResult` into its JSON envelope.
-[[nodiscard]] std::string
-render_json_upgrade_ship_result(const UpgradeShipResult& vm);
 
 /// Open ADL dispatch for `UpgradeShipResult`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,

@@ -197,6 +197,8 @@ void collect_ship_report(GameObj& g, RstViewModel& vm, const Ship& s,
   if (!should_report_ship(s, g.player(), g.governor(), rep_on)) {
     return;
   }
+  vm.ship_views.push_back(*GB::presentation::project_ship_view(
+      g.entity_manager, g.scope_context(), s));
 
   RstShipEntry entry{};
   if (vm.flags.stock) {
@@ -287,7 +289,7 @@ bool run_rst(const command_t& argv, GameObj& g, const RstReportFlags& flags) {
 
         collect_ship_report(g, vm, *ship, report_types);
       }
-      g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
+      g.present(vm);
       return true;
     }
 
@@ -350,7 +352,7 @@ bool run_rst(const command_t& argv, GameObj& g, const RstReportFlags& flags) {
     }
   }
 
-  g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
+  g.present(vm);
   return true;
 }
 

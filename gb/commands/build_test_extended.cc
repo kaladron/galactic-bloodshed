@@ -341,7 +341,8 @@ void test_build_info_and_json_presentation() {
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   test::expect_true(GB::commands::build({"build", "?"}, g));
-  test::expect_contains(g.out.str(), "\"type\":\"ship_specs_table\"");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), "Default ship parameters");
 
   fixture.em.mutate_race(1, [](Race& r) {
     r.God = true;
@@ -383,7 +384,7 @@ void test_build_info_and_json_presentation() {
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   test::expect_true(GB::commands::build({"build", "?", ":"}, g));
-  test::expect_contains(g.out.str(), "\"type\":\"ship_spec_detail\"");
+  test::expect_contains(g.out.str(), R"("type":"message")");
 
   std::println(std::cout, "✓ Build info and JSON presentation test passed");
 }
@@ -421,8 +422,7 @@ void test_planet_and_factory_mcdc_branches() {
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   test::expect_true(GB::commands::build({"build", "p", "6,6", "1"}, g));
-  test::expect_contains(g.out.str(), "\"type\":\"created_ship\"");
-  test::expect_contains(g.out.str(), "\"type\":\"initialized_ship\"");
+  test::expect_contains(g.out.str(), R"("type":"message")");
   g.set_ui_mode(UiMode::ASCII);
 
   // Mortal with AVPM building OTYPE_TRANSDEV ('[') skips autoloading

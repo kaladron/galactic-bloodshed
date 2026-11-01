@@ -157,9 +157,9 @@ void test_make_designations_and_errors() {
   // 10. UiMode::JSON verification for make and 0-arg make
   g.set_ui_mode(GB::presentation::UiMode::JSON);
   ctx.assert_dispatch_success(g, {"make", "f"});
-  test::expect_contains(g.out.str(), R"("type":"factory_make")");
+  test::expect_contains(g.out.str(), R"("type":"message")");
   ctx.assert_dispatch_success(g, {"make"});
-  test::expect_contains(g.out.str(), R"("type":"factory_specs")");
+  test::expect_contains(g.out.str(), R"("type":"message")");
   g.set_ui_mode(GB::presentation::UiMode::ASCII);
 
   // 11. Factory already online allows 0-arg inspection but rejects make <type>

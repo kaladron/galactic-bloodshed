@@ -236,7 +236,7 @@ void test_modify_attributes_and_batteries() {
   // 9. UiMode::JSON verification
   g.set_ui_mode(GB::presentation::UiMode::JSON);
   ctx.assert_dispatch_success(g, {"modify", "armor", "30"});
-  test::expect_contains(g.out.str(), R"("type":"factory_modify")");
+  test::expect_contains(g.out.str(), R"("type":"message")");
   g.set_ui_mode(GB::presentation::UiMode::ASCII);
 
   // 10. Non-modifiable ship (probe ':') with and without hyperdrive discovery

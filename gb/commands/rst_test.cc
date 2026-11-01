@@ -280,8 +280,8 @@ void test_rst_filters_scopes_and_json() {
   g.set_ui_mode(UiMode::JSON);
   ctx.assert_dispatch_success(g, {"report", "#1"});
   const std::string json_out = g.out.str();
-  test::expect_contains(json_out, "\"type\":\"rst\"");
-  test::expect_contains(json_out, "\"name\":\"Hermes\"");
+  test::expect_contains(json_out, R"("type":"ship")");
+  test::expect_contains(json_out, R"("name":"Hermes")");
 }
 
 }  // namespace

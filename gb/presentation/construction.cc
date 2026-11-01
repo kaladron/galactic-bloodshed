@@ -149,14 +149,16 @@ render_initialized_ship_report(const InitializedShipReport& report) {
 
 std::string render_for_mode(UiMode mode, const CreatedShipSummary& vm) {
   if (mode == UiMode::JSON) {
-    return render_json_envelope("created_ship", vm);
+    return render_json_message(
+        make_output_message(render_created_ship_summary(vm)));
   }
   return render_created_ship_summary(vm);
 }
 
 std::string render_for_mode(UiMode mode, const InitializedShipReport& vm) {
   if (mode == UiMode::JSON) {
-    return render_json_envelope("initialized_ship", vm);
+    return render_json_message(
+        make_output_message(render_initialized_ship_report(vm)));
   }
   return render_initialized_ship_report(vm);
 }
@@ -257,10 +259,6 @@ std::string render_factory_specs(const FactorySpecsViewModel& vm) {
   return out;
 }
 
-std::string render_json_factory_specs(const FactorySpecsViewModel& vm) {
-  return render_json_envelope("factory_specs", vm);
-}
-
 std::string render_factory_make_result(const FactoryMakeResult& vm) {
   std::string out;
   std::format_to(std::back_inserter(out),
@@ -274,35 +272,29 @@ std::string render_factory_make_result(const FactoryMakeResult& vm) {
   return out;
 }
 
-std::string render_json_factory_make_result(const FactoryMakeResult& vm) {
-  return render_json_envelope("factory_make", vm);
-}
-
 std::string render_factory_modify_result(const FactoryModifyResult& vm) {
   return render_factory_design_stats(vm.stats);
 }
 
-std::string render_json_factory_modify_result(const FactoryModifyResult& vm) {
-  return render_json_envelope("factory_modify", vm);
-}
-
 std::string render_for_mode(UiMode mode, const FactorySpecsViewModel& vm) {
   if (mode == UiMode::JSON) {
-    return render_json_factory_specs(vm);
+    return render_json_message(make_output_message(render_factory_specs(vm)));
   }
   return render_factory_specs(vm);
 }
 
 std::string render_for_mode(UiMode mode, const FactoryMakeResult& vm) {
   if (mode == UiMode::JSON) {
-    return render_json_factory_make_result(vm);
+    return render_json_message(
+        make_output_message(render_factory_make_result(vm)));
   }
   return render_factory_make_result(vm);
 }
 
 std::string render_for_mode(UiMode mode, const FactoryModifyResult& vm) {
   if (mode == UiMode::JSON) {
-    return render_json_factory_modify_result(vm);
+    return render_json_message(
+        make_output_message(render_factory_modify_result(vm)));
   }
   return render_factory_modify_result(vm);
 }
@@ -422,8 +414,12 @@ std::string render_ship_specs_table(const ShipSpecsTableViewModel& vm) {
   return std::format("     - Default ship parameters -\n{}\n", table.str());
 }
 
-std::string render_json_ship_specs_table(const ShipSpecsTableViewModel& vm) {
-  return render_json_envelope("ship_specs_table", vm);
+std::string render_for_mode(UiMode mode, const ShipSpecsTableViewModel& vm) {
+  if (mode == UiMode::JSON) {
+    return render_json_message(
+        make_output_message(render_ship_specs_table(vm)));
+  }
+  return render_ship_specs_table(vm);
 }
 
 std::string render_ship_spec_detail(const ShipSpecDetailViewModel& vm) {
@@ -460,20 +456,10 @@ std::string render_ship_spec_detail(const ShipSpecDetailViewModel& vm) {
   return out;
 }
 
-std::string render_json_ship_spec_detail(const ShipSpecDetailViewModel& vm) {
-  return render_json_envelope("ship_spec_detail", vm);
-}
-
-std::string render_for_mode(UiMode mode, const ShipSpecsTableViewModel& vm) {
-  if (mode == UiMode::JSON) {
-    return render_json_ship_specs_table(vm);
-  }
-  return render_ship_specs_table(vm);
-}
-
 std::string render_for_mode(UiMode mode, const ShipSpecDetailViewModel& vm) {
   if (mode == UiMode::JSON) {
-    return render_json_ship_spec_detail(vm);
+    return render_json_message(
+        make_output_message(render_ship_spec_detail(vm)));
   }
   return render_ship_spec_detail(vm);
 }
@@ -530,13 +516,10 @@ std::string render_upgrade_ship_result(const UpgradeShipResult& vm) {
                      vm.old_cost, vm.new_cost, vm.net_cost);
 }
 
-std::string render_json_upgrade_ship_result(const UpgradeShipResult& vm) {
-  return render_json_envelope("ship_upgrade", vm);
-}
-
 std::string render_for_mode(UiMode mode, const UpgradeShipResult& vm) {
   if (mode == UiMode::JSON) {
-    return render_json_upgrade_ship_result(vm);
+    return render_json_message(
+        make_output_message(render_upgrade_ship_result(vm)));
   }
   return render_upgrade_ship_result(vm);
 }

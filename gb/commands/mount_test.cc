@@ -102,11 +102,39 @@ void test_mount_errors() {
   std::println(std::cout, "✓ mount error cases passed");
 }
 
+void test_mount_json_mode() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  const auto ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
+                           .owned_by(1, 1)
+                           .in_star_orbit(1)
+                           .with_mount(1)
+                           .with_crystals(2)
+                           .build();
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 1);
+  g.set_level(ScopeLevel::LEVEL_SHIP);
+  g.set_shipno(ship_id);
+  g.set_ui_mode(GB::presentation::UiMode::JSON);
+
+  ctx.assert_dispatch_success(g, {"mount", std::format("#{}", ship_id)});
+
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), "Mounted.");
+  test::expect_contains(g.out.str(), R"("type":"ship")");
+
+  std::println(std::cout, "✓ mount JSON mode test passed");
+}
+
 }  // namespace
 
 int main() {
   test_mount_persistence();
   test_mount_errors();
+  test_mount_json_mode();
 
   std::println(std::cout, "\n✅ All mount tests passed!");
   return 0;

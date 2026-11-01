@@ -308,7 +308,8 @@ std::string render_for_mode(UiMode mode, const ShipOrdersHeader& vm) {
 
 std::string render_for_mode(UiMode mode, const ShipOrderStatus& vm) {
   if (mode == UiMode::JSON) {
-    return render_json_envelope("ship_order_status", vm);
+    return render_json_message(
+        make_output_message(render_ship_order_status(vm)));
   }
   return render_ship_order_status(vm);
 }
@@ -317,7 +318,8 @@ std::string render_for_mode(UiMode mode, const OrderUpdate& vm) {
   if (mode == UiMode::JSON) {
     return vm.notice == OrderUpdateNotice::None
                ? std::string{}
-               : render_json_envelope("order_update", vm);
+               : render_json_message(
+                     make_output_message(render_order_update(vm)));
   }
   return render_order_update(vm);
 }
@@ -1012,32 +1014,6 @@ render_land_observer_telegram(const LandShipResult& res) {
                        res.planet_name);
   }
   return std::nullopt;
-}
-
-std::string render_scope_change(const ScopeChangeResult& /*vm*/) {
-  return {};
-}
-
-std::string render_json_scope_change(const ScopeChangeResult& vm) {
-  return render_json_envelope("scope_change", vm);
-}
-
-std::string render_for_mode(UiMode mode, const ScopeChangeResult& vm) {
-  return mode == UiMode::JSON ? render_json_scope_change(vm)
-                              : render_scope_change(vm);
-}
-
-std::string render_default_scope_result(const DefaultScopeResult& vm) {
-  return std::format("New home system is {}\n", vm.path);
-}
-
-std::string render_json_default_scope_result(const DefaultScopeResult& vm) {
-  return render_json_envelope("default_scope", vm);
-}
-
-std::string render_for_mode(UiMode mode, const DefaultScopeResult& vm) {
-  return mode == UiMode::JSON ? render_json_default_scope_result(vm)
-                              : render_default_scope_result(vm);
 }
 
 }  // namespace GB::presentation

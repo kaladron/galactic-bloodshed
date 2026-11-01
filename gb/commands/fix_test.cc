@@ -314,14 +314,17 @@ void test_fix_command_dispatch() {
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"fix", "ship", "damage", "10"});
-  test::expect_contains(g.out.str(), "\"type\":\"fix\"");
-  test::expect_contains(g.out.str(), "\"property\":\"damage\"");
-  test::expect_contains(g.out.str(), "\"value\":10");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"(damage = 10)");
+  test::expect_contains(g.out.str(), R"("type":"ship")");
+  test::expect_contains(g.out.str(), R"("damage":10)");
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"fix", "ship", "dead"});
-  test::expect_contains(g.out.str(), "\"type\":\"fix\"");
-  test::expect_contains(g.out.str(), "\"ship_destroyed\":true");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"(destroyed)");
+  test::expect_contains(g.out.str(), R"("type":"ship")");
+  test::expect_contains(g.out.str(), R"("alive":false)");
   test::expect_throws<EntityNotFoundError>(
       [&]() { ctx.em.peek_ship(ship1_id); });
 

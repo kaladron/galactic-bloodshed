@@ -272,21 +272,22 @@ void test_cs_json_mode() {
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"cs", "/Sol/Earth"}, 0);
-  test::expect_contains(g.out.str(), R"("type":"scope_change")");
+  test::expect_contains(g.out.str(), R"("type":"session")");
   test::expect_contains(g.out.str(), R"("path":"/Sol/Earth")");
   test::expect_contains(g.out.str(), R"("snum":1)");
   test::expect_contains(g.out.str(), R"("pnum":1)");
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"cs", "-d", "/Vega/Vega Prime"}, 0);
-  test::expect_contains(g.out.str(), R"("type":"default_scope")");
-  test::expect_contains(g.out.str(), R"("path":"/Vega/Vega Prime")");
-  test::expect_contains(g.out.str(), R"("snum":2)");
-  test::expect_contains(g.out.str(), R"("pnum":1)");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"(New home system is /Vega/Vega Prime)");
+  test::expect_contains(g.out.str(), R"("type":"race")");
+  test::expect_contains(g.out.str(), R"("default_star":2)");
+  test::expect_contains(g.out.str(), R"("default_planet":1)");
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"cs"}, 0);
-  test::expect_contains(g.out.str(), R"("type":"scope_change")");
+  test::expect_contains(g.out.str(), R"("type":"session")");
   test::expect_contains(g.out.str(), R"("path":"/Vega/Vega Prime")");
 }
 

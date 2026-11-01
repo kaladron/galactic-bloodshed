@@ -54,8 +54,8 @@ void test_zoom_happy_path() {
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"zoom", "3.0"});
-  test::expect_contains(g.out.str(), "\"type\":\"zoom\"");
-  test::expect_contains(g.out.str(), "\"zoom\":3");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"(Zoom value 3)");
   test::expect_eq(g.zoom[1], 3.0);
 }
 

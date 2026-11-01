@@ -368,10 +368,6 @@ struct ExamineViewModel {
 /// Renders an `ExamineViewModel` for `UiMode::ASCII`.
 [[nodiscard]] std::string render_examine(const ExamineViewModel& vm);
 
-/// Serializes an `ExamineViewModel` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"examine","data":{...}}\n`).
-[[nodiscard]] std::string render_json_examine(const ExamineViewModel& vm);
-
 /// Dispatches `ExamineViewModel` rendering based on `mode`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const ExamineViewModel& vm);
@@ -913,7 +909,6 @@ struct FixResult {
 };
 
 [[nodiscard]] std::string render_fix_result(const FixResult& vm);
-[[nodiscard]] std::string render_json_fix_result(const FixResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode, const FixResult& vm);
 
 /// Entity category targeted by `name` command.
@@ -934,7 +929,6 @@ struct NameResult {
 };
 
 [[nodiscard]] std::string render_name_result(const NameResult& vm);
-[[nodiscard]] std::string render_json_name_result(const NameResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode, const NameResult& vm);
 
 /// Formats a race/governor sender tag (`<Race> "<Gov>" [<player>,<gov>]`).

@@ -6,7 +6,7 @@
 module;
 
 import gb.entities;
-import gb.presentation.planet_views;
+import gb.presentation.core;
 import gb.services;
 import std;
 
@@ -78,11 +78,8 @@ bool distance(const command_t& argv, GameObj& g) {
       resolve_scope_coords(to, g.player(), g.entity_manager, g);
   if (!to_coords) return false;
 
-  g.present(GB::presentation::DistanceResult{
-      .from = from.to_string(g.entity_manager),
-      .to = to.to_string(g.entity_manager),
-      .distance = from_coords->distance_to(*to_coords),
-  });
+  g.present(GB::presentation::make_output_message(
+      std::format("Distance = {}\n", from_coords->distance_to(*to_coords))));
   return true;
 }
 

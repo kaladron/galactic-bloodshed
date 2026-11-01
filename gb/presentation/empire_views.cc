@@ -504,12 +504,11 @@ std::string render_examine(const ExamineViewModel& vm) {
   return out;
 }
 
-std::string render_json_examine(const ExamineViewModel& vm) {
-  return render_json_envelope("examine", vm);
-}
-
 std::string render_for_mode(UiMode mode, const ExamineViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_examine(vm) : render_examine(vm);
+  if (mode == UiMode::JSON) {
+    return render_json_message(make_output_message(render_examine(vm)));
+  }
+  return render_examine(vm);
 }
 
 std::string render_dump(const DumpViewModel& vm) {
@@ -1242,13 +1241,11 @@ std::string render_fix_result(const FixResult& vm) {
   return std::format("{} = {}\n", vm.display_property, vm.value);
 }
 
-std::string render_json_fix_result(const FixResult& vm) {
-  return render_json_envelope("fix", vm);
-}
-
 std::string render_for_mode(UiMode mode, const FixResult& vm) {
-  return mode == UiMode::JSON ? render_json_fix_result(vm)
-                              : render_fix_result(vm);
+  if (mode == UiMode::JSON) {
+    return render_json_message(make_output_message(render_fix_result(vm)));
+  }
+  return render_fix_result(vm);
 }
 
 std::string render_name_result(const NameResult& vm) {
@@ -1269,13 +1266,11 @@ std::string render_name_result(const NameResult& vm) {
   return "";
 }
 
-std::string render_json_name_result(const NameResult& vm) {
-  return render_json_envelope("name", vm);
-}
-
 std::string render_for_mode(UiMode mode, const NameResult& vm) {
-  return mode == UiMode::JSON ? render_json_name_result(vm)
-                              : render_name_result(vm);
+  if (mode == UiMode::JSON) {
+    return render_json_message(make_output_message(render_name_result(vm)));
+  }
+  return render_name_result(vm);
 }
 
 std::string format_sender_tag(const Race& race, player_t player,

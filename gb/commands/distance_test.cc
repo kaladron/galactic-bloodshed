@@ -178,8 +178,8 @@ void test_distance_dispatch() {
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"distance", "/Sol", "/Vega"});
-  test::expect_contains(g.out.str(), "\"type\":\"distance\"");
-  test::expect_contains(g.out.str(), "\"distance\":500");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"(Distance = 500)");
 }
 
 void test_distance_matrix() {

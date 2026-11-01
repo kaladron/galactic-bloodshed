@@ -6,7 +6,7 @@
 module;
 
 import gb.entities;
-import gb.presentation.navigation;
+import gb.presentation.core;
 import gb.services;
 import std;
 
@@ -15,16 +15,10 @@ module commands;
 namespace {
 
 void present_scope_change(GameObj& g) {
-  const Place current{g.level(), g.snum(), g.pnum(), g.shipno()};
-  g.present(GB::presentation::ScopeChangeResult{
-      .level = g.level(),
-      .snum = g.snum(),
-      .pnum = g.pnum(),
-      .shipno = g.shipno(),
-      .path = current.to_string(g.entity_manager),
-      .universe_center = g.universe_center(),
-      .system_center = g.system_center(),
-  });
+  if (g.ui_mode() == GB::presentation::UiMode::JSON) {
+    g.out << GB::presentation::render_json_session(
+        GB::presentation::build_session_view(g));
+  }
 }
 
 /**
@@ -168,12 +162,8 @@ bool change_default_home_scope(GameObj& g, std::string_view target_arg) {
     gov.defplanetnum = where->pnum;
   });
 
-  g.present(GB::presentation::DefaultScopeResult{
-      .level = where->level,
-      .snum = where->snum,
-      .pnum = where->pnum,
-      .path = where->to_string(g.entity_manager),
-  });
+  g.present(GB::presentation::make_output_message(std::format(
+      "New home system is {}\n", where->to_string(g.entity_manager))));
   return true;
 }
 

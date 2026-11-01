@@ -747,8 +747,10 @@ void test_navigation_and_combat_order_mcdc_and_json() {
   g.out.str("");
   g.set_ui_mode(UiMode::JSON);
   ctx.assert_dispatch_success(g, {"order", "#1"});
-  test::expect_contains(g.out.str(), "\"type\":\"ship_order_status\"");
-  test::expect_contains(g.out.str(), "\"name\":\"TestShip\"");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"(TestShip)");
+  test::expect_contains(g.out.str(), R"("type":"ship")");
+  test::expect_contains(g.out.str(), R"("name":"TestShip")");
   g.set_ui_mode(UiMode::ASCII);
 
   std::println(std::cout,
@@ -1006,8 +1008,11 @@ void test_special_ship_order_mcdc_and_notices() {
   g.out.str("");
   g.set_ui_mode(UiMode::JSON);
   ctx.assert_dispatch_success(g, {"order", f_err_arg, "on"});
-  test::expect_contains(g.out.str(), "\"type\":\"order_update\"");
-  test::expect_contains(g.out.str(), "\"factory_activation_cost\":100");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(),
+                        R"(Factory activated at a cost of 100 resources.)");
+  test::expect_contains(g.out.str(), R"("type":"ship")");
+  test::expect_contains(g.out.str(), R"("type":"planet")");
   g.set_ui_mode(UiMode::ASCII);
 
   std::println(std::cout,

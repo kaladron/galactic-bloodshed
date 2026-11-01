@@ -933,46 +933,6 @@ render_slave_revolt_bulletin(const SlaveRevoltBulletinViewModel& vm) {
       vm.star_name, vm.planet_name, vm.former_master);
 }
 
-std::string render_center_result(const CenterResult&) {
-  return "";
-}
-
-std::string render_json_center_result(const CenterResult& vm) {
-  return render_json_envelope("center", vm);
-}
-
-std::string render_for_mode(UiMode mode, const CenterResult& vm) {
-  return mode == UiMode::JSON ? render_json_center_result(vm)
-                              : render_center_result(vm);
-}
-
-std::string render_zoom_result(const ZoomResult& vm) {
-  return std::format("Zoom value {0}, lastx = {1}, lasty = {2}.\n", vm.zoom,
-                     vm.last_x, vm.last_y);
-}
-
-std::string render_json_zoom_result(const ZoomResult& vm) {
-  return render_json_envelope("zoom", vm);
-}
-
-std::string render_for_mode(UiMode mode, const ZoomResult& vm) {
-  return mode == UiMode::JSON ? render_json_zoom_result(vm)
-                              : render_zoom_result(vm);
-}
-
-std::string render_distance_result(const DistanceResult& vm) {
-  return std::format("Distance = {}\n", vm.distance);
-}
-
-std::string render_json_distance_result(const DistanceResult& vm) {
-  return render_json_envelope("distance", vm);
-}
-
-std::string render_for_mode(UiMode mode, const DistanceResult& vm) {
-  return mode == UiMode::JSON ? render_json_distance_result(vm)
-                              : render_distance_result(vm);
-}
-
 std::string render_star_locations(const StarLocationsViewModel& vm) {
   if (vm.stars.empty()) {
     return "No stars found within specified distance.\n";

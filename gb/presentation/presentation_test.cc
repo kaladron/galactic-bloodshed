@@ -78,6 +78,12 @@ void test_render_json_envelope_and_polymorphic_presenter() {
   test::expect_eq(
       GB::presentation::render_for_mode(UiMode::JSON, empty_captured), "");
 
+  const OrderUpdate empty_order_update{};
+  test::expect_eq(
+      GB::presentation::render_for_mode(UiMode::ASCII, empty_order_update), "");
+  test::expect_eq(
+      GB::presentation::render_for_mode(UiMode::JSON, empty_order_update), "");
+
   const CapturedShipsReport populated_captured{
       .captured_ships =
           {

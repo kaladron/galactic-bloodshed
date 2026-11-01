@@ -393,8 +393,10 @@ void test_name_permissions_scope_and_json() {
     g.set_shipno(ship_id);
     g.out.str("");
     ctx.assert_dispatch_success(g, {"name", "ship", "Defiant"});
-    test::expect_contains(g.out.str(), "\"type\":\"name\"");
-    test::expect_contains(g.out.str(), "\"name\":\"Defiant\"");
+    test::expect_contains(g.out.str(), R"("type":"message")");
+    test::expect_contains(g.out.str(), R"(Name set.)");
+    test::expect_contains(g.out.str(), R"("type":"ship")");
+    test::expect_contains(g.out.str(), R"("name":"Defiant")");
   }
 
   std::println(std::cout,

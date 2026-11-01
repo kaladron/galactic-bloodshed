@@ -55,8 +55,8 @@ void test_center_happy_path() {
   g.out.str("");
   ctx.assert_dispatch_success(g, {"center", "/Sol/Earth"});
   test::expect_eq(g.universe_center(), UniverseCoordinates(0.0, 0.0));
-  test::expect_contains(g.out.str(), "\"type\":\"center\"");
-  test::expect_contains(g.out.str(), "\"star_name\":\"Sol\"");
+  test::expect_contains(g.out.str(), R"("type":"session")");
+  test::expect_contains(g.out.str(), R"("universe_center":{"x":0,"y":0})");
 }
 
 void test_center_domain_errors() {

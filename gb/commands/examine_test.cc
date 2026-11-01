@@ -99,7 +99,10 @@ void test_examine_dispatch() {
 
   g.set_ui_mode(UiMode::JSON);
   ctx.assert_dispatch_success(g, {"examine", "#1"});
-  test::expect_contains(g.out.str(), "\"type\":\"examine\"");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(
+      g.out.str(),
+      R"(Shuttle: SQLite stored short-range spacecraft description.)");
 
   ctx.verify_universe_invariants();
 }

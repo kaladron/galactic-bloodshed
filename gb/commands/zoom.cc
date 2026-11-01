@@ -6,7 +6,7 @@
 module;
 
 import gb.entities;
-import gb.presentation.planet_views;
+import gb.presentation.core;
 import gb.services;
 import scnlib;
 import std;
@@ -61,11 +61,9 @@ bool zoom(const command_t& argv, GameObj& g) {
   const double last_y = (g.level() == ScopeLevel::LEVEL_UNIV)
                             ? g.universe_center().y
                             : g.system_center().y;
-  g.present(GB::presentation::ZoomResult{
-      .zoom = g.zoom[i],
-      .last_x = last_x,
-      .last_y = last_y,
-  });
+  g.present(GB::presentation::make_output_message(
+      std::format("Zoom value {0}, lastx = {1}, lasty = {2}.\n", g.zoom[i],
+                  last_x, last_y)));
   return true;
 }
 

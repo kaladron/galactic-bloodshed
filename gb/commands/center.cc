@@ -6,7 +6,7 @@
 module;
 
 import gb.entities;
-import gb.presentation.planet_views;
+import gb.presentation.core;
 import gb.services;
 import std;
 
@@ -36,11 +36,10 @@ bool center(const command_t& argv, GameObj& g) {
   }
   const auto& star = *g.entity_manager.peek_star(where->snum);
   g.set_universe_center(star.coordinates());
-  g.present(GB::presentation::CenterResult{
-      .snum = where->snum,
-      .star_name = star.get_name(),
-      .universe_center = g.universe_center(),
-  });
+  if (g.ui_mode() == GB::presentation::UiMode::JSON) {
+    g.out << GB::presentation::render_json_session(
+        GB::presentation::build_session_view(g));
+  }
   return true;
 }
 

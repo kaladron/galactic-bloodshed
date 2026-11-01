@@ -18,16 +18,22 @@ bool profile(const command_t& argv, GameObj& g) {
 
   // Get information about ourselves
   if (argv.size() == 1) {
-    const auto& homestar =
-        *g.entity_manager.peek_star(g.current_governor().homesystem);
+    std::string home_star_name = "None";
+    std::string home_planet_name = "None";
+    if (g.current_governor().homesystem != 0) {
+      const auto& homestar =
+          *g.entity_manager.peek_star(g.current_governor().homesystem);
+      home_star_name = homestar.get_name();
+      home_planet_name =
+          homestar.get_planet_name(g.current_governor().homeplanetnum);
+    }
     const GB::presentation::ProfileSelfViewModel vm{
         .race_name = race.name,
         .player = race.Playernum,
         .is_god = race.God,
         .personal_info = race.info,
-        .home_star_name = homestar.get_name(),
-        .home_planet_name =
-            homestar.get_planet_name(g.current_governor().homeplanetnum),
+        .home_star_name = std::move(home_star_name),
+        .home_planet_name = std::move(home_planet_name),
         .gov_ship = race.Gov_ship,
         .morale = race.morale,
         .updates_active = race.turn,

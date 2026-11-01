@@ -46,6 +46,7 @@ Specialized development skills are located in `.github/skills/` and provide comp
 - Never separate implementation into one commit and tests into a later commit.
 - **Test Fidelity & Completeness**: Preserve all distinct test cases, assertions, and edge scenarios (e.g. multi-step sequences like friendly boarding, rejection of already-docked ships, edge-case validations). Never drop, truncate, or over-consolidate existing test cases during modernization. Preserve realistic entity state and domain setup fields (e.g., `race.mass`, `race.metabolism`, distinct player IDs for role rejection tests such as Player 1 for deity and Player 2 for mortal).
 - **Preserve domain formulas & template lookups in tests**: When initializing test entities (races, ships, planets), preserve baseline template lookups and domain calculations (e.g., `Shipdata[type][ABIL_BUILD]`, `Shipnames[type]`, `race.mass`, `race.metabolism`) instead of replacing them with arbitrary hardcoded magic numbers (e.g., replacing template size calculations with `100`).
+- **MC/DC Coverage**: Strive to maintain 100% Modified Condition/Decision Coverage (MC/DC) across all new and modified boolean decisions. Keep compound conditionals simple and write unit tests that independently toggle each condition.
 
 ### 3. Plain English Architecture Documentation
 - `ARCHITECTURE.md` is for humans and AI agents to understand how systems work conceptually.

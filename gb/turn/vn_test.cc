@@ -499,6 +499,39 @@ int main() {
     test::expect_false(child_vn->is_busy());
     test::expect_false(child_vn->name().empty());
 
+    // Mortal-built generation-1 seed VN (owner = 2, progenitor = 2) replicates
+    // into an autonomous System-owned (owner = 1) offspring while preserving
+    // the mortal creator's progenitor lineage (progenitor = 2).
+    ship_struct mortal_seed_data{};
+    mortal_seed_data.number = 411;
+    mortal_seed_data.owner = 2;
+    mortal_seed_data.type = ShipType::OTYPE_VN;
+    mortal_seed_data.tech = 200.0;
+    mortal_seed_data.armor = 1;
+    mortal_seed_data.resource = 250;
+    mortal_seed_data.fuel = 40.0;
+    mortal_seed_data.special = MindData{
+        .progenitor = player_t{2},
+        .target_player = player_t{3},
+        .generation = 1,
+        .busy = true,
+        .tampered = false,
+        .who_killed = std::nullopt,
+    };
+    auto mortal_seed_ship = ShipFactory::create(mortal_seed_data);
+    auto* mortal_seed = mortal_seed_ship->as<VonNeumannShip>();
+    test::expect_true(mortal_seed != nullptr);
+
+    shipnum_t seed_child_num =
+        construct_replicated_vn(em, *mortal_seed, planet);
+    const auto* seed_child = em.peek_ship(seed_child_num);
+    test::expect_true(seed_child != nullptr);
+    test::expect_eq(seed_child->owner(), player_t{1});
+    auto* seed_child_vn = seed_child->as<VonNeumannShip>();
+    test::expect_true(seed_child_vn != nullptr);
+    test::expect_eq(seed_child_vn->progenitor(), player_t{2});
+    test::expect_eq(seed_child_vn->generation(), 2);
+
     std::println(std::cout,
                  "  ✓ construct_replicated_vn inherits lineage and attributes");
   }
@@ -513,14 +546,15 @@ int main() {
 
     ship_struct vn_data{};
     vn_data.number = 402;
-    vn_data.owner = 1;
+    vn_data.owner = 2;
+    vn_data.governor = 1;
     vn_data.type = ShipType::OTYPE_VN;
     vn_data.tech = 500.0;
     vn_data.armor = 2;
     vn_data.resource = 500;
     vn_data.fuel = 40.0;
     vn_data.special = MindData{
-        .progenitor = player_t{1},
+        .progenitor = player_t{2},
         .target_player = std::nullopt,
         .generation = 2,
         .busy = true,
@@ -543,6 +577,7 @@ int main() {
 
     const auto* bers = em.peek_ship(bers_num);
     test::expect_true(bers != nullptr);
+    test::expect_eq(bers->owner(), player_t{1});
     test::expect_eq(bers->storbits(), planet.star_id());
     test::expect_eq(bers->pnumorbits(), planet.planet_order());
     test::expect_eq(bers->type(), ShipType::OTYPE_BERS);
@@ -557,9 +592,13 @@ int main() {
 
     auto* bers_ship = bers->as<BerserkerShip>();
     test::expect_true(bers_ship != nullptr);
+    test::expect_eq(bers_ship->progenitor(), player_t{2});
     test::expect_eq(bers_ship->target(), player_t{3});
     test::expect_eq(bers_ship->generation(), 2);
     test::expect_false(bers_ship->is_busy());
+
+    auto p2_telegrams = em.get_telegrams(player_t{2}, Race::leader_id);
+    test::expect_false(p2_telegrams.empty());
 
     std::println(
         std::cout,

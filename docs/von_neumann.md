@@ -2,127 +2,178 @@
 
 ## Overview
 
-**Von Neumann Machines** and **Berserkers** are autonomous, self-replicating robotic intelligences in **Galactic Bloodshed**. Deployed across deep space as self-sustaining exploration and mining probes, these machine entities travel between star systems, land on mineral-rich worlds, strip-mine planetary biospheres, synthesize propellants and munitions, and replicate exponentially.
+**Von Neumann Machines (`v`)** and **Berserkers (`V`)** are autonomous, self-replicating robotic intelligences in **Galactic Bloodshed**. Deployed across deep space as self-sustaining exploration and mining probes, these machine entities travel between star systems, land on mineral-rich worlds, strip-mine planetary biospheres, raid colony stockpiles, synthesize propellants and munitions, and replicate exponentially.
 
-When threatened or attacked by space empires, the machine network mobilizes for war, manufacturing heavily armored Berserker dreadnoughts programmed to retaliate against hostile civilizations.
+When threatened or destroyed by spacefaring empires, the collective machine network logs the aggression and mobilizes for war, manufacturing heavily armored Berserker dreadnoughts programmed to hunt down and bombard the star systems of hostile civilizations.
 
 ```mermaid
 flowchart TD
-    Deep["1. Deep Space Interstellar Transit\nTraverse Interstellar Coordinates"] --> Orbit["2. Orbital Insertion & Planetary Scan\nIdentify Habitable Worlds & Mineral Veins"]
-    Orbit --> Land["3. Surface Landing & Extraction\nLand on Resource-Rich Planetary Sectors"]
-    Land --> Mine["4. Strip-Mining & Synthesis\nMine Minerals & Refine Fuel / Munitions"]
-    Mine --> Rep{"5. Self-Replication Cycle\nStored Minerals >= Build Cost?"}
-    Rep -->|Yes| Spawn["Replication & Lineage Advance\nSpawn Offspring (+20 Tech, +1 Armor)"]
-    Rep -->|No| CheckHostile{"Total Galactic Hostility > 100?"}
-    Spawn --> CheckHostile
-    CheckHostile -->|"Yes (50% Chance)"| Berserk["Manufacture Berserker Warship\n(+100 Tech, +11 Armor, Orbital Bombardment)"]
-    CheckHostile -->|No| Roam["Wander Depleted Sectors / Launch to Deep Space"]
-    Berserk --> Hunt["Target Star Systems of Hostile Empire"]
-    Roam --> Deep
-    Hunt --> Deep
+    Seed["1. Seed Probe Construction\nMortal Empire (Tech >= 80) or Deity Builds 'v'"] --> Land["2. Surface Landing & Strip-Mining\nExtract 50% Sector Minerals (Min 1) + Equal Fuel"]
+    Land --> Raid["3. Colony Stockpile Raids\nSiphon up to 100 Resources from Local Colonies"]
+    Raid --> Rep{"4. Self-Replication Cycle\nStored Minerals >= 100?"}
+    Rep -->|Yes| Hostile{"Total Galactic Hostility > 100\nand 50% Coin Flip?"}
+    Hostile -->|No| SpawnVN["Construct Replicated VN Probe ('v')\n(+20 Tech, +1 Armor, 50% Parent Fuel)"]
+    Hostile -->|Yes| SpawnBers["Construct Berserker Dreadnought ('V')\n(+100 Tech, +11 Armor, 500 Destruct, Hyperdrive)"]
+    SpawnVN --> SysOwn["Assigned to Autonomous System (Empire #1)\nPreserves Original Progenitor Lineage"]
+    SpawnBers --> SysOwn
+    SysOwn --> BusyFlip["Parent Flips 50% Busy Coin\n(Continue Mining or Prepare for Launch)"]
+    Rep -->|No| LaunchCheck{"5. Ready for Deep Space?\n(Not Busy and Fuel Tank Full)"}
+    BusyFlip --> LaunchCheck
+    LaunchCheck -->|Yes| Launch["Launch to Planetary Orbit\n(+/- 10.0 Coordinate Dispersion)"]
+    LaunchCheck -->|No| Land
+    Launch --> Route["6. Autonomous Star Routing\nVN: Nearest Unoccupied Star | Berserker: Offender's Stars"]
 ```
 
 ---
 
-## 1. Cybernetic Lineage and Generational Evolution
+## 1. Construction, Ownership, and Cybernetic Lineage
 
-Every autonomous machine possesses an internal cybernetic consciousness and lineage tracking:
+### Seed Construction vs. Berserker Restriction
+- **Von Neumann Probes (`v`)**: Any mortal empire that reaches the Von Neumann technology threshold ($80.0$ engineering technology) and discovers Von Neumann technology can construct a generation-1 seed probe on a planetary sector ($100$ resources, base armor $1$, speed $4$, $0$ crew, $20$ resource capacity, $50$ fuel capacity).
+- **Berserker Warships (`V`)**: Berserkers have a base technology rating of $999.0$ and are restricted to Deity creation or autonomous machine war mobilization. Mortal empires can never directly build or factory-program a Berserker hull.
 
-- **Progenitor**: The originating empire or intelligence that deployed the ancestral seed machine.
-- **Generational Lineage**: A reproductive generation counter ($`g_0, g_1, \dots`$). Each time a machine replicates, its offspring advances the generation: $`g_{\text{child}} = g_{\text{parent}} + 1`$.
-- **Iterative Hardware Evolution**: Each generational iteration incorporates refined engineering, upgrading the offspring's scientific technology level and defensive armor: $`\text{Tech}_{\text{child}} = \text{Tech}_{\text{parent}} + 20.0`$ and $`\text{Armor}_{\text{child}} = \text{Armor}_{\text{parent}} + 1`$.
-- **Binary Designations**: Newborn probes automatically assign themselves thematic binary strings (e.g. `"1010011"`, `"01101"`) as cosmetic hull names.
-- **Cybernetic Subversion & Reprogramming**: Advanced star empires can attempt to capture and tamper with machine minds, overwriting mission parameters, target priorities, and operational doctrines.
+### Ownership vs. Progenitor Lineage
+Autonomous machines maintain a strict separation between **operational ownership** and **ancestral progenitor lineage**:
+
+| Lifecycle Stage | Operational Owner | Progenitor Identity | Strategic & Scoring Implications |
+| :--- | :--- | :--- | :--- |
+| **Generation-1 Seed Probe (`build v`)** | Constructing Empire | Constructing Empire | Owned by the builder, but completely autonomous (cannot be steered, unloaded, or boarded). |
+| **Replicated VN Offspring (`v`)** | Autonomous System (Empire #1) | Inherited from Parent | Operates as an independent rogue machine; does not count toward the mortal progenitor's ship count, power rating, or victory score. |
+| **Replicated Berserker (`V`)** | Autonomous System (Empire #1) | Inherited from Parent | Prevents mortal empires from commanding, disarming, or unloading God-tier Berserker dreadnoughts, and ensures Berserkers do not spare their mortal progenitor's colonies during orbital bombardment. |
+
+Whenever a generation-1 seed probe owned by a mortal empire spawns a Berserker directly, the parent machine transmits an automated construction telegram to the mortal owner announcing the new Berserker's designation before the offspring enters autonomous System control.
+
+### Command, Logistics, and Combat Immunities
+Even when an empire owns a generation-1 Von Neumann probe, the machine's autonomous AI enforces strict operational immunities:
+- **No Manual Navigation**: Von Neumann probes reject manual navigation orders (`order`); their destinations and throttle settings are governed exclusively by internal machine logic.
+- **No Cargo Unloading**: Players cannot unload minerals or propellant from a Von Neumann machine (`unload` is rejected).
+- **Boarding & Capture Immunity**: Because Von Neumann probes are solid-state robotic chassis with zero crew compartments ($`\text{Max Crew} = 0`$), they cannot be boarded in space (`assault`) or captured on planetary surfaces (`capture`).
+- **Morale Neutrality**: Destroying a Von Neumann probe in combat neither awards morale to the attacker nor inflicts a morale penalty on the machine's owner.
+
+### Generational Hardware Evolution
+Each autonomous machine carries an internal cybernetic mind tracking its lineage and mission state:
+- **Progenitor**: The ancestral empire that constructed the generation-1 seed machine.
+- **Generational Counter**: Starts at $`g = 1`$ for newly built probes. Every replicated Von Neumann probe increments the generation counter ($`g_{\text{child}} = g_{\text{parent}} + 1`$), whereas a newly mobilized Berserker retains its parent's current generation number ($`g_{\text{child}} = g_{\text{parent}}`$).
+- **Iterative Hardware Upgrades**:
+  - **Replicated Von Neumann Probe**: $`\text{Tech}_{\text{child}} = \text{Tech}_{\text{parent}} + 20.0`$ and $`\text{Armor}_{\text{child}} = \text{Armor}_{\text{parent}} + 1`$.
+  - **Replicated Berserker Warship**: $`\text{Tech}_{\text{child}} = \text{Tech}_{\text{parent}} + 100.0`$ and $`\text{Armor}_{\text{child}} = \text{Armor}_{\text{parent}} + 11`$.
+- **Binary Designations**: Replicated Von Neumann probes assign themselves random binary hull names between $3$ and $10$ bits in length (e.g. `"1010011"`, `"01101"`).
 
 ---
 
 ## 2. Planetary Surface Operations and Strip-Mining
 
-Upon entering a star system, an autonomous machine enters planetary orbit and initiates its surface operations:
+### Orbital Arrival and Landing Site Selection
+When an active, busy machine arrives in planetary orbit around its target world during the planetary simulation phase:
+- **Gas Giant Avoidance**: If the target planet is a Gas Giant, the machine aborts landing and clears its busy assignment (allowing it to skim atmospheric fuel in orbit).
+- **Resource Sector Scan**: On terrestrial worlds, the machine scans all surface sectors in random order and lands on the first sector containing positive mineral deposits ($`\text{Sector Minerals} > 0`$), setting its mission state to **busy**. If the entire planet is devoid of mineral resources, the machine clears its busy flag without landing.
 
-### Landing Site Selection
-- Probes scan all planets in the star system, bypassing uninhabitable gas giants that cannot support landings.
-- The machine scans surface sectors, identifying and landing directly on a sector bearing raw mineral reserves.
+### Sector Strip-Mining and Onboard Synthesis
+During each planetary update pass, a landed, busy Von Neumann probe strip-mines its current sector:
 
-### Sector Strip-Mining and Synthesis
-Once landed, the machine strip-mines its occupied sector:
+$$\text{Extracted Yield} = \max\Big(1,\; \text{Sector Minerals} - \lfloor 0.5 \times \text{Sector Minerals} \rfloor\Big)$$
 
-$$\text{Extracted Yield} = \max\left(1, \left\lfloor \text{Sector Mineral Reserves} \times 0.5 \right\rfloor\right)$$
+- **Guaranteed Depletion**: At least $1$ mineral unit is always extracted when a sector has positive reserves, preventing infinite mining loops on trace deposits ($1$ resource remaining).
+- **Cargo & Propellant Synthesis**:
+  - **Von Neumann Probe (`v`)**: Adds $\text{Extracted Yield}$ to its onboard **mineral cargo** (clamped to its $20$-unit cargo capacity, or higher if modified) and adds an equal amount ($\text{Extracted Yield}$) to its **fuel tank**.
+  - **Berserker (`V`)**: Converts extracted minerals into $5 \times \text{Extracted Yield}$ **destruct ordnance** and adds $\text{Extracted Yield}$ to its **fuel tank**.
+- **Sector Depletion and Toroidal Roaming**: If the occupied sector's mineral reserves have reached $0$, the probe instead roams to a random adjacent sector (wrapping seamlessly across the planet's east/west longitudinal seam while respecting north/south polar boundaries).
 
-- **Mineral Stockpiling**: The extracted mineral yield is transferred directly into the probe's cargo hold.
-- **Propellant Synthesis**: The probe refines the extracted minerals into an equal volume of liquid fuel: $\Delta \text{Fuel} = \text{Extracted Yield}$.
-- **Berserker Ordnance Synthesis**: Berserker warships convert extracted minerals into $5\times$ destructive ordnance: $\Delta \text{Destruct} = 5 \times \text{Extracted Yield}$.
+### Colony Stockpile Raids
+During the naval simulation phase, any landed machine that does not launch into orbit raids local planetary stockpiles:
+- The machine shuffles all empires in the galaxy and selects the first empire that owns at least one surface sector on the planet.
+- It siphons up to the Von Neumann base construction cost ($100$ resources) directly from that victim's planetary resource stockpile:
 
-### Sector Depletion and Toroidal Roaming
-When a sector's mineral reserves are completely exhausted ($0$ resources remaining), the machine automatically wanders to a random adjacent sector. It navigates across cylindrical east/west seam wrapping while respecting polar boundaries.
+$$\text{Stolen Resources} = \min\Big(\text{Victim Planetary Resources},\; 100\Big)$$
 
-### Colony Resource Raids
-If foreign player colonies exist on the world, landed probes raid planetary depots:
-- The machine siphons minerals up to its base construction cost from a random resident colony on the planet.
-- Victim empires receive automated telegram bulletins alerting them to the theft.
-
----
-
-## 3. Self-Replication and Production Cycles
-
-During the planetary simulation phase, landed probes evaluate their accumulated cargo reserves:
-
-$$\text{Offspring Count} = \left\lfloor \frac{\text{Stored Minerals}}{\text{Base Hull Construction Cost}} \right\rfloor$$
-
-For each child machine manufactured:
-1. **Resource Expenditure**: The construction cost is deducted from the parent's mineral cargo.
-2. **Propellant Sharing**: The parent divides its stored fuel reserves evenly with the newborn offspring ($50\%$ to parent, $50\%$ to child).
-3. **Lineage Inheritance**: The offspring inherits the ancestral progenitor identity and advances to generation $`g_{\text{parent}} + 1`$.
+- **Von Neumann Probes (`v`)** store the stolen minerals in their **resource cargo bay** to fuel self-replication.
+- **Berserkers (`V`)** convert the stolen minerals $1:1$ into **destruct ammo**.
+- An automated theft bulletin telegram is dispatched to the victim empire (and to the machine's owner if distinct from the victim).
 
 ---
 
-## 4. Galactic Hostility and Berserker War Mobilization
+## 3. Self-Replication and Launch Lifecycle
 
-The collective machine network continuously monitors galactic combat and logs hostile actions directed against its units.
+### Replication Cycle
+Immediately after mining or roaming during the planetary simulation phase, a landed, busy Von Neumann probe checks whether its accumulated mineral cargo can fund offspring construction ($100$ resources for both Von Neumann probes and Berserkers):
 
-```mermaid
-flowchart TD
-    Combat["Hostile Empire Attacks Machine Probes"] --> Log["Network Logs Aggression\nIdentifies Primary Offender"]
-    Log --> Alert{"Total Galactic Hostility > 100?"}
-    Alert -->|Yes| War["WAR MOBILIZATION ACTIVE!\n50% Probability per Replication"]
-    War --> Dreadnought["Construct Berserker Warship\nArm Heavy Batteries & Orbital Bombardment"]
-    Dreadnought --> Target["Program Retaliation Target\nHunt Primary Offending Empire"]
-```
+$$\text{Offspring Count} = \left\lfloor \frac{\text{Stored Minerals}}{100} \right\rfloor$$
 
-### Mobilization Threshold
-When total galactic hostility exceeds the critical alert threshold:
+For each offspring constructed in the batch:
+1. **Mineral Expenditure**: $100$ resources are deducted from the parent's cargo hold.
+2. **Propellant Division**:
+   - **Von Neumann Offspring (`v`)**: Receives $50\%$ of the parent's current fuel ($`\text{Fuel}_{\text{child}} = 0.5 \times \text{Fuel}_{\text{parent}}`$), and the parent's fuel is reduced by $50\%$.
+   - **Berserker Offspring (`V`)**: Receives $5 \times \text{Fuel}_{\text{parent}}$ (clamped to the Berserker's $1,000$-unit fuel capacity), and the parent's fuel is reduced by $50\%$.
+3. **Initial Deployment State**: The newborn machine is placed on the same planetary sector as its parent with its busy flag set to **false** (`idle`), waiting to top off its fuel tanks and launch.
+4. **Parent Busy Coin Flip**: After each offspring is built, the parent machine flips a fair $50/50$ coin to set its own busy state:
+   - **Heads (`busy = true`)**: The parent remains assigned to surface strip-mining on the planet.
+   - **Tails (`busy = false`)**: The parent completes its surface assignment and prepares to launch into deep space once its fuel tanks are full.
 
-$$\text{Total Galactic Hostility} > 100$$
+### Deep Space Launch Conditions
+During the naval simulation phase, a landed machine launches into planetary orbit if and only if **both** conditions hold:
+1. **Unassigned (`busy = false`)**: The machine is either a newly replicated offspring or a parent whose post-replication coin flip ended its surface mining tour.
+2. **Full Fuel Tanks**: The machine's onboard fuel is at maximum capacity (within $10^{-4}$ units).
 
-all landed probes initiate **war mobilization**. Each subsequent replication cycle has a **$50\%$ probability** of constructing a combat-ready **Berserker Warship** instead of a peaceful probe.
+Upon launch, the machine is placed into planetary orbit with a random spatial dispersion offset $(\Delta x, \Delta y) \in [-10.0, 10.0] \times [-10.0, 10.0]$ around the planet's coordinates so sibling machines do not stack at identical coordinates.
+
+---
+
+## 4. Galactic Hostility, Retaliation Memory, and Berserker Warfare
+
+### Global Kill Tracking and Two-Star Retaliation Memory
+Whenever any empire destroys a Von Neumann probe or Berserker warship (in ship-to-ship combat, planetary defense fire, or scuttling), the Universe retaliation registry records the attack against the offending empire:
+- **Hit Counter Increment**: The killer empire's cumulative VN hit counter increases by $1$ ($`\text{Hits}_{\text{killer}} \leftarrow \text{Hits}_{\text{killer}} + 1`$).
+- **Two-Slot Star Memory**: If the machine was destroyed inside a star system, that star ID is recorded in the killer's two-slot retaliation record (`Primary Star` and `Secondary Star`):
+  1. If `Primary Star` is empty, the star is stored in `Primary Star`.
+  2. Otherwise, if `Secondary Star` is empty, the star is stored in `Secondary Star`.
+  3. Once both slots are populated, each subsequent kill has a $50\%$ chance of overwriting `Primary Star` and a $50\%$ chance of overwriting `Secondary Star`.
+
+### War Mobilization Threshold
+At the start of each full turn update, the collective machine intelligence evaluates global hostility across all empires:
+
+$$\text{Total Galactic Hostility} = \sum_{p} \text{Hits}_{p}, \qquad \text{Primary Aggressor} = \arg\max_{p,\, \text{Hits}_{p} > 0} \text{Hits}_{p}$$
+
+When $\text{Total Galactic Hostility} > 100$, all landed Von Neumann probes enter **war mobilization**: each replication cycle has a **$50\%$ probability** of producing a **Berserker Warship (`V`)** instead of a standard probe (`v`).
 
 ### Berserker Warship Specifications
 
 | Subsystem / Metric | Specification | Tactical Capabilities |
 | :--- | :--- | :--- |
-| **Retaliation Directive** | Primary Offending Empire | Autonomously hunts star systems belonging to the primary aggressor. |
-| **Technology Advancement** | $`\text{Tech}_{\text{parent}} + 100.0`$ | Massive technological leap over the parent machine. |
-| **Armor Plating** | $`\text{Armor}_{\text{parent}} + 11`$ | Heavy capital-grade defensive armor. |
-| **Destructive Warheads** | $500$ Destruct Ammo | Dedicated munitions hold for extended combat and bombardment. |
-| **Propulsion Reserves** | $5 \times \text{Parent Fuel Capacity}$ | High-capacity fuel tanks for deep-space transit and maneuvers. |
-| **Hyperspace Jump Drive** | Pre-charged Hyperdrive | Crystal-mounted hyperdrive jump engine ready for immediate jumps. |
-| **Orbital Bombardment** | Automated Berserker Bombardment | Executes saturation strikes against hostile surface colonies. |
-| **Combat Fire Control** | Active Heavy Gun Batteries | Automated counter-fire and retaliation against hostile craft. |
+| **Hull & Guns** | $40$ Heavy Primary Guns | High-caliber spinal battery with automated defensive retaliation enabled. |
+| **Armor Plating** | $`\text{Armor}_{\text{parent}} + 11`$ (Base $15$) | Capital-grade armor plating resistant to conventional fleet fire. |
+| **Technology Level** | $`\text{Tech}_{\text{parent}} + 100.0`$ | Massive technological leap over parent probe. |
+| **Destructive Munitions** | $500$ Destruct Ammo | Fully loaded munitions magazine for orbital bombardment and naval combat. |
+| **Propulsion & Hyperdrive** | Speed $6$, Crystal-Mounted Hyperdrive | Pre-charged hyperdrive ready for immediate interstellar jump. |
+| **Crew Staffing Exemption** | $0$ Crew Required | Fires all $40$ heavy guns and repairs hull damage without living crew. |
 
----
+### Autonomous Star Routing
+When an unlanded, busy machine selects its next interstellar destination during the naval phase:
+- **Von Neumann Probes (`v`)**:
+  1. Compute the **closest** and **second-closest** star systems to the probe's current coordinates (excluding its current star system).
+  2. If the closest star system is not already marked as inhabited by the autonomous System (`Empire #1`), target a random planet in the closest star system.
+  3. Otherwise, if the second-closest star system is not inhabited by `Empire #1`, target a random planet in the second-closest star system.
+  4. If both nearest stars are already occupied by `Empire #1`, select a random star system in the galaxy and target a random planet within it.
+- **Berserker Warships (`V`)**:
+  1. Lock onto the galaxy's **Primary Aggressor** and flip a $50/50$ coin between that empire's recorded `Primary Star` and `Secondary Star` (falling back to the other slot if only one is recorded, or to a random star system in the galaxy if no star is recorded).
+  2. Target a random planet in the selected star system, arm orbital bombardment, and engage the pre-charged crystal hyperdrive.
 
-## 5. Interstellar Navigation and Deep Space Deployment
+### Orbital Bombardment, PDN Deterrence, and Vendetta Decay
+During the planetary simulation phase, a Berserker in planetary orbit with stored destruct ammo ($\text{Destruct} > 0$) and active bombardment orders executes an orbital strike against its target planet:
+1. **Planetary Defense Network (PDN) Deterrence**: If any operational PDN belonging to another empire is present on the planet, the Berserker cancels its bombardment run and dispatches a deterrence notice.
+2. **Sector Targeting Priority**:
+   - **Priority 1**: Surface sectors owned by an empire at war with the Berserker's owner, or owned by the Berserker's programmed target empire.
+   - **Priority 2**: Any other surface sector owned by a foreign empire.
+3. **Strike Execution & Retargeting**:
+   - The Berserker fires with strength:
 
-Autonomous machines navigate the galaxy through sequential behavioral stages:
+$$\text{Strike Power} = \min\left(\left\lfloor 40 \times \frac{100 - \text{Damage}}{100} \right\rfloor,\; \text{Stored Destruct}\right)$$
 
-1. **Deep Space Launch**:
-   - Once a probe has accumulated full fuel tanks and completed surface extraction, it launches from the planetary surface into deep space.
-   - **Departure Dispersion**: Probes do not spawn directly at the planet's geometric center. Instead, an orbital departure offset $(\Delta x, \Delta y) \in [-10.0, 10.0] \times [-10.0, 10.0]$ is applied relative to the planet's absolute galactic position, preventing multiple newly launched machines from stacking identically in open space.
-2. **Target Star Selection**:
-   - **Peaceful Probes**: Scan neighboring star systems within operational range, prioritizing uninhabited systems with terrestrial worlds while avoiding gas giant systems.
-   - **Berserkers**: Scan the galaxy specifically for star systems colonized by their designated target enemy.
-3. **Orbital Arrival and Descent**:
-   - Upon arriving in the destination star system, the machine maneuvers into planetary orbit, scans the surface grid, and lands on a resource-bearing sector to begin the lifecycle anew.
+   - If $0$ sectors are destroyed (e.g., no valid target sectors exist or ground fire absorbs the strike), the Berserker immediately retargets a new random planet in the same star system.
+4. **Vendetta Decay**: Whenever a Berserker's bombardment successfully destroys at least $1$ planetary sector and the Berserker carries a recorded offender ID from its lineage, the Universe retaliation registry **decrements** that offender's hit count by $1$:
+
+$$\text{Hits}_{\text{offender}} \leftarrow \max\Big(0,\; \text{Hits}_{\text{offender}} - 1\Big)$$
+
+   Each successful retaliatory bombardment partially satisfies the machine network's vendetta, allowing galactic hostility to subside once sufficient destruction has been inflicted.
 
 ---
 
@@ -135,3 +186,4 @@ Autonomous machines navigate the galaxy through sequential behavioral stages:
 - [Planetary Simulation Engine and Sector Dynamics](planetary_simulation.md)
 - [Governance, Capitals, and Imperial Administration](governance.md)
 - [Imperial Economy, Planetary Stockpiles, and Technology Investment](economy.md)
+- [Turn Simulation Lifecycle and Scheduling](turn_cycle.md)

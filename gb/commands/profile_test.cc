@@ -155,10 +155,40 @@ void test_profile_dispatch() {
       .run_matrix(g);
 }
 
+void test_profile_disembodied_race() {
+  std::println(std::cout,
+               "Test: profile for disembodied deity (homesystem = 0)");
+
+  TestContext ctx;
+  ctx.with_standard_universe();
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+
+  ctx.em.mutate_race(1, [](Race& r) {
+    r.God = true;
+    r.Gov_ship = std::nullopt;
+    r.governor(Race::leader_id).homesystem = 0;
+    r.governor(Race::leader_id).homeplanetnum = 0;
+    r.governor(Race::leader_id).deflevel = ScopeLevel::LEVEL_UNIV;
+  });
+
+  ctx.setup_game_obj(g, 1, 1);
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_god(true);
+
+  ctx.assert_dispatch_success(g, {"profile"});
+  const std::string out = g.out.str();
+  test::expect_contains(out, "*** Diety Status ***");
+  test::expect_contains(out, "Default Scope: /None/None");
+  test::expect_contains(out, "NO DESIGNATED CAPITAL!!");
+  std::println(std::cout, "    ✓ Disembodied deity self-profile verified");
+}
+
 }  // namespace
 
 int main() {
   test_profile_dispatch();
+  test_profile_disembodied_race();
   std::println(std::cout, "\n✅ All profile tests passed!");
   return 0;
 }

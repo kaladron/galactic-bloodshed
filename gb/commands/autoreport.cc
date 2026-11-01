@@ -7,7 +7,7 @@
 module;
 
 import gb.entities;
-import gb.presentation.planet_views;
+import gb.presentation;
 import gb.services;
 import std;
 
@@ -60,12 +60,9 @@ bool autoreport(const command_t& argv, GameObj& g) {
     info.autorep = enabled ? TELEG_MAX_AUTO : 0;
   });
 
-  g.present(GB::presentation::AutoreportResult{
-      .snum = snum,
-      .pnum = pnum,
-      .planet_name = target_star.get_planet_name(pnum),
-      .enabled = enabled,
-  });
+  g.present(GB::presentation::make_output_message(std::format(
+      "Autoreport on {} has been {}.\n", target_star.get_planet_name(pnum),
+      enabled ? "set" : "unset")));
   return true;
 }
 

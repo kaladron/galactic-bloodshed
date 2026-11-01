@@ -24,11 +24,9 @@ bool tax(const command_t& argv, GameObj& g) {
   }
 
   if (argv.size() < 2) {
-    const auto& planet = *g.entity_manager.peek_planet(g.snum(), g.pnum());
     g.present(GB::presentation::TaxStatusViewModel{
-        .current_rate = planet.info(Playernum).tax,
-        .target_rate = planet.info(Playernum).newtax,
-    });
+        .planet = GB::presentation::project_planet_view(
+            g.entity_manager, g.scope_context(), g.snum(), g.pnum())});
     return true;
   }
 
@@ -42,7 +40,7 @@ bool tax(const command_t& argv, GameObj& g) {
   g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
     planet.info(Playernum).newtax = new_tax;
   });
-  g.present(GB::presentation::TaxSetResult{.target_rate = new_tax});
+  g.present(GB::presentation::make_output_message("Set.\n"));
   return true;
 }
 

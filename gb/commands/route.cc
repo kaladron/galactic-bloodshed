@@ -6,7 +6,7 @@
 module;
 
 import gb.entities;
-import gb.presentation.planet_views;
+import gb.presentation;
 import gb.services;
 import scnlib;
 import std;
@@ -27,68 +27,23 @@ std::optional<int> parse_route_index(std::string_view arg, GameObj& g) {
   return parsed->value();
 }
 
-GB::presentation::RouteRow make_route_row(EntityManager& em, int route_num,
-                                          const plroute& rt) {
-  std::string star_name = "???";
-  std::string planet_name = "???";
-  if (rt.has_destination()) {
-    const auto& dest_star = *em.peek_star(*rt.dest_star);
-    star_name = dest_star.get_name();
-    planet_name = dest_star.get_planet_name(*rt.dest_planet);
-  }
-  return GB::presentation::RouteRow{
-      .route_num = route_num,
-      .dest_coords = rt.dest_coords,
-      .load = rt.load.format_compact(),
-      .unload = rt.unload.format_compact(),
-      .dest_star_name = std::move(star_name),
-      .dest_planet_name = std::move(planet_name),
-  };
-}
-
-GB::presentation::RouteSetResult make_route_set_result(int route_num,
-                                                       const plroute& rt) {
-  return GB::presentation::RouteSetResult{
-      .route_num = route_num,
-      .active = rt.set,
-      .dest_coords = rt.dest_coords,
-      .load = rt.load.format_compact(),
-      .unload = rt.unload.format_compact(),
-      .dest_star = rt.dest_star,
-      .dest_planet = rt.dest_planet,
-  };
-}
-
 /**
  * @brief Display all active shipping routes on the current planet.
  */
 void show_all_routes(GameObj& g) {
-  const player_t playernum = g.player();
-  GB::presentation::RouteListViewModel vm;
-  g.entity_manager.with_planet(g.snum(), g.pnum(), [&](const Planet& p) {
-    for (const int route_num : std::views::iota(1, MAX_ROUTES + 1)) {
-      const auto& rt = p.info(playernum).route_at(route_num);
-      if (rt.set) {
-        vm.routes.push_back(make_route_row(g.entity_manager, route_num, rt));
-      }
-    }
-  });
-  g.present(vm);
+  g.present(GB::presentation::RouteListViewModel{
+      .planet = GB::presentation::project_planet_view(
+          g.entity_manager, g.scope_context(), g.snum(), g.pnum())});
 }
 
 /**
  * @brief Display a single shipping route by 1-based route number.
  */
 void show_single_route(GameObj& g, int route_num) {
-  const player_t playernum = g.player();
-  GB::presentation::RouteListViewModel vm;
-  g.entity_manager.with_planet(g.snum(), g.pnum(), [&](const Planet& p) {
-    const auto& rt = p.info(playernum).route_at(route_num);
-    if (rt.set) {
-      vm.routes.push_back(make_route_row(g.entity_manager, route_num, rt));
-    }
-  });
-  g.present(vm);
+  g.present(GB::presentation::RouteListViewModel{
+      .planet = GB::presentation::project_planet_view(
+          g.entity_manager, g.scope_context(), g.snum(), g.pnum()),
+      .route_num = route_num});
 }
 
 /**
@@ -100,13 +55,10 @@ bool configure_route_target(GameObj& g, int route_num,
   const player_t playernum = g.player();
   if (target_arg == "activate" || target_arg == "deactivate") {
     const bool active = (target_arg == "activate");
-    plroute updated{};
     g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {
-      auto& rt = p.info(playernum).route_at(route_num);
-      rt.set = active;
-      updated = rt;
+      p.info(playernum).route_at(route_num).set = active;
     });
-    g.present(make_route_set_result(route_num, updated));
+    g.present(GB::presentation::make_output_message("Set.\n"));
     return true;
   }
 
@@ -121,13 +73,11 @@ bool configure_route_target(GameObj& g, int route_num,
     g.out << "You have to designate a planet.\n";
     return false;
   }
-  plroute updated{};
   g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {
-    auto& rt = p.info(playernum).route_at(route_num);
-    rt.set_destination(where->snum, where->pnum);
-    updated = rt;
+    p.info(playernum).route_at(route_num).set_destination(where->snum,
+                                                          where->pnum);
   });
-  g.present(make_route_set_result(route_num, updated));
+  g.present(GB::presentation::make_output_message("Set.\n"));
   return true;
 }
 
@@ -145,33 +95,26 @@ bool configure_route_attribute(GameObj& g, int route_num,
       g.out << "Bad sector coordinates.\n";
       return false;
     }
-    plroute updated{};
     g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {
-      auto& rt = p.info(playernum).route_at(route_num);
-      rt.dest_coords = *coords_opt;
-      updated = rt;
+      p.info(playernum).route_at(route_num).dest_coords = *coords_opt;
     });
-    g.present(make_route_set_result(route_num, updated));
+    g.present(GB::presentation::make_output_message("Set.\n"));
     return true;
   }
   if (subcmd == "load") {
-    plroute updated{};
     g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {
-      auto& rt = p.info(playernum).route_at(route_num);
-      rt.load = CommodityManifest::parse(value_arg);
-      updated = rt;
+      p.info(playernum).route_at(route_num).load =
+          CommodityManifest::parse(value_arg);
     });
-    g.present(make_route_set_result(route_num, updated));
+    g.present(GB::presentation::make_output_message("Set.\n"));
     return true;
   }
   if (subcmd == "unload") {
-    plroute updated{};
     g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {
-      auto& rt = p.info(playernum).route_at(route_num);
-      rt.unload = CommodityManifest::parse(value_arg);
-      updated = rt;
+      p.info(playernum).route_at(route_num).unload =
+          CommodityManifest::parse(value_arg);
     });
-    g.present(make_route_set_result(route_num, updated));
+    g.present(GB::presentation::make_output_message("Set.\n"));
     return true;
   }
 

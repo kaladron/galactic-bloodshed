@@ -307,40 +307,6 @@ struct AnalysisViewModel {
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const AnalysisViewModel& vm);
 
-/// View model for querying current planetary mobilization (`mobilize`).
-struct MobilizeStatusViewModel {
-  Percentage current_mobilization{0};
-  Percentage quota{0};
-};
-
-/// Result of setting planetary mobilization quota (`mobilize <percentage>`).
-struct MobilizeSetResult {
-  Percentage quota{0};
-};
-
-/// View model for querying planetary tax rate (`tax`).
-struct TaxStatusViewModel {
-  Percentage current_rate{0};
-  Percentage target_rate{0};
-};
-
-/// Result of setting planetary tax rate (`tax <rate>`).
-struct TaxSetResult {
-  Percentage target_rate{0};
-};
-
-/// Result of setting planetary toxicity threshold (`toxicity <threshold>`).
-struct ToxicityResult {
-  Percentage threshold{0};
-};
-
-/// Result of allocating global action points to a star system (`allocate`).
-struct AllocateResult {
-  ap_t allocated{0};
-  ap_t star_ap{0};
-  ap_t global_ap{0};
-};
-
 /// Result of repairing wasted planetary sectors (`repair`).
 struct RepairResult {
   int sectors_repaired{0};
@@ -357,39 +323,6 @@ struct EnslaveResult {
   resource_t defense_strength{0};
   double required_garrison{0.0};
 };
-
-[[nodiscard]] std::string
-render_mobilize_status(const MobilizeStatusViewModel& vm);
-[[nodiscard]] std::string
-render_json_mobilize_status(const MobilizeStatusViewModel& vm);
-[[nodiscard]] std::string render_for_mode(UiMode mode,
-                                          const MobilizeStatusViewModel& vm);
-
-[[nodiscard]] std::string
-render_mobilize_set_result(const MobilizeSetResult& vm);
-[[nodiscard]] std::string
-render_json_mobilize_set_result(const MobilizeSetResult& vm);
-[[nodiscard]] std::string render_for_mode(UiMode mode,
-                                          const MobilizeSetResult& vm);
-
-[[nodiscard]] std::string render_tax_status(const TaxStatusViewModel& vm);
-[[nodiscard]] std::string render_json_tax_status(const TaxStatusViewModel& vm);
-[[nodiscard]] std::string render_for_mode(UiMode mode,
-                                          const TaxStatusViewModel& vm);
-
-[[nodiscard]] std::string render_tax_set_result(const TaxSetResult& vm);
-[[nodiscard]] std::string render_json_tax_set_result(const TaxSetResult& vm);
-[[nodiscard]] std::string render_for_mode(UiMode mode, const TaxSetResult& vm);
-
-[[nodiscard]] std::string render_toxicity_result(const ToxicityResult& vm);
-[[nodiscard]] std::string render_json_toxicity_result(const ToxicityResult& vm);
-[[nodiscard]] std::string render_for_mode(UiMode mode,
-                                          const ToxicityResult& vm);
-
-[[nodiscard]] std::string render_allocate_result(const AllocateResult& vm);
-[[nodiscard]] std::string render_json_allocate_result(const AllocateResult& vm);
-[[nodiscard]] std::string render_for_mode(UiMode mode,
-                                          const AllocateResult& vm);
 
 [[nodiscard]] std::string render_repair_result(const RepairResult& vm);
 [[nodiscard]] std::string render_json_repair_result(const RepairResult& vm);
@@ -447,58 +380,6 @@ render_json_insurgency_result(const InsurgencyResult& vm);
 [[nodiscard]] std::string
 render_insurgency_telegram(const InsurgencyResult& vm);
 [[nodiscard]] std::string render_insurgency_news(const InsurgencyResult& vm);
-
-/// Single active shipping route entry for a planet (`route` / `route <n>`).
-struct RouteRow {
-  int route_num{0};
-  Coordinates dest_coords{0, 0};
-  std::string load{};
-  std::string unload{};
-  std::string dest_star_name{};
-  std::string dest_planet_name{};
-};
-
-/// View model for planetary shipping route inspection (`route` / `route <n>`).
-struct RouteListViewModel {
-  std::vector<RouteRow> routes{};
-};
-
-/// Result of updating a planetary shipping route (`route <n> ...`).
-struct RouteSetResult {
-  int route_num{0};
-  bool active{false};
-  Coordinates dest_coords{0, 0};
-  std::string load{};
-  std::string unload{};
-  std::optional<starnum_t> dest_star{std::nullopt};
-  std::optional<planetnum_t> dest_planet{std::nullopt};
-};
-
-[[nodiscard]] std::string render_route_list(const RouteListViewModel& vm);
-[[nodiscard]] std::string render_json_route_list(const RouteListViewModel& vm);
-[[nodiscard]] std::string render_for_mode(UiMode mode,
-                                          const RouteListViewModel& vm);
-
-[[nodiscard]] std::string render_route_set_result(const RouteSetResult& vm);
-[[nodiscard]] std::string
-render_json_route_set_result(const RouteSetResult& vm);
-[[nodiscard]] std::string render_for_mode(UiMode mode,
-                                          const RouteSetResult& vm);
-
-/// Result of toggling automatic production reports on a planet (`autoreport
-/// [<planet>]`).
-struct AutoreportResult {
-  starnum_t snum{0};
-  planetnum_t pnum{0};
-  std::string planet_name{};
-  bool enabled{false};
-};
-
-[[nodiscard]] std::string render_autoreport_result(const AutoreportResult& vm);
-[[nodiscard]] std::string
-render_json_autoreport_result(const AutoreportResult& vm);
-[[nodiscard]] std::string render_for_mode(UiMode mode,
-                                          const AutoreportResult& vm);
 
 /// Single conqueror loot allocation row in a planetary recovery report.
 struct RecoveryShareRow {
@@ -788,6 +669,35 @@ struct PlanetView {
 
   [[nodiscard]] bool operator==(const PlanetView&) const noexcept = default;
 };
+
+/// View model for querying current planetary mobilization (`mobilize`).
+struct MobilizeStatusViewModel {
+  PlanetView planet{};
+};
+
+/// View model for querying planetary tax rate (`tax`).
+struct TaxStatusViewModel {
+  PlanetView planet{};
+};
+
+/// View model for planetary shipping route inspection (`route` / `route <n>`).
+struct RouteListViewModel {
+  PlanetView planet{};
+  std::optional<int> route_num{std::nullopt};
+};
+
+[[nodiscard]] std::string
+render_mobilize_status(const MobilizeStatusViewModel& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const MobilizeStatusViewModel& vm);
+
+[[nodiscard]] std::string render_tax_status(const TaxStatusViewModel& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const TaxStatusViewModel& vm);
+
+[[nodiscard]] std::string render_route_list(const RouteListViewModel& vm);
+[[nodiscard]] std::string render_for_mode(UiMode mode,
+                                          const RouteListViewModel& vm);
 
 /// Landed ship on a sector.
 struct SectorLandedShipView {

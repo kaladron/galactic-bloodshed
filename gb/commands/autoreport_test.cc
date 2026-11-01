@@ -121,13 +121,19 @@ void test_autoreport_dispatch() {
   g.set_pnum(1);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"autoreport"});
-  test::expect_contains(g.out.str(), "\"type\":\"autoreport\"");
-  test::expect_contains(g.out.str(), "\"planet_name\":\"Earth\"");
-  test::expect_contains(g.out.str(), "\"enabled\":true");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(),
+                        R"("message":"Autoreport on Earth has been set.\n")");
+  test::expect_contains(g.out.str(), R"("type":"planet")");
+  test::expect_contains(g.out.str(), R"("autoreport":true)");
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"autoreport"});
-  test::expect_contains(g.out.str(), "\"enabled\":false");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(),
+                        R"("message":"Autoreport on Earth has been unset.\n")");
+  test::expect_contains(g.out.str(), R"("type":"planet")");
+  test::expect_contains(g.out.str(), R"("autoreport":false)");
   g.set_ui_mode(UiMode::ASCII);
 
   // 10. Command matrix validation (roles, guests, governor, scopes)

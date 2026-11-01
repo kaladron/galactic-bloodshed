@@ -617,82 +617,23 @@ std::string render_for_mode(UiMode mode, const AnalysisViewModel& vm) {
 
 std::string render_mobilize_status(const MobilizeStatusViewModel& vm) {
   return std::format("Current mobilization: {}    Quota: {}\n",
-                     vm.current_mobilization, vm.quota);
-}
-
-std::string render_json_mobilize_status(const MobilizeStatusViewModel& vm) {
-  return render_json_envelope("mobilize_status", vm);
+                     vm.planet.colony->mobilization,
+                     vm.planet.colony->target_mobilization);
 }
 
 std::string render_for_mode(UiMode mode, const MobilizeStatusViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_mobilize_status(vm)
+  return mode == UiMode::JSON ? render_json_planet_view(vm.planet)
                               : render_mobilize_status(vm);
 }
 
-std::string render_mobilize_set_result(const MobilizeSetResult&) {
-  return "";
-}
-
-std::string render_json_mobilize_set_result(const MobilizeSetResult& vm) {
-  return render_json_envelope("mobilize", vm);
-}
-
-std::string render_for_mode(UiMode mode, const MobilizeSetResult& vm) {
-  return mode == UiMode::JSON ? render_json_mobilize_set_result(vm)
-                              : render_mobilize_set_result(vm);
-}
-
 std::string render_tax_status(const TaxStatusViewModel& vm) {
-  return std::format("Current tax rate: {}%    Target: {}%\n", vm.current_rate,
-                     vm.target_rate);
-}
-
-std::string render_json_tax_status(const TaxStatusViewModel& vm) {
-  return render_json_envelope("tax_status", vm);
+  return std::format("Current tax rate: {}%    Target: {}%\n",
+                     vm.planet.colony->tax, vm.planet.colony->target_tax);
 }
 
 std::string render_for_mode(UiMode mode, const TaxStatusViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_tax_status(vm)
+  return mode == UiMode::JSON ? render_json_planet_view(vm.planet)
                               : render_tax_status(vm);
-}
-
-std::string render_tax_set_result(const TaxSetResult&) {
-  return "Set.\n";
-}
-
-std::string render_json_tax_set_result(const TaxSetResult& vm) {
-  return render_json_envelope("tax", vm);
-}
-
-std::string render_for_mode(UiMode mode, const TaxSetResult& vm) {
-  return mode == UiMode::JSON ? render_json_tax_set_result(vm)
-                              : render_tax_set_result(vm);
-}
-
-std::string render_toxicity_result(const ToxicityResult& vm) {
-  return std::format(" New threshold is: {}\n", vm.threshold);
-}
-
-std::string render_json_toxicity_result(const ToxicityResult& vm) {
-  return render_json_envelope("toxicity", vm);
-}
-
-std::string render_for_mode(UiMode mode, const ToxicityResult& vm) {
-  return mode == UiMode::JSON ? render_json_toxicity_result(vm)
-                              : render_toxicity_result(vm);
-}
-
-std::string render_allocate_result(const AllocateResult&) {
-  return "Allocated\n";
-}
-
-std::string render_json_allocate_result(const AllocateResult& vm) {
-  return render_json_envelope("allocate", vm);
-}
-
-std::string render_for_mode(UiMode mode, const AllocateResult& vm) {
-  return mode == UiMode::JSON ? render_json_allocate_result(vm)
-                              : render_allocate_result(vm);
 }
 
 std::string render_repair_result(const RepairResult& vm) {
@@ -853,66 +794,58 @@ std::string render_insurgency_news(const InsurgencyResult& vm) {
                      vm.instigator_id, vm.target_name, vm.target_id);
 }
 
+namespace {
+
+bool should_display_route(const ColonyRouteView& row,
+                          std::optional<int> route_num) noexcept {
+  if (!row.active) return false;
+  if (!route_num.has_value()) return true;
+  return row.route_number == *route_num;
+}
+
+}  // namespace
+
 std::string render_route_list(const RouteListViewModel& vm) {
   std::string out;
-  if (!vm.routes.empty()) {
-    tabulate::Table table;
-    table.format().hide_border().column_separator("  ");
-    table.column(0).format().width(3).font_align(tabulate::FontAlign::right);
-    table.column(1).format().width(11);
-    table.column(2).format().width(12);
-    table.column(3).format().width(14);
-    table.column(4).format().width(24);
+  tabulate::Table table;
+  table.format().hide_border().column_separator("  ");
+  table.column(0).format().width(3).font_align(tabulate::FontAlign::right);
+  table.column(1).format().width(11);
+  table.column(2).format().width(12);
+  table.column(3).format().width(14);
+  table.column(4).format().width(24);
 
-    for (const auto& row : vm.routes) {
-      table.add_row({
-          std::format("{}", row.route_num),
-          std::format("land {:2},{:2}", row.dest_coords.x, row.dest_coords.y),
-          row.load.empty() ? "" : std::format("load: {}", row.load),
-          row.unload.empty() ? "" : std::format("unload: {}", row.unload),
-          std::format("-> {}/{}", row.dest_star_name, row.dest_planet_name),
-      });
+  bool has_rows = false;
+  for (const auto& row : vm.planet.colony->routes) {
+    if (!should_display_route(row, vm.route_num)) {
+      continue;
     }
+    has_rows = true;
+    const std::string load_str = row.load.format_compact();
+    const std::string unload_str = row.unload.format_compact();
+    const std::string dest_str =
+        row.dest_planet_name.empty()
+            ? R"(-> ???/???)"
+            : std::format("-> {}/{}", row.dest_star_name, row.dest_planet_name);
+
+    table.add_row({
+        std::format("{}", row.route_number),
+        std::format("land {:2},{:2}", row.dest_coords.x, row.dest_coords.y),
+        load_str.empty() ? "" : std::format("load: {}", load_str),
+        unload_str.empty() ? "" : std::format("unload: {}", unload_str),
+        dest_str,
+    });
+  }
+  if (has_rows) {
     std::format_to(std::back_inserter(out), "{}\n", table.str());
   }
   out += "Done.\n";
   return out;
 }
 
-std::string render_json_route_list(const RouteListViewModel& vm) {
-  return render_json_envelope("route_list", vm);
-}
-
 std::string render_for_mode(UiMode mode, const RouteListViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_route_list(vm)
+  return mode == UiMode::JSON ? render_json_planet_view(vm.planet)
                               : render_route_list(vm);
-}
-
-std::string render_route_set_result(const RouteSetResult& /*vm*/) {
-  return "Set.\n";
-}
-
-std::string render_json_route_set_result(const RouteSetResult& vm) {
-  return render_json_envelope("route_set", vm);
-}
-
-std::string render_for_mode(UiMode mode, const RouteSetResult& vm) {
-  return mode == UiMode::JSON ? render_json_route_set_result(vm)
-                              : render_route_set_result(vm);
-}
-
-std::string render_autoreport_result(const AutoreportResult& vm) {
-  return std::format("Autoreport on {} has been {}.\n", vm.planet_name,
-                     vm.enabled ? "set" : "unset");
-}
-
-std::string render_json_autoreport_result(const AutoreportResult& vm) {
-  return render_json_envelope("autoreport", vm);
-}
-
-std::string render_for_mode(UiMode mode, const AutoreportResult& vm) {
-  return mode == UiMode::JSON ? render_json_autoreport_result(vm)
-                              : render_autoreport_result(vm);
 }
 
 std::string render_recovery_report(const RecoveryReportViewModel& vm) {
@@ -1183,6 +1116,11 @@ bool is_route_configured(const plroute& rt) noexcept {
   return rt.has_destination();
 }
 
+bool mortal_can_see_colony(const plinfo& pinfo) noexcept {
+  if (pinfo.explored != 0) return true;
+  return pinfo.numsectsowned > 0;
+}
+
 }  // namespace
 
 StarView project_star_view(EntityManager& em, const ScopeContext& viewer,
@@ -1299,7 +1237,7 @@ PlanetView project_planet_view(EntityManager& em, const ScopeContext& viewer,
         .aliens = std::move(aliens),
     };
 
-    if (viewer.can_see(pinfo.numsectsowned > 0)) {
+    if (viewer.can_see(mortal_can_see_colony(pinfo))) {
       std::vector<ColonyRouteView> routes;
       for (int r = 1; r <= MAX_ROUTES; ++r) {
         const auto& rt = pinfo.route_at(r);

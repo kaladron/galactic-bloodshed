@@ -144,13 +144,16 @@ void test_tax_domain_errors() {
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"tax"});
-  test::expect_contains(g.out.str(), "\"type\":\"tax_status\"");
-  test::expect_contains(g.out.str(), "\"current_rate\":10");
+  test::expect_contains(g.out.str(), R"("type":"planet")");
+  test::expect_contains(g.out.str(), R"("tax":10)");
+  test::expect_contains(g.out.str(), R"("target_tax":10)");
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"tax", "35"});
-  test::expect_contains(g.out.str(), "\"type\":\"tax\"");
-  test::expect_contains(g.out.str(), "\"target_rate\":35");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"("message":"Set.\n")");
+  test::expect_contains(g.out.str(), R"("type":"planet")");
+  test::expect_contains(g.out.str(), R"("target_tax":35)");
 
   ctx.verify_universe_invariants();
 }

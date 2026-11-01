@@ -79,10 +79,10 @@ int main() {
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"allocate", "5"});
-  test::expect_contains(g.out.str(), "\"type\":\"allocate\"");
-  test::expect_contains(g.out.str(), "\"allocated\":5");
-  test::expect_contains(g.out.str(), "\"star_ap\":40");
-  test::expect_contains(g.out.str(), "\"global_ap\":30");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"("message":"Allocated\n")");
+  test::expect_contains(g.out.str(), R"("type":"star")");
+  test::expect_contains(g.out.str(), R"("ap":40)");
   g.set_ui_mode(UiMode::ASCII);
 
   // 7. Guest race rejection

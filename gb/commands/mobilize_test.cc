@@ -70,13 +70,14 @@ void test_mobilize_dispatch() {
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"mobilize"});
-  test::expect_contains(g.out.str(), "\"type\":\"mobilize_status\"");
-  test::expect_contains(g.out.str(), "\"quota\":100");
+  test::expect_contains(g.out.str(), R"("type":"planet")");
+  test::expect_contains(g.out.str(), R"("target_mobilization":100)");
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"mobilize", "40"});
-  test::expect_contains(g.out.str(), "\"type\":\"mobilize\"");
-  test::expect_contains(g.out.str(), "\"quota\":40");
+  test::expect_contains(g.out.str(), R"("type":"planet")");
+  test::expect_contains(g.out.str(), R"("target_mobilization":40)");
+  test::expect_contains(g.out.str(), R"("type":"star")");
   g.set_ui_mode(UiMode::ASCII);
 
   // 6. Reject when star lacks AP

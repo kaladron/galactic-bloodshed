@@ -33,9 +33,8 @@ bool toxicity(const command_t& argv, GameObj& g) {
     new_val = p.info(g.player()).tox_thresh;
   });
 
-  g.present(GB::presentation::ToxicityResult{
-      .threshold = new_val.value_or(0),
-  });
+  g.present(GB::presentation::make_output_message(
+      std::format(" New threshold is: {}\n", new_val.value_or(0))));
   return true;
 }
 

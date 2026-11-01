@@ -64,8 +64,10 @@ void test_toxicity_dispatch() {
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"toxicity", "60"});
-  test::expect_contains(g.out.str(), "\"type\":\"toxicity\"");
-  test::expect_contains(g.out.str(), "\"threshold\":60");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"("message":" New threshold is: 60\n")");
+  test::expect_contains(g.out.str(), R"("type":"planet")");
+  test::expect_contains(g.out.str(), R"("tox_thresh":60)");
   g.set_ui_mode(UiMode::ASCII);
 
   // 4. Reject missing arguments

@@ -26,12 +26,9 @@ bool mobilize(const command_t& argv, GameObj& g) {
   const ap_t APcount = 1;
 
   if (argv.size() < 2) {
-    g.entity_manager.with_planet(g.snum(), g.pnum(), [&](const Planet& planet) {
-      g.present(GB::presentation::MobilizeStatusViewModel{
-          .current_mobilization = planet.info(Playernum).comread,
-          .quota = planet.info(Playernum).mob_set,
-      });
-    });
+    g.present(GB::presentation::MobilizeStatusViewModel{
+        .planet = GB::presentation::project_planet_view(
+            g.entity_manager, g.scope_context(), g.snum(), g.pnum())});
     return true;
   }
 
@@ -50,7 +47,6 @@ bool mobilize(const command_t& argv, GameObj& g) {
   g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
     planet.info(Playernum).mob_set = sum_mob;
   });
-  g.present(GB::presentation::MobilizeSetResult{.quota = sum_mob});
   return true;
 }
 

@@ -31,21 +31,12 @@ bool allocate(const command_t& argv, GameObj& g) {
                          maxalloc);
     return false;
   }
-  ap_t new_global_ap{0};
-  g.entity_manager.mutate_universe([&](Universe& u) {
-    u.deduct_AP(Playernum, alloc);
-    new_global_ap = u.get_AP(Playernum);
-  });
-  ap_t new_star_ap{0};
+  g.entity_manager.mutate_universe(
+      [&](Universe& u) { u.deduct_AP(Playernum, alloc); });
   g.entity_manager.mutate_star(g.snum(), [&](Star& star) {
     star.AP(Playernum) = std::min(LIMIT_APs, star.AP(Playernum) + alloc);
-    new_star_ap = star.AP(Playernum);
   });
-  g.present(GB::presentation::AllocateResult{
-      .allocated = alloc,
-      .star_ap = new_star_ap,
-      .global_ap = new_global_ap,
-  });
+  g.present(GB::presentation::make_output_message("Allocated\n"));
   return true;
 }
 

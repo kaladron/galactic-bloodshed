@@ -63,7 +63,7 @@ void test_declare_dispatch() {
   g.out.str("");
   ctx.assert_dispatch_success(g, {"declare", "2", "alliance", "40"});
   test::expect_contains(g.out.str(), R"("type":"declare")");
-  test::expect_contains(g.out.str(), R"("relation":0)");
+  test::expect_contains(g.out.str(), R"("relation":1)");
   test::expect_contains(g.out.str(), R"("translation_modifier":40)");
   g.set_ui_mode(UiMode::ASCII);
 

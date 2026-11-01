@@ -181,6 +181,21 @@ void test_route_command_dispatch() {
   test::expect_contains(g.out.str(), "Set");
   test::expect_false(ctx.em.peek_planet(1, 1)->info(player_t{1}).route[0].set);
 
+  // Inactive configured route is not displayed
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"route"});
+  test::expect_eq(g.out.str(), std::string_view{"Done.\n"});
+
+  // Multiple active routes with single-route filter (exercises non-matching
+  // route branch)
+  ctx.assert_dispatch_success(g, {"route", "1", "activate"});
+  ctx.assert_dispatch_success(g, {"route", "2", "activate"});
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"route", "1"});
+  test::expect_contains(g.out.str(), "Done");
+  ctx.assert_dispatch_success(g, {"route", "1", "deactivate"});
+  ctx.assert_dispatch_success(g, {"route", "2", "deactivate"});
+
   // 7. Destination validation errors, unknown 4-arg subcommand, and >4 args
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"route", "1", "/NoSuchStar"});
@@ -213,17 +228,20 @@ void test_route_json_mode() {
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"route"});
-  test::expect_contains(g.out.str(), R"("type":"route_list")");
+  test::expect_contains(g.out.str(), R"("type":"planet")");
   test::expect_contains(g.out.str(), R"("routes":[])");
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"route", "2", "activate"});
-  test::expect_contains(g.out.str(), R"("type":"route_set")");
-  test::expect_contains(g.out.str(), R"("route_num":2)");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"("message":"Set.\n")");
+  test::expect_contains(g.out.str(), R"("type":"planet")");
+  test::expect_contains(g.out.str(), R"("route_number":2)");
   test::expect_contains(g.out.str(), R"("active":true)");
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"route", "2", "/Vega/Vega Prime"});
+  test::expect_contains(g.out.str(), R"("type":"planet")");
   test::expect_contains(g.out.str(), R"("dest_star":2)");
   test::expect_contains(g.out.str(), R"("dest_planet":1)");
 
@@ -236,9 +254,10 @@ void test_route_json_mode() {
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"route", "2"});
-  test::expect_contains(g.out.str(), R"("type":"route_list")");
-  test::expect_contains(g.out.str(), R"("load":"fr")");
-  test::expect_contains(g.out.str(), R"("unload":"d")");
+  test::expect_contains(g.out.str(), R"("type":"planet")");
+  test::expect_contains(g.out.str(), R"("fuel":true)");
+  test::expect_contains(g.out.str(), R"("resources":true)");
+  test::expect_contains(g.out.str(), R"("destruct":true)");
   test::expect_contains(g.out.str(), R"("dest_star_name":"Vega")");
   test::expect_contains(g.out.str(), R"("dest_planet_name":"Vega Prime")");
 }

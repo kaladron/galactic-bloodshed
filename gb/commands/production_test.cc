@@ -23,6 +23,11 @@ void setup_test_world(TestContext& ctx) {
     planet.info(player_t{1}).prod_crystals = 5;
     planet.info(player_t{1}).est_production = 175.0;
   });
+
+  TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+      .owned_by(1)
+      .in_deep_space()
+      .build();
 }
 
 void test_production_dispatch() {
@@ -48,20 +53,42 @@ void test_production_dispatch() {
   test::expect_contains(g.out.str(), "Sol/Eart");
   test::expect_false(g.out.str().contains("Sol/Mars"));
 
-  // 3. Bad location warnings (no duplicate PlaceError text)
+  // Star-scoped argument includes all colonies under that star
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"production", "/InvalidStar", "/"});
+  ctx.assert_dispatch_success(g, {"production", "/Sol"});
+  test::expect_contains(g.out.str(), "Sol/Eart");
+
+  // Non-controlling governor filters out colonies
+  g.set_governor(governor_t{2});
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"production", "/Sol"});
+  test::expect_false(g.out.str().contains("Sol/Eart"));
+  g.set_governor(governor_t{1});
+
+  // 3. Bad location warnings (no duplicate PlaceError text) and ship places
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"production", "/InvalidStar", "/", "#1"});
   test::expect_contains(g.out.str(), "Bad location `/InvalidStar`.");
   test::expect_contains(g.out.str(), "Bad location `/`.");
+  test::expect_contains(g.out.str(), "Bad location `#1`.");
   test::expect_false(g.out.str().contains("No such star"));
 
-  // 4. UiMode::JSON output
+  // 4. Unexplored star handling (all stars and specific planet via god)
+  ctx.em.mutate_star(3, [](Star& s) { s.clear_explored_by(player_t{1}); });
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"production"});
+  g.set_god(true);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"production", "/Antares/Antares Prime"});
+  g.set_god(false);
+
+  // 5. UiMode::JSON output
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"production", "/Sol/Earth"});
-  test::expect_contains(g.out.str(), "\"type\":\"production\"");
-  test::expect_contains(g.out.str(), "\"planet_name\":\"Earth\"");
-  test::expect_contains(g.out.str(), "\"prod_res\":100");
+  test::expect_contains(g.out.str(), R"("type":"planet")");
+  test::expect_contains(g.out.str(), R"("name":"Earth")");
+  test::expect_contains(g.out.str(), R"("resources":100)");
 
   ctx.verify_universe_invariants();
 }

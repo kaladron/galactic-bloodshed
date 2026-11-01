@@ -14,22 +14,22 @@ module commands;
 
 namespace {
 
-void append_planet_production(
-    const Star& star_ref, const Planet& pl, player_t player,
-    governor_t governor, std::vector<GB::presentation::ProductionRow>& rows) {
-  const auto& info = pl.info(player);
+void append_planet_production(GameObj& g, const Star& star_ref,
+                              const Planet& pl,
+                              GB::presentation::ProductionReportViewModel& vm) {
+  const auto& info = pl.info(g.player());
   if (!info.explored || !info.numsectsowned ||
-      !star_ref.control(player, governor)) {
+      !star_ref.control(g.player(), g.governor())) {
     return;
   }
-  rows.push_back({
+  vm.rows.push_back({
       .snum = star_ref.star_id(),
       .pnum = pl.planet_order(),
       .star_name = star_ref.get_name(),
       .planet_name = star_ref.get_planet_name(pl.planet_order()),
       .type_symbol = pl.type_symbol(),
       .autoreport = info.autorep != 0,
-      .governor = star_ref.governor(player),
+      .governor = star_ref.governor(g.player()),
       .prod_tech = info.prod_tech,
       .total_resources = pl.total_resources(),
       .prod_crystals = info.prod_crystals,
@@ -40,17 +40,19 @@ void append_planet_production(
       .tox_thresh = info.tox_thresh.value_or(0),
       .est_production = info.est_production,
   });
+  vm.planets.push_back(GB::presentation::project_planet_view(
+      g.entity_manager, g.scope_context(), star_ref.star_id(),
+      pl.planet_order()));
 }
 
-void append_star_production(
-    GameObj& g, starnum_t star,
-    std::vector<GB::presentation::ProductionRow>& rows) {
+void append_star_production(GameObj& g, starnum_t star,
+                            GB::presentation::ProductionReportViewModel& vm) {
   const auto& star_ref = *g.entity_manager.peek_star(star);
   if (!star_ref.is_explored_by(g.player())) return;
 
   for (const auto& pl :
        PlanetList::readonly(g.entity_manager, star, star_ref.numplanets())) {
-    append_planet_production(star_ref, pl, g.player(), g.governor(), rows);
+    append_planet_production(g, star_ref, pl, vm);
   }
 }
 
@@ -62,7 +64,7 @@ bool production(const command_t& argv, GameObj& g) {
 
   if (argv.size() < 2) {
     for (const Star& star : StarList::readonly(g.entity_manager)) {
-      append_star_production(g, star.star_id(), vm.rows);
+      append_star_production(g, star.star_id(), vm);
     }
   } else {
     for (std::size_t i = 1; i < argv.size(); ++i) {
@@ -77,11 +79,10 @@ bool production(const command_t& argv, GameObj& g) {
         if (star_ref.is_explored_by(g.player())) {
           const auto& pl =
               *g.entity_manager.peek_planet(where->snum, where->pnum);
-          append_planet_production(star_ref, pl, g.player(), g.governor(),
-                                   vm.rows);
+          append_planet_production(g, star_ref, pl, vm);
         }
       } else {
-        append_star_production(g, where->snum, vm.rows);
+        append_star_production(g, where->snum, vm);
       }
     }
   }

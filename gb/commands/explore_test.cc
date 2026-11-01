@@ -50,6 +50,10 @@ shipnum_t setup_test_world(TestContext& ctx) {
       .with_explored(player_t{1}, false)
       .build();
 
+  ctx.em.mutate_planet(starnum_t{1}, planetnum_t{2}, [](Planet& mars) {
+    mars.info(player_t{2}).numsectsowned = 0;
+  });
+
   // Star 2 (unexplored)
   ctx.create_star("Centauri", starnum_t{2})
       .with_position(UniverseCoordinates{500.0, 500.0})
@@ -97,9 +101,10 @@ void test_explore_dispatch() {
   g.set_ui_mode(UiMode::JSON);
   ctx.assert_dispatch_success(g, {"explore", "/Sol"});
   output = g.out.str();
-  test::expect_contains(output, "\"type\":\"explore\"");
-  test::expect_contains(output, "\"star_name\":\"Sol\"");
-  test::expect_contains(output, "\"planet_name\":\"Earth\"");
+  test::expect_contains(output, R"("type":"star")");
+  test::expect_contains(output, R"("name":"Sol")");
+  test::expect_contains(output, R"("type":"planet")");
+  test::expect_contains(output, R"("name":"Earth")");
   g.set_ui_mode(UiMode::ASCII);
   std::println(std::cout, "    ✓ explore JSON mode succeeded");
 

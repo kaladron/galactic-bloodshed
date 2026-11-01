@@ -542,8 +542,8 @@ int main() {
     g.set_level(ScopeLevel::LEVEL_PLAN);
     g.set_ui_mode(UiMode::JSON);
     ctx.assert_dispatch_success(g, {"analysis"});
-    test::expect_contains(g.out.str(), "\"type\":\"analysis\"");
-    test::expect_contains(g.out.str(), "\"planet_name\":\"TestPlanet\"");
+    test::expect_contains(g.out.str(), R"("type":"message")");
+    test::expect_contains(g.out.str(), "Analysis of /TestStar/TestPlanet:");
   }
 
   std::println(std::cout,

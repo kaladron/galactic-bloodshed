@@ -152,13 +152,15 @@ std::string render_ascii_planet_map(const PlanetMapViewModel& vm) {
   return out;
 }
 
-std::string render_json_planet_map(const PlanetMapViewModel& vm) {
-  return render_json_envelope("map", vm);
-}
-
-std::string render_for_mode(UiMode mode, const PlanetMapViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_planet_map(vm)
-                              : render_ascii_planet_map(vm);
+std::string render_for_mode(UiMode mode, const PlanetMapOutputViewModel& vm) {
+  if (mode == UiMode::JSON) {
+    std::string out = render_json_planet_view(vm.planet);
+    if (vm.sectors.has_value()) {
+      out += render_json_sector_grid_view(*vm.sectors);
+    }
+    return out;
+  }
+  return render_ascii_planet_map(vm.ascii_map);
 }
 
 std::string render_survey_sectors(const SurveySectorViewModel& vm) {
@@ -204,13 +206,15 @@ std::string render_survey_sectors(const SurveySectorViewModel& vm) {
   return out;
 }
 
-std::string render_json_survey_sectors(const SurveySectorViewModel& vm) {
-  return render_json_envelope("survey_sectors", vm);
-}
-
 std::string render_for_mode(UiMode mode, const SurveySectorViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_survey_sectors(vm)
-                              : render_survey_sectors(vm);
+  if (mode == UiMode::JSON) {
+    std::string out = render_json_planet_view(vm.planet);
+    if (vm.grid.has_value()) {
+      out += render_json_sector_grid_view(*vm.grid);
+    }
+    return out;
+  }
+  return render_survey_sectors(vm);
 }
 
 namespace {
@@ -288,14 +292,9 @@ render_survey_planet_overview(const SurveyPlanetOverviewViewModel& vm) {
   return out;
 }
 
-std::string
-render_json_survey_planet_overview(const SurveyPlanetOverviewViewModel& vm) {
-  return render_json_envelope("survey_planet", vm);
-}
-
 std::string render_for_mode(UiMode mode,
                             const SurveyPlanetOverviewViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_survey_planet_overview(vm)
+  return mode == UiMode::JSON ? render_json_planet_view(vm.planet)
                               : render_survey_planet_overview(vm);
 }
 
@@ -329,12 +328,8 @@ std::string render_survey_star(const SurveyStarViewModel& vm) {
   return out;
 }
 
-std::string render_json_survey_star(const SurveyStarViewModel& vm) {
-  return render_json_envelope("survey_star", vm);
-}
-
 std::string render_for_mode(UiMode mode, const SurveyStarViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_survey_star(vm)
+  return mode == UiMode::JSON ? render_json_star_view(vm.star)
                               : render_survey_star(vm);
 }
 
@@ -342,12 +337,9 @@ std::string render_survey_universe(const SurveyUniverseViewModel& vm) {
   return std::format("{}\n", vm.message);
 }
 
-std::string render_json_survey_universe(const SurveyUniverseViewModel& vm) {
-  return render_json_envelope("survey_universe", vm);
-}
-
 std::string render_for_mode(UiMode mode, const SurveyUniverseViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_survey_universe(vm)
+  return mode == UiMode::JSON ? render_json_message(make_output_message(
+                                    render_survey_universe(vm)))
                               : render_survey_universe(vm);
 }
 
@@ -466,13 +458,21 @@ std::string render_ascii_orbit_map(const OrbitViewModel& vm) {
   return out;
 }
 
-std::string render_json_orbit_map(const OrbitViewModel& vm) {
-  return render_json_envelope("orbit", vm);
-}
-
 std::string render_for_mode(UiMode mode, const OrbitViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_orbit_map(vm)
-                              : render_ascii_orbit_map(vm);
+  if (mode == UiMode::JSON) {
+    std::string out;
+    for (const auto& s : vm.star_views) {
+      out += render_json_star_view(s);
+    }
+    for (const auto& p : vm.planet_views) {
+      out += render_json_planet_view(p);
+    }
+    for (const auto& sh : vm.ship_views) {
+      out += render_json_ship_view(sh);
+    }
+    return out;
+  }
+  return render_ascii_orbit_map(vm);
 }
 
 std::string render_explore(const ExploreViewModel& vm) {
@@ -530,12 +530,18 @@ std::string render_explore(const ExploreViewModel& vm) {
   return out;
 }
 
-std::string render_json_explore(const ExploreViewModel& vm) {
-  return render_json_envelope("explore", vm);
-}
-
 std::string render_for_mode(UiMode mode, const ExploreViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_explore(vm) : render_explore(vm);
+  if (mode == UiMode::JSON) {
+    std::string out;
+    for (const auto& s : vm.star_views) {
+      out += render_json_star_view(s);
+    }
+    for (const auto& p : vm.planet_views) {
+      out += render_json_planet_view(p);
+    }
+    return out;
+  }
+  return render_explore(vm);
 }
 
 std::string render_analysis(const AnalysisViewModel& vm) {
@@ -607,12 +613,10 @@ std::string render_analysis(const AnalysisViewModel& vm) {
   return out;
 }
 
-std::string render_json_analysis(const AnalysisViewModel& vm) {
-  return render_json_envelope("analysis", vm);
-}
-
 std::string render_for_mode(UiMode mode, const AnalysisViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_analysis(vm) : render_analysis(vm);
+  return mode == UiMode::JSON
+             ? render_json_message(make_output_message(render_analysis(vm)))
+             : render_analysis(vm);
 }
 
 std::string render_mobilize_status(const MobilizeStatusViewModel& vm) {
@@ -995,13 +999,15 @@ std::string render_star_locations(const StarLocationsViewModel& vm) {
   return std::format("{}\n", table.str());
 }
 
-std::string render_json_star_locations(const StarLocationsViewModel& vm) {
-  return render_json_envelope("stars", vm);
-}
-
 std::string render_for_mode(UiMode mode, const StarLocationsViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_star_locations(vm)
-                              : render_star_locations(vm);
+  if (mode == UiMode::JSON) {
+    std::string out;
+    for (const auto& s : vm.star_views) {
+      out += render_json_star_view(s);
+    }
+    return out;
+  }
+  return render_star_locations(vm);
 }
 
 std::string render_production_report(const ProductionReportViewModel& vm) {
@@ -1046,31 +1052,25 @@ std::string render_production_report(const ProductionReportViewModel& vm) {
   return out;
 }
 
-std::string render_json_production_report(const ProductionReportViewModel& vm) {
-  return render_json_envelope("production", vm);
-}
-
 std::string render_for_mode(UiMode mode, const ProductionReportViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_production_report(vm)
-                              : render_production_report(vm);
+  if (mode == UiMode::JSON) {
+    std::string out;
+    for (const auto& p : vm.planets) {
+      out += render_json_planet_view(p);
+    }
+    return out;
+  }
+  return render_production_report(vm);
 }
 
 std::string render_technology(const TechnologyViewModel& vm) {
-  if (vm.updated) {
-    return std::format("   New (ideal) tech production: {:.3f} (this planet)\n",
-                       vm.tech_production);
-  }
   return std::format("Current investment : {}    Technology production/update: "
                      "{:.3f}\n",
                      vm.investment, vm.tech_production);
 }
 
-std::string render_json_technology(const TechnologyViewModel& vm) {
-  return render_json_envelope("technology", vm);
-}
-
 std::string render_for_mode(UiMode mode, const TechnologyViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_technology(vm)
+  return mode == UiMode::JSON ? render_json_planet_view(vm.planet)
                               : render_technology(vm);
 }
 

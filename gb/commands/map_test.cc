@@ -154,8 +154,23 @@ void test_map_dispatch() {
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"map"});
-  test::expect_contains(g.out.str(), "\"type\":\"map\"");
-  test::expect_contains(g.out.str(), "\"planet_name\":\"TestPlanet\"");
+  test::expect_contains(g.out.str(), R"("type":"planet")");
+  test::expect_contains(g.out.str(), R"("name":"TestPlanet")");
+  test::expect_contains(g.out.str(), R"("type":"sectors")");
+
+  // 1c. JSON mode on unseen planet without sight -> sectors is nullopt
+  ctx.em.mutate_planet(1, 1, [](Planet& p) {
+    p.info(1).explored = false;
+    p.info(1).numsectsowned = 0;
+  });
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"map"});
+  test::expect_contains(g.out.str(), R"("type":"planet")");
+  test::expect_false(g.out.str().contains(R"("type":"sectors")"));
+  ctx.em.mutate_planet(1, 1, [](Planet& p) {
+    p.info(1).explored = true;
+    p.info(1).numsectsowned = 3;
+  });
   g.set_ui_mode(UiMode::ASCII);
   std::println(std::cout, "    ✓ Map in JSON mode succeeded");
 

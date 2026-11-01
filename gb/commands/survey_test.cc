@@ -129,23 +129,25 @@ void test_survey_sectors_json_and_landed_ships() {
   g.set_snum(2);
   g.set_pnum(1);
 
-  // Governor 2 is not authorized for governor 3's probe -> ships list empty
+  // Sector survey in JSON mode with coordinate range
   ctx.assert_dispatch_success(g, {"survey", "0:0,0:0"});
-  std::string unauthorized_json = g.out.str();
-  test::expect_contains(unauthorized_json, R"("type":"survey_sectors")");
-  test::expect_contains(unauthorized_json, R"("ships":[]})");
+  std::string range_json = g.out.str();
+  test::expect_contains(range_json, R"("type":"planet")");
+  test::expect_contains(range_json, R"("type":"sectors")");
+  test::expect_contains(range_json, R"("partial":true)");
+  test::expect_contains(range_json, std::format(R"("id":{})", probe_id));
 
-  // Governor 1 (leader) is authorized for all governors' ships -> sees probe
+  // Sector survey in JSON mode with all sectors ("-")
   g.out.str("");
   g.out.clear();
   g.set_governor(1);
   ctx.assert_dispatch_success(g, {"survey", "-"});
-  std::string authorized_json = g.out.str();
-  test::expect_contains(authorized_json, R"("type":"survey_sectors")");
-  test::expect_contains(authorized_json,
-                        std::format(R"("shipno":{})", probe_id));
-  std::println(std::cout,
-               "    ✓ JSON sector survey and ship authorization verified");
+  std::string all_json = g.out.str();
+  test::expect_contains(all_json, R"("type":"planet")");
+  test::expect_contains(all_json, R"("type":"sectors")");
+  test::expect_contains(all_json, R"("partial":false)");
+  test::expect_contains(all_json, std::format(R"("id":{})", probe_id));
+  std::println(std::cout, "    ✓ JSON sector survey and landed ships verified");
 }
 
 void test_survey_planet_star_and_universe_json() {
@@ -166,8 +168,8 @@ void test_survey_planet_star_and_universe_json() {
   g.set_pnum(1);
   ctx.assert_dispatch_success(g, {"survey"});
   std::string planet_json = g.out.str();
-  test::expect_contains(planet_json, R"("type":"survey_planet")");
-  test::expect_contains(planet_json, R"("planet_name":"Earth")");
+  test::expect_contains(planet_json, R"("type":"planet")");
+  test::expect_contains(planet_json, R"("name":"Earth")");
   test::expect_contains(planet_json, R"("star_name":"Sol")");
 
   // Star survey in JSON mode
@@ -177,8 +179,8 @@ void test_survey_planet_star_and_universe_json() {
   g.set_snum(2);
   ctx.assert_dispatch_success(g, {"survey"});
   std::string star_json = g.out.str();
-  test::expect_contains(star_json, R"("type":"survey_star")");
-  test::expect_contains(star_json, R"("star_name":"Vega")");
+  test::expect_contains(star_json, R"("type":"star")");
+  test::expect_contains(star_json, R"("name":"Vega")");
   test::expect_contains(star_json, R"("stability":45)");
 
   // Universe survey in JSON mode
@@ -187,8 +189,8 @@ void test_survey_planet_star_and_universe_json() {
   g.set_level(ScopeLevel::LEVEL_UNIV);
   ctx.assert_dispatch_success(g, {"survey"});
   std::string univ_json = g.out.str();
-  test::expect_contains(univ_json, R"("type":"survey_universe")");
-  test::expect_contains(univ_json, R"("It's just _there_, you know?")");
+  test::expect_contains(univ_json, R"("type":"message")");
+  test::expect_contains(univ_json, "It's just _there_, you know?");
   std::println(
       std::cout,
       "    ✓ JSON planet overview, star, and universe surveys verified");
@@ -201,10 +203,10 @@ void test_survey_location_and_scope_errors() {
   TestContext ctx;
   setup_test_world(ctx);
 
-  TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-      .owned_by(1, 1)
-      .in_planet_orbit(1, 1)
-      .build();
+  const auto probe_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
+                            .owned_by(1, 1)
+                            .in_planet_orbit(1, 1)
+                            .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -231,13 +233,14 @@ void test_survey_location_and_scope_errors() {
   // Explicit ship place is rejected
   g.out.str("");
   g.out.clear();
-  test::expect_false(GB::commands::survey({"survey", "#10"}, g));
+  test::expect_false(
+      GB::commands::survey({"survey", std::format("#{}", probe_id)}, g));
 
   // No-arg survey while scoped to a ship hits default Illegal scope branch
   g.out.str("");
   g.out.clear();
   g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(10);
+  g.set_shipno(probe_id);
   test::expect_false(GB::commands::survey({"survey"}, g));
   test::expect_contains(g.out.str(), "Illegal scope.");
 
@@ -291,10 +294,19 @@ void test_survey_sector_presence_crystals_and_cloaking() {
   g.set_snum(2);
   g.set_pnum(1);
 
-  // Neither foreign probe nor sightless canister grants planetary survey
-  // presence
+  // Survey sectors in JSON mode on unexplored planet with no sight returns
+  // nullopt grid
+  ctx.em.mutate_planet(2, 1, [](Planet& p) { p.info(1).explored = false; });
   ctx.assert_dispatch_success(g, {"survey", "0:0,0:0"});
-  test::expect_contains(g.out.str(), R"("ships":[]})");
+  test::expect_contains(g.out.str(), R"("type":"planet")");
+  test::expect_false(g.out.str().contains(R"("type":"sectors")"));
+
+  // Restore explored status on planet (2, 1) -> grid present in JSON mode
+  ctx.em.mutate_planet(2, 1, [](Planet& p) { p.info(1).explored = true; });
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"survey", "0:0,0:0"});
+  test::expect_contains(g.out.str(), R"("type":"planet")");
+  test::expect_contains(g.out.str(), R"("type":"sectors")");
 
   // Add an orbiting probe owned by (1, 1): grants planetary presence
   // via has_sight() while being skipped by !is_landed() in sector ship list
@@ -335,6 +347,11 @@ void test_survey_sector_presence_crystals_and_cloaking() {
   test::expect_contains(g.out.str(), "biomass");
   test::expect_contains(g.out.str(), "This planet ENSLAVED to player 2!");
 
+  g.out.str("");
+  g.out.clear();
+  ctx.assert_dispatch_success(g, {"survey", "0:0,0:0"});
+  test::expect_false(g.out.str().contains("yes"));
+
   // Enable crystal discovery -> crystals shown in overview and sector table
   ctx.em.mutate_race(1, [](Race& r) { r.discoveries.crystal = true; });
   g.out.str("");
@@ -347,8 +364,8 @@ void test_survey_sector_presence_crystals_and_cloaking() {
   ctx.assert_dispatch_success(g, {"survey", "0:0,0:0"});
   test::expect_contains(g.out.str(), "yes");
 
-  // God without crystal discovery also sees crystals, and 11 ships on (2, 1)
-  // are capped at 10
+  // God without crystal discovery also sees crystals, and all 11 ships on (2,
+  // 1) are included in SectorGridView
   ctx.em.mutate_race(1, [](Race& r) {
     r.discoveries.crystal = false;
     r.God = true;
@@ -358,14 +375,18 @@ void test_survey_sector_presence_crystals_and_cloaking() {
   ctx.assert_dispatch_success(g, {"survey"});
   test::expect_contains(g.out.str(), "Crystal sectors: 1");
 
+  g.out.str("");
+  g.out.clear();
+  ctx.assert_dispatch_success(g, {"survey", "0:0,0:0"});
+  test::expect_contains(g.out.str(), "yes");
+
   g.set_snum(2);
   g.set_pnum(1);
   g.set_ui_mode(GB::presentation::UiMode::JSON);
   g.out.str("");
   g.out.clear();
   ctx.assert_dispatch_success(g, {"survey", "0:0,0:0"});
-  test::expect_false(
-      g.out.str().contains(std::format(R"("shipno":{})", last_probe_id)));
+  test::expect_contains(g.out.str(), std::format(R"("id":{})", last_probe_id));
 
   // Cloaked sector rendering branch in render_survey_sectors
   GB::presentation::SurveySectorViewModel cloaked_vm{

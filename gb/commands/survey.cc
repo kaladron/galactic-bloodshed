@@ -13,7 +13,6 @@ import std;
 module commands;
 
 namespace {
-constexpr int MAX_SHIPS_PER_SECTOR = 10;
 
 struct SurveyRequest {
   Place where;
@@ -58,39 +57,6 @@ std::optional<SurveyRequest> parse_survey_location(const command_t& argv,
   return SurveyRequest{.where = *where};
 }
 
-bool has_planetary_survey_presence(GameObj& g, const Place& where,
-                                   const Planet& p) {
-  if (p.info(g.player()).numsectsowned > 0) return true;
-  for (const Ship& shipa :
-       ShipList::readonly_on_planet(g.entity_manager, where.snum, where.pnum)) {
-    if (shipa.owner() == g.player() && shipa.is_authorized_for(g.governor()) &&
-        shipa.has_sight()) {
-      return true;
-    }
-  }
-  return false;
-}
-
-std::flat_map<Coordinates, std::vector<GB::presentation::SurveySectorShip>>
-collect_landed_sector_ships(GameObj& g, const Place& where, const Planet& p) {
-  std::flat_map<Coordinates, std::vector<GB::presentation::SurveySectorShip>>
-      shiplocs;
-  if (!has_planetary_survey_presence(g, where, p)) {
-    return shiplocs;
-  }
-  for (const Ship& shipa :
-       ShipList::readonly_on_planet(g.entity_manager, where.snum, where.pnum)) {
-    if (!shipa.is_landed()) continue;
-    auto& loc = shiplocs[shipa.land_coords()];
-    if (std::ssize(loc) < MAX_SHIPS_PER_SECTOR) {
-      loc.push_back({.shipno = shipa.number(),
-                     .ltr = shipa.type_letter(),
-                     .owner = shipa.owner()});
-    }
-  }
-  return shiplocs;
-}
-
 // Helper: Survey planet sectors (detailed sector-by-sector view)
 void survey_planet_sectors(GameObj& g, const Place& where,
                            const std::string& range_arg, bool all) {
@@ -113,7 +79,6 @@ void survey_planet_sectors(GameObj& g, const Place& where,
   }
   const auto [low, high] = bounds;
 
-  auto shiplocs = collect_landed_sector_ships(g, where, p);
   const double compat = p.compatibility(race);
   const auto& pinfo = p.info(g.player());
 
@@ -131,12 +96,11 @@ void survey_planet_sectors(GameObj& g, const Place& where,
       .enslaved_to = p.slaved_to().value_or(0),
   };
 
+  std::flat_set<Coordinates> filter;
   for (auto [c, s] : smap->indexed_sectors()) {
     if (!c.within_bounds(low, high)) continue;
-
-    std::vector<GB::presentation::SurveySectorShip> ships;
-    if (auto it = shiplocs.find(c); it != shiplocs.end()) {
-      ships = it->second;
+    if (!all) {
+      filter.insert(c);
     }
     vm.sectors.push_back({
         .coords = c,
@@ -154,9 +118,14 @@ void survey_planet_sectors(GameObj& g, const Place& where,
         .popn = s.get_popn(),
         .troops = s.get_troops(),
         .maxpopn = maxsupport(race, s, compat, p.toxic()),
-        .ships = std::move(ships),
     });
   }
+
+  vm.planet = GB::presentation::project_planet_view(
+      g.entity_manager, g.scope_context(), where.snum, where.pnum);
+  vm.grid = GB::presentation::project_sector_grid_view(
+      g.entity_manager, g.scope_context(), where.snum, where.pnum,
+      all ? nullptr : &filter);
 
   g.present(vm);
 }
@@ -205,6 +174,8 @@ void survey_planet_overview(GameObj& g, const Place& where) {
       .popn = p.popn(),
       .maxpopn = p.maxpopn(),
       .slaved_to = p.slaved_to(),
+      .planet = GB::presentation::project_planet_view(
+          g.entity_manager, g.scope_context(), where.snum, where.pnum),
   };
   g.present(vm);
 }
@@ -227,6 +198,8 @@ void survey_star(GameObj& g, const Place& where) {
       .stability = stability,
       .temperature_class = star.temperature(),
       .planet_names = star.planet_names(),
+      .star = GB::presentation::project_star_view(
+          g.entity_manager, g.scope_context(), where.snum),
   };
   g.present(vm);
 }

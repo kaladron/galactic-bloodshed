@@ -42,6 +42,8 @@ bool star_locations(const command_t& argv, GameObj& g) {
           .y = star.coordinates().y,
           .distance = dist,
       });
+      vm.star_views.push_back(GB::presentation::project_star_view(
+          g.entity_manager, g.scope_context(), star.star_id()));
     }
   }
 

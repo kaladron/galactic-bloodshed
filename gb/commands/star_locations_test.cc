@@ -64,8 +64,8 @@ void test_stars_dispatch() {
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"stars", "100"});
-  test::expect_contains(g.out.str(), "\"type\":\"stars\"");
-  test::expect_contains(g.out.str(), "\"name\":\"Sol\"");
+  test::expect_contains(g.out.str(), R"("type":"star")");
+  test::expect_contains(g.out.str(), R"("name":"Sol")");
   g.set_ui_mode(UiMode::ASCII);
 
   // 6. Matrix runner

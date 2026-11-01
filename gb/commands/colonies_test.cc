@@ -51,6 +51,7 @@ void test_colonies_dispatch() {
 
   // 3. Unexplored star and invalid/universe/ship locations
   ctx.em.mutate_star(3, [](Star& s) { s.clear_explored_by(player_t{1}); });
+  ctx.assert_dispatch_success(g, {"colonies"});
   ctx.assert_dispatch_success(
       g, {"colonies", "/Antares", "/NoSuchStar", "/", "#1"});
   test::expect_contains(g.out.str(), "Bad location `/NoSuchStar'.");
@@ -60,7 +61,8 @@ void test_colonies_dispatch() {
   // 4. JSON mode
   g.set_ui_mode(UiMode::JSON);
   ctx.assert_dispatch_success(g, {"colonies", "/Sol"});
-  test::expect_contains(g.out.str(), "\"rows\"");
+  test::expect_contains(g.out.str(), R"("type":"planet")");
+  test::expect_contains(g.out.str(), R"("name":"Earth")");
 
   ctx.verify_universe_invariants();
 }

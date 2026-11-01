@@ -58,6 +58,8 @@ void colonies_at_star(ColoniesViewModel& vm, GameObj& g, const Race& race,
       }
     }
     vm.rows.push_back(std::move(row));
+    vm.planets.push_back(GB::presentation::project_planet_view(
+        g.entity_manager, g.scope_context(), star, pl.planet_order()));
   }
 }
 }  // namespace

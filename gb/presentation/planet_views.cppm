@@ -6,6 +6,7 @@
 export module gb.presentation.planet_views;
 
 export import gb.presentation.core;
+export import gb.presentation.ship_ops;
 
 import gb.entities;
 import gb.services;
@@ -14,12 +15,167 @@ import std;
 
 export namespace GB::presentation {
 
-/// Landed ship entry on a surveyed planetary sector.
-struct SurveySectorShip {
-  shipnum_t shipno{0};
-  char ltr{' '};
+/// Lightweight summary of a planet within a star system.
+struct StarPlanetStubView {
+  planetnum_t pnum{0};
+  std::string name{};
+  bool explored{false};
+  bool inhabited{false};
+};
+
+/// Explored details of a star system.
+struct StarExploredView {
+  double gravity{0.0};
+  int temperature_class{0};
+  std::optional<int> stability{std::nullopt};
+  ap_t ap{0};
+  governor_t governor{1};
+  bool inhabited{false};
+  std::vector<StarPlanetStubView> planets{};
+};
+
+/// Canonical view model for a star system.
+struct StarView {
+  starnum_t snum{0};
+  std::string name{};
+  UniverseCoordinates coordinates{0.0, 0.0};
+  bool explored{false};
+  std::optional<StarExploredView> details{std::nullopt};
+};
+
+/// Alien presence on a surveyed planet.
+struct PlanetAlienView {
+  player_t player{0};
+  bool at_war{false};
+};
+
+/// Environmental and survey data for a planet.
+struct PlanetEnvironmentView {
+  PlanetType type{PlanetType::EARTH};
+  char type_symbol{' '};
+  std::string type_name{};
+  Coordinates dimensions{0, 0};
+  double gravity{0.0};
+  ConditionValues conditions{};
+  temperature_t temp{0};
+  temperature_t normal_temp{0};
+  Percentage toxicity{0};
+  double compatibility{0.0};
+  Percentage avg_fertility{0};
+  resource_t avg_resource{0};
+  resource_t total_resources{0};
+  std::optional<sector_count_t> crystal_sectors{std::nullopt};
+  std::optional<player_t> slaved_to{std::nullopt};
+  bool aliens_unknown{false};
+  std::vector<PlanetAlienView> aliens{};
+};
+
+/// Single shipping route on a colonized planet.
+struct ColonyRouteView {
+  int route_number{0};
+  bool active{false};
+  std::optional<starnum_t> dest_star{std::nullopt};
+  std::optional<planetnum_t> dest_planet{std::nullopt};
+  std::string dest_star_name{};
+  std::string dest_planet_name{};
+  Coordinates dest_coords{0, 0};
+  CommodityManifest load{};
+  CommodityManifest unload{};
+};
+
+/// Colony-specific details visible to the planet owner/governor or deity.
+struct ColonyView {
+  governor_t governor{1};
+  bool autoreport{false};
+  sector_count_t sectors_owned{0};
+  population_t popn{0};
+  population_t troops{0};
+  population_t total_popn{0};
+  population_t total_troops{0};
+  population_t maxpopn{0};
+  gun_count_t guns{0};
+  Stockpile stockpile{};
+  Stockpile last_production{};
+  money_t prod_money{0};
+  double prod_tech{0.0};
+  double est_production{0.0};
+  money_t tech_invest{0};
+  Percentage tax{0};
+  Percentage target_tax{0};
+  Percentage mobilization{0};
+  Percentage target_mobilization{0};
+  std::uint32_t mob_points{0};
+  std::optional<Percentage> tox_thresh{std::nullopt};
+  std::vector<ColonyRouteView> routes{};
+};
+
+/// Canonical view model for a planet.
+struct PlanetView {
+  starnum_t snum{0};
+  planetnum_t pnum{0};
+  std::string star_name{};
+  std::string name{};
+  SystemCoordinates system_coords{0.0, 0.0};
+  bool explored{false};
+  std::optional<PlanetEnvironmentView> environment{std::nullopt};
+  std::optional<ColonyView> colony{std::nullopt};
+};
+
+/// Landed ship on a sector.
+struct SectorLandedShipView {
+  shipnum_t id{0};
+  char type_letter{' '};
   player_t owner{0};
 };
+
+/// Detailed survey data of a sector.
+struct SectorSurveyDetailsView {
+  SectorType geological_type{SectorType::SEC_LAND};
+  Percentage eff{0};
+  Percentage fert{0};
+  std::optional<Percentage> mobilization{std::nullopt};
+  resource_t resource{0};
+  bool crystals{false};
+  population_t popn{0};
+  population_t troops{0};
+  population_t maxpopn{0};
+};
+
+/// Canonical view model for a single sector.
+struct SectorView {
+  Coordinates coords{0, 0};
+  SectorType condition{SectorType::SEC_LAND};
+  std::optional<player_t> owner{std::nullopt};
+  std::vector<SectorLandedShipView> ships{};
+  std::optional<SectorSurveyDetailsView> details{std::nullopt};
+};
+
+/// Canonical view model for a grid of sectors on a planet.
+struct SectorGridView {
+  starnum_t snum{0};
+  planetnum_t pnum{0};
+  Coordinates dimensions{0, 0};
+  bool partial{false};
+  std::vector<SectorView> sectors{};
+};
+
+[[nodiscard]] StarView project_star_view(EntityManager& em,
+                                         const ScopeContext& viewer,
+                                         starnum_t snum);
+
+[[nodiscard]] PlanetView project_planet_view(EntityManager& em,
+                                             const ScopeContext& viewer,
+                                             starnum_t snum, planetnum_t pnum);
+
+[[nodiscard]] std::optional<SectorGridView> project_sector_grid_view(
+    EntityManager& em, const ScopeContext& viewer, starnum_t snum,
+    planetnum_t pnum,
+    const std::flat_set<Coordinates>* coords_filter = nullptr);
+
+[[nodiscard]] std::string render_json_star_view(const StarView& vm);
+[[nodiscard]] std::string render_json_planet_view(const PlanetView& vm);
+[[nodiscard]] std::string
+render_json_sector_grid_view(const SectorGridView& vm);
 
 /// Single sector row in a planetary sector-range survey.
 struct SurveySectorRow {
@@ -37,7 +193,6 @@ struct SurveySectorRow {
   population_t popn{0};
   population_t troops{0};
   population_t maxpopn{0};
-  std::vector<SurveySectorShip> ships{};
 };
 
 /// View model for planetary sector-range surveys (`survey -` or
@@ -55,6 +210,8 @@ struct SurveySectorViewModel {
   double compatibility{0.0};
   player_t enslaved_to{0};
   std::vector<SurveySectorRow> sectors{};
+  PlanetView planet{};
+  std::optional<SectorGridView> grid{std::nullopt};
 };
 
 /// View model for planetary overview surveys (`survey` at planet scope).
@@ -82,6 +239,7 @@ struct SurveyPlanetOverviewViewModel {
   population_t popn{0};
   population_t maxpopn{0};
   std::optional<player_t> slaved_to{std::nullopt};
+  PlanetView planet{};
 };
 
 /// View model for stellar system surveys (`survey` at star scope).
@@ -93,6 +251,7 @@ struct SurveyStarViewModel {
   std::optional<int> stability{std::nullopt};
   int temperature_class{0};
   std::vector<std::string> planet_names{};
+  StarView star{};
 };
 
 /// View model for universe-scope surveys (`survey` at universe scope).
@@ -134,6 +293,9 @@ struct OrbitViewModel {
   std::vector<OrbitStarEntry> stars{};
   std::vector<OrbitPlanetEntry> planets{};
   std::vector<OrbitShipEntry> ships{};
+  std::vector<StarView> star_views{};
+  std::vector<PlanetView> planet_views{};
+  std::vector<ShipView> ship_views{};
 };
 
 /// Renders a `PlanetMapViewModel` as a 2D ASCII planetary map with X/Y
@@ -141,23 +303,21 @@ struct OrbitViewModel {
 /// `inverse` cells, and a `tabulate::Table` for planetary statistics.
 [[nodiscard]] std::string render_ascii_planet_map(const PlanetMapViewModel& vm);
 
-/// Serializes a `PlanetMapViewModel` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"map","data":{...}}\n`).
-[[nodiscard]] std::string render_json_planet_map(const PlanetMapViewModel& vm);
+/// Composite view model for `map` command (ASCII map + canonical JSON views).
+struct PlanetMapOutputViewModel {
+  PlanetMapViewModel ascii_map{};
+  PlanetView planet{};
+  std::optional<SectorGridView> sectors{std::nullopt};
+};
 
-/// Dispatches `PlanetMapViewModel` rendering based on `mode`.
+/// Dispatches `PlanetMapOutputViewModel` rendering based on `mode`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
-                                          const PlanetMapViewModel& vm);
+                                          const PlanetMapOutputViewModel& vm);
 
 /// Renders a `SurveySectorViewModel` as a `tabulate::Table` for
 /// `UiMode::ASCII`.
 [[nodiscard]] std::string
 render_survey_sectors(const SurveySectorViewModel& vm);
-
-/// Serializes a `SurveySectorViewModel` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"survey_sectors","data":{...}}\n`).
-[[nodiscard]] std::string
-render_json_survey_sectors(const SurveySectorViewModel& vm);
 
 /// Dispatches `SurveySectorViewModel` rendering based on `mode`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
@@ -167,22 +327,12 @@ render_json_survey_sectors(const SurveySectorViewModel& vm);
 [[nodiscard]] std::string
 render_survey_planet_overview(const SurveyPlanetOverviewViewModel& vm);
 
-/// Serializes a `SurveyPlanetOverviewViewModel` into a newline-delimited Glaze
-/// JSON envelope (`{"type":"survey_planet","data":{...}}\n`).
-[[nodiscard]] std::string
-render_json_survey_planet_overview(const SurveyPlanetOverviewViewModel& vm);
-
 /// Dispatches `SurveyPlanetOverviewViewModel` rendering based on `mode`.
 [[nodiscard]] std::string
 render_for_mode(UiMode mode, const SurveyPlanetOverviewViewModel& vm);
 
 /// Renders a `SurveyStarViewModel` for `UiMode::ASCII`.
 [[nodiscard]] std::string render_survey_star(const SurveyStarViewModel& vm);
-
-/// Serializes a `SurveyStarViewModel` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"survey_star","data":{...}}\n`).
-[[nodiscard]] std::string
-render_json_survey_star(const SurveyStarViewModel& vm);
 
 /// Dispatches `SurveyStarViewModel` rendering based on `mode`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
@@ -191,11 +341,6 @@ render_json_survey_star(const SurveyStarViewModel& vm);
 /// Renders a `SurveyUniverseViewModel` for `UiMode::ASCII`.
 [[nodiscard]] std::string
 render_survey_universe(const SurveyUniverseViewModel& vm);
-
-/// Serializes a `SurveyUniverseViewModel` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"survey_universe","data":{...}}\n`).
-[[nodiscard]] std::string
-render_json_survey_universe(const SurveyUniverseViewModel& vm);
 
 /// Dispatches `SurveyUniverseViewModel` rendering based on `mode`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
@@ -227,15 +372,13 @@ struct ExploreStarEntry {
 struct ExploreViewModel {
   ap_t global_ap{0};
   std::vector<ExploreStarEntry> stars{};
+  std::vector<StarView> star_views{};
+  std::vector<PlanetView> planet_views{};
 };
 
 /// Renders an `OrbitViewModel` as a 2D ASCII orbital canvas with object legend
 /// and ANSI SGR reverse-video (`\x1b[7m...\x1b[27m`) for `inverse` standout.
 [[nodiscard]] std::string render_ascii_orbit_map(const OrbitViewModel& vm);
-
-/// Serializes an `OrbitViewModel` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"orbit","data":{...}}\n`).
-[[nodiscard]] std::string render_json_orbit_map(const OrbitViewModel& vm);
 
 /// Dispatches `OrbitViewModel` rendering based on `mode`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
@@ -243,10 +386,6 @@ struct ExploreViewModel {
 
 /// Renders an `ExploreViewModel` for `UiMode::ASCII`.
 [[nodiscard]] std::string render_explore(const ExploreViewModel& vm);
-
-/// Serializes an `ExploreViewModel` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"explore","data":{...}}\n`).
-[[nodiscard]] std::string render_json_explore(const ExploreViewModel& vm);
 
 /// Dispatches `ExploreViewModel` rendering based on `mode`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
@@ -298,10 +437,6 @@ struct AnalysisViewModel {
 
 /// Renders an `AnalysisViewModel` for `UiMode::ASCII`.
 [[nodiscard]] std::string render_analysis(const AnalysisViewModel& vm);
-
-/// Serializes an `AnalysisViewModel` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"analysis","data":{...}}\n`).
-[[nodiscard]] std::string render_json_analysis(const AnalysisViewModel& vm);
 
 /// Dispatches `AnalysisViewModel` rendering based on `mode`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
@@ -462,7 +597,7 @@ struct DistanceResult {
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const DistanceResult& vm);
 
-/// Single star entry in a `stars [<radius>]` report.
+/// Single star row in a `stars [<radius>]` stellar positions report.
 struct StarLocationRow {
   starnum_t star_id{0};
   std::string name{};
@@ -475,12 +610,11 @@ struct StarLocationRow {
 struct StarLocationsViewModel {
   int max_distance{999999};
   std::vector<StarLocationRow> stars{};
+  std::vector<StarView> star_views{};
 };
 
 [[nodiscard]] std::string
 render_star_locations(const StarLocationsViewModel& vm);
-[[nodiscard]] std::string
-render_json_star_locations(const StarLocationsViewModel& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const StarLocationsViewModel& vm);
 
@@ -508,153 +642,24 @@ struct ProductionRow {
 struct ProductionReportViewModel {
   std::vector<ProductionRow> rows{};
   std::vector<std::string> bad_locations{};
+  std::vector<PlanetView> planets{};
 };
 
 [[nodiscard]] std::string
 render_production_report(const ProductionReportViewModel& vm);
-[[nodiscard]] std::string
-render_json_production_report(const ProductionReportViewModel& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const ProductionReportViewModel& vm);
 
 /// View model for `technology [<investment>]` planetary tech investment.
 struct TechnologyViewModel {
-  bool updated{false};
   money_t investment{0};
   double tech_production{0.0};
+  PlanetView planet{};
 };
 
 [[nodiscard]] std::string render_technology(const TechnologyViewModel& vm);
-[[nodiscard]] std::string render_json_technology(const TechnologyViewModel& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const TechnologyViewModel& vm);
-
-/// Lightweight summary of a planet within a star system.
-struct StarPlanetStubView {
-  planetnum_t pnum{0};
-  std::string name{};
-  bool explored{false};
-  bool inhabited{false};
-
-  [[nodiscard]] bool
-  operator==(const StarPlanetStubView&) const noexcept = default;
-};
-
-/// Explored details of a star system.
-struct StarExploredView {
-  double gravity{0.0};
-  int temperature_class{0};
-  std::optional<int> stability{std::nullopt};
-  ap_t ap{0};
-  governor_t governor{1};
-  bool inhabited{false};
-  std::vector<StarPlanetStubView> planets{};
-
-  [[nodiscard]] bool
-  operator==(const StarExploredView&) const noexcept = default;
-};
-
-/// Canonical view model for a star system.
-struct StarView {
-  starnum_t snum{0};
-  std::string name{};
-  UniverseCoordinates coordinates{0.0, 0.0};
-  bool explored{false};
-  std::optional<StarExploredView> details{std::nullopt};
-
-  [[nodiscard]] bool operator==(const StarView&) const noexcept = default;
-};
-
-/// Alien presence on a surveyed planet.
-struct PlanetAlienView {
-  player_t player{0};
-  bool at_war{false};
-
-  [[nodiscard]] bool
-  operator==(const PlanetAlienView&) const noexcept = default;
-};
-
-/// Environmental and survey data for a planet.
-struct PlanetEnvironmentView {
-  PlanetType type{PlanetType::EARTH};
-  char type_symbol{' '};
-  std::string type_name{};
-  Coordinates dimensions{0, 0};
-  double gravity{0.0};
-  ConditionValues conditions{};
-  temperature_t temp{0};
-  temperature_t normal_temp{0};
-  Percentage toxicity{0};
-  double compatibility{0.0};
-  Percentage avg_fertility{0};
-  resource_t avg_resource{0};
-  resource_t total_resources{0};
-  std::optional<sector_count_t> crystal_sectors{std::nullopt};
-  std::optional<player_t> slaved_to{std::nullopt};
-  bool aliens_unknown{false};
-  std::vector<PlanetAlienView> aliens{};
-
-  [[nodiscard]] bool
-  operator==(const PlanetEnvironmentView&) const noexcept = default;
-};
-
-/// Single shipping route on a colonized planet.
-struct ColonyRouteView {
-  int route_number{0};
-  bool active{false};
-  std::optional<starnum_t> dest_star{std::nullopt};
-  std::optional<planetnum_t> dest_planet{std::nullopt};
-  std::string dest_star_name{};
-  std::string dest_planet_name{};
-  Coordinates dest_coords{0, 0};
-  CommodityManifest load{};
-  CommodityManifest unload{};
-
-  [[nodiscard]] bool
-  operator==(const ColonyRouteView&) const noexcept = default;
-};
-
-/// Colony-specific details visible to the planet owner/governor or deity.
-struct ColonyView {
-  governor_t governor{1};
-  bool autoreport{false};
-  sector_count_t sectors_owned{0};
-  population_t popn{0};
-  population_t troops{0};
-  population_t total_popn{0};
-  population_t total_troops{0};
-  population_t maxpopn{0};
-  gun_count_t guns{0};
-  Stockpile stockpile{};
-  Stockpile last_production{};
-  money_t prod_money{0};
-  double prod_tech{0.0};
-  double est_production{0.0};
-  money_t tech_invest{0};
-  Percentage tax{0};
-  Percentage target_tax{0};
-  Percentage mobilization{0};
-  Percentage target_mobilization{0};
-  std::uint32_t mob_points{0};
-  std::optional<Percentage> tox_thresh{std::nullopt};
-  std::vector<ColonyRouteView> routes{};
-
-  [[nodiscard]] bool operator==(const ColonyView&) const noexcept = default;
-};
-
-/// Canonical view model for a planet.
-struct PlanetView {
-  starnum_t snum{0};
-  planetnum_t pnum{0};
-  std::string star_name{};
-  std::string name{};
-  SystemCoordinates system_coords{0.0, 0.0};
-  bool explored{false};
-  std::optional<PlanetEnvironmentView> environment{std::nullopt};
-  std::optional<ColonyView> colony{std::nullopt};
-
-  [[nodiscard]] bool operator==(const PlanetView&) const noexcept = default;
-};
 
 /// View model for querying current planetary mobilization (`mobilize`).
 struct MobilizeStatusViewModel {
@@ -684,71 +689,5 @@ render_mobilize_status(const MobilizeStatusViewModel& vm);
 [[nodiscard]] std::string render_route_list(const RouteListViewModel& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const RouteListViewModel& vm);
-
-/// Landed ship on a sector.
-struct SectorLandedShipView {
-  shipnum_t id{0};
-  char type_letter{' '};
-  player_t owner{0};
-
-  [[nodiscard]] bool
-  operator==(const SectorLandedShipView&) const noexcept = default;
-};
-
-/// Detailed survey data of a sector.
-struct SectorSurveyDetailsView {
-  SectorType geological_type{SectorType::SEC_LAND};
-  Percentage eff{0};
-  Percentage fert{0};
-  std::optional<Percentage> mobilization{std::nullopt};
-  resource_t resource{0};
-  bool crystals{false};
-  population_t popn{0};
-  population_t troops{0};
-  population_t maxpopn{0};
-
-  [[nodiscard]] bool
-  operator==(const SectorSurveyDetailsView&) const noexcept = default;
-};
-
-/// Canonical view model for a single sector.
-struct SectorView {
-  Coordinates coords{0, 0};
-  SectorType condition{SectorType::SEC_LAND};
-  std::optional<player_t> owner{std::nullopt};
-  std::vector<SectorLandedShipView> ships{};
-  std::optional<SectorSurveyDetailsView> details{std::nullopt};
-
-  [[nodiscard]] bool operator==(const SectorView&) const noexcept = default;
-};
-
-/// Canonical view model for a grid of sectors on a planet.
-struct SectorGridView {
-  starnum_t snum{0};
-  planetnum_t pnum{0};
-  Coordinates dimensions{0, 0};
-  bool partial{false};
-  std::vector<SectorView> sectors{};
-
-  [[nodiscard]] bool operator==(const SectorGridView&) const noexcept = default;
-};
-
-[[nodiscard]] StarView project_star_view(EntityManager& em,
-                                         const ScopeContext& viewer,
-                                         starnum_t snum);
-
-[[nodiscard]] PlanetView project_planet_view(EntityManager& em,
-                                             const ScopeContext& viewer,
-                                             starnum_t snum, planetnum_t pnum);
-
-[[nodiscard]] std::optional<SectorGridView> project_sector_grid_view(
-    EntityManager& em, const ScopeContext& viewer, starnum_t snum,
-    planetnum_t pnum,
-    const std::flat_set<Coordinates>* coords_filter = nullptr);
-
-[[nodiscard]] std::string render_json_star_view(const StarView& vm);
-[[nodiscard]] std::string render_json_planet_view(const PlanetView& vm);
-[[nodiscard]] std::string
-render_json_sector_grid_view(const SectorGridView& vm);
 
 }  // namespace GB::presentation

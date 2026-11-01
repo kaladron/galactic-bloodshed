@@ -76,9 +76,13 @@ bool explore(const command_t& argv, GameObj& g) {
         row.compatibility = pl.compatibility(*g.race);
       }
       star_entry.planets.push_back(std::move(row));
+      vm.planet_views.push_back(GB::presentation::project_planet_view(
+          g.entity_manager, g.scope_context(), star_ref.star_id(), pnum));
     }
 
     vm.stars.push_back(std::move(star_entry));
+    vm.star_views.push_back(GB::presentation::project_star_view(
+        g.entity_manager, g.scope_context(), star_ref.star_id()));
   }
 
   g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);

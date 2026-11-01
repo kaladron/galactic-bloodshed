@@ -26,9 +26,10 @@ bool technology(const command_t& argv, GameObj& g) {
     const auto& planet = *g.entity_manager.peek_planet(g.snum(), g.pnum());
     const auto& info = planet.info(player);
     g.present(GB::presentation::TechnologyViewModel{
-        .updated = false,
         .investment = info.tech_invest,
         .tech_production = tech_prod(info.tech_invest, info.popn),
+        .planet = GB::presentation::project_planet_view(
+            g.entity_manager, g.scope_context(), g.snum(), g.pnum()),
     });
     return true;
   }
@@ -46,11 +47,8 @@ bool technology(const command_t& argv, GameObj& g) {
     info.tech_invest = invest;
     new_prod = tech_prod(info.tech_invest, info.popn);
   });
-  g.present(GB::presentation::TechnologyViewModel{
-      .updated = true,
-      .investment = invest,
-      .tech_production = new_prod,
-  });
+  g.present(GB::presentation::make_output_message(std::format(
+      "   New (ideal) tech production: {:.3f} (this planet)\n", new_prod)));
   return true;
 }
 

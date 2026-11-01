@@ -6,6 +6,7 @@
 export module gb.presentation.empire_views;
 
 export import gb.presentation.core;
+import gb.presentation.planet_views;
 
 import gb.entities;
 import gb.services;
@@ -281,14 +282,11 @@ struct ColonyRow {
 struct ColoniesViewModel {
   std::vector<std::string> errors{};
   std::vector<ColonyRow> rows{};
+  std::vector<PlanetView> planets{};
 };
 
 /// Renders a `ColoniesViewModel` for `UiMode::ASCII`.
 [[nodiscard]] std::string render_colonies(const ColoniesViewModel& vm);
-
-/// Serializes a `ColoniesViewModel` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"colonies","data":{...}}\n`).
-[[nodiscard]] std::string render_json_colonies(const ColoniesViewModel& vm);
 
 /// Dispatches `ColoniesViewModel` rendering based on `mode`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
@@ -344,7 +342,8 @@ struct TechStatusRow {
 struct TechStatusViewModel {
   std::vector<std::string> errors{};
   std::vector<TechStatusRow> rows{};
-  std::optional<population_t> total_popn{std::nullopt};
+  std::vector<PlanetView> planets{};
+  population_t total_popn{0};
   money_t total_invest{0};
   double total_gain{0.0};
   double total_max_gain{0.0};
@@ -352,11 +351,6 @@ struct TechStatusViewModel {
 
 /// Renders a `TechStatusViewModel` for `UiMode::ASCII`.
 [[nodiscard]] std::string render_tech_status(const TechStatusViewModel& vm);
-
-/// Serializes a `TechStatusViewModel` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"tech_status","data":{...}}\n`).
-[[nodiscard]] std::string
-render_json_tech_status(const TechStatusViewModel& vm);
 
 /// Dispatches `TechStatusViewModel` rendering based on `mode`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,

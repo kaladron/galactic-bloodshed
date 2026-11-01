@@ -52,8 +52,16 @@ void test_technology_happy_paths() {
   ctx.assert_dispatch_success(g, {"technology", "3000000000"}, 1);
   test::expect_eq(ctx.em.peek_planet(1, 1)->info(1).tech_invest,
                   3'000'000'000LL);
-  test::expect_contains(g.out.str(), "\"type\":\"technology\"");
-  test::expect_contains(g.out.str(), "\"investment\":3000000000");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), "New (ideal) tech production:");
+  test::expect_contains(g.out.str(), R"("type":"planet")");
+  test::expect_contains(g.out.str(), R"("tech_invest":3000000000)");
+
+  // 4. Query technology investment in JSON mode
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"technology"}, 1);
+  test::expect_contains(g.out.str(), R"("type":"planet")");
+  test::expect_contains(g.out.str(), R"("tech_invest":3000000000)");
 }
 
 // Test technology command with insufficient AP

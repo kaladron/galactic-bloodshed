@@ -383,12 +383,15 @@ std::string render_colonies(const ColoniesViewModel& vm) {
   return out;
 }
 
-std::string render_json_colonies(const ColoniesViewModel& vm) {
-  return render_json_envelope("colonies", vm);
-}
-
 std::string render_for_mode(UiMode mode, const ColoniesViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_colonies(vm) : render_colonies(vm);
+  if (mode == UiMode::JSON) {
+    std::string out;
+    for (const auto& p : vm.planets) {
+      out += render_json_planet_view(p);
+    }
+    return out;
+  }
+  return render_colonies(vm);
 }
 
 std::string render_power(const PowerViewModel& vm) {
@@ -465,24 +468,22 @@ std::string render_tech_status(const TechStatusViewModel& vm) {
 
   std::format_to(std::back_inserter(out), "{}\n", table.str());
 
-  if (!vm.total_popn) {
-    out += "       Total Popn:  unknown\n";
-  } else {
-    std::format_to(std::back_inserter(out), "       Total Popn:  {:7}\n",
-                   *vm.total_popn);
-  }
+  std::format_to(std::back_inserter(out), "       Total Popn:  {:7}\n",
+                 vm.total_popn);
   std::format_to(std::back_inserter(out), "Tech: {:31}{:8.3f}{:8.3f}\n",
                  vm.total_invest, vm.total_gain, vm.total_max_gain);
   return out;
 }
 
-std::string render_json_tech_status(const TechStatusViewModel& vm) {
-  return render_json_envelope("tech_status", vm);
-}
-
 std::string render_for_mode(UiMode mode, const TechStatusViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_tech_status(vm)
-                              : render_tech_status(vm);
+  if (mode == UiMode::JSON) {
+    std::string out;
+    for (const auto& p : vm.planets) {
+      out += render_json_planet_view(p);
+    }
+    return out;
+  }
+  return render_tech_status(vm);
 }
 
 std::string render_examine(const ExamineViewModel& vm) {

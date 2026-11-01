@@ -67,6 +67,7 @@ void test_status_dispatch() {
 
   // 3. Unexplored star, invalid/universe/ship locations, missing power, & JSON
   ctx.em.mutate_star(3, [](Star& s) { s.clear_explored_by(player_t{1}); });
+  ctx.assert_dispatch_success(g, {"status"});
   ctx.assert_dispatch_success(g,
                               {"status", "/Antares", "/NoSuchStar", "/", "#1"});
   test::expect_contains(g.out.str(), "Bad location `/NoSuchStar`.");
@@ -75,17 +76,10 @@ void test_status_dispatch() {
 
   g.set_ui_mode(UiMode::JSON);
   ctx.assert_dispatch_success(g, {"status", "/Sol"});
-  test::expect_contains(g.out.str(), "\"type\":\"tech_status\"");
+  test::expect_contains(g.out.str(), R"("type":"planet")");
+  test::expect_contains(g.out.str(), R"("name":"Earth")");
 
   ctx.verify_universe_invariants();
-
-  JsonStore store(ctx.db);
-  PowerRepository(store).remove(2);
-  ctx.em.clear_cache();
-  g.set_ui_mode(UiMode::ASCII);
-  ctx.setup_game_obj(g, 2, 1);
-  ctx.assert_dispatch_success(g, {"status"});
-  test::expect_contains(g.out.str(), "Total Popn:  unknown");
 }
 
 }  // namespace

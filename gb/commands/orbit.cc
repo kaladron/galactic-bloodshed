@@ -204,6 +204,7 @@ bool orbit(const command_t& argv, GameObj& g) {
   const Place& where = *resolved;
   const OrbitViewport vp = compute_viewport(g, opts->path_arg.has_value());
   const Race& race = *g.race;
+  GB::presentation::SightContext sight_ctx;
 
   GB::presentation::OrbitViewModel vm{
       .inverse = race.governor(g.governor()).toggle.inverse,
@@ -215,6 +216,8 @@ bool orbit(const command_t& argv, GameObj& g) {
         if (opts->suppress_id != star_ref.star_id()) {
           vm.stars.push_back(
               build_star_entry(g, ScopeLevel::LEVEL_UNIV, star_ref, vp, *opts));
+          vm.star_views.push_back(GB::presentation::project_star_view(
+              g.entity_manager, g.scope_context(), star_ref.star_id()));
         }
       }
       if (opts->show_ships) {
@@ -224,6 +227,8 @@ bool orbit(const command_t& argv, GameObj& g) {
             if (auto entry =
                     build_ship_entry(g, g.entity_manager, where, s, race, vp)) {
               vm.ships.push_back(*entry);
+              vm.ship_views.push_back(*GB::presentation::project_ship_view(
+                  g.entity_manager, g.scope_context(), s, &sight_ctx));
             }
           }
         }
@@ -234,6 +239,8 @@ bool orbit(const command_t& argv, GameObj& g) {
       const auto& star = *g.entity_manager.peek_star(where.snum);
       vm.stars.push_back(
           build_star_entry(g, ScopeLevel::LEVEL_STAR, star, vp, *opts));
+      vm.star_views.push_back(GB::presentation::project_star_view(
+          g.entity_manager, g.scope_context(), where.snum));
 
       for (const auto& p : PlanetList::readonly(g.entity_manager, where.snum,
                                                 star.numplanets())) {
@@ -241,6 +248,9 @@ bool orbit(const command_t& argv, GameObj& g) {
           vm.planets.push_back(build_planet_entry(
               g, ScopeLevel::LEVEL_STAR, p,
               star.get_planet_name(p.planet_order()), race, vp, *opts));
+          vm.planet_views.push_back(GB::presentation::project_planet_view(
+              g.entity_manager, g.scope_context(), where.snum,
+              p.planet_order()));
         }
       }
       const bool iq =
@@ -254,6 +264,8 @@ bool orbit(const command_t& argv, GameObj& g) {
             if (auto entry =
                     build_ship_entry(g, g.entity_manager, where, s, race, vp)) {
               vm.ships.push_back(*entry);
+              vm.ship_views.push_back(*GB::presentation::project_ship_view(
+                  g.entity_manager, g.scope_context(), s, &sight_ctx));
             }
           }
         }
@@ -266,6 +278,8 @@ bool orbit(const command_t& argv, GameObj& g) {
       vm.planets.push_back(build_planet_entry(
           g, ScopeLevel::LEVEL_PLAN, p, plan_star.get_planet_name(where.pnum),
           race, vp, *opts));
+      vm.planet_views.push_back(GB::presentation::project_planet_view(
+          g.entity_manager, g.scope_context(), where.snum, where.pnum));
 
       const bool iq = has_planet_sight(g.entity_manager, where.snum, where.pnum,
                                        g.player());
@@ -277,6 +291,8 @@ bool orbit(const command_t& argv, GameObj& g) {
             if (auto entry = build_ship_entry(g, g.entity_manager, where, s,
                                               race, vp, &p)) {
               vm.ships.push_back(*entry);
+              vm.ship_views.push_back(*GB::presentation::project_ship_view(
+                  g.entity_manager, g.scope_context(), s, &sight_ctx));
             }
           }
         }

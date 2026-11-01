@@ -48,6 +48,8 @@ void tech_report_star(TechStatusViewModel& vm, GameObj& g, const Star& star,
         .gain = gain,
         .max_gain = max_gain,
     });
+    vm.planets.push_back(GB::presentation::project_planet_view(
+        g.entity_manager, g.scope_context(), snum, pl.planet_order()));
 
     vm.total_invest += pl.info(Playernum).tech_invest;
     vm.total_gain += gain;
@@ -77,21 +79,12 @@ bool tech_status(const command_t& argv, GameObj& g) {
         continue;
       } /* ok, a proper location */
       starnum_t star = where->snum;
-      try {
-        const auto& star_ref = *g.entity_manager.peek_star(star);
-        tech_report_star(vm, g, star_ref, star);
-      } catch (const EntityNotFoundError&) {
-        continue;
-      }
+      const auto& star_ref = *g.entity_manager.peek_star(star);
+      tech_report_star(vm, g, star_ref, star);
     }
   }
 
-  try {
-    if (const auto* power_ptr = g.entity_manager.peek_power(Playernum)) {
-      vm.total_popn = power_ptr->popn();
-    }
-  } catch (const EntityNotFoundError&) {
-  }
+  vm.total_popn = g.entity_manager.peek_power(Playernum)->popn();
 
   g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
   return true;

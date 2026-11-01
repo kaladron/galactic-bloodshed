@@ -155,10 +155,12 @@ void test_orbit_happy_path() {
     g.out.str("");
     ctx.assert_dispatch_success(g, {"orbit"});
     std::string json_out = g.out.str();
-    test::expect_contains(json_out, "\"type\":\"orbit\"");
-    test::expect_contains(json_out, "\"label\":\"TestStar\"");
-    test::expect_contains(json_out, "\"label\":\"TestPlanet\"");
-    test::expect_contains(json_out, "\"shipno\":1");
+    test::expect_contains(json_out, R"("type":"star")");
+    test::expect_contains(json_out, R"("name":"TestStar")");
+    test::expect_contains(json_out, R"("type":"planet")");
+    test::expect_contains(json_out, R"("name":"TestPlanet")");
+    test::expect_contains(json_out, R"("type":"ship")");
+    test::expect_contains(json_out, R"("id":1)");
     g.set_ui_mode(UiMode::ASCII);
     std::println(std::cout,
                  "    ✓ Orbit inverse standout and JSON output verified");
@@ -281,6 +283,7 @@ void test_orbit_visibility_and_filtering() {
   // and out-of-bounds ships. Unexplored planet 2 renders '?' symbol.
   ctx.em.mutate_ship(1, [](Ship& s) { s.popn() = 1; });
   ctx.em.mutate_ship(3, [](Ship& s) { s.popn() = 1; });
+  ctx.em.mutate_race(1, [](Race& r) { r.governor(1).toggle.compat = true; });
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
   g.out.str("");
@@ -351,6 +354,10 @@ void test_orbit_visibility_and_filtering() {
   g.out.str("");
   ctx.assert_dispatch_success(g, {"orbit", "-1", "-s"});
   test::expect_false(g.out.str().contains("TestStar"));
+  test::expect_false(g.out.str().contains("C #2"));
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"orbit", "-2"});
   test::expect_false(g.out.str().contains("C #2"));
 
   std::println(std::cout,

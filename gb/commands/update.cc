@@ -22,7 +22,8 @@ bool update(const command_t& argv, GameObj& g) {
   }
   g.session_registry.flush_all();
   do_update(g.entity_manager, g.session_registry, true);
-  g.present(GB::presentation::UpdateResult{});
+  g.present(GB::presentation::make_output_message(
+      "Starting update...\nUpdate completed.\n"));
   return true;
 }
 

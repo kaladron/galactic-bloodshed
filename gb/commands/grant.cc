@@ -89,14 +89,14 @@ bool grant(const command_t& argv, GameObj& g) {
       else if (-amount > recipient.money)
         amount = -recipient.money;
       if (amount >= 0) {
-        g.out << std::format("{} money granted to \"{}\".\n", amount,
-                             recipient.name);
+        g.present(GB::presentation::make_output_message(std::format(
+            "{} money granted to \"{}\".\n", amount, recipient.name)));
         warn_player(
             g.session_registry, g.entity_manager, Playernum, gov,
             std::format("\"{}\" granted you {} money.\n", donor.name, amount));
       } else {
-        g.out << std::format("{} money deducted from \"{}\".\n", -amount,
-                             recipient.name);
+        g.present(GB::presentation::make_output_message(std::format(
+            "{} money deducted from \"{}\".\n", -amount, recipient.name)));
         warn_player(
             g.session_registry, g.entity_manager, Playernum, gov,
             std::format("\"{}\" docked you {} money.\n", donor.name, -amount));

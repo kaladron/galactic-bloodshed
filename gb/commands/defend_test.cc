@@ -139,7 +139,8 @@ void test_defend_retaliation_and_escort() {
   g.out.str("");
   ctx.assert_dispatch_success(
       g, {"defend", std::format("#{}", target_id.value), "5,5", "10"});
-  test::expect_contains(g.out.str(), R"("type":"defend")");
+  test::expect_contains(g.out.str(), R"("type":"combat_event")");
+  test::expect_contains(g.out.str(), R"("kind":"defend")");
   test::expect_contains(g.out.str(), R"("planet_shot":)");
   g.set_ui_mode(UiMode::ASCII);
 

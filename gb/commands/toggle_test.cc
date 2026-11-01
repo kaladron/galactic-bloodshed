@@ -105,10 +105,10 @@ void test_toggle_database_persistence() {
 
     g.set_ui_mode(UiMode::JSON);
     ctx.assert_dispatch_success(g, {"toggle"});
-    test::expect_contains(g.out.str(), "\"type\":\"toggle_status\"");
+    test::expect_contains(g.out.str(), R"("type":"session")");
     ctx.assert_dispatch_success(g, {"toggle", "gag"});
-    test::expect_contains(g.out.str(), "\"type\":\"toggle\"");
-    test::expect_contains(g.out.str(), "\"enabled\":true");
+    test::expect_contains(g.out.str(), R"("type":"message")");
+    test::expect_contains(g.out.str(), "gag is now on\\n");
   }
 
   ctx.verify_universe_invariants();

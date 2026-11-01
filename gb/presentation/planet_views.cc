@@ -866,15 +866,6 @@ std::string render_recovery_report(const RecoveryReportViewModel& vm) {
                      vm.planet_name, table.str());
 }
 
-std::string render_json_recovery_report(const RecoveryReportViewModel& vm) {
-  return render_json_envelope("recovery_report", vm);
-}
-
-std::string render_for_mode(UiMode mode, const RecoveryReportViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_recovery_report(vm)
-                              : render_recovery_report(vm);
-}
-
 std::string
 render_planet_turn_autoreport(const PlanetTurnAutoreportViewModel& vm) {
   std::string out;

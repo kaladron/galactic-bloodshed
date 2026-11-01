@@ -36,6 +36,21 @@ GB::presentation::WhoisEntry build_whois_entry(GameObj& g, player_t target) {
     };
   }
 }
+
+void add_whois_entry(GB::presentation::WhoisViewModel& vm, GameObj& g,
+                     GB::presentation::WhoisEntry entry) {
+  if (entry.error.has_value()) {
+    vm.errors.push_back(GB::presentation::ErrorView{
+        .code = "domain_error",
+        .command = "whois",
+        .message = *entry.error,
+    });
+  } else {
+    vm.races.push_back(GB::presentation::project_race_view(
+        g.entity_manager, g.scope_context(), entry.player));
+  }
+  vm.entries.push_back(std::move(entry));
+}
 }  // namespace
 
 namespace GB::commands {
@@ -43,8 +58,8 @@ namespace GB::commands {
 bool whois(const command_t& argv, GameObj& g) {
   GB::presentation::WhoisViewModel vm{};
   if (argv.size() <= 1) {
-    vm.entries.push_back(build_whois_entry(g, g.player()));
-    g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
+    add_whois_entry(vm, g, build_whois_entry(g, g.player()));
+    g.present(vm);
     return true;
   }
 
@@ -52,15 +67,17 @@ bool whois(const command_t& argv, GameObj& g) {
        std::ranges::subrange(argv.begin() + 1, argv.end())) {
     const player_t target = get_player(g.entity_manager, player_str);
     if (target == player_t{0}) {
-      vm.entries.push_back(GB::presentation::WhoisEntry{
-          .error = std::format("Identify: Invalid player {}. Try again.",
-                               player_str),
-      });
+      add_whois_entry(
+          vm, g,
+          GB::presentation::WhoisEntry{
+              .error = std::format("Identify: Invalid player {}. Try again.",
+                                   player_str),
+          });
       continue;
     }
-    vm.entries.push_back(build_whois_entry(g, target));
+    add_whois_entry(vm, g, build_whois_entry(g, target));
   }
-  g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
+  g.present(vm);
   return true;
 }
 

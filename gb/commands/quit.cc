@@ -19,7 +19,7 @@ bool quit(const command_t& argv, GameObj& g) {
     g.out << "Syntax: quit\n";
     return false;
   }
-  g.present(GB::presentation::QuitResult{});
+  g.present(GB::presentation::make_output_message("Goodbye!\n"));
   g.set_disconnect_requested(true);
   return true;
 }

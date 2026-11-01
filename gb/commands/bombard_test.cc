@@ -72,7 +72,8 @@ void test_bombard_happy_paths() {
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"bombard", "#1", "5,5", "10"}, 1);
-  test::expect_contains(g.out.str(), R"("type":"bombard")");
+  test::expect_contains(g.out.str(), R"("type":"combat_event")");
+  test::expect_contains(g.out.str(), R"("kind":"bombard")");
   test::expect_contains(g.out.str(), R"("sectors_destroyed":)");
 
   ctx.verify_universe_invariants();

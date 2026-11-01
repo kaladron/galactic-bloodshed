@@ -56,7 +56,7 @@ bool who(const command_t&, GameObj& g) {
     });
   }
 
-  g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
+  g.present(vm);
   return true;
 }
 

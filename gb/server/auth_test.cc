@@ -202,15 +202,14 @@ void test_check_connect_json_mode() {
   session->send("Broadcast alert\n");
 
   std::string_view output = session->pending_output();
-  test::expect_contains(output, "\"type\":\"login\"");
-  test::expect_contains(output, "\"race_name\":\"JsonRace\"");
-  test::expect_contains(output, "\"gov_name\":\"JsonGov\"");
-  test::expect_contains(output, "\"morale\":85");
-  test::expect_contains(output, "\"type\":\"time\"");
+  test::expect_contains(output, R"("type":"session")");
+  test::expect_contains(output, R"("race_name":"JsonRace")");
+  test::expect_contains(output, R"("governor_name":"JsonGov")");
   test::expect_contains(output, R"("type":"race")");
-  test::expect_contains(output, "\"money\":10000");
-  test::expect_contains(
-      output, "{\"type\":\"text\",\"data\":{\"message\":\"Broadcast alert\"}}");
+  test::expect_contains(output, R"("morale":85)");
+  test::expect_contains(output, R"("money":10000)");
+  test::expect_contains(output, R"("type":"message")");
+  test::expect_contains(output, R"("message":"Broadcast alert")");
 
   ctx.verify_universe_invariants();
 }

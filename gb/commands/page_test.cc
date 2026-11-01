@@ -102,12 +102,14 @@ void test_page_dispatch() {
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"page", "2"}, 0);
-  test::expect_contains(g.out.str(), "\"type\":\"page\"");
-  test::expect_contains(g.out.str(), "\"target\":0");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), "Request sent.\\n");
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"page", "block"}, 0);
-  test::expect_contains(g.out.str(), "\"target\":1");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(),
+                        "Paging alliance block.\\nRequest sent.\\n");
 
   ctx.verify_universe_invariants();
 }

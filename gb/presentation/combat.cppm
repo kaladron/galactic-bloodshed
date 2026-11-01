@@ -7,6 +7,7 @@
 export module gb.presentation.combat;
 
 export import gb.presentation.core;
+export import gb.presentation.planet_views;
 
 import gb.entities;
 import gb.services;
@@ -195,13 +196,12 @@ struct TacticalReportEntry {
 /// View model for the `tactical` command.
 struct TacticalViewModel {
   std::vector<TacticalReportEntry> entries{};
+  std::vector<ShipView> ships{};
+  std::vector<PlanetView> planets{};
 };
 
 /// Formats a `TacticalViewModel` into its ASCII tabular presentation string.
 [[nodiscard]] std::string render_tactical(const TacticalViewModel& vm);
-
-/// Formats a `TacticalViewModel` into its JSON envelope string.
-[[nodiscard]] std::string render_json_tactical(const TacticalViewModel& vm);
 
 /// Open ADL dispatch for `TacticalViewModel`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
@@ -257,10 +257,6 @@ render_sector_ground_assault_telegram(const SectorGroundAssaultResult& res);
 [[nodiscard]] std::string
 render_bombard_ship_result(const BombardShipResult& res);
 
-/// Formats a `BombardShipResult` into its JSON envelope string.
-[[nodiscard]] std::string
-render_json_bombard_ship_result(const BombardShipResult& res);
-
 /// Open ADL dispatch for `BombardShipResult`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const BombardShipResult& vm);
@@ -271,10 +267,6 @@ render_json_bombard_ship_result(const BombardShipResult& res);
 /// Formats a `DefendPlanetResult` into its user-facing ASCII report.
 [[nodiscard]] std::string
 render_defend_planet_result(const DefendPlanetResult& res);
-
-/// Formats a `DefendPlanetResult` into its JSON envelope string.
-[[nodiscard]] std::string
-render_json_defend_planet_result(const DefendPlanetResult& res);
 
 /// Open ADL dispatch for `DefendPlanetResult`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
@@ -306,10 +298,6 @@ render_capture_defender_telegram(const LandedBoardingResult& res);
 /// Formats a `LandedBoardingResult` into its user-facing ASCII report.
 [[nodiscard]] std::string
 render_capture_result(const LandedBoardingResult& res);
-
-/// Formats a `LandedBoardingResult` into its JSON envelope string.
-[[nodiscard]] std::string
-render_json_capture_result(const LandedBoardingResult& res);
 
 /// Open ADL dispatch for `LandedBoardingResult`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,

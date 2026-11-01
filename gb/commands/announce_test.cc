@@ -95,9 +95,8 @@ void test_announce_dispatch() {
   ctx.assert_dispatch_success(g, {"!", "Deity", "Announcement"});
   test::expect_contains(registry.notifications.back().message,
                         "! Deity Announcement\n");
-  test::expect_contains(g.out.str(), "\"type\":\"announce\"");
-  test::expect_contains(g.out.str(), "\"mode\":2");
-  test::expect_contains(g.out.str(), "\"message\":\"Deity Announcement\"");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"("message":"Deity Announcement")");
 
   ctx.verify_universe_invariants();
 }

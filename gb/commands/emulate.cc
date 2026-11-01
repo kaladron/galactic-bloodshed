@@ -52,12 +52,12 @@ bool emulate(const command_t& argv, GameObj& g) {
   g.set_god(false);  // When emulating, act as normal player
   g.race = race;
 
-  g.present(GB::presentation::EmulateResult{
-      .player = new_player,
-      .governor = new_gov,
-      .race_name = race->name,
-      .governor_name = race->governor(new_gov).name,
-  });
+  g.present(GB::presentation::make_output_message(
+      std::format("Emulating {} \"{}\" [{},{}]\n", race->name,
+                  race->governor(new_gov).name, new_player, new_gov)));
+  if (g.ui_mode() == GB::presentation::UiMode::JSON) {
+    g.present(GB::presentation::build_session_view(g));
+  }
   return true;
 }
 

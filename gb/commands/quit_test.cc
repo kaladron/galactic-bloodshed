@@ -37,7 +37,8 @@ void test_quit_command() {
   g.set_disconnect_requested(false);
   g.set_ui_mode(UiMode::JSON);
   ctx.assert_dispatch_success(g, {"quit"});
-  test::expect_contains(g.out.str(), "\"type\":\"quit\"");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"("message":"Goodbye!\n")");
   test::expect_true(g.disconnect_requested());
 }
 

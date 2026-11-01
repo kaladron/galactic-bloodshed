@@ -57,6 +57,21 @@ SessionView build_session_view(const GameObj& g) {
     view.toggles = gov.toggle;
   }
 
+  if (const auto* state = g.entity_manager.peek_server_state();
+      state != nullptr) {
+    view.clock = SessionClockView{
+        .server_time = std::time(nullptr),
+        .update_interval_minutes = state->update_time_minutes,
+        .segments_per_update = state->segments,
+        .current_segment = state->nsegments_done == state->segments
+                               ? 1
+                               : state->nsegments_done + 1,
+        .next_segment_time = state->next_segment_time,
+        .next_update_number = state->nupdates_done + 1,
+        .next_update_time = state->next_update_time,
+    };
+  }
+
   return view;
 }
 

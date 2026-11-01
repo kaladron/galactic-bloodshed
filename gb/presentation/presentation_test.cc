@@ -126,7 +126,10 @@ void test_render_json_envelope_and_polymorphic_presenter() {
       "Battleship\n");
   test::expect_contains(
       GB::presentation::render_for_mode(UiMode::JSON, exploded),
-      "\"type\":\"reactor_overload\"");
+      R"("type":"combat_event")");
+  test::expect_contains(
+      GB::presentation::render_for_mode(UiMode::JSON, exploded),
+      R"("kind":"reactor_overload")");
 
   const ReactorOverloadEvent damaged_crystal{
       .outcome = ReactorOverloadOutcome::CrystalDamaged,
@@ -206,7 +209,10 @@ void test_render_json_envelope_and_polymorphic_presenter() {
                         "1 primary/1 secondary guns destroyed");
   test::expect_contains(
       GB::presentation::render_for_mode(UiMode::JSON, ship_shot),
-      "\"type\":\"ship_shot\"");
+      R"("type":"combat_event")");
+  test::expect_contains(
+      GB::presentation::render_for_mode(UiMode::JSON, ship_shot),
+      R"("kind":"ship_shot")");
 
   const ShipShotResult planet_rad_shot{
       .attacker_kind = ShipShotAttackerKind::Planet,
@@ -243,7 +249,10 @@ void test_render_json_envelope_and_polymorphic_presenter() {
       "B1 Battleship bombards /Sol/Terra [2]\n\t2 sectors destroyed\n");
   test::expect_contains(
       GB::presentation::render_for_mode(UiMode::JSON, bombard_res),
-      "\"type\":\"bombard_result\"");
+      R"("type":"combat_event")");
+  test::expect_contains(
+      GB::presentation::render_for_mode(UiMode::JSON, bombard_res),
+      R"("kind":"bombard_result")");
 
   const MineDetonationReport mine_report{
       .ship_display = "M1 Mine",
@@ -259,7 +268,63 @@ void test_render_json_envelope_and_polymorphic_presenter() {
       "2 sectors destroyed.");
   test::expect_contains(
       GB::presentation::render_for_mode(UiMode::JSON, mine_report),
-      "\"type\":\"mine_detonation\"");
+      R"("type":"combat_event")");
+  test::expect_contains(
+      GB::presentation::render_for_mode(UiMode::JSON, mine_report),
+      R"("kind":"mine_detonation")");
+
+  const MechAttackPeopleResult mech_attack{
+      .location_display = "/Sol/Terra",
+      .ship_display = "M1 Mech",
+      .defender_race_name = "Humans",
+      .defender_player = 1,
+      .sector_coords = Coordinates{1, 2},
+      .sector_condition = "plowed",
+      .guns_fired = 2,
+      .initial_civ = 100,
+      .initial_mil = 50,
+      .surviving_civ = 80,
+      .surviving_mil = 40,
+      .civ_killed = 20,
+      .mil_killed = 10,
+      .attack_strength = 15.0,
+      .defense_strength = 10.0,
+  };
+  test::expect_contains(
+      GB::presentation::render_for_mode(UiMode::ASCII, mech_attack),
+      "M1 Mech attacked Humans [1]");
+  test::expect_contains(
+      GB::presentation::render_for_mode(UiMode::JSON, mech_attack),
+      R"("type":"combat_event")");
+  test::expect_contains(
+      GB::presentation::render_for_mode(UiMode::JSON, mech_attack),
+      R"("kind":"mech_attack_people")");
+
+  const PeopleAttackMechResult people_attack{
+      .location_display = "/Sol/Terra",
+      .attacker_race_name = "Humans",
+      .attacker_player = 1,
+      .mech_alive = true,
+      .ship_display = "M1 Mech",
+      .ship_type_name = "AFV",
+      .target_coords = Coordinates{1, 2},
+      .sector_condition = "plowed",
+      .attacker_civ = 100,
+      .attacker_mil = 50,
+      .attack_strength = 12.0,
+      .defense_strength = 8.0,
+      .damage_inflicted = 5,
+      .total_damage = 25,
+  };
+  test::expect_contains(
+      GB::presentation::render_for_mode(UiMode::ASCII, people_attack),
+      "Humans [1] attacked M1 Mech");
+  test::expect_contains(
+      GB::presentation::render_for_mode(UiMode::JSON, people_attack),
+      R"("type":"combat_event")");
+  test::expect_contains(
+      GB::presentation::render_for_mode(UiMode::JSON, people_attack),
+      R"("kind":"people_attack_mech")");
 }
 
 void test_gameobj_ui_mode_and_present() {
@@ -408,15 +473,10 @@ void test_planet_turn_bulletins() {
                        .fuel = 10,
                        .crystals = 3},
   };
-  const std::string recovery_ascii =
-      pres::render_for_mode(UiMode::ASCII, recovery_vm);
+  const std::string recovery_ascii = pres::render_recovery_report(recovery_vm);
   test::expect_contains(recovery_ascii, "Recovery Report: Planet /Sol/Earth\n");
   test::expect_contains(recovery_ascii, "Humanoid");
   test::expect_contains(recovery_ascii, "Total:");
-  const std::string recovery_json =
-      pres::render_for_mode(UiMode::JSON, recovery_vm);
-  test::expect_contains(recovery_json, "\"type\":\"recovery_report\"");
-  test::expect_contains(recovery_json, "\"race_name\":\"Humanoid\"");
 
   test::expect_eq(
       pres::render_planet_turn_autoreport(
@@ -1529,6 +1589,43 @@ void test_canonical_race_block_market_combat_views() {
                         R"("summary":"B9 Nemesis bombarded /Sol/Earth\n")");
   test::expect_contains(combat_json, R"("ship_display":"B9 Nemesis")");
   test::expect_contains(combat_json, R"("sectors_destroyed":3)");
+
+  // 6. WhoisViewModel and NewsBundleResult branches
+  const GB::presentation::WhoisViewModel whois_with_errors{
+      .entries = {GB::presentation::WhoisEntry{.player = 1,
+                                               .race_name = "Humans"}},
+      .races = {GB::presentation::RaceView{.player = 1, .name = "Humans"}},
+      .errors = {GB::presentation::ErrorView{.code = "not_found",
+                                             .message = "Unknown race"}},
+  };
+  test::expect_contains(
+      GB::presentation::render_for_mode(UiMode::JSON, whois_with_errors),
+      R"("type":"race")");
+  test::expect_contains(
+      GB::presentation::render_for_mode(UiMode::JSON, whois_with_errors),
+      R"("type":"error")");
+  test::expect_contains(
+      GB::presentation::render_for_mode(UiMode::ASCII, whois_with_errors),
+      "Humans");
+
+  const GB::presentation::NewsBundleResult news_bundle_full{
+      .combat = {GB::presentation::TimestampedMessage{
+          .id = 1, .timestamp = 100, .message = "Combat news"}},
+      .business = {GB::presentation::TimestampedMessage{
+          .id = 2, .timestamp = 101, .message = "Business news"}},
+      .bulletins = {GB::presentation::TimestampedMessage{
+          .id = 3, .timestamp = 102, .message = "Bulletin news"}},
+  };
+  const auto news_full_json =
+      GB::presentation::render_for_mode(UiMode::JSON, news_bundle_full);
+  test::expect_contains(news_full_json, "Combat news");
+  test::expect_contains(news_full_json, "Business news");
+  test::expect_contains(news_full_json, "Bulletin news");
+
+  const GB::presentation::NewsBundleResult news_bundle_empty{};
+  const auto news_empty_json =
+      GB::presentation::render_for_mode(UiMode::JSON, news_bundle_empty);
+  test::expect_contains(news_empty_json, R"("type":"message")");
 }
 
 }  // namespace

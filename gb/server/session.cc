@@ -54,8 +54,8 @@ void Session::send(std::string_view message) {
       out_buffer_.append(line);
       out_buffer_.push_back('\n');
     } else {
-      out_buffer_.append(GB::presentation::render_json_text(
-          GB::presentation::TextViewModel{.message = std::string(line)}));
+      out_buffer_.append(GB::presentation::render_json_message(
+          GB::presentation::make_output_message(std::string(line))));
     }
 
     if (nl_pos == std::string_view::npos) {

@@ -21,6 +21,9 @@ tally_votes(GameObj& g, GB::presentation::VoteViewerRole role) {
       .own_vote_go = g.race->votes,
   };
 
+  vm.races.push_back(GB::presentation::project_race_view(
+      g.entity_manager, g.scope_context(), g.player()));
+
   for (const Race& race : RaceList::readonly(g.entity_manager)) {
     if (race.God || race.Guest) continue;
     vm.total_votes++;
@@ -34,6 +37,10 @@ tally_votes(GameObj& g, GB::presentation::VoteViewerRole role) {
           .race_name = race.name,
           .vote_go = race.votes,
       });
+      if (race.Playernum != g.player()) {
+        vm.races.push_back(GB::presentation::project_race_view(
+            g.entity_manager, g.scope_context(), race.Playernum));
+      }
     }
   }
   return vm;
@@ -79,20 +86,13 @@ bool vote(const command_t& argv, GameObj& g) {
   g.entity_manager.mutate_race(Playernum,
                                [&](Race& race) { race.votes = new_vote; });
 
-  bool unanimous = false;
   if (new_vote) {
     const auto tally = tally_votes(g, GB::presentation::VoteViewerRole::Mortal);
     if (tally.total_votes > 0 && tally.nays == 0) {
       g.session_registry.request_next_thing();
-      unanimous = true;
     }
   }
 
-  g.present(GB::presentation::VoteCastResult{
-      .player = Playernum,
-      .vote_go = new_vote,
-      .unanimous = unanimous,
-  });
   return true;
 }
 

@@ -245,9 +245,10 @@ void test_tactical_explicit_ship_and_filters() {
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"tactical", destroyer_arg, "2"});
-  test::expect_contains(g.out.str(), "\"type\":\"tactical\"");
-  test::expect_contains(g.out.str(), "\"name\":\"Destroyer1\"");
-  test::expect_contains(g.out.str(), "\"name\":\"EnemyCruiser\"");
+  test::expect_contains(g.out.str(), R"("type":"ship")");
+  test::expect_contains(g.out.str(), R"("type":"planet")");
+  test::expect_contains(g.out.str(), R"("name":"Destroyer1")");
+  test::expect_contains(g.out.str(), R"("name":"EnemyCruiser")");
 
   std::println(std::cout,
                "  ✓ Explicit ship and filter arguments work properly");

@@ -20,7 +20,7 @@ bool shutdown(const command_t& argv, GameObj& g) {
     return false;
   }
   g.set_shutdown_requested(true);
-  g.present(GB::presentation::ShutdownResult{});
+  g.present(GB::presentation::make_output_message("Doing shutdown.\n"));
   return true;
 }
 

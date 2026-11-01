@@ -44,8 +44,8 @@ void test_post_bulletin_ascii_and_json() {
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"post", "Universe", "bulletin"}, 0);
-  test::expect_contains(g.out.str(), "\"type\":\"post\"");
-  test::expect_contains(g.out.str(), "\"message\":\"Universe bulletin\"");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"("message":"Universe bulletin")");
 
   g.set_ui_mode(UiMode::ASCII);
   TestCommandMatrix(ctx, "post")

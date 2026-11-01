@@ -67,6 +67,10 @@ public:
     return std::nullopt;
   }
 
+  virtual std::optional<std::pair<starnum_t, planetnum_t>> planet_id() const {
+    return std::nullopt;
+  }
+
   virtual void populate_header(TacticalReportEntry& entry, GameObj& g,
                                player_t player_num,
                                const TacticalParams& params) const = 0;
@@ -80,10 +84,11 @@ public:
   virtual bool should_report_tactical(player_t player_num,
                                       governor_t governor) const = 0;
 
-  TacticalReportEntry
-  build_report_entry(GameObj& g, TacticalContext& ctx, const Race& race,
-                     const std::vector<std::unique_ptr<TacticalItem>>& items,
-                     const TacticalParams& params) const;
+  TacticalReportEntry build_report_entry(
+      GameObj& g, TacticalContext& ctx, const Race& race,
+      const std::vector<std::unique_ptr<TacticalItem>>& items,
+      const TacticalParams& params, std::flat_set<shipnum_t>& ship_ids,
+      std::flat_set<std::pair<starnum_t, planetnum_t>>& planet_ids) const;
 };
 
 class ShipTacticalItem : public TacticalItem {
@@ -117,6 +122,10 @@ class PlanetTacticalItem : public TacticalItem {
 public:
   PlanetTacticalItem(const Planet* planet, UniverseCoordinates coords)
       : TacticalItem(coords), planet_(planet) {}
+
+  std::optional<std::pair<starnum_t, planetnum_t>> planet_id() const override {
+    return std::pair{planet_->star_id(), planet_->planet_order()};
+  }
 
   void populate_header(TacticalReportEntry& entry, GameObj& g,
                        player_t player_num,
@@ -188,9 +197,16 @@ void star_get_tactical_items(GameObj& g,
 TacticalReportEntry TacticalItem::build_report_entry(
     GameObj& g, TacticalContext& ctx, const Race& race,
     const std::vector<std::unique_ptr<TacticalItem>>& items,
-    const TacticalParams& params) const {
+    const TacticalParams& params, std::flat_set<shipnum_t>& ship_ids,
+    std::flat_set<std::pair<starnum_t, planetnum_t>>& planet_ids) const {
   TacticalReportEntry entry{};
   populate_header(entry, g, g.player(), params);
+  if (auto snum = ship_number(); snum.has_value()) {
+    ship_ids.insert(*snum);
+  }
+  if (auto pid = planet_id(); pid.has_value()) {
+    planet_ids.insert(*pid);
+  }
 
   for (const auto& target : items) {
     if (target.get() == this) continue;
@@ -201,6 +217,12 @@ TacticalReportEntry TacticalItem::build_report_entry(
     if (auto target_row =
             target->build_target_entry(g, ctx, race, dist, params)) {
       entry.targets.push_back(std::move(*target_row));
+      if (auto snum = target->ship_number(); snum.has_value()) {
+        ship_ids.insert(*snum);
+      }
+      if (auto pid = target->planet_id(); pid.has_value()) {
+        planet_ids.insert(*pid);
+      }
     }
   }
 
@@ -396,16 +418,34 @@ void generate_tactical_reports(
   }
 
   TacticalViewModel vm{};
+  std::flat_set<shipnum_t> ship_ids;
+  std::flat_set<std::pair<starnum_t, planetnum_t>> planet_ids;
+
   for (const auto& item : items) {
     if (!item->should_report_tactical(g.player(), g.governor())) {
       continue;
     }
     TacticalParams params = item->get_tactical_params(*race);
-    vm.entries.push_back(
-        item->build_report_entry(g, ctx, *race, items, params));
+    vm.entries.push_back(item->build_report_entry(g, ctx, *race, items, params,
+                                                  ship_ids, planet_ids));
   }
 
-  g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
+  GB::presentation::SightContext sight{};
+  for (shipnum_t id : ship_ids) {
+    if (const auto* s = g.entity_manager.peek_ship(id); s != nullptr) {
+      if (auto sv = GB::presentation::project_ship_view(
+              g.entity_manager, g.scope_context(), *s, &sight);
+          sv.has_value()) {
+        vm.ships.push_back(std::move(*sv));
+      }
+    }
+  }
+  for (const auto& [snum, pnum] : planet_ids) {
+    vm.planets.push_back(GB::presentation::project_planet_view(
+        g.entity_manager, g.scope_context(), snum, pnum));
+  }
+
+  g.present(vm);
 }
 
 void collect_ship_area_items(GameObj& g,

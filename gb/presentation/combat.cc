@@ -455,56 +455,62 @@ std::string render_fire_ship_result(const FireShipResult& res) {
 
 std::string render_for_mode(UiMode mode, const ReactorOverloadEvent& vm) {
   if (mode == UiMode::JSON) {
-    return render_json_envelope("reactor_overload", vm);
+    return render_json_combat_event("reactor_overload",
+                                    render_reactor_overload_event(vm), vm);
   }
   return render_reactor_overload_event(vm);
 }
 
 std::string render_for_mode(UiMode mode, const MechAttackPeopleResult& vm) {
   if (mode == UiMode::JSON) {
-    return render_json_envelope("mech_attack_people", vm);
+    return render_json_combat_event("mech_attack_people",
+                                    render_mech_attack_people_long(vm), vm);
   }
   return render_mech_attack_people_long(vm);
 }
 
 std::string render_for_mode(UiMode mode, const PeopleAttackMechResult& vm) {
   if (mode == UiMode::JSON) {
-    return render_json_envelope("people_attack_mech", vm);
+    return render_json_combat_event("people_attack_mech",
+                                    render_people_attack_mech_long(vm), vm);
   }
   return render_people_attack_mech_long(vm);
 }
 
 std::string render_for_mode(UiMode mode, const ShipShotResult& vm) {
   if (mode == UiMode::JSON) {
-    return render_json_envelope("ship_shot", vm);
+    return render_json_combat_event("ship_shot", render_ship_shot_long(vm), vm);
   }
   return render_ship_shot_long(vm);
 }
 
 std::string render_for_mode(UiMode mode, const BombardResult& vm) {
   if (mode == UiMode::JSON) {
-    return render_json_envelope("bombard_result", vm);
+    return render_json_combat_event("bombard_result", render_bombard_long(vm),
+                                    vm);
   }
   return render_bombard_long(vm);
 }
 
 std::string render_for_mode(UiMode mode, const MineDetonationReport& vm) {
   if (mode == UiMode::JSON) {
-    return render_json_envelope("mine_detonation", vm);
+    return render_json_combat_event("mine_detonation",
+                                    render_mine_detonation_report(vm), vm);
   }
   return render_mine_detonation_report(vm);
 }
 
 std::string render_for_mode(UiMode mode, const AssaultResult& vm) {
   if (mode == UiMode::JSON) {
-    return render_json_envelope("assault", vm);
+    return render_json_combat_event("assault", render_assault_result(vm), vm);
   }
   return render_assault_result(vm);
 }
 
 std::string render_for_mode(UiMode mode, const FireShipResult& vm) {
   if (mode == UiMode::JSON) {
-    return render_json_envelope("fire_ship", vm);
+    return render_json_combat_event("fire_ship", render_fire_ship_result(vm),
+                                    vm);
   }
   return render_fire_ship_result(vm);
 }
@@ -584,12 +590,18 @@ std::string render_tactical(const TacticalViewModel& vm) {
   return out;
 }
 
-std::string render_json_tactical(const TacticalViewModel& vm) {
-  return render_json_envelope("tactical", vm);
-}
-
 std::string render_for_mode(UiMode mode, const TacticalViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_tactical(vm) : render_tactical(vm);
+  if (mode == UiMode::JSON) {
+    std::string out;
+    for (const auto& s : vm.ships) {
+      out += render_json_ship_view(s);
+    }
+    for (const auto& p : vm.planets) {
+      out += render_json_planet_view(p);
+    }
+    return out;
+  }
+  return render_tactical(vm);
 }
 
 std::string format_militia_error(const MilitiaError& err) {
@@ -836,13 +848,11 @@ std::string render_bombard_ship_result(const BombardShipResult& res) {
   return out;
 }
 
-std::string render_json_bombard_ship_result(const BombardShipResult& res) {
-  return render_json_envelope("bombard", res);
-}
-
 std::string render_for_mode(UiMode mode, const BombardShipResult& vm) {
-  return mode == UiMode::JSON ? render_json_bombard_ship_result(vm)
-                              : render_bombard_ship_result(vm);
+  return mode == UiMode::JSON
+             ? render_json_combat_event("bombard",
+                                        render_bombard_ship_result(vm), vm)
+             : render_bombard_ship_result(vm);
 }
 
 std::string format_defend_error(const DefendError& err) {
@@ -885,13 +895,11 @@ std::string render_defend_planet_result(const DefendPlanetResult& res) {
   return out;
 }
 
-std::string render_json_defend_planet_result(const DefendPlanetResult& res) {
-  return render_json_envelope("defend", res);
-}
-
 std::string render_for_mode(UiMode mode, const DefendPlanetResult& vm) {
-  return mode == UiMode::JSON ? render_json_defend_planet_result(vm)
-                              : render_defend_planet_result(vm);
+  return mode == UiMode::JSON
+             ? render_json_combat_event("defend",
+                                        render_defend_planet_result(vm), vm)
+             : render_defend_planet_result(vm);
 }
 
 std::string format_walk_error(const WalkError& err) {
@@ -1100,12 +1108,9 @@ std::string render_capture_result(const LandedBoardingResult& res) {
   return out;
 }
 
-std::string render_json_capture_result(const LandedBoardingResult& res) {
-  return render_json_envelope("capture", res);
-}
-
 std::string render_for_mode(UiMode mode, const LandedBoardingResult& vm) {
-  return mode == UiMode::JSON ? render_json_capture_result(vm)
+  return mode == UiMode::JSON ? render_json_combat_event(
+                                    "capture", render_capture_result(vm), vm)
                               : render_capture_result(vm);
 }
 

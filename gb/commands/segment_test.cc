@@ -88,8 +88,9 @@ void test_segment_matrix() {
   }
   g.set_ui_mode(UiMode::JSON);
   ctx.assert_dispatch_success(g, {"@@segment", "2"});
-  test::expect_contains(g.out.str(), "\"type\":\"segment\"");
-  test::expect_contains(g.out.str(), "\"segment\":2");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(),
+                        "Starting segment movement...\\nSegment completed.\\n");
 }
 
 }  // namespace

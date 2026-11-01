@@ -69,11 +69,12 @@ void test_vote_dispatch() {
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"vote"});
-  test::expect_contains(g.out.str(), R"("type":"vote")");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"("type":"race")");
   g.out.str("");
   ctx.assert_dispatch_success(g, {"vote", "update", "go"});
-  test::expect_contains(g.out.str(), R"("type":"vote_cast")");
-  test::expect_contains(g.out.str(), R"("unanimous":true)");
+  test::expect_contains(g.out.str(), R"("type":"race")");
+  test::expect_contains(g.out.str(), R"("vote_update_go":true)");
   g.set_ui_mode(UiMode::ASCII);
 
   // 8. Guest vote message (and total_votes == 0 when only Guest race exists)

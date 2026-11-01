@@ -369,8 +369,9 @@ void test_capture_default_boarders_and_allied_ship() {
   g.out.str("");
   ctx.assert_dispatch_success(
       g, {"capture", std::format("#{}", json_target.value), "5", "mil"});
-  test::expect_contains(g.out.str(), "\"type\":\"capture\"");
-  test::expect_contains(g.out.str(), "\"captured\":true");
+  test::expect_contains(g.out.str(), R"("type":"combat_event")");
+  test::expect_contains(g.out.str(), R"("kind":"capture")");
+  test::expect_contains(g.out.str(), R"("captured":true)");
 
   ctx.verify_universe_invariants();
 }

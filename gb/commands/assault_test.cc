@@ -84,7 +84,8 @@ void test_assault_happy_path_and_json_presentation() {
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"assault", "#1", "#3"}, 1);
-  test::expect_contains(g.out.str(), "\"type\":\"assault\"");
+  test::expect_contains(g.out.str(), R"("type":"combat_event")");
+  test::expect_contains(g.out.str(), R"("kind":"assault")");
 
   ctx.verify_universe_invariants();
 }

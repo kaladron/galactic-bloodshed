@@ -39,7 +39,8 @@ void test_shutdown_as_god() {
   g.set_shutdown_requested(false);
   g.set_ui_mode(UiMode::JSON);
   ctx.assert_dispatch_success(g, {"@@shutdown"});
-  test::expect_contains(g.out.str(), "\"type\":\"shutdown\"");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"("message":"Doing shutdown.\n")");
   test::expect_true(g.shutdown_requested());
 }
 

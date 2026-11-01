@@ -20,7 +20,7 @@ bool purge(const command_t& argv, GameObj& g) {
     return false;
   }
   ::purge(g.entity_manager);
-  g.present(GB::presentation::PurgeResult{});
+  g.present(GB::presentation::make_output_message("Purged all news.\n"));
   return true;
 }
 

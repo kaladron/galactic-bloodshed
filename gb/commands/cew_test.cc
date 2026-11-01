@@ -58,8 +58,9 @@ void test_cew_happy_path_and_json() {
   g.set_ui_mode(GB::presentation::UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"cew", "#1", "#2"}, 1);
-  test::expect_contains(g.out.str(), "\"type\":\"fire_ship\"");
-  test::expect_contains(g.out.str(), "\"cew_strength\":10");
+  test::expect_contains(g.out.str(), R"("type":"combat_event")");
+  test::expect_contains(g.out.str(), R"("kind":"fire_ship")");
+  test::expect_contains(g.out.str(), R"("cew_strength":10)");
   g.set_ui_mode(GB::presentation::UiMode::ASCII);
 
   ctx.verify_universe_invariants();

@@ -29,7 +29,9 @@ bool highlight(const command_t& argv, GameObj& g) {
   g.entity_manager.mutate_race(g.player(), [&](Race& race) {
     race.governor(g.governor()).toggle.highlight = n;
   });
-  g.present(GB::presentation::HighlightResult{.target_player = n});
+  if (g.ui_mode() == GB::presentation::UiMode::JSON) {
+    g.present(GB::presentation::build_session_view(g));
+  }
   return true;
 }
 

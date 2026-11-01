@@ -106,8 +106,8 @@ void test_send_to_governor_self_deity_and_json() {
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"send", "2", "Decree"}, 0);
-  test::expect_contains(g.out.str(), "\"type\":\"send\"");
-  test::expect_contains(g.out.str(), "\"target\":0");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), "Message sent.\\n");
 
   ctx.verify_universe_invariants();
 }
@@ -141,11 +141,15 @@ void test_send_block_and_star() {
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"send", "block", "1", "Broadcast"}, 0);
-  test::expect_contains(g.out.str(), "\"target\":1");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(
+      g.out.str(), "Sending message to alliance block.\\nMessage sent.\\n");
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"send", "star", "/Sol", "Ping"}, 0);
-  test::expect_contains(g.out.str(), "\"target\":2");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(),
+                        "Sending message to star system.\\nMessage sent.\\n");
 
   ctx.verify_universe_invariants();
 }

@@ -45,10 +45,9 @@ int main() {
   g.out.str("");
   ctx.assert_dispatch_success(g, {"time"});
   out = g.out.str();
-  test::expect_contains(out, "\"type\":\"time\"");
-  test::expect_contains(out, "\"start_line\":\"Server started  :");
-  test::expect_contains(out, "\"update_line\":\"Last Update   2 :");
-  test::expect_contains(out, "\"segment_line\":\"Last Segment  1 :");
+  test::expect_contains(out, R"("type":"session")");
+  test::expect_contains(out, R"("clock":)");
+  test::expect_contains(out, R"("update_interval_minutes":60)");
   g.set_ui_mode(UiMode::ASCII);
 
   // 3. Test schedule command when nsegments_done < segments
@@ -73,11 +72,12 @@ int main() {
   g.out.str("");
   ctx.assert_dispatch_success(g, {"schedule"});
   out = g.out.str();
-  test::expect_contains(out, "\"type\":\"schedule\"");
-  test::expect_contains(out, "\"update_time_minutes\":60");
-  test::expect_contains(out, "\"segments\":4");
-  test::expect_contains(out, "\"next_segment_number\":1");
-  test::expect_contains(out, "\"next_update_number\":3");
+  test::expect_contains(out, R"("type":"session")");
+  test::expect_contains(out, R"("clock":)");
+  test::expect_contains(out, R"("update_interval_minutes":60)");
+  test::expect_contains(out, R"("segments_per_update":4)");
+  test::expect_contains(out, R"("current_segment":1)");
+  test::expect_contains(out, R"("next_update_number":3)");
   g.set_ui_mode(UiMode::ASCII);
 
   ctx.verify_universe_invariants();

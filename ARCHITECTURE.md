@@ -118,7 +118,7 @@ Galactic Bloodshed uses **C++26 modules** to enforce architectural boundaries. S
     - `:visibility`: `in_range`, `can_see_ship`, `optical_range`, `ships_at_star`, `get4args`
     - `:victory`: `create_victory_list`, `compute_power_blocks`
   - **`gb.presentation`** (`gb/presentation/presentation.cppm`, `gb_presentation` target): Dual-mode (`UiMode::ASCII` via `std::format`/`tabulate` and `UiMode::JSON` via `glaze`) view models, result renderers, and telegram/news bulletin formatters:
-    - `gb.presentation.core`: `UiMode`, `OutputBuffer`, `present_to`, `to_json_envelope`, ANSI color/inverse terminal helpers
+    - `gb.presentation.core`: `UiMode`, `OutputBuffer`, `present_to`, `render_json_envelope`, ANSI color/inverse terminal helpers
     - `gb.presentation.planet_views`: Planetary maps (`map`), orbital maps (`orbit`), surveys, sector analysis, production, routes, and planetary turn bulletins
     - `gb.presentation.navigation`: Navigation reports, course/order results, docking/landing/launching, cargo transfer summaries, and scope changes
     - `gb.presentation.construction`: Ship construction, factory blueprints (`make`/`modify`), and in-service retrofits (`upgrade`)
@@ -458,9 +458,22 @@ const auto& star = *g.entity_manager.peek_star(g.snum());
 **Location**: `gb/presentation/`  
 **Module**: `gb.presentation` (`gb.presentation.core`, `gb.presentation.planet_views`, `gb.presentation.navigation`, `gb.presentation.construction`, `gb.presentation.ship_ops`, `gb.presentation.combat`, `gb.presentation.empire_views`, `gb.presentation.production`)
 
-All player-facing output formatting—including 2D ASCII maps (`map`, `orbit`), `tabulate` tables, ANSI color/reverse-video sequences, Glaze JSON command envelopes, and telegram/news bulletins—is isolated in `gb.presentation`:
+All player-facing output formatting—including 2D ASCII maps (`map`, `orbit`), `tabulate` tables, ANSI color/reverse-video sequences, canonical JSON stanzas, and telegram/news bulletins—is isolated in `gb.presentation`:
 - **Zero Stream Coupling**: `GameObj::out` is a zero-locale `std::string`-backed `OutputBuffer` (`gb.presentation.core`). Neither `gb.mechanics`, `gb.turn`, nor `commands` imports `tabulate` or formats `std::stringstream` output.
-- **Dual-Mode Dispatch (`UiMode::ASCII` & `UiMode::JSON`)**: Command handlers construct strongly typed ViewModel or Result structs and pass them to `g.present(view_model)`. `present_to(out, g.ui_mode(), view_model)` dispatches via ADL to `render_for_mode(mode, view_model)`, emitting human-readable ASCII/ANSI text in `UiMode::ASCII` or a structured Glaze JSON envelope (`{"type": "...", "data": {...}}`) in `UiMode::JSON`.
+- **Dual-Mode Dispatch (`UiMode::ASCII` & `UiMode::JSON`)**: Command handlers construct strongly typed ViewModel or Result structs and pass them to `g.present(view_model)`. `present_to(out, g.ui_mode(), view_model)` dispatches via ADL to `render_for_mode(mode, view_model)`, emitting human-readable ASCII/ANSI text in `UiMode::ASCII` or canonical JSON wire stanzas in `UiMode::JSON`.
+- **Canonical Multi-Stanza JSON Wire Protocol**: Rather than bespoke, fragmented per-command envelopes, `UiMode::JSON` streams top-level typed JSON objects (`{"type":"<stanza_type>","data":{...}}\n`). Canonical stanzas include:
+  - `"session"`: Current player session state, prompt scope, action points, and active toggles (`SessionView`).
+  - `"star"`: Star system state, spectral class, stability, and child planets (`StarView`).
+  - `"planet"`: Planetary conditions, colony attributes, exploration status, and resources (`PlanetView`).
+  - `"sectors"`: Grid of sector states, population, fertility, and terrain (`SectorGridView`).
+  - `"ship"`: Ship specifications, damage, fuel, cargo, weapons, orders, and location (`ShipView`).
+  - `"race"`: Species characteristics, technological status, and demographics (`RaceView`).
+  - `"block"`: Alliance treaties and power bloc definitions (`BlockView`).
+  - `"market_lot"`: Active commodity market listings and bids (`MarketLotView`).
+  - `"combat_event"`: Tactical combat encounters, gunnery, boarding, and detonations (`CombatEventView`).
+  - `"message"`: Broadcasts, telegrams, announcements, and narrative responses (`MessageView`).
+  - `"error"`: Validation and permission failures (`ErrorView`).
+- **Fog-of-War View Projection Pattern (`ScopeContext::can_see`)**: Canonical view projectors (`project_star_view`, `project_planet_view`, `project_ship_view`, `project_race_view`, etc.) enforce fog-of-war rules based on the viewing player's perspective (`ScopeContext`). Visibility checks are centralized through `viewer.can_see(bool mortal_visible)`—deities automatically see all tiers without per-field god branching, while mortal players only receive attributes they have explored or have sensor range/technology to detect.
 
 ---
 
@@ -484,8 +497,10 @@ The application layer handles player interaction, input parsing, command dispatc
    - Verifies permissions, valid scope, and minimum arguments.
    - Pre-checks that the player has sufficient AP to pay the command's fixed cost.
    - Opens an `EntityManager::Transaction` (`BEGIN IMMEDIATE`) and `SessionRegistry::begin_outbox()`.
+   - Starts mutation tracking on `EntityManager` when operating in `UiMode::JSON`.
    - Invokes the command handler (`bool (*)(const command_t& argv, GameObj& g)`).
    - Deducts fixed AP **only** when the handler returns `true`, commits the SQLite transaction, and flushes `SessionRegistry::commit_outbox()`. If the handler returns `false` or throws an exception, the transaction and `SocketOutbox` are rolled back with 0 AP deducted.
+   - **Automatic Dirty Entity Stanza Emission**: On successful execution in `UiMode::JSON`, `dispatch_command()` queries `EntityManager::take_dirty_entities()` (`DirtyEntitySet`) to identify all stars, planets, and ships modified during the command. It passes these through `render_dirty_entities_json()`, automatically projecting and emitting updated canonical `"star"`, `"planet"`, and `"ship"` JSON stanzas filtered through the player's fog-of-war perspective. This guarantees client state synchronization without individual commands needing to manually format or push modified entity data.
 
 3. **Command Lifecycle**:
 
@@ -509,6 +524,13 @@ flowchart TD
     CheckModel -- "Fixed Star / Univ" --> DeductFixed["Deduct Fixed AP, Commit DB & Flush Outbox"]
     CheckModel -- Dynamic --> DoneDyn["Commit DB & Flush Outbox (AP deducted per action)"]
     CheckModel -- Free --> DoneFree["Commit DB & Flush Outbox (0 AP)"]
+    
+    DeductFixed --> DirtyCheck{"UiMode == JSON?"}
+    DoneDyn --> DirtyCheck
+    DoneFree --> DirtyCheck
+    DirtyCheck -- Yes --> EmitDirty["Emit Dirty Entity JSON Stanzas"]
+    DirtyCheck -- No --> Finish["Command Complete"]
+    EmitDirty --> Finish
 ```
 
 #### Command Pattern Example

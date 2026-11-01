@@ -74,7 +74,9 @@ void test_update_matrix() {
   }
   g.set_ui_mode(UiMode::JSON);
   ctx.assert_dispatch_success(g, {"@@update"});
-  test::expect_contains(g.out.str(), "\"type\":\"update\"");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(),
+                        "Starting update...\\nUpdate completed.\\n");
 }
 
 void test_update_population_growth_persistence() {

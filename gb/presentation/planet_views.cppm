@@ -521,10 +521,6 @@ struct RecoveryReportViewModel {
 
 [[nodiscard]] std::string
 render_recovery_report(const RecoveryReportViewModel& vm);
-[[nodiscard]] std::string
-render_json_recovery_report(const RecoveryReportViewModel& vm);
-[[nodiscard]] std::string render_for_mode(UiMode mode,
-                                          const RecoveryReportViewModel& vm);
 
 /// View model for per-turn automatic planetary production report telegrams.
 struct PlanetTurnAutoreportViewModel {

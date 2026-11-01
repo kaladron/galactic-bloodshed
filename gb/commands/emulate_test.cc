@@ -14,29 +14,21 @@ namespace {
 
 void test_emulate_matrix() {
   TestContext ctx;
+  ctx.with_standard_universe();
+  ctx.em.mutate_race(1, [](Race& r) {
+    r.God = true;
+    r.name = "DeityRace";
+    r.leader().name = "Supreme";
+  });
+  ctx.em.mutate_race(2, [](Race& r) {
+    r.God = false;
+    r.name = "Klingons";
+    r.leader().name = "Leader";
+    r.appoint_governor(2, {.name = "Governor2"});
+  });
+
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-
-  // Setup test races
-  Race deity_race{};
-  deity_race.Playernum = 1;
-  deity_race.name = "DeityRace";
-  deity_race.God = true;
-  deity_race.leader().name = "Supreme";
-
-  Race target_race{};
-  target_race.Playernum = 2;
-  target_race.name = "Klingons";
-  target_race.God = false;
-  target_race.leader().name = "Leader";
-  target_race.appoint_governor(2, {.name = "Governor2"});
-
-  {
-    JsonStore store(ctx.db);
-    RaceRepository races(store);
-    races.save(deity_race);
-    races.save(target_race);
-  }
 
   // --- Case 1: Happy Path (God user emulating player 2 governor 2) ---
   ctx.setup_game_obj(g, 1, 1);
@@ -114,8 +106,9 @@ void test_emulate_matrix() {
   // JSON mode
   g.set_ui_mode(UiMode::JSON);
   ctx.assert_dispatch_success(g, {"emulate", "2", "2"});
-  test::expect_contains(g.out.str(), "\"type\":\"emulate\"");
-  test::expect_contains(g.out.str(), "\"governor_name\":\"Governor2\"");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"("type":"session")");
+  test::expect_contains(g.out.str(), R"("governor_name":"Governor2")");
 }
 
 }  // namespace

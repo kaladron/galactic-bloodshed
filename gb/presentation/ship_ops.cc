@@ -297,7 +297,8 @@ std::string render_for_mode(UiMode mode, const DismountCrystalResult& vm) {
 
 std::string render_for_mode(UiMode mode, const GrantShipResult& vm) {
   if (mode == UiMode::JSON) {
-    return render_json_envelope("grant_ship", vm);
+    return render_json_message(
+        make_output_message(render_grant_ship_result(vm)));
   }
   return render_grant_ship_result(vm);
 }
@@ -565,10 +566,8 @@ namespace {
 bool resolve_local_sight(EntityManager& em, const Ship& ship, player_t player,
                          SightContext& sight) {
   if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN) {
-    if (ship.is_landed()) {
-      return sight.has_planet_sight(em, player, ship.storbits(),
-                                    ship.pnumorbits());
-    }
+    return sight.has_planet_sight(em, player, ship.storbits(),
+                                  ship.pnumorbits());
   }
   return sight.has_star_sight(em, player, ship.storbits());
 }

@@ -40,7 +40,8 @@ void test_purge_as_god() {
   test::expect_contains(g.out.str(), "Syntax: purge");
   g.set_ui_mode(UiMode::JSON);
   ctx.assert_dispatch_success(g, {"purge"});
-  test::expect_contains(g.out.str(), "\"type\":\"purge\"");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"("message":"Purged all news.\n")");
 }
 
 // Test purge rejection for mortal player

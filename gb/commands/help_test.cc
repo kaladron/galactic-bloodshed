@@ -86,14 +86,13 @@ void test_help_command_dispatch() {
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"help"});
-  test::expect_contains(g.out.str(), "\"type\":\"help\"");
-  test::expect_contains(g.out.str(), "\"topic\":\"help\"");
-  test::expect_contains(g.out.str(), "\"is_index\":true");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"("topic":"help")");
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"help", "build"});
-  test::expect_contains(g.out.str(), "\"topic\":\"build\"");
-  test::expect_contains(g.out.str(), "\"is_index\":false");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"("topic":"build")");
 
   ctx.verify_universe_invariants();
 }

@@ -153,8 +153,10 @@ void check_connect(Session& session, std::string_view message) {
   if (!authenticated) return;
 
   auto& g = session.game_obj();
+  g.race = session.entity_manager().peek_race(Playernum);
   if (session.ui_mode() == UiMode::JSON) {
-    session.send(GB::presentation::render_json_login(login_vm));
+    session.send(GB::presentation::render_json_session(
+        GB::presentation::build_session_view(g)));
   } else {
     session.send(GB::presentation::render_login_banner(login_vm));
   }

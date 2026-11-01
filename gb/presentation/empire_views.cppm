@@ -236,14 +236,12 @@ struct WhoisEntry {
 /// View model for `whois` / `identify` command results.
 struct WhoisViewModel {
   std::vector<WhoisEntry> entries{};
+  std::vector<RaceView> races{};
+  std::vector<ErrorView> errors{};
 };
 
 /// Renders a `WhoisViewModel` for `UiMode::ASCII`.
 [[nodiscard]] std::string render_whois(const WhoisViewModel& vm);
-
-/// Serializes a `WhoisViewModel` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"whois","data":{...}}\n`).
-[[nodiscard]] std::string render_json_whois(const WhoisViewModel& vm);
 
 /// Dispatches `WhoisViewModel` rendering based on `mode`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
@@ -529,14 +527,11 @@ struct TimeViewModel {
   std::string update_line{};
   std::string segment_line{};
   std::string current_time{};
+  SessionView session{};
 };
 
 /// Renders a `TimeViewModel` for `UiMode::ASCII`.
 [[nodiscard]] std::string render_time(const TimeViewModel& vm);
-
-/// Serializes a `TimeViewModel` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"time","data":{...}}\n`).
-[[nodiscard]] std::string render_json_time(const TimeViewModel& vm);
 
 /// Dispatches `TimeViewModel` rendering based on `mode`.
 [[nodiscard]] std::string render_for_mode(UiMode mode, const TimeViewModel& vm);
@@ -550,14 +545,11 @@ struct ScheduleViewModel {
   std::string next_segment_time{};
   turn_t next_update_number{0};
   std::string next_update_time{};
+  SessionView session{};
 };
 
 /// Renders a `ScheduleViewModel` for `UiMode::ASCII`.
 [[nodiscard]] std::string render_schedule(const ScheduleViewModel& vm);
-
-/// Serializes a `ScheduleViewModel` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"schedule","data":{...}}\n`).
-[[nodiscard]] std::string render_json_schedule(const ScheduleViewModel& vm);
 
 /// Dispatches `ScheduleViewModel` rendering based on `mode`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
@@ -590,34 +582,6 @@ struct VictoryViewModel {
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const VictoryViewModel& vm);
 
-using ::PromptViewModel;
-
-/// Renders a `PromptViewModel` for `UiMode::ASCII`.
-[[nodiscard]] std::string render_prompt(const PromptViewModel& vm);
-
-/// Serializes a `PromptViewModel` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"prompt","data":{...}}\n`).
-[[nodiscard]] std::string render_json_prompt(const PromptViewModel& vm);
-
-/// Dispatches `PromptViewModel` rendering based on `mode`.
-[[nodiscard]] std::string render_for_mode(UiMode mode,
-                                          const PromptViewModel& vm);
-
-/// View model for plain-text output lines wrapped in `UiMode::JSON`.
-struct TextViewModel {
-  std::string message{};
-};
-
-/// Renders a `TextViewModel` for `UiMode::ASCII`.
-[[nodiscard]] std::string render_text(const TextViewModel& vm);
-
-/// Serializes a `TextViewModel` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"text","data":{"message":"..."}}\n`).
-[[nodiscard]] std::string render_json_text(const TextViewModel& vm);
-
-/// Dispatches `TextViewModel` rendering based on `mode`.
-[[nodiscard]] std::string render_for_mode(UiMode mode, const TextViewModel& vm);
-
 /// View model for player login session details (`auth.cc`).
 struct LoginViewModel {
   player_t race_id{0};
@@ -636,17 +600,6 @@ struct LoginViewModel {
 /// Renders the post-time login status (last login, gov center, morale) for
 /// `UiMode::ASCII`.
 [[nodiscard]] std::string render_login_status(const LoginViewModel& vm);
-
-/// Renders the full login summary for `UiMode::ASCII`.
-[[nodiscard]] std::string render_login(const LoginViewModel& vm);
-
-/// Serializes a `LoginViewModel` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"login","data":{...}}\n`).
-[[nodiscard]] std::string render_json_login(const LoginViewModel& vm);
-
-/// Dispatches `LoginViewModel` rendering based on `mode`.
-[[nodiscard]] std::string render_for_mode(UiMode mode,
-                                          const LoginViewModel& vm);
 
 /// Single market lot row in a `bid` commodities market listing.
 struct CommodityLotRow {
@@ -923,24 +876,11 @@ struct VoteViewModel {
   int yays{0};
   int nays{0};
   std::vector<RaceVoteEntry> details{};
+  std::vector<RaceView> races{};
 };
 
 [[nodiscard]] std::string render_vote(const VoteViewModel& vm);
-[[nodiscard]] std::string render_json_vote(const VoteViewModel& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode, const VoteViewModel& vm);
-
-/// Result of casting an update vote (`vote update <go|wait>`).
-struct VoteCastResult {
-  player_t player{0};
-  bool vote_go{false};
-  bool unanimous{false};
-};
-
-[[nodiscard]] std::string render_vote_cast_result(const VoteCastResult& vm);
-[[nodiscard]] std::string
-render_json_vote_cast_result(const VoteCastResult& vm);
-[[nodiscard]] std::string render_for_mode(UiMode mode,
-                                          const VoteCastResult& vm);
 
 /// Result of dissolving an empire (`dissolve <race_pw> <leader_pw> [waste]`).
 struct DissolveResult {
@@ -1015,8 +955,6 @@ struct SendMessageResult {
 
 [[nodiscard]] std::string
 render_send_message_result(const SendMessageResult& vm);
-[[nodiscard]] std::string
-render_json_send_message_result(const SendMessageResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const SendMessageResult& vm);
 
@@ -1027,7 +965,6 @@ struct PostResult {
 };
 
 [[nodiscard]] std::string render_post_result(const PostResult& vm);
-[[nodiscard]] std::string render_json_post_result(const PostResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode, const PostResult& vm);
 
 /// Live communication channel used by `announce`, `broadcast`, `shout`, and
@@ -1050,7 +987,6 @@ struct AnnounceResult {
 [[nodiscard]] std::string
 render_announce_dispatch_message(const AnnounceResult& vm);
 [[nodiscard]] std::string render_announce_result(const AnnounceResult& vm);
-[[nodiscard]] std::string render_json_announce_result(const AnnounceResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const AnnounceResult& vm);
 
@@ -1069,7 +1005,6 @@ struct PageResult {
                                                    std::string_view gov_name,
                                                    std::string_view star_name);
 [[nodiscard]] std::string render_page_result(const PageResult& vm);
-[[nodiscard]] std::string render_json_page_result(const PageResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode, const PageResult& vm);
 
 /// Single timestamped telegram or news entry in a `read` view model.
@@ -1088,8 +1023,6 @@ struct TelegramReadResult {
 make_telegram_read_result(std::vector<TelegramItem> items);
 [[nodiscard]] std::string
 render_telegram_read_result(const TelegramReadResult& vm);
-[[nodiscard]] std::string
-render_json_telegram_read_result(const TelegramReadResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const TelegramReadResult& vm);
 
@@ -1105,8 +1038,6 @@ struct NewsBundleResult {
     std::vector<NewsItem> declarations, std::vector<NewsItem> combat,
     std::vector<NewsItem> business, std::vector<NewsItem> bulletins);
 [[nodiscard]] std::string render_news_bundle_result(const NewsBundleResult& vm);
-[[nodiscard]] std::string
-render_json_news_bundle_result(const NewsBundleResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const NewsBundleResult& vm);
 
@@ -1173,7 +1104,6 @@ struct HelpViewModel {
 };
 
 [[nodiscard]] std::string render_help(const HelpViewModel& vm);
-[[nodiscard]] std::string render_json_help(const HelpViewModel& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode, const HelpViewModel& vm);
 
 /// Turn bulletin payload when a commodity market lot settles.
@@ -1218,16 +1148,6 @@ struct VictoryAnnouncementViewModel {
 [[nodiscard]] std::string
 render_victory_announcement(const VictoryAnnouncementViewModel& vm);
 
-/// Result of setting the highlighted player (`highlight <player>`).
-struct HighlightResult {
-  player_t target_player{0};
-};
-[[nodiscard]] std::string render_highlight_result(const HighlightResult& vm);
-[[nodiscard]] std::string
-render_json_highlight_result(const HighlightResult& vm);
-[[nodiscard]] std::string render_for_mode(UiMode mode,
-                                          const HighlightResult& vm);
-
 /// Governor configuration flag modified by `toggle <option>`.
 enum class ToggleOption : std::uint8_t {
   Inverse,
@@ -1243,10 +1163,9 @@ enum class ToggleOption : std::uint8_t {
 /// View model for `toggle` (display all governor configuration options).
 struct ToggleStatusViewModel {
   toggletype toggles{};
+  SessionView session{};
 };
 [[nodiscard]] std::string render_toggle_status(const ToggleStatusViewModel& vm);
-[[nodiscard]] std::string
-render_json_toggle_status(const ToggleStatusViewModel& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const ToggleStatusViewModel& vm);
 
@@ -1257,61 +1176,7 @@ struct ToggleChangedResult {
 };
 [[nodiscard]] std::string
 render_toggle_changed_result(const ToggleChangedResult& vm);
-[[nodiscard]] std::string
-render_json_toggle_changed_result(const ToggleChangedResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const ToggleChangedResult& vm);
-
-/// Result of deity emulating a player and governor (`emulate <player> <gov>`).
-struct EmulateResult {
-  player_t player{0};
-  governor_t governor{1};
-  std::string race_name{};
-  std::string governor_name{};
-};
-[[nodiscard]] std::string render_emulate_result(const EmulateResult& vm);
-[[nodiscard]] std::string render_json_emulate_result(const EmulateResult& vm);
-[[nodiscard]] std::string render_for_mode(UiMode mode, const EmulateResult& vm);
-
-/// Result of deity purging all galactic news items (`purge`).
-struct PurgeResult {
-  bool purged{true};
-};
-[[nodiscard]] std::string render_purge_result(const PurgeResult& vm);
-[[nodiscard]] std::string render_json_purge_result(const PurgeResult& vm);
-[[nodiscard]] std::string render_for_mode(UiMode mode, const PurgeResult& vm);
-
-/// Result of disconnecting from the game server (`quit`).
-struct QuitResult {
-  bool disconnect_requested{true};
-};
-[[nodiscard]] std::string render_quit_result(const QuitResult& vm);
-[[nodiscard]] std::string render_json_quit_result(const QuitResult& vm);
-[[nodiscard]] std::string render_for_mode(UiMode mode, const QuitResult& vm);
-
-/// Result of deity triggering segment movement (`@@segment [seg_num]`).
-struct SegmentResult {
-  int segment{0};
-};
-[[nodiscard]] std::string render_segment_result(const SegmentResult& vm);
-[[nodiscard]] std::string render_json_segment_result(const SegmentResult& vm);
-[[nodiscard]] std::string render_for_mode(UiMode mode, const SegmentResult& vm);
-
-/// Result of initiating emergency server shutdown (`@@shutdown`).
-struct ShutdownResult {
-  bool shutdown_requested{true};
-};
-[[nodiscard]] std::string render_shutdown_result(const ShutdownResult& vm);
-[[nodiscard]] std::string render_json_shutdown_result(const ShutdownResult& vm);
-[[nodiscard]] std::string render_for_mode(UiMode mode,
-                                          const ShutdownResult& vm);
-
-/// Result of deity triggering a full game update (`@@update`).
-struct UpdateResult {
-  bool completed{true};
-};
-[[nodiscard]] std::string render_update_result(const UpdateResult& vm);
-[[nodiscard]] std::string render_json_update_result(const UpdateResult& vm);
-[[nodiscard]] std::string render_for_mode(UiMode mode, const UpdateResult& vm);
 
 }  // namespace GB::presentation

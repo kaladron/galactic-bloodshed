@@ -52,9 +52,9 @@ void test_whois_dispatch() {
   // 5. JSON mode rendering
   g.set_ui_mode(UiMode::JSON);
   ctx.assert_dispatch_success(g, {"whois", "1", "2"});
-  test::expect_contains(g.out.str(), "\"type\":\"whois\"");
-  test::expect_contains(g.out.str(), "\"governor_name\":\"Kirk\"");
-  test::expect_contains(g.out.str(), "\"race_name\":\"Klingons\"");
+  test::expect_contains(g.out.str(), R"("type":"race")");
+  test::expect_contains(g.out.str(), R"("name":"Kirk")");
+  test::expect_contains(g.out.str(), R"("name":"Klingons")");
   g.set_ui_mode(UiMode::ASCII);
   std::println(std::cout, "    ✓ JSON mode whois output verified");
 }

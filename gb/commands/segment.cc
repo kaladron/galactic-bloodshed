@@ -34,7 +34,8 @@ bool segment(const command_t& argv, GameObj& g) {
 
   g.session_registry.flush_all();
   do_segment(g.entity_manager, g.session_registry, 1, seg_num);
-  g.present(GB::presentation::SegmentResult{.segment = seg_num});
+  g.present(GB::presentation::make_output_message(
+      "Starting segment movement...\nSegment completed.\n"));
   return true;
 }
 

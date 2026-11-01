@@ -51,6 +51,7 @@ bool toggle(const command_t& argv, GameObj& g) {
     g.entity_manager.with_race(g.player(), [&](const Race& race) {
       g.present(GB::presentation::ToggleStatusViewModel{
           .toggles = race.governor(g.governor()).toggle,
+          .session = GB::presentation::build_session_view(g),
       });
     });
     return true;

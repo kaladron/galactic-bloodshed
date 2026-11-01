@@ -242,15 +242,14 @@ void test_read_json_mode() {
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"read"});
-  test::expect_contains(g.out.str(), "\"type\":\"telegrams\"");
-  test::expect_contains(g.out.str(), "\"message\":\"Structured alert\"");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"("message":"Structured alert")");
   test::expect_false(ctx.em.has_telegrams(1, 1));
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"read", "news"});
-  test::expect_contains(g.out.str(), "\"type\":\"news\"");
-  test::expect_contains(g.out.str(), "\"declarations\":[");
-  test::expect_contains(g.out.str(), "\"message\":\"War declared\"");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"("message":"War declared")");
 
   ctx.verify_universe_invariants();
 }

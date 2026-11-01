@@ -15,21 +15,11 @@ void test_highlight_database_persistence() {
 
   // Create in-memory database
   TestContext ctx;
-
-  // Setup: Create two races (player 1 and player 2)
-  Race race1{};
-  race1.Playernum = 1;
-  race1.name = "Player 1";
-  race1.leader().toggle.highlight = 0;  // Initially no highlight
-
-  Race race2{};
-  race2.Playernum = 2;
-  race2.name = "Player 2";
+  ctx.with_standard_universe();
+  ctx.em.mutate_race(1, [](Race& r) { r.leader().toggle.highlight = 0; });
 
   JsonStore store(ctx.db);
   RaceRepository races_repo(store);
-  races_repo.save(race1);
-  races_repo.save(race2);
 
   // Create GameObj for command execution
   auto& registry = get_test_session_registry();
@@ -94,8 +84,8 @@ void test_highlight_database_persistence() {
   test::expect_contains(g.out.str(), "Syntax: highlight <player>");
   g.set_ui_mode(UiMode::JSON);
   ctx.assert_dispatch_success(g, {"highlight", "1"});
-  test::expect_contains(g.out.str(), "\"type\":\"highlight\"");
-  test::expect_contains(g.out.str(), "\"target_player\":1");
+  test::expect_contains(g.out.str(), R"("type":"session")");
+  test::expect_contains(g.out.str(), R"("highlight":1)");
 
   std::println(std::cout,
                "  ✅ All highlight database persistence tests passed!");

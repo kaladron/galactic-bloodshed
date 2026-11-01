@@ -214,6 +214,68 @@ void test_check_connect_json_mode() {
   ctx.verify_universe_invariants();
 }
 
+void test_check_connect_deity_arrival_broadcast() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  ctx.em.mutate_race(1, [](Race& race) {
+    race.name = "GodRace";
+    race.password = "godword";
+    race.God = true;
+    race.leader().name = "Almighty";
+    race.leader().password = "govword";
+  });
+
+  ctx.em.mutate_race(2, [](Race& race) {
+    race.name = "MortalRace";
+    race.password = "mortalword";
+    race.God = false;
+    race.leader().name = "Peasant";
+    race.leader().password = "govword";
+  });
+
+  // Active session for mortal Player 2 in RecordingSessionRegistry
+  RecordingSessionRegistry registry;
+  registry.sessions = {
+      SessionInfo{.player = 2, .governor = 1, .connected = true},
+  };
+
+  asio::io_context io;
+
+  // 1. Deity (Race 1, God = true) logs in: mortal receives arrival broadcast
+  {
+    asio::ip::tcp::socket socket1(io);
+    auto session1 = Session::create(std::move(socket1), ctx.em, registry);
+    check_connect(*session1, "godword govword");
+    test::expect_true(session1->connected());
+    test::expect_true(session1->god());
+    test::expect_true(
+        registry.has_received(player_t{2}, "has entered the universe"));
+    test::expect_true(registry.has_received(
+        player_t{2},
+        "*** Deity GodRace \"Almighty\" [1,1] has entered the universe. ***"));
+  }
+
+  // 2. Mortal (Race 2, God = false) logs in: player 1 does NOT receive arrival
+  // broadcast
+  registry.clear_notifications();
+  {
+    // Clear active session for Player 2 so login is permitted
+    registry.sessions = {
+        SessionInfo{.player = 1, .governor = 1, .connected = true},
+    };
+    asio::ip::tcp::socket socket2(io);
+    auto session2 = Session::create(std::move(socket2), ctx.em, registry);
+    check_connect(*session2, "mortalword govword");
+    test::expect_true(session2->connected());
+    test::expect_false(session2->god());
+    test::expect_false(
+        registry.has_received(player_t{1}, "has entered the universe"));
+  }
+
+  ctx.verify_universe_invariants();
+}
+
 }  // namespace
 
 int main() {
@@ -224,6 +286,7 @@ int main() {
   test_check_connect_duplicate_session_rejection();
   test_check_connect_success_and_clamping();
   test_check_connect_json_mode();
+  test_check_connect_deity_arrival_broadcast();
 
   std::println(std::cout, "✓ auth_test passed!");
   return 0;

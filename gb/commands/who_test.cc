@@ -77,14 +77,30 @@ void test_who_matrix() {
   // Player 2 is invisible, so non-god Player 1 should not see "Klingons" in
   // table
   test::expect_false(out.contains("Klingons"));
-  // Deity session should be skipped
-  test::expect_false(out.contains("Deity"));
+  // Deity session should be visible to normal players when not invisible
+  test::expect_contains(out, "Deity");
   // Non-god sees coward count or Finished depending on SHOW_COWARDS
   if (SHOW_COWARDS) {
     test::expect_contains(out, "1 coward");
   } else {
     test::expect_contains(out, "Finished.");
   }
+
+  // Deity toggles invisible -> hidden from normal Player 1, coward count
+  // increases
+  ctx.em.mutate_race(player_t{3},
+                     [](Race& r) { r.leader().toggle.invisible = true; });
+  g.out.str("");
+  test::expect_true(
+      GB::commands::dispatch_command(g, GB::commands::who_cmd, {"who"}));
+  out = g.out.str();
+  test::expect_false(out.contains("Deity"));
+  if (SHOW_COWARDS) {
+    test::expect_contains(out, "2 cowards");
+  }
+  // Reset deity invisible toggle
+  ctx.em.mutate_race(player_t{3},
+                     [](Race& r) { r.leader().toggle.invisible = false; });
 
   // --- Case 2: Invisible player viewing who sees themselves ---
   ctx.setup_game_obj(g, 2, 1);
@@ -110,6 +126,21 @@ void test_who_matrix() {
   test::expect_contains(out, "Klingons");
   test::expect_contains(out, "Sol");
   test::expect_contains(out, "INVISIBLE");
+
+  // God viewing session with snum == 0 (e.g. universe scope): empty star name,
+  // no exception
+  mock_registry.sessions.push_back(SessionInfo{.player = 3,
+                                               .governor = 1,
+                                               .snum = 0,
+                                               .connected = true,
+                                               .god = true,
+                                               .last_time = now});
+  g.out.str("");
+  test::expect_true(
+      GB::commands::dispatch_command(g, GB::commands::who_cmd, {"who"}));
+  out = g.out.str();
+  test::expect_contains(out, "Deity");
+  mock_registry.sessions.pop_back();
 
   // --- Case 4: JSON mode rendering ---
   g.set_ui_mode(UiMode::JSON);

@@ -223,6 +223,56 @@ void test_send_validation_errors() {
   ctx.verify_universe_invariants();
 }
 
+void test_send_universe_scope_deity_messaging() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 1);
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_snum(0);
+  g.set_god(false);
+
+  // 1. Mortal sending to mortal (costs 1 AP): rejected at LEVEL_UNIV
+  ctx.assert_dispatch_rejected(g, {"send", "2", "Hello", "Mortal"});
+  test::expect_eq(g.out.str(), "Invalid scope for this command.\n");
+
+  // Mortal sending to block at LEVEL_UNIV (costs 1 AP): rejected
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"send", "block", "1", "Allied", "fleet"});
+  test::expect_eq(g.out.str(), "Invalid scope for this command.\n");
+
+  // 2. Mortal sending to Deity (alien.God == true, ap_cost == 0): succeeds from
+  // LEVEL_UNIV
+  ctx.em.mutate_race(2, [](Race& r) { r.God = true; });
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"send", "2", "Prayer", "to", "Deity"}, 0);
+  test::expect_contains(g.out.str(), "Message sent.");
+
+  // 3. Deity sending from LEVEL_UNIV with snum == 0: succeeds with 0 AP
+  g.set_god(true);
+  ctx.em.mutate_race(2, [](Race& r) { r.God = false; });
+
+  // Deity to mortal
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"send", "2", "Divine", "Edict"}, 0);
+  test::expect_contains(g.out.str(), "Message sent.");
+
+  // Deity to alliance block
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"send", "block", "1", "Divine", "Blessing"},
+                              0);
+  test::expect_contains(g.out.str(), "Message sent.");
+
+  // Deity to star system /Sol
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"send", "star", "/Sol", "Solar", "Flare"}, 0);
+  test::expect_contains(g.out.str(), "Message sent.");
+
+  ctx.verify_universe_invariants();
+}
+
 }  // namespace
 
 int main() {
@@ -230,6 +280,7 @@ int main() {
   test_send_to_governor_self_deity_and_json();
   test_send_block_and_star();
   test_send_validation_errors();
+  test_send_universe_scope_deity_messaging();
 
   std::println(std::cout, "✓ send_message_test passed!");
   return 0;

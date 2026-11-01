@@ -66,6 +66,21 @@ void setup_test_universe(TestContext& ctx) {
   RaceRepository races(store);
   races.save(race);
 
+  Race mortal{};
+  mortal.Playernum = 2;
+  mortal.name = "MortalRace";
+  mortal.password = "mortalpass";
+  mortal.God = false;
+  mortal.leader().name = "MortalGov";
+  mortal.leader().password = "mortalword";
+  mortal.leader().deflevel = ScopeLevel::LEVEL_STAR;
+  mortal.leader().defsystem = 1;
+  mortal.leader().defplanetnum = 1;
+  races.save(mortal);
+
+  PowerRepository powers(store);
+  powers.save(Power{{.id = 2}});
+
   UniverseRepository univ_repo(store);
   Universe u{};
   univ_repo.save(u);
@@ -89,6 +104,18 @@ std::string drain_socket(asio::ip::tcp::socket& socket) {
   if (!ec && first > 0) {
     result.append(buf.data(), first);
   }
+  while (socket.available(ec) > 0 && !ec) {
+    std::size_t n = socket.read_some(asio::buffer(buf), ec);
+    if (ec || n == 0) break;
+    result.append(buf.data(), n);
+  }
+  return result;
+}
+
+std::string drain_socket_available(asio::ip::tcp::socket& socket) {
+  std::string result;
+  std::array<char, 1024> buf{};
+  asio::error_code ec;
   while (socket.available(ec) > 0 && !ec) {
     std::size_t n = socket.read_some(asio::buffer(buf), ec);
     if (ec || n == 0) break;
@@ -333,6 +360,127 @@ void test_server_slow_client_flush_reaping() {
   server.shutdown();
 }
 
+void test_server_deity_departure_broadcast() {
+  TestContext ctx;
+  setup_test_universe(ctx);
+
+  asio::io_context io;
+  Server server(io, 0, ctx.em);
+  server.start();
+
+  // 1. Connect a mortal client (Race 2, MortalRace)
+  asio::ip::tcp::socket mortal_client(io);
+  mortal_client.connect(
+      asio::ip::tcp::endpoint(asio::ip::address_v6::loopback(), server.port()));
+  io.poll();
+  (void)drain_socket(mortal_client);
+
+  std::string mortal_creds = "mortalpass mortalword\n";
+  mortal_client.write_some(asio::buffer(mortal_creds));
+  io.poll();
+  server.process_commands();
+  io.poll();
+  (void)drain_socket(mortal_client);
+  test::expect_true(server.is_connected(2, 1));
+
+  // 2. Connect Deity client (Race 1, ServerTestRace)
+  asio::ip::tcp::socket deity_client(io);
+  deity_client.connect(
+      asio::ip::tcp::endpoint(asio::ip::address_v6::loopback(), server.port()));
+  io.poll();
+  (void)drain_socket(deity_client);
+
+  std::string deity_creds = "raceword govword\n";
+  deity_client.write_some(asio::buffer(deity_creds));
+  io.poll();
+  server.process_commands();
+  io.poll();
+  (void)drain_socket(deity_client);
+  test::expect_true(server.is_connected(1, 1));
+
+  // Mortal receives arrival broadcast
+  std::string arrival_broadcast = drain_socket(mortal_client);
+  test::expect_contains(
+      arrival_broadcast,
+      "*** Deity ServerTestRace \"Gov1\" [1,1] has entered the universe. ***");
+
+  // 3. Deity disconnects via `quit`
+  std::string deity_quit = "quit\n";
+  deity_client.write_some(asio::buffer(deity_quit));
+  io.poll();
+  server.process_commands();
+  io.poll();
+  (void)drain_socket(deity_client);
+  test::expect_false(server.is_connected(1, 1));
+
+  // Mortal receives departure broadcast
+  std::string departure_broadcast = drain_socket(mortal_client);
+  test::expect_contains(
+      departure_broadcast,
+      "*** Deity ServerTestRace \"Gov1\" [1,1] has departed the universe. ***");
+
+  // 4. Another mortal client connects, logs in, and disconnects: NO departure
+  // broadcast sent to first mortal
+  asio::ip::tcp::socket mortal2_client(io);
+  mortal2_client.connect(
+      asio::ip::tcp::endpoint(asio::ip::address_v6::loopback(), server.port()));
+  io.poll();
+  (void)drain_socket(mortal2_client);
+
+  // Appoint second governor for mortal race
+  ctx.em.mutate_race(2, [](Race& r) {
+    r.appoint_governor({.name = "MortalGov2", .password = "mortalword2"});
+  });
+  std::string mortal2_creds = "mortalpass mortalword2\n";
+  mortal2_client.write_some(asio::buffer(mortal2_creds));
+  io.poll();
+  server.process_commands();
+  io.poll();
+  (void)drain_socket(mortal2_client);
+  test::expect_true(server.is_connected(2, 2));
+
+  // Clear any pending messages on first mortal
+  (void)drain_socket_available(mortal_client);
+
+  // Mortal 2 quits
+  std::string mortal2_quit = "quit\n";
+  mortal2_client.write_some(asio::buffer(mortal2_quit));
+  io.poll();
+  server.process_commands();
+  io.poll();
+  (void)drain_socket(mortal2_client);
+  test::expect_false(server.is_connected(2, 2));
+
+  // Mortal 1 receives NO departure broadcast from Mortal 2
+  std::string mortal1_after_mortal_quit = drain_socket_available(mortal_client);
+  test::expect_false(
+      mortal1_after_mortal_quit.contains("has departed the universe"));
+
+  // 5. Connect Deity again, then trigger server.shutdown(): NO departure
+  // broadcast sent
+  asio::ip::tcp::socket deity2_client(io);
+  deity2_client.connect(
+      asio::ip::tcp::endpoint(asio::ip::address_v6::loopback(), server.port()));
+  io.poll();
+  (void)drain_socket(deity2_client);
+
+  deity2_client.write_some(asio::buffer(deity_creds));
+  io.poll();
+  server.process_commands();
+  io.poll();
+  (void)drain_socket(deity2_client);
+  test::expect_true(server.is_connected(1, 1));
+  (void)drain_socket(mortal_client);  // Drain arrival broadcast
+
+  // Server shutdown with connected deity
+  server.shutdown();
+  io.poll();
+
+  std::string mortal_after_shutdown = drain_socket_available(mortal_client);
+  test::expect_false(
+      mortal_after_shutdown.contains("has departed the universe"));
+}
+
 }  // namespace
 
 int main() {
@@ -340,6 +488,7 @@ int main() {
   test_server_network_lifecycle_and_session_handling();
   test_server_quotas_idle_timeout_and_turn_events();
   test_server_slow_client_flush_reaping();
+  test_server_deity_departure_broadcast();
 
   std::println(std::cout, "✓ server_test passed!");
   return 0;

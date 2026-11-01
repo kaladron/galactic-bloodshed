@@ -233,16 +233,35 @@ std::vector<SessionInfo> Server::get_connected_sessions() const {
 }
 
 void Server::reap_disconnected_sessions() {
-  std::erase_if(sessions_, [](const auto& session) {
+  std::vector<std::pair<player_t, governor_t>> departing_deities;
+
+  std::erase_if(sessions_, [&](const auto& session) {
     if (!session->is_disconnected()) return false;
     if (session->connected()) {
       std::println(std::cerr, "DISCONNECT Race={} Governor={}",
                    session->player(), session->governor());
+      if (session->god() && !shutdown_flag_) {
+        departing_deities.emplace_back(session->player(), session->governor());
+      }
     } else {
       std::println(std::cerr, "DISCONNECT never connected");
     }
     return true;
   });
+
+  for (const auto& [player, governor] : departing_deities) {
+    std::string race_name;
+    std::string gov_name;
+    entity_manager_.with_race(player, [&](const Race& race) {
+      race_name = race.name;
+      gov_name = race.governor(governor).name;
+    });
+    d_shout(
+        *this, entity_manager_, player, governor,
+        std::format(
+            "\n*** Deity {} \"{}\" [{},{}] has departed the universe. ***\n",
+            race_name, gov_name, player, governor));
+  }
 }
 
 bool Server::do_command(Session& session, std::string_view comm) {

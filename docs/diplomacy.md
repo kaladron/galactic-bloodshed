@@ -228,8 +228,14 @@ flowchart LR
 ```
 
 ### Communication Channels
-- **Direct Telegrams**: Secure bilateral transmissions sent directly to foreign emperors and system governors (`telegram <player> <msg>`).
-- **Galactic Broadcasts**: System-wide or galaxy-wide public proclamations (`announce` command).
+- **Direct Telegrams (`send <race> [<governor>] <message>`)**: Bilateral transmissions sent to a foreign empire's leader (or a specific governor). Sending a telegram between mortal empires requires being scoped to a star, planet, or ship, costs $1\text{ Star AP}$, and increases the recipient's translation knowledge of the sender by $+2\%$ (clamped to $100\%$). Sending a message to oneself or to/from the **Deity** costs **$0\text{ AP}$** and is permitted from **any scope** (including Universe scope `/`) without requiring prior contact or translation knowledge.
+- **Block & System Telegrams (`send block <block> <message>`, `send star <star> <message>`)**: Dispatches a telegram to the leader of every member empire in a power block or every empire inhabiting a target star system ($1\text{ Star AP}$ for mortals, $0\text{ AP}$ at any scope for the Deity), incrementing each recipient's translation knowledge of the sender by $+2\%$.
+- **Live Paging (`page <race|block> [<governor>]`)**: Sends a real-time notification alerting an online player (or all online members of your alliance block) that you are seeking a live conference from your current star system ($1\text{ Star AP}$ for mortal-to-mortal pages). Paging to or from the **Deity** costs **$0\text{ AP}$** and works from any scope (reporting `"universe"` when sent from Universe scope).
+- **Real-Time Chat & Presence (`broadcast`, `announce`, `think`, `who`)**:
+  - `broadcast` (or `"`): Sends a real-time galaxy-wide message to all connected players who have not enabled `gag`.
+  - `announce` (or `:`): Sends a real-time system-wide message to connected empires inhabiting the current star system (and the Deity).
+  - `think` (or `=`): Sends an internal real-time message to other connected governors of your own empire.
+  - `who`: Lists all currently connected players and governors (including the Deity, unless a governor has toggled `invisible`). When the **Deity** connects to or disconnects from the server, a galaxy-wide announcement is broadcast to all online players so empires know when the Deity is available for live communication.
 - **Combat & Disaster Bulletins**: Automated intelligence bulletins alerting players to fleet battles, supernova collapses, and slave uprisings.
 
 ### Universal Translation Milestone

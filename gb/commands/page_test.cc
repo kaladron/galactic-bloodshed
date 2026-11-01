@@ -114,10 +114,67 @@ void test_page_dispatch() {
   ctx.verify_universe_invariants();
 }
 
+void test_page_universe_scope_deity_messaging() {
+  TestContext ctx;
+  setup_test_world(ctx);
+
+  RecordingSessionRegistry registry;
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 1);
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_snum(0);
+  g.set_god(false);
+
+  // 1. Mortal paging another mortal at LEVEL_UNIV (costs 1 AP): rejected
+  ctx.assert_dispatch_rejected(g, {"page", "2"});
+  test::expect_eq(g.out.str(), "Invalid scope for this command.\n");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"page", "block"});
+  test::expect_eq(g.out.str(), "Invalid scope for this command.\n");
+
+  // 2. Mortal paging a Deity from LEVEL_UNIV (alien.God == true, ap_cost == 0):
+  // succeeds and formats origin as "universe"
+  ctx.em.mutate_race(2, [](Race& r) { r.God = true; });
+  registry.clear_notifications();
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"page", "2"}, 0);
+  test::expect_eq(g.out.str(), "Request sent.\n");
+  auto msgs = registry.messages_for(player_t{2});
+  test::expect_eq(msgs.size(), 1u);
+  test::expect_contains(msgs[0], "page(s) you from the universe star system.");
+
+  // 3. Deity paging from LEVEL_UNIV (g.god() == true, snum == 0):
+  // succeeds with 0 AP and formats origin as "universe"
+  g.set_god(true);
+  ctx.em.mutate_race(2, [](Race& r) { r.God = false; });
+
+  // Deity pages mortal
+  registry.clear_notifications();
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"page", "2"}, 0);
+  test::expect_eq(g.out.str(), "Request sent.\n");
+  msgs = registry.messages_for(player_t{2});
+  test::expect_eq(msgs.size(), 1u);
+  test::expect_contains(msgs[0], "page(s) you from the universe star system.");
+
+  // Deity pages alliance block
+  registry.clear_notifications();
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"page", "block"}, 0);
+  test::expect_eq(g.out.str(), "Paging alliance block.\nRequest sent.\n");
+  msgs = registry.messages_for(player_t{2});
+  test::expect_eq(msgs.size(), 1u);
+  test::expect_contains(msgs[0], "page(s) you from the universe star system.");
+
+  ctx.verify_universe_invariants();
+}
+
 }  // namespace
 
 int main() {
   test_page_dispatch();
+  test_page_universe_scope_deity_messaging();
   std::println(std::cout, "✓ page_test passed!");
   return 0;
 }

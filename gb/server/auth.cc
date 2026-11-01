@@ -180,4 +180,11 @@ void check_connect(Session& session, std::string_view message) {
   session.entity_manager().mutate_race(Playernum, [&](Race& race_mut) {
     race_mut.governor(Governor).login = std::time(nullptr);
   });
+
+  if (session.god()) {
+    d_shout(session.registry(), session.entity_manager(), Playernum, Governor,
+            std::format(
+                "\n*** Deity {} \"{}\" [{},{}] has entered the universe. ***\n",
+                login_vm.race_name, login_vm.gov_name, Playernum, Governor));
+  }
 }

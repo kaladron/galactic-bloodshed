@@ -19,11 +19,22 @@ bool deduct_page_ap(GameObj& g, ap_t ap_cost) {
   if (ap_cost == 0) {
     return true;
   }
+  if (g.level() == ScopeLevel::LEVEL_UNIV) {
+    g.out << "Invalid scope for this command.\n";
+    return false;
+  }
   if (!g.deduct_ap(g.snum(), ap_cost)) {
     g.out << std::format("You don't have {} action points there.\n", ap_cost);
     return false;
   }
   return true;
+}
+
+std::string page_origin_name(GameObj& g) {
+  if (g.level() == ScopeLevel::LEVEL_UNIV) {
+    return "universe";
+  }
+  return g.entity_manager.peek_star(g.snum())->get_name();
 }
 
 std::expected<std::optional<governor_t>, bool>
@@ -47,9 +58,8 @@ bool page_alliance_block(GameObj& g) {
   }
 
   const auto playernum = g.player();
-  const auto& star = *g.entity_manager.peek_star(g.snum());
   const auto msg = GB::presentation::render_page_notification(
-      g.race->name, g.current_governor().name, star.get_name());
+      g.race->name, g.current_governor().name, page_origin_name(g));
   const auto& block_player = *g.entity_manager.peek_block(playernum);
 
   for (const Race& race : RaceList::readonly(g.entity_manager)) {
@@ -82,9 +92,8 @@ bool page_player(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  const auto& star = *g.entity_manager.peek_star(g.snum());
   const auto msg = GB::presentation::render_page_notification(
-      g.race->name, g.current_governor().name, star.get_name());
+      g.race->name, g.current_governor().name, page_origin_name(g));
   if (*target_gov) {
     g.session_registry.notify_player(who, **target_gov, msg);
   } else {
@@ -111,7 +120,7 @@ bool page(const command_t& argv, GameObj& g) {
 const CommandDescriptor page_cmd{
     .name = "page",
     .roles = {},
-    .scopes = {.star = true, .planet = true, .ship = true},
+    .scopes = AllowedScopes::any(),
     .ap = APCost::dynamic(),
     .min_args = 2,
     .syntax = "page <race|block> [<governor>]",

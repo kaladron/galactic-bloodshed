@@ -30,6 +30,10 @@ bool deduct_message_ap(GameObj& g, ap_t ap_cost) {
   if (ap_cost == 0) {
     return true;
   }
+  if (g.level() == ScopeLevel::LEVEL_UNIV) {
+    g.out << "Invalid scope for this command.\n";
+    return false;
+  }
   if (!g.deduct_ap(g.snum(), ap_cost)) {
     g.out << std::format("You don't have {} action points there.\n", ap_cost);
     return false;
@@ -237,7 +241,7 @@ bool send_message(const command_t& argv, GameObj& g) {
 const CommandDescriptor send_cmd{
     .name = "send",
     .roles = {},
-    .scopes = {.star = true, .planet = true, .ship = true},
+    .scopes = AllowedScopes::any(),
     .ap = APCost::dynamic(),
     .min_args = 3,
     .syntax = "send <race|block|star> [<governor>] <message>",

@@ -25,8 +25,6 @@ bool who(const command_t&, GameObj& g) {
 
   // Get all connected sessions as metadata (no Session type exposure)
   for (const auto& info : g.session_registry.get_connected_sessions()) {
-    if (info.god) continue;  // Skip god sessions
-
     g.entity_manager.with_race(info.player, [&](const Race& r) {
       const auto& gov = r.governor(info.governor);
       // Check if this player should be visible
@@ -35,7 +33,7 @@ bool who(const command_t&, GameObj& g) {
 
       if (is_visible) {
         std::string star_name;
-        if (is_god) {
+        if (is_god && info.snum != 0) {
           g.entity_manager.with_star(info.snum, [&](const Star& star) {
             star_name = star.get_name();
           });

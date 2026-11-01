@@ -521,12 +521,10 @@ std::string render_dump(const DumpViewModel& vm) {
   return out;
 }
 
-std::string render_json_dump(const DumpViewModel& vm) {
-  return render_json_envelope("dump", vm);
-}
-
 std::string render_for_mode(UiMode mode, const DumpViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_dump(vm) : render_dump(vm);
+  return mode == UiMode::JSON
+             ? render_json_message(make_output_message(render_dump(vm)))
+             : render_dump(vm);
 }
 
 std::string render_time(const TimeViewModel& vm) {
@@ -799,13 +797,10 @@ std::string render_give_result(const GiveResult& /*vm*/) {
   return "Owner changed.\n";
 }
 
-std::string render_json_give_result(const GiveResult& vm) {
-  return render_json_envelope("give", vm);
-}
-
 std::string render_for_mode(UiMode mode, const GiveResult& vm) {
-  return mode == UiMode::JSON ? render_json_give_result(vm)
-                              : render_give_result(vm);
+  return mode == UiMode::JSON
+             ? render_json_message(make_output_message(render_give_result(vm)))
+             : render_give_result(vm);
 }
 
 std::string render_give_recipient_telegram(std::string_view donor_name,

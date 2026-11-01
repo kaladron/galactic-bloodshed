@@ -66,8 +66,8 @@ void test_render_json_envelope_and_polymorphic_presenter() {
 
   const std::string dispatched_json =
       GB::presentation::render_for_mode(UiMode::JSON, est);
-  test::expect_contains(dispatched_json, "\"type\":\"trip_estimate\"");
-  test::expect_contains(dispatched_json, "\"distance\":42.5");
+  test::expect_contains(dispatched_json, R"("type":"message")");
+  test::expect_contains(dispatched_json, "Total Distance = 42.50");
 
   static_assert(std::is_aggregate_v<CapturedShipEvent>);
   static_assert(std::is_aggregate_v<CapturedShipsReport>);
@@ -94,7 +94,10 @@ void test_render_json_envelope_and_polymorphic_presenter() {
       "f12 Fighter CAPTURED!\n");
   test::expect_contains(
       GB::presentation::render_for_mode(UiMode::JSON, populated_captured),
-      "\"type\":\"captured_ships\"");
+      R"("type":"message")");
+  test::expect_contains(
+      GB::presentation::render_for_mode(UiMode::JSON, populated_captured),
+      "f12 Fighter CAPTURED!");
 
   static_assert(std::is_aggregate_v<ReactorOverloadEvent>);
   static_assert(std::is_aggregate_v<MechAttackPeopleResult>);
@@ -276,7 +279,8 @@ void test_gameobj_ui_mode_and_present() {
   g.set_ui_mode(UiMode::JSON);
   test::expect_eq(g.ui_mode(), UiMode::JSON);
   g.present(est);
-  test::expect_contains(g.out.str(), "\"type\":\"trip_estimate\"");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), "Total Distance = 10.00");
 
   g.set_ui_mode(UiMode::ASCII);
   test::expect_eq(g.ui_mode(), UiMode::ASCII);

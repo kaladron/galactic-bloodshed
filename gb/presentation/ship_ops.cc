@@ -274,7 +274,7 @@ std::string render_peaceful_dock_result(const PeacefulDockResult& res) {
 
 std::string render_for_mode(UiMode mode, const JettisonResult& vm) {
   if (mode == UiMode::JSON) {
-    return render_json_envelope("jettison", vm);
+    return render_json_message(make_output_message(render_jettison_result(vm)));
   }
   return render_jettison_result(vm);
 }
@@ -309,7 +309,8 @@ std::string render_for_mode(UiMode mode, const ScrapShipResult& vm) {
 
 std::string render_for_mode(UiMode mode, const PeacefulDockResult& vm) {
   if (mode == UiMode::JSON) {
-    return render_json_envelope("peaceful_dock", vm);
+    return render_json_message(
+        make_output_message(render_peaceful_dock_result(vm)));
   }
   return render_peaceful_dock_result(vm);
 }

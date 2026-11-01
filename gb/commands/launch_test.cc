@@ -409,7 +409,7 @@ void test_launch_mcdc_undock_observers_and_json() {
   g.set_god(false);
 
   // 3. Foreign player with sectors on planet receives launch observation
-  // telegram, and UiMode::JSON renders launch_ship envelope
+  // telegram, and UiMode::JSON renders canonical message and dirty ship stanzas
   ctx.em.mutate_star(1, [](Star& st) { st.AP(1) = 10; });
   ctx.em.mutate_ship(1, [](Ship& s1) {
     s1.land_on_planet(1, 1, {5, 5});
@@ -419,8 +419,9 @@ void test_launch_mcdc_undock_observers_and_json() {
 
   g.set_ui_mode(UiMode::JSON);
   ctx.assert_dispatch_success(g, {"launch", "#1"}, 1);
-  test::expect_contains(g.out.str(), "\"type\":\"launch_ship\"");
-  test::expect_contains(g.out.str(), "\"star_name\":\"Sol\"");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"("type":"ship")");
+  test::expect_contains(g.out.str(), "launched from planet");
   g.set_ui_mode(UiMode::ASCII);
 
   const auto p2_telegrams = ctx.em.get_telegrams(2, 1);

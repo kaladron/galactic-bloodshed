@@ -129,6 +129,17 @@ void test_jettison_happy_path() {
     test::expect_eq(s_after->resource(), initial_resource - 30);
     std::println(std::cout, "✓ Resources jettisoned");
   }
+
+  std::println(std::cout, "Jettison JSON mode");
+  {
+    g.set_ui_mode(UiMode::JSON);
+    g.out.str("");
+    ctx.assert_dispatch_success(g, {"jettison", "#1", "r", "5"});
+    test::expect_contains(g.out.str(), R"("type":"message")");
+    test::expect_contains(g.out.str(), R"("type":"ship")");
+    test::expect_contains(g.out.str(), "resources jettisoned");
+    g.set_ui_mode(UiMode::ASCII);
+  }
 }
 
 void test_jettison_domain_errors() {

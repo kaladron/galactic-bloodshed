@@ -602,7 +602,9 @@ void test_land_json_and_remaining_conditions() {
   });
   g.set_ui_mode(UiMode::JSON);
   ctx.assert_dispatch_success(g, {"land", "#1", "1,1"}, 1);
-  test::expect_contains(g.out.str(), "\"type\":\"land_ship\"");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"("type":"ship")");
+  test::expect_contains(g.out.str(), "landed on planet");
   g.set_ui_mode(UiMode::ASCII);
 
   // 4. Ship destroyed by planetary defense fire during descent

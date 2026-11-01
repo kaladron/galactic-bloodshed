@@ -385,10 +385,6 @@ struct DumpViewModel {
 /// Renders a `DumpViewModel` for `UiMode::ASCII`.
 [[nodiscard]] std::string render_dump(const DumpViewModel& vm);
 
-/// Serializes a `DumpViewModel` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"dump","data":{...}}\n`).
-[[nodiscard]] std::string render_json_dump(const DumpViewModel& vm);
-
 /// Dispatches `DumpViewModel` rendering based on `mode`.
 [[nodiscard]] std::string render_for_mode(UiMode mode, const DumpViewModel& vm);
 
@@ -611,7 +607,6 @@ struct GiveResult {
                                           std::string_view recipient_name,
                                           std::string_view orbit_path);
 [[nodiscard]] std::string render_give_result(const GiveResult& vm);
-[[nodiscard]] std::string render_json_give_result(const GiveResult& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode, const GiveResult& vm);
 [[nodiscard]] std::string
 render_give_recipient_telegram(std::string_view donor_name, player_t donor_id,

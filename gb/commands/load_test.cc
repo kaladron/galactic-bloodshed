@@ -399,8 +399,10 @@ void test_load_ship_to_ship() {
   g.out.str("");
   ctx.assert_dispatch_success(g,
                               {"load", std::format("#{}", s1_id.value), "c"});
-  test::expect_contains(g.out.str(), "\"type\":\"ship_docking_status\"");
-  test::expect_contains(g.out.str(), "\"type\":\"ship_cargo_transfer\"");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"("type":"ship")");
+  test::expect_contains(g.out.str(), "docked with");
+  test::expect_contains(g.out.str(), "crew complement");
   test::expect_eq(
       ctx.em.peek_ship(s1_id)->popn() + ctx.em.peek_ship(s2_id)->popn(), 30);
   std::println(std::cout, "✓ Alien ship transfer constraints enforced");
@@ -491,7 +493,9 @@ void test_planet_crew_load_and_unload() {
   g.out.str("");
   ctx.assert_dispatch_success(g,
                               {"load", std::format("#{}", ship_id.value), "c"});
-  test::expect_contains(g.out.str(), "\"type\":\"planet_cargo_transfer\"");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"("type":"ship")");
+  test::expect_contains(g.out.str(), "crew complement");
   test::expect_eq(ctx.em.peek_ship(ship_id)->popn(), 80);
   test::expect_eq(ctx.em.peek_ship(ship_id)->troops(), 20);
   test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({5, 5}).get_popn(), 20);
@@ -510,7 +514,10 @@ void test_planet_crew_load_and_unload() {
         GB::presentation::render_for_mode(UiMode::ASCII, sample).empty());
     test::expect_contains(
         GB::presentation::render_for_mode(UiMode::JSON, sample),
-        "\"type\":\"planet_cargo_transfer\"");
+        R"("type":"message")");
+    test::expect_contains(
+        GB::presentation::render_for_mode(UiMode::JSON, sample),
+        "crew complement");
   }
 
   std::println(std::cout,
@@ -699,7 +706,9 @@ void test_transporter_edge_cases() {
   g.out.str("");
   ctx.assert_dispatch_success(
       g, {"load", std::format("#{}", send_id.value), "r", "5"});
-  test::expect_contains(g.out.str(), "\"type\":\"transporter_transfer\"");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"("type":"ship")");
+  test::expect_contains(g.out.str(), "transferred");
 
   for (const auto err : all_transporter_errors) {
     test::expect_false(GB::presentation::format_transporter_error(err).empty());

@@ -205,13 +205,16 @@ void test_give_dispatch() {
   g.out.str("");
   ctx.assert_dispatch_success(
       g, {"give", "Klingons", std::format("#{}", crewed_id.value)});
-  test::expect_contains(g.out.str(), "\"type\":\"give\"");
-  test::expect_contains(g.out.str(), "\"recipient_name\":\"Klingons\"");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"("type":"ship")");
+  test::expect_contains(g.out.str(), "Owner changed.");
 
   g.out.str("");
   ctx.assert_dispatch_success(
       g, {"give", "Klingons", std::format("#{}", carrier_id.value)});
-  test::expect_contains(g.out.str(), "\"type\":\"give\"");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"("type":"ship")");
+  test::expect_contains(g.out.str(), "Owner changed.");
 
   ctx.em.mutate_race(1, [](Race& r) {
     r.God = false;

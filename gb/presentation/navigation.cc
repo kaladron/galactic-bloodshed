@@ -285,16 +285,16 @@ std::string render_ship_order_status(const ShipOrderStatus& status) {
 
 std::string render_for_mode(UiMode mode, const TripEstimate& vm) {
   if (mode == UiMode::JSON) {
-    return render_json_envelope("trip_estimate", vm);
+    return render_json_message(make_output_message(render_trip_estimate(vm)));
   }
   return render_trip_estimate(vm);
 }
 
 std::string render_for_mode(UiMode mode, const CapturedShipsReport& vm) {
   if (mode == UiMode::JSON) {
-    return vm.captured_ships.empty()
-               ? std::string{}
-               : render_json_envelope("captured_ships", vm);
+    return vm.captured_ships.empty() ? std::string{}
+                                     : render_json_message(make_output_message(
+                                           render_captured_ships_report(vm)));
   }
   return render_captured_ships_report(vm);
 }
@@ -343,13 +343,10 @@ std::string render_proj_fuel(const ProjFuelViewModel& vm) {
   return out;
 }
 
-std::string render_json_proj_fuel(const ProjFuelViewModel& vm) {
-  return render_json_envelope("fuel", vm);
-}
-
 std::string render_for_mode(UiMode mode, const ProjFuelViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_proj_fuel(vm)
-                              : render_proj_fuel(vm);
+  return mode == UiMode::JSON
+             ? render_json_message(make_output_message(render_proj_fuel(vm)))
+             : render_proj_fuel(vm);
 }
 
 std::string
@@ -526,13 +523,9 @@ std::string render_planet_cargo_transfer(const PlanetCargoTransferResult& res) {
   return out;
 }
 
-std::string
-render_json_planet_cargo_transfer(const PlanetCargoTransferResult& res) {
-  return render_json_envelope("planet_cargo_transfer", res);
-}
-
 std::string render_for_mode(UiMode mode, const PlanetCargoTransferResult& vm) {
-  return mode == UiMode::JSON ? render_json_planet_cargo_transfer(vm)
+  return mode == UiMode::JSON ? render_json_message(make_output_message(
+                                    render_planet_cargo_transfer(vm)))
                               : render_planet_cargo_transfer(vm);
 }
 
@@ -569,12 +562,9 @@ std::string render_ship_docking_status(const ShipDockingStatus& status) {
   return out;
 }
 
-std::string render_json_ship_docking_status(const ShipDockingStatus& status) {
-  return render_json_envelope("ship_docking_status", status);
-}
-
 std::string render_for_mode(UiMode mode, const ShipDockingStatus& vm) {
-  return mode == UiMode::JSON ? render_json_ship_docking_status(vm)
+  return mode == UiMode::JSON ? render_json_message(make_output_message(
+                                    render_ship_docking_status(vm)))
                               : render_ship_docking_status(vm);
 }
 
@@ -586,13 +576,9 @@ std::string render_ship_cargo_transfer(const ShipCargoTransferResult& res) {
   return out;
 }
 
-std::string
-render_json_ship_cargo_transfer(const ShipCargoTransferResult& res) {
-  return render_json_envelope("ship_cargo_transfer", res);
-}
-
 std::string render_for_mode(UiMode mode, const ShipCargoTransferResult& vm) {
-  return mode == UiMode::JSON ? render_json_ship_cargo_transfer(vm)
+  return mode == UiMode::JSON ? render_json_message(make_output_message(
+                                    render_ship_cargo_transfer(vm)))
                               : render_ship_cargo_transfer(vm);
 }
 
@@ -679,13 +665,9 @@ std::string render_transporter_transfer(const TransporterTransferResult& res) {
   return out;
 }
 
-std::string
-render_json_transporter_transfer(const TransporterTransferResult& res) {
-  return render_json_envelope("transporter_transfer", res);
-}
-
 std::string render_for_mode(UiMode mode, const TransporterTransferResult& vm) {
-  return mode == UiMode::JSON ? render_json_transporter_transfer(vm)
+  return mode == UiMode::JSON ? render_json_message(make_output_message(
+                                    render_transporter_transfer(vm)))
                               : render_transporter_transfer(vm);
 }
 
@@ -811,13 +793,10 @@ std::string render_launch_ship_result(const LaunchShipResult& res) {
   return {};
 }
 
-std::string render_json_launch_ship_result(const LaunchShipResult& res) {
-  return render_json_envelope("launch_ship", res);
-}
-
 std::string render_for_mode(UiMode mode, const LaunchShipResult& vm) {
   if (mode == UiMode::JSON) {
-    return render_json_launch_ship_result(vm);
+    return render_json_message(
+        make_output_message(render_launch_ship_result(vm)));
   }
   return render_launch_ship_result(vm);
 }
@@ -1012,13 +991,10 @@ std::string render_land_ship_result(const LandShipResult& res) {
   return {};
 }
 
-std::string render_json_land_ship_result(const LandShipResult& res) {
-  return render_json_envelope("land_ship", res);
-}
-
 std::string render_for_mode(UiMode mode, const LandShipResult& vm) {
   if (mode == UiMode::JSON) {
-    return render_json_land_ship_result(vm);
+    return render_json_message(
+        make_output_message(render_land_ship_result(vm)));
   }
   return render_land_ship_result(vm);
 }

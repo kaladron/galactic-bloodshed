@@ -168,7 +168,8 @@ void test_dump_specific_places() {
   // 4. JSON mode
   g.set_ui_mode(UiMode::JSON);
   ctx.assert_dispatch_success(g, {"dump", "Klingons", "/Sol"}, 10);
-  test::expect_contains(g.out.str(), "\"type\":\"dump\"");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), "Exploration Data transferred");
 }
 
 void test_dump_matrix() {

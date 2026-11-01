@@ -87,7 +87,9 @@ void test_dock_happy_paths_and_json_presentation() {
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"dock", "#1", "#2"}, 0);
-  test::expect_contains(g.out.str(), "\"type\":\"peaceful_dock\"");
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"("type":"ship")");
+  test::expect_contains(g.out.str(), "docked with");
 
   ctx.verify_universe_invariants();
 }

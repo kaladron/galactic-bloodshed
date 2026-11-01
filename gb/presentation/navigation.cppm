@@ -65,10 +65,6 @@ struct ProjFuelViewModel {
 /// Formats a `ProjFuelViewModel` into its ASCII presentation string.
 [[nodiscard]] std::string render_proj_fuel(const ProjFuelViewModel& vm);
 
-/// Serializes a `ProjFuelViewModel` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"fuel","data":{...}}\n`).
-[[nodiscard]] std::string render_json_proj_fuel(const ProjFuelViewModel& vm);
-
 /// Open ADL dispatch for `ProjFuelViewModel`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const ProjFuelViewModel& vm);
@@ -94,11 +90,6 @@ render_alien_assault_news(const AlienSectorAssaultResult& assault);
 [[nodiscard]] std::string
 render_planet_cargo_transfer(const PlanetCargoTransferResult& res);
 
-/// Serializes a `PlanetCargoTransferResult` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"planet_cargo_transfer","data":{...}}\n`).
-[[nodiscard]] std::string
-render_json_planet_cargo_transfer(const PlanetCargoTransferResult& res);
-
 /// Open ADL dispatch for `PlanetCargoTransferResult`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const PlanetCargoTransferResult& vm);
@@ -111,11 +102,6 @@ format_ship_docking_error(const ShipDockingError& err);
 [[nodiscard]] std::string
 render_ship_docking_status(const ShipDockingStatus& status);
 
-/// Serializes a `ShipDockingStatus` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"ship_docking_status","data":{...}}\n`).
-[[nodiscard]] std::string
-render_json_ship_docking_status(const ShipDockingStatus& status);
-
 /// Open ADL dispatch for `ShipDockingStatus`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const ShipDockingStatus& vm);
@@ -123,11 +109,6 @@ render_json_ship_docking_status(const ShipDockingStatus& status);
 /// Formats a `ShipCargoTransferResult` into its ASCII presentation string.
 [[nodiscard]] std::string
 render_ship_cargo_transfer(const ShipCargoTransferResult& res);
-
-/// Serializes a `ShipCargoTransferResult` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"ship_cargo_transfer","data":{...}}\n`).
-[[nodiscard]] std::string
-render_json_ship_cargo_transfer(const ShipCargoTransferResult& res);
 
 /// Open ADL dispatch for `ShipCargoTransferResult`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
@@ -145,11 +126,6 @@ render_ship_cargo_transfer_telegram(const ShipCargoTransferResult& res);
 [[nodiscard]] std::string
 render_transporter_transfer(const TransporterTransferResult& res);
 
-/// Serializes a `TransporterTransferResult` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"transporter_transfer","data":{...}}\n`).
-[[nodiscard]] std::string
-render_json_transporter_transfer(const TransporterTransferResult& res);
-
 /// Open ADL dispatch for `TransporterTransferResult`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const TransporterTransferResult& vm);
@@ -166,11 +142,6 @@ render_transporter_telegram(const TransporterTransferResult& res);
 [[nodiscard]] std::string
 render_launch_ship_result(const LaunchShipResult& res);
 
-/// Serializes a `LaunchShipResult` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"launch_ship","data":{...}}\n`).
-[[nodiscard]] std::string
-render_json_launch_ship_result(const LaunchShipResult& res);
-
 /// Open ADL dispatch for `LaunchShipResult`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,
                                           const LaunchShipResult& vm);
@@ -185,11 +156,6 @@ render_launch_observed_telegram(const LaunchShipResult& res);
 
 /// Formats a `LandShipResult` into its ASCII presentation string.
 [[nodiscard]] std::string render_land_ship_result(const LandShipResult& res);
-
-/// Serializes a `LandShipResult` into a newline-delimited Glaze JSON
-/// envelope (`{"type":"land_ship","data":{...}}\n`).
-[[nodiscard]] std::string
-render_json_land_ship_result(const LandShipResult& res);
 
 /// Open ADL dispatch for `LandShipResult`.
 [[nodiscard]] std::string render_for_mode(UiMode mode,

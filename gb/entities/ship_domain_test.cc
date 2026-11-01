@@ -1444,7 +1444,10 @@ void test_blueprint_complexity_defense_and_capture() {
       "CAPTURED!");
   test::expect_contains(GB::presentation::render_for_mode(
                             GB::presentation::UiMode::JSON, captured_rep),
-                        "\"type\":\"captured_ships\"");
+                        R"("type":"message")");
+  test::expect_contains(GB::presentation::render_for_mode(
+                            GB::presentation::UiMode::JSON, captured_rep),
+                        "CAPTURED!");
 
   // Also verify 2-level nested doown()
   ctx.em.mutate_ship(shuttle_id, [](Ship& s) {

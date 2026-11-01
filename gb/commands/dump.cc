@@ -67,7 +67,7 @@ bool dump(const command_t& argv, GameObj& g) {
   warn_race(g.session_registry, g.entity_manager, recipient_id,
             std::format("{} [{}] has given you exploration data.\n",
                         g.race->name, donor_id));
-  g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
+  g.present(vm);
   return true;
 }
 

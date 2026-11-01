@@ -67,6 +67,15 @@ void test_unload_happy_path() {
   test::expect_eq(ctx.em.peek_ship(ship_id)->crystals(), 6);
   test::expect_eq(ctx.em.peek_planet(1, 1)->info(player_t{1}).crystals, 54);
 
+  g.set_ui_mode(UiMode::JSON);
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"unload", std::format("#{}", ship_id.value), "x", "2"});
+  test::expect_contains(g.out.str(), R"("type":"message")");
+  test::expect_contains(g.out.str(), R"("type":"ship")");
+  test::expect_contains(g.out.str(), "transferred");
+  g.set_ui_mode(UiMode::ASCII);
+
   std::println(std::cout, "✓ Commodities unloaded from ship to planet");
 }
 

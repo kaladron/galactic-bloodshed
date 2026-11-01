@@ -10,7 +10,7 @@ include(FetchContent)
 FetchContent_Declare(
   glaze
   GIT_REPOSITORY https://github.com/stephenberry/glaze.git
-  GIT_TAG v6.2.0
+  GIT_TAG v9.1.0
   GIT_SHALLOW TRUE
   EXCLUDE_FROM_ALL)
 

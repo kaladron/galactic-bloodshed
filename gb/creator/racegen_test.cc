@@ -340,23 +340,25 @@ void test_player_privilege_validation() {
   spec.name = "Olympians";
   spec.sector_compatibilities.land = 1.0;
 
-  spec.is_god = true;
+  // MC/DC coverage for `if (is_player && spec.is_guest)`:
+  // 1. is_player == true, spec.is_guest == true -> rejected
+  spec.is_guest = true;
   auto errors = engine.validate(spec, /*is_player=*/true, /*rigorous=*/false);
   test::expect_true(
       !errors.empty() &&
           errors[0].contains("Players may not create non-normal races"),
-      "player validation must reject God race");
+      "player validation must reject Guest race");
+
+  // 2. is_player == false, spec.is_guest == true -> allowed
   test::expect_true(
       engine.validate(spec, /*is_player=*/false, /*rigorous=*/false).empty(),
-      "admin validation must allow God race");
+      "admin validation must allow Guest race");
 
-  spec.is_god = false;
-  spec.is_guest = true;
-  errors = engine.validate(spec, /*is_player=*/true, /*rigorous=*/false);
+  // 3. is_player == true, spec.is_guest == false -> allowed
+  spec.is_guest = false;
   test::expect_true(
-      !errors.empty() &&
-          errors[0].contains("Players may not create non-normal races"),
-      "player validation must reject Guest race");
+      engine.validate(spec, /*is_player=*/true, /*rigorous=*/false).empty(),
+      "player validation must allow normal race");
 }
 
 void test_jovian_and_terrestrial_sector_validation() {

@@ -1229,7 +1229,6 @@ void test_end_to_end_multi_turn_game_lifecycle() {
     spec.name = std::format("Empire{}", i + 1);
     spec.password = "pass";
     spec.governor_password = "gov";
-    spec.is_god = (i == 0);
     spec.target_planet = std::make_pair(home_star, home_pnum);
 
     enrolled[i] = enrollment.enroll_player(spec);

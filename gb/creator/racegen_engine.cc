@@ -394,7 +394,6 @@ RaceEnrollmentSpec
 RacegenEngine::create_default_spec(bool metamorph) const noexcept {
   RaceEnrollmentSpec spec{};
   spec.home_planet_type = PlanetType::EARTH;
-  spec.is_god = false;
   spec.is_guest = false;
 
   spec.metamorph = metamorph;
@@ -537,7 +536,7 @@ std::vector<std::string> RacegenEngine::validate(const RaceEnrollmentSpec& spec,
   }
 
   // 3. Privileges
-  if (is_player && (spec.is_god || spec.is_guest)) {
+  if (is_player && spec.is_guest) {
     errors.push_back("Players may not create non-normal races.");
   }
 

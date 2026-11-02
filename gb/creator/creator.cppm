@@ -285,7 +285,6 @@ export struct RaceEnrollmentSpec {
   std::optional<Coordinates> capital_coords{std::nullopt};
   std::optional<std::pair<starnum_t, planetnum_t>> target_planet{std::nullopt};
   std::vector<starnum_t> candidate_stars;
-  bool is_god{false};
   bool is_guest{false};
 
   // Biological & racial attributes
@@ -320,14 +319,14 @@ struct meta<GB::creator::RaceEnrollmentSpec> {
       &T::governor_password, "address", &T::address, "home_planet_type",
       &T::home_planet_type, "preferred_sector", &T::preferred_sector,
       "capital_coords", &T::capital_coords, "target_planet", &T::target_planet,
-      "candidate_stars", &T::candidate_stars, "is_god", &T::is_god, "is_guest",
-      &T::is_guest, "mass", &T::mass, "birthrate", &T::birthrate, "fighters",
-      &T::fighters, "iq", &T::iq, "iq_limit", &T::iq_limit, "metamorph",
-      &T::metamorph, "absorb", &T::absorb, "collective_iq", &T::collective_iq,
-      "pods", &T::pods, "adventurism", &T::adventurism, "number_sexes",
-      &T::number_sexes, "metabolism", &T::metabolism, "fertilize",
-      &T::fertilize, "sector_compatibilities", &T::sector_compatibilities,
-      "likesbest", &T::likesbest);
+      "candidate_stars", &T::candidate_stars, "is_guest", &T::is_guest, "mass",
+      &T::mass, "birthrate", &T::birthrate, "fighters", &T::fighters, "iq",
+      &T::iq, "iq_limit", &T::iq_limit, "metamorph", &T::metamorph, "absorb",
+      &T::absorb, "collective_iq", &T::collective_iq, "pods", &T::pods,
+      "adventurism", &T::adventurism, "number_sexes", &T::number_sexes,
+      "metabolism", &T::metabolism, "fertilize", &T::fertilize,
+      "sector_compatibilities", &T::sector_compatibilities, "likesbest",
+      &T::likesbest);
 };
 
 }  // namespace glz

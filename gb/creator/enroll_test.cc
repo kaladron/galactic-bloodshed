@@ -84,7 +84,6 @@ void test_seed_deity_and_mortal_enrollment() {
       .password = "mortalpass",
       .home_planet_type = PlanetType::EARTH,
       .preferred_sector = SectorType::SEC_LAND,
-      .is_god = false,
       .mass = 1.0,
       .birthrate = 0.5,
       .fighters = 5,
@@ -145,7 +144,6 @@ void test_enroll_unbounded_players() {
       .name = "Empire65",
       .password = "secret",
       .home_planet_type = PlanetType::EARTH,
-      .is_god = true,
   };
 
   auto result = service.enroll_player(spec);
@@ -178,7 +176,6 @@ void test_enroll_no_free_planet_type() {
       .name = "Terrans",
       .password = "secret",
       .home_planet_type = PlanetType::EARTH,
-      .is_god = true,
   };
 
   auto result = service.enroll_player(spec);
@@ -326,13 +323,13 @@ void test_enroll_valid_race_success() {
       .build();
 
   GB::creator::EnrollmentService service(em);
+  service.seed_deity("deitypass", "deitygov");
 
   GB::creator::RaceEnrollmentSpec spec{
       .name = "Jovians",
       .password = "secret",
       .home_planet_type = PlanetType::GASGIANT,
       .preferred_sector = SectorType::SEC_GAS,
-      .is_god = true,
       .mass = 1.0,
       .birthrate = 0.6,
       .fighters = 5,
@@ -345,9 +342,9 @@ void test_enroll_valid_race_success() {
 
   auto result = service.enroll_player(spec);
   test::expect_true(result.success);
-  test::expect_eq(result.player_num, player_t{1});
+  test::expect_eq(result.player_num, player_t{2});
 
-  const auto* enrolled_race = em.peek_race(player_t{1});
+  const auto* enrolled_race = em.peek_race(player_t{2});
   test::expect_true(enrolled_race != nullptr);
   if (enrolled_race) {
     test::expect_eq(enrolled_race->name, std::string("Jovians"));
@@ -360,8 +357,8 @@ void test_enroll_valid_race_success() {
   const auto* star = em.peek_star(1);
   test::expect_true(star != nullptr);
   if (star) {
-    test::expect_true(star->is_explored_by(player_t{1}));
-    test::expect_true(star->is_inhabited_by(player_t{1}));
+    test::expect_true(star->is_explored_by(player_t{2}));
+    test::expect_true(star->is_inhabited_by(player_t{2}));
   }
 
   const auto* planet = em.peek_planet(1, 2);

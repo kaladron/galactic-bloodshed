@@ -286,7 +286,6 @@ bool RacegenSession::apply_archetype(std::string_view query, bool randomize) {
   std::string saved_pass = spec_.password;
   std::string saved_gov_pass = spec_.governor_password;
   std::string saved_address = spec_.address;
-  bool saved_god = spec_.is_god;
   bool saved_guest = spec_.is_guest;
 
   RaceEnrollmentSpec loaded =
@@ -298,7 +297,6 @@ bool RacegenSession::apply_archetype(std::string_view query, bool randomize) {
   loaded.password = std::move(saved_pass);
   loaded.governor_password = std::move(saved_gov_pass);
   loaded.address = std::move(saved_address);
-  loaded.is_god = saved_god;
   loaded.is_guest = saved_guest;
 
   spec_ = std::move(loaded);
@@ -376,8 +374,7 @@ EnrollmentResult RacegenSession::enroll() {
                 -cost_.points_remaining)};
   }
 
-  auto errors =
-      engine_.validate(spec_, /*is_player=*/!spec_.is_god && !spec_.is_guest);
+  auto errors = engine_.validate(spec_, /*is_player=*/!spec_.is_guest);
   if (!errors.empty()) {
     std::string msg = "Cannot enroll: validation errors:";
     for (const auto& err : errors) {
@@ -675,9 +672,8 @@ bool RacegenSession::modify_field(std::string_view field_name,
   }
 
   // Validate changes against non-rigorous game rules
-  auto errors =
-      engine_.validate(spec_, /*is_player=*/!spec_.is_god && !spec_.is_guest,
-                       /*rigorous=*/false);
+  auto errors = engine_.validate(spec_, /*is_player=*/!spec_.is_guest,
+                                 /*rigorous=*/false);
   if (!errors.empty()) {
     std::println(out_, "Error: {}", errors.front());
     spec_ = backup;

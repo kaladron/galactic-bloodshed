@@ -56,6 +56,9 @@ void setup_test_universe(Database& db) {
       .with_temperature(140)
       .with_all_sectors(SectorType::SEC_DESERT)
       .build();
+
+  // Universe initialization seeds the disembodied Deity as Player 1
+  GB::creator::EnrollmentService(em).seed_deity("deitypass", "deitygov");
 }
 
 void test_seed_deity_and_first_mortal_enrollment() {
@@ -66,22 +69,21 @@ void test_seed_deity_and_first_mortal_enrollment() {
   EntityManager em(db);
   GB::creator::EnrollmentService service(em);
 
-  // 1. Seed deity
-  service.seed_deity("godpass", "govpass");
+  // 1. Verify Player 1 seeded as disembodied Deity by setup_test_universe
   const auto* deity = em.peek_race(player_t{1});
   test::expect_true(deity != nullptr);
   if (deity) {
     test::expect_true(deity->God);
     test::expect_false(deity->Guest);
+    test::expect_false(deity->Gov_ship.has_value());
+    test::expect_eq(deity->leader().deflevel, ScopeLevel::LEVEL_UNIV);
   }
 
-  // 2. Enroll player even with spec.is_god = true -> enrolled_race->God is
-  // false
+  // 2. Enroll player -> enrolled_race->God is false
   GB::creator::RaceEnrollmentSpec spec{
       .name = "MortalRace",
       .password = "pass",
       .home_planet_type = PlanetType::EARTH,
-      .is_god = true,
   };
 
   auto result = service.enroll_player(spec);
@@ -106,8 +108,8 @@ void test_unbounded_players_allowed() {
   JsonStore store(db);
   RaceRepository races(store);
 
-  // Create 64 existing races
-  for (int i = 1; i <= 64; ++i) {
+  // Create existing mortal races 2..64 (Player 1 is seeded Deity)
+  for (int i = 2; i <= 64; ++i) {
     Race r{};
     r.Playernum = player_t{i};
     r.name = std::format("Empire{}", i);
@@ -121,7 +123,6 @@ void test_unbounded_players_allowed() {
       .name = "Empire65",
       .password = "pass",
       .home_planet_type = PlanetType::EARTH,
-      .is_god = true,
   };
 
   auto result = service.enroll_player(spec);
@@ -144,7 +145,6 @@ void test_no_free_planet_rejected() {
       .name = "ForestDwellers",
       .password = "pass",
       .home_planet_type = PlanetType::FOREST,
-      .is_god = true,
   };
 
   auto result = service.enroll_player(spec);
@@ -169,7 +169,6 @@ void test_enroll_first_race_mortal_success() {
       .address = "Earthling",
       .home_planet_type = PlanetType::EARTH,
       .preferred_sector = SectorType::SEC_LAND,
-      .is_god = true,
       .mass = 1.0,
       .birthrate = 1.0,
       .fighters = 10,
@@ -185,18 +184,18 @@ void test_enroll_first_race_mortal_success() {
 
   auto result = service.enroll_player(spec);
   test::expect_true(result.success);
-  test::expect_eq(result.player_num, player_t{1});
+  test::expect_eq(result.player_num, player_t{2});
   test::expect_eq(result.star, starnum_t{1});
   test::expect_eq(result.pnum, planetnum_t{1});
   test::expect_gt(result.gov_ship, shipnum_t{0});
 
   // Verify Race entity
-  const auto* race = em.peek_race(player_t{1});
+  const auto* race = em.peek_race(player_t{2});
   test::expect_true(race != nullptr);
   if (race) {
     test::expect_eq(race->name, std::string("Terrans"));
     test::expect_false(race->God);
-    test::expect_eq(race->Playernum, player_t{1});
+    test::expect_eq(race->Playernum, player_t{2});
     test::expect_eq(race->Gov_ship, result.gov_ship);
     test::expect_eq(race->number_sexes, 2u);
     test::expect_eq(race->temp, 20);
@@ -206,14 +205,14 @@ void test_enroll_first_race_mortal_success() {
     test::expect_eq(race->leader().homesystem, starnum_t{1});
     test::expect_eq(race->leader().homeplanetnum, planetnum_t{1});
     test::expect_true(race->has_governor(Race::leader_id));
-    test::expect_eq(race->translation_for(player_t{1}), 100);
+    test::expect_eq(race->translation_for(player_t{2}), 100);
   }
 
   // Verify Block and Power entities created on race enrollment
-  const auto* blk = em.peek_block(1);
+  const auto* blk = em.peek_block(2);
   test::expect_true(blk != nullptr);
   test::expect_eq(blk->name(), std::string("Terrans"));
-  const auto* pwr = em.peek_power(1);
+  const auto* pwr = em.peek_power(2);
   test::expect_true(pwr != nullptr);
 
   // Verify Capital Ship entity
@@ -221,7 +220,7 @@ void test_enroll_first_race_mortal_success() {
   test::expect_true(ship != nullptr);
   if (ship) {
     test::expect_eq(ship->type(), ShipType::OTYPE_GOV);
-    test::expect_eq(ship->owner(), player_t{1});
+    test::expect_eq(ship->owner(), player_t{2});
     test::expect_true(ship->is_landed());
     test::expect_eq(ship->whatorbits(), ScopeLevel::LEVEL_PLAN);
     test::expect_eq(ship->storbits(), starnum_t{1});
@@ -234,14 +233,14 @@ void test_enroll_first_race_mortal_success() {
   test::expect_true(planet != nullptr);
   if (planet) {
     test::expect_eq(planet->popn(), 2);
-    test::expect_eq(planet->info(player_t{1}).numsectsowned, 1u);
-    test::expect_true(planet->info(player_t{1}).explored);
+    test::expect_eq(planet->info(player_t{2}).numsectsowned, 1u);
+    test::expect_true(planet->info(player_t{2}).explored);
   }
 
   // Verify SectorMap
   em.with_sectormap(starnum_t{1}, planetnum_t{1}, [&](const SectorMap& smap) {
     const auto& capital_sect = smap.get(result.capital_coords);
-    test::expect_eq(capital_sect.get_owner(), player_t{1});
+    test::expect_eq(capital_sect.get_owner(), player_t{2});
     test::expect_eq(capital_sect.get_popn(), 2);
     test::expect_eq(capital_sect.get_fert(), 100);
     test::expect_eq(capital_sect.get_eff(), 10);
@@ -251,9 +250,9 @@ void test_enroll_first_race_mortal_success() {
   const auto* star = em.peek_star(starnum_t{1});
   test::expect_true(star != nullptr);
   if (star) {
-    test::expect_true(star->is_explored_by(player_t{1}));
-    test::expect_true(star->is_inhabited_by(player_t{1}));
-    test::expect_eq(star->AP(player_t{1}), 5);
+    test::expect_true(star->is_explored_by(player_t{2}));
+    test::expect_true(star->is_inhabited_by(player_t{2}));
+    test::expect_eq(star->AP(player_t{2}), 5);
   }
 
   std::println(std::cout, "  ✓ Enroll first race mortal success passed");
@@ -267,15 +266,15 @@ void test_enroll_second_race_mortal_success() {
   EntityManager em(db);
   GB::creator::EnrollmentService service(em);
 
-  // First enroll Deity
-  GB::creator::RaceEnrollmentSpec god_spec{
-      .name = "Creator",
-      .password = "godpass",
+  // First enroll Player 2 (first mortal empire)
+  GB::creator::RaceEnrollmentSpec first_spec{
+      .name = "Terrans",
+      .password = "terranpass",
       .home_planet_type = PlanetType::EARTH,
-      .is_god = true,
   };
-  auto god_result = service.enroll_player(god_spec);
-  test::expect_true(god_result.success);
+  auto first_result = service.enroll_player(first_spec);
+  test::expect_true(first_result.success);
+  test::expect_eq(first_result.player_num, player_t{2});
 
   // Now enroll mortal race on DESERT (Star 3, Planet 2)
   GB::creator::RaceEnrollmentSpec mortal_spec{
@@ -283,7 +282,6 @@ void test_enroll_second_race_mortal_success() {
       .password = "mortalpass",
       .home_planet_type = PlanetType::DESERT,
       .preferred_sector = SectorType::SEC_DESERT,
-      .is_god = false,
       .mass = 0.8,
       .birthrate = 0.8,
       .fighters = 8,
@@ -296,11 +294,11 @@ void test_enroll_second_race_mortal_success() {
 
   auto mortal_result = service.enroll_player(mortal_spec);
   test::expect_true(mortal_result.success);
-  test::expect_eq(mortal_result.player_num, player_t{2});
+  test::expect_eq(mortal_result.player_num, player_t{3});
   test::expect_eq(mortal_result.star, starnum_t{3});
   test::expect_eq(mortal_result.pnum, planetnum_t{2});
 
-  const auto* mortal_race = em.peek_race(player_t{2});
+  const auto* mortal_race = em.peek_race(player_t{3});
   test::expect_true(mortal_race != nullptr);
   if (mortal_race) {
     test::expect_eq(mortal_race->name, std::string("DesertFolk"));
@@ -323,14 +321,13 @@ void test_enroll_guest_race_success() {
       .name = "GuestTraveler",
       .password = "guestpass",
       .home_planet_type = PlanetType::EARTH,
-      .is_god = false,
       .is_guest = true,
   };
   auto res = service.enroll_player(guest_spec);
   test::expect_true(res.success);
-  test::expect_eq(res.player_num, player_t{1});
+  test::expect_eq(res.player_num, player_t{2});
 
-  const auto* guest_race = em.peek_race(player_t{1});
+  const auto* guest_race = em.peek_race(player_t{2});
   test::expect_true(guest_race != nullptr);
   if (guest_race) {
     test::expect_eq(guest_race->name, std::string("GuestTraveler"));
@@ -354,7 +351,6 @@ void test_enroll_gas_giant_cold_success() {
       .password = "jovpass",
       .home_planet_type = PlanetType::GASGIANT,
       .preferred_sector = SectorType::SEC_GAS,
-      .is_god = true,
       .number_sexes = 1,
       .sector_compatibilities = {.gas = 1.0, .plated = 0.0},
       .likesbest = SectorType::SEC_GAS,
@@ -362,10 +358,11 @@ void test_enroll_gas_giant_cold_success() {
 
   auto result = service.enroll_player(spec);
   test::expect_true(result.success);
+  test::expect_eq(result.player_num, player_t{2});
   test::expect_eq(result.star, starnum_t{1});
   test::expect_eq(result.pnum, planetnum_t{2});
 
-  const auto* race = em.peek_race(player_t{1});
+  const auto* race = em.peek_race(player_t{2});
   test::expect_true(race != nullptr);
   if (race) {
     test::expect_eq(race->temp, -80);
@@ -390,11 +387,11 @@ void test_enroll_explicit_capital_coords() {
       .password = "pass",
       .home_planet_type = PlanetType::EARTH,
       .capital_coords = explicit_coords,
-      .is_god = true,
   };
 
   auto result = service.enroll_player(spec);
   test::expect_true(result.success);
+  test::expect_eq(result.player_num, player_t{2});
   test::expect_eq(result.capital_coords, explicit_coords);
 
   const auto* ship = em.peek_ship(result.gov_ship);
@@ -404,7 +401,7 @@ void test_enroll_explicit_capital_coords() {
   }
 
   em.with_sectormap(result.star, result.pnum, [&](const SectorMap& smap) {
-    test::expect_eq(smap.get(explicit_coords).get_owner(), player_t{1});
+    test::expect_eq(smap.get(explicit_coords).get_owner(), player_t{2});
   });
 
   std::println(std::cout, "  ✓ Explicit capital coordinates passed");
@@ -490,7 +487,6 @@ void test_enroll_validation_and_budget_rejection() {
       .name = "IllegalBirthrate",
       .password = "pass",
       .home_planet_type = PlanetType::EARTH,
-      .is_god = true,
       .birthrate = 1.5,
   };
   auto res_birthrate = service.enroll_player(bad_birthrate);
@@ -502,7 +498,6 @@ void test_enroll_validation_and_budget_rejection() {
       .name = "BrainDeadMorph",
       .password = "pass",
       .home_planet_type = PlanetType::EARTH,
-      .is_god = true,
       .iq = 0,
       .iq_limit = 0,
       .metamorph = true,
@@ -519,7 +514,6 @@ void test_enroll_validation_and_budget_rejection() {
       .name = "NoPlated",
       .password = "pass",
       .home_planet_type = PlanetType::EARTH,
-      .is_god = true,
       .sector_compatibilities = {.land = 1.0, .plated = 0.0},
   };
   auto res_plated = service.enroll_player(bad_plated);
@@ -531,7 +525,6 @@ void test_enroll_validation_and_budget_rejection() {
       .name = "MaxStats",
       .password = "pass",
       .home_planet_type = PlanetType::EARTH,
-      .is_god = true,
       .mass = 3.0,
       .birthrate = 1.0,
       .fighters = 20,
@@ -571,7 +564,6 @@ void test_quickstart_archetype_json_roundtrip_and_enroll() {
   spec.password = "queenpass";
   spec.governor_password = "hivepass";
   spec.address = "hive@lv426.org";
-  spec.is_god = true;
 
   const auto tmp_file =
       std::filesystem::temp_directory_path() / "test_quickstart_racegen.json";
@@ -585,9 +577,9 @@ void test_quickstart_archetype_json_roundtrip_and_enroll() {
   if (load_res) {
     auto enroll_res = service.enroll_player(*load_res);
     test::expect_true(enroll_res.success);
-    test::expect_eq(enroll_res.player_num, player_t{1});
+    test::expect_eq(enroll_res.player_num, player_t{2});
 
-    const auto* race = em.peek_race(player_t{1});
+    const auto* race = em.peek_race(player_t{2});
     test::expect_true(race != nullptr);
     if (race) {
       test::expect_eq(race->name, std::string("Xenomorphs"));

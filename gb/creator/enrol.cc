@@ -152,13 +152,10 @@ int main(int argc, char* argv[]) {
     email_address = "player@localhost";
   }
 
-  std::print("\n\tDeity/Guest/Normal (d/g/n) [{}]? ",
-             Playernum == 1 ? 'd' : 'n');
-  std::string deity_line;
-  std::getline(std::cin, deity_line);
-  char role_char =
-      (!deity_line.empty()) ? deity_line[0] : (Playernum == 1 ? 'd' : 'n');
-  bool is_god = (role_char == 'd');
+  std::print("\n\tGuest/Normal (g/n) [n]? ");
+  std::string role_line;
+  std::getline(std::cin, role_line);
+  char role_char = (!role_line.empty()) ? role_line[0] : 'n';
   bool is_guest = (role_char == 'g');
 
   starnum_t star{0};
@@ -242,7 +239,6 @@ int main(int argc, char* argv[]) {
     spec.password = race_password;
     spec.governor_password = gov_password;
     spec.address = email_address;
-    spec.is_god = is_god;
     spec.is_guest = is_guest;
     spec.target_planet = std::make_pair(star, pnum);
 

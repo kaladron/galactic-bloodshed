@@ -408,12 +408,12 @@ void test_enroll_with_service_success() {
       .build();
 
   GB::creator::EnrollmentService service(em);
+  service.seed_deity("deitypass", "deitygov");
 
   std::istringstream in;
   std::ostringstream out;
   GB::creator::RacegenSession session(in, out, &service);
 
-  session.mutable_spec().is_god = true;
   test::expect_true(session.execute_command("modify name Terran"));
   test::expect_true(session.execute_command("modify password secret"));
   test::expect_true(session.execute_command("modify address user@example.com"));
@@ -425,8 +425,8 @@ void test_enroll_with_service_success() {
                     "quit must be flagged on enrollment");
   test::expect_true(out.str().contains("Enrollment successful!"),
                     "output must report enrollment success");
-  test::expect_true(out.str().contains("Player ID    : 1"),
-                    "output must report player ID 1");
+  test::expect_true(out.str().contains("Player ID    : 2"),
+                    "output must report player ID 2");
 }
 
 void test_standalone_save_and_load_race_spec() {
@@ -609,8 +609,9 @@ void test_enroll_guest_and_validation_failure() {
   session.modify_field("addr", "guest@galaxy.org");
   session.modify_field("land", "100%");
   auto guest_res = session.enroll();
-  test::expect_false(guest_res.success,
-                     "first enrolled race in empty DB still requires God");
+  test::expect_false(
+      guest_res.success,
+      "enrollment fails when no suitable home planet exists in DB");
 }
 
 }  // namespace

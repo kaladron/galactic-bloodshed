@@ -231,6 +231,10 @@ UniverseGenerationResult UniverseGenerator::generate(Database& db) {
   UniverseRepository universe_repo(store);
   universe_repo.save(universe_data);
 
+  EntityManager entity_manager(db);
+  EnrollmentService(entity_manager)
+      .seed_deity(config_.deity_password, config_.deity_gov_password);
+
   std::vector<Star> stars;
   stars.reserve(config_.num_stars.value);
 

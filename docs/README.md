@@ -48,7 +48,7 @@ mindmap
 | :--- | :--- |
 | **[Stellar Systems and Radiation](stars.md)** | Spectral classifications, stellar luminosity, radiation hazard zones, planetary orbital radii, and supernova lifecycle stages. |
 | **[Planetary Mechanics and Surface Topography](planets.md)** | Toroidal surface coordinate geometry, polar boundaries, Keplerian heliocentric orbital motion ($T^2 \propto r^3$), orbital entrainment of stationed vessels, surface mobilization, planetary defense guns, and slave uprisings. |
-| **[Universe Generation and Galaxy Topography](universe_creation.md)** | Procedural galaxy generation (`makeuniv`), star density distributions, system seeding, resource endowments, and homeworld allocation. |
+| **[Universe Generation and Galaxy Topography](universe_creation.md)** | Procedural galaxy generation (`makeuniv`), disembodied Deity seeding (`Player 1`), star density distributions, system seeding, resource endowments, and homeworld allocation. |
 
 ---
 

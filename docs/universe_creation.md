@@ -13,7 +13,7 @@ flowchart TD
     Star --> Orbit["4. Planetary Accretion & Orbit Placement\nCalculate Orbital Radii & Radiant Thermal Flux"]
     Orbit --> Class["5. Planetology & Atmosphere\nClassify Planetary Archetypes by Solar Distance"]
     Class --> Sectors["6. Cylindrical Sector Generation\nGenerate Surface Topography, Minerals & Biomes"]
-    Sectors --> DB["7. Database Persistence\nSave Stars, Planets & Sectormap into World State"]
+    Sectors --> DB["7. Database Persistence & Deity Seeding\nSave World State & Seed Disembodied Deity (Player 1)"]
 ```
 
 ---
@@ -111,29 +111,60 @@ Each surface sector is endowed with foundational economic metrics:
 
 ---
 
-## 6. Administration and Generation Utilities
+## 6. The Disembodied Deity (Player 1)
 
-Game operators initialize a new universe using the administrative generation tool (`makeuniv`):
+During universe creation, `makeuniv` automatically seeds **Player 1 (`Deity`)** as a **disembodied administrative account** rather than a territorial civilization:
+
+- **Universe Scope Origin (`/`)**: The Deity leader (Governor 1) begins at Universe scope (`/`) with home star system $0$ and home planet $0$.
+- **Zero Territorial Footprint**: No home star, home planet, surface sectors, colonists, or Governmental Center flagship are allocated to Player 1. Every generated star system remains uninhabited and available for mortal colonization.
+- **Fair Host Participation**: Decoupling the Deity role from mortal empires allows the game host to enroll and play a separate, balanced mortal civilization (starting at Player 2) while reserving Player 1 strictly for server administration.
+- **Autonomous Machine Alignment**: Self-replicating Von Neumann probes (`v`) and Berserker warships (`V`) operate under the autonomous System/Deity account (Player 1) while preserving their ancestral creator in `progenitor` (see [Autonomous Machine AI](von_neumann.md)).
+
+---
+
+## 7. Administration and Generation Utilities
+
+Game operators initialize a new universe using the administrative generation tool (`makeuniv`). Generation initializes the database schema, constructs stars, planets, and sectors, and explicitly seeds Player 1 as a disembodied Deity at Universe scope (`/`).
+
+### Interactive Mode (Default) vs. Non-Interactive Batch Mode (`-d`)
+
+By default, `makeuniv` runs in **interactive mode**, prompting on standard input for any parameter not explicitly supplied via command-line flags:
+1. Whether to autoload star names from `star.list` (`[y/n]`, unless `-a` is passed).
+2. Whether to autoload planet names from `planet.list` (`[y/n]`, unless `-b` is passed).
+3. Total number of star systems (`[1-255]`, unless `-s` is passed).
+4. Minimum number of planets per system (`[1-10]`, unless `-l` is passed).
+5. Maximum number of planets per system (`[<min>-10]`, unless `-m` is passed).
+6. Password for the Deity race (`Player 1`, unless `--deity-password` is passed; must be non-empty and contain no spaces).
+7. Password for the Deity leader (`Governor 1`, unless `--deity-gov-password` is passed; must be non-empty and contain no spaces).
+
+In **non-interactive batch mode (`-d`)**, `makeuniv` automatically applies default parameters (`128` stars, `1`–`10` planets per system, autoloaded star and planet names) without prompting, and **requires** `--deity-password` and `--deity-gov-password` on the command line (exiting with an error if either password is missing or contains spaces).
 
 ```bash
-# Generate a standard 30-star galaxy in the default database
+# Generate a universe interactively (prompts for unsupplied options and deity passwords)
 ./build/gb/makeuniv
 
-# Generate a dense 50-star cluster in a custom database file
+# Generate a dense 50-star cluster interactively (prompts for remaining options and passwords)
 ./build/gb/makeuniv --db /var/games/gb/cluster.db -s 50
 
-# Generate a non-interactive universe using default parameters
-./build/gb/makeuniv -D test.db -d -s 25
+# Generate a non-interactive universe using default parameters and explicit deity passwords
+./build/gb/makeuniv -D test.db -d -s 25 --deity-password secretpass --deity-gov-password secretgov
 ```
 
 | Flag | Parameter | Default | Description |
 | :--- | :--- | :--- | :--- |
 | `-D`, `--database`, `--db` | `<filepath>` | `/var/lib/galactic-bloodshed/gb.db` | Target SQLite database file. |
-| `-s` | `<integer>` | `128` | Number of star systems to place in the galaxy. |
-| `-l` / `-m` | `<integer>` | `1` / `10` | Minimum and maximum planets permitted per star system. |
+| `-s` | `<integer>` | `128` | Number of star systems to place in the galaxy (1-255). |
+| `-l` / `-m` | `<integer>` | `1` / `10` | Minimum and maximum planets permitted per star system (1-10). |
+| `-d` | — | `false` | Non-interactive mode using defaults (requires `--deity-password` and `--deity-gov-password`). |
+| `--deity-password` | `<password>` | — | Password for the Deity race (Player 1). Required in `-d` mode. |
+| `--deity-gov-password` | `<password>` | — | Password for the Deity leader/governor. Required in `-d` mode. |
+| `-a` | — | `false` | Autoload star names from star.list without prompting. |
+| `-b` | — | `false` | Autoload planet names from planet.list without prompting. |
+| `-e` | `<integer>` | `0` | Percentage chance for stars to have no planets. |
 | `-p`, `--print-planets` | — | `false` | Print generated planet maps and information. |
 | `-w`, `--print-stars` | — | `false` | Print generated star system information. |
 | `-v`, `--version` | — | — | Display binary version information and exit. |
+| `-h`, `--help` | — | — | Display help message and exit. |
 
 ---
 

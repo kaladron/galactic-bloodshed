@@ -23,7 +23,7 @@ flowchart TD
 
 ## 1. The Governmental Center (Seat of Power)
 
-Every star empire requires an active seat of government to coordinate its interstellar administration.
+Every mortal star empire requires an active seat of government to coordinate its interstellar administration. (By contrast, the **disembodied Deity** seeded as Player 1 during `makeuniv` operates permanently from Universe scope `/` with no home planet or Governmental Center flagship, and is exempt from anarchy.)
 
 ### Operational Requirements
 A vessel serves as a legitimate Governmental Center only if it meets all of the following criteria:
@@ -238,6 +238,9 @@ Intelligence gathering on foreign empires depends on the linguistic and cultural
 | **Obscured** | $\le 50\%$ | Species classification, race name, and home planet name. Full demographic and technological attributes are classified. |
 | **Decrypted** | $> 50\%$ | Complete physiological profiles, mass, metabolism, birth rates, environmental affinities, tech levels, discoveries, and moral standing. |
 | **Omniscient** | Deity / Self | Unrestricted access to all racial metrics, internal governance ships, and hidden parameters regardless of translation level. |
+
+> [!NOTE]
+> The disembodied **Deity** (Player 1) is always treated as $100\%$ translated when inspected by any mortal empire (`profile 1`). When the Deity inspects its own profile (`profile` with no arguments), its home star and planet are reported as `"None"`.
 
 ### Demographic Metrics
 - **Species Classification**: Identifies physical archetype (e.g., Humanoid, Insectoid, Avian, Robotic, Amphibian).

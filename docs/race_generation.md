@@ -2,7 +2,9 @@
 
 ## Overview
 
-In **Galactic Bloodshed**, every interstellar empire originates through **race generation**. Players can either inaugurate their civilization by adopting one of eleven calibrated **evolutionary archetypes**, or engineer a custom species from scratch within the **1400-point genetic design sandbox**.
+In **Galactic Bloodshed**, every interstellar empire originates through **race generation**. Player 1 is reserved for the disembodied Deity initialized during universe creation (`makeuniv`), while mortal and guest player empires are registered starting at Player 2 via evolutionary archetypes or custom genetic design.
+
+Players can either inaugurate their civilization by adopting one of eleven calibrated **evolutionary archetypes**, or engineer a custom species from scratch within the **1400-point genetic design sandbox**.
 
 Once biological attributes and environmental tolerances are balanced, the imperial onboarding system discovers an optimal solar system, establishes the ancestral capital colony, and commissions the imperial government flagship.
 
@@ -172,11 +174,11 @@ Once a species is validated and points remaining $\ge 0$, the imperial onboardin
 
 ## 7. Interactive Onboarding Utilities
 
-Players and game operators access race generation through two dedicated command-line tools that share a unified `racegen.json` specification format:
+Players and game operators access race generation through two dedicated command-line tools that share a unified `racegen.json` specification format. Because **Player 1 is permanently reserved for the disembodied Deity** seeded during universe generation (`makeuniv`), neither `enrol`, `racegen`, nor `racegen.json` can create a Deity empire; onboarding tools exclusively register **Normal (mortal)** and **Guest** civilizations starting at **Player 2**:
 
 - **`enrol` (Quick-Start Registration Wizard & JSON Enrollment)**:
   - Designed for players joining an active game quickly without micromanaging sector covariance matrices.
-  - Interactive mode presents imperial credentials, preset archetype selection (`1-10`), and homeworld choice, automatically generating pre-rolled sector compatibilities and saving the finalized specification to `racegen.json`.
+  - Interactive mode prompts for imperial credentials, role selection (`Guest/Normal (g/n) [n]?`), preset archetype selection (`1-11`), and homeworld choice, automatically generating pre-rolled sector compatibilities and saving the finalized specification to `racegen.json`.
   - Non-interactive mode (`-f, --file [path]`, defaulting to `racegen.json`) loads a saved Glaze JSON race specification and enrolls the empire directly into the universe database:
   ```bash
   # Interactive quick-start wizard (saves racegen.json and enrolls)

@@ -425,6 +425,8 @@ export struct UniverseConfig {
   std::string star_names_file{PKGDATADIR "star.list"};
   std::string planet_names_file{PKGDATADIR "planet.list"};
   std::string exam_file{PKGDATADIR "exam.dat"};
+  std::string deity_password;
+  std::string deity_gov_password;
 };
 
 /// Summary of a generated universe.

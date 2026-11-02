@@ -27,6 +27,8 @@ void test_universe_generator_in_memory() {
       .auto_name_planets = true,
       .print_star_info = false,
       .print_planet_info = false,
+      .deity_password = "godpass",
+      .deity_gov_password = "govpass",
   };
 
   GB::creator::UniverseGenerator generator(config);
@@ -80,11 +82,28 @@ void test_universe_generator_in_memory() {
     }
   }
 
-  // Verify victory/player tables are not pre-populated with orphan rows before
-  // race enrollment
+  // Verify Player 1 was seeded as the disembodied Deity
+  const auto* race = em.peek_race(player_t{1});
+  test::expect_true(race != nullptr);
+  if (race) {
+    test::expect_true(race->God);
+    test::expect_false(race->Guest);
+    test::expect_false(race->Gov_ship.has_value());
+    test::expect_eq(race->leader().deflevel, ScopeLevel::LEVEL_UNIV);
+    test::expect_eq(race->leader().homesystem, starnum_t{0});
+    test::expect_eq(race->leader().homeplanetnum, planetnum_t{0});
+    test::expect_eq(race->password, "godpass");
+    test::expect_eq(race->leader().password, "govpass");
+  }
+
+  // Verify victory/player tables: Player 1 seeded, mortal player rows not
+  // pre-populated
   BlockRepository block_repo(store);
   PowerRepository power_repo(store);
+  test::expect_true(block_repo.find_by_id(player_t{1}).has_value());
+  test::expect_true(power_repo.find_by_id(player_t{1}).has_value());
   for (player_t p : all_players()) {
+    if (p == 1) continue;
     test::expect_false(block_repo.find_by_id(p).has_value());
     test::expect_false(power_repo.find_by_id(p).has_value());
   }
@@ -105,6 +124,8 @@ void test_universe_generator_planetless_stars() {
       .min_planets = 1,
       .max_planets = 5,
       .planetless_chance_percent = 100,  // All stars must be planetless
+      .deity_password = "godpass",
+      .deity_gov_password = "govpass",
   };
 
   GB::creator::UniverseGenerator generator(config);
@@ -135,6 +156,8 @@ void test_universe_generator_custom_names() {
       .min_planets = 1,
       .max_planets = 1,
       .planetless_chance_percent = 0,
+      .deity_password = "godpass",
+      .deity_gov_password = "govpass",
   };
 
   GB::creator::UniverseGenerator generator(config);
@@ -178,6 +201,8 @@ void test_universe_generator_partial_planetless_and_name_cap() {
       .auto_name_stars = true,
       .auto_name_planets = false,
       .star_names_file = tmp_names.string(),
+      .deity_password = "godpass",
+      .deity_gov_password = "govpass",
   };
 
   GB::creator::UniverseGenerator generator(config);
@@ -187,6 +212,61 @@ void test_universe_generator_partial_planetless_and_name_cap() {
   std::filesystem::remove(tmp_names);
 }
 
+void test_universe_generator_deity_password_validation() {
+  std::println(std::cout,
+               "Test: UniverseGenerator deity password validation (MC/DC)");
+
+  // 1. Empty deity_password
+  {
+    Database db(":memory:");
+    GB::creator::UniverseConfig cfg{
+        .num_stars = 1,
+        .deity_password = "",
+        .deity_gov_password = "govpass",
+    };
+    GB::creator::UniverseGenerator gen(cfg);
+    test::expect_throws<std::invalid_argument>([&]() { gen.generate(db); });
+  }
+
+  // 2. Whitespace in deity_password
+  {
+    Database db(":memory:");
+    GB::creator::UniverseConfig cfg{
+        .num_stars = 1,
+        .deity_password = "god pass",
+        .deity_gov_password = "govpass",
+    };
+    GB::creator::UniverseGenerator gen(cfg);
+    test::expect_throws<std::invalid_argument>([&]() { gen.generate(db); });
+  }
+
+  // 3. Empty deity_gov_password
+  {
+    Database db(":memory:");
+    GB::creator::UniverseConfig cfg{
+        .num_stars = 1,
+        .deity_password = "godpass",
+        .deity_gov_password = "",
+    };
+    GB::creator::UniverseGenerator gen(cfg);
+    test::expect_throws<std::invalid_argument>([&]() { gen.generate(db); });
+  }
+
+  // 4. Whitespace in deity_gov_password
+  {
+    Database db(":memory:");
+    GB::creator::UniverseConfig cfg{
+        .num_stars = 1,
+        .deity_password = "godpass",
+        .deity_gov_password = "gov pass",
+    };
+    GB::creator::UniverseGenerator gen(cfg);
+    test::expect_throws<std::invalid_argument>([&]() { gen.generate(db); });
+  }
+
+  std::println(std::cout, "  ✓ Deity password validation (MC/DC) passed");
+}
+
 }  // namespace
 
 int main() {
@@ -194,6 +274,7 @@ int main() {
   test_universe_generator_planetless_stars();
   test_universe_generator_custom_names();
   test_universe_generator_partial_planetless_and_name_cap();
+  test_universe_generator_deity_password_validation();
 
   std::println(std::cout, "\n✅ All UniverseGenerator tests passed!");
   return 0;

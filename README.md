@@ -69,14 +69,16 @@ Starts the Galactic Bloodshed server.
 * `-h, --help`: Display help message and exit.
 
 #### `makeuniv` (Universe Generator)
-Initializes and populates a new game universe database with procedural stars, planetary systems, and sector maps.
+Initializes and populates a new game universe database with procedural stars, planetary systems, sector maps, and the disembodied Deity account (Player 1). Defaults to interactive prompting unless `-d` is passed.
 ```bash
 ./build/gb/makeuniv [options]
 ```
 * `-D, --database, --db <path>`: Path to SQLite database.
 * `-a`: Autoload star names from `star.list`.
 * `-b`: Autoload planet names from `planet.list`.
-* `-d`: Use all defaults and autoloaded names.
+* `-d`: Non-interactive mode using all defaults and autoloaded names (requires `--deity-password` and `--deity-gov-password`).
+* `--deity-password <pass>`: Password for the Deity race (Player 1).
+* `--deity-gov-password <pass>`: Password for the Deity leader (Governor 1).
 * `-e <E>`: Percentage of stars that have no planets.
 * `-l <MIN>`: Minimum planets per system.
 * `-m <MAX>`: Maximum planets per system.
@@ -86,10 +88,10 @@ Initializes and populates a new game universe database with procedural stars, pl
 * `-v, --version`: Display version information and exit.
 * `-h, --help`: Display help message and exit.
 
-For detailed documentation on procedural star placement, galaxy geometry, orbital physics, and planetary temperature gradients, see the [Universe Creation Guide](docs/universe_creation.md).
+For detailed documentation on procedural star placement, galaxy geometry, orbital physics, planetary temperature gradients, and disembodied Deity seeding, see the [Universe Creation Guide](docs/universe_creation.md).
 
 #### `enrol` (Race Enrollment CLI)
-Interactive CLI tool to enroll new player races into an existing game database. Features a guided setup wizard with 10 calibrated evolutionary archetypes, preferred homeworld selection, and automatic capital colony founding.
+Interactive CLI tool to enroll new mortal and guest player races (starting at Player 2) into an existing game database. Features a guided setup wizard with 11 calibrated evolutionary archetypes, preferred homeworld selection, and automatic capital colony founding.
 ```bash
 ./build/gb/enrol [options]
 ```

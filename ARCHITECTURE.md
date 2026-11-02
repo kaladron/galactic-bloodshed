@@ -132,7 +132,7 @@ Galactic Bloodshed uses **C++26 modules** to enforce architectural boundaries. S
 
 - **Tier 6: `commands` & `gb.creator`** (Application & Onboarding Layers)
   - **`commands`** (`gb/commands/commands.cppm`): Individual player command implementations authored with declarative `CommandDescriptor`s (`command_spec.cppm`), delegating domain rules to `gb.mechanics` and rendering all output through `g.present(...)` (`gb.presentation`)
-  - **`gb.creator`** (`gb/creator/creator.cppm`): Procedural galaxy generation (`UniverseGenerator`), player registration (`EnrollmentService`), and 1400-point species design (`RacegenEngine`, `RaceArchetype`)
+  - **`gb.creator`** (`gb/creator/creator.cppm`): Procedural galaxy generation (`UniverseGenerator`), player registration (`EnrollmentService`), and 1400-point species design (`RacegenEngine`, `RaceArchetype`). `UniverseGenerator` seeds Player 1 as a disembodied Deity at universe scope, while `EnrollmentService` enrolls mortal and guest empires starting at Player 2.
 
 - **Tier 7: `gb.server`** (Server & Networking) - `gb/server/server_module.cppm` (`gb_server` target)
   - Asio-backed TCP server (`Server`), client sessions (`Session` with Telnet `IAC`/`TTYPE` terminal negotiation), authentication (`auth`), notifications (`notification`), and startup configuration (`server_config`)

@@ -390,7 +390,15 @@ TestContext::with_universe(std::optional<GB::creator::UniverseConfig> config) {
       .auto_name_planets = true,
       .print_star_info = false,
       .print_planet_info = false,
+      .deity_password = "godpass",
+      .deity_gov_password = "govpass",
   });
+  if (cfg.deity_password.empty()) {
+    cfg.deity_password = "godpass";
+  }
+  if (cfg.deity_gov_password.empty()) {
+    cfg.deity_gov_password = "govpass";
+  }
 
   GB::creator::UniverseGenerator generator(cfg);
   generator.generate(db);

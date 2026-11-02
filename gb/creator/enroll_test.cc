@@ -15,26 +15,98 @@ import test;
 
 namespace {
 
-void test_enroll_first_race_god_requirement() {
-  std::println(std::cout, "Test: First race enrolled must be God");
+void test_seed_deity_and_mortal_enrollment() {
+  std::println(std::cout, "Test: seed_deity and mortal enrollment");
 
   Database db(":memory:");
   initialize_schema(db);
+  JsonStore store(db);
+
+  Universe us{};
+  UniverseRepository univ_repo(store);
+  univ_repo.save(us);
+
   EntityManager em(db);
+
+  TestStarBuilder(em, db, "Sol", 1).build();
+  TestPlanetBuilder(em, db, 1, PlanetType::EARTH, Coordinates{5, 5}, 1)
+      .named("Terra")
+      .with_temperature(20)
+      .with_all_sectors(SectorType::SEC_LAND)
+      .build();
+  TestPlanetBuilder(em, db, 1, PlanetType::MARS, Coordinates{5, 5}, 2)
+      .named("Ares")
+      .build();
+
   GB::creator::EnrollmentService service(em);
 
-  GB::creator::RaceEnrollmentSpec spec{
-      .name = "Mortal",
-      .password = "secret",
+  // 1. seed_deity MC/DC validation on is_valid_login_token
+  // - empty password
+  test::expect_throws<std::invalid_argument>(
+      [&]() { service.seed_deity("", "govpass"); });
+  // - password with space
+  test::expect_throws<std::invalid_argument>(
+      [&]() { service.seed_deity("god pass", "govpass"); });
+  // - empty gov_password
+  test::expect_throws<std::invalid_argument>(
+      [&]() { service.seed_deity("godpass", ""); });
+  // - gov_password with space
+  test::expect_throws<std::invalid_argument>(
+      [&]() { service.seed_deity("godpass", "gov pass"); });
+
+  // 2. Valid seed_deity("godpass", "govpass") creates Player 1
+  service.seed_deity("godpass", "govpass");
+
+  const auto* deity = em.peek_race(player_t{1});
+  test::expect_true(deity != nullptr);
+  if (deity) {
+    test::expect_eq(deity->Playernum, player_t{1});
+    test::expect_eq(deity->name, std::string("Deity"));
+    test::expect_true(deity->God);
+    test::expect_false(deity->Guest);
+    test::expect_false(deity->Gov_ship.has_value());
+    test::expect_eq(deity->leader().deflevel, ScopeLevel::LEVEL_UNIV);
+    test::expect_eq(deity->leader().homesystem, starnum_t{0});
+    test::expect_eq(deity->leader().homeplanetnum, planetnum_t{0});
+  }
+
+  // Block 1 and Power 1 created
+  const auto* blk = em.peek_block(1);
+  test::expect_true(blk != nullptr);
+  test::expect_eq(blk->name(), std::string("Deity"));
+  const auto* pwr = em.peek_power(1);
+  test::expect_true(pwr != nullptr);
+
+  // 3. Subsequent enroll_player call enrolls mortal race as player 2 with God
+  // == false
+  GB::creator::RaceEnrollmentSpec mortal_spec{
+      .name = "Terrans",
+      .password = "mortalpass",
+      .home_planet_type = PlanetType::EARTH,
+      .preferred_sector = SectorType::SEC_LAND,
       .is_god = false,
+      .mass = 1.0,
+      .birthrate = 0.5,
+      .fighters = 5,
+      .iq = 100,
+      .number_sexes = 1,
+      .metabolism = 1.0,
+      .sector_compatibilities = {.land = 1.0, .plated = 1.0},
+      .likesbest = SectorType::SEC_LAND,
   };
 
-  auto result = service.enroll_player(spec);
-  test::expect_false(result.success);
-  test::expect_contains(result.message,
-                        "The first race enrolled must have God privileges.");
+  auto result = service.enroll_player(mortal_spec);
+  test::expect_true(result.success);
+  test::expect_eq(result.player_num, player_t{2});
 
-  std::println(std::cout, "  ✓ God race requirement check passed");
+  const auto* mortal = em.peek_race(player_t{2});
+  test::expect_true(mortal != nullptr);
+  if (mortal) {
+    test::expect_eq(mortal->name, std::string("Terrans"));
+    test::expect_false(mortal->God);
+  }
+
+  std::println(std::cout, "  ✓ seed_deity and mortal enrollment verified");
 }
 
 void test_enroll_unbounded_players() {
@@ -282,7 +354,7 @@ void test_enroll_valid_race_success() {
     test::expect_eq(enrolled_race->likesbest, SectorType::SEC_GAS);
     test::expect_eq(enrolled_race->likes[SectorType::SEC_GAS], 1.0);
     test::expect_eq(enrolled_race->likes[SectorType::SEC_WASTED], 0.0);
-    test::expect_true(enrolled_race->God);
+    test::expect_false(enrolled_race->God);
   }
 
   const auto* star = em.peek_star(1);
@@ -311,7 +383,7 @@ void test_enroll_valid_race_success() {
 }  // namespace
 
 int main() {
-  test_enroll_first_race_god_requirement();
+  test_seed_deity_and_mortal_enrollment();
   test_enroll_unbounded_players();
   test_enroll_no_free_planet_type();
   test_find_suitable_planet_deterministic_search();

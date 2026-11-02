@@ -362,6 +362,11 @@ export class EnrollmentService {
 public:
   explicit EnrollmentService(EntityManager& em);
 
+  /// Seeds Player 1 as a disembodied Deity race (at universe scope with no
+  /// home star, planet, or ships). Throws std::invalid_argument if either
+  /// password is empty or contains whitespace.
+  void seed_deity(std::string_view password, std::string_view gov_password);
+
   /// Enrolls a new player empire using the provided specification.
   EnrollmentResult enroll_player(const RaceEnrollmentSpec& spec);
 

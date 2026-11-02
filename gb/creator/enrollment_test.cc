@@ -58,27 +58,44 @@ void setup_test_universe(Database& db) {
       .build();
 }
 
-void test_first_race_requires_god() {
-  std::println(std::cout, "Test: First race enrolled must have God privileges");
+void test_seed_deity_and_first_mortal_enrollment() {
+  std::println(std::cout, "Test: seed_deity and first mortal enrollment");
 
   Database db(":memory:");
   setup_test_universe(db);
   EntityManager em(db);
   GB::creator::EnrollmentService service(em);
 
+  // 1. Seed deity
+  service.seed_deity("godpass", "govpass");
+  const auto* deity = em.peek_race(player_t{1});
+  test::expect_true(deity != nullptr);
+  if (deity) {
+    test::expect_true(deity->God);
+    test::expect_false(deity->Guest);
+  }
+
+  // 2. Enroll player even with spec.is_god = true -> enrolled_race->God is
+  // false
   GB::creator::RaceEnrollmentSpec spec{
       .name = "MortalRace",
       .password = "pass",
       .home_planet_type = PlanetType::EARTH,
-      .is_god = false,
+      .is_god = true,
   };
 
   auto result = service.enroll_player(spec);
-  test::expect_false(result.success);
-  test::expect_contains(result.message,
-                        "The first race enrolled must have God privileges.");
+  test::expect_true(result.success);
+  test::expect_eq(result.player_num, player_t{2});
 
-  std::println(std::cout, "  ✓ First race God requirement check passed");
+  const auto* enrolled_race = em.peek_race(player_t{2});
+  test::expect_true(enrolled_race != nullptr);
+  if (enrolled_race) {
+    test::expect_false(enrolled_race->God);
+  }
+
+  std::println(std::cout,
+               "  ✓ seed_deity and mortal-only enroll_player passed");
 }
 
 void test_unbounded_players_allowed() {
@@ -137,8 +154,8 @@ void test_no_free_planet_rejected() {
   std::println(std::cout, "  ✓ No free planet type rejection passed");
 }
 
-void test_enroll_first_race_god_success() {
-  std::println(std::cout, "Test: Enroll first race as God on Earth");
+void test_enroll_first_race_mortal_success() {
+  std::println(std::cout, "Test: Enroll first race as Mortal on Earth");
 
   Database db(":memory:");
   setup_test_universe(db);
@@ -178,7 +195,7 @@ void test_enroll_first_race_god_success() {
   test::expect_true(race != nullptr);
   if (race) {
     test::expect_eq(race->name, std::string("Terrans"));
-    test::expect_true(race->God);
+    test::expect_false(race->God);
     test::expect_eq(race->Playernum, player_t{1});
     test::expect_eq(race->Gov_ship, result.gov_ship);
     test::expect_eq(race->number_sexes, 2u);
@@ -239,7 +256,7 @@ void test_enroll_first_race_god_success() {
     test::expect_eq(star->AP(player_t{1}), 5);
   }
 
-  std::println(std::cout, "  ✓ Enroll first race God success passed");
+  std::println(std::cout, "  ✓ Enroll first race mortal success passed");
 }
 
 void test_enroll_second_race_mortal_success() {
@@ -294,44 +311,34 @@ void test_enroll_second_race_mortal_success() {
   std::println(std::cout, "  ✓ Enroll second race mortal success passed");
 }
 
-void test_enroll_second_race_god_success() {
-  std::println(std::cout, "Test: Enroll second race with God privileges");
+void test_enroll_guest_race_success() {
+  std::println(std::cout, "Test: Enroll guest race");
 
   Database db(":memory:");
   setup_test_universe(db);
   EntityManager em(db);
   GB::creator::EnrollmentService service(em);
 
-  // Enroll player 1 as God on Earth
-  GB::creator::RaceEnrollmentSpec god1_spec{
-      .name = "PantheonPrime",
-      .password = "pass1",
+  GB::creator::RaceEnrollmentSpec guest_spec{
+      .name = "GuestTraveler",
+      .password = "guestpass",
       .home_planet_type = PlanetType::EARTH,
-      .is_god = true,
+      .is_god = false,
+      .is_guest = true,
   };
-  auto res1 = service.enroll_player(god1_spec);
-  test::expect_true(res1.success);
+  auto res = service.enroll_player(guest_spec);
+  test::expect_true(res.success);
+  test::expect_eq(res.player_num, player_t{1});
 
-  // Enroll player 2 as another God race on Desert
-  GB::creator::RaceEnrollmentSpec god2_spec{
-      .name = "DesertDeity",
-      .password = "pass2",
-      .home_planet_type = PlanetType::DESERT,
-      .preferred_sector = SectorType::SEC_DESERT,
-      .is_god = true,
-  };
-  auto res2 = service.enroll_player(god2_spec);
-  test::expect_true(res2.success);
-  test::expect_eq(res2.player_num, player_t{2});
-
-  const auto* god2_race = em.peek_race(player_t{2});
-  test::expect_true(god2_race != nullptr);
-  if (god2_race) {
-    test::expect_eq(god2_race->name, std::string("DesertDeity"));
-    test::expect_true(god2_race->God);
+  const auto* guest_race = em.peek_race(player_t{1});
+  test::expect_true(guest_race != nullptr);
+  if (guest_race) {
+    test::expect_eq(guest_race->name, std::string("GuestTraveler"));
+    test::expect_true(guest_race->Guest);
+    test::expect_false(guest_race->God);
   }
 
-  std::println(std::cout, "  ✓ Enroll second race God success passed");
+  std::println(std::cout, "  ✓ Enroll guest race success passed");
 }
 
 void test_enroll_gas_giant_cold_success() {
@@ -598,12 +605,12 @@ void test_quickstart_archetype_json_roundtrip_and_enroll() {
 }  // namespace
 
 int main() {
-  test_first_race_requires_god();
+  test_seed_deity_and_first_mortal_enrollment();
   test_unbounded_players_allowed();
   test_no_free_planet_rejected();
-  test_enroll_first_race_god_success();
+  test_enroll_first_race_mortal_success();
   test_enroll_second_race_mortal_success();
-  test_enroll_second_race_god_success();
+  test_enroll_guest_race_success();
   test_enroll_gas_giant_cold_success();
   test_enroll_explicit_capital_coords();
   test_find_suitable_planet_shuffle();

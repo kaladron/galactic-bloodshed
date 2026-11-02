@@ -13,9 +13,53 @@ import std;
 
 module gb.creator;
 
+namespace {
+
+bool is_valid_login_token(std::string_view token) noexcept {
+  return !token.empty() && !token.contains(' ');
+}
+
+}  // namespace
+
 namespace GB::creator {
 
 EnrollmentService::EnrollmentService(EntityManager& em) : entity_manager_(em) {}
+
+void EnrollmentService::seed_deity(std::string_view password,
+                                   std::string_view gov_password) {
+  if (!is_valid_login_token(password)) {
+    throw std::invalid_argument("seed_deity: deity race password must be "
+                                "non-empty and contain no spaces");
+  }
+  if (!is_valid_login_token(gov_password)) {
+    throw std::invalid_argument("seed_deity: deity governor password must be "
+                                "non-empty and contain no spaces");
+  }
+
+  auto [default_pref, default_compat] =
+      default_sector_compatibilities_for_planet(PlanetType::EARTH);
+
+  Race deity{};
+  deity.Playernum = 1;
+  deity.God = true;
+  deity.Guest = false;
+  deity.name = "Deity";
+  deity.password = std::string(password);
+  deity.turn = 0;
+  deity.init_leader(0, 0, std::string(gov_password), ScopeLevel::LEVEL_UNIV);
+  deity.translate[player_t{1}] = 100;
+  deity.mass = 1.0;
+  deity.birthrate = 0.5;
+  deity.fighters = 1;
+  deity.IQ = 200;
+  deity.number_sexes = 1;
+  deity.metabolism = 1.0;
+  deity.likes = default_compat;
+  deity.likesbest = default_pref;
+  deity.Gov_ship = std::nullopt;
+
+  entity_manager_.create_race(deity);
+}
 
 std::optional<std::pair<starnum_t, planetnum_t>>
 EnrollmentService::find_suitable_planet(PlanetType ppref,
@@ -72,7 +116,7 @@ Race EnrollmentService::build_race(player_t playernum,
 
   Race race{};
   race.Playernum = playernum;
-  race.God = spec.is_god;
+  race.God = false;
   race.Guest = spec.is_guest;
   race.name = spec.name;
   race.password = spec.password;
@@ -121,15 +165,7 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
   // 1. Assign next player ID
   player_t playernum{entity_manager_.max_race_player().value + 1};
 
-  // 2. Check God requirement for player 1
-  if (playernum == 1 && !spec.is_god) {
-    return EnrollmentResult{
-        .success = false,
-        .message = "The first race enrolled must have God privileges.",
-    };
-  }
-
-  // 3. Validate racial specification and point budget
+  // 2. Validate racial specification and point budget
   RacegenEngine engine;
   auto errors = engine.validate(spec, /*is_player=*/false, /*rigorous=*/false);
   if (!errors.empty()) {
@@ -146,7 +182,7 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
     };
   }
 
-  // 4. Find candidate planet
+  // 3. Find candidate planet
   starnum_t star{0};
   planetnum_t pnum{0};
   if (spec.target_planet.has_value()) {
@@ -208,7 +244,7 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
   });
   entity_manager_.create_race(race);
 
-  // 7. Build and dock capital government ship, then link Race::Gov_ship
+  // 6. Build and dock capital government ship, then link Race::Gov_ship
   shipnum_t shipno{0};
   {
     auto ship_handle =

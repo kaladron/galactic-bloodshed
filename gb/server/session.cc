@@ -122,6 +122,7 @@ std::string Session::process_telnet_sequences(std::string_view raw) {
         terminal_type_.assign(raw.substr(i + 4, end - (i + 4)));
         terminal_capabilities_ =
             GB::presentation::detect_terminal_capabilities(terminal_type_);
+        game_obj_.set_color(terminal_capabilities_.color);
       }
       i = (end + 1 < raw.size()) ? end + 2 : raw.size();
       continue;
@@ -131,44 +132,51 @@ std::string Session::process_telnet_sequences(std::string_view raw) {
   return clean;
 }
 
+bool Session::enqueue_complete_lines() {
+  for (auto newline_pos = line_buffer_.find('\n');
+       newline_pos != std::string::npos;
+       newline_pos = line_buffer_.find('\n')) {
+    if (input_queue_.size() >= MAX_INPUT_QUEUE_SIZE) {
+      std::println(std::cerr,
+                   "Disconnecting flooding client (input queue overflow)");
+      disconnect();
+      return false;
+    }
+
+    std::string line = line_buffer_.substr(0, newline_pos);
+    line_buffer_.erase(0, newline_pos + 1);
+
+    if (!line.empty() && line.back() == '\r') {
+      line.pop_back();
+    }
+    if (line.size() > MAX_COMMAND_LEN) {
+      std::println(std::cerr,
+                   "Disconnecting client (command exceeds MAX_COMMAND_LEN)");
+      disconnect();
+      return false;
+    }
+    if (!line.empty()) {
+      input_queue_.push_back(std::move(line));
+    }
+  }
+  return true;
+}
+
 void Session::do_read() {
   auto self = shared_from_this();
-  asio::async_read_until(
-      socket_, input_buffer_, '\n',
-      [this, self](asio::error_code ec, std::size_t /*bytes_transferred*/) {
+  socket_.async_read_some(
+      asio::buffer(read_chunk_),
+      [this, self](asio::error_code ec, std::size_t bytes_transferred) {
         if (ec) {
           disconnect();
           return;
         }
 
-        // Check for input flooding
-        if (input_queue_.size() >= MAX_INPUT_QUEUE_SIZE) {
-          std::println(std::cerr,
-                       "Disconnecting flooding client (input queue overflow)");
-          disconnect();
-          return;
+        line_buffer_.append(process_telnet_sequences(
+            std::string_view(read_chunk_.data(), bytes_transferred)));
+        if (enqueue_complete_lines()) {
+          do_read();
         }
-
-        // Extract line from buffer
-        std::istream is(&input_buffer_);
-        std::string line;
-        std::getline(is, line);
-        line = process_telnet_sequences(line);
-        // Remove trailing \r if present (Windows clients)
-        if (!line.empty() && line.back() == '\r') line.pop_back();
-        if (line.size() > MAX_COMMAND_LEN) {
-          std::println(
-              std::cerr,
-              "Disconnecting client (command exceeds MAX_COMMAND_LEN)");
-          disconnect();
-          return;
-        }
-        // Add to input queue for command processing
-        if (!line.empty()) {
-          input_queue_.push_back(std::move(line));
-        }
-        // Continue reading
-        do_read();
       });
 }
 

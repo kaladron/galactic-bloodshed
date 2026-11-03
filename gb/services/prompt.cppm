@@ -56,6 +56,7 @@ export struct SessionView {
   std::string race_name{};
   std::string governor_name{};
   bool god{false};
+  bool color{false};
   ap_t ap{0};
   ap_t global_ap{0};
   SessionScopeView scope{};

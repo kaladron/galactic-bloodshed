@@ -1164,6 +1164,7 @@ enum class ToggleOption : std::uint8_t {
 struct ToggleStatusViewModel {
   toggletype toggles{};
   SessionView session{};
+  bool color{false};
 };
 [[nodiscard]] std::string render_toggle_status(const ToggleStatusViewModel& vm);
 [[nodiscard]] std::string render_for_mode(UiMode mode,

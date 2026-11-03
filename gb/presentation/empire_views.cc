@@ -1561,7 +1561,7 @@ std::string render_toggle_status(const ToggleStatusViewModel& vm) {
       "gag is {}\ninverse is {}\ncolor is {}\ndouble_digits is {}\n"
       "geography is {}\nautoload is {}\ncompatibility is {}\n{}\n"
       "highlight player {}\n",
-      on_off_upper(t.gag), on_off_upper(t.inverse), on_off_upper(t.color),
+      on_off_upper(t.gag), on_off_upper(t.inverse), on_off_upper(vm.color),
       on_off_upper(t.double_digits), on_off_upper(t.geography),
       on_off_upper(t.autoload), on_off_upper(t.compat),
       t.invisible ? "INVISIBLE" : "VISIBLE", t.highlight);

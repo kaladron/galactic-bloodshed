@@ -65,7 +65,7 @@ void test_toggle_database_persistence() {
 
     ctx.assert_dispatch_success(g, {"toggle", "color"});
     test::expect_contains(g.out.str(), "color is now on");
-    test::expect_true(ctx.em.peek_race(1)->leader().toggle.color);
+    test::expect_true(g.color());
     g.out.str("");
 
     // Verify planetary map renders ANSI terrain foreground color when enabled
@@ -76,7 +76,7 @@ void test_toggle_database_persistence() {
     // Toggle colour alias turns color back off
     ctx.assert_dispatch_success(g, {"toggle", "colour"});
     test::expect_contains(g.out.str(), "color is now off");
-    test::expect_false(ctx.em.peek_race(1)->leader().toggle.color);
+    test::expect_false(g.color());
     g.out.str("");
 
     ctx.assert_dispatch_success(g, {"toggle", "double_digits"});

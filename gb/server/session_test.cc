@@ -572,6 +572,9 @@ int main() {
     auto session = Session::create(std::move(server_socket), em, registry);
     session->start();
 
+    test::expect_false(session->color());
+    test::expect_false(session->game_obj().color());
+
     // Send Telnet IAC WILL TTYPE (0xFF 0xFB 0x18), IAC DO SGA (0xFF 0xFD 0x03),
     // and IAC SB TTYPE IS "xterm-256color" IAC SE followed by a login command.
     using namespace std::string_literals;
@@ -589,6 +592,8 @@ int main() {
     test::expect_true(session->terminal_capabilities().ansi_sgr);
     test::expect_true(session->terminal_capabilities().color);
     test::expect_true(session->terminal_capabilities().utf8);
+    test::expect_true(session->color());
+    test::expect_true(session->game_obj().color());
 
     // Verify server replied with IAC SB TTYPE SEND IAC SE
     std::array<char, 32> reply_buf{};
@@ -599,6 +604,69 @@ int main() {
     std::println(std::cout,
                  "✓ Telnet IAC stripping and RFC 1091 TTYPE negotiation "
                  "verified");
+  }
+
+  // Un-delimited Telnet negotiation and dynamic post-login TTYPE color
+  // switching
+  {
+    asio::io_context io;
+    asio::ip::tcp::acceptor acceptor(
+        io, asio::ip::tcp::endpoint(asio::ip::address_v6::loopback(), 0));
+    asio::ip::tcp::socket client_socket(io);
+    client_socket.connect(acceptor.local_endpoint());
+    asio::ip::tcp::socket server_socket = acceptor.accept();
+
+    MockSessionRegistry registry;
+    auto session = Session::create(std::move(server_socket), em, registry);
+    session->start();
+
+    // Verify initial colour state is false
+    test::expect_false(session->color());
+    test::expect_false(session->game_obj().color());
+
+    // Send un-delimited IAC WILL TTYPE (no trailing \n)
+    using namespace std::string_literals;
+    client_socket.write_some(asio::buffer("\xff\xfb\x18"s));
+    io.poll();
+
+    // Verify server replied with IAC SB TTYPE SEND IAC SE immediately
+    std::array<char, 32> reply_buf{};
+    std::size_t reply_bytes = client_socket.read_some(asio::buffer(reply_buf));
+    test::expect_eq(std::string_view(reply_buf.data(), reply_bytes),
+                    std::string_view("\xff\xfa\x18\x01\xff\xf0", 6));
+
+    // Simulate an already-connected session
+    session->set_connected(true);
+
+    // Send post-login IAC SB TTYPE IS "xterm-256color" IAC SE without \n
+    client_socket.write_some(
+        asio::buffer("\xff\xfa\x18\x00xterm-256color\xff\xf0"s));
+    io.run_one();
+
+    test::expect_true(session->color());
+    test::expect_true(session->game_obj().color());
+    test::expect_eq(session->terminal_type(), "xterm-256color");
+    test::expect_false(session->has_pending_input());
+
+    // Manual override via Session::set_color
+    session->set_color(false);
+    test::expect_false(session->color());
+    session->set_color(true);
+    test::expect_true(session->color());
+
+    // Send post-login IAC SB TTYPE IS "vt100" IAC SE without \n to disable
+    // colour
+    client_socket.write_some(asio::buffer("\xff\xfa\x18\x00vt100\xff\xf0"s));
+    io.run_one();
+
+    test::expect_false(session->color());
+    test::expect_false(session->game_obj().color());
+    test::expect_eq(session->terminal_type(), "vt100");
+    test::expect_false(session->has_pending_input());
+
+    std::println(std::cout,
+                 "✓ Un-delimited Telnet negotiation and dynamic TTYPE colour "
+                 "switching verified");
   }
 
   std::println(std::cout, "\n✅ All session module tests passed!");

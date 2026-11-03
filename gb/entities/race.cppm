@@ -14,7 +14,6 @@ export struct toggletype {
   bool gag{false};
   bool double_digits{false};
   bool inverse{false};
-  bool color{false};
   bool geography{false};
   bool autoload{false};
   player_t highlight{0}; /* which race to highlight */

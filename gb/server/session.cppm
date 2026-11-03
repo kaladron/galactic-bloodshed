@@ -103,6 +103,9 @@ public:
   [[nodiscard]] UiMode ui_mode() const noexcept {
     return game_obj_.ui_mode();
   }
+  [[nodiscard]] bool color() const noexcept {
+    return game_obj_.color();
+  }
   [[nodiscard]] std::string_view terminal_type() const noexcept {
     return terminal_type_;
   }
@@ -134,6 +137,9 @@ public:
   }
   void set_ui_mode(UiMode mode) noexcept {
     game_obj_.set_ui_mode(mode);
+  }
+  void set_color(bool c) noexcept {
+    game_obj_.set_color(c);
   }
 
   /// Access the persistent command execution context owned by this session
@@ -184,9 +190,11 @@ private:
   void do_write();
   void queue_for_write(std::string content);  // Internal: add to write queue
   std::string process_telnet_sequences(std::string_view raw);
+  bool enqueue_complete_lines();
 
   asio::ip::tcp::socket socket_;
-  asio::streambuf input_buffer_{MAX_COMMAND_LEN * 16};
+  std::array<char, MAX_COMMAND_LEN * 16> read_chunk_{};
+  std::string line_buffer_;
   std::string out_buffer_;               // Where send() writes go
   std::deque<std::string> write_queue_;  // Pending async writes (internal)
   std::deque<std::string> input_queue_;

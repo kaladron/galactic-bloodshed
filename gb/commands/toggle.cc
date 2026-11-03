@@ -20,10 +20,8 @@ struct ToggleSpec {
   GB::presentation::ToggleOption option;
 };
 
-constexpr std::array<ToggleSpec, 9> toggle_specs{{
+constexpr std::array<ToggleSpec, 7> toggle_specs{{
     {"inverse", &toggletype::inverse, GB::presentation::ToggleOption::Inverse},
-    {"color", &toggletype::color, GB::presentation::ToggleOption::Color},
-    {"colour", &toggletype::color, GB::presentation::ToggleOption::Color},
     {"double_digits", &toggletype::double_digits,
      GB::presentation::ToggleOption::DoubleDigits},
     {"geography", &toggletype::geography,
@@ -52,7 +50,17 @@ bool toggle(const command_t& argv, GameObj& g) {
       g.present(GB::presentation::ToggleStatusViewModel{
           .toggles = race.governor(g.governor()).toggle,
           .session = GB::presentation::build_session_view(g),
+          .color = g.color(),
       });
+    });
+    return true;
+  }
+
+  if (argv[1] == "color" || argv[1] == "colour") {
+    g.set_color(!g.color());
+    g.present(GB::presentation::ToggleChangedResult{
+        .option = GB::presentation::ToggleOption::Color,
+        .enabled = g.color(),
     });
     return true;
   }

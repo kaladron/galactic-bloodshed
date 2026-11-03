@@ -152,6 +152,9 @@ public:
   [[nodiscard]] UiMode ui_mode() const noexcept {
     return ui_mode_;
   }
+  [[nodiscard]] bool color() const noexcept {
+    return color_;
+  }
   /// Returns a pure value snapshot of the session's current scope and identity.
   [[nodiscard]] ScopeContext scope_context() const noexcept {
     return ScopeContext{
@@ -195,6 +198,9 @@ public:
   }
   void set_ui_mode(UiMode mode) noexcept {
     ui_mode_ = mode;
+  }
+  void set_color(bool c) noexcept {
+    color_ = c;
   }
 
   /// Set the universe scope viewport center coordinates.
@@ -258,6 +264,7 @@ private:
   shipnum_t shipno_{};
   ScopeLevel level_ = ScopeLevel::LEVEL_PLAN;
   UiMode ui_mode_ = UiMode::ASCII;
+  bool color_ = false;
   UniverseCoordinates universe_center_{0.0, 0.0};
   SystemCoordinates system_center_{0.0, 0.0};
 };

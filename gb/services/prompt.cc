@@ -28,6 +28,7 @@ SessionView build_session_view(const GameObj& g) {
       .player = player,
       .governor = governor,
       .god = g.god(),
+      .color = g.color(),
       .ap = prompt.ap,
       .global_ap = universe->get_AP(player),
       .scope =

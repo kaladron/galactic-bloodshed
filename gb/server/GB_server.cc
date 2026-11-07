@@ -36,17 +36,8 @@ int main(int argc, char** argv) {
   Database database{config.db_path};
   EntityManager entity_manager{database};
 
-  std::println(std::cout, "      ***   Galactic Bloodshed v{0} ***",
-               GB_VERSION);
-  std::println(std::cout, "");
   std::time_t clk = std::time(nullptr);
-  std::println("      {}", format_timestamp(clk));
-  if (EXTERNAL_TRIGGER) {
-    std::println(std::cout, "      The update  password is '%s'.",
-                 UPDATE_PASSWORD);
-    std::println(std::cout, "      The segment password is '%s'.",
-                 SEGMENT_PASSWORD);
-  }
+  std::print(std::cout, "{}", format_startup_banner(clk));
   entity_manager.mutate_server_state([&](ServerState& state) {
     initialize_schedule_state(state, config, clk);
   });

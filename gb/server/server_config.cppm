@@ -26,6 +26,9 @@ export struct ServerConfig {
 
 export ServerConfig parse_server_args(int argc, const char* const* argv);
 export void print_server_usage(const char* prog_name);
+export [[nodiscard]] std::string
+format_startup_banner(std::time_t current_time,
+                      bool include_trigger_passwords = EXTERNAL_TRIGGER);
 export void initialize_schedule_state(ServerState& state,
                                       const ServerConfig& config,
                                       std::time_t current_time);

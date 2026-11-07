@@ -23,7 +23,7 @@ export template <typename Derived>
 class ReadonlyFactory {
 public:
   template <typename... Args>
-  static const Derived readonly(Args&&... args) {
+  [[nodiscard]] static const Derived readonly(Args&&... args) {
     return Derived(std::forward<Args>(args)...);
   }
 
@@ -589,13 +589,6 @@ public:
   using Base = CompositeEntityList<Planet, PlanetList>;
   using Iterator = typename Base::Iterator;
   using ConstIterator = typename Base::ConstIterator;
-
-  using Base::readonly;
-
-  [[nodiscard]] static const PlanetList
-  readonly(EntityManager& em, starnum_t snum, const Star& star) {
-    return readonly(em, snum, star.numplanets());
-  }
 
   PlanetList(EntityManager& em, starnum_t star, planetnum_t numplanets)
       : Base(em, star, numplanets) {}

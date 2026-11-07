@@ -150,6 +150,16 @@ void test_planet_list_readonly(EntityManager& em) {
   }
 
   test::expect_eq(total_planets, 3);
+
+  // Test PlanetList::readonly(em, snum, const Star&) overload
+  const auto& star1 = *em.peek_star(1);
+  int star1_planets = 0;
+  for (const Planet& p : PlanetList::readonly(em, 1, star1)) {
+    test::expect_eq(p.star_id(), 1);
+    star1_planets++;
+  }
+  test::expect_eq(star1_planets, 1);
+
   std::println(std::cout,
                "  PlanetList: iterated {} total planets across all stars",
                total_planets);

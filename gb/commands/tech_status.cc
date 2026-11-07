@@ -26,8 +26,7 @@ void tech_report_star(TechStatusViewModel& vm, GameObj& g, const Star& star,
     return;
   }
 
-  for (const auto& pl :
-       PlanetList::readonly(g.entity_manager, snum, star.numplanets())) {
+  for (const auto& pl : PlanetList::readonly(g.entity_manager, snum, star)) {
     if (!pl.info(Playernum).explored || !pl.info(Playernum).numsectsowned) {
       continue;
     }

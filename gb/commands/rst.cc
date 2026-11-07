@@ -245,7 +245,7 @@ void collect_star_ships(GameObj& g, RstViewModel& vm, player_t player_num,
     }
 
     for (const auto& planet :
-         PlanetList::readonly(g.entity_manager, snum, star->numplanets())) {
+         PlanetList::readonly(g.entity_manager, snum, *star)) {
       collect_planet_ships(g, vm, player_num, snum, planet.planet_order(),
                            rep_on);
     }

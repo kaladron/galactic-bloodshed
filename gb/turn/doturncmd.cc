@@ -252,10 +252,10 @@ static void process_ship_masses_and_ownership(TurnState& state) {
 
 static void process_ship_turns(TurnState& state, bool update) {
   /* do all ships one turn - do slower ships first */
-  for (int j = 0; j <= 9; j++) {
+  for (auto speed = speed_t::min(); speed <= speed_t::max(); ++speed) {
     for (auto ship_handle :
          ShipList(state.entity_manager, ShipList::IterationType::AllAlive)) {
-      if (ship_handle->speed() == j) {
+      if (ship_handle->speed() == speed) {
         doship(*ship_handle, update, state.entity_manager, state.stats);
         if ((ship_handle->type() == ShipType::STYPE_MISSILE) &&
             !attack_planet(*ship_handle)) {

@@ -216,8 +216,8 @@ int Planet::revolt(SectorMap& smap, const Race& victim_race,
                    const player_t agent) {
   const player_t victim = victim_race.Playernum;
   int revolted_sectors = 0;
-  for (Sector& s : smap) {
-    if (s.get_owner() != victim || s.get_popn() == 0) continue;
+  for (Sector& s : smap.owned_by(victim)) {
+    if (s.get_popn() == 0) continue;
 
     // Revolt rate is a function of tax rate.
     if (!success(info(victim).tax)) continue;

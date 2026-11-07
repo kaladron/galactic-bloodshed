@@ -75,7 +75,7 @@ void verify_universe_invariants(EntityManager& em, std::source_location loc) {
                 em.peek_sectormap(planet.star_id(), planet.planet_order())) {
           population_t total_sect_pop = 0;
           population_t total_sect_troops = 0;
-          for (const Sector& sect : *smap) {
+          for (const Sector& sect : smap->populated()) {
             total_sect_pop += sect.get_popn();
             total_sect_troops += sect.get_troops();
           }

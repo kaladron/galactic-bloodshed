@@ -26,7 +26,7 @@ void colonies_at_star(ColoniesViewModel& vm, GameObj& g, const Race& race,
   if (!star_ref.is_explored_by(Playernum)) return;
 
   for (const auto& pl :
-       PlanetList::readonly(g.entity_manager, star, star_ref.numplanets())) {
+       PlanetList::readonly(g.entity_manager, star, star_ref)) {
     if (!pl.info(Playernum).explored || !pl.info(Playernum).numsectsowned ||
         !star_ref.control(Playernum, Governor)) {
       continue;

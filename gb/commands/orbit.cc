@@ -242,8 +242,8 @@ bool orbit(const command_t& argv, GameObj& g) {
       vm.star_views.push_back(GB::presentation::project_star_view(
           g.entity_manager, g.scope_context(), where.snum));
 
-      for (const auto& p : PlanetList::readonly(g.entity_manager, where.snum,
-                                                star.numplanets())) {
+      for (const auto& p :
+           PlanetList::readonly(g.entity_manager, where.snum, star)) {
         if (opts->suppress_id != p.planet_order()) {
           vm.planets.push_back(build_planet_entry(
               g, ScopeLevel::LEVEL_STAR, p,

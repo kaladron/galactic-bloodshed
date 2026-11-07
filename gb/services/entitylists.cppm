@@ -590,6 +590,13 @@ public:
   using Iterator = typename Base::Iterator;
   using ConstIterator = typename Base::ConstIterator;
 
+  using Base::readonly;
+
+  [[nodiscard]] static const PlanetList
+  readonly(EntityManager& em, starnum_t snum, const Star& star) {
+    return readonly(em, snum, star.numplanets());
+  }
+
   PlanetList(EntityManager& em, starnum_t star, planetnum_t numplanets)
       : Base(em, star, numplanets) {}
 

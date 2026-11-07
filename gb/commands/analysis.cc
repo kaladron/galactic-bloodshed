@@ -404,8 +404,8 @@ bool analysis(const command_t& argv, GameObj& g) {
       break;
     case ScopeLevel::LEVEL_STAR: {
       const auto& star = *g.entity_manager.peek_star(where.snum);
-      for (const auto& planet : PlanetList::readonly(
-               g.entity_manager, where.snum, star.numplanets())) {
+      for (const auto& planet :
+           PlanetList::readonly(g.entity_manager, where.snum, star)) {
         do_analysis(vm, g, filter, mode, sector_type, where.snum,
                     planet.planet_order());
       }

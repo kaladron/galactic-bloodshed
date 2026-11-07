@@ -187,7 +187,7 @@ void star_get_tactical_items(GameObj& g,
     }
 
     for (const auto& planet :
-         PlanetList::readonly(g.entity_manager, snum, star->numplanets())) {
+         PlanetList::readonly(g.entity_manager, snum, *star)) {
       plan_get_tactical_items(g, items, player_num, snum,
                               planet.planet_order());
     }

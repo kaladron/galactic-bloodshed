@@ -51,7 +51,7 @@ void append_star_production(GameObj& g, starnum_t star,
   if (!star_ref.is_explored_by(g.player())) return;
 
   for (const auto& pl :
-       PlanetList::readonly(g.entity_manager, star, star_ref.numplanets())) {
+       PlanetList::readonly(g.entity_manager, star, star_ref)) {
     append_planet_production(g, star_ref, pl, vm);
   }
 }

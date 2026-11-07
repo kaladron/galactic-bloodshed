@@ -42,8 +42,8 @@ void dissolve_empire_colonies(GameObj& g, player_t playernum, bool waste) {
       continue;
     }
 
-    for (const auto& planet : PlanetList::readonly(
-             g.entity_manager, star.star_id(), star.numplanets())) {
+    for (const auto& planet :
+         PlanetList::readonly(g.entity_manager, star.star_id(), star)) {
       g.entity_manager.mutate_planet_and_sectors(
           star.star_id(), planet.planet_order(),
           [&](Planet& pl, SectorMap& smap) {
@@ -60,14 +60,12 @@ void dissolve_empire_colonies(GameObj& g, player_t playernum, bool waste) {
             pinfo.explored = 0;
             pinfo.autorep = 0;
 
-            for (auto& s : smap) {
-              if (s.get_owner() == playernum) {
-                s.set_owner(0);
-                s.set_troops(0);
-                s.clear_popn();
-                if (waste) {
-                  s.set_condition(SectorType::SEC_WASTED);
-                }
+            for (auto& s : smap.owned_by(playernum)) {
+              s.set_owner(0);
+              s.set_troops(0);
+              s.clear_popn();
+              if (waste) {
+                s.set_condition(SectorType::SEC_WASTED);
               }
             }
             pl.sync_demographics(smap);

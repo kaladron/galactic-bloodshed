@@ -197,9 +197,9 @@ Star UniverseGenerator::make_star_system(Database& db, starnum_t snum,
           star.name, dist);
       std::println(std::cout, "sect map({}x{}):", planet.dimensions().x,
                    planet.dimensions().y);
-      for (int y = 0; y < planet.dimensions().y; ++y) {
-        for (int x = 0; x < planet.dimensions().x; ++x) {
-          std::cout << smap.get(Coordinates{x, y}).condition_symbol();
+      for (const auto row : smap.rows()) {
+        for (const auto& s : row) {
+          std::cout << s.condition_symbol();
         }
         std::cout << '\n';
       }

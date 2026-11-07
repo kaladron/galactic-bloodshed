@@ -124,6 +124,41 @@ int main() {
     // Numeric limits
     test::expect_eq(std::numeric_limits<bounded_damage_t>::min().value, 0);
     test::expect_eq(std::numeric_limits<bounded_damage_t>::max().value, 100);
+
+    // Bounded::values() range iteration
+    static_assert(std::ranges::input_range<decltype(speed_t::values())>);
+    static_assert(std::ranges::forward_range<decltype(speed_t::values())>);
+    static_assert([]() constexpr {
+      int count = 0;
+      int expected = 0;
+      for (const speed_t speed : speed_t::values()) {
+        static_assert(std::same_as<decltype(speed), const speed_t>);
+        if (speed.value != expected++) return false;
+        ++count;
+      }
+      return count == 10;
+    }());
+
+    std::vector<speed_t> speeds;
+    for (const speed_t speed : speed_t::values()) {
+      speeds.push_back(speed);
+    }
+    test::expect_eq(speeds.size(), 10);
+    for (int i = 0; i <= 9; ++i) {
+      test::expect_eq(speeds[i].value, i);
+    }
+
+    // Edge case: Max == numeric_limits<uint8_t>::max() terminates without
+    // overflow
+    using u8max_t = Bounded<"u8max", std::uint8_t, 253, 255>;
+    std::vector<std::uint8_t> u8_vals;
+    for (const u8max_t val : u8max_t::values()) {
+      u8_vals.push_back(val.value);
+    }
+    test::expect_eq(u8_vals.size(), 3);
+    test::expect_eq(u8_vals[0], 253);
+    test::expect_eq(u8_vals[1], 254);
+    test::expect_eq(u8_vals[2], 255);
   }
 
   // ---------------------------------------------------------------------------

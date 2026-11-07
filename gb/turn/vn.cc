@@ -357,8 +357,7 @@ bool attempt_planet_landing(EntityManager& em, AutonomousShip& ship,
     return false;
   }
 
-  for (Sector& sect :
-       smap.shuffle() | std::views::filter(&Sector::has_resource)) {
+  for (Sector& sect : smap.shuffle_if(&Sector::has_resource)) {
     ship.land_on_planet();
     const auto& star = *em.peek_star(ship.storbits());
     ship.set_coordinates(planet.absolute_coordinates(star));

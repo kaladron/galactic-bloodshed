@@ -32,10 +32,9 @@ find_bombardment_target(EntityManager& entity_manager, const Ship& ship,
         const std::optional<player_t> programmed_target =
             bers ? bers->target() : std::nullopt;
 
-        auto candidates =
-            smap.shuffle() | std::views::filter([&](const Sector& s) noexcept {
-              return s.is_bombardable_by(ship.owner());
-            });
+        const auto candidates = smap.shuffle_if([&](const Sector& s) noexcept {
+          return s.is_bombardable_by(ship.owner());
+        });
 
         // 1. Look for an active enemy colony or programmed target first
         for (const Sector& sect : candidates) {

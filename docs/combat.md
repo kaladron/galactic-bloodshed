@@ -261,7 +261,7 @@ flowchart TD
 
 ### Orbital Bombardment Firepower and Blast Geometry
 Effective orbital bombardment power (`bombard <ship> [<x,y> [<strength>]]`) is bounded by the ship's maximum retaliation strength (either active gun battery count or armed laser strength, clamped by stored destructive ordnance or half of stored fuel) and costs $1$ Star AP per firing ship:
-- **Blast Radius**: A bombardment strike of strength $S$ affects all planetary sectors within toroidal Euclidean distance:
+- **Blast Radius**: A bombardment strike of strength $S$ affects all planetary sectors within cylindrical Euclidean distance (east-west wrapping with bounded polar latitude):
   $$r = 0.4 \times S$$
   If target coordinates `<x,y>` are omitted, a random sector on the planet is targeted.
 - **Distance-Attenuated Sector Damage Factor**: Each sector at distance $d \le r$ from ground zero sustains a blast intensity factor:

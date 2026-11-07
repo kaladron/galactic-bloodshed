@@ -579,6 +579,11 @@ public:
   [[nodiscard]] bool is_adjacent(const Coordinates from,
                                  const Coordinates to) const noexcept;
 
+  /// \brief Calculates Euclidean distance between two coordinates under
+  /// cylindrical projection (east-west wrapping with bounded polar latitude).
+  [[nodiscard]] double cylindrical_distance(Coordinates a,
+                                            Coordinates b) const noexcept;
+
   /// \brief Returns all valid adjacent coordinates surrounding the given
   /// position, respecting east/west toroidal wrapping and north/south polar
   /// boundaries.

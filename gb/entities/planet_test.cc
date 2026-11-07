@@ -142,6 +142,26 @@ int main() {
     // random_adjacent_coordinates returns a valid adjacent neighbor
     auto random_neighbor = planet.random_adjacent_coordinates({5, 5});
     test::expect_true(planet.is_adjacent({5, 5}, random_neighbor));
+
+    // Cylindrical distance tests:
+    // Standard Euclidean distance without wrapping
+    test::expect_true(
+        std::abs(planet.cylindrical_distance({2, 3}, {5, 7}) - 5.0) < 1e-6);
+    // Symmetry across x = 0 and x = Maxx - 1 (width = 10)
+    // Distance (0, 2) <-> (9, 2) must be 1.0 in BOTH directions (not 0.0
+    // or 9.0)
+    test::expect_true(
+        std::abs(planet.cylindrical_distance({0, 2}, {9, 2}) - 1.0) < 1e-6);
+    test::expect_true(
+        std::abs(planet.cylindrical_distance({9, 2}, {0, 2}) - 1.0) < 1e-6);
+    // Diagonal seam wrapping: (0, 1) to (9, 2) has dx = 1, dy = 1 -> sqrt(2)
+    test::expect_true(std::abs(planet.cylindrical_distance({0, 1}, {9, 2}) -
+                               std::sqrt(2.0)) < 1e-6);
+    test::expect_true(std::abs(planet.cylindrical_distance({9, 2}, {0, 1}) -
+                               std::sqrt(2.0)) < 1e-6);
+    // Polar separation does NOT wrap vertically: (5, 0) to (5, 7) has dy = 7
+    test::expect_true(
+        std::abs(planet.cylindrical_distance({5, 0}, {5, 7}) - 7.0) < 1e-6);
   }
 
   // Test 5b: CommodityManifest, plroute, and Commod domain methods

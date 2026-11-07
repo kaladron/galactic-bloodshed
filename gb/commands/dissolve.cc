@@ -61,11 +61,10 @@ void dissolve_empire_colonies(GameObj& g, player_t playernum, bool waste) {
             pinfo.autorep = 0;
 
             for (auto& s : smap.owned_by(playernum)) {
-              s.set_owner(0);
-              s.set_troops(0);
-              s.clear_popn();
               if (waste) {
-                s.set_condition(SectorType::SEC_WASTED);
+                s.devastate();
+              } else {
+                s.clear_colony();
               }
             }
             pl.sync_demographics(smap);

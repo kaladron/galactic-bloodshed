@@ -994,6 +994,10 @@ void test_execute_berserker_bombardment() {
       .with_temperature(50)
       .with_colony(2, 100, Coordinates{5, 5})
       .build();
+  TestPlanetBuilder(em, db, 1, PlanetType::EARTH, Coordinates{10, 10}, 2)
+      .named("Planet1")
+      .with_temperature(50)
+      .build();
   Planet planet(em.peek_planet(1, 1)->get_struct());
 
   // Berserker ship in orbit

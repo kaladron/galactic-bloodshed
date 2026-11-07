@@ -97,8 +97,8 @@ void survey_planet_sectors(GameObj& g, const Place& where,
   };
 
   std::flat_set<Coordinates> filter;
-  for (auto [c, s] : smap->indexed_sectors()) {
-    if (!c.within_bounds(low, high)) continue;
+  for (const Sector& s : smap->within_box(low, high)) {
+    const Coordinates c = s.coords();
     if (!all) {
       filter.insert(c);
     }

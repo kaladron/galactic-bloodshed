@@ -42,6 +42,13 @@ std::pair<shipnum_t, shipnum_t> setup_test_world(TestContext& ctx) {
   test::expect_eq(loaded_race->password, "testpass");
   test::expect_eq(loaded_race->leader().password, "govpass");
 
+  // Initialize Earth sector (0, 0) with nonzero efficiency and mobilization
+  ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
+    auto& s = smap.get({0, 0});
+    s.set_efficiency_bounded(85);
+    s.set_mobilization(50);
+  });
+
   return {s1, s2};
 }
 
@@ -84,6 +91,8 @@ void test_dissolve_happy_path() {
     test::expect_eq(smap->get({0, 0}).get_owner(), 0);
     test::expect_eq(smap->get({0, 0}).get_popn(), 0);
     test::expect_eq(smap->get({0, 0}).get_troops(), 0);
+    test::expect_eq(smap->get({0, 0}).get_eff(), 0);
+    test::expect_eq(smap->get({0, 0}).get_mobilization(), 0);
     test::expect_eq(smap->get({0, 0}).get_condition(), SectorType::SEC_WASTED);
 
     const auto* pl = ctx.em.peek_planet(1, 1);
@@ -200,6 +209,12 @@ void test_dissolve_without_waste_and_json() {
     test::expect_true(ctx.em.peek_race(1)->dissolved);
     test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({0, 0}).get_condition(),
                     orig_cond);
+    test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({0, 0}).get_eff(), 0);
+    test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({0, 0}).get_mobilization(),
+                    0);
+    test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({0, 0}).get_owner(), 0);
+    test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({0, 0}).get_popn(), 0);
+    test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({0, 0}).get_troops(), 0);
     ctx.verify_universe_invariants();
   }
 

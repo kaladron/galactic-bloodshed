@@ -201,6 +201,67 @@ public:
     return Max;
   }
 
+  struct ValueRange {
+    struct Iterator {
+      using iterator_concept = std::forward_iterator_tag;
+      using iterator_category = std::forward_iterator_tag;
+      using value_type = Bounded;
+      using difference_type = std::ptrdiff_t;
+      using pointer = void;
+      using reference = Bounded;
+
+      T current_{Min};
+      bool done_{false};
+
+      constexpr Iterator() = default;
+      constexpr Iterator(T current, bool done) noexcept
+          : current_(current), done_(done) {}
+
+      [[nodiscard]] constexpr Bounded operator*() const noexcept {
+        return Bounded{current_};
+      }
+
+      constexpr Iterator& operator++() noexcept {
+        if (current_ == Max) {
+          done_ = true;
+        } else {
+          ++current_;
+        }
+        return *this;
+      }
+
+      constexpr Iterator operator++(int) noexcept {
+        Iterator temp = *this;
+        ++(*this);
+        return temp;
+      }
+
+      [[nodiscard]] constexpr bool
+      operator==(const Iterator& other) const noexcept {
+        if (done_ && other.done_) return true;
+        return done_ == other.done_ && current_ == other.current_;
+      }
+    };
+
+    [[nodiscard]] constexpr Iterator begin() const noexcept {
+      return Iterator{Min, false};
+    }
+
+    [[nodiscard]] constexpr Iterator end() const noexcept {
+      return Iterator{Max, true};
+    }
+
+    [[nodiscard]] static constexpr bool empty() noexcept {
+      return false;
+    }
+  };
+
+  [[nodiscard]] static constexpr ValueRange values() noexcept
+    requires(std::integral<T>)
+  {
+    return ValueRange{};
+  }
+
   // MUTATING ARITHMETIC (WITH AUTOMATIC BOUNDS CLAMPING & OVERFLOW SAFETY)
   constexpr Bounded& operator+=(T delta) noexcept {
     if constexpr (std::unsigned_integral<T>) {

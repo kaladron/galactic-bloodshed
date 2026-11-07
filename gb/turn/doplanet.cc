@@ -624,7 +624,7 @@ EnslavementResult execute_slave_revolt(EntityManager& entity_manager,
     auto is_master_sector = [&](const Sector& s) noexcept {
       return s.is_owned_by(former_master);
     };
-    for (Sector& p : smap.shuffle() | std::views::filter(is_master_sector)) {
+    for (Sector& p : smap.shuffle_if(is_master_sector)) {
       if (bool_rand()) {
         p.devastate();
         master_devastated++;
@@ -778,7 +778,7 @@ void process_planet_production(EntityManager& entity_manager, const Star& star,
     return;
   }
 
-  for (Sector& p : smap.shuffle() | std::views::filter(&Sector::is_occupied)) {
+  for (Sector& p : smap.shuffle_if(&Sector::is_occupied)) {
     produce(entity_manager, star, planet, p, stats);
     if (p.is_owned()) {
       planet.info(p.get_owner()).est_production +=

@@ -252,7 +252,7 @@ static void process_ship_masses_and_ownership(TurnState& state) {
 
 static void process_ship_turns(TurnState& state, bool update) {
   /* do all ships one turn - do slower ships first */
-  for (auto speed = speed_t::min(); speed <= speed_t::max(); ++speed) {
+  for (const speed_t speed : speed_t::values()) {
     for (auto ship_handle :
          ShipList(state.entity_manager, ShipList::IterationType::AllAlive)) {
       if (ship_handle->speed() == speed) {

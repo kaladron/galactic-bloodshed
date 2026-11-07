@@ -190,12 +190,7 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
   std::flat_map<player_t, int> sum_mob{};
 
   for (auto& s : smap) {
-    const auto coords = s.coords();
-    int dx = std::min(
-        std::abs(coords.x - target_sector.x),
-        std::abs(target_sector.x + (pl.dimensions().x - 1) - coords.x));
-    int dy = std::abs(coords.y - target_sector.y);
-    double d = std::sqrt(static_cast<double>(dx * dx + dy * dy));
+    const double d = pl.cylindrical_distance(s.coords(), target_sector);
 
     if (d <= r) {
       double fac = SECTOR_DAMAGE * static_cast<double>(strength) *

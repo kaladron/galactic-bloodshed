@@ -59,8 +59,7 @@ bool repair(const command_t& argv, GameObj& g) {
   g.entity_manager.mutate_sectormap(
       where.snum, where.pnum, [&](SectorMap& smap) {
         g.entity_manager.mutate_planet(where.snum, where.pnum, [&](Planet& p) {
-          for (auto [c, s] : smap.indexed_sectors()) {
-            if (!c.within_bounds(low, high)) continue;
+          for (Sector& s : smap.within_box(low, high)) {
             if (p.info(Playernum).resource >= SECTOR_REPAIR_COST &&
                 s.is_repairable_by(Playernum)) {
               s.repair();

@@ -886,7 +886,7 @@ public:
     private:
       void advance_to_match() noexcept {
         while (map_ && idx_ < map_->grid_.size()) {
-          if (pred_(map_->grid_[idx_])) {
+          if (std::invoke(pred_, map_->grid_[idx_])) {
             return;
           }
           ++idx_;
@@ -1099,6 +1099,101 @@ public:
     return grid_ | std::views::filter(IsOccupiedPred{});
   }
 
+  /// \brief Returns a non-allocating lazy view of sectors matching a predicate.
+  template <typename Pred>
+  [[nodiscard]] auto filter(Pred pred) noexcept {
+    return FilteredSectorsView(*this, std::move(pred));
+  }
+  template <typename Pred>
+  [[nodiscard]] auto filter(Pred pred) const noexcept {
+    return grid_ | std::views::filter(std::move(pred));
+  }
+
+  struct WithinBoxPred {
+    Coordinates low;
+    Coordinates high;
+    bool operator()(const Sector& s) const noexcept {
+      return s.coords().within_bounds(low, high);
+    }
+  };
+
+  /// \brief Returns a non-allocating lazy view of sectors within a coordinate
+  /// bounding box.
+  [[nodiscard]] auto within_box(Coordinates low, Coordinates high) noexcept {
+    return FilteredSectorsView(*this, WithinBoxPred{low, high});
+  }
+  [[nodiscard]] auto within_box(Coordinates low,
+                                Coordinates high) const noexcept {
+    return grid_ | std::views::filter(WithinBoxPred{low, high});
+  }
+
+  class RowsView {
+  public:
+    class Iterator {
+    public:
+      using iterator_concept = std::forward_iterator_tag;
+      using iterator_category = std::forward_iterator_tag;
+      using value_type = std::span<const Sector>;
+      using difference_type = std::ptrdiff_t;
+      using pointer = void;
+      using reference = std::span<const Sector>;
+
+      constexpr Iterator() = default;
+      constexpr Iterator(std::span<const Sector> grid, std::size_t width,
+                         std::size_t y) noexcept
+          : grid_(grid), width_(width), y_(y) {}
+
+      [[nodiscard]] constexpr std::span<const Sector>
+      operator*() const noexcept {
+        return grid_.subspan(y_ * width_, width_);
+      }
+
+      constexpr Iterator& operator++() noexcept {
+        ++y_;
+        return *this;
+      }
+      constexpr Iterator operator++(int) noexcept {
+        Iterator tmp = *this;
+        ++y_;
+        return tmp;
+      }
+
+      [[nodiscard]] constexpr bool
+      operator==(const Iterator& other) const noexcept {
+        return y_ == other.y_;
+      }
+
+    private:
+      std::span<const Sector> grid_{};
+      std::size_t width_{0};
+      std::size_t y_{0};
+    };
+
+    constexpr RowsView(std::span<const Sector> grid, int width,
+                       int height) noexcept
+        : grid_(grid), width_(width > 0 ? static_cast<std::size_t>(width) : 0),
+          height_(width > 0 && height > 0 ? static_cast<std::size_t>(height)
+                                          : 0) {}
+
+    [[nodiscard]] constexpr Iterator begin() const noexcept {
+      return Iterator(grid_, width_, 0);
+    }
+    [[nodiscard]] constexpr Iterator end() const noexcept {
+      return Iterator(grid_, width_, height_);
+    }
+
+  private:
+    std::span<const Sector> grid_{};
+    std::size_t width_{0};
+    std::size_t height_{0};
+  };
+
+  /// \brief Returns a const-only view of 1D row spans across the sector grid.
+  [[nodiscard]] constexpr RowsView rows() const noexcept {
+    return RowsView(std::span<const Sector>{grid_}, dimensions_.x,
+                    dimensions_.y);
+  }
+
   template <typename URBG>
   Sector& get_random(URBG& g) {
     std::uniform_int_distribution<int> dis_x(0, dimensions_.x - 1);
@@ -1136,6 +1231,40 @@ public:
   [[nodiscard]] ConstShuffledSectorsView shuffle() const {
     return shuffle(game_rng());
   }  /// Randomizes the order of the SectorMap (const).
+
+  template <typename Pred, typename URBG>
+  [[nodiscard]] ShuffledSectorsView shuffle_if(Pred pred, URBG& g) {
+    std::vector<std::size_t> indices;
+    indices.reserve(grid_.size());
+    for (std::size_t i = 0; i < grid_.size(); ++i) {
+      if (std::invoke(pred, grid_[i])) {
+        indices.push_back(i);
+      }
+    }
+    std::ranges::shuffle(indices, g);
+    return ShuffledSectorsView(*this, std::move(indices));
+  }
+  template <typename Pred>
+  [[nodiscard]] ShuffledSectorsView shuffle_if(Pred pred) {
+    return shuffle_if(std::move(pred), game_rng());
+  }
+
+  template <typename Pred, typename URBG>
+  [[nodiscard]] ConstShuffledSectorsView shuffle_if(Pred pred, URBG& g) const {
+    std::vector<std::size_t> indices;
+    indices.reserve(grid_.size());
+    for (std::size_t i = 0; i < grid_.size(); ++i) {
+      if (std::invoke(pred, grid_[i])) {
+        indices.push_back(i);
+      }
+    }
+    std::ranges::shuffle(indices, g);
+    return ConstShuffledSectorsView(*this, std::move(indices));
+  }
+  template <typename Pred>
+  [[nodiscard]] ConstShuffledSectorsView shuffle_if(Pred pred) const {
+    return shuffle_if(std::move(pred), game_rng());
+  }
 
   SectorMap(SectorMap&) = delete;
   ~SectorMap() = default;

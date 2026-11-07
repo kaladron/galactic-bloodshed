@@ -29,6 +29,15 @@ bool Planet::is_adjacent(const Coordinates from,
   return dx == dimensions().x - 1;
 }
 
+double Planet::cylindrical_distance(Coordinates a,
+                                    Coordinates b) const noexcept {
+  const int raw_dx = std::abs(a.x - b.x);
+  const int dx =
+      dimensions().x > 0 ? std::min(raw_dx, dimensions().x - raw_dx) : raw_dx;
+  const int dy = std::abs(a.y - b.y);
+  return std::hypot(static_cast<double>(dx), static_cast<double>(dy));
+}
+
 std::vector<Coordinates> Planet::adjacent_coordinates(Coordinates from) const {
   std::vector<Coordinates> neighbors;
   if (dimensions().x <= 0 || dimensions().y <= 0) {
@@ -216,9 +225,9 @@ int Planet::revolt(SectorMap& smap, const Race& victim_race,
                    const player_t agent) {
   const player_t victim = victim_race.Playernum;
   int revolted_sectors = 0;
-  for (Sector& s : smap.owned_by(victim)) {
-    if (s.get_popn() == 0) continue;
-
+  for (Sector& s : smap.filter([victim](const Sector& s) noexcept {
+         return s.is_owned_by(victim) && s.get_popn() > 0;
+       })) {
     // Revolt rate is a function of tax rate.
     if (!success(info(victim).tax)) continue;
 

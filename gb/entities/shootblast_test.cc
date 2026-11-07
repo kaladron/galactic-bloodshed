@@ -180,6 +180,62 @@ void test_shoot_ship_to_planet_valid_attack() {
                res->sectors_destroyed);
 }
 
+void test_shoot_ship_to_planet_cylindrical_seam_symmetry() {
+  std::println(std::cout,
+               "Test: shoot_ship_to_planet cylindrical seam symmetry");
+
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  Planet planet(ctx.em.peek_planet(1, 1)->get_struct());
+  planet.dimensions() = Coordinates{10, 10};
+
+  // Case A: Target at x = 0, sector at seam boundary x = 9 (dx = 1, dy = 0)
+  SectorMap smap_a(planet);
+  auto& s_a = smap_a.get(Coordinates{9, 5});
+  s_a.set_owner(2);
+  s_a.set_popn_exact(100);
+  s_a.set_condition(SectorType::SEC_LAND);
+  s_a.set_type(SectorType::SEC_LAND);
+
+  // Case B: Target at x = 9, sector at seam boundary x = 0 (dx = 1, dy = 0)
+  SectorMap smap_b(planet);
+  auto& s_b = smap_b.get(Coordinates{0, 5});
+  s_b.set_owner(2);
+  s_b.set_popn_exact(100);
+  s_b.set_condition(SectorType::SEC_LAND);
+  s_b.set_type(SectorType::SEC_LAND);
+
+  Ship ship{};
+  ship.number() = 1;
+  ship.owner() = 1;
+  ship.type() = ShipType::OTYPE_CANIST;
+  ship.enter_planet_orbit(1, 1);
+  ship.alive() = true;
+  ship.on() = true;
+  ship.tech() = 10.0;
+  ship.size() = 10;
+
+  // Strength 50 with HEAVY guns gives fac = 22.5 at d = 1 across the seam,
+  // deterministically exceeding defense_bonus * uniform_rand(0, 10) (max 10).
+  auto res_a = shoot_ship_to_planet(ctx.em, ship, planet, 50, Coordinates{0, 5},
+                                    smap_a, 0, guntype_t::HEAVY);
+  test::expect_true(res_a.has_value());
+  test::expect_true(res_a->nuked_players.contains(2));
+
+  auto res_b = shoot_ship_to_planet(ctx.em, ship, planet, 50, Coordinates{9, 5},
+                                    smap_b, 0, guntype_t::HEAVY);
+  test::expect_true(res_b.has_value());
+  test::expect_true(res_b->nuked_players.contains(2));
+
+  // Both seam-adjacent sectors sustain identical damage
+  test::expect_eq(smap_a.get(Coordinates{9, 5}).get_popn(),
+                  smap_b.get(Coordinates{0, 5}).get_popn());
+
+  std::println(std::cout,
+               "  ✓ shoot_ship_to_planet cylindrical seam symmetry passed");
+}
+
 void test_hit_odds_sizing() {
   std::println(std::cout, "Test: hit_odds sizing with zero and extreme body");
 
@@ -557,6 +613,7 @@ int main() {
   test_shoot_planet_to_ship_valid_attack();
   test_shoot_ship_to_planet_invalid_cases();
   test_shoot_ship_to_planet_valid_attack();
+  test_shoot_ship_to_planet_cylindrical_seam_symmetry();
   test_hit_odds_sizing();
   test_zero_body_ship_combat();
   test_penetration_factor_domain();

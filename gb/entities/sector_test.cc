@@ -363,6 +363,102 @@ void test_sectormap_range_views() {
     ++const_owned_count;
   }
   test::expect_eq(const_owned_count, 2UL);
+
+  // 7. smap.filter(pred) and dirty-tracking safety
+  smap.clear_dirty();
+  test::expect_eq(smap.dirty_count(), 0UL);
+
+  std::size_t filtered_count = 0;
+  for (Sector& s : smap.filter([&](const Sector& s) noexcept {
+         return s.is_owned_by(1) && s.get_popn() > 0;
+       })) {
+    s.add_resource(25);
+    ++filtered_count;
+  }
+  test::expect_eq(filtered_count, 1UL);
+  test::expect_eq(smap.dirty_count(), 1UL);
+  test::expect_true(smap.is_dirty({0, 0}));
+  test::expect_false(smap.is_dirty({1, 0}));
+  test::expect_false(smap.is_dirty({0, 1}));
+  test::expect_false(smap.is_dirty({1, 1}));
+
+  // Non-matching filter marks zero sectors dirty
+  smap.clear_dirty();
+  for (Sector& s : smap.filter([](const Sector&) noexcept { return false; })) {
+    s.add_resource(100);
+  }
+  test::expect_eq(smap.dirty_count(), 0UL);
+
+  // Filter with member function pointer
+  std::size_t occupied_count = 0;
+  for (const Sector& s : smap.filter(&Sector::is_occupied)) {
+    test::expect_true(s.is_occupied());
+    ++occupied_count;
+  }
+  test::expect_eq(occupied_count, 2UL);
+
+  // 8. smap.shuffle_if(pred) and dirty-tracking safety
+  smap.clear_dirty();
+  std::size_t shuffled_matches = 0;
+  for (Sector& s : smap.shuffle_if(
+           [](const Sector& s) noexcept { return s.is_owned_by(2); })) {
+    s.add_resource(10);
+    ++shuffled_matches;
+  }
+  test::expect_eq(shuffled_matches, 1UL);
+  test::expect_eq(smap.dirty_count(), 1UL);
+  test::expect_true(smap.is_dirty({0, 1}));
+  test::expect_false(smap.is_dirty({0, 0}));
+
+  // Non-matching shuffle_if marks zero sectors dirty
+  smap.clear_dirty();
+  for (Sector& s :
+       smap.shuffle_if([](const Sector&) noexcept { return false; })) {
+    s.add_resource(100);
+  }
+  test::expect_eq(smap.dirty_count(), 0UL);
+
+  // Const shuffle_if with member function pointer
+  std::size_t const_shuffled_count = 0;
+  for (const Sector& s : const_smap.shuffle_if(&Sector::is_occupied)) {
+    test::expect_true(s.is_occupied());
+    ++const_shuffled_count;
+  }
+  test::expect_eq(const_shuffled_count, 2UL);
+
+  // 9. smap.within_box(low, high) and dirty tracking
+  smap.clear_dirty();
+  std::size_t box_count = 0;
+  for (Sector& s : smap.within_box(Coordinates{0, 0}, Coordinates{0, 1})) {
+    s.add_resource(5);
+    ++box_count;
+  }
+  test::expect_eq(box_count, 2UL);
+  test::expect_eq(smap.dirty_count(), 2UL);
+  test::expect_true(smap.is_dirty({0, 0}));
+  test::expect_true(smap.is_dirty({0, 1}));
+  test::expect_false(smap.is_dirty({1, 0}));
+  test::expect_false(smap.is_dirty({1, 1}));
+
+  // Const within_box
+  std::size_t const_box_count = 0;
+  for (const Sector& s :
+       const_smap.within_box(Coordinates{1, 0}, Coordinates{1, 1})) {
+    test::expect_eq(s.coords().x, 1);
+    ++const_box_count;
+  }
+  test::expect_eq(const_box_count, 2UL);
+
+  // 10. smap.rows() const 1D span slices
+  std::size_t row_count = 0;
+  for (const auto row : const_smap.rows()) {
+    test::expect_eq(row.size(), 2UL);
+    for (const Sector& s : row) {
+      test::expect_eq(s.coords().y, static_cast<int>(row_count));
+    }
+    ++row_count;
+  }
+  test::expect_eq(row_count, 2UL);
 }
 
 void test_sector_resource_and_crystal_predicates() {

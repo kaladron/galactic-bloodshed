@@ -97,12 +97,10 @@ bool SectorRepository::save_sector(const Sector& sector, starnum_t star_id,
 SectorMap SectorRepository::load_map(const Planet& planet) {
   SectorMap smap(planet);
 
-  for (int y = 0; y < planet.dimensions().y; y++) {
-    for (int x = 0; x < planet.dimensions().x; x++) {
-      if (auto sector =
-              find_sector(planet.star_id(), planet.planet_order(), x, y)) {
-        smap.set(Coordinates{x, y}, std::move(*sector));
-      }
+  for (const Coordinates coord : smap.coordinates()) {
+    if (auto sector = find_sector(planet.star_id(), planet.planet_order(),
+                                  coord.x, coord.y)) {
+      smap.set(coord, std::move(*sector));
     }
   }
 

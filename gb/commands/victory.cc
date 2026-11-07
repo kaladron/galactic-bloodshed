@@ -13,18 +13,19 @@ import std;
 
 namespace GB::commands {
 bool victory(const command_t& argv, GameObj& g) {
-  int count = g.entity_manager.num_races().value;
+  std::optional<int> requested_count;
   if (argv.size() > 1) {
     auto scan_res = scn::scan<int>(argv[1], "{}");
     if (!scan_res || scan_res->value() < 1) {
       g.out << "Invalid count specified.\n";
       return false;
     }
-    count = scan_res->value();
+    requested_count = scan_res->value();
   }
-  count = std::min(count, static_cast<int>(g.entity_manager.num_races().value));
 
   auto viclist = create_victory_list(g.entity_manager);
+  const int total = static_cast<int>(viclist.size());
+  const int count = requested_count ? std::min(*requested_count, total) : total;
 
   GB::presentation::VictoryViewModel vm{
       .is_god = g.god(),

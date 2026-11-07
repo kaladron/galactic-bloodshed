@@ -453,9 +453,7 @@ public:
   shipnum_t next_available_ship_number();
 
   // Count and ID boundary methods (for queries and iteration)
-  int num_commods();
   int max_commod_id();
-  player_t num_races();
   player_t max_race_player();
   starnum_t num_stars();
   starnum_t max_star_id();

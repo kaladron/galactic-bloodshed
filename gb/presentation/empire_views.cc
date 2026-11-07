@@ -1779,7 +1779,8 @@ BlockView project_block_view(EntityManager& em, const ScopeContext& viewer,
   std::vector<player_t> invited;
   std::vector<player_t> pledged;
 
-  for (player_t p = 1; p <= em.num_races(); ++p) {
+  for (const Race& r : RaceList::readonly(em)) {
+    const player_t p = r.Playernum;
     if (blk.is_member(p)) {
       members.push_back(p);
     }

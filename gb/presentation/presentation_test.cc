@@ -1628,6 +1628,33 @@ void test_canonical_race_block_market_combat_views() {
   test::expect_contains(news_empty_json, R"("type":"message")");
 }
 
+void test_project_block_view_sparse_player_ids() {
+  TestContext ctx;
+  TestWorldBuilder(ctx)
+      .add_race("Terrans", 100.0, false, 1)
+      .add_race("Vulcans", 120.0, false, 4);
+
+  ctx.em.mutate_block(1, [](Block& b) {
+    b.invite(1);
+    b.pledge(1);
+    b.invite(4);
+    b.pledge(4);
+  });
+
+  const ScopeContext viewer1{
+      .player = 1,
+      .governor = 0,
+      .god = false,
+  };
+
+  const auto block1_view =
+      GB::presentation::project_block_view(ctx.em, viewer1, 1);
+  test::expect_eq(block1_view.block_id, 1);
+  test::expect_eq(block1_view.members, (std::vector<player_t>{1, 4}));
+  test::expect_eq(block1_view.invited, (std::vector<player_t>{1, 4}));
+  test::expect_eq(block1_view.pledged, (std::vector<player_t>{1, 4}));
+}
+
 }  // namespace
 
 int main() {
@@ -1642,5 +1669,6 @@ int main() {
   test_canonical_star_planet_sector_projectors();
   test_canonical_ship_view_projectors();
   test_canonical_race_block_market_combat_views();
+  test_project_block_view_sparse_player_ids();
   return 0;
 }

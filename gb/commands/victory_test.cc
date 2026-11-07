@@ -112,10 +112,50 @@ void test_victory_dispatch() {
   ctx.verify_universe_invariants();
 }
 
+void test_victory_sparse_player_ids() {
+  std::println(std::cout, "Test: victory command handles sparse player IDs");
+
+  TestContext ctx;
+  TestWorldBuilder(ctx)
+      .add_race("Terrans", 100.0, false, 1)
+      .add_race("Vulcans", 120.0, false, 4);
+
+  ctx.em.mutate_race(1, [](Race& r) { r.victory_score = 100; });
+  ctx.em.mutate_race(4, [](Race& r) { r.victory_score = 250; });
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 1);
+  g.race = ctx.em.peek_race(g.player());
+
+  // 1. victory (all players) - both Terrans (1) and Vulcans (4) present
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"victory"});
+  std::string out = g.out.str();
+  test::expect_contains(out, "PLAYER RANKINGS");
+  test::expect_true(out.contains("Terrans") && out.contains("Vulcans"));
+
+  // 2. victory 1 - only top rank (Vulcans)
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"victory", "1"});
+  out = g.out.str();
+  test::expect_contains(out, "Vulcans");
+  test::expect_false(out.contains("Terrans"));
+
+  // 3. victory 10 - clamped to total (2), both present
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"victory", "10"});
+  out = g.out.str();
+  test::expect_true(out.contains("Terrans") && out.contains("Vulcans"));
+
+  std::println(std::cout, "    ✓ victory sparse player IDs succeeded");
+}
+
 }  // namespace
 
 int main() {
   test_victory_dispatch();
+  test_victory_sparse_player_ids();
 
   std::println(std::cout, "All victory tests passed!");
   return 0;

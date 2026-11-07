@@ -520,7 +520,7 @@ private:
 };
 
 /**
- * Iterator class for races (1-indexed, 1..num_races).
+ * Iterator class for races (1-indexed up to max_race_player).
  * Returns EntityHandle<Race> for RAII auto-save behavior.
  *
  * Skips any race slots that don't exist (sparse iteration).
@@ -652,7 +652,7 @@ public:
 };
 
 /**
- * Iterator class for commodities (1-indexed, 1..num_commods).
+ * Iterator class for commodities (1-indexed up to max_commod_id).
  * Returns EntityHandle<Commod> for RAII auto-save behavior.
  * Only returns valid commodities (non-null, has owner, has amount).
  */

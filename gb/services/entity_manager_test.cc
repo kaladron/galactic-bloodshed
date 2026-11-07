@@ -362,7 +362,7 @@ void test_entity_manager_get_player() {
       std::cout,
       "  ✓ find_player_by_name returns nullopt for invalid player number");
 
-  // Sparse player IDs (Race 4 exists, Race 3 does not; num_races() == 3)
+  // Sparse player IDs (Race 4 exists, Race 3 does not; total race count == 3)
   Race race4{};
   race4.Playernum = 4;
   race4.name = "Klingon";

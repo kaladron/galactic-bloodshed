@@ -627,11 +627,6 @@ void EntityManager::release_ship_exam(ShipType ship_type) {
 }
 
 // Query methods
-int EntityManager::num_commods() {
-  // Count commods by listing all IDs in the database
-  return storage_->store.list_ids("tbl_commod").size();
-}
-
 int EntityManager::max_commod_id() {
   auto ids = storage_->store.list_ids("tbl_commod");
   return ids.empty() ? 0 : ids.back();
@@ -639,11 +634,6 @@ int EntityManager::max_commod_id() {
 
 int EntityManager::next_available_commod_id() {
   return storage_->commods.next_available_id();
-}
-
-player_t EntityManager::num_races() {
-  // Count races by listing all IDs in the database
-  return storage_->store.list_ids("tbl_race").size();
 }
 
 player_t EntityManager::max_race_player() {

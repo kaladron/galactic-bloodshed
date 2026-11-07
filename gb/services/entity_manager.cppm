@@ -484,6 +484,7 @@ public:
   resolve_mirror_aim_direction(const SpaceMirrorShip& mirror);
 
   // Docking & Mooring operations (service layer)
+  [[nodiscard]] std::vector<shipnum_t> ancestor_carriers(shipnum_t ship_id);
   [[nodiscard]] std::expected<void, DockError>
   dock_carrier(shipnum_t child_id, shipnum_t carrier_id);
   [[nodiscard]] std::expected<void, UndockError>

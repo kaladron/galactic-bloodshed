@@ -72,7 +72,7 @@ bool walk(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  const char direction = argv[2].empty() ? '\0' : argv[2][0];
+  const char direction = first_char(argv[2]);
   auto res = execute_afv_walk(g.entity_manager, *shipno, direction, g.player(),
                               g.governor(), g.god());
   if (!res) {

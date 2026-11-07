@@ -17,7 +17,7 @@ bool repair(const command_t& argv, GameObj& g) {
   Place where{g.level(), g.snum(), g.pnum()};
   bool has_coords = false;
   if (argv.size() > 1) {
-    if (std::isdigit(static_cast<unsigned char>(argv[1][0])) &&
+    if (std::isdigit(static_cast<unsigned char>(first_char(argv[1]))) &&
         argv[1].contains(',')) {
       has_coords = true;
     } else {

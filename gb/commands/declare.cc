@@ -36,7 +36,7 @@ bool declare(const command_t& argv, GameObj& g) {
       .target_name = alien.name,
   };
 
-  switch (argv[2][0]) {
+  switch (first_char(argv[2])) {
     case 'a':
       result.relation = GB::presentation::DiplomaticRelation::Alliance;
       result.rare_quip = success(5);

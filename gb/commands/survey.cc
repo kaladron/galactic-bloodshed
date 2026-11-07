@@ -30,8 +30,10 @@ std::optional<SurveyRequest> parse_survey_location(const command_t& argv,
     };
   }
 
-  const bool is_range = std::isdigit(argv[1][0]) && argv[1].contains(',');
-  const bool is_all = argv[1][0] == '-';
+  const char c = first_char(argv[1]);
+  const bool is_range =
+      std::isdigit(static_cast<unsigned char>(c)) && argv[1].contains(',');
+  const bool is_all = c == '-';
   if (is_range || is_all) {
     // Sector range or full survey
     if (g.level() != ScopeLevel::LEVEL_PLAN) {

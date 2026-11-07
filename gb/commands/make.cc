@@ -44,8 +44,8 @@ bool make(const command_t& argv, GameObj& g) {
       return;
     }
 
-    auto res =
-        configure_factory_blueprint(dirship, race, g.shipno(), argv[1][0]);
+    auto res = configure_factory_blueprint(dirship, race, g.shipno(),
+                                           first_char(argv[1]));
     if (!res) {
       g.out << GB::presentation::format_factory_make_error(res.error());
       return;

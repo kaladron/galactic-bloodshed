@@ -5,74 +5,126 @@
 
 module;
 
-#include <cstdlib>
-
-import std;
 import dallib;
 import gb.entities;
-import gb.services;
 import gb.repositories;
+import gb.services;
+import std;
 
 module gb.creator;
 
 namespace GB::creator {
 
-/*             @   o   O   #   ~   .   (   -    */
-static const int xmin[] = {15, 2, 4, 4, 26, 12, 12, 12};
-static const int xmax[] = {23, 4, 8, 8, 32, 20, 20, 20};
+constexpr PlanetValues<int> xmin = {
+    .earth = 15,
+    .asteroid = 2,
+    .mars = 4,
+    .iceball = 4,
+    .gasgiant = 26,
+    .water = 12,
+    .forest = 12,
+    .desert = 12,
+};
+
+constexpr PlanetValues<int> xmax = {
+    .earth = 23,
+    .asteroid = 4,
+    .mars = 8,
+    .iceball = 8,
+    .gasgiant = 32,
+    .water = 20,
+    .forest = 20,
+    .desert = 20,
+};
 
 /*
  * Fmin, Fmax, rmin, rmax are now all based on the sector type as well
- * as the planet type.
+ * as the planet type (omitted terrain fields default to 0).
  */
+constexpr SectorValues<int> x_chance = {
+    .sea = 5,
+    .land = 15,
+    .mount = 10,
+    .gas = 4,
+    .ice = 5,
+    .forest = 7,
+    .desert = 6,
+};
 
-/*                 .      *     ^     ~     #     (     -             */
-static const int x_chance[] = {5, 15, 10, 4, 5, 7, 6};
-static const int Fmin[][8] = {{25, 20, 10, 0, 20, 45, 5},  /*   @   */
-                              {0, 1, 2, 0, 0, 0, 1},       /*   o   */
-                              {0, 3, 2, 0, 0, 0, 2},       /*   O   */
-                              {0, 0, 8, 0, 25, 0, 0},      /*   #   */
-                              {0, 0, 0, 35, 0, 0, 0},      /*   ~   */
-                              {30, 0, 0, 0, 20, 0, 0},     /*   .   */
-                              {30, 25, 20, 0, 30, 60, 15}, /*   (   */
-                              {0, 5, 2, 0, 0, 0, 2}};      /*   -   */
+constexpr PlanetValues<SectorValues<int>> Fmin = {
+    .earth = {.sea = 25,
+              .land = 20,
+              .mount = 10,
+              .ice = 20,
+              .forest = 45,
+              .desert = 5},
+    .asteroid = {.land = 1, .mount = 2, .desert = 1},
+    .mars = {.land = 3, .mount = 2, .desert = 2},
+    .iceball = {.mount = 8, .ice = 25},
+    .gasgiant = {.gas = 35},
+    .water = {.sea = 30, .ice = 20},
+    .forest = {.sea = 30,
+               .land = 25,
+               .mount = 20,
+               .ice = 30,
+               .forest = 60,
+               .desert = 15},
+    .desert = {.land = 5, .mount = 2, .desert = 2},
+};
 
-/*                 .      *     ^     ~     #     (     -             */
-static const int Fmax[][8] = {{40, 35, 20, 0, 40, 65, 15}, /*   @   */
-                              {0, 2, 3, 0, 0, 0, 2},       /*   o   */
-                              {0, 5, 4, 0, 0, 0, 3},       /*   O   */
-                              {0, 0, 15, 0, 35, 0, 0},     /*   #   */
-                              {0, 0, 0, 55, 0, 0, 0},      /*   ~   */
-                              {50, 0, 0, 0, 40, 0, 0},     /*   .   */
-                              {60, 45, 30, 0, 50, 90, 25}, /*   (   */
-                              {0, 10, 6, 0, 0, 0, 8}};     /*   -   */
+constexpr PlanetValues<SectorValues<int>> Fmax = {
+    .earth = {.sea = 40,
+              .land = 35,
+              .mount = 20,
+              .ice = 40,
+              .forest = 65,
+              .desert = 15},
+    .asteroid = {.land = 2, .mount = 3, .desert = 2},
+    .mars = {.land = 5, .mount = 4, .desert = 3},
+    .iceball = {.mount = 15, .ice = 35},
+    .gasgiant = {.gas = 55},
+    .water = {.sea = 50, .ice = 40},
+    .forest = {.sea = 60,
+               .land = 45,
+               .mount = 30,
+               .ice = 50,
+               .forest = 90,
+               .desert = 25},
+    .desert = {.land = 10, .mount = 6, .desert = 8},
+};
 
-/*                 .      *     ^     ~     #     (     -             */
-static const int rmin[][8] = {{200, 225, 300, 0, 200, 0, 250}, /*   @   */
-                              {0, 250, 350, 0, 0, 0, 300},     /*   o   */
-                              {0, 225, 275, 0, 0, 0, 250},     /*   O   */
-                              {0, 0, 250, 0, 225, 0, 0},       /*   #   */
-                              {0, 0, 0, 30, 0, 0, 0},          /*   ~   */
-                              {175, 0, 0, 0, 200, 0, 0},       /*   .   */
-                              {150, 0, 0, 0, 150, 150, 0},     /*   (   */
-                              {0, 200, 300, 0, 0, 0, 250}};    /*   -   */
+constexpr PlanetValues<SectorValues<int>> rmin = {
+    .earth = {.sea = 200, .land = 225, .mount = 300, .ice = 200, .desert = 250},
+    .asteroid = {.land = 250, .mount = 350, .desert = 300},
+    .mars = {.land = 225, .mount = 275, .desert = 250},
+    .iceball = {.mount = 250, .ice = 225},
+    .gasgiant = {.gas = 30},
+    .water = {.sea = 175, .ice = 200},
+    .forest = {.sea = 150, .ice = 150, .forest = 150},
+    .desert = {.land = 200, .mount = 300, .desert = 250},
+};
 
-/*                 .      *     ^     ~     #     (     -             */
-static const int rmax[][8] = {{250, 325, 400, 0, 250, 0, 300}, /*   @   */
-                              {0, 300, 600, 0, 0, 0, 400},     /*   o   */
-                              {0, 300, 500, 0, 0, 0, 300},     /*   O   */
-                              {0, 0, 350, 0, 300, 0, 0},       /*   #   */
-                              {0, 0, 0, 60, 0, 0, 0},          /*   ~   */
-                              {225, 0, 0, 0, 250, 0, 0},       /*   .   */
-                              {250, 0, 0, 0, 250, 200, 0},     /*   (   */
-                              {0, 200, 500, 0, 0, 0, 350}};    /*   -   */
+constexpr PlanetValues<SectorValues<int>> rmax = {
+    .earth = {.sea = 250, .land = 325, .mount = 400, .ice = 250, .desert = 300},
+    .asteroid = {.land = 300, .mount = 600, .desert = 400},
+    .mars = {.land = 300, .mount = 500, .desert = 300},
+    .iceball = {.mount = 350, .ice = 300},
+    .gasgiant = {.gas = 60},
+    .water = {.sea = 225, .ice = 250},
+    .forest = {.sea = 250, .ice = 250, .forest = 200},
+    .desert = {.land = 200, .mount = 500, .desert = 350},
+};
 
-/*  The starting conditions of the sectors given a planet types */
-/*              @      o     O    #    ~    .       (       _  */
-static const SectorType cond[] = {
-    SectorType::SEC_SEA,    SectorType::SEC_MOUNT,  SectorType::SEC_LAND,
-    SectorType::SEC_ICE,    SectorType::SEC_GAS,    SectorType::SEC_SEA,
-    SectorType::SEC_FOREST, SectorType::SEC_DESERT,
+/* The starting conditions of the sectors given a planet type */
+constexpr PlanetValues<SectorType> cond = {
+    .earth = SectorType::SEC_SEA,
+    .asteroid = SectorType::SEC_MOUNT,
+    .mars = SectorType::SEC_LAND,
+    .iceball = SectorType::SEC_ICE,
+    .gasgiant = SectorType::SEC_GAS,
+    .water = SectorType::SEC_SEA,
+    .forest = SectorType::SEC_FOREST,
+    .desert = SectorType::SEC_DESERT,
 };
 
 namespace {
@@ -85,7 +137,7 @@ void MakeEarthAtmosphere(Planet& planet, const int chance) {
     atmos -= (planet.conditions().nitrogen = uniform_rand(20, atmos - 20));
     atmos -= (planet.conditions().co2 = uniform_rand(10, atmos / 2));
     atmos -= (planet.conditions().helium = uniform_rand(2, (atmos / 8) + 1));
-    atmos -= (planet.conditions().methane = random() & 01);
+    atmos -= (planet.conditions().methane = uniform_rand(0, 1));
     atmos -= (planet.conditions().sulfur = 0);
     atmos -= (planet.conditions().hydrogen = 0);
     planet.conditions().other = atmos;
@@ -93,39 +145,21 @@ void MakeEarthAtmosphere(Planet& planet, const int chance) {
     /* methane atmosphere */
     atmos -= (planet.conditions().methane = uniform_rand(70, 80));
     atmos -= (planet.conditions().hydrogen = uniform_rand(1, atmos / 2));
-    atmos -= (planet.conditions().helium = 1 + (random() & 01));
+    atmos -= (planet.conditions().helium = 1 + uniform_rand(0, 1));
     atmos -= (planet.conditions().oxygen = 0);
-    atmos -= (planet.conditions().co2 = 1 + (random() & 01));
-    atmos -= (planet.conditions().sulfur = (random() & 01));
+    atmos -= (planet.conditions().co2 = 1 + uniform_rand(0, 1));
+    atmos -= (planet.conditions().sulfur = uniform_rand(0, 1));
     atmos -= (planet.conditions().nitrogen = uniform_rand(1, atmos / 2));
     planet.conditions().other = atmos;
   }
 }
 
 //! Returns # of neighbors of a given designation that a sector has.
-int neighbors(SectorMap& smap, Coordinates coords, SectorType type) {
-  int l = coords.x - 1;
-  int r = coords.x + 1; /* Left and right columns. */
-  int n = 0;            /* Number of neighbors so far. */
-
-  if (coords.x == 0)
-    l = smap.dimensions().x - 1;
-  else if (r == smap.dimensions().x)
-    r = 0;
-  if (coords.y > 0)
-    n += (smap.get(Coordinates{coords.x, coords.y - 1}).get_type() == type) +
-         (smap.get(Coordinates{l, coords.y - 1}).get_type() == type) +
-         (smap.get(Coordinates{r, coords.y - 1}).get_type() == type);
-
-  n += (smap.get(Coordinates{l, coords.y}).get_type() == type) +
-       (smap.get(Coordinates{r, coords.y}).get_type() == type);
-
-  if (coords.y < smap.dimensions().y - 1)
-    n += (smap.get(Coordinates{coords.x, coords.y + 1}).get_type() == type) +
-         (smap.get(Coordinates{l, coords.y + 1}).get_type() == type) +
-         (smap.get(Coordinates{r, coords.y + 1}).get_type() == type);
-
-  return (n);
+int neighbors(const Planet& planet, const SectorMap& smap, Coordinates coords,
+              SectorType type) {
+  return static_cast<int>(std::ranges::count_if(
+      smap.adjacent(planet, coords),
+      [type](const Sector& s) noexcept { return s.get_type() == type; }));
 }
 
 //! Randomly places n sectors of designation type on a planet.
@@ -141,26 +175,21 @@ void seed(SectorMap& smap, SectorType type, int n) {
  *  of adjacent sectors of the same type that must be found for the sector to
  *  become type.
  */
-void grow(SectorMap& smap, SectorType type, int n, int rate) {
-  std::vector<std::tuple<int, int, SectorType>> worklist;  // x, y, type
-
-  // We don't want to alter the current map, as this is iterative.
-  // So we store a worklist and apply it after we've done a scan of
-  // the map.
+void grow(const Planet& planet, SectorMap& smap, SectorType type, int n,
+          int rate) {
+  std::vector<Coordinates> worklist;
   while (n-- > 0) {
-    for (int x = 0; x < smap.dimensions().x; x++) {
-      for (int y = 0; y < smap.dimensions().y; y++) {
-        if (neighbors(smap, Coordinates{x, y}, type) >= rate) {
-          worklist.emplace_back(std::make_tuple(x, y, type));
-        }
+    worklist.clear();
+    for (const Coordinates c : smap.coordinates()) {
+      if (neighbors(planet, smap, c, type) >= rate) {
+        worklist.push_back(c);
       }
     }
-  }
-
-  for (auto& [x, y, sector_type] : worklist) {
-    auto& s = smap.get(Coordinates{x, y});
-    s.set_condition(sector_type);
-    s.set_type(sector_type);
+    for (const Coordinates c : worklist) {
+      auto& s = smap.get(c);
+      s.set_condition(type);
+      s.set_type(type);
+    }
   }
 }
 
@@ -189,6 +218,39 @@ int SectTemp(const Planet& p, const int y) {
 }
 
 /**
+ * @brief Converts polar sectors to ice based on temperature and planet type.
+ *
+ * @param p The planet containing planetary conditions.
+ * @param s The polar sector to potentially freeze.
+ * @param maxy The planet's latitude dimension (height).
+ */
+void maybe_ice_pole(const Planet& p, Sector& s, int maxy) {
+  if (s.coords().y != 0 && s.coords().y != maxy - 1) {
+    return;
+  }
+  const int temp = SectTemp(p, s.coords().y);
+  switch (s.get_condition()) {
+    case SectorType::SEC_SEA:
+      if (success(-temp)) {
+        s.set_condition(SectorType::SEC_ICE);
+      }
+      break;
+    case SectorType::SEC_LAND:
+      if (p.type() == PlanetType::EARTH && success(-temp)) {
+        s.set_condition(SectorType::SEC_ICE);
+      }
+      break;
+    case SectorType::SEC_FOREST:
+      if (p.type() == PlanetType::FOREST && success(-temp)) {
+        s.set_condition(SectorType::SEC_ICE);
+      }
+      break;
+    default:
+      break;
+  }
+}
+
+/**
  * @brief Generates the surface of a planet by initializing each sector's
  * properties.
  *
@@ -201,37 +263,17 @@ int SectTemp(const Planet& p, const int y) {
  * @param smap The sector map representing the planet's surface.
  */
 void Makesurface(const Planet& p, SectorMap& smap) {
+  const int maxy = smap.dimensions().y;
   for (auto& s : smap) {
+    maybe_ice_pole(p, s, maxy);
     s.set_type(s.get_condition());
     s.set_resource(uniform_rand(rmin[p.type()][s.get_type()],
                                 rmax[p.type()][s.get_type()]));
     s.set_fert(uniform_rand(Fmin[p.type()][s.get_type()],
                             Fmax[p.type()][s.get_type()]));
 
-    if (uniform_rand(0, 1000) < x_chance[s.get_type()])
+    if (uniform_rand(0, 1000) < x_chance[s.get_type()]) {
       s.set_crystals(uniform_rand(4, 8));
-
-    // We ice up the poles.
-    if ((s.coords().y != 0) && (s.coords().y != smap.dimensions().y - 1))
-      continue;
-
-    int temp = SectTemp(p, s.coords().y);
-    switch (s.get_type()) {
-      case SectorType::SEC_SEA:
-        if (success(-temp)) s.set_condition(SectorType::SEC_ICE);
-        break;
-      case SectorType::SEC_LAND:
-        if (p.type() == PlanetType::EARTH) {
-          if (success(-temp)) s.set_condition(SectorType::SEC_ICE);
-        }
-        break;
-      case SectorType::SEC_FOREST:
-        if (p.type() == PlanetType::FOREST) {
-          if (success(-temp)) s.set_condition(SectorType::SEC_ICE);
-          break;
-        }
-      default:
-        break;
     }
   }
 }
@@ -261,7 +303,7 @@ Planet makeplanet(double dist, short stemp, PlanetType type, starnum_t star_id,
     s.set_condition(t);
   }
 
-  auto total_sects = (planet.dimensions().y - 1) * (planet.dimensions().x - 1);
+  const int total_sects = planet.num_sectors();
 
   switch (type) {
     case PlanetType::GASGIANT: /* gas giant Planet */
@@ -279,9 +321,9 @@ Planet makeplanet(double dist, short stemp, PlanetType type, starnum_t star_id,
         auto atmos =
             100 - (planet.conditions().hydrogen = uniform_rand(30, 75));
         atmos -= (planet.conditions().helium = uniform_rand(20, atmos / 2));
-        atmos -= (planet.conditions().methane = random() & 01);
+        atmos -= (planet.conditions().methane = uniform_rand(0, 1));
         atmos -= (planet.conditions().oxygen = 0);
-        atmos -= (planet.conditions().co2 = random() & 01);
+        atmos -= (planet.conditions().co2 = uniform_rand(0, 1));
         atmos -= (planet.conditions().nitrogen = uniform_rand(1, atmos / 2));
         atmos -= (planet.conditions().sulfur = 0);
         planet.conditions().other = atmos;
@@ -292,11 +334,11 @@ Planet makeplanet(double dist, short stemp, PlanetType type, starnum_t star_id,
       planet.conditions().helium = 0;
       planet.conditions().methane = 0;
       planet.conditions().oxygen = 0;
-      if (random() & 01) { /* some have an atmosphere, some don't */
+      if (uniform_rand(0, 1)) { /* some have an atmosphere, some don't */
         auto atmos = 100 - (planet.conditions().co2 = uniform_rand(30, 45));
         atmos -= (planet.conditions().nitrogen = uniform_rand(10, atmos / 2));
         atmos -= (planet.conditions().sulfur =
-                      (random() & 01) ? 0 : uniform_rand(20, atmos / 2));
+                      uniform_rand(0, 1) ? 0 : uniform_rand(20, atmos / 2));
         planet.conditions().other = atmos;
       } else {
         planet.conditions().co2 = 0;
@@ -333,7 +375,7 @@ Planet makeplanet(double dist, short stemp, PlanetType type, starnum_t star_id,
         auto atmos = 100 - (planet.conditions().co2 = uniform_rand(30, 45));
         atmos -= (planet.conditions().nitrogen = uniform_rand(10, atmos / 2));
         atmos -= (planet.conditions().sulfur =
-                      (random() & 01) ? 0 : uniform_rand(20, atmos / 2));
+                      uniform_rand(0, 1) ? 0 : uniform_rand(20, atmos / 2));
         planet.conditions().other = atmos;
       } else {
         planet.conditions().co2 = 0;
@@ -341,24 +383,25 @@ Planet makeplanet(double dist, short stemp, PlanetType type, starnum_t star_id,
         planet.conditions().sulfur = 0;
         planet.conditions().other = 0;
       }
-      seed(smap, SectorType::SEC_MOUNT, uniform_rand(1, total_sects / 2));
+      seed(smap, SectorType::SEC_MOUNT,
+           uniform_rand(1, std::max(1, total_sects / 2)));
       break;
     case PlanetType::EARTH:
       MakeEarthAtmosphere(planet, 33);
       seed(smap, SectorType::SEC_LAND,
            uniform_rand(total_sects / 30, total_sects / 20));
-      grow(smap, SectorType::SEC_LAND, 1, 1);
-      grow(smap, SectorType::SEC_LAND, 1, 2);
-      grow(smap, SectorType::SEC_LAND, 2, 3);
-      grow(smap, SectorType::SEC_SEA, 1, 4);
+      grow(planet, smap, SectorType::SEC_LAND, 1, 1);
+      grow(planet, smap, SectorType::SEC_LAND, 1, 2);
+      grow(planet, smap, SectorType::SEC_LAND, 2, 3);
+      grow(planet, smap, SectorType::SEC_SEA, 1, 4);
       break;
     case PlanetType::FOREST:
       MakeEarthAtmosphere(planet, 0);
       seed(smap, SectorType::SEC_SEA,
            uniform_rand(total_sects / 30, total_sects / 20));
-      grow(smap, SectorType::SEC_SEA, 1, 1);
-      grow(smap, SectorType::SEC_SEA, 1, 3);
-      grow(smap, SectorType::SEC_FOREST, 1, 3);
+      grow(planet, smap, SectorType::SEC_SEA, 1, 1);
+      grow(planet, smap, SectorType::SEC_SEA, 1, 3);
+      grow(planet, smap, SectorType::SEC_FOREST, 1, 3);
       break;
     case PlanetType::WATER:
       MakeEarthAtmosphere(planet, 25);
@@ -367,13 +410,13 @@ Planet makeplanet(double dist, short stemp, PlanetType type, starnum_t star_id,
       MakeEarthAtmosphere(planet, 50);
       seed(smap, SectorType::SEC_MOUNT,
            uniform_rand(total_sects / 50, total_sects / 25));
-      grow(smap, SectorType::SEC_MOUNT, 1, 1);
-      grow(smap, SectorType::SEC_MOUNT, 1, 2);
+      grow(planet, smap, SectorType::SEC_MOUNT, 1, 1);
+      grow(planet, smap, SectorType::SEC_MOUNT, 1, 2);
       seed(smap, SectorType::SEC_LAND,
            uniform_rand(total_sects / 50, total_sects / 25));
-      grow(smap, SectorType::SEC_LAND, 1, 1);
-      grow(smap, SectorType::SEC_LAND, 1, 3);
-      grow(smap, SectorType::SEC_DESERT, 1, 3);
+      grow(planet, smap, SectorType::SEC_LAND, 1, 1);
+      grow(planet, smap, SectorType::SEC_LAND, 1, 3);
+      grow(planet, smap, SectorType::SEC_DESERT, 1, 3);
       break;
   }
   Makesurface(planet,

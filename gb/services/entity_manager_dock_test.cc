@@ -357,6 +357,60 @@ void test_kill_ship_carrier_and_child_accounting() {
   test::expect_throws<EntityNotFoundError>([&]() { em.peek_ship(craft_id); });
 }
 
+void test_ancestor_carriers_and_corrupt_db_cycles() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+  auto& em = ctx.em;
+
+  const auto carrier1_id = TestShipBuilder(em, ShipType::STYPE_CARRIER)
+                               .owned_by(1)
+                               .with_alive(true)
+                               .in_star_orbit(1)
+                               .with_max_hanger(100)
+                               .build();
+  const auto carrier2_id = TestShipBuilder(em, ShipType::STYPE_CARRIER)
+                               .owned_by(1)
+                               .with_alive(true)
+                               .in_star_orbit(1)
+                               .with_size(20)
+                               .with_max_hanger(50)
+                               .build();
+  const auto fighter_id = TestShipBuilder(em, ShipType::STYPE_FIGHTER)
+                              .owned_by(1)
+                              .with_alive(true)
+                              .in_star_orbit(1)
+                              .with_size(10)
+                              .build();
+
+  // Multi-tier docking: fighter inside carrier2 inside carrier1
+  test::expect_true(em.dock_carrier(fighter_id, carrier2_id).has_value());
+  test::expect_true(em.dock_carrier(carrier2_id, carrier1_id).has_value());
+
+  // Chain order verification
+  const auto fighter_ancestors = em.ancestor_carriers(fighter_id);
+  test::expect_eq(fighter_ancestors.size(), 2zu);
+  test::expect_eq(fighter_ancestors[0], carrier2_id);
+  test::expect_eq(fighter_ancestors[1], carrier1_id);
+
+  const auto carrier2_ancestors = em.ancestor_carriers(carrier2_id);
+  test::expect_eq(carrier2_ancestors.size(), 1zu);
+  test::expect_eq(carrier2_ancestors[0], carrier1_id);
+
+  const auto carrier1_ancestors = em.ancestor_carriers(carrier1_id);
+  test::expect_true(carrier1_ancestors.empty());
+
+  // Non-existent ship throws EntityNotFoundError
+  test::expect_throws<EntityNotFoundError>(
+      [&]() { static_cast<void>(em.ancestor_carriers(9999)); });
+
+  // Corrupt-DB cycle detection throws std::runtime_error
+  // Force carrier1 to orbit fighter
+  em.mutate_ship(carrier1_id,
+                 [&](Ship& s) { s.dock_into_carrier(fighter_id); });
+  test::expect_throws<std::runtime_error>(
+      [&]() { static_cast<void>(em.ancestor_carriers(fighter_id)); });
+}
+
 }  // namespace
 
 int main() {
@@ -365,6 +419,7 @@ int main() {
   test_undock_carrier();
   test_moor_and_unmoor_ships();
   test_kill_ship_carrier_and_child_accounting();
+  test_ancestor_carriers_and_corrupt_db_cycles();
   std::println(std::cout, "All EntityManager dock tests passed!");
   return 0;
 }

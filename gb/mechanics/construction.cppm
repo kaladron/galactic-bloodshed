@@ -64,6 +64,10 @@ shipping_cost(EntityManager& em, starnum_t to, starnum_t from, money_t value);
 export std::expected<void, std::string> can_build_on_ship(ShipType, const Race&,
                                                           const Ship&);
 export std::optional<ShipType> get_build_type(char);
+export [[nodiscard]] inline std::optional<ShipType>
+get_build_type(std::string_view token) {
+  return get_build_type(first_char(token));
+}
 export std::unique_ptr<Ship> getship(ShipType, const Race&);
 export std::expected<ShipBuildLocation, ShipBuildError>
 build_at_ship(player_t playernum, governor_t governor, bool god,

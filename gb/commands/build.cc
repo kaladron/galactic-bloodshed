@@ -20,7 +20,7 @@ bool handle_build_info_query(const command_t& argv, GameObj& g) {
     g.present(GB::presentation::build_ship_specs_table_vm(*g.race));
     return true;
   }
-  const auto ship_type = get_build_type(argv[2][0]);
+  const auto ship_type = get_build_type(argv[2]);
   if (!ship_type) {
     g.out << "No such ship type.\n";
     return false;
@@ -40,10 +40,11 @@ bool handle_build_info_query(const command_t& argv, GameObj& g) {
 
 int parse_ship_build_count(const command_t& argv, bool is_factory) {
   if (is_factory) {
-    if (argv.size() >= 2 &&
-        (std::isdigit(static_cast<unsigned char>(argv[1][0])) ||
-         argv[1][0] == '-')) {
-      return getcount(argv, 1);
+    if (argv.size() >= 2) {
+      const char c = first_char(argv[1]);
+      if (std::isdigit(static_cast<unsigned char>(c)) || c == '-') {
+        return getcount(argv, 1);
+      }
     }
     return getcount(argv, 2);
   }
@@ -67,7 +68,7 @@ std::optional<PlanetBuildPlan> validate_planet_build(const command_t& argv,
     g.out << "Build what?\n";
     return std::nullopt;
   }
-  auto what = get_build_type(argv[1][0]);
+  auto what = get_build_type(argv[1]);
   if (!what) {
     g.out << "No such ship type.\n";
     return std::nullopt;
@@ -244,7 +245,7 @@ validate_non_factory_ship_build(const command_t& argv, GameObj& g,
     g.out << "Build what?\n";
     return std::nullopt;
   }
-  auto what = get_build_type(argv[1][0]);
+  auto what = get_build_type(argv[1]);
   if (!what) {
     g.out << "No such ship type.\n";
     return std::nullopt;
@@ -408,7 +409,7 @@ bool execute_ship_build_command(const command_t& argv, GameObj& g) {
 namespace GB::commands {
 
 bool build(const command_t& argv, GameObj& g) {
-  if (argv.size() > 1 && argv[1][0] == '?') {
+  if (argv.size() > 1 && first_char(argv[1]) == '?') {
     return handle_build_info_query(argv, g);
   }
 

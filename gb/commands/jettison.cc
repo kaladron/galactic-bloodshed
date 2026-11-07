@@ -29,7 +29,7 @@ bool jettison(const command_t& argv, GameObj& g) {
     requested_amount = parsed->value();
   }
 
-  const char commod = argv[2].empty() ? '\0' : argv[2][0];
+  const char commod = first_char(argv[2]);
   bool success = false;
 
   for (auto ship_handle : ScopedCommandableShips(g, argv[1])) {

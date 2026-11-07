@@ -947,16 +947,41 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
   }
 }
 
+std::vector<shipnum_t> EntityManager::ancestor_carriers(shipnum_t ship_id) {
+  const auto* current = peek_ship(ship_id);
+  if (!current) {
+    throw EntityNotFoundError(std::format("Ship {} not found", ship_id));
+  }
+  std::flat_set<shipnum_t> visited{ship_id};
+  std::vector<shipnum_t> ancestors;
+  while (current->whatorbits() == ScopeLevel::LEVEL_SHIP) {
+    if (!current->destshipno().has_value()) {
+      throw std::runtime_error(
+          std::format("Ship {} docked in LEVEL_SHIP without carrier ID",
+                      current->number()));
+    }
+    const shipnum_t parent_id = *current->destshipno();
+    if (!visited.insert(parent_id).second) {
+      throw std::runtime_error(
+          std::format("Carrier cycle detected at ship {}", parent_id));
+    }
+    current = peek_ship(parent_id);
+    if (!current) {
+      throw EntityNotFoundError(
+          std::format("Carrier ship {} not found", parent_id));
+    }
+    ancestors.push_back(parent_id);
+  }
+  return ancestors;
+}
+
 void EntityManager::propagate_ancestor_mass_delta(shipnum_t direct_carrier_id,
                                                   double delta_mass) {
   if (std::abs(delta_mass) < 1e-9) return;
-  const auto* current = peek_ship(direct_carrier_id);
-  while (current->whatorbits() == ScopeLevel::LEVEL_SHIP) {
-    const shipnum_t ancestor_id = current->destshipno().value();
+  for (const shipnum_t ancestor_id : ancestor_carriers(direct_carrier_id)) {
     mutate_ship(ancestor_id, [&](Ship& anc) {
       anc.set_mass(std::max(anc.base_mass(), anc.mass() + delta_mass));
     });
-    current = peek_ship(ancestor_id);
   }
 }
 
@@ -970,12 +995,8 @@ EntityManager::dock_carrier(shipnum_t child_id, shipnum_t carrier_id) {
   const auto* carrier_peek = peek_ship(carrier_id);
 
   // Cycle detection: ensure child_id is not an ancestor of carrier_id
-  for (const auto* anc = carrier_peek;
-       anc->whatorbits() == ScopeLevel::LEVEL_SHIP;
-       anc = peek_ship(anc->destshipno().value())) {
-    if (anc->destshipno() == child_id) {
-      return std::unexpected(DockError::CycleDetected);
-    }
+  if (std::ranges::contains(ancestor_carriers(carrier_id), child_id)) {
+    return std::unexpected(DockError::CycleDetected);
   }
 
   if (child_peek->size() > carrier_peek->hanger_space()) {

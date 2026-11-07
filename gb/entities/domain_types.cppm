@@ -7,6 +7,7 @@
 export module gb.entities:types;
 
 import std;
+import scnlib;
 
 // Re-export basic types from standalone types module
 export import types;
@@ -1183,21 +1184,66 @@ struct std::formatter<UniverseCoordinates, CharT> {
   }
 };
 
+/// \brief Safely returns the leading character of a token, or '\0' if empty.
+export [[nodiscard]] constexpr char first_char(std::string_view s) noexcept {
+  return s.empty() ? '\0' : s.front();
+}
+
+namespace detail {
+template <std::integral T>
+[[nodiscard]] inline std::optional<T> parse_strict_integer(std::string_view s) {
+  if (s.empty()) {
+    return std::nullopt;
+  }
+  const unsigned char first = static_cast<unsigned char>(s.front());
+  if constexpr (std::is_signed_v<T>) {
+    if (!std::isdigit(first) && s.front() != '-') {
+      return std::nullopt;
+    }
+  } else {
+    if (!std::isdigit(first)) {
+      return std::nullopt;
+    }
+  }
+  auto res = scn::scan<T>(s, "{}");
+  if (!res || !res->range().empty()) {
+    return std::nullopt;
+  }
+  return res->value();
+}
+
+[[nodiscard]] inline std::optional<std::pair<int, int>>
+parse_axis_range(std::string_view part) {
+  const auto colon = part.find(':');
+  if (colon != std::string_view::npos) {
+    auto low = parse_strict_integer<int>(part.substr(0, colon));
+    auto high = parse_strict_integer<int>(part.substr(colon + 1));
+    if (!low || !high) {
+      return std::nullopt;
+    }
+    return std::make_pair(*low, *high);
+  }
+  auto val = parse_strict_integer<int>(part);
+  if (!val) {
+    return std::nullopt;
+  }
+  return std::make_pair(*val, *val);
+}
+}  // namespace detail
+
 /**
  * \brief Convert input string to a shipnum_t
  * \param s User-provided input string
  * \return If the user provided a valid number, return it.
  */
-export constexpr std::optional<shipnum_t>
+export [[nodiscard]] inline std::optional<shipnum_t>
 string_to_shipnum(std::string_view s) {
   while (s.starts_with('#')) {
     s.remove_prefix(1);
   }
-  shipnum_t::value_type val = 0;
-  const auto* end = s.data() + s.size();
-  const auto [ptr, ec] = std::from_chars(s.data(), end, val);
-  if (ec == std::errc{} && ptr == end && val > 0) {
-    return shipnum_t{val};
+  auto val = detail::parse_strict_integer<shipnum_t::value_type>(s);
+  if (val.has_value() && *val > 0) {
+    return shipnum_t{*val};
   }
   return std::nullopt;
 }
@@ -1208,68 +1254,14 @@ export [[nodiscard]] inline std::optional<std::pair<Coordinates, Coordinates>>
 get4args(std::string_view s) {
   if (s.empty()) return std::nullopt;
 
-  auto comma_pos = s.find(',');
+  const auto comma_pos = s.find(',');
   if (comma_pos == std::string_view::npos) return std::nullopt;
 
-  std::string_view x_part = s.substr(0, comma_pos);
-  std::string_view y_part = s.substr(comma_pos + 1);
+  const auto x_range = detail::parse_axis_range(s.substr(0, comma_pos));
+  const auto y_range = detail::parse_axis_range(s.substr(comma_pos + 1));
 
-  int xl = 0;
-  int xh = 0;
-  int yl = 0;
-  int yh = 0;
+  if (!x_range || !y_range) return std::nullopt;
 
-  auto x_colon = x_part.find(':');
-  if (x_colon != std::string_view::npos) {
-    auto xl_result =
-        std::from_chars(x_part.data(), x_part.data() + x_colon, xl);
-    if (xl_result.ec != std::errc{} ||
-        xl_result.ptr != x_part.data() + x_colon) {
-      return std::nullopt;
-    }
-
-    auto xh_part = x_part.substr(x_colon + 1);
-    auto xh_result =
-        std::from_chars(xh_part.data(), xh_part.data() + xh_part.size(), xh);
-    if (xh_result.ec != std::errc{} ||
-        xh_result.ptr != xh_part.data() + xh_part.size()) {
-      return std::nullopt;
-    }
-  } else {
-    auto x_result =
-        std::from_chars(x_part.data(), x_part.data() + x_part.size(), xl);
-    if (x_result.ec != std::errc{} ||
-        x_result.ptr != x_part.data() + x_part.size()) {
-      return std::nullopt;
-    }
-    xh = xl;
-  }
-
-  auto y_colon = y_part.find(':');
-  if (y_colon != std::string_view::npos) {
-    auto yl_result =
-        std::from_chars(y_part.data(), y_part.data() + y_colon, yl);
-    if (yl_result.ec != std::errc{} ||
-        yl_result.ptr != y_part.data() + y_colon) {
-      return std::nullopt;
-    }
-
-    auto yh_part = y_part.substr(y_colon + 1);
-    auto yh_result =
-        std::from_chars(yh_part.data(), yh_part.data() + yh_part.size(), yh);
-    if (yh_result.ec != std::errc{} ||
-        yh_result.ptr != yh_part.data() + yh_part.size()) {
-      return std::nullopt;
-    }
-  } else {
-    auto y_result =
-        std::from_chars(y_part.data(), y_part.data() + y_part.size(), yl);
-    if (y_result.ec != std::errc{} ||
-        y_result.ptr != y_part.data() + y_part.size()) {
-      return std::nullopt;
-    }
-    yh = yl;
-  }
-
-  return std::make_pair(Coordinates{xl, yl}, Coordinates{xh, yh});
+  return std::make_pair(Coordinates{x_range->first, y_range->first},
+                        Coordinates{x_range->second, y_range->second});
 }

@@ -30,7 +30,7 @@ bool unload(const command_t& argv, GameObj& g) {
     requested_amt = parsed_amt->value();
   }
 
-  const char commod = argv[2][0];
+  const char commod = first_char(argv[2]);
   bool success = false;
   for (auto ship_handle : ScopedCommandableShips(g, argv[1])) {
     bool should_return_early = false;

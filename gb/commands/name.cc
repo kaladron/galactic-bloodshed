@@ -19,7 +19,7 @@ bool name(const command_t& argv, GameObj& g) {
   governor_t Governor = g.governor();
 
   if (argv[2].empty() ||
-      !std::isalnum(static_cast<unsigned char>(argv[2][0]))) {
+      !std::isalnum(static_cast<unsigned char>(first_char(argv[2])))) {
     g.out << "Illegal name format.\n";
     return false;
   }

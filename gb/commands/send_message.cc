@@ -60,7 +60,7 @@ std::optional<PlayerMessageRoute>
 parse_player_message_route(const command_t& argv, const Race& alien,
                            GameObj& g) {
   if (argv[2].empty() ||
-      !std::isdigit(static_cast<unsigned char>(argv[2][0]))) {
+      !std::isdigit(static_cast<unsigned char>(first_char(argv[2])))) {
     return PlayerMessageRoute{};
   }
   if (argv.size() < 4) {

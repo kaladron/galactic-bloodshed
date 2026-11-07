@@ -303,9 +303,7 @@ namespace {
 
 std::array<ShipType, NUMSTYPES> get_sorted_ship_types() {
   std::array<ShipType, NUMSTYPES> result{};
-  for (int i = 0; i < NUMSTYPES; ++i) {
-    result[i] = static_cast<ShipType>(i);
-  }
+  std::ranges::transform(ship_templates, result.begin(), &ShipTemplate::type);
   std::ranges::sort(result, [](ShipType a, ShipType b) {
     return complexity(a) < complexity(b);
   });
@@ -397,8 +395,7 @@ build_ship_spec_detail_vm(ShipType type, const Race& race,
       .can_build_on_planet = tmpl.can_build_on_planet(),
       .spec = build_ship_spec_row(type, race),
   };
-  for (int j = 0; j < NUMSTYPES; ++j) {
-    const auto& builder_tmpl = ship_template(ShipType{j});
+  for (const auto& builder_tmpl : ship_templates) {
     if (tmpl.can_be_built_by(builder_tmpl)) {
       vm.builder_letters.emplace_back(1, builder_tmpl.letter);
     }

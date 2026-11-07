@@ -30,6 +30,12 @@ void test_string_to_shipnum() {
   test::expect_false(g.has_value());
   auto h = string_to_shipnum("#0");
   test::expect_false(h.has_value());
+  test::expect_false(string_to_shipnum("+123").has_value());
+  test::expect_false(string_to_shipnum("#+123").has_value());
+  test::expect_false(string_to_shipnum(" 123").has_value());
+  test::expect_false(string_to_shipnum("123 ").has_value());
+  test::expect_false(
+      string_to_shipnum("9999999999999999999999999999").has_value());
   std::println(std::cout, "✓ string_to_shipnum tests passed");
 }
 
@@ -172,6 +178,24 @@ void test_colon_without_first_value() {
   auto result = get4args(":5,10");
   test::expect_false(result.has_value());
 }
+
+void test_strict_parsing_rejections() {
+  // Leading '+' rejection
+  test::expect_false(get4args("+1:+5,10").has_value());
+  test::expect_false(get4args("1:5,+10").has_value());
+  test::expect_false(get4args("+1,+2").has_value());
+
+  // Leading and trailing spaces rejection
+  test::expect_false(get4args("1:5,10 ").has_value());
+  test::expect_false(get4args(" 1:5,10").has_value());
+  test::expect_false(get4args("1: 5,10").has_value());
+  test::expect_false(get4args("1:5 ,10").has_value());
+  test::expect_false(get4args("1:5, 10").has_value());
+
+  // Integer overflow rejection
+  test::expect_false(get4args("9999999999999999999999999999,1").has_value());
+  test::expect_false(get4args("1,9999999999999999999999999999").has_value());
+}
 }  // namespace
 
 int main() {
@@ -202,6 +226,7 @@ int main() {
   test_whitespace();
   test_colon_without_second_value();
   test_colon_without_first_value();
+  test_strict_parsing_rejections();
 
   std::println(std::cout, "✓ get4args tests passed");
   std::println(std::cout, "\n✅ All shlmisc tests passed!");

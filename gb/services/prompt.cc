@@ -81,11 +81,9 @@ PromptViewModel build_ship_prompt(EntityManager& em, const player_t player,
   const Ship* current_ship = em.peek_ship(shipno);
 
   std::vector<shipnum_t> ship_chain{shipno};
-
-  while (current_ship->whatorbits() == ScopeLevel::LEVEL_SHIP) {
-    const shipnum_t parent_no = current_ship->destshipno().value();
-    current_ship = em.peek_ship(parent_no);
-    ship_chain.push_back(parent_no);
+  for (const shipnum_t ancestor_id : em.ancestor_carriers(shipno)) {
+    ship_chain.push_back(ancestor_id);
+    current_ship = em.peek_ship(ancestor_id);
   }
 
   ap_t ap = 0;

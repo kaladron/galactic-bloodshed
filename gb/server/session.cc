@@ -65,9 +65,31 @@ void Session::send(std::string_view message) {
   }
 }
 
+namespace {
+struct ByteReader {
+  std::string_view rem;
+
+  [[nodiscard]] bool empty() const noexcept {
+    return rem.empty();
+  }
+  [[nodiscard]] std::size_t size() const noexcept {
+    return rem.size();
+  }
+
+  [[nodiscard]] std::optional<unsigned char>
+  peek(std::size_t offset = 0) const noexcept {
+    if (offset >= rem.size()) return std::nullopt;
+    return static_cast<unsigned char>(rem[offset]);
+  }
+
+  void consume(std::size_t count = 1) noexcept {
+    rem.remove_prefix(std::min(count, rem.size()));
+  }
+};
+}  // namespace
+
 std::string Session::process_telnet_sequences(std::string_view raw) {
   static constexpr unsigned char TELNET_IAC = 0xFF;
-  static constexpr unsigned char TELNET_SE = 0xF0;
   static constexpr unsigned char TELNET_SB = 0xFA;
   static constexpr unsigned char TELNET_WILL = 0xFB;
   static constexpr unsigned char TELNET_WONT = 0xFC;
@@ -82,53 +104,68 @@ std::string Session::process_telnet_sequences(std::string_view raw) {
 
   std::string clean;
   clean.reserve(raw.size());
-  for (std::size_t i = 0; i < raw.size();) {
-    const auto byte = static_cast<unsigned char>(raw[i]);
+  ByteReader reader{raw};
+
+  while (!reader.empty()) {
+    const auto byte = *reader.peek(0);
     if (byte != TELNET_IAC) {
-      clean.push_back(raw[i]);
-      ++i;
+      clean.push_back(static_cast<char>(byte));
+      reader.consume(1);
       continue;
     }
-    if (i + 1 >= raw.size()) {
+
+    if (reader.size() < 2) {
+      // Trailing lone IAC
+      reader.consume(1);
       break;
     }
-    const auto cmd = static_cast<unsigned char>(raw[i + 1]);
+
+    const auto cmd = *reader.peek(1);
     if (cmd == TELNET_IAC) {
       clean.push_back(static_cast<char>(TELNET_IAC));
-      i += 2;
+      reader.consume(2);
       continue;
     }
+
     if (cmd == TELNET_WILL || cmd == TELNET_WONT || cmd == TELNET_DO ||
         cmd == TELNET_DONT) {
-      if (i + 2 < raw.size()) {
-        const auto opt = static_cast<unsigned char>(raw[i + 2]);
+      if (reader.size() >= 3) {
+        const auto opt = *reader.peek(2);
         if (cmd == TELNET_WILL && opt == TELNET_OPT_TTYPE) {
           queue_for_write(std::string("\xff\xfa\x18\x01\xff\xf0", 6));
         }
+        reader.consume(3);
+      } else {
+        reader.consume(reader.size());
       }
-      i = std::min(raw.size(), i + 3);
       continue;
     }
+
     if (cmd == TELNET_SB) {
-      std::size_t end = i + 2;
-      while (end + 1 < raw.size() &&
-             !(static_cast<unsigned char>(raw[end]) == TELNET_IAC &&
-               static_cast<unsigned char>(raw[end + 1]) == TELNET_SE)) {
-        ++end;
+      constexpr std::string_view iac_se{"\xff\xf0", 2};
+      const auto se_pos = reader.rem.find(iac_se);
+      if (se_pos == std::string_view::npos) {
+        // Unterminated IAC SB: consume remaining bytes without updating
+        // terminal type
+        reader.consume(reader.size());
+        continue;
       }
-      if (i + 3 < end &&
-          static_cast<unsigned char>(raw[i + 2]) == TELNET_OPT_TTYPE &&
-          static_cast<unsigned char>(raw[i + 3]) == TELNET_TTYPE_IS) {
-        terminal_type_.assign(raw.substr(i + 4, end - (i + 4)));
+
+      if (se_pos >= 4 && *reader.peek(2) == TELNET_OPT_TTYPE &&
+          *reader.peek(3) == TELNET_TTYPE_IS) {
+        terminal_type_.assign(reader.rem.substr(4, se_pos - 4));
         terminal_capabilities_ =
             GB::presentation::detect_terminal_capabilities(terminal_type_);
         game_obj_.set_color(terminal_capabilities_.color);
       }
-      i = (end + 1 < raw.size()) ? end + 2 : raw.size();
+
+      reader.consume(se_pos + iac_se.size());
       continue;
     }
-    i += 2;
+
+    reader.consume(2);
   }
+
   return clean;
 }
 

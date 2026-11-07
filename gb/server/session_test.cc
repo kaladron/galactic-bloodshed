@@ -669,6 +669,48 @@ int main() {
                  "switching verified");
   }
 
+  // Telnet IAC escaping, trailing lone IAC, and unterminated subnegotiation
+  {
+    asio::io_context io;
+    asio::ip::tcp::acceptor acceptor(
+        io, asio::ip::tcp::endpoint(asio::ip::address_v6::loopback(), 0));
+    asio::ip::tcp::socket client_socket(io);
+    client_socket.connect(acceptor.local_endpoint());
+    asio::ip::tcp::socket server_socket = acceptor.accept();
+
+    MockSessionRegistry registry;
+    auto session = Session::create(std::move(server_socket), em, registry);
+    session->start();
+
+    // 1. Escaped IAC (0xFF 0xFF -> 0xFF) inside a command line
+    using namespace std::string_literals;
+    client_socket.write_some(asio::buffer("hello\xff\xffworld\r\n"s));
+    io.poll();
+    test::expect_true(session->has_pending_input());
+    test::expect_eq(session->pop_input(), "hello\xffworld"s);
+
+    // 2. Trailing lone IAC is consumed safely without out-of-bounds access
+    client_socket.write_some(asio::buffer("hello\xff\r\n"s));
+    io.poll();
+    test::expect_true(session->has_pending_input());
+    test::expect_eq(session->pop_input(), "hello");
+
+    // Establish a known terminal type
+    client_socket.write_some(
+        asio::buffer("\xff\xfa\x18\x00xterm-256color\xff\xf0"s));
+    io.poll();
+    test::expect_eq(session->terminal_type(), "xterm-256color");
+
+    // 3. Unterminated IAC SB does not overwrite terminal type
+    client_socket.write_some(asio::buffer("\xff\xfa\x18\x00unterminated\r\n"s));
+    io.poll();
+    test::expect_eq(session->terminal_type(), "xterm-256color");
+
+    std::println(
+        std::cout,
+        "✓ Telnet escaped IAC, lone IAC, and unterminated SB verified");
+  }
+
   std::println(std::cout, "\n✅ All session module tests passed!");
   return 0;
 }

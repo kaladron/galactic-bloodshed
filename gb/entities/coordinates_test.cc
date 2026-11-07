@@ -606,6 +606,65 @@ int main() {
     });
   }
 
+  // --- SectorMap::adjacent tests ---
+  {
+    Planet planet{1, 1, PlanetType::EARTH, Coordinates{10, 8}};
+    SectorMap smap(planet);
+    smap.clear_dirty();
+
+    // 1. Const adjacent iteration does not mark any sector dirty
+    const auto& const_smap = smap;
+    int count = 0;
+    for (const Sector& s : const_smap.adjacent(planet, Coordinates{0, 3})) {
+      [[maybe_unused]] auto c = s.coords();
+      ++count;
+    }
+    test::expect_eq(count, 8);
+    test::expect_eq(smap.dirty_count(), 0);
+
+    // 2. East-west seam wrapping at x = 0 (neighbors include x = 9 and x = 1)
+    std::vector<Coordinates> wrapped_coords;
+    for (const Sector& s : const_smap.adjacent(planet, Coordinates{0, 3})) {
+      wrapped_coords.push_back(s.coords());
+    }
+    test::expect_true(std::ranges::contains(wrapped_coords, Coordinates{9, 3}));
+    test::expect_true(std::ranges::contains(wrapped_coords, Coordinates{1, 3}));
+    test::expect_true(std::ranges::contains(wrapped_coords, Coordinates{0, 2}));
+    test::expect_true(std::ranges::contains(wrapped_coords, Coordinates{0, 4}));
+
+    // 3. North pole (y = 0) and South pole (y = 7) have exactly 5 neighbors
+    int north_pole_count = 0;
+    for (const Sector& s : const_smap.adjacent(planet, Coordinates{0, 0})) {
+      test::expect_ge(s.coords().y, 0);
+      test::expect_le(s.coords().y, 1);
+      ++north_pole_count;
+    }
+    test::expect_eq(north_pole_count, 5);
+
+    int south_pole_count = 0;
+    for (const Sector& s : const_smap.adjacent(planet, Coordinates{5, 7})) {
+      test::expect_ge(s.coords().y, 6);
+      test::expect_le(s.coords().y, 7);
+      ++south_pole_count;
+    }
+    test::expect_eq(south_pole_count, 5);
+
+    // 4. Mutable adjacent iteration marks dirty ONLY on dereference
+    smap.clear_dirty();
+    test::expect_eq(smap.dirty_count(), 0);
+
+    auto adj_view = smap.adjacent(planet, Coordinates{5, 4});
+    // Creating view did not dereference any sector
+    test::expect_eq(smap.dirty_count(), 0);
+
+    // Dereference only the first neighbor
+    auto it = adj_view.begin();
+    if (it != adj_view.end()) {
+      [[maybe_unused]] Sector& s = *it;
+      test::expect_eq(smap.dirty_count(), 1);
+    }
+  }
+
   std::println(std::cout, "✓ All Coordinates & API Integration tests passed!");
   return 0;
 }

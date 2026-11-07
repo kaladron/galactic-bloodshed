@@ -602,8 +602,9 @@ std::string render_analysis(const AnalysisViewModel& vm) {
       table.add_row(tabulate::Table::Row_t(row.begin(), row.end()));
     }
 
-    for (int i = 0; i <= SectorType::SEC_WASTED; i++) {
-      table.column(8 + i).format().width(4).font_align(
+    std::size_t col = 8;
+    for ([[maybe_unused]] const SectorType st : all_sector_types) {
+      table.column(col++).format().width(4).font_align(
           tabulate::FontAlign::right);
     }
 

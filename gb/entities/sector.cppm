@@ -1266,6 +1266,32 @@ public:
     return shuffle_if(std::move(pred), game_rng());
   }
 
+  [[nodiscard]] ShuffledSectorsView adjacent(const Planet& planet,
+                                             Coordinates from) {
+    std::vector<std::size_t> indices;
+    auto coords = planet.adjacent_coordinates(from);
+    indices.reserve(coords.size());
+    for (const auto c : coords) {
+      if (in_bounds(c)) {
+        indices.push_back(coord_to_idx(c));
+      }
+    }
+    return ShuffledSectorsView(*this, std::move(indices));
+  }
+
+  [[nodiscard]] ConstShuffledSectorsView adjacent(const Planet& planet,
+                                                  Coordinates from) const {
+    std::vector<std::size_t> indices;
+    auto coords = planet.adjacent_coordinates(from);
+    indices.reserve(coords.size());
+    for (const auto c : coords) {
+      if (in_bounds(c)) {
+        indices.push_back(coord_to_idx(c));
+      }
+    }
+    return ConstShuffledSectorsView(*this, std::move(indices));
+  }
+
   SectorMap(SectorMap&) = delete;
   ~SectorMap() = default;
   void operator=(const SectorMap&) = delete;

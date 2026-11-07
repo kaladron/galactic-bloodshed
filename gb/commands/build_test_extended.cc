@@ -198,6 +198,18 @@ void test_invalid_ship_for_planet() {
   GameObj g(fixture.em, registry);
   fixture.init_game_obj(g);
 
+  // 0. Empty ship type token and empty argument list fail safely
+  {
+    g.out.str("");
+    test::expect_false(GB::commands::build({"build", ""}, g));
+    test::expect_contains(g.out.str(), "No such ship type.");
+  }
+  {
+    g.out.str("");
+    test::expect_false(GB::commands::build({"build"}, g));
+    test::expect_contains(g.out.str(), "Build what?");
+  }
+
   // 1. Unknown ship type
   {
     g.out.str("");

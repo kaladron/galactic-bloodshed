@@ -39,7 +39,7 @@ const Ship* validate_fuel_ship(const command_t& argv, GameObj& g) {
              "[destination]\"...\n";
     return nullptr;
   }
-  if (argv[1][0] != '#') {
+  if (first_char(argv[1]) != '#') {
     g.out << "Invalid first option.\n\"fuel #<shipnumber> [destination]\"...\n";
     return nullptr;
   }

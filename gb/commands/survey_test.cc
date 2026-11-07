@@ -230,6 +230,11 @@ void test_survey_location_and_scope_errors() {
   g.out.clear();
   test::expect_false(GB::commands::survey({"survey", "1invalid"}, g));
 
+  // High-bit unsigned byte in place argument does not cause UB in isdigit
+  g.out.str("");
+  g.out.clear();
+  test::expect_false(GB::commands::survey({"survey", "\x80"}, g));
+
   // Explicit ship place is rejected
   g.out.str("");
   g.out.clear();

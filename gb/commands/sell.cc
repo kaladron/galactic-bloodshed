@@ -25,7 +25,7 @@ bool sell(const command_t& argv, GameObj& g) {
   auto pnum = g.pnum();
 
   /* get information on sale */
-  char commod = argv[1].empty() ? '\0' : argv[1][0];
+  char commod = first_char(argv[1]);
   auto parsed_amount = scn::scan<resource_t>(argv[2], "{}");
   if (!parsed_amount || parsed_amount->value() <= 0) {
     g.out << "Try using positive values.\n";

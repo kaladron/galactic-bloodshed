@@ -145,7 +145,7 @@ void test_check_connect_success_and_clamping() {
     race.leader().deflevel = ScopeLevel::LEVEL_PLAN;
     race.leader().defsystem = 999;     // Out of bounds -> should clamp to 1
     race.leader().defplanetnum = 999;  // Out of bounds -> should clamp to 1
-    race.leader().login = 0;
+    race.leader().login = 1000000;
   });
 
   asio::io_context io;
@@ -164,13 +164,15 @@ void test_check_connect_success_and_clamping() {
   // Verify race login time updated in database
   const auto* updated_race = ctx.em.peek_race(1);
   test::expect_true(updated_race != nullptr);
-  test::expect_gt(updated_race->leader().login, 0);
+  test::expect_gt(updated_race->leader().login, 1000000);
 
   // Verify login output
   std::string_view output = session->pending_output();
   test::expect_contains(output, "TestRace \"Gov1\" [1,1] logged on.");
   test::expect_contains(
       output, std::format("Government Center #{} is active.", gov_id));
+  test::expect_contains(
+      output, std::format("Last login      : {}", format_timestamp(1000000)));
   test::expect_contains(output, "Morale: 100");
   test::expect_contains(output, "You have:");
 
@@ -187,6 +189,7 @@ void test_check_connect_json_mode() {
     race.morale = 85;
     race.leader().name = "JsonGov";
     race.leader().password = "govword";
+    race.leader().login = 1000000;
   });
 
   asio::io_context io;
@@ -198,6 +201,12 @@ void test_check_connect_json_mode() {
   test::expect_true(session->connected());
   test::expect_true(session->ui_mode() == UiMode::JSON);
 
+  // Verify race login time updated in database
+  const auto* updated_race = ctx.em.peek_race(1);
+  test::expect_true(updated_race != nullptr);
+  const std::time_t updated_login = updated_race->leader().login;
+  test::expect_gt(updated_login, 1000000);
+
   // Also send a plain-text notification to verify Session::send text wrapping
   session->send("Broadcast alert\n");
 
@@ -208,6 +217,9 @@ void test_check_connect_json_mode() {
   test::expect_contains(output, R"("type":"race")");
   test::expect_contains(output, R"("morale":85)");
   test::expect_contains(output, R"("money":10000)");
+  test::expect_false(output.contains(R"("last_login":1000000)"));
+  test::expect_contains(output,
+                        std::format(R"("last_login":{})", updated_login));
   test::expect_contains(output, R"("type":"message")");
   test::expect_contains(output, R"("message":"Broadcast alert")");
 

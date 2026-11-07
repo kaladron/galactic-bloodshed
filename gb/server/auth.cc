@@ -152,6 +152,11 @@ void check_connect(Session& session, std::string_view message) {
   }
   if (!authenticated) return;
 
+  // Update login time
+  session.entity_manager().mutate_race(Playernum, [&](Race& race_mut) {
+    race_mut.governor(Governor).login = std::time(nullptr);
+  });
+
   auto& g = session.game_obj();
   g.race = session.entity_manager().peek_race(Playernum);
   if (session.ui_mode() == UiMode::JSON) {
@@ -175,11 +180,6 @@ void check_connect(Session& session, std::string_view message) {
   session.send(g.out.view());
   g.out.clear();
   g.race = nullptr;
-
-  // Update login time
-  session.entity_manager().mutate_race(Playernum, [&](Race& race_mut) {
-    race_mut.governor(Governor).login = std::time(nullptr);
-  });
 
   if (session.god()) {
     d_shout(session.registry(), session.entity_manager(), Playernum, Governor,

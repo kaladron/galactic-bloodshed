@@ -79,6 +79,7 @@ void setup_test_universe(TestContext& ctx) {
   races.save(mortal);
 
   PowerRepository powers(store);
+  powers.save(Power{{.id = 1}});
   powers.save(Power{{.id = 2}});
 
   UniverseRepository univ_repo(store);
@@ -481,6 +482,97 @@ void test_server_deity_departure_broadcast() {
       mortal_after_shutdown.contains("has departed the universe"));
 }
 
+void test_server_json_mode_single_session_stanza() {
+  TestContext ctx;
+  setup_test_universe(ctx);
+  ctx.em.mutate_server_state([](ServerState& state) {
+    state.update_time_minutes = 60;
+    state.record_server_start(1700000000);
+    state.record_update_completed(1700003600, false);
+    state.record_segment_completed(1700005400);
+  });
+
+  asio::io_context io;
+  Server server(io, 0, ctx.em);
+  server.start();
+
+  asio::ip::tcp::socket client(io);
+  client.connect(
+      asio::ip::tcp::endpoint(asio::ip::address_v6::loopback(), server.port()));
+  io.poll();
+  test::expect_eq(server.session_count(), 1u);
+  (void)drain_socket(client);  // Drain ASCII welcome message
+
+  auto send_cmd = [&](std::string_view line) {
+    std::string payload = std::format("{}\n", line);
+    client.write_some(asio::buffer(payload));
+    io.poll();
+    server.process_commands();
+    io.poll();
+    return drain_socket(client);
+  };
+
+  // 1. Connect in JSON mode: exactly 1 "session" and 1 "race", 0 "message"
+  const std::string login_reply = send_cmd("raceword govword json");
+  test::expect_count(login_reply, R"("type":"session")", 1);
+  test::expect_count(login_reply, R"("type":"race")", 1);
+  test::expect_count(login_reply, R"("type":"message")", 0);
+  test::expect_contains(login_reply, R"("race_name":"ServerTestRace")");
+
+  // 2. Command 'cs /Sol': scope change reflected in single canonical session
+  const std::string cs_reply = send_cmd("cs /Sol");
+  test::expect_count(cs_reply, R"("type":"session")", 1);
+  test::expect_count(cs_reply, R"("type":"message")", 0);
+  test::expect_contains(cs_reply, R"("star":"Sol")");
+  test::expect_contains(cs_reply, R"("path":"/Sol")");
+
+  // 3. Command 'center /Sol': viewport center reflected in single session
+  const std::string center_reply = send_cmd("center /Sol");
+  test::expect_count(center_reply, R"("type":"session")", 1);
+  test::expect_count(center_reply, R"("type":"message")", 0);
+  test::expect_contains(center_reply, R"("universe_center":{"x":300,"y":400})");
+
+  // 4. Command 'time': ServerState timestamps reflected in single session clock
+  const std::string time_reply = send_cmd("time");
+  test::expect_count(time_reply, R"("type":"session")", 1);
+  test::expect_count(time_reply, R"("type":"message")", 0);
+  test::expect_contains(time_reply, R"("server_start_time":1700000000)");
+  test::expect_contains(time_reply, R"("last_update_time":1700003600)");
+  test::expect_contains(time_reply, R"("last_segment_time":1700005400)");
+
+  // 5. Command 'schedule': schedule fields reflected in single session clock
+  const std::string sched_reply = send_cmd("schedule");
+  test::expect_count(sched_reply, R"("type":"session")", 1);
+  test::expect_count(sched_reply, R"("type":"message")", 0);
+  test::expect_contains(sched_reply, R"("segments_per_update":3)");
+  test::expect_contains(sched_reply, R"("next_segment_time":)");
+  test::expect_contains(sched_reply, R"("next_update_time":)");
+
+  // 6. Command 'toggle': governor toggles reflected in single session
+  const std::string toggle_reply = send_cmd("toggle");
+  test::expect_count(toggle_reply, R"("type":"session")", 1);
+  test::expect_count(toggle_reply, R"("type":"message")", 0);
+  test::expect_contains(toggle_reply, R"("toggles":)");
+
+  // 7. Command 'highlight 2': 1 dirty race stanza + 1 session stanza (0
+  // messages)
+  const std::string highlight_reply = send_cmd("highlight 2");
+  test::expect_count(highlight_reply, R"("type":"session")", 1);
+  test::expect_count(highlight_reply, R"("type":"race")", 1);
+  test::expect_count(highlight_reply, R"("type":"message")", 0);
+  test::expect_contains(highlight_reply, R"("highlight":2)");
+
+  // 8. Command 'emulate 2 1': 1 confirmation message + 1 session stanza with
+  // emulated identity
+  const std::string emulate_reply = send_cmd("emulate 2 1");
+  test::expect_count(emulate_reply, R"("type":"session")", 1);
+  test::expect_count(emulate_reply, R"("type":"message")", 1);
+  test::expect_contains(emulate_reply, R"("race_name":"MortalRace")");
+  test::expect_contains(emulate_reply, R"("governor_name":"MortalGov")");
+
+  server.shutdown();
+}
+
 }  // namespace
 
 int main() {
@@ -489,6 +581,7 @@ int main() {
   test_server_quotas_idle_timeout_and_turn_events();
   test_server_slow_client_flush_reaping();
   test_server_deity_departure_broadcast();
+  test_server_json_mode_single_session_stanza();
 
   std::println(std::cout, "✓ server_test passed!");
   return 0;

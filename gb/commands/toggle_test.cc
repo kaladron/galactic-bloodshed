@@ -105,10 +105,13 @@ void test_toggle_database_persistence() {
 
     g.set_ui_mode(UiMode::JSON);
     ctx.assert_dispatch_success(g, {"toggle"});
-    test::expect_contains(g.out.str(), R"("type":"session")");
+    test::expect_eq(g.out.str(), "");
+
     ctx.assert_dispatch_success(g, {"toggle", "gag"});
-    test::expect_contains(g.out.str(), R"("type":"message")");
+    test::expect_not_contains(g.out.str(), R"("type":"session")");
+    test::expect_count(g.out.str(), R"("type":"message")", 1);
     test::expect_contains(g.out.str(), "gag is now on\\n");
+    test::expect_count(g.out.str(), R"("type":"race")", 1);
   }
 
   ctx.verify_universe_invariants();

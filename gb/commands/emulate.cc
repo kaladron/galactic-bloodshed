@@ -55,9 +55,6 @@ bool emulate(const command_t& argv, GameObj& g) {
   g.present(GB::presentation::make_output_message(
       std::format("Emulating {} \"{}\" [{},{}]\n", race->name,
                   race->governor(new_gov).name, new_player, new_gov)));
-  if (g.ui_mode() == GB::presentation::UiMode::JSON) {
-    g.present(GB::presentation::build_session_view(g));
-  }
   return true;
 }
 

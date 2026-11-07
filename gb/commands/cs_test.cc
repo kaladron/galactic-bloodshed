@@ -272,10 +272,10 @@ void test_cs_json_mode() {
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"cs", "/Sol/Earth"}, 0);
-  test::expect_contains(g.out.str(), R"("type":"session")");
-  test::expect_contains(g.out.str(), R"("path":"/Sol/Earth")");
-  test::expect_contains(g.out.str(), R"("snum":1)");
-  test::expect_contains(g.out.str(), R"("pnum":1)");
+  test::expect_eq(g.level(), ScopeLevel::LEVEL_PLAN);
+  test::expect_eq(g.snum(), 1);
+  test::expect_eq(g.pnum(), 1);
+  test::expect_eq(g.out.str(), "");
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"cs", "-d", "/Vega/Vega Prime"}, 0);
@@ -284,11 +284,14 @@ void test_cs_json_mode() {
   test::expect_contains(g.out.str(), R"("type":"race")");
   test::expect_contains(g.out.str(), R"("default_star":2)");
   test::expect_contains(g.out.str(), R"("default_planet":1)");
+  test::expect_not_contains(g.out.str(), R"("type":"session")");
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"cs"}, 0);
-  test::expect_contains(g.out.str(), R"("type":"session")");
-  test::expect_contains(g.out.str(), R"("path":"/Vega/Vega Prime")");
+  test::expect_eq(g.level(), ScopeLevel::LEVEL_PLAN);
+  test::expect_eq(g.snum(), 2);
+  test::expect_eq(g.pnum(), 1);
+  test::expect_eq(g.out.str(), "");
 }
 
 }  // namespace

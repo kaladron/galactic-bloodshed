@@ -140,7 +140,7 @@ target_link_libraries(
   gb_repositories
   PUBLIC gb_entities dallib glaze::glaze glaze_json_module glaze_core_module strong_id_module)
 
-# Standalone Tier-3 Service Layer Library (EntityManager, GameObj, Place, EntityLists, Notification, Prompt, Telegrams)
+# Standalone Tier-3 Service Layer Library (EntityManager, GameObj, Place, EntityLists, Notification, Telegrams)
 add_library(gb_services)
 target_sources(
   gb_services
@@ -154,12 +154,10 @@ target_sources(
           services/entitylists.cppm
           services/tele.cppm
           services/place.cppm
-          services/prompt.cppm
           services/notification.cppm
   PRIVATE services/entity_manager.cc
           services/entitylists.cc
           services/gameobj.cc
-          services/prompt.cc
           services/tele.cc
           services/notification.cc)
 target_link_libraries(
@@ -202,6 +200,7 @@ target_sources(
          CXX_MODULES
          FILES
           presentation/core.cppm
+          presentation/session.cppm
           presentation/planet_views.cppm
           presentation/empire_views.cppm
           presentation/navigation.cppm
@@ -209,7 +208,8 @@ target_sources(
           presentation/ship_ops.cppm
           presentation/combat.cppm
           presentation/presentation.cppm
-  PRIVATE presentation/planet_views.cc
+  PRIVATE presentation/session.cc
+          presentation/planet_views.cc
           presentation/empire_views.cc
           presentation/navigation.cc
           presentation/construction.cc
@@ -291,7 +291,7 @@ target_sources(
   server
   PUBLIC FILE_SET CXX_MODULES FILES server/server.cppm
   PRIVATE server/server.cc)
-target_link_libraries(server PUBLIC gb_turn gb_entities gb_services asio_module session auth notification commands dallib)
+target_link_libraries(server PUBLIC gb_turn gb_entities gb_services gb_presentation asio_module session auth notification commands dallib)
 
 add_library(gb_server)
 target_sources(
@@ -561,7 +561,7 @@ gb_add_test(power_json_test SOURCES repositories/power_json_test.cc)
 gb_add_test(presentation_test SOURCES presentation/presentation_test.cc)
 gb_add_test(production_test SOURCES commands/production_test.cc)
 gb_add_test(profile_test SOURCES commands/profile_test.cc)
-gb_add_test(prompt_test SOURCES services/prompt_test.cc)
+gb_add_test(prompt_test SOURCES presentation/prompt_test.cc)
 gb_add_test(purge_test SOURCES commands/purge_test.cc)
 gb_add_test(quit_test SOURCES commands/quit_test.cc)
 gb_add_test(race_repository_test SOURCES repositories/race_repository_test.cc)

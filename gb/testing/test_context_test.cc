@@ -56,10 +56,22 @@ void test_expectation_utilities() {
   test::expect_false(false, "False condition");
   test::expect_false(1 + 1 == 3, "Expression false");
 
-  // 5. String contains
+  // 5. String contains, non-containment, and non-overlapping occurrence counts
   std::string output = "Sector 5,5 colonized by player 1 (Federation)";
   test::expect_contains(output, "colonized by player 1", "Sub-string matching");
   test::expect_contains(output, "Federation");
+  test::expect_not_contains(output, "Romulans", "Negative substring matching");
+  test::expect_not_contains(output, R"("type":"session")");
+
+  static_assert(test::count_occurrences("", "x") == 0);
+  static_assert(test::count_occurrences("abc", "") == 0);
+  static_assert(test::count_occurrences("abc", "z") == 0);
+  static_assert(test::count_occurrences("x", "x") == 1);
+  static_assert(test::count_occurrences("xx", "x") == 2);
+  static_assert(test::count_occurrences("--a--", "--") == 2);
+  static_assert(test::count_occurrences("aaaa", "aa") == 2);
+  test::expect_count(output, "5", 2, "Exact substring count");
+  test::expect_count(output, "Romulans", 0);
 
   // 6. Exception expectations
   test::expect_throws<std::runtime_error>(

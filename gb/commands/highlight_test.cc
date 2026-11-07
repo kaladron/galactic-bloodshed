@@ -84,8 +84,9 @@ void test_highlight_database_persistence() {
   test::expect_contains(g.out.str(), "Syntax: highlight <player>");
   g.set_ui_mode(UiMode::JSON);
   ctx.assert_dispatch_success(g, {"highlight", "1"});
-  test::expect_contains(g.out.str(), R"("type":"session")");
-  test::expect_contains(g.out.str(), R"("highlight":1)");
+  test::expect_eq(ctx.em.peek_race(1)->leader().toggle.highlight, 1);
+  test::expect_contains(g.out.str(), R"("type":"race")");
+  test::expect_not_contains(g.out.str(), R"("type":"session")");
 
   std::println(std::cout,
                "  ✅ All highlight database persistence tests passed!");

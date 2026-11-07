@@ -6,11 +6,16 @@
 
 import dallib;
 import gb.entities;
+import gb.presentation.session;
 import gb.services;
 import test;
 import std;
 
 namespace {
+
+using GB::presentation::build_session_view;
+using GB::presentation::do_prompt;
+using GB::presentation::format_ship_prompt;
 
 void test_prompt_universe_scope() {
   TestContext ctx;
@@ -114,7 +119,7 @@ void test_prompt_ship_orbiting_scopes() {
 
   // Missing ship throws EntityNotFoundError (database corruption / invalid ID)
   g.set_shipno(999);
-  test::expect_throws<EntityNotFoundError>([&]() { do_prompt(g); });
+  test::expect_throws<EntityNotFoundError>([&]() { (void)do_prompt(g); });
 
   // Ship in universe
   g.set_shipno(10);
@@ -375,6 +380,17 @@ void test_prompt_json_mode() {
 
   ctx.em.mutate_universe([](Universe& u) { u.set_AP(player_t{1}, ap_t{42}); });
   ctx.em.mutate_star(1, [](Star& star) { star.AP(player_t{1}) = ap_t{17}; });
+  ctx.em.mutate_server_state([](ServerState& state) {
+    state.update_time_minutes = 45;
+    state.segments = 3;
+    state.nsegments_done = 2;
+    state.nupdates_done = 7;
+    state.record_server_start(1700000000);
+    state.record_update_completed(1700003600, false);
+    state.record_segment_completed(1700005400);
+    state.next_segment_time = 1700007200;
+    state.next_update_time = 1700009000;
+  });
 
   const auto ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
                            .owned_by(1, 1)
@@ -397,6 +413,20 @@ void test_prompt_json_mode() {
   test::expect_contains(out, "\"toggles\":");
   test::expect_contains(out, "\"level\":0");
   test::expect_contains(out, "\"path\":\"/\"");
+  test::expect_contains(out, "\"server_start_time\":1700000000");
+  test::expect_contains(out, "\"last_update_time\":1700003600");
+  test::expect_contains(out, "\"last_segment_time\":1700005400");
+  test::expect_contains(out, "\"update_interval_minutes\":45");
+  test::expect_contains(out, "\"segments_per_update\":3");
+  test::expect_contains(out, "\"segments_done\":2");
+  test::expect_contains(out, "\"current_segment\":3");
+  test::expect_contains(out, "\"updates_done\":7");
+  test::expect_contains(out, "\"next_update_number\":8");
+
+  // Verify current_segment wraps to 1 when segments_done == segments
+  ctx.em.mutate_server_state(
+      [](ServerState& state) { state.nsegments_done = state.segments; });
+  test::expect_contains(do_prompt(g), "\"current_segment\":1");
 
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);

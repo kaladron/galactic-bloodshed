@@ -646,54 +646,26 @@ void test_detect_terminal_capabilities() {
 
 void test_canonical_session_message_error_views() {
   TestContext ctx;
+  ctx.with_standard_universe();
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 1);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(1);
 
-  const GB::presentation::SessionView session_vm{
-      .player = player_t{1},
-      .governor = governor_t{2},
-      .race_name = "Terran",
-      .governor_name = "Admiral",
-      .god = false,
-      .ap = 50,
-      .global_ap = 100,
-      .scope =
-          GB::presentation::SessionScopeView{
-              .level = ScopeLevel::LEVEL_PLAN,
-              .snum = 1,
-              .pnum = 2,
-              .star = "Sol",
-              .planet = "Mars",
-              .path = "/Sol/Mars",
-          },
-      .viewport =
-          GB::presentation::SessionViewportView{
-              .universe_center = {10.0, 20.0},
-              .system_center = {5.0, 15.0},
-              .universe_zoom = 1.0,
-              .system_zoom = 2.0,
-          },
-  };
+  // SessionView intentionally does not satisfy HasModeRenderOverload so
+  // commands cannot emit duplicate {"type":"session"} stanzas via g.present().
+  static_assert(
+      !GB::presentation::HasModeRenderOverload<GB::presentation::SessionView>);
 
-  test::expect_eq(GB::presentation::render_session_prompt(session_vm),
-                  " ( [50] /Sol/Mars )\n");
-  test::expect_contains(GB::presentation::render_json_session(session_vm),
-                        "\"type\":\"session\"");
-  test::expect_eq(GB::presentation::render_for_mode(UiMode::ASCII, session_vm),
-                  " ( [50] /Sol/Mars )\n");
-  test::expect_contains(
-      GB::presentation::render_for_mode(UiMode::JSON, session_vm),
-      "\"type\":\"session\"");
+  test::expect_eq(GB::presentation::do_prompt(g), " ( [100] /Sol/Earth )\n");
 
-  g.present(session_vm);
-  test::expect_eq(g.out.str(), " ( [50] /Sol/Mars )\n");
-
-  g.out.str("");
   g.set_ui_mode(UiMode::JSON);
-  g.present(session_vm);
-  test::expect_contains(g.out.str(), "\"type\":\"session\"");
-  test::expect_contains(g.out.str(), "\"race_name\":\"Terran\"");
-  test::expect_contains(g.out.str(), "\"path\":\"/Sol/Mars\"");
+  const std::string session_json = GB::presentation::do_prompt(g);
+  test::expect_count(session_json, R"("type":"session")", 1);
+  test::expect_contains(session_json, R"("race_name":"Federation")");
+  test::expect_contains(session_json, R"("path":"/Sol/Earth")");
 
   const auto msg_vm =
       GB::presentation::make_output_message("Order executed.\n");

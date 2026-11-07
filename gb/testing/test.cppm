@@ -294,6 +294,76 @@ expect_contains(std::string_view haystack, std::string_view needle,
   }
 }
 
+inline void expect_not_contains(
+    std::string_view haystack, std::string_view needle,
+    std::string_view msg = "",
+    std::source_location loc = std::source_location::current()) {
+  if (haystack.contains(needle)) {
+    if (!msg.empty()) {
+      std::println(std::cerr,
+                   "\n❌ [STRING MISMATCH] {}:{}\n"
+                   "    Function: {}\n"
+                   "    Expected NOT to contain: \"{}\"\n"
+                   "    Actual output was:\n---\n{}\n---\n"
+                   "    Message: {}",
+                   loc.file_name(), loc.line(), loc.function_name(), needle,
+                   haystack, msg);
+    } else {
+      std::println(std::cerr,
+                   "\n❌ [STRING MISMATCH] {}:{}\n"
+                   "    Function: {}\n"
+                   "    Expected NOT to contain: \"{}\"\n"
+                   "    Actual output was:\n---\n{}\n---",
+                   loc.file_name(), loc.line(), loc.function_name(), needle,
+                   haystack);
+    }
+    std::abort();
+  }
+}
+
+/// Counts non-overlapping occurrences of `needle` inside `haystack` using
+/// C++23 `std::views::split`.
+[[nodiscard]] constexpr std::size_t
+count_occurrences(std::string_view haystack, std::string_view needle) noexcept {
+  if (haystack.empty() || needle.empty()) {
+    return 0;
+  }
+  return static_cast<std::size_t>(
+      std::ranges::distance(haystack | std::views::split(needle)) - 1);
+}
+
+inline void
+expect_count(std::string_view haystack, std::string_view needle,
+             std::size_t expected_count, std::string_view msg = "",
+             std::source_location loc = std::source_location::current()) {
+  const std::size_t actual_count = count_occurrences(haystack, needle);
+  if (actual_count != expected_count) {
+    if (!msg.empty()) {
+      std::println(std::cerr,
+                   "\n❌ [SUBSTRING COUNT MISMATCH] {}:{}\n"
+                   "    Function: {}\n"
+                   "    Needle:   \"{}\"\n"
+                   "    Expected: {}\n"
+                   "    Actual:   {}\n"
+                   "    Actual output was:\n---\n{}\n---\n"
+                   "    Message:  {}",
+                   loc.file_name(), loc.line(), loc.function_name(), needle,
+                   expected_count, actual_count, haystack, msg);
+    } else {
+      std::println(std::cerr,
+                   "\n❌ [SUBSTRING COUNT MISMATCH] {}:{}\n"
+                   "    Function: {}\n"
+                   "    Needle:   \"{}\"\n"
+                   "    Expected: {}\n"
+                   "    Actual:   {}\n"
+                   "    Actual output was:\n---\n{}\n---",
+                   loc.file_name(), loc.line(), loc.function_name(), needle,
+                   expected_count, actual_count, haystack);
+    }
+    std::abort();
+  }
+}
+
 template <typename ExceptionType, typename Func>
 void expect_throws(Func&& fn, std::string_view msg = "",
                    std::source_location loc = std::source_location::current()) {

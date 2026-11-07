@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file prompt.cppm
-/// \brief Module partition for player command prompt generation.
+/// \file session.cppm
+/// \brief Session state view models and canonical player prompt rendering.
 
-module;
+export module gb.presentation.session;
 
-import std;
-
-export module gb.services:prompt;
+export import gb.presentation.core;
 
 import gb.entities;
-import :gameobj;
-import :services;
+import gb.services;
+import std;
 
-export struct PromptViewModel {
+export namespace GB::presentation {
+
+struct PromptViewModel {
   ap_t ap{0};
   ScopeLevel level{ScopeLevel::LEVEL_UNIV};
   std::string star{};
@@ -22,7 +22,7 @@ export struct PromptViewModel {
   std::string path{};
 };
 
-export struct SessionScopeView {
+struct SessionScopeView {
   ScopeLevel level{ScopeLevel::LEVEL_UNIV};
   starnum_t snum{0};
   planetnum_t pnum{0};
@@ -33,24 +33,29 @@ export struct SessionScopeView {
   std::string path{};
 };
 
-export struct SessionViewportView {
+struct SessionViewportView {
   UniverseCoordinates universe_center{0.0, 0.0};
   SystemCoordinates system_center{0.0, 0.0};
   double universe_zoom{0.5};
   double system_zoom{0.5};
 };
 
-export struct SessionClockView {
+struct SessionClockView {
   std::time_t server_time{0};
+  std::time_t server_start_time{0};
+  std::time_t last_update_time{0};
+  std::time_t last_segment_time{0};
   int update_interval_minutes{0};
   segments_t segments_per_update{0};
+  segments_t segments_done{0};
   segments_t current_segment{0};
   std::time_t next_segment_time{0};
+  turn_t updates_done{0};
   turn_t next_update_number{0};
   std::time_t next_update_time{0};
 };
 
-export struct SessionView {
+struct SessionView {
   player_t player{0};
   governor_t governor{1};
   std::string race_name{};
@@ -65,14 +70,20 @@ export struct SessionView {
   std::optional<SessionClockView> clock{std::nullopt};
 };
 
-export [[nodiscard]] SessionView build_session_view(const GameObj& g);
+[[nodiscard]] SessionView build_session_view(const GameObj& g);
 
-export [[nodiscard]] PromptViewModel
+[[nodiscard]] PromptViewModel
 build_ship_prompt(EntityManager& em, player_t player, shipnum_t shipno);
 
-export [[nodiscard]] PromptViewModel build_prompt(const GameObj& g);
+[[nodiscard]] PromptViewModel build_prompt(const GameObj& g);
 
-export std::string format_ship_prompt(EntityManager& em, player_t player,
-                                      shipnum_t shipno);
+[[nodiscard]] std::string format_ship_prompt(EntityManager& em, player_t player,
+                                             shipnum_t shipno);
 
-export std::string do_prompt(const GameObj& g);
+/// Canonical prompt and session-state emitter appended once per command by
+/// Server::process_command(). Intentionally NOT exposed as a
+/// render_for_mode(UiMode, const SessionView&) overload so commands cannot
+/// emit duplicate {"type":"session"} stanzas via g.present().
+[[nodiscard]] std::string do_prompt(const GameObj& g);
+
+}  // namespace GB::presentation

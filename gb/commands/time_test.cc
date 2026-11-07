@@ -40,18 +40,14 @@ int main() {
   test::expect_contains(out, "Last Segment  1 :");
   test::expect_contains(out, "Current time    :");
 
-  // 2. Test time command in JSON mode
+  // 2. Test time command in JSON mode: emits no duplicate session stanza inside
+  // dispatch_command because Server::process_command appends do_prompt(g)
   g.set_ui_mode(UiMode::JSON);
-  g.out.str("");
   ctx.assert_dispatch_success(g, {"time"});
-  out = g.out.str();
-  test::expect_contains(out, R"("type":"session")");
-  test::expect_contains(out, R"("clock":)");
-  test::expect_contains(out, R"("update_interval_minutes":60)");
+  test::expect_eq(g.out.str(), "");
   g.set_ui_mode(UiMode::ASCII);
 
   // 3. Test schedule command when nsegments_done < segments
-  g.out.str("");
   ctx.assert_dispatch_success(g, {"schedule"});
   out = g.out.str();
   test::expect_contains(out, "60 minute update intervals");
@@ -63,21 +59,13 @@ int main() {
   // JSON mode
   ctx.em.mutate_server_state(
       [](ServerState& state) { state.nsegments_done = state.segments; });
-  g.out.str("");
   ctx.assert_dispatch_success(g, {"schedule"});
   out = g.out.str();
   test::expect_contains(out, "Next Segment  1 :");
 
   g.set_ui_mode(UiMode::JSON);
-  g.out.str("");
   ctx.assert_dispatch_success(g, {"schedule"});
-  out = g.out.str();
-  test::expect_contains(out, R"("type":"session")");
-  test::expect_contains(out, R"("clock":)");
-  test::expect_contains(out, R"("update_interval_minutes":60)");
-  test::expect_contains(out, R"("segments_per_update":4)");
-  test::expect_contains(out, R"("current_segment":1)");
-  test::expect_contains(out, R"("next_update_number":3)");
+  test::expect_eq(g.out.str(), "");
   g.set_ui_mode(UiMode::ASCII);
 
   ctx.verify_universe_invariants();

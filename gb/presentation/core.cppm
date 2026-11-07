@@ -16,12 +16,6 @@ import std;
 
 export namespace GB::presentation {
 
-using ::build_session_view;
-using ::SessionClockView;
-using ::SessionScopeView;
-using ::SessionView;
-using ::SessionViewportView;
-
 /// Logical channel classification for canonical `"message"` stanzas.
 enum class MessageChannel : std::uint8_t {
   Output,           ///< Direct confirmation or diagnostic text from a command
@@ -76,20 +70,6 @@ template <typename T>
     out.push_back('\n');
   }
   return out;
-}
-
-[[nodiscard]] inline std::string render_session_prompt(const SessionView& vm) {
-  return std::format(" ( [{}] {} )\n", vm.ap, vm.scope.path);
-}
-
-[[nodiscard]] inline std::string render_json_session(const SessionView& vm) {
-  return render_json_envelope("session", vm);
-}
-
-[[nodiscard]] inline std::string render_for_mode(UiMode mode,
-                                                 const SessionView& vm) {
-  return mode == UiMode::JSON ? render_json_session(vm)
-                              : render_session_prompt(vm);
 }
 
 [[nodiscard]] inline std::string render_message(const MessageView& vm) {

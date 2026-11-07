@@ -14,6 +14,7 @@ import auth;
 import commands;
 import dallib;
 import gb.entities;
+import gb.presentation.session;
 import gb.services;
 import gb.turn;
 import notification;
@@ -314,7 +315,7 @@ void Server::process_command(GameObj& g, const command_t& argv) {
 
   /* compute the prompt and send to the player */
   if (!g.disconnect_requested() && !g.shutdown_requested()) {
-    g.out << do_prompt(g);
+    g.out << GB::presentation::do_prompt(g);
   }
   g.race = nullptr;
 }

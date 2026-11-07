@@ -210,17 +210,21 @@ void test_check_connect_json_mode() {
   // Also send a plain-text notification to verify Session::send text wrapping
   session->send("Broadcast alert\n");
 
+  // check_connect() itself emits only the initial RaceView snapshot (no ASCII
+  // login banner/time text and no premature session stanza before 'cs' runs)
   std::string_view output = session->pending_output();
-  test::expect_contains(output, R"("type":"session")");
-  test::expect_contains(output, R"("race_name":"JsonRace")");
-  test::expect_contains(output, R"("governor_name":"JsonGov")");
-  test::expect_contains(output, R"("type":"race")");
+  test::expect_count(output, R"("type":"session")", 0);
+  test::expect_not_contains(output, "logged on.");
+  test::expect_not_contains(output, "Last login");
+  test::expect_count(output, R"("type":"race")", 1);
+  test::expect_contains(output, R"("name":"JsonRace")");
+  test::expect_contains(output, R"("name":"JsonGov")");
   test::expect_contains(output, R"("morale":85)");
   test::expect_contains(output, R"("money":10000)");
-  test::expect_false(output.contains(R"("last_login":1000000)"));
+  test::expect_not_contains(output, R"("last_login":1000000)");
   test::expect_contains(output,
                         std::format(R"("last_login":{})", updated_login));
-  test::expect_contains(output, R"("type":"message")");
+  test::expect_count(output, R"("type":"message")", 1);
   test::expect_contains(output, R"("message":"Broadcast alert")");
 
   ctx.verify_universe_invariants();

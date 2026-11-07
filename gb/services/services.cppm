@@ -15,5 +15,4 @@ export import :gameobj;
 export import :entitylists;
 export import :tele;
 export import :place;
-export import :prompt;
 export import :notification;

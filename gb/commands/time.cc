@@ -23,7 +23,6 @@ bool time(const command_t&, GameObj& g) {
       .update_line = state->update_line(),
       .segment_line = state->segment_line(),
       .current_time = format_timestamp(clk),
-      .session = GB::presentation::build_session_view(g),
   };
   g.present(vm);
   return true;
@@ -46,7 +45,6 @@ bool schedule(const command_t&, GameObj& g) {
       .next_segment_time = format_timestamp(state->next_segment_time),
       .next_update_number = state->nupdates_done + 1,
       .next_update_time = format_timestamp(state->next_update_time),
-      .session = GB::presentation::build_session_view(g),
   };
   g.present(vm);
   return true;

@@ -14,13 +14,6 @@ module commands;
 
 namespace {
 
-void present_scope_change(GameObj& g) {
-  if (g.ui_mode() == GB::presentation::UiMode::JSON) {
-    g.out << GB::presentation::render_json_session(
-        GB::presentation::build_session_view(g));
-  }
-}
-
 /**
  * @brief Reset the governor's current scope to their configured default home
  * scope.
@@ -48,7 +41,6 @@ bool change_to_default_scope(GameObj& g) {
   g.set_shipno(0);
   g.set_system_center({0.0, 0.0});
   g.set_universe_center(star.coordinates());
-  present_scope_change(g);
   return true;
 }
 
@@ -191,7 +183,6 @@ bool cs(const command_t& argv, GameObj& g) {
     g.set_snum(where->snum);
     g.set_pnum(where->pnum);
     g.set_shipno(where->shipno);
-    present_scope_change(g);
     return true;
   }
 

@@ -544,8 +544,7 @@ std::string render_time(const TimeViewModel& vm) {
 }
 
 std::string render_for_mode(UiMode mode, const TimeViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_session(vm.session)
-                              : render_time(vm);
+  return mode == UiMode::JSON ? "" : render_time(vm);
 }
 
 std::string render_schedule(const ScheduleViewModel& vm) {
@@ -560,8 +559,7 @@ std::string render_schedule(const ScheduleViewModel& vm) {
 }
 
 std::string render_for_mode(UiMode mode, const ScheduleViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_session(vm.session)
-                              : render_schedule(vm);
+  return mode == UiMode::JSON ? "" : render_schedule(vm);
 }
 
 std::string render_victory(const VictoryViewModel& vm) {
@@ -1568,8 +1566,7 @@ std::string render_toggle_status(const ToggleStatusViewModel& vm) {
 }
 
 std::string render_for_mode(UiMode mode, const ToggleStatusViewModel& vm) {
-  return mode == UiMode::JSON ? render_json_session(vm.session)
-                              : render_toggle_status(vm);
+  return mode == UiMode::JSON ? "" : render_toggle_status(vm);
 }
 
 std::string render_toggle_changed_result(const ToggleChangedResult& vm) {

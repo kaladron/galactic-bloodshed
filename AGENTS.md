@@ -188,9 +188,9 @@ The codebase uses a 7-Tier C++26 Module DAG with the following structure:
 - **`dallib`** (Tier 1): Data Access Layer module (`Database`, `JsonStore`, `Schema`)
 - **`gb.entities`** (Tier 1): Pure in-memory domain models (`Race`, `Power`, `Block`, `Star`, `Planet`, `Ship`, `Sector`, `SectorMap`, `Universe`, `NewsItem`, `TelegramItem`), strong IDs, `Coordinates`, `Tweakables`
 - **`gb.repositories`** (Tier 2): Repository DAL adapters (`RaceRepository`, `ShipRepository`, `PlanetRepository`, `StarRepository`, `SectorRepository`, `NewsRepository`, `TelegramRepository`, etc.)
-- **`gb.services`** (Tier 3): Core game services (`EntityManager`, `GameObj` with `OutputBuffer` and `UiMode`, `Place`, `EntityLists`, `do_prompt`, `SessionRegistry` with transactional `SocketOutbox`, `DeferredWriteScope`)
+- **`gb.services`** (Tier 3): Core game services (`EntityManager`, `GameObj` with `OutputBuffer` and `UiMode`, `Place`, `EntityLists`, `SessionRegistry` with transactional `SocketOutbox`, `DeferredWriteScope`)
 - **`gb.mechanics`** (Tier 4): Shared stateless multi-entity game rules (`:navigation`, `:combat`, `:construction`, `:visibility`, `:victory`)
-- **`gb.presentation`** (Tier 5): Dual-mode (`UiMode::ASCII` and `UiMode::JSON`) view models and presentation rendering (`:core`, `:navigation`, `:galaxy`, `:planet`, `:ship`, `:diplomacy`, `:empire`, `:session`)
+- **`gb.presentation`** (Tier 5): Dual-mode (`UiMode::ASCII` and `UiMode::JSON`) view models and presentation rendering (`:core`, `:session` with `do_prompt`, `:navigation`, `:galaxy`, `:planet`, `:ship`, `:diplomacy`, `:empire`)
 - **`gb.turn`** (Tier 5): Turn simulation engine (`TurnStats`, `doplanet`, `doship`, `dosector`, `do_VN`, `doturncmd`, `do_update`, `do_segment`)
 - **`commands` & `gb.creator`** (Tier 6): Player command implementations (`GB::commands`) and universe generation/enrollment (`gb.creator`)
 - **`gb.server`** (Tier 7): Server networking, session management, authentication, and notifications

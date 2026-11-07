@@ -108,7 +108,7 @@ Galactic Bloodshed uses **C++26 modules** to enforce architectural boundaries. S
   - `GameObj`: Per-command execution context, `UiMode` (`ASCII` or `JSON`), zero-locale `OutputBuffer` (`g.out`, `g.present()`, `g.print()`), `check_commandable(const Ship&)`, and AP deduction helpers (`gameobj.cppm`)
   - `Place`: Hierarchical scope path parser and formatter (`place.cppm`)
   - `RaceList`, `StarList`, `PlanetList`, `ShipList`, `CommodList`, `BlockList`: RAII and readonly collection views (`entitylists.cppm`)
-  - `SessionRegistry` (with transactional `SocketOutbox` staging live cross-player messages until `EntityManager::Transaction::commit()`) & Notification routing (`session_registry.cppm`, `notification.cppm`, `tele.cppm`, `prompt.cppm`)
+  - `SessionRegistry` (with transactional `SocketOutbox` staging live cross-player messages until `EntityManager::Transaction::commit()`) & Notification routing (`session_registry.cppm`, `notification.cppm`, `tele.cppm`)
 
 - **Tier 4: `gb.mechanics` & `gb.presentation`** (Shared Game Rules & Dual-Mode Presentation)
   - **`gb.mechanics`** (`gb/mechanics/mechanics.cppm`, `gb_mechanics` target): Multi-entity stateless rules returning structured domain results without formatting strings or touching player output:
@@ -119,6 +119,7 @@ Galactic Bloodshed uses **C++26 modules** to enforce architectural boundaries. S
     - `:victory`: `create_victory_list`, `compute_power_blocks`
   - **`gb.presentation`** (`gb/presentation/presentation.cppm`, `gb_presentation` target): Dual-mode (`UiMode::ASCII` via `std::format`/`tabulate` and `UiMode::JSON` via `glaze`) view models, result renderers, and telegram/news bulletin formatters:
     - `gb.presentation.core`: `UiMode`, `OutputBuffer`, `present_to`, `render_json_envelope`, ANSI color/inverse terminal helpers
+    - `gb.presentation.session`: `SessionView`, `PromptViewModel`, and `do_prompt` (canonical single emitter of `"session"` stanzas and ASCII prompts)
     - `gb.presentation.planet_views`: Planetary maps (`map`), orbital maps (`orbit`), surveys, sector analysis, production, routes, and planetary turn bulletins
     - `gb.presentation.navigation`: Navigation reports, course/order results, docking/landing/launching, cargo transfer summaries, and scope changes
     - `gb.presentation.construction`: Ship construction, factory blueprints (`make`/`modify`), and in-service retrofits (`upgrade`)
@@ -456,13 +457,13 @@ const auto& star = *g.entity_manager.peek_star(g.snum());
 
 ### Layer 4: Presentation Layer (`gb.presentation`) & Dual-Mode Rendering
 **Location**: `gb/presentation/`  
-**Module**: `gb.presentation` (`gb.presentation.core`, `gb.presentation.planet_views`, `gb.presentation.navigation`, `gb.presentation.construction`, `gb.presentation.ship_ops`, `gb.presentation.combat`, `gb.presentation.empire_views`, `gb.presentation.production`)
+**Module**: `gb.presentation` (`gb.presentation.core`, `gb.presentation.session`, `gb.presentation.planet_views`, `gb.presentation.navigation`, `gb.presentation.construction`, `gb.presentation.ship_ops`, `gb.presentation.combat`, `gb.presentation.empire_views`, `gb.presentation.production`)
 
 All player-facing output formatting—including 2D ASCII maps (`map`, `orbit`), `tabulate` tables, ANSI color/reverse-video sequences, canonical JSON stanzas, and telegram/news bulletins—is isolated in `gb.presentation`:
 - **Zero Stream Coupling**: `GameObj::out` is a zero-locale `std::string`-backed `OutputBuffer` (`gb.presentation.core`). Neither `gb.mechanics`, `gb.turn`, nor `commands` imports `tabulate` or formats `std::stringstream` output.
 - **Dual-Mode Dispatch (`UiMode::ASCII` & `UiMode::JSON`)**: Command handlers construct strongly typed ViewModel or Result structs and pass them to `g.present(view_model)`. `present_to(out, g.ui_mode(), view_model)` dispatches via ADL to `render_for_mode(mode, view_model)`, emitting human-readable ASCII/ANSI text in `UiMode::ASCII` or canonical JSON wire stanzas in `UiMode::JSON`.
 - **Canonical Multi-Stanza JSON Wire Protocol**: Rather than bespoke, fragmented per-command envelopes, `UiMode::JSON` streams top-level typed JSON objects (`{"type":"<stanza_type>","data":{...}}\n`). Canonical stanzas include:
-  - `"session"`: Current player session state, prompt scope, action points, and active toggles (`SessionView`).
+  - `"session"`: Current player session state, prompt scope, viewport, server clock, action points, and active toggles (`SessionView`), emitted once per command by `do_prompt()`.
   - `"star"`: Star system state, spectral class, stability, and child planets (`StarView`).
   - `"planet"`: Planetary conditions, colony attributes, exploration status, and resources (`PlanetView`).
   - `"sectors"`: Grid of sector states, population, fertility, and terrain (`SectorGridView`).
@@ -1130,7 +1131,6 @@ gb/
 │   ├── gameobj.cppm / .cc      # Per-command execution context (OutputBuffer, UiMode)
 │   ├── entitylists.cppm / .cc  # RAII & readonly collection iteration views
 │   ├── place.cppm / .cc        # Hierarchical scope path parser & formatter
-│   ├── prompt.cppm / .cc       # Contextual prompt formatting
 │   ├── session_registry.cppm   # Cross-cutting notification & transactional SocketOutbox interface
 │   ├── notification.cppm / .cc # Broadcast & player notification routing (with offline telegram fallback)
 │   └── *_test.cc               # Service unit tests
@@ -1146,13 +1146,13 @@ gb/
 ├── presentation/                # Tier-5 Presentation & View-Model Layer (gb.presentation)
 │   ├── presentation.cppm       # Presentation module aggregator
 │   ├── core.cppm               # ViewModel concept, AnsiColor, TableBuilder, JSON serializer
+│   ├── session.cppm / .cc      # SessionView, PromptViewModel, & canonical do_prompt
 │   ├── navigation.cppm / .cc   # Scope, orbit, walk, launch, land, dock, radar views
 │   ├── galaxy.cppm / .cc       # Star, survey, map,tech, victory, power, block views
 │   ├── planet.cppm / .cc       # Planet map, production, toxicity, sector, route views
 │   ├── ship.cppm / .cc         # Ship status, tactical, build, order, weapon views
 │   ├── diplomacy.cppm / .cc    # Diplomatic relations,insurgency, declaration views
 │   ├── empire.cppm / .cc       # Profile, treasury, governor, market, AP views
-│   ├── session.cppm / .cc      # Help, news, telegram, toggle, motto views
 │   └── *_test.cc               # Presentation view-model & dual-mode unit tests
 │
 ├── turn/                        # Tier-5 Turn Simulation Engine (gb.turn)

@@ -107,8 +107,11 @@ void test_emulate_matrix() {
   g.set_ui_mode(UiMode::JSON);
   ctx.assert_dispatch_success(g, {"emulate", "2", "2"});
   test::expect_contains(g.out.str(), R"("type":"message")");
-  test::expect_contains(g.out.str(), R"("type":"session")");
-  test::expect_contains(g.out.str(), R"("governor_name":"Governor2")");
+  test::expect_contains(g.out.str(),
+                        R"(Emulating Klingons \"Governor2\" [2,2])");
+  test::expect_not_contains(g.out.str(), R"("type":"session")");
+  test::expect_eq(g.player(), 2);
+  test::expect_eq(g.governor(), 2);
 }
 
 }  // namespace

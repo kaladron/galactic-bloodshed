@@ -6,6 +6,7 @@
 export module gb.presentation;
 
 export import gb.presentation.core;
+export import gb.presentation.session;
 export import gb.presentation.planet_views;
 export import gb.presentation.empire_views;
 export import gb.presentation.navigation;

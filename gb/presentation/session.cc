@@ -1,22 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file prompt.cc
-/// \brief Generates player command prompts based on scope and orbit level.
+/// \file session.cc
+/// \brief Generates player command prompts and canonical JSON session stanzas.
 
-module;
+module gb.presentation.session;
 
+import gb.entities;
+import gb.services;
 import std;
-import dallib;
-import gb.repositories.glaze;
-import glaze.core;
-import glaze.json;
 
-module gb.services;
-
-struct SessionJsonEnvelope {
-  std::string_view type{"session"};
-  const SessionView* data{nullptr};
-};
+namespace GB::presentation {
 
 SessionView build_session_view(const GameObj& g) {
   const PromptViewModel prompt = build_prompt(g);
@@ -62,12 +55,17 @@ SessionView build_session_view(const GameObj& g) {
       state != nullptr) {
     view.clock = SessionClockView{
         .server_time = std::time(nullptr),
+        .server_start_time = state->server_start_time,
+        .last_update_time = state->last_update_time,
+        .last_segment_time = state->last_segment_time,
         .update_interval_minutes = state->update_time_minutes,
         .segments_per_update = state->segments,
+        .segments_done = state->nsegments_done,
         .current_segment = state->nsegments_done == state->segments
                                ? 1
                                : state->nsegments_done + 1,
         .next_segment_time = state->next_segment_time,
+        .updates_done = state->nupdates_done,
         .next_update_number = state->nupdates_done + 1,
         .next_update_time = state->next_update_time,
     };
@@ -185,15 +183,11 @@ std::string format_ship_prompt(EntityManager& em, const player_t player,
  * \return Prompt string for display to the user
  */
 std::string do_prompt(const GameObj& g) {
-  if (g.ui_mode() == GB::presentation::UiMode::JSON) {
-    const auto vm = build_session_view(g);
-    std::string out;
-    const SessionJsonEnvelope envelope{.data = &vm};
-    if (const auto ec = glz::write_json(envelope, out); !ec) {
-      out.push_back('\n');
-    }
-    return out;
+  if (g.ui_mode() == UiMode::JSON) {
+    return render_json_envelope("session", build_session_view(g));
   }
   const auto vm = build_prompt(g);
   return std::format(" ( [{}] {} )\n", vm.ap, vm.path);
 }
+
+}  // namespace GB::presentation

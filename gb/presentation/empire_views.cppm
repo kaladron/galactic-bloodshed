@@ -527,7 +527,6 @@ struct TimeViewModel {
   std::string update_line{};
   std::string segment_line{};
   std::string current_time{};
-  SessionView session{};
 };
 
 /// Renders a `TimeViewModel` for `UiMode::ASCII`.
@@ -545,7 +544,6 @@ struct ScheduleViewModel {
   std::string next_segment_time{};
   turn_t next_update_number{0};
   std::string next_update_time{};
-  SessionView session{};
 };
 
 /// Renders a `ScheduleViewModel` for `UiMode::ASCII`.
@@ -1163,7 +1161,6 @@ enum class ToggleOption : std::uint8_t {
 /// View model for `toggle` (display all governor configuration options).
 struct ToggleStatusViewModel {
   toggletype toggles{};
-  SessionView session{};
   bool color{false};
 };
 [[nodiscard]] std::string render_toggle_status(const ToggleStatusViewModel& vm);

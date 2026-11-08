@@ -77,9 +77,29 @@ void test_do_habitat() {
                           .build();
 
   ctx.em.mutate_ship(ship_id, [&](Ship& ship) {
+    // crew_ratio = 1000 / 2000 = 0.5, hull_efficiency = 1.0 -> fuse = 50.0 ->
+    // produces floor(50.0 * HABITAT_PROD_RATE) = 2 resources for 40.0 fuel.
     do_habitat(ship, ctx.em);
-    test::expect_gt(ship.resource(), 10);
+    test::expect_eq(ship.resource(),
+                    10 + static_cast<resource_t>(50.0 * HABITAT_PROD_RATE));
+    expect_near(ship.fuel(), 100.0 - (2.0 / HABITAT_PROD_RATE));
     test::expect_gt(ship.popn(), 1000);
+  });
+
+  // Sub-threshold fuel just under 3 resource batches (nextafter(60.0, 0.0))
+  // must produce 2 resources, never rounding up to 3 via 0.05 precision drift.
+  shipnum_t boundary_id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
+                              .owned_by(1)
+                              .in_star_orbit(1)
+                              .with_fuel(std::nextafter(60.0, 0.0))
+                              .with_crew(2000, 0)
+                              .with_resource(0)
+                              .with_on(true)
+                              .build();
+  ctx.em.mutate_ship(boundary_id, [&](Ship& ship) {
+    do_habitat(ship, ctx.em);
+    test::expect_eq(ship.resource(), 2);
+    expect_near(ship.fuel(), std::nextafter(60.0, 0.0) - 40.0);
   });
 }
 

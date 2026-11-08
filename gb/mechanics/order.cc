@@ -737,7 +737,7 @@ activate_factory_on_planet(EntityManager& em, player_t player,
   std::expected<resource_t, OrderError> result{0};
   em.mutate_planet(
       factory.storbits(), factory.pnumorbits(), [&](Planet& planet) {
-        const resource_t oncost = 2 * factory.build_cost();
+        const resource_t oncost = PLAN_FACT_ON_COST * factory.build_cost();
         if (planet.info(player).resource < oncost) {
           result = std::unexpected(OrderError{
               .reason = OrderErrorReason::InsufficientPlanetResourcesForFactory,

@@ -838,5 +838,6 @@ export inline double tech_prod(const money_t investment,
 
 export constexpr gun_count_t planet_guns(resource_t points) noexcept {
   if (points < 0) return 0; /* shouldn't happen */
-  return static_cast<gun_count_t>(std::min<resource_t>(20, points / 1000));
+  return static_cast<gun_count_t>(
+      std::min<resource_t>(PLAN_FIRE_LIM, points / 1000));
 }

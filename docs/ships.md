@@ -81,7 +81,7 @@ Starships and orbital structures are constructed through three distinct manufact
 ### Custom Ship Design and Factory Programming (`make` and `modify`)
 Mobile Factories (`F`) can be programmed to manufacture custom-engineered starships tailored to an empire's tactical doctrine:
 
-- **Factory Offline Requirement**: A factory's design specifications can only be altered while the factory is **offline** (`order <factory> off`). Once activated (`order <factory> on`), its blueprint is locked and cannot be modified until powered down.
+- **Factory Offline Requirement & Activation Cost**: A factory's design specifications can only be altered while the factory is **offline** (`order <factory> off`). Activating a factory (`order <factory> on`) permanently locks its blueprint (an online factory cannot be powered back down) and consumes $`2 \times \text{Cost}_{\text{blueprint}}`$ mineral resources from the colony stockpile when landed on a planet, or $`4 \times \text{Cost}_{\text{blueprint}}`$ mineral resources from the host Habitat's cargo bay while expanding the factory's occupied hangar volume to $`1 + \lfloor 0.2 \times \text{Size}_{\text{blueprint}} \rfloor`$.
 - **Selecting a Base Hull (`make <type>`)**: Issuing `make <type>` loads the baseline hull specifications for the target ship class into the factory's design buffer.
 - **Customizing Hull Specifications (`modify <attribute> [value]`)**: Commanders can customize hull attributes on modifiable templates:
   - **Structural & Storage Capacities**: `armor` ($0\text{--}100$), `crew`, `cargo`, `fuel`, `destruct`, and `hangar` capacity.

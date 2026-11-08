@@ -513,6 +513,21 @@ int main() {
     test::expect_eq(info.comread, 0U);
     test::expect_eq(info.guns, 0U);
 
+    // High mobilization caps guns at PLAN_FIRE_LIM
+    info.numsectsowned = 300;
+    info.update_combat_readiness(25000);
+    test::expect_eq(info.guns, PLAN_FIRE_LIM);
+    static_assert(planet_guns(-500) == 0);
+    static_assert(planet_guns(0) == 0);
+    static_assert(planet_guns(999) == 0);
+    static_assert(planet_guns(1000) == 1);
+    static_assert(planet_guns(19999) == PLAN_FIRE_LIM - 1);
+    static_assert(planet_guns(20000) == PLAN_FIRE_LIM);
+    static_assert(planet_guns(25000) == PLAN_FIRE_LIM);
+    static_assert(planet_guns(1'000'000'000'000LL) == PLAN_FIRE_LIM);
+    test::expect_eq(planet_guns(-500), 0);
+    test::expect_eq(planet_guns(25000), PLAN_FIRE_LIM);
+
     // Percentage domain methods & clamping
     Percentage p{25};
     test::expect_eq(p.value(), 25);

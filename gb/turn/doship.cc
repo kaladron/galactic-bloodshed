@@ -54,10 +54,11 @@ void do_habitat(Ship& ship, EntityManager& entity_manager) {
 
   /* In v5.0+ Habitats make resources out of fuel */
   if (ship.on() && ship.max_crew_capacity() > 0) {
+    constexpr double fuel_per_resource = 1.0 / HABITAT_PROD_RATE;
     double fuse = ship.fuel() * ship.crew_ratio() * ship.hull_efficiency();
-    auto add = std::min(static_cast<resource_t>(fuse / 20.0),
+    auto add = std::min(static_cast<resource_t>(fuse / fuel_per_resource),
                         ship.available_resource_capacity());
-    fuse = 20.0 * static_cast<double>(add);
+    fuse = fuel_per_resource * static_cast<double>(add);
     ship.add_resource(add);
     ship.consume_fuel(fuse);
 

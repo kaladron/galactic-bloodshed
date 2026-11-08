@@ -466,14 +466,27 @@ void test_order_factory_activation_and_errors() {
   ctx.assert_dispatch_success(g, {"order", f1_arg, "off"});
 
   const auto initial_res = ctx.em.peek_planet(1, 1)->info(1).resource;
+  const resource_t expected_plan_cost = PLAN_FACT_ON_COST * 50;
+  ctx.em.mutate_planet(
+      1, 1, [&](Planet& p) { p.info(1).resource = expected_plan_cost - 1; });
   g.out.str("");
   ctx.assert_dispatch_success(g, {"order", f1_arg, "on"});
   test::expect_contains(g.out.str(),
-                        "Factory activated at a cost of 100 resources");
+                        std::format("You don't have {} resources on the planet",
+                                    expected_plan_cost));
+  test::expect_eq(ctx.em.peek_ship(f1_id)->on(), 0);
+
+  ctx.em.mutate_planet(1, 1,
+                       [&](Planet& p) { p.info(1).resource = initial_res; });
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"order", f1_arg, "on"});
+  test::expect_contains(
+      g.out.str(), std::format("Factory activated at a cost of {} resources",
+                               expected_plan_cost));
   ctx.em.clear_cache();
   test::expect_eq(ctx.em.peek_ship(f1_id)->on(), 1);
   test::expect_eq(ctx.em.peek_planet(1, 1)->info(1).resource,
-                  initial_res - 100);
+                  initial_res - expected_plan_cost);
 
   // Cannot turn off an online factory
   g.out.str("");
@@ -510,6 +523,8 @@ void test_order_factory_activation_and_errors() {
   test::expect_contains(g.out.str(), "Factory activated");
   ctx.em.clear_cache();
   test::expect_eq(ctx.em.peek_ship(f2_id)->on(), 1);
+  test::expect_eq(ctx.em.peek_ship(hab)->resource(),
+                  500 - HAB_FACT_ON_COST * 20);
 
   // 3. Irradiated ship cannot be given orders
   const auto rad_id = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)

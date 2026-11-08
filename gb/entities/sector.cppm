@@ -93,26 +93,26 @@ private:
 
 public:
   // Constructor from sector_struct (for new pattern)
-  explicit Sector(const sector_struct& s) : data_(s) {}
+  explicit constexpr Sector(const sector_struct& s) noexcept : data_(s) {}
 
-  Sector(Coordinates coords_, Percentage eff_, Percentage fert_,
-         Percentage mobilization_, resource_t crystals_, resource_t resource_,
-         population_t popn_, population_t troops_,
-         std::optional<player_t> owner_, SectorType type_,
-         SectorType condition_)
+  constexpr Sector(Coordinates coords_, Percentage eff_, Percentage fert_,
+                   Percentage mobilization_, resource_t crystals_,
+                   resource_t resource_, population_t popn_,
+                   population_t troops_, std::optional<player_t> owner_,
+                   SectorType type_, SectorType condition_) noexcept
       : data_{coords_, eff_,    fert_,  mobilization_, crystals_, resource_,
               popn_,   troops_, owner_, type_,         condition_} {}
 
-  Sector() = default;
-  ~Sector() = default;
+  constexpr Sector() noexcept = default;
+  constexpr ~Sector() = default;
   Sector(const Sector&) = delete;
   Sector& operator=(const Sector&) = delete;
 
   // Move constructor
-  Sector(Sector&& other) noexcept : data_(other.data_) {}
+  constexpr Sector(Sector&& other) noexcept : data_(other.data_) {}
 
   // Move assignment
-  Sector& operator=(Sector&& other) noexcept {
+  constexpr Sector& operator=(Sector&& other) noexcept {
     if (this != &other) {
       data_ = other.data_;
     }
@@ -123,28 +123,28 @@ public:
   auto operator<=>(const Sector&) const = delete;
 
   // Read accessors (const)
-  [[nodiscard]] Coordinates coords() const noexcept {
+  [[nodiscard]] constexpr Coordinates coords() const noexcept {
     return data_.coords;
   }
-  [[nodiscard]] Percentage get_eff() const noexcept {
+  [[nodiscard]] constexpr Percentage get_eff() const noexcept {
     return data_.eff;
   }
-  [[nodiscard]] Percentage get_fert() const noexcept {
+  [[nodiscard]] constexpr Percentage get_fert() const noexcept {
     return data_.fert;
   }
-  [[nodiscard]] Percentage get_mobilization() const noexcept {
+  [[nodiscard]] constexpr Percentage get_mobilization() const noexcept {
     return data_.mobilization;
   }
-  [[nodiscard]] resource_t get_crystals() const noexcept {
+  [[nodiscard]] constexpr resource_t get_crystals() const noexcept {
     return data_.crystals;
   }
-  [[nodiscard]] resource_t get_resource() const noexcept {
+  [[nodiscard]] constexpr resource_t get_resource() const noexcept {
     return data_.resource;
   }
-  [[nodiscard]] population_t get_popn() const noexcept {
+  [[nodiscard]] constexpr population_t get_popn() const noexcept {
     return data_.popn;
   }
-  [[nodiscard]] population_t get_troops() const noexcept {
+  [[nodiscard]] constexpr population_t get_troops() const noexcept {
     return data_.troops;
   }
   [[nodiscard]] constexpr std::optional<player_t> owner() const noexcept {
@@ -153,7 +153,7 @@ public:
   [[nodiscard]] constexpr player_t get_owner() const noexcept {
     return data_.owner.value_or(player_t{0});
   }
-  [[nodiscard]] SectorType get_type() const noexcept {
+  [[nodiscard]] constexpr SectorType get_type() const noexcept {
     return data_.type;
   }
   [[nodiscard]] constexpr SectorType get_condition() const noexcept {
@@ -1348,7 +1348,7 @@ constexpr double morale_factor(const T x) {
  *
  * @param r The race that owns or would own the sector
  * @param s The sector being evaluated
- * @param c Compatibility factor (0.0-100.0) representing how well the race
+ * @param compat Compatibility factor (0.0-100.0) representing how well the race
  * adapts to the planet's overall conditions
  * @param toxic Toxicity level (0-100) of the planet - higher values reduce
  * capacity
@@ -1362,15 +1362,13 @@ constexpr double morale_factor(const T x) {
  *       - Compatibility: Scaled by race's adaptation to planet conditions
  *       - Toxicity penalty: Reduces capacity as (100 - toxic)%
  */
-export constexpr auto maxsupport(const Race& r, const Sector& s, const double c,
-                                 const int toxic) {
-  if (!r.tolerates_sector(s)) return 0L;
-  double a = ((double)s.get_eff() + 1.0) * (double)s.get_fert();
-  double b = (.01 * c);
-
-  auto val = std::lround(a * b * .01 * (100.0 - (double)toxic));
-
-  return val;
+export constexpr population_t maxsupport(const Race& r, const Sector& s,
+                                         const double compat,
+                                         const Percentage toxic) {
+  if (!r.tolerates_sector(s)) return 0;
+  const int productivity = (s.get_eff() + 1) * s.get_fert();
+  return std::lround(productivity * percent_to_fraction(compat) *
+                     toxic.complement().as_fraction());
 }
 
 /// \brief Computes how many colonists migrate to an unowned adjacent target

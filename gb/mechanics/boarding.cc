@@ -481,10 +481,9 @@ constexpr double calculate_boarding_defense_strength(const Ship& ship,
   const population_t crew_weight =
       ship.popn() +
       ship.troops() * MILITARY_COMBAT_MULTIPLIER * defender.fighters;
-  const double hull_integrity_factor = percent_to_fraction(100 - ship.damage());
   return static_cast<double>(crew_weight) * percent_to_fraction(defender.tech) *
          (static_cast<double>(ship.effective_armor()) + COMBAT_FLOOR_EPSILON) *
-         hull_integrity_factor *
+         ship.hull_efficiency() *
          morale_factor(defender.morale - attacker.morale);
 }
 

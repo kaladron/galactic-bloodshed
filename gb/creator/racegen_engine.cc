@@ -77,7 +77,7 @@ double get_attribute_value(const RaceEnrollmentSpec& spec,
     case AttributeIndex::CollectiveIQ:
       return spec.collective_iq ? 1.0 : 0.0;
     case AttributeIndex::Fertilize:
-      return static_cast<double>(spec.fertilize) / 100.0;
+      return spec.fertilize.as_fraction();
     case AttributeIndex::IQ:
       return static_cast<double>(std::max(spec.iq, spec.iq_limit));
     case AttributeIndex::Fight:

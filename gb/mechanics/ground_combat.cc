@@ -95,9 +95,8 @@ constexpr double calculate_mech_combat_strength(
     const Ship& ship, const weapon_power_t retal_strength,
     const Race& mech_owner, const Race& opponent, const Sector& sect) {
   const double armor_factor = percent_to_fraction(ship.armor() + 1);
-  const double hull_integrity_factor = percent_to_fraction(100 - ship.damage());
   return MECH_ATTACK * ship.tech() * static_cast<double>(retal_strength) *
-         armor_factor * hull_integrity_factor *
+         armor_factor * ship.hull_efficiency() *
          mech_owner.sector_combat_factor(sect) *
          morale_factor(mech_owner.morale - opponent.morale);
 }

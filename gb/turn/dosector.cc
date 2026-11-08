@@ -137,7 +137,7 @@ void spread(EntityManager& entity_manager, const Planet& pl, Sector& s,
     /* the higher the fertility, the less people like to leave */
     const double base_migrants = race.adventurism *
                                  static_cast<double>(s.get_popn()) *
-                                 (100.0 - s.get_fert()) / 100.0;
+                                 s.get_fert().complement().as_fraction();
     const auto raw_migrants = round_rand(base_migrants);
     if (raw_migrants <= race.number_sexes) {
       return;

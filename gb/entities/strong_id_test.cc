@@ -63,29 +63,33 @@ int main() {
   // Bounded<Tag, T, Min, Max> Tests
   // ---------------------------------------------------------------------------
   {
+    using test_pct_t = Bounded<"test_pct", std::int32_t, 0, 100>;
+    using signed_range_t = Bounded<"signed_range", std::int32_t, -50, 50>;
+    using test_key_t = Bounded<"test_key", std::int32_t, 0, 100>;
+
     // Construction clamping
-    bounded_damage_t d_normal{50};
-    bounded_damage_t d_underflow{0};
-    bounded_damage_t d_negative{-10};
-    bounded_damage_t d_overflow{150};
+    test_pct_t d_normal{50};
+    test_pct_t d_underflow{0};
+    test_pct_t d_negative{-10};
+    test_pct_t d_overflow{150};
 
     test::expect_eq(d_normal.value, 50);
     test::expect_eq(d_underflow.value, 0);
     test::expect_eq(d_negative.value, 0);
     test::expect_eq(d_overflow.value, 100);
-    test::expect_eq(bounded_damage_t::min(), 0);
-    test::expect_eq(bounded_damage_t::max(), 100);
+    test::expect_eq(test_pct_t::min(), 0);
+    test::expect_eq(test_pct_t::max(), 100);
 
-    // Signed bounded test
-    morale_t m_normal{25};
-    morale_t m_negative{-50};
-    morale_t m_over{120};
-    test::expect_eq(m_normal.value, 25);
-    test::expect_eq(m_negative.value, 0);
-    test::expect_eq(m_over.value, 100);
+    // Signed bounded test (including negative lower bound)
+    signed_range_t s_normal{-25};
+    signed_range_t s_below{-80};
+    signed_range_t s_over{120};
+    test::expect_eq(s_normal.value, -25);
+    test::expect_eq(s_below.value, -50);
+    test::expect_eq(s_over.value, 50);
 
     // Mutating arithmetic clamping
-    bounded_damage_t d{90};
+    test_pct_t d{90};
     d += 20;
     test::expect_eq(d.value, 100);  // Clamped at 100
     d -= 150;
@@ -97,7 +101,7 @@ int main() {
     test::expect_eq(d.value, 25);
 
     // Increment / Decrement
-    bounded_speed_t sp{8};
+    speed_t sp{8};
     ++sp;
     test::expect_eq(sp.value, 9);
     ++sp;  // Saturated at Max (9)
@@ -106,24 +110,24 @@ int main() {
     test::expect_eq(sp.value, 8);
 
     // Binary operators
-    bounded_damage_t d2 = d + 30;
+    test_pct_t d2 = d + 30;
     test::expect_eq(d2.value, 55);
-    bounded_damage_t d3 = d - 100;
+    test_pct_t d3 = d - 100;
     test::expect_eq(d3.value, 0);
 
     // Formatting & streaming
-    std::string d_str = std::format("Damage: {}", d2);
-    test::expect_eq(d_str, "Damage: 55");
+    std::string d_str = std::format("Bounded: {}", d2);
+    test::expect_eq(d_str, "Bounded: 55");
 
     // Hash support
-    std::unordered_map<efficiency_t, std::string> eff_map;
-    efficiency_t eff{80};
-    eff_map[eff] = "High";
-    test::expect_eq(eff_map[efficiency_t{80}], "High");
+    std::unordered_map<test_key_t, std::string> key_map;
+    test_key_t key{80};
+    key_map[key] = "High";
+    test::expect_eq(key_map[test_key_t{80}], "High");
 
     // Numeric limits
-    test::expect_eq(std::numeric_limits<bounded_damage_t>::min().value, 0);
-    test::expect_eq(std::numeric_limits<bounded_damage_t>::max().value, 100);
+    test::expect_eq(std::numeric_limits<test_pct_t>::min().value, 0);
+    test::expect_eq(std::numeric_limits<test_pct_t>::max().value, 100);
 
     // Bounded::values() range iteration
     static_assert(std::ranges::input_range<decltype(speed_t::values())>);
@@ -165,29 +169,31 @@ int main() {
   // Modular<Tag, T, Mod> Tests
   // ---------------------------------------------------------------------------
   {
+    using test_bearing_t = Modular<"bearing", std::int32_t, 360>;
+
     // Construction wrapping (0..359)
-    modular_bearing_t b0{0};
-    modular_bearing_t b180{180};
-    modular_bearing_t b360{360};
-    modular_bearing_t b725{725};
-    modular_bearing_t b_neg{-10};
+    test_bearing_t b0{0};
+    test_bearing_t b180{180};
+    test_bearing_t b360{360};
+    test_bearing_t b725{725};
+    test_bearing_t b_neg{-10};
 
     test::expect_eq(b0.value, 0);
     test::expect_eq(b180.value, 180);
     test::expect_eq(b360.value, 0);     // 360 % 360 = 0
     test::expect_eq(b725.value, 5);     // 725 % 360 = 5
     test::expect_eq(b_neg.value, 350);  // (-10 + 360) % 360 = 350
-    test::expect_eq(modular_bearing_t::modulus(), 360);
+    test::expect_eq(test_bearing_t::modulus(), 360);
 
     // Mutating arithmetic wrapping
-    modular_bearing_t b{350};
+    test_bearing_t b{350};
     b += 20;
     test::expect_eq(b.value, 10);  // (350 + 20) % 360 = 10
     b -= 30;
     test::expect_eq(b.value, 340);  // (10 - 30 + 360) % 360 = 340
 
     // Increment / Decrement
-    modular_bearing_t b_edge{359};
+    test_bearing_t b_edge{359};
     ++b_edge;
     test::expect_eq(b_edge.value, 0);  // Wrapped from 359 to 0
     --b_edge;
@@ -198,9 +204,9 @@ int main() {
     test::expect_eq(b_str, "Bearing: 340 deg");
 
     // Hash support
-    std::unordered_map<modular_bearing_t, std::string> heading_map;
-    heading_map[modular_bearing_t{90}] = "East";
-    test::expect_eq(heading_map[modular_bearing_t{90}], "East");
+    std::unordered_map<test_bearing_t, std::string> heading_map;
+    heading_map[test_bearing_t{90}] = "East";
+    test::expect_eq(heading_map[test_bearing_t{90}], "East");
   }
 
   std::println(std::cout, "All strong_id, bounded, and modular tests passed!");

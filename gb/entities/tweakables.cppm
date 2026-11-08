@@ -97,7 +97,7 @@ export constexpr bool DISSOLVE = true;  // Allow players to dissolve
 export constexpr bool DEFENSE = true;   // Allow planetary guns
 export constexpr bool MARKET = true;    // Enable the market
 
-export constexpr int VICTORY_PERCENT = 10;
+export constexpr Percentage VICTORY_PERCENT{10};
 export constexpr int VICTORY_UPDATES = 5;
 
 // Shipping routes - DON'T change this unless you know what you are doing
@@ -215,8 +215,8 @@ export constexpr double VN_RES_TAKE =
 export constexpr double REPAIR_RATE = 25.0;  // rate at which ships get repaired
 export constexpr int SECTOR_REPAIR_COST =
     10;  // how much it costs to remove a wasted status from a sector
-export constexpr int NATURAL_REPAIR =
-    5;  // chance of the wasted status being removed/update
+export constexpr Percentage NATURAL_REPAIR{
+    5};  // chance of the wasted status being removed/update
 
 export constexpr double CREAT_UNIV_ITERAT = 10;  // iterations for star movement
 
@@ -256,7 +256,7 @@ export constexpr int TECH_SEE_STABILITY = 15;  // min tech to see star stability
 export constexpr int TECH_EXPLORE = 10;  // min tech to see your whole planet
 
 // min tox to damage planet
-export constexpr int ENVIR_DAMAGE_TOX = 70;
+export constexpr Percentage ENVIR_DAMAGE_TOX{70};
 
 export constexpr double PLANETGRAVCONST = 0.05;
 export constexpr double SYSTEMGRAVCONST = 150000.0;
@@ -315,7 +315,7 @@ export inline constexpr double fraction_to_percent(const double frac) noexcept {
   return frac * 100.0;
 }
 
-export constexpr double SPORE_SUCCESS_RATE = 25;
+export constexpr Percentage SPORE_SUCCESS_RATE{25};
 
 export constexpr char CLIENT_CHAR = '|';
 

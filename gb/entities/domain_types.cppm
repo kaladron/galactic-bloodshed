@@ -489,26 +489,18 @@ export class Percentage {
 public:
   constexpr Percentage() noexcept = default;
 
-  template <std::integral T>
+  template <typename T>
+    requires requires(T v) { std::saturate_cast<int>(v); }
   constexpr Percentage(T v, std::source_location loc =
                                 std::source_location::current()) noexcept {
-    if constexpr (std::signed_integral<T>) {
-      const int clamped = static_cast<int>(std::clamp<T>(v, 0, 100));
-      if !consteval {
-        if (v < 0 || v > 100) {
-          log_invariant_violation("Percentage", "value", v, clamped, loc);
-        }
+    const int sat = std::saturate_cast<int>(v);
+    const int clamped = std::clamp(sat, 0, 100);
+    if !consteval {
+      if (sat < 0 || sat > 100) {
+        log_invariant_violation("Percentage", "value", v, clamped, loc);
       }
-      value_ = clamped;
-    } else {
-      const int clamped = static_cast<int>(std::min<T>(v, 100));
-      if !consteval {
-        if (v > 100) {
-          log_invariant_violation("Percentage", "value", v, clamped, loc);
-        }
-      }
-      value_ = clamped;
     }
+    value_ = clamped;
   }
 
   template <std::floating_point T>
@@ -527,6 +519,16 @@ public:
 
   [[nodiscard]] constexpr int value() const noexcept {
     return value_;
+  }
+
+  /// \brief Constructs a `Percentage` saturated into `[0, 100]` without logging
+  /// an invariant violation (for formulas whose natural domain math saturates).
+  template <typename T>
+    requires requires(T v) { std::saturate_cast<int>(v); }
+  [[nodiscard]] static constexpr Percentage clamped(T v) noexcept {
+    Percentage p;
+    p.value_ = std::clamp(std::saturate_cast<int>(v), 0, 100);
+    return p;
   }
 
   [[nodiscard]] constexpr operator int() const noexcept {
@@ -637,11 +639,13 @@ public:
   constexpr Temperature() noexcept = default;
 
   template <std::signed_integral T>
+    requires requires(T v) { std::saturate_cast<int>(v); }
   constexpr Temperature(T v, std::source_location loc =
                                  std::source_location::current()) noexcept {
-    const int clamped = static_cast<int>(std::max<T>(v, ABSOLUTE_ZERO_CELSIUS));
+    const int sat = std::saturate_cast<int>(v);
+    const int clamped = std::max(sat, ABSOLUTE_ZERO_CELSIUS);
     if !consteval {
-      if (v < ABSOLUTE_ZERO_CELSIUS) {
+      if (sat < ABSOLUTE_ZERO_CELSIUS) {
         log_invariant_violation("Temperature", "celsius", v, clamped, loc);
       }
     }

@@ -72,27 +72,3 @@ export using mass_t = double;         ///< Biological mass per colonist unit
 export using metabolism_t = double;   ///< Resource and food consumption rate
 export using adventurism_t =
     double;  ///< Planetary colonization expansion drive
-
-// Bounded and modular domain smart types
-export using bounded_damage_t =
-    Bounded<"damage", std::int32_t, 0,
-            100>;  ///< Clamped hull damage percentage [0..100]
-export using efficiency_t =
-    Bounded<"efficiency", std::int32_t, 0,
-            100>;  ///< Clamped sector industrial efficiency [0..100]
-export using fertility_t =
-    Bounded<"fertility", std::int32_t, 0,
-            100>;  ///< Clamped sector agricultural fertility [0..100]
-export using mobilization_t =
-    Bounded<"mobilization", std::int32_t, 0,
-            100>;  ///< Clamped planetary defense mobilization [0..100]
-export using tax_t = Bounded<"tax", std::int32_t, 0,
-                             100>;  ///< Clamped colony tax rate [0..100]
-export using morale_t = Bounded<"morale", std::int32_t, 0,
-                                100>;  ///< Clamped race morale level [0..100]
-export using bounded_speed_t =
-    Bounded<"speed", std::int32_t, 0,
-            9>;  ///< Clamped tactical speed throttle [0..9]
-export using modular_bearing_t =
-    Modular<"bearing", std::int32_t,
-            360>;  ///< Modular course navigation bearing [0..359 deg]

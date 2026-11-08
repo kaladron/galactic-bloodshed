@@ -5,6 +5,7 @@
 /// geometry.
 
 import gb.entities;
+import gb.log;
 import gb.services;
 import gb.turn;
 import test;
@@ -517,12 +518,102 @@ int main() {
     test::expect_eq(p.value(), 25);
     test::expect_eq(p.as_fraction(), 0.25);
     test::expect_eq(p.complement(), 75);
+    test::expect_eq(p.complement().as_fraction(), 0.75);
     p.adjust(90);
     test::expect_eq(p, 100);
     p.adjust(-120);
     test::expect_eq(p, 0);
-    test::expect_eq(Percentage{-15}, 0);
-    test::expect_eq(Percentage{175}, 100);
+
+    // Percentage rejects bool and character types via std::saturate_cast
+    static_assert(!std::constructible_from<Percentage, bool>);
+    static_assert(!std::constructible_from<Percentage, char>);
+    static_assert(!std::constructible_from<Percentage, wchar_t>);
+
+    // Percentage::clamped saturates signed and unsigned integers without
+    // logging invariant violations
+    static_assert(Percentage::clamped(-15) == 0);
+    static_assert(Percentage::clamped(std::int8_t{-10}) == 0);
+    static_assert(Percentage::clamped(0) == 0);
+    static_assert(Percentage::clamped(42) == 42);
+    static_assert(Percentage::clamped(100) == 100);
+    static_assert(Percentage::clamped(175) == 100);
+    static_assert(Percentage::clamped(std::int64_t{3'000'000'000LL}) == 100);
+    static_assert(Percentage::clamped(42U) == 42);
+    static_assert(Percentage::clamped(250U) == 100);
+
+    std::ostringstream clamped_logs;
+    {
+      GB::log::ScopedSink sink{clamped_logs};
+      test::expect_eq(Percentage::clamped(-15), 0);
+      test::expect_eq(Percentage::clamped(0), 0);
+      test::expect_eq(Percentage::clamped(65), 65);
+      test::expect_eq(Percentage::clamped(100), 100);
+      test::expect_eq(Percentage::clamped(175), 100);
+      test::expect_eq(Percentage::clamped(300U), 100);
+    }
+    test::expect_eq(clamped_logs.str(), "");
+
+    // Direct Percentage construction clamps AND logs invariant violations
+    std::ostringstream invariant_logs;
+    {
+      GB::log::ScopedSink sink{invariant_logs};
+      test::expect_eq(Percentage{-15}, 0);
+      test::expect_eq(Percentage{175}, 100);
+    }
+    test::expect_contains(
+        invariant_logs.str(),
+        "[WARN] [INVARIANT] Percentage::value: attempted -15, clamped to 0");
+    test::expect_contains(
+        invariant_logs.str(),
+        "[WARN] [INVARIANT] Percentage::value: attempted 175, clamped to 100");
+
+    // Sector constexpr construction/getters and maxsupport typing/scaling
+    constexpr Sector csect{Coordinates{2, 3},
+                           Percentage{49},
+                           Percentage{80},
+                           Percentage{10},
+                           5,
+                           200,
+                           1000,
+                           50,
+                           player_t{1},
+                           SectorType::SEC_LAND,
+                           SectorType::SEC_LAND};
+    static_assert(csect.coords() == Coordinates{2, 3});
+    static_assert(csect.get_eff() == 49);
+    static_assert(csect.get_fert() == 80);
+    static_assert(csect.get_mobilization() == 10);
+    static_assert(csect.get_crystals() == 5);
+    static_assert(csect.get_resource() == 200);
+    static_assert(csect.get_popn() == 1000);
+    static_assert(csect.get_troops() == 50);
+    static_assert(csect.get_type() == SectorType::SEC_LAND);
+    static_assert((csect.get_eff() + 1) * csect.get_fert() == 4000);
+
+    Race support_race{};
+    support_race.likes[SectorType::SEC_LAND] = 1.0;
+    support_race.likes[SectorType::SEC_SEA] = 0.0;
+    static_assert(std::same_as<decltype(maxsupport(support_race, csect, 100.0,
+                                                   Percentage{0})),
+                               population_t>);
+    // (49 + 1) * 80 = 4000; 75% compat * (100 - 20)% non-toxic = 2400
+    test::expect_eq(maxsupport(support_race, csect, 75.0, Percentage{20}),
+                    population_t{2400});
+    test::expect_eq(maxsupport(support_race, csect, 100.0, Percentage{100}),
+                    population_t{0});
+    constexpr Sector sea_sect{Coordinates{0, 0},
+                              Percentage{50},
+                              Percentage{80},
+                              Percentage{0},
+                              0,
+                              100,
+                              0,
+                              0,
+                              std::nullopt,
+                              SectorType::SEC_SEA,
+                              SectorType::SEC_SEA};
+    test::expect_eq(maxsupport(support_race, sea_sect, 100.0, Percentage{0}),
+                    population_t{0});
   }
 
   // Test 17: Stockpile value type & plinfo atomic operations
@@ -906,6 +997,11 @@ int main() {
   // Test 28: temperature_t (Temperature) absolute-zero floor and affine delta
   // arithmetic
   {
+    static_assert(!std::constructible_from<Temperature, bool>);
+    static_assert(!std::constructible_from<Temperature, char>);
+    static_assert(!std::constructible_from<Temperature, unsigned int>);
+    static_assert(Temperature{std::int8_t{-50}}.value() == -50);
+
     Planet planet{1, 1, PlanetType::ICEBALL, Coordinates{5, 5}};
     planet.rtemp() = -200;
     planet.temp() = -260;

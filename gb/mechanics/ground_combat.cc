@@ -190,7 +190,7 @@ PeopleAttackMechResult people_attack_mech(EntityManager& em, Ship& ship,
       (dstrength > 0.0) ? std::min(1e6, 100.0 * astrength / dstrength)
                         : (astrength > 0.0 ? 100.0 : 0.0);
   const damage_t damage =
-      std::min(100, uniform_rand(0, round_rand(damage_ceiling)));
+      Percentage::clamped(uniform_rand(0, round_rand(damage_ceiling)));
   if (ship.apply_damage(damage).destroyed) {
     em.kill_ship(race.Playernum, ship);
   }

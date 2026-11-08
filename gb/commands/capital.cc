@@ -62,9 +62,7 @@ bool capital(const command_t& argv, GameObj& g) {
             g.player(), [&](Race& race) { race.Gov_ship = shipno; });
       }
 
-      const double efficiency = (static_cast<double>(s.popn()) /
-                                 static_cast<double>(s.max_crew_capacity())) *
-                                (100.0 - static_cast<double>(s.damage()));
+      const double efficiency = s.crew_ratio() * s.damage().complement();
       g.present(GB::presentation::make_output_message(std::format(
           "Efficiency of governmental center: {:.0f}%.\n", efficiency)));
       return true;

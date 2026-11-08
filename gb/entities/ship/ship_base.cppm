@@ -1008,8 +1008,7 @@ public:
   [[nodiscard]] constexpr double
   sublight_move_factor(segments_t segments) const {
     return SHIP_MOVE_SCALE * (1.0 - 0.01 * static_cast<double>(data_.rad)) *
-           (1.0 - 0.01 * static_cast<double>(data_.damage)) *
-           speed_multiplier() * scope_move_distance() /
+           hull_efficiency() * speed_multiplier() * scope_move_distance() /
            static_cast<double>(segments);
   }
 
@@ -1218,7 +1217,7 @@ public:
   [[nodiscard]] constexpr armor_t effective_armor() const noexcept {
     return (data_.type == ShipType::OTYPE_FACTORY)
                ? get_template().base_armor
-               : (data_.armor * (100 - data_.damage) / 100);
+               : (data_.armor * data_.damage.complement()) / 100;
   }
 
   /// Active weapon battery strength based on selected gun mode.
@@ -1338,8 +1337,7 @@ public:
   /// \brief Hull operational efficiency in [0.0, 1.0] based on damage (1.0 at
   /// 0% damage, 0.0 at 100% damage).
   [[nodiscard]] constexpr double hull_efficiency() const noexcept {
-    return std::clamp((100.0 - static_cast<double>(data_.damage)) / 100.0, 0.0,
-                      1.0);
+    return data_.damage.complement().as_fraction();
   }
 
   /// \brief Ratio of carried crew to maximum capacity in [0.0, 1.0] (0.0 if
@@ -1395,8 +1393,8 @@ public:
   // =========================================================================
 
   /// \brief Deity override: sets hull damage clamped to [0, 100]%.
-  void admin_override_damage(damage_t amt) noexcept {
-    data_.damage = std::clamp<damage_t>(amt, 0, 100);
+  void admin_override_damage(int amt) noexcept {
+    data_.damage = Percentage::clamped(amt);
   }
 
   /// \brief Deity override: sets radiation dosage clamped to [0, 100]%.
@@ -1548,9 +1546,8 @@ public:
   /// Protected against overflow and negative values. Returns a DamageResult
   /// indicating actual damage added, new damage level, and whether the ship was
   /// destroyed.
-  [[nodiscard]] DamageResult apply_damage(damage_t amt) noexcept {
+  [[nodiscard]] DamageResult apply_damage(int amt) noexcept {
     if (data_.damage >= 100) {
-      data_.damage = 100;
       return {
           .damage_applied = 0,
           .new_damage = 100,
@@ -1565,13 +1562,9 @@ public:
       };
     }
     const damage_t prev = data_.damage;
-    if (100 - data_.damage <= amt) {
-      data_.damage = 100;
-    } else {
-      data_.damage += amt;
-    }
+    data_.damage.adjust(amt);
     return {
-        .damage_applied = data_.damage - prev,
+        .damage_applied = data_.damage.value() - prev.value(),
         .new_damage = data_.damage,
         .destroyed = (data_.damage >= 100),
     };
@@ -1581,20 +1574,23 @@ public:
   /// guarding against negative values.
   template <std::floating_point T>
   [[nodiscard]] DamageResult apply_damage(T amt) noexcept {
-    if (amt <= 0.0) {
+    if (!(amt > 0.0)) {
       return {
           .damage_applied = 0,
           .new_damage = data_.damage,
           .destroyed = (data_.damage >= 100),
       };
     }
-    return apply_damage(static_cast<damage_t>(std::round(amt)));
+    if (amt >= 100.0) {
+      return apply_damage(100);
+    }
+    return apply_damage(static_cast<int>(std::lround(amt)));
   }
 
   /// \brief Repairs hull damage by the specified amount, clamped to 0%.
-  void repair_damage(damage_t amt) noexcept {
+  void repair_damage(int amt) noexcept {
     if (amt <= 0) return;
-    data_.damage = std::max<damage_t>(0, data_.damage - amt);
+    data_.damage -= amt;
   }
 
   /// \brief Applies radiation dosage following peak-dose semantics, clamped to

@@ -39,7 +39,7 @@ void do_repair(Ship& ship, EntityManager& entity_manager) {
 
   if (cost <= ship.resource()) {
     ship.consume_resource(cost);
-    ship.repair_damage(static_cast<damage_t>(maxrep));
+    ship.repair_damage(static_cast<int>(maxrep));
   } else {
     /* use up all of the ships resources */
     int drep = static_cast<int>(maxrep * (static_cast<double>(ship.resource()) /

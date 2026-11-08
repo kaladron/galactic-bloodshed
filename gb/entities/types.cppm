@@ -33,7 +33,6 @@ export using victory_score_t =
 // Semantic domain metric types
 export using armor_t =
     std::int32_t;  ///< Armor defense rating absorbing combat damage
-export using damage_t = std::int32_t;  ///< Hull damage percentage (0..100)
 export using speed_t =
     Bounded<"speed", std::int32_t, 0,
             9>;  ///< Clamped tactical engine speed throttle [0..9]
@@ -55,8 +54,6 @@ export using weapon_range_t =
     std::int32_t;  ///< Tactical weapon or mine proximity trigger range
 export using hit_count_t =
     std::int32_t;  ///< Number of successful weapon hits or penetrations
-export using hit_odds_t =
-    std::int32_t;  ///< Weapon hit probability percentage (0..100)
 export using sector_count_t =
     std::int32_t;  ///< Cardinality / tally of planetary sectors
 export using temp_delta_t =

@@ -305,7 +305,7 @@ ShipTacticalItem::build_target_entry(GameObj& g, TacticalContext& ctx,
                tspeed, body, firer.caliber, defense);
 
   if (firer.laser_focused) {
-    prob = prob * prob / 100;
+    prob = Percentage{(prob.value() * prob.value()) / 100};
   }
 
   const char relation_indicator = race.is_at_war_with(s.owner())   ? '-'

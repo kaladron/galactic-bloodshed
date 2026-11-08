@@ -340,14 +340,13 @@ do_damage(EntityManager& em, ShipShotAttackerKind attacker_kind, player_t who,
     if (uniform_rand() <= r) penetrate += 1;
   }
 
-  damage_t damage = std::max(
-      0, round_rand(gun_caliber(caliber) * penetrate, SHIP_DAMAGE / body));
+  damage_t damage = Percentage::clamped(
+      round_rand(gun_caliber(caliber) * penetrate, SHIP_DAMAGE / body));
 
   const auto crit = do_critical_hits(penetrate, ship, caliber);
 
-  if (crit.count > 0) damage += crit.damage;
+  if (crit.count > 0) damage += crit.damage.value();
 
-  damage = std::min<damage_t>(100, damage);
   const auto damage_result = ship.apply_damage(damage);
 
   const double race_mass = em.peek_race(ship.owner())->mass;
@@ -431,7 +430,7 @@ static SalvoHitRoll roll_salvo_hits(double dist, bool focus,
   hit_count_t hits = 0;
   hit_odds_t hit_probability = 0;
   if (focus) {
-    hit_probability = (prob * prob) / 100;
+    hit_probability = Percentage{(prob.value() * prob.value()) / 100};
     if (success(hit_probability)) hits = guns;
   } else {
     for (auto _ : std::views::iota(weapon_power_t{0}, guns)) {
@@ -483,8 +482,8 @@ hit_odds(double range, double tech, damage_t fdam, bool fev, bool tev,
   double b = 72.0 / ((2.0 + tev_d) * (2.0 + fev_d) *
                      (18.0 + (double)tspeed + (double)fspeed));
   double c = a * b / static_cast<double>(gun_caliber(caliber));
-  const auto factor = static_cast<weapon_range_t>(std::max(
-      0.0, c * (1.0 - static_cast<double>(fdam) / 100.))); /* 50% hit range */
+  const auto factor = static_cast<weapon_range_t>(
+      std::max(0.0, c * fdam.complement().as_fraction())); /* 50% hit range */
   hit_odds_t odds = 0;
   if (factor > 0) {
     const double raw_odds =
@@ -492,17 +491,19 @@ hit_odds(double range, double tech, damage_t fdam, bool fev, bool tev,
         (static_cast<double>(factor) + std::max(0.0, range));
     const double mitigated =
         raw_odds * std::max(0.0, 1.0 - 0.1 * static_cast<double>(defense));
-    odds = static_cast<hit_odds_t>(mitigated);
+    odds = Percentage::clamped(
+        static_cast<int>(std::clamp(mitigated, 0.0, 100.0)));
   }
   return {odds, factor};
 }
 
 static hit_odds_t cew_hit_odds(double range, weapon_range_t cew_range) {
-  double factor =
-      (range + 1.0) / ((double)cew_range + 1.0); /* maximum chance */
-  const auto odds = static_cast<hit_odds_t>(
-      100.0 * std::exp((double)(-50.0 * (factor - 1.0) * (factor - 1.0))));
-  return odds;
+  const double factor = (range + 1.0) / (static_cast<double>(cew_range) +
+                                         1.0); /* maximum chance */
+  const double raw_odds =
+      100.0 * std::exp(-50.0 * (factor - 1.0) * (factor - 1.0));
+  return Percentage::clamped(
+      static_cast<int>(std::clamp(raw_odds, 0.0, 100.0)));
 }
 
 static CriticalHitResult do_critical_hits(hit_count_t penetrate, Ship& ship,
@@ -514,11 +515,9 @@ static CriticalHitResult do_critical_hits(hit_count_t penetrate, Ship& ship,
   for (auto _ : std::views::iota(hit_count_t{0}, penetrate)) {
     if (!uniform_rand(0, eff_size - 1)) {
       crithits += 1;
-      const damage_t dam = uniform_rand(0, 100);
-      critdam += dam;
+      critdam += uniform_rand(0, 100);
     }
   }
-  critdam = std::min<damage_t>(100, critdam);
 
   CriticalHitSystemsDamage systems{};
   if (ship.cew() && success(critdam)) {

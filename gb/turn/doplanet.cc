@@ -117,7 +117,7 @@ execute_terraforming(Ship& ship, Planet& planet, SectorMap& smap,
   }
 
   const int chance =
-      (100 - ship.damage()) * ship.popn() / ship.max_crew_capacity();
+      ship.damage().complement() * ship.popn() / ship.max_crew_capacity();
   if (success(chance)) {
     /* only condition can be terraformed, type doesn't change */
     s.terraform(race.likesbest);

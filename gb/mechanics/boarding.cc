@@ -71,9 +71,8 @@ void apply_boarding_casualties(EntityManager& em, Ship& s, Ship& s2,
                                    (b2strength + 1.0) / (bstrength + 1.0))));
     report.surviving_boarders -= report.attacker_casualties;
 
-    report.attacker_damage =
-        std::min(100, uniform_rand(0, round_rand(25.0 * (b2strength + 1.0) /
-                                                 (bstrength + 1.0))));
+    report.attacker_damage = Percentage::clamped(uniform_rand(
+        0, round_rand(25.0 * (b2strength + 1.0) / (bstrength + 1.0))));
     if (s.apply_damage(report.attacker_damage).destroyed) {
       em.kill_ship(attacker_player, s);
     }
@@ -89,9 +88,8 @@ void apply_boarding_casualties(EntityManager& em, Ship& s, Ship& s2,
     s2.remove_popn(report.defender_civ_casualties, alien.mass);
     s2.remove_troops(report.defender_mil_casualties, alien.mass);
 
-    report.defender_damage =
-        std::min(100, uniform_rand(0, round_rand(25.0 * (bstrength + 1.0) /
-                                                 (b2strength + 1.0))));
+    report.defender_damage = Percentage::clamped(uniform_rand(
+        0, round_rand(25.0 * (bstrength + 1.0) / (b2strength + 1.0))));
     if (s2.apply_damage(report.defender_damage).destroyed) {
       em.kill_ship(attacker_player, s2);
     }
@@ -100,9 +98,9 @@ void apply_boarding_casualties(EntityManager& em, Ship& s, Ship& s2,
 
   s2.clear_crew(alien.mass);
   if (report.boobytrap_triggered) {
-    report.booby_damage = static_cast<damage_t>(
-        std::min<resource_t>(100, uniform_rand(0, 10 * s2.destruct())));
-    report.attacker_damage += report.booby_damage;
+    report.booby_damage =
+        Percentage::clamped(uniform_rand(0, 10 * s2.destruct()));
+    report.attacker_damage += report.booby_damage.value();
     if (s.apply_damage(report.booby_damage).destroyed) {
       em.kill_ship(attacker_player, s);
     }
@@ -514,9 +512,8 @@ void resolve_manned_landed_boarding(EntityManager& em, Ship& ship,
         std::min(old_popn, uniform_rand(0, round_rand(casualty_scale, ratio)));
     res.defender_mil_casualties = std::min(
         old_troops, uniform_rand(0, round_rand(casualty_scale, ratio)));
-    res.ship_damage = static_cast<damage_t>(std::min(
-        100,
-        uniform_rand(0, round_rand(MAX_BOARDING_COLLATERAL_DAMAGE * ratio))));
+    res.ship_damage = Percentage::clamped(
+        uniform_rand(0, round_rand(MAX_BOARDING_COLLATERAL_DAMAGE * ratio)));
     if (ship.apply_damage(res.ship_damage).destroyed) {
       em.kill_ship(attacker_player, ship);
     }
@@ -530,8 +527,7 @@ void resolve_booby_trap_boarding(EntityManager& em, Ship& ship,
                                  population_t boarders,
                                  player_t attacker_player,
                                  LandedBoardingResult& res) {
-  res.booby_damage = static_cast<damage_t>(
-      std::min<resource_t>(100, uniform_rand(0, 10 * ship.destruct())));
+  res.booby_damage = Percentage::clamped(uniform_rand(0, 10 * ship.destruct()));
   population_t casualties = 0;
   for (population_t i = 0; i < boarders; ++i) {
     casualties += (uniform_rand(1, 100) < res.booby_damage);

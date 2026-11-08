@@ -4,6 +4,7 @@
 /// \brief Unit tests for shoot_planet_to_ship and shoot_ship_to_planet.
 
 import gb.entities;
+import gb.log;
 import gb.services;
 import gb.turn;
 import test;
@@ -262,6 +263,23 @@ void test_hit_odds_sizing() {
                                            1'000'000, guntype_t::LIGHT, 0);
   test::expect_ge(odds_huge, odds_std);
   test::expect_gt(factor_huge, factor_std);
+
+  // Negative target defense clamps raw > 100% odds to 100% without invariant
+  // warnings or float-to-int overflow
+  std::ostringstream odds_logs;
+  {
+    GB::log::ScopedSink sink{odds_logs};
+    auto [odds_neg, factor_neg] =
+        hit_odds(0.0, 100.0, 0, false, false, 0, 0, 100, guntype_t::LIGHT, -20);
+    test::expect_eq(odds_neg, 100);
+    test::expect_gt(factor_neg, 0);
+
+    auto [odds_min_def, _] =
+        hit_odds(0.0, 100.0, 0, false, false, 0, 0, 100, guntype_t::LIGHT,
+                 std::numeric_limits<armor_t>::min());
+    test::expect_eq(odds_min_def, 100);
+  }
+  test::expect_eq(odds_logs.str(), "");
 
   std::println(std::cout, "  ✓ hit_odds sizing passed");
 }

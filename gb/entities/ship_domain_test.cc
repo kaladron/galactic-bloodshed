@@ -5,6 +5,7 @@
 /// invariants.
 
 import gb.entities;
+import gb.log;
 import gb.presentation.navigation;
 import gb.services;
 import std;
@@ -310,7 +311,7 @@ void test_clamped_add_and_consume() {
   const auto d_res1 = ship.apply_damage(20);
   test::expect_eq(d_res1.damage_applied, 10u);
   test::expect_eq(ship.damage(), 100);
-  const auto d_res2 = ship.apply_damage(std::numeric_limits<damage_t>::max());
+  const auto d_res2 = ship.apply_damage(std::numeric_limits<int>::max());
   test::expect_eq(d_res2.damage_applied, 0u);
   test::expect_eq(ship.damage(), 100);
 
@@ -800,16 +801,37 @@ void test_damage_and_radiation_subsystem() {
   test::expect_eq(ship.damage(), 50u);
 
   // 4. Overkill damage clamped to 100 without overflow
-  res = ship.apply_damage(std::numeric_limits<damage_t>::max());
+  res = ship.apply_damage(std::numeric_limits<int>::max());
   test::expect_eq(res.damage_applied, 50u);
   test::expect_eq(res.new_damage, 100u);
   test::expect_true(res.destroyed);
 
-  // 5. Floating point overload
-  ship.admin_override_damage(10);
-  res = ship.apply_damage(15.4);
-  test::expect_eq(res.damage_applied, 15u);
-  test::expect_eq(res.new_damage, 25u);
+  // 5. Floating point overload and silent saturation without invariant warnings
+  std::ostringstream damage_logs;
+  {
+    GB::log::ScopedSink sink{damage_logs};
+    ship.admin_override_damage(-25);
+    test::expect_eq(ship.damage(), 0);
+    ship.admin_override_damage(150);
+    test::expect_eq(ship.damage(), 100);
+    ship.repair_damage(std::numeric_limits<int>::max());
+    test::expect_eq(ship.damage(), 0);
+
+    ship.admin_override_damage(10);
+    res = ship.apply_damage(15.4);
+    test::expect_eq(res.damage_applied, 15u);
+    test::expect_eq(res.new_damage, 25u);
+
+    res = ship.apply_damage(std::numeric_limits<double>::quiet_NaN());
+    test::expect_eq(res.damage_applied, 0);
+    test::expect_eq(res.new_damage, 25);
+
+    res = ship.apply_damage(250.0);
+    test::expect_eq(res.damage_applied, 75);
+    test::expect_eq(res.new_damage, 100);
+    test::expect_true(res.destroyed);
+  }
+  test::expect_eq(damage_logs.str(), "");
 
   // 6. apply_radiation peak-dose semantics
   ship.apply_radiation(30);

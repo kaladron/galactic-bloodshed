@@ -524,6 +524,41 @@ int main() {
     p.adjust(-120);
     test::expect_eq(p, 0);
 
+    // Saturating adjust / += / -= across INT_MAX and INT_MIN (no signed UB)
+    static_assert(std::same_as<damage_t, Percentage>);
+    static_assert(std::same_as<hit_odds_t, Percentage>);
+    static_assert([] {
+      Percentage sat{50};
+      sat.adjust(std::numeric_limits<int>::max());
+      const bool max_ok = (sat == 100);
+      sat.adjust(std::numeric_limits<int>::min());
+      const bool min_ok = (sat == 0);
+      sat -= std::numeric_limits<int>::min();
+      return max_ok && min_ok && (sat == 100);
+    }());
+    p = Percentage{50};
+    p.adjust(std::numeric_limits<int>::max());
+    test::expect_eq(p, 100);
+    p.adjust(std::numeric_limits<int>::min());
+    test::expect_eq(p, 0);
+    p -= std::numeric_limits<int>::min();
+    test::expect_eq(p, 100);
+    p -= std::numeric_limits<int>::max();
+    test::expect_eq(p, 0);
+
+    Temperature t_sat{100};
+    t_sat.adjust(std::numeric_limits<temp_delta_t>::max());
+    test::expect_eq(t_sat, std::numeric_limits<int>::max());
+    test::expect_eq(t_sat - Temperature{-273},
+                    std::numeric_limits<temp_delta_t>::max());
+    t_sat -= std::numeric_limits<temp_delta_t>::max();
+    t_sat -= std::numeric_limits<temp_delta_t>::max();
+    test::expect_eq(t_sat, Temperature::ABSOLUTE_ZERO_CELSIUS);
+    t_sat -= std::numeric_limits<temp_delta_t>::min();
+    test::expect_eq(t_sat, std::numeric_limits<int>::max() - 272);
+    t_sat -= std::numeric_limits<temp_delta_t>::min();
+    test::expect_eq(t_sat, std::numeric_limits<int>::max());
+
     // Percentage rejects bool and character types via std::saturate_cast
     static_assert(!std::constructible_from<Percentage, bool>);
     static_assert(!std::constructible_from<Percentage, char>);

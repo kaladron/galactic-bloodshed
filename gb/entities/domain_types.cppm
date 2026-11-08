@@ -548,7 +548,7 @@ public:
   /// \brief Adjusts the percentage by a signed delta, saturating smoothly at
   /// `[0, 100]` without logging an invariant violation.
   constexpr Percentage& adjust(int delta) noexcept {
-    value_ = std::clamp(value_ + delta, 0, 100);
+    value_ = std::clamp(std::add_sat(value_, delta), 0, 100);
     return *this;
   }
 
@@ -557,7 +557,8 @@ public:
   }
 
   constexpr Percentage& operator-=(int delta) noexcept {
-    return adjust(-delta);
+    value_ = std::clamp(std::sub_sat(value_, delta), 0, 100);
+    return *this;
   }
 
   constexpr Percentage& operator++() noexcept {
@@ -614,6 +615,8 @@ private:
 
 export using percent_t = Percentage;
 export using fertilize_t = Percentage;
+export using damage_t = Percentage;    ///< Hull damage percentage [0..100]
+export using hit_odds_t = Percentage;  ///< Weapon hit probability [0..100]
 
 export template <>
 struct std::formatter<Percentage, char> : std::formatter<int, char> {
@@ -678,7 +681,7 @@ public:
   /// smoothly at absolute zero (`-273` °C) without logging an invariant
   /// violation.
   constexpr Temperature& adjust(temp_delta_t delta) noexcept {
-    value_ = std::max(value_ + delta, ABSOLUTE_ZERO_CELSIUS);
+    value_ = std::max(std::add_sat(value_, delta), ABSOLUTE_ZERO_CELSIUS);
     return *this;
   }
 
@@ -687,7 +690,8 @@ public:
   }
 
   constexpr Temperature& operator-=(temp_delta_t delta) noexcept {
-    return adjust(-delta);
+    value_ = std::max(std::sub_sat(value_, delta), ABSOLUTE_ZERO_CELSIUS);
+    return *this;
   }
 
   [[nodiscard]] friend constexpr Temperature
@@ -704,7 +708,7 @@ public:
 
   [[nodiscard]] friend constexpr temp_delta_t
   operator-(Temperature lhs, Temperature rhs) noexcept {
-    return lhs.value_ - rhs.value_;
+    return std::sub_sat(lhs.value_, rhs.value_);
   }
 
   template <std::same_as<Temperature> T1, std::same_as<Temperature> T2>

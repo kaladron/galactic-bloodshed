@@ -250,7 +250,7 @@ void Ship::initialize_constructed_state(const Race& race, governor_t gov,
   data_.alive = true;
   data_.active = true;
   data_.protect.retaliate = active_guns() > 0;
-  admin_override_damage(race.God ? 0 : get_template().base_damage);
+  admin_override_damage(race.God ? damage_t{0} : get_template().base_damage);
   data_.retaliate = data_.primary_battery.count;
   set_mass(local_mass(race.mass));
   data_.special = default_special_data(data_.type, race.Playernum);

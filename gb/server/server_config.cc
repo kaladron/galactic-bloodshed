@@ -125,8 +125,8 @@ void print_server_usage(const char* prog_name) {
                GB_PORT);
   std::println(std::cout,
                "  -d, --database, --db <path> Path to SQLite database "
-               "(default: {}gb.db)",
-               PKGSTATEDIR);
+               "(default: {})",
+               default_db_path().string());
   std::println(std::cout,
                "  -v, --version               Display version information and "
                "exit");

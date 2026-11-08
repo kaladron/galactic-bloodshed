@@ -107,7 +107,7 @@ void test_help_dir_fallbacks() {
   ScopedTempDirAndCwd guard;
   const std::string tmp_dir_str = guard.tmp_dir.string();
 
-  // 1. Empty help_dir_override falls back to HELPDIR / dev_dir
+  // 1. Empty help_dir_override falls back to HELP_DIR / dev_dir
   g.out.str("");
   test::expect_true(GB::commands::help({"help", "build"}, g, ""));
   test::expect_contains(g.out.str(), "Finished.");

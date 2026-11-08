@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
-/// \file help_test.cc
-/// \brief Unit tests verifying help documentation files exist in HELPDIR, are
+/// \file help_files_test.cc
+/// \brief Unit tests verifying help documentation files exist in HELP_DIR, are
 /// readable markdown, and have valid headers.
 
+import gb.entities;
 import test;
 import std;
 
@@ -12,7 +13,7 @@ std::filesystem::path get_help_dir() {
       env_help && *env_help != '\0') {
     return env_help;
   }
-  std::filesystem::path help_dir(HELPDIR);
+  std::filesystem::path help_dir{HELP_DIR};
   if (!std::filesystem::exists(help_dir)) {
     for (const auto& dev_dir : {"help", "../help", "../../help"}) {
       if (std::filesystem::exists(std::filesystem::path(dev_dir) / "help.md")) {
@@ -23,7 +24,7 @@ std::filesystem::path get_help_dir() {
   return help_dir;
 }
 
-// Test that help files exist in the HELPDIR with .md extension
+// Test that help files exist in HELP_DIR with .md extension
 void test_help_files_exist() {
   std::println(std::cout, "Test: Help files exist with .md extension");
 
@@ -32,7 +33,7 @@ void test_help_files_exist() {
   // Check that the help directory exists
   test::expect_true(std::filesystem::exists(help_dir));
   test::expect_true(std::filesystem::is_directory(help_dir));
-  std::println(std::cout, "  ✓ HELPDIR exists: {}", help_dir.string());
+  std::println(std::cout, "  ✓ HELP_DIR exists: {}", help_dir.string());
 
   // Count .md files
   int md_count = 0;

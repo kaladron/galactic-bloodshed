@@ -9,12 +9,11 @@ import gb.services;
 import gb.creator;
 import dallib;
 import scnlib;
-#undef stdout
 
 int main(int argc, char* argv[]) {
   using namespace GB::creator;
 
-  std::string db_path = PKGSTATEDIR "gb.db";
+  std::string db_path = default_db_path().string();
   std::optional<std::filesystem::path> spec_file;
 
   for (int i = 1; i < argc; ++i) {
@@ -29,8 +28,8 @@ int main(int argc, char* argv[]) {
       std::println(std::cout, "Options:");
       std::println(std::cout,
                    "  -d, --database, --db <path> Path to SQLite database "
-                   "(default: {}gb.db)",
-                   PKGSTATEDIR);
+                   "(default: {})",
+                   default_db_path().string());
       std::println(std::cout,
                    "  -f, --file [path]           Enroll directly from a JSON "
                    "race specification file (default: {})",

@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file database.cc
+/// \brief SQLite3 database connection and transaction management.
+
 module;
 
 #include <sqlite3.h>
 
 import std;
-#undef stdout
 
 module dallib;
 

@@ -35,6 +35,12 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE BOOL "Export compilation database" FO
 
 
 # Set compiler flags for different build types
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG")
+else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE")
+endif()
+
 set(CMAKE_CXX_FLAGS_DEBUG
     "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=undefined,address -fno-omit-frame-pointer"
 )
@@ -42,7 +48,24 @@ set(CMAKE_LINKER_FLAGS_DEBUG
     "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=undefined,address")
 
 # Compiler options
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-sign-compare -Wdocumentation -Wno-missing-designated-field-initializers")
+string(JOIN " " GB_WARNING_FLAGS
+    -Wall
+    -Wextra
+    -Wno-sign-compare
+    -Wdocumentation
+    -Wno-missing-designated-field-initializers
+    -Wnull-dereference
+    -Wpessimizing-move
+    -Wredundant-move
+    -Wnon-virtual-dtor
+    -Woverloaded-virtual
+    -Wsuggest-override
+    -Wcomma
+    -Wextra-semi
+    -Wzero-as-null-pointer-constant
+    -Wformat=2
+)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GB_WARNING_FLAGS}")
 
 # Coverage support
 option(ENABLE_COVERAGE "Enable code coverage testing" OFF)

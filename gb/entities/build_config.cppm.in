@@ -1,0 +1,39 @@
+// SPDX-License-Identifier: Apache-2.0
+
+/// \file build_config.cppm
+/// \brief Build-time version and installation directory constants configured by
+/// CMake.
+
+export module gb.entities:build_config;
+
+import std;
+
+/// Semantic version string resolved at CMake configure time.
+export inline constexpr std::string_view GB_VERSION = "@GB_VERSION_STR@";
+
+/// Static read-only game data directory (`star.list`, `planet.list`,
+/// `exam.dat`).
+export inline constexpr std::string_view PKG_DATA_DIR = "@PKGDATADIR@";
+
+/// Persistent game state directory (`gb.db`, `nogo`).
+export inline constexpr std::string_view PKG_STATE_DIR = "@PKGSTATEDIR@";
+
+/// Player help markdown directory (`help/*.md`).
+export inline constexpr std::string_view HELP_DIR = "@HELPDIR@";
+
+/// Resolves a filename under `PKG_DATA_DIR`.
+export [[nodiscard]] inline std::filesystem::path
+pkg_data_path(std::string_view filename) {
+  return std::filesystem::path{PKG_DATA_DIR} / filename;
+}
+
+/// Resolves a filename under `PKG_STATE_DIR`.
+export [[nodiscard]] inline std::filesystem::path
+pkg_state_path(std::string_view filename) {
+  return std::filesystem::path{PKG_STATE_DIR} / filename;
+}
+
+/// Default SQLite database path (`PKG_STATE_DIR / "gb.db"`).
+export [[nodiscard]] inline std::filesystem::path default_db_path() {
+  return pkg_state_path("gb.db");
+}

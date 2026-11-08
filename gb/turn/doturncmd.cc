@@ -787,7 +787,7 @@ ScheduleCalculation compute_segment_schedule(const ServerState& state,
 
 namespace {
 bool is_turn_suppressed(bool forced) {
-  return !forced && std::filesystem::exists(PKGSTATEDIR "nogo");
+  return !forced && std::filesystem::exists(pkg_state_path("nogo"));
 }
 }  // namespace
 

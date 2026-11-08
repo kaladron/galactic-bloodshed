@@ -4,10 +4,7 @@ build
 *.log
 *.a
 *.o
-*.h.in
-*.in
 *.in~
-*.m4
 *.m4
 Makefile
 aclocal.m4

@@ -10,7 +10,7 @@ import gb.creator;
 import dallib;
 
 int main(int argc, char* argv[]) {
-  std::string db_path = PKGSTATEDIR "gb.db";
+  std::string db_path = default_db_path().string();
   bool db_path_specified = false;
   std::optional<std::filesystem::path> spec_file;
   std::optional<std::string> archetype_arg;
@@ -27,8 +27,8 @@ int main(int argc, char* argv[]) {
       std::println(std::cout, "Options:");
       std::println(std::cout,
                    "  -d, --database, --db <path> Path to SQLite database "
-                   "(default: {}gb.db)",
-                   PKGSTATEDIR);
+                   "(default: {})",
+                   default_db_path().string());
       std::println(std::cout,
                    "  -f, --file [path]           Load race specification from "
                    "JSON file (default: {})",

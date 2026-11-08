@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file json_store.cc
+/// \brief Key-value JSON document persistence backed by SQLite3 tables.
+
 module;
 
 #include <sqlite3.h>
 
 import std;
-#undef stdout
 
 module dallib;
 

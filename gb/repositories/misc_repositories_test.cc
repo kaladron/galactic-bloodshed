@@ -345,13 +345,13 @@ void test_ship_exam_repository() {
   test::expect_false(repo.find_by_type(ShipType::STYPE_POD).has_value());
   test::expect_true(repo.find_by_type(ShipType::STYPE_SHUTTLE).has_value());
 
-  // Test seed_from_file using PKGDATADIR exam.dat
+  // Test seed_from_file using pkg_data_path("exam.dat")
   {
     Database seed_db(":memory:");
     initialize_schema(seed_db);
     JsonStore seed_store(seed_db);
     ShipExamRepository seed_repo(seed_store);
-    bool seeded = seed_repo.seed_from_file(PKGDATADIR "exam.dat");
+    bool seeded = seed_repo.seed_from_file(pkg_data_path("exam.dat").string());
     if (seeded) {
       auto pod_exam = seed_repo.find_by_type(ShipType::STYPE_POD);
       test::expect_true(pod_exam.has_value());

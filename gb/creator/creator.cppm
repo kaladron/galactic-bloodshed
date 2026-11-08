@@ -422,9 +422,9 @@ export struct UniverseConfig {
   bool auto_name_planets{true};
   bool print_star_info{false};
   bool print_planet_info{false};
-  std::string star_names_file{PKGDATADIR "star.list"};
-  std::string planet_names_file{PKGDATADIR "planet.list"};
-  std::string exam_file{PKGDATADIR "exam.dat"};
+  std::string star_names_file{pkg_data_path("star.list").string()};
+  std::string planet_names_file{pkg_data_path("planet.list").string()};
+  std::string exam_file{pkg_data_path("exam.dat").string()};
   std::string deity_password;
   std::string deity_gov_password;
 };

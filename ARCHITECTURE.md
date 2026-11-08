@@ -817,7 +817,7 @@ export class ShipRepository { /* ... */ };
 
 ```cpp
 // In main() or initialization code
-Database db(PKGSTATEDIR "gb.db");
+Database db(default_db_path().string());
 initialize_schema(db);
 
 // Create service boundary

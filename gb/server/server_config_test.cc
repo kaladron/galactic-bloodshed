@@ -17,6 +17,7 @@ namespace {
 void test_parse_server_args_default() {
   const char* argv[] = {"GB"};
   ServerConfig config = parse_server_args(1, argv);
+  test::expect_eq(config.db_path, default_db_path().string());
   test::expect_eq(config.port, GB_PORT);
   test::expect_eq(config.update_time, DEFAULT_UPDATE_TIME);
   test::expect_eq(config.segments, MOVES_PER_UPDATE);

@@ -15,7 +15,6 @@ else()
     set(PKGDATADIR "${CMAKE_INSTALL_FULL_DATADIR}/${CMAKE_PROJECT_NAME}/")
     message(STATUS "Release build: Using install data directory: ${PKGDATADIR}")
 endif()
-add_definitions(-DPKGDATADIR="${PKGDATADIR}")
 
 # Set PKGSTATEDIR for local state files
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -31,28 +30,24 @@ else()
     message(STATUS "Release build: Using install state directory: ${PKGSTATEDIR}")
     set(STATE_INSTALL_DESTINATION "/var/lib/${CMAKE_PROJECT_NAME}")
 endif()
-add_definitions(-DPKGSTATEDIR="${PKGSTATEDIR}")
 install(DIRECTORY DESTINATION "${STATE_INSTALL_DESTINATION}")
 
-# Set DOCDIR and HELPDIR
+# Set HELPDIR
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    # Development mode: use source docs directory
-    set(DOCDIR "${CMAKE_SOURCE_DIR}/docs/")
-    message(STATUS "Debug build: Using source docs directory: ${DOCDIR}")
     # Development mode: use source help directory
     set(HELPDIR "${CMAKE_SOURCE_DIR}/help/")
     message(STATUS "Debug build: Using source help directory: ${HELPDIR}")
 else()
-    # Production mode: use install directory
-    set(DOCDIR "${CMAKE_INSTALL_FULL_DOCDIR}/")
-    message(STATUS "Release build: Using install docs directory: ${DOCDIR}")
     # Production mode: use /usr/share/galactic-bloodshed/help/
     set(HELPDIR "${CMAKE_INSTALL_FULL_DATADIR}/${CMAKE_PROJECT_NAME}/help/")
     message(STATUS "Release build: Using install help directory: ${HELPDIR}")
 endif()
-add_definitions(-DDOCDIR="${DOCDIR}")
-add_definitions(-DHELPDIR="${HELPDIR}")
-add_compile_definitions(GB_VERSION_STR="${GB_VERSION_STR}")
+
+configure_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/entities/build_config.cppm.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/entities/build_config.cppm"
+  @ONLY
+)
 
 # Make Doxygen optional - gracefully skip documentation if not found
 find_package(Doxygen QUIET OPTIONAL_COMPONENTS dot)
@@ -95,7 +90,11 @@ target_sources(
   gb_entities
   PUBLIC FILE_SET
          CXX_MODULES
+         BASE_DIRS
+          "${CMAKE_CURRENT_SOURCE_DIR}"
+          "${CMAKE_CURRENT_BINARY_DIR}"
          FILES
+          "${CMAKE_CURRENT_BINARY_DIR}/entities/build_config.cppm"
           entities/entities.cppm
           entities/commod.cppm
           entities/domain_types.cppm
@@ -469,6 +468,7 @@ gb_add_test(block_json_test SOURCES repositories/block_json_test.cc)
 gb_add_test(block_test SOURCES commands/block_test.cc)
 gb_add_test(bombard_test SOURCES commands/bombard_test.cc)
 gb_add_test(build_command_test SOURCES commands/build_test.cc)
+gb_add_test(build_config_test SOURCES entities/build_config_test.cc)
 gb_add_test(build_table_test SOURCES commands/build_table_test.cc)
 gb_add_test(build_test SOURCES entities/build_test.cc)
 gb_add_test(build_test_extended SOURCES commands/build_test_extended.cc)

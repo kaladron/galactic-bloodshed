@@ -22,8 +22,8 @@ resolve_help_path(std::string_view topic, std::string_view help_dir_override) {
     return std::nullopt;
   }
   std::filesystem::path help_dir =
-      !help_dir_override.empty() ? std::filesystem::path(help_dir_override)
-                                 : std::filesystem::path(HELPDIR);
+      !help_dir_override.empty() ? std::filesystem::path{help_dir_override}
+                                 : std::filesystem::path{HELP_DIR};
   auto path = help_dir / std::format("{}.md", topic);
   if (std::filesystem::is_regular_file(path)) {
     return path;

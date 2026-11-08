@@ -15,7 +15,7 @@ import gb.entities;
 import gb.services;
 
 export struct ServerConfig {
-  std::string db_path{PKGSTATEDIR "gb.db"};
+  std::string db_path{default_db_path().string()};
   int port{GB_PORT};
   std::chrono::minutes update_time{DEFAULT_UPDATE_TIME};
   int segments{MOVES_PER_UPDATE};

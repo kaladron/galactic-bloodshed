@@ -31,7 +31,7 @@ bool is_valid_token(std::string_view s) noexcept {
 }  // namespace
 
 int main(int argc, char* argv[]) {
-  std::string db_path = PKGSTATEDIR "gb.db";
+  std::string db_path = default_db_path().string();
   GB::creator::UniverseConfig config{};
   bool interactive = true;
 
@@ -188,7 +188,8 @@ usage:
               "  --deity-gov-password <pass> Password for the Deity leader.");
           std::println(std::cout,
                        "  -D, --database, --db <path> Path to SQLite database "
-                       "(default: " PKGSTATEDIR "gb.db)");
+                       "(default: {})",
+                       default_db_path().string());
           std::println(std::cout,
                        "  -v, --version              Display version "
                        "information and exit.");

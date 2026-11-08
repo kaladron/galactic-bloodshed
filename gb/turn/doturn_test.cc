@@ -1474,7 +1474,7 @@ void test_doturn_mcdc_branches() {
   });
   do_segment(ctx.em, reg, /*override=*/1, /*segment=*/1);
 
-  std::filesystem::path nogo_path{PKGSTATEDIR "nogo"};
+  const std::filesystem::path nogo_path = pkg_state_path("nogo");
   std::filesystem::create_directories(nogo_path.parent_path());
   {
     std::ofstream nogo_file(nogo_path);

@@ -10,7 +10,6 @@ import gb.mechanics;
 import gb.presentation.planet_views;
 import gb.services;
 import std;
-#undef stdout
 
 module commands;
 

@@ -63,10 +63,20 @@ public:
     return sessions_.size();
   }
 
+  [[nodiscard]] bool is_shutdown() const noexcept {
+    return shutdown_flag_;
+  }
+
+  [[nodiscard]] bool has_fatal_error() const noexcept {
+    return fatal_error_;
+  }
+
   void on_timer();
   void update_quotas(std::chrono::steady_clock::time_point now =
                          std::chrono::steady_clock::now());
   void process_commands();
+  void process_command(GameObj& g, const command_t& argv,
+                       std::string_view raw_command = {});
   void check_idle_sessions(std::time_t now = std::time(nullptr));
   void check_turn_events(std::time_t current_time = std::time(nullptr));
 
@@ -74,8 +84,8 @@ private:
   void do_accept();
   void schedule_next_event();
   void reap_disconnected_sessions();
+  void fail_fast();
   bool do_command(Session& session, std::string_view comm);
-  void process_command(GameObj& g, const command_t& argv);
 
   asio::io_context& io_;
   asio::ip::tcp::acceptor acceptor_;
@@ -86,6 +96,7 @@ private:
   std::set<std::shared_ptr<Session>> sessions_;
   bool started_ = false;
   bool shutdown_flag_ = false;
+  bool fatal_error_ = false;
   bool update_flag_ = false;
   bool pending_turn_ = false;
 

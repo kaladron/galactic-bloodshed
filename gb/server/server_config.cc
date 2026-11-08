@@ -8,6 +8,7 @@ module;
 
 import dallib;
 import gb.entities;
+import gb.log;
 import gb.services;
 import std;
 
@@ -28,7 +29,7 @@ std::optional<int> parse_int_arg(std::string_view str) {
 bool parse_port_option(ServerConfig& config, std::string_view val) {
   auto port = parse_int_arg(val);
   if (!port) {
-    std::println(std::cerr, "Error: Invalid port number \"{}\".", val);
+    GB::log::error("Invalid port number \"{}\".", val);
     config.has_error = true;
     return false;
   }
@@ -39,14 +40,13 @@ bool parse_port_option(ServerConfig& config, std::string_view val) {
 bool handle_positional_arg(ServerConfig& config, int& positional_index,
                            std::string_view arg) {
   if (positional_index >= 3) {
-    std::println(std::cerr, "Error: Unexpected positional argument \"{}\".",
-                 arg);
+    GB::log::error("Unexpected positional argument \"{}\".", arg);
     config.has_error = true;
     return false;
   }
   auto value = parse_int_arg(arg);
   if (!value) {
-    std::println(std::cerr, "Error: Invalid numerical argument \"{}\".", arg);
+    GB::log::error("Invalid numerical argument \"{}\".", arg);
     config.has_error = true;
     return false;
   }
@@ -79,8 +79,7 @@ ServerConfig parse_server_args(int argc, const char* const* argv) {
     }
     if (arg == "-p" || arg == "--port") {
       if (i + 1 >= argc) {
-        std::println(std::cerr, "Error: Option \"{}\" requires an argument.",
-                     arg);
+        GB::log::error("Option \"{}\" requires an argument.", arg);
         config.has_error = true;
         return config;
       }
@@ -92,8 +91,7 @@ ServerConfig parse_server_args(int argc, const char* const* argv) {
       }
     } else if (arg == "-d" || arg == "--database" || arg == "--db") {
       if (i + 1 >= argc) {
-        std::println(std::cerr, "Error: Option \"{}\" requires an argument.",
-                     arg);
+        GB::log::error("Option \"{}\" requires an argument.", arg);
         config.has_error = true;
         return config;
       }
@@ -103,7 +101,7 @@ ServerConfig parse_server_args(int argc, const char* const* argv) {
     } else if (arg.starts_with("--db=")) {
       config.db_path = arg.substr(std::string_view("--db=").size());
     } else if (arg.starts_with("-")) {
-      std::println(std::cerr, "Error: Unknown option \"{}\".", arg);
+      GB::log::error("Unknown option \"{}\".", arg);
       config.has_error = true;
       return config;
     } else if (!handle_positional_arg(config, positional_index, arg)) {

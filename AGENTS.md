@@ -163,6 +163,7 @@ cmake --build build --clean-first
 ```
 /workspaces/galactic-bloodshed/
 ├── gb/                     # Core game implementation
+│   ├── log/              # Tier 1 structured stderr/journald logger (gb.log)
 │   ├── dal/              # Data Access Layer (dallib)
 │   ├── entities/         # Domain entities, strong IDs, collections (gb.entities)
 │   ├── repositories/     # Repository pattern implementations (gb.repositories)
@@ -185,6 +186,7 @@ cmake --build build --clean-first
 
 ### Module Architecture
 The codebase uses a 7-Tier C++26 Module DAG with the following structure:
+- **`gb.log`** (Tier 1): Zero-dependency structured logger writing `systemd-journald` priority-prefixed UTC lines to unbuffered `std::cerr`
 - **`dallib`** (Tier 1): Data Access Layer module (`Database`, `JsonStore`, `Schema`)
 - **`gb.entities`** (Tier 1): Pure in-memory domain models (`Race`, `Power`, `Block`, `Star`, `Planet`, `Ship`, `Sector`, `SectorMap`, `Universe`, `NewsItem`, `TelegramItem`), strong IDs, `Coordinates`, `Tweakables`
 - **`gb.repositories`** (Tier 2): Repository DAL adapters (`RaceRepository`, `ShipRepository`, `PlanetRepository`, `StarRepository`, `SectorRepository`, `NewsRepository`, `TelegramRepository`, etc.)

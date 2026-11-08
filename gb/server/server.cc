@@ -14,12 +14,50 @@ import auth;
 import commands;
 import dallib;
 import gb.entities;
+import gb.log;
 import gb.presentation.session;
 import gb.services;
 import gb.turn;
 import notification;
 import session;
 import std;
+
+namespace {
+
+std::string format_scope_context(const GameObj& g) {
+  switch (g.level()) {
+    case ScopeLevel::LEVEL_UNIV:
+      return "scope=UNIV";
+    case ScopeLevel::LEVEL_STAR:
+      return std::format("scope=STAR(snum={})", g.snum());
+    case ScopeLevel::LEVEL_PLAN:
+      return std::format("scope=PLAN(snum={},pnum={})", g.snum(), g.pnum());
+    case ScopeLevel::LEVEL_SHIP:
+      break;
+  }
+  return std::format("scope=SHIP(snum={},pnum={},shipno={})", g.snum(),
+                     g.pnum(), g.shipno());
+}
+
+std::string format_command_text(const command_t& argv,
+                                std::string_view raw_command) {
+  if (!raw_command.empty()) {
+    return std::string(raw_command);
+  }
+  std::string joined;
+  for (std::size_t i = 0; i < argv.size(); ++i) {
+    if (i > 0) joined.push_back(' ');
+    joined.append(argv[i]);
+  }
+  return joined;
+}
+
+std::string_view turn_phase_name(const ServerState* state) noexcept {
+  if (!state) return "turn";
+  return (state->nsegments_done < state->segments) ? "segment" : "update";
+}
+
+}  // namespace
 
 Server::Server(asio::io_context& io, int port, EntityManager& em)
     : io_(io),
@@ -33,7 +71,7 @@ Server::Server(asio::io_context& io, int port, EntityManager& em)
   // Handle signals for graceful shutdown
   signals_.async_wait([this](asio::error_code ec, int signum) {
     if (!ec) {
-      std::println(std::cerr, "Received signal {}, shutting down...", signum);
+      GB::log::info("Received signal {}, shutting down...", signum);
       shutdown();
     }
   });
@@ -62,22 +100,35 @@ void Server::shutdown() {
   reap_disconnected_sessions();
 }
 
+void Server::fail_fast() {
+  fatal_error_ = true;
+  shutdown();
+  io_.stop();
+}
+
 void Server::do_accept() {
   acceptor_.async_accept([this](asio::error_code ec,
                                 asio::ip::tcp::socket socket) {
     if (ec) {
       if (!shutdown_flag_) {
-        std::println(std::cerr, "Accept error: {}", ec.message());
+        GB::log::error("Accept error: {}", ec.message());
       }
       return;
     }
 
-    auto session = Session::create(std::move(socket), entity_manager_, *this);
-    sessions_.insert(session);
-    welcome_user(*session, entity_manager_);
-    session->start();
+    try {
+      auto session = Session::create(std::move(socket), entity_manager_, *this);
+      sessions_.insert(session);
+      welcome_user(*session, entity_manager_);
+      session->start();
 
-    do_accept();  // Accept next connection
+      do_accept();  // Accept next connection
+    } catch (const std::exception& e) {
+      GB::log::fatal("Unhandled exception accepting client connection: {}",
+                     e.what());
+      fail_fast();
+      throw;
+    }
   });
 }
 
@@ -114,7 +165,7 @@ void Server::check_idle_sessions(std::time_t now) {
   for (auto& session : sessions_) {
     if (!session->is_disconnected() && session->connected() &&
         (now - session->last_time()) > IDLE_TIMEOUT_SECONDS) {
-      std::println(std::cerr, "Disconnecting idle session (timeout)");
+      GB::log::info("Disconnecting idle session (timeout)");
       session->send("Connection timed out due to inactivity.\n");
       session->disconnect();
     }
@@ -123,21 +174,31 @@ void Server::check_idle_sessions(std::time_t now) {
 }
 
 void Server::check_turn_events(std::time_t current_time) {
-  const auto* state = entity_manager_.peek_server_state();
-  if (state && go_time_ == 0) {
-    if (current_time >= state->next_update_time) {
-      go_time_ = current_time +
-                 (uniform_rand(0, DEFAULT_RANDOM_UPDATE_RANGE.count()) * 60);
-    } else if (current_time >= state->next_segment_time &&
-               state->nsegments_done < state->segments) {
-      go_time_ = current_time +
-                 (uniform_rand(0, DEFAULT_RANDOM_SEGMENT_RANGE.count()) * 60);
+  std::string_view phase = "schedule_check";
+  try {
+    const auto* state = entity_manager_.peek_server_state();
+    if (state && go_time_ == 0) {
+      if (current_time >= state->next_update_time) {
+        go_time_ = current_time +
+                   (uniform_rand(0, DEFAULT_RANDOM_UPDATE_RANGE.count()) * 60);
+      } else if (current_time >= state->next_segment_time &&
+                 state->nsegments_done < state->segments) {
+        go_time_ = current_time +
+                   (uniform_rand(0, DEFAULT_RANDOM_SEGMENT_RANGE.count()) * 60);
+      }
     }
-  }
-  if (pending_turn_ || (go_time_ > 0 && current_time >= go_time_)) {
-    do_next_thing(entity_manager_, *this);
-    go_time_ = 0;
-    pending_turn_ = false;
+    if (pending_turn_ || (go_time_ > 0 && current_time >= go_time_)) {
+      phase = turn_phase_name(state);
+      do_next_thing(entity_manager_, *this);
+      go_time_ = 0;
+      pending_turn_ = false;
+    }
+  } catch (const std::exception& e) {
+    set_update_in_progress(false);
+    GB::log::fatal("Unhandled exception during turn processing (phase={}): {}",
+                   phase, e.what());
+    fail_fast();
+    throw;
   }
 }
 
@@ -239,13 +300,13 @@ void Server::reap_disconnected_sessions() {
   std::erase_if(sessions_, [&](const auto& session) {
     if (!session->is_disconnected()) return false;
     if (session->connected()) {
-      std::println(std::cerr, "DISCONNECT Race={} Governor={}",
-                   session->player(), session->governor());
+      GB::log::info("DISCONNECT Race={} Governor={}", session->player(),
+                    session->governor());
       if (session->god() && !shutdown_flag_) {
         departing_deities.emplace_back(session->player(), session->governor());
       }
     } else {
-      std::println(std::cerr, "DISCONNECT never connected");
+      GB::log::info("DISCONNECT never connected");
     }
     return true;
   });
@@ -276,21 +337,29 @@ bool Server::do_command(Session& session, std::string_view comm) {
   }
   auto& g = session.game_obj();
   if (!session.connected()) {
-    check_connect(session, comm);
-    if (!session.connected()) {
-      session.send("Goodbye!\n");
-      return false;
+    try {
+      check_connect(session, comm);
+      if (!session.connected()) {
+        session.send("Goodbye!\n");
+        return false;
+      }
+      g.out.clear();
+      check_for_telegrams(g);
+    } catch (const std::exception& e) {
+      GB::log::fatal("Unhandled exception during login handshake: player={} "
+                     "governor={}: {}",
+                     session.player(), session.governor(), e.what());
+      fail_fast();
+      throw;
     }
-    g.out.clear();
-    check_for_telegrams(g);
-    process_command(g, {"cs"});
+    process_command(g, {"cs"}, "cs");
     session.send(g.out.view());
     g.out.clear();
     return true;
   }
 
   g.out.clear();
-  process_command(g, make_command_t(comm));
+  process_command(g, make_command_t(comm), comm);
 
   if (g.shutdown_requested()) {
     shutdown_flag_ = true;
@@ -302,20 +371,32 @@ bool Server::do_command(Session& session, std::string_view comm) {
   return !g.disconnect_requested();
 }
 
-void Server::process_command(GameObj& g, const command_t& argv) {
+void Server::process_command(GameObj& g, const command_t& argv,
+                             std::string_view raw_command) {
   if (argv.empty()) return;
 
-  g.race = g.entity_manager.peek_race(g.player());
+  try {
+    g.race = g.entity_manager.peek_race(g.player());
 
-  if (const auto* desc = GB::commands::find_command_descriptor(argv[0])) {
-    GB::commands::dispatch_command(g, *desc, argv);
-  } else {
-    g.out << std::format("'{}':illegal command error.\n", argv[0]);
-  }
+    if (const auto* desc = GB::commands::find_command_descriptor(argv[0])) {
+      GB::commands::dispatch_command(g, *desc, argv);
+    } else {
+      g.out << std::format("'{}':illegal command error.\n", argv[0]);
+    }
 
-  /* compute the prompt and send to the player */
-  if (!g.disconnect_requested() && !g.shutdown_requested()) {
-    g.out << GB::presentation::do_prompt(g);
+    /* compute the prompt and send to the player */
+    if (!g.disconnect_requested() && !g.shutdown_requested()) {
+      g.out << GB::presentation::do_prompt(g);
+    }
+    g.race = nullptr;
+  } catch (const std::exception& e) {
+    g.race = nullptr;
+    GB::log::fatal(
+        "Unhandled exception in command execution: player={} governor={} {} "
+        "raw_command=\"{}\": {}",
+        g.player(), g.governor(), format_scope_context(g),
+        format_command_text(argv, raw_command), e.what());
+    fail_fast();
+    throw;
   }
-  g.race = nullptr;
 }

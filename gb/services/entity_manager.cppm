@@ -75,16 +75,20 @@ class EntityHandle {
 
   void reset() {
     if (!entity) return;
-    if (dirty) {
-      if (std::uncaught_exceptions() == 0) {
-        save_fn(*entity);
+    T* ent = std::exchange(entity, nullptr);
+    bool should_save = std::exchange(dirty, false);
+    if (std::uncaught_exceptions() > 0) {
+      should_save = false;
+    }
+    struct ReleaseGuard {
+      std::function<void()>& fn;
+      ~ReleaseGuard() {
+        if (fn) fn();
       }
+    } guard{release_fn};
+    if (should_save) {
+      save_fn(*ent);
     }
-    if (release_fn) {
-      release_fn();
-    }
-    entity = nullptr;
-    dirty = false;
   }
 
 public:
@@ -93,7 +97,7 @@ public:
       : manager(mgr), entity(ent), save_fn(std::move(save)),
         release_fn(std::move(release)), dirty(initial_dirty) {}
 
-  ~EntityHandle() {
+  ~EntityHandle() noexcept(false) {
     reset();
   }
 
@@ -105,7 +109,7 @@ public:
         save_fn(std::move(other.save_fn)),
         release_fn(std::move(other.release_fn)),
         dirty(std::exchange(other.dirty, false)) {}
-  EntityHandle& operator=(EntityHandle&& other) noexcept {
+  EntityHandle& operator=(EntityHandle&& other) {
     if (this != &other) {
       reset();
       manager = other.manager;

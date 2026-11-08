@@ -9,6 +9,7 @@ module;
 import commands;
 import dallib;
 import gb.entities;
+import gb.log;
 import gb.presentation;
 import gb.services;
 import gb.turn;
@@ -91,8 +92,7 @@ void check_connect(Session& session, std::string_view message) {
 
   if (Playernum == 0) {
     session.send("Connection refused.\n");
-    std::println(std::cerr, "FAILED CONNECT {},{}", race_password,
-                 gov_password);
+    GB::log::warn("FAILED CONNECT {},{}", race_password, gov_password);
     return;
   }
 
@@ -108,8 +108,8 @@ void check_connect(Session& session, std::string_view message) {
       authenticated = true;
 
       const auto& gov = race.governor(Governor);
-      std::println(std::cerr, "CONNECTED {} \"{}\" [{},{}]", race.name,
-                   gov.name, Playernum, Governor);
+      GB::log::info("CONNECTED {} \"{}\" [{},{}]", race.name, gov.name,
+                    Playernum, Governor);
       session.set_connected(true);
       session.set_god(race.God);
       session.set_player(Playernum);

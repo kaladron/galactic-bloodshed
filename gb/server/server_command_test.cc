@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /// \file server_command_test.cc
-/// \brief Unit tests for server boundary privilege propagation and guest
-/// restrictions
+/// \brief Unit tests for server boundary privilege propagation, guest
+/// restrictions, and fail-fast fatal crash logging.
 
+import asio;
 import commands;
 import dallib;
 import gb.entities;
+import gb.log;
 import gb.services;
 import gb.server;
+import server;
 import session;
 import test;
 import std;
@@ -145,6 +148,139 @@ void test_output_buffer() {
   test::expect_eq(buf.str(), "");
 }
 
+void test_process_command_fail_fast_logging_and_rollback() {
+  // 1. EntityNotFoundError at planet scope logs [FATAL], stops server, rethrows
+  {
+    TestContext ctx;
+    ctx.with_standard_universe();
+
+    asio::io_context io;
+    Server server(io, 0, ctx.em);
+    GameObj g(ctx.em, server);
+    ctx.setup_game_obj(g, 2, 1);
+    g.set_level(ScopeLevel::LEVEL_PLAN);
+    g.set_snum(99);  // Non-existent star triggers EntityNotFoundError
+    g.set_pnum(1);
+
+    std::ostringstream log_buf;
+    GB::log::ScopedSink sink{log_buf};
+
+    bool caught = false;
+    try {
+      server.process_command(g, {"production"});
+    } catch (const EntityNotFoundError&) {
+      caught = true;
+    }
+
+    test::expect_true(caught);
+    test::expect_true(g.race == nullptr);
+    test::expect_true(server.is_shutdown());
+    test::expect_true(server.has_fatal_error());
+    test::expect_true(io.stopped());
+    test::expect_true(log_buf.str().starts_with("<2>"));
+    test::expect_contains(
+        log_buf.str(),
+        "[FATAL] Unhandled exception in command execution: player=2 governor=1 "
+        "scope=PLAN(snum=99,pnum=1) raw_command=\"production\":");
+  }
+
+  // 2. SqliteError (FK constraint failure) during command execution rolls back
+  //    prior SQL writes, logs [FATAL], stops server, and propagates fail-fast
+  {
+    TestContext ctx;
+    ctx.with_standard_universe();
+    ctx.em.mutate_star(1, [](Star& star) { star.AP(2) = 60; });
+
+    const shipnum_t gov_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
+                                   .owned_by(2, 1)
+                                   .landed_on(1, 1, Coordinates{0, 0})
+                                   .build();
+    // Cache gov_ship in EntityManager, then delete its row from tbl_ship so
+    // saving Race.Gov_ship triggers SQLITE_CONSTRAINT_FOREIGNKEY after Star AP
+    // has already been written inside the active transaction.
+    (void)ctx.em.peek_ship(gov_ship);
+    test::expect_true(JsonStore(ctx.db).remove("tbl_ship", gov_ship));
+
+    asio::io_context io;
+    Server server(io, 0, ctx.em);
+    GameObj g(ctx.em, server);
+    ctx.setup_game_obj(g, 2, 1);
+    g.set_level(ScopeLevel::LEVEL_PLAN);
+    g.set_snum(1);
+    g.set_pnum(1);
+
+    std::ostringstream log_buf;
+    GB::log::ScopedSink sink{log_buf};
+
+    const std::string arg = std::format("#{}", gov_ship);
+    const std::string raw = std::format("capital #{}", gov_ship);
+    bool caught = false;
+    try {
+      server.process_command(g, {"capital", arg}, raw);
+    } catch (const SqliteError&) {
+      caught = true;
+    }
+
+    test::expect_true(caught);
+    test::expect_true(server.is_shutdown());
+    test::expect_true(server.has_fatal_error());
+    test::expect_true(io.stopped());
+    test::expect_contains(
+        log_buf.str(),
+        std::format(
+            "[FATAL] Unhandled exception in command execution: player=2 "
+            "governor=1 scope=PLAN(snum=1,pnum=1) raw_command=\"{}\":",
+            raw));
+    test::expect_contains(log_buf.str(), "FOREIGN KEY");
+
+    // Verify ReleaseGuard released race_refcount so Transaction::rollback()
+    // evicted the dirty in-memory Race AND rolled back Star(1) AP in SQLite.
+    test::expect_false(ctx.em.peek_race(2)->Gov_ship.has_value());
+    ctx.em.clear_cache();
+    test::expect_eq(ctx.em.peek_star(1)->AP(2), 60);
+  }
+
+  // 3. Scope context formatting covers UNIV, STAR, and SHIP scopes
+  for (const ScopeLevel level : {ScopeLevel::LEVEL_UNIV, ScopeLevel::LEVEL_STAR,
+                                 ScopeLevel::LEVEL_SHIP}) {
+    TestContext ctx;
+    {
+      Database closed = std::move(ctx.db);
+    }
+
+    asio::io_context io;
+    Server server(io, 0, ctx.em);
+    GameObj g(ctx.em, server);
+    g.set_player(3);
+    g.set_governor(2);
+    g.set_level(level);
+    g.set_snum(4);
+    g.set_pnum(2);
+    g.set_shipno(7);
+
+    std::ostringstream log_buf;
+    GB::log::ScopedSink sink{log_buf};
+
+    bool caught = false;
+    try {
+      server.process_command(g, {"cs", "/Sol"});
+    } catch (const SqliteError&) {
+      caught = true;
+    }
+
+    test::expect_true(caught);
+    test::expect_contains(log_buf.str(), "raw_command=\"cs /Sol\"");
+    if (level == ScopeLevel::LEVEL_UNIV) {
+      test::expect_contains(log_buf.str(), "scope=UNIV");
+    } else if (level == ScopeLevel::LEVEL_STAR) {
+      test::expect_contains(log_buf.str(), "scope=STAR(snum=4)");
+    } else {
+      test::expect_contains(log_buf.str(),
+                            "scope=SHIP(snum=4,pnum=2,shipno=7)");
+    }
+  }
+}
+
 }  // namespace
 
 int main() {
@@ -152,6 +288,7 @@ int main() {
   test_emulation_privilege_drop_and_guest_restrictions();
   test_server_boundary_dispatch_lifecycle();
   test_output_buffer();
+  test_process_command_fail_fast_logging_and_rollback();
 
   std::println(std::cout, "✓ server_command_test passed!");
   return 0;

@@ -94,6 +94,9 @@ Galactic Bloodshed uses **C++26 modules** to enforce architectural boundaries. S
   - First-class domain methods and computed predicates (`Ship::is_docked()`, `Ship::refuel_from_gas_giant()`, `Ship::process_radiation()`, `Ship::prepare_for_flight()`, `Planet::update_toxicity()`, `Planet::process_toxic_environmental_damage()`, `Planet::select_victim_to_steal_from()`, `SectorMap::process_supernova_devastation()`, `AutonomousShip::mine_sector()`, `AutonomousShip::roam_to_adjacent_sector()`)
   - Configuration constants (`Tweakables`), random utilities (`rand.cppm`), ship templates (`ship_templates.cppm`), and ship filters (`shipfilter.cppm`)
 
+- **Tier 1: `gb.log`** (Structured Logging) - `gb/log/log.cppm` (`gb_log` target)
+  - Zero-dependency structured daemon logger writing atomic newline-terminated ISO-8601 UTC records with `systemd-journald` priority prefixes (`<6>`/`<4>`/`<3>`/`<2>`) and `[INFO]`/`[WARN]`/`[ERROR]`/`[FATAL]` labels to unbuffered `std::cerr`
+
 - **Tier 1: `dallib`** (Data Access Layer) - `gb/dal/dallib.cppm` (`dallib` target)
   - `Database`, `JsonStore`, and `initialize_schema()`
   - Only layer with direct dependency on SQLite3
@@ -137,6 +140,7 @@ Galactic Bloodshed uses **C++26 modules** to enforce architectural boundaries. S
 
 - **Tier 7: `gb.server`** (Server & Networking) - `gb/server/server_module.cppm` (`gb_server` target)
   - Asio-backed TCP server (`Server`), client sessions (`Session` with Telnet `IAC`/`TTYPE` terminal negotiation), authentication (`auth`), notifications (`notification`), and startup configuration (`server_config`)
+  - Strict fail-fast crash logging boundaries across `Server::process_command()`, `Server::do_command()`, `Server::do_accept()`, `Server::check_turn_events()`, and `GB_server.cc` `main()`: unhandled `SqliteError` or `EntityNotFoundError` unwinds active `DeferredWriteScope` transactions first, logs `[FATAL]` with full session/scope/command/turn context via `gb.log`, shuts down the server immediately, and propagates fail-fast without swallowing corruption errors
 
 ### Strict 3-Tier Domain Logic Placement Rule
 
@@ -156,8 +160,9 @@ gb.presentation --> gb.mechanics, gb.services, gb.entities, tabulate, glaze
 gb.mechanics    --> gb.services, gb.entities, scnlib
 gb.services     --> PUBLIC: gb.entities, dallib | PRIVATE: gb.repositories
 gb.repositories --> gb.entities, dallib, glaze
-gb.entities     --> strong_id, types_module, scnlib (zero DB, zero Glaze, zero services)
-dallib          --> SQLite3, types_module
+gb.entities     --> gb.log, strong_id, types_module, scnlib (zero DB, zero Glaze, zero services)
+dallib          --> SQLite3, types_module, gb.log
+gb.log          --> std (zero external dependencies)
 ```
 
 ---

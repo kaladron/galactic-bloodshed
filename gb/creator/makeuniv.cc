@@ -4,7 +4,6 @@
 /// \brief Universe creation command-line utility.
 
 #include <unistd.h>
-#include <cstdio>
 #include <cstdlib>
 
 import std;

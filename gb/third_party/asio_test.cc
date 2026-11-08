@@ -8,8 +8,6 @@ import asio;
 import test;
 import std;
 
-#include <cstdio>
-
 int main() {
   // io_context creation
   asio::io_context io;

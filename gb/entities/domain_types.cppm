@@ -6,6 +6,7 @@
 
 export module gb.entities:types;
 
+import gb.log;
 import std;
 import scnlib;
 
@@ -470,10 +471,9 @@ void log_invariant_violation(
     std::string_view entity, std::string_view field, T attempted, U clamped_to,
     std::source_location loc = std::source_location::current()) {
   if constexpr (DEBUG_INVARIANTS) {
-    std::print(std::cerr,
-               "[INVARIANT] {}::{}: attempted {}, clamped to {} (at {}:{})\n",
-               entity, field, attempted, clamped_to, loc.file_name(),
-               loc.line());
+    GB::log::warn("[INVARIANT] {}::{}: attempted {}, clamped to {} (at {}:{})",
+                  entity, field, attempted, clamped_to, loc.file_name(),
+                  loc.line());
   }
 }
 

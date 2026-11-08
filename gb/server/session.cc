@@ -6,6 +6,7 @@
 module;
 
 import asio;
+import gb.log;
 import gb.presentation;
 import std;
 
@@ -26,8 +27,7 @@ Session::Session(PrivateToken, asio::ip::tcp::socket socket, EntityManager& em,
   asio::error_code ec;
   auto endpoint = socket_.remote_endpoint(ec);
   if (!ec) {
-    std::println(std::cerr, "NEW CONNECTION from {}",
-                 endpoint.address().to_string());
+    GB::log::info("NEW CONNECTION from {}", endpoint.address().to_string());
   }
 }
 
@@ -174,8 +174,7 @@ bool Session::enqueue_complete_lines() {
        newline_pos != std::string::npos;
        newline_pos = line_buffer_.find('\n')) {
     if (input_queue_.size() >= MAX_INPUT_QUEUE_SIZE) {
-      std::println(std::cerr,
-                   "Disconnecting flooding client (input queue overflow)");
+      GB::log::warn("Disconnecting flooding client (input queue overflow)");
       disconnect();
       return false;
     }
@@ -187,8 +186,7 @@ bool Session::enqueue_complete_lines() {
       line.pop_back();
     }
     if (line.size() > MAX_COMMAND_LEN) {
-      std::println(std::cerr,
-                   "Disconnecting client (command exceeds MAX_COMMAND_LEN)");
+      GB::log::warn("Disconnecting client (command exceeds MAX_COMMAND_LEN)");
       disconnect();
       return false;
     }
@@ -233,7 +231,7 @@ void Session::flush_to_network() {
 
   // Check for slow client - if queue is too large, disconnect
   if (write_queue_size() > MAX_WRITE_QUEUE_SIZE) {
-    std::println(std::cerr, "Disconnecting slow client (queue overflow)");
+    GB::log::warn("Disconnecting slow client (queue overflow)");
     disconnect();
     return;
   }

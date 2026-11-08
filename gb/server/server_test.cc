@@ -9,6 +9,7 @@ import auth;
 import commands;
 import dallib;
 import gb.entities;
+import gb.log;
 import gb.services;
 import gb.server;
 import notification;
@@ -573,6 +574,156 @@ void test_server_json_mode_single_session_stanza() {
   server.shutdown();
 }
 
+void test_server_fail_fast_boundaries() {
+  // 1a. check_turn_events (update phase) logs [FATAL] on EntityNotFoundError,
+  //     resets update_in_progress, shuts down server, and rethrows
+  {
+    TestContext ctx;
+    setup_test_universe(ctx);
+    ctx.em.mutate_server_state(
+        [](ServerState& s) { s.nsegments_done = s.segments; });
+    test::expect_true(JsonStore(ctx.db).remove("tbl_universe", 1));
+    ctx.em.clear_cache();
+
+    asio::io_context io;
+    Server server(io, 0, ctx.em);
+    server.request_next_thing();
+
+    std::ostringstream log_buf;
+    GB::log::ScopedSink sink{log_buf};
+
+    bool caught = false;
+    try {
+      server.check_turn_events(std::time(nullptr));
+    } catch (const EntityNotFoundError&) {
+      caught = true;
+    }
+
+    test::expect_true(caught);
+    test::expect_false(server.update_in_progress());
+    test::expect_true(server.is_shutdown());
+    test::expect_true(server.has_fatal_error());
+    test::expect_true(io.stopped());
+    test::expect_contains(
+        log_buf.str(),
+        "[FATAL] Unhandled exception during turn processing (phase=update):");
+  }
+
+  // 1b. check_turn_events (segment phase) logs [FATAL] on SqliteError, shuts
+  //     down server, and rethrows
+  {
+    TestContext ctx;
+    setup_test_universe(ctx);
+    (void)ctx.em.peek_server_state();
+    {
+      Database closed = std::move(ctx.db);
+    }
+
+    asio::io_context io;
+    Server server(io, 0, ctx.em);
+    server.request_next_thing();
+
+    std::ostringstream log_buf;
+    GB::log::ScopedSink sink{log_buf};
+
+    bool caught = false;
+    try {
+      server.check_turn_events(std::time(nullptr));
+    } catch (const SqliteError&) {
+      caught = true;
+    }
+
+    test::expect_true(caught);
+    test::expect_false(server.update_in_progress());
+    test::expect_true(server.is_shutdown());
+    test::expect_true(server.has_fatal_error());
+    test::expect_true(io.stopped());
+    test::expect_contains(
+        log_buf.str(),
+        "[FATAL] Unhandled exception during turn processing (phase=segment):");
+  }
+
+  // 2. do_accept logs [FATAL], stops server, and rethrows on welcome DB error
+  {
+    TestContext ctx;
+    {
+      Database closed = std::move(ctx.db);
+    }
+
+    asio::io_context io;
+    Server server(io, 0, ctx.em);
+    server.start();
+
+    asio::ip::tcp::socket client(io);
+    client.connect(asio::ip::tcp::endpoint(asio::ip::address_v6::loopback(),
+                                           server.port()));
+
+    std::ostringstream log_buf;
+    GB::log::ScopedSink sink{log_buf};
+
+    bool caught = false;
+    try {
+      io.poll();
+    } catch (const SqliteError&) {
+      caught = true;
+    }
+
+    test::expect_true(caught);
+    test::expect_true(server.is_shutdown());
+    test::expect_true(server.has_fatal_error());
+    test::expect_true(io.stopped());
+    test::expect_contains(
+        log_buf.str(),
+        "[FATAL] Unhandled exception accepting client connection:");
+  }
+
+  // 3. Login handshake crash logs [FATAL] without leaking password tokens
+  {
+    TestContext ctx;
+    setup_test_universe(ctx);
+
+    asio::io_context io;
+    Server server(io, 0, ctx.em);
+    server.start();
+
+    asio::ip::tcp::socket client(io);
+    client.connect(asio::ip::tcp::endpoint(asio::ip::address_v6::loopback(),
+                                           server.port()));
+    io.poll();
+    (void)drain_socket(client);
+
+    // Close underlying DB after welcome banner so check_connect fails fast
+    {
+      Database closed = std::move(ctx.db);
+    }
+
+    const std::string creds = "raceword govword\n";
+    client.write_some(asio::buffer(creds));
+    io.poll();
+
+    std::ostringstream log_buf;
+    GB::log::ScopedSink sink{log_buf};
+
+    bool caught = false;
+    try {
+      server.process_commands();
+    } catch (const SqliteError&) {
+      caught = true;
+    }
+
+    test::expect_true(caught);
+    test::expect_true(server.is_shutdown());
+    test::expect_true(server.has_fatal_error());
+    test::expect_true(io.stopped());
+    test::expect_contains(
+        log_buf.str(),
+        "[FATAL] Unhandled exception during login handshake: player=0 "
+        "governor=1:");
+    test::expect_not_contains(log_buf.str(), "raceword");
+    test::expect_not_contains(log_buf.str(), "govword");
+  }
+}
+
 }  // namespace
 
 int main() {
@@ -582,6 +733,7 @@ int main() {
   test_server_slow_client_flush_reaping();
   test_server_deity_departure_broadcast();
   test_server_json_mode_single_session_stanza();
+  test_server_fail_fast_boundaries();
 
   std::println(std::cout, "✓ server_test passed!");
   return 0;

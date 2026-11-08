@@ -5,6 +5,7 @@
 
 module;
 
+import gb.log;
 import gb.presentation.combat;
 import gb.presentation.empire_views;
 import std;
@@ -827,13 +828,11 @@ void do_update(EntityManager& entity_manager, SessionRegistry& session_registry,
     updates_done = state.nupdates_done;
   });
 
-  std::println(std::cerr, "{}", format_timestamp(clk));
-  std::println(std::cerr, "Next Update {:3d} : {}", updates_done + 1,
-               format_timestamp(next_upd_time));
-  std::println(std::cerr, "{}", format_timestamp(clk));
-  std::println(std::cerr, "Next Segment {:2d} : {}",
-               segs_done == total_segs ? 1U : segs_done + 1U,
-               format_timestamp(next_seg_time));
+  GB::log::info("Next Update {:3d} : {}", updates_done + 1,
+                format_timestamp(next_upd_time));
+  GB::log::info("Next Segment {:2d} : {}",
+                segs_done == total_segs ? 1U : segs_done + 1U,
+                format_timestamp(next_seg_time));
 
   session_registry.set_update_in_progress(true);
   if (!fakeit) do_turn(entity_manager, session_registry, true);
@@ -884,9 +883,8 @@ void do_segment(EntityManager& entity_manager,
   session_registry.set_update_in_progress(true);
   if (!fakeit) do_turn(entity_manager, session_registry, false);
   session_registry.set_update_in_progress(false);
-  std::println(std::cerr, "{}", format_timestamp(clk));
-  std::println(std::cerr, "Next Segment {:2d} : {}", segs_done,
-               format_timestamp(next_seg_time));
+  GB::log::info("Next Segment {:2d} : {}", segs_done,
+                format_timestamp(next_seg_time));
   clk = std::time(nullptr);
   std::string segment_msg =
       std::format("{}\nSegment finished\n", format_timestamp(clk));

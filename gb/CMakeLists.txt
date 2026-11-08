@@ -75,6 +75,12 @@ target_sources(
   PUBLIC FILE_SET CXX_MODULES FILES entities/types.cppm)
 target_link_libraries(types_module PUBLIC strong_id_module)
 
+# Standalone Tier-1 Structured Logger Module (Zero External Dependencies)
+add_library(gb_log)
+target_sources(
+  gb_log
+  PUBLIC FILE_SET CXX_MODULES FILES log/log.cppm)
+
 # Create dallib as a separate library for Data Access Layer
 add_library(dallib)
 target_sources(
@@ -82,7 +88,7 @@ target_sources(
   PUBLIC FILE_SET CXX_MODULES FILES dal/dallib.cppm
   PRIVATE FILE_SET internal_modules TYPE CXX_MODULES FILES dal/database_impl.cppm
   PRIVATE dal/database.cc dal/json_store.cc dal/schema.cc)
-target_link_libraries(dallib PUBLIC types_module PRIVATE SQLite::SQLite3)
+target_link_libraries(dallib PUBLIC types_module gb_log PRIVATE SQLite::SQLite3)
 
 # Standalone Tier-1 Domain Entities Library (Zero DB, Glaze, or Service Dependencies)
 add_library(gb_entities)
@@ -120,7 +126,7 @@ target_sources(
           entities/ship/ship_subclasses.cc
           entities/ship/ship_templates.cc
           entities/star.cc)
-target_link_libraries(gb_entities PUBLIC strong_id_module types_module scnlib_module)
+target_link_libraries(gb_entities PUBLIC gb_log strong_id_module types_module scnlib_module)
 
 # Standalone Tier-2 Data Repositories Library (gb.repositories has zero Glaze imports; gb.repositories.glaze provides opt-in Glaze schemas)
 add_library(gb_repositories)
@@ -530,6 +536,7 @@ gb_add_test(json_store_test SOURCES dal/json_store_test.cc)
 gb_add_test(land_test SOURCES commands/land_test.cc)
 gb_add_test(launch_test SOURCES commands/launch_test.cc)
 gb_add_test(load_test SOURCES commands/load_test.cc)
+gb_add_test(log_test SOURCES log/log_test.cc)
 gb_add_test(make_test SOURCES commands/make_test.cc)
 gb_add_test(makeplanet_test SOURCES creator/makeplanet_test.cc EXTRA_LIBS gb_creator)
 gb_add_test(makeuniv_test SOURCES creator/makeuniv_test.cc EXTRA_LIBS gb_creator)
@@ -583,7 +590,7 @@ gb_add_test(sectormap_sqlite_test SOURCES repositories/sectormap_sqlite_test.cc)
 gb_add_test(segment_test SOURCES commands/segment_test.cc)
 gb_add_test(sell_test SOURCES commands/sell_test.cc)
 gb_add_test(send_message_test SOURCES commands/send_message_test.cc)
-gb_add_test(server_command_test SOURCES server/server_command_test.cc EXTRA_LIBS session)
+gb_add_test(server_command_test SOURCES server/server_command_test.cc EXTRA_LIBS asio_module server session)
 gb_add_test(server_config_test SOURCES server/server_config_test.cc EXTRA_LIBS server_config)
 gb_add_test(server_test SOURCES server/server_test.cc EXTRA_LIBS asio_module session auth server notification)
 gb_add_test(session_test SOURCES server/session_test.cc EXTRA_LIBS session)

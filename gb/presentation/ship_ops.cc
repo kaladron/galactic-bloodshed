@@ -728,8 +728,7 @@ std::optional<ShipView> project_ship_view(EntityManager& em,
 
     const bool laser_on = (ship.fire_laser() > 0);
     const bool laser_focused = ship.focus();
-    const double dmg_factor = 1.0 - (0.01 * static_cast<double>(ship.damage()));
-    const int safe_cew = static_cast<int>(dmg_factor * ship.tech() / 4.0);
+    const int safe_cew = ship.max_safe_laser_strength();
 
     ShipWeaponsView weapons{
         .armor = ship.armor(),

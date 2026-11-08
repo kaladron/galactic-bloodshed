@@ -977,7 +977,8 @@ std::vector<shipnum_t> EntityManager::ancestor_carriers(shipnum_t ship_id) {
 
 void EntityManager::propagate_ancestor_mass_delta(shipnum_t direct_carrier_id,
                                                   double delta_mass) {
-  if (std::abs(delta_mass) < 1e-9) return;
+  constexpr double mass_delta_epsilon = 1e-9;
+  if (std::abs(delta_mass) < mass_delta_epsilon) return;
   for (const shipnum_t ancestor_id : ancestor_carriers(direct_carrier_id)) {
     mutate_ship(ancestor_id, [&](Ship& anc) {
       anc.set_mass(std::max(anc.base_mass(), anc.mass() + delta_mass));

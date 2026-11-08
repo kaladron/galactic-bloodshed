@@ -94,7 +94,8 @@ namespace {
 constexpr double calculate_mech_combat_strength(
     const Ship& ship, const weapon_power_t retal_strength,
     const Race& mech_owner, const Race& opponent, const Sector& sect) {
-  const double armor_factor = percent_to_fraction(ship.armor() + 1);
+  const double armor_factor =
+      MECH_ARMOR_SCALE * static_cast<double>(ship.armor() + 1);
   return MECH_ATTACK * ship.tech() * static_cast<double>(retal_strength) *
          armor_factor * ship.hull_efficiency() *
          mech_owner.sector_combat_factor(sect) *
@@ -115,8 +116,8 @@ constexpr double calculate_garrison_combat_strength(const population_t civ,
                                                     const Sector& sect) {
   const population_t weighted_personnel =
       MILITARY_COMBAT_MULTIPLIER * mil * garrison_race.fighters + civ;
-  return percent_to_fraction(weighted_personnel) *
-         percent_to_fraction(garrison_race.tech) *
+  return (GARRISON_FORCE_SCALE * static_cast<double>(weighted_personnel)) *
+         (COMBAT_TECH_SCALE * garrison_race.tech) *
          garrison_race.sector_combat_factor(sect) *
          sect.combat_defense_factor() *
          morale_factor(garrison_race.morale - opponent.morale);

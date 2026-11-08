@@ -281,6 +281,38 @@ void test_hit_odds_sizing() {
   }
   test::expect_eq(odds_logs.str(), "");
 
+  // Exact cube-root body scaling (cbrt(1000) == 10 -> factor == 800 at tech 9)
+  // and safe clamping for negative, NaN, and infinite tech
+  auto [odds_cube, factor_cube] =
+      hit_odds(800.0, 9.0, 0, false, false, 0, 0, 1000, guntype_t::LIGHT, 0);
+  test::expect_eq(factor_cube, 800);
+  test::expect_eq(odds_cube, 50);
+  auto [odds_neg_tech, factor_neg_tech] =
+      hit_odds(10.0, -5.0, 0, false, false, 0, 0, 100, guntype_t::LIGHT, 0);
+  test::expect_eq(factor_neg_tech, 0);
+  test::expect_eq(odds_neg_tech, 0);
+  auto [odds_nan_tech, factor_nan_tech] =
+      hit_odds(10.0, std::numeric_limits<double>::quiet_NaN(), 0, false, false,
+               0, 0, 100, guntype_t::LIGHT, 0);
+  test::expect_eq(factor_nan_tech, 0);
+  test::expect_eq(odds_nan_tech, 0);
+  auto [odds_inf_tech, factor_inf_tech] =
+      hit_odds(10.0, std::numeric_limits<double>::infinity(), 0, false, false,
+               0, 0, 100, guntype_t::LIGHT, 0);
+  test::expect_gt(factor_inf_tech, 0);
+  test::expect_ge(odds_inf_tech, 99);
+
+  // Focused-laser quadratic hit odds: floor(p^2 / 100)
+  static_assert(quadratic_hit_odds(0) == 0);
+  static_assert(quadratic_hit_odds(9) == 0);
+  static_assert(quadratic_hit_odds(10) == 1);
+  static_assert(quadratic_hit_odds(50) == 25);
+  static_assert(quadratic_hit_odds(75) == 56);
+  static_assert(quadratic_hit_odds(100) == 100);
+  test::expect_eq(quadratic_hit_odds(50), 25);
+  test::expect_eq(quadratic_hit_odds(75), 56);
+  test::expect_eq(quadratic_hit_odds(100), 100);
+
   std::println(std::cout, "  ✓ hit_odds sizing passed");
 }
 

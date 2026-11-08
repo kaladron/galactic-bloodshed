@@ -148,7 +148,10 @@ void initialize_schedule_state(ServerState& state, const ServerConfig& config,
     state.next_update_time = current_time + (state.update_time_minutes * 60);
   }
   if (state.segments <= 1) {
-    state.next_segment_time = current_time + (144 * 3600);
+    constexpr auto no_segments_schedule_offset = std::chrono::hours{144};
+    state.next_segment_time =
+        current_time +
+        std::chrono::seconds{no_segments_schedule_offset}.count();
   } else {
     if (state.next_segment_time == 0) {
       state.next_segment_time =

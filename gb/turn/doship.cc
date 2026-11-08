@@ -320,8 +320,8 @@ void do_ap(Ship& ship, EntityManager& entity_manager) {
     const auto& race = *entity_manager.peek_race(ship.owner());
     entity_manager.mutate_planet(
         ship.storbits(), ship.pnumorbits(), [&](Planet& p) {
-          if (ship.fuel() >= 3.0) {
-            ship.consume_fuel(3.0);
+          if (ship.fuel() >= ATMOSPHERE_PROCESSOR_FUEL_USE) {
+            ship.consume_fuel(ATMOSPHERE_PROCESSOR_FUEL_USE);
             for (AtmosphereConditions cond : all_atmosphere_conditions) {
               auto d =
                   round_rand(ap_planet_factor(p) * ship.crew_ratio() *

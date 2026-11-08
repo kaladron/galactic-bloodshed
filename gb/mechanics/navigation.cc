@@ -15,7 +15,7 @@ armor_t getdefense(EntityManager& em, const Ship& ship) {
     const auto* smap = em.peek_sectormap(ship.storbits(), ship.pnumorbits());
     if (!smap) return 0;
     const auto& sect = smap->get(ship.land_coords());
-    return 2 * sect.defense_bonus();
+    return LANDING_DEFENSE_MULTIPLIER * sect.defense_bonus();
   }
   // No defense
   return 0;
@@ -733,7 +733,7 @@ bool followable(EntityManager& em, const Ship& s1, const Ship& s2) {
   if (!s2.alive() || !s1.active() || s2.whatorbits() == ScopeLevel::LEVEL_SHIP)
     return false;
 
-  double range = 4.0 * logscale((int)(s1.tech() + 1.0)) * SYSTEMSIZE;
+  const double range = FOLLOW_RANGE_MULTIPLIER * gun_range(s1.tech());
 
   const auto* r = em.peek_race(s2.owner());
   if (!r) return false;

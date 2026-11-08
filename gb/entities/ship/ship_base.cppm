@@ -1340,6 +1340,22 @@ public:
     return data_.damage.complement().as_fraction();
   }
 
+  /// \brief Maximum crystal laser or CEW power rating before risking crystal
+  /// burnout: floor(max(0, hull_efficiency * tech /
+  /// LASER_SAFE_STRENGTH_DIVISOR)).
+  [[nodiscard]] constexpr weapon_power_t
+  max_safe_laser_strength() const noexcept {
+    return scaled_laser_threshold(LASER_SAFE_STRENGTH_DIVISOR);
+  }
+
+  /// \brief Crystal laser or CEW power threshold above which reactor overload
+  /// can destroy the ship: floor(max(0, hull_efficiency * tech /
+  /// LASER_EXPLODE_STRENGTH_DIVISOR)).
+  [[nodiscard]] constexpr weapon_power_t
+  laser_explosion_threshold() const noexcept {
+    return scaled_laser_threshold(LASER_EXPLODE_STRENGTH_DIVISOR);
+  }
+
   /// \brief Ratio of carried crew to maximum capacity in [0.0, 1.0] (0.0 if
   /// ship has zero capacity).
   [[nodiscard]] double crew_ratio() const noexcept {
@@ -1809,6 +1825,17 @@ public:
   /// \brief Synchronizes offline factory technological capability with current
   /// empire technology.
   void sync_factory_technology(const Race& race) noexcept;
+
+private:
+  [[nodiscard]] constexpr weapon_power_t
+  scaled_laser_threshold(double divisor) const noexcept {
+    const double raw = hull_efficiency() * data_.tech / divisor;
+    if (!(raw > 0.0)) return 0;
+    constexpr auto max_val =
+        static_cast<double>(std::numeric_limits<weapon_power_t>::max());
+    if (raw >= max_val) return std::numeric_limits<weapon_power_t>::max();
+    return static_cast<weapon_power_t>(raw);
+  }
 };
 
 // Type traits for zero-cost static downcasting (specialized in ship_subclasses)

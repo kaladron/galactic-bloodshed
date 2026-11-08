@@ -108,12 +108,14 @@ export constexpr int MAX_CRYSTALS = 127;
 export constexpr double UNIVSIZE = 150000;
 export constexpr double SYSTEMSIZE = 2000;
 export constexpr double PLORBITSIZE = 50;
+export constexpr double DEFAULT_MAP_ZOOM = 0.5;
 
 export constexpr charge_t HYPER_DRIVE_READY_CHARGE = 1;
 export constexpr double HYPER_DRIVE_FUEL_USE = 5.0;
 export constexpr double HYPER_DIST_FACTOR = 200.0;
 
 export constexpr double SHIP_MOVE_SCALE = 3.0;
+export constexpr double FOLLOW_RANGE_MULTIPLIER = 4.0;
 
 export constexpr double FUEL_MANEUVER = 0.3;  // Fuel it costs to change aim
 
@@ -165,11 +167,23 @@ export constexpr resource_t PLAN_FACT_ON_COST = 2;
 export constexpr double SECTOR_DAMAGE = 0.3;
 export constexpr double SHIP_DAMAGE = 2.0;
 export constexpr double ENERGY_WEAPON_FUEL_PER_STRENGTH = 2.0;
+export constexpr double LASER_SAFE_STRENGTH_DIVISOR = 4.0;
+export constexpr double LASER_EXPLODE_STRENGTH_DIVISOR = 2.0;
 
 export constexpr double VN_RES_TAKE =
     0.5;  // amt of resource of a sector the VN's take
+export constexpr int VN_BERSERKER_ANGER_THRESHOLD = 100;
+export constexpr double VN_REPLICATION_FUEL_SHARE = 0.5;
+export constexpr armor_t VN_REPLICATION_ARMOR_BONUS = 1;
+export constexpr double VN_REPLICATION_TECH_BONUS = 20.0;
+export constexpr double BERSERKER_REPLICATION_FUEL_MULTIPLIER = 5.0;
+export constexpr armor_t BERSERKER_REPLICATION_ARMOR_BONUS = 11;
+export constexpr double BERSERKER_REPLICATION_TECH_BONUS = 100.0;
+export constexpr resource_t BERSERKER_INITIAL_DESTRUCT = 500;
 
 export constexpr double REPAIR_RATE = 25.0;  // rate at which ships get repaired
+export constexpr resource_t SCRAP_RECOVERY_DIVISOR = 2;
+export constexpr resource_t SHIP_MODIFICATION_COST_MULTIPLIER = 2;
 export constexpr int SECTOR_REPAIR_COST =
     10;  // how much it costs to remove a wasted status from a sector
 export constexpr Percentage NATURAL_REPAIR{
@@ -180,20 +194,30 @@ export constexpr double GRAV_FACTOR =
 
 export constexpr double MOB_COST = 0.00;  // mobiliz.c, planet.c cost/mob points
 export constexpr double MESO_POP_SCALE = 20000.0;
+export constexpr population_t OVERPOPULATION_DIE_OFF_MULTIPLIER = 2;
+export constexpr temp_delta_t PLANET_TEMP_RANDOM_VARIANCE = 5;
+export constexpr int MAX_TAX_STEP_PER_UPDATE = 5;
+export constexpr double STAR_AP_POPULATION_SCALE = 5.0;
 
 export constexpr double FUEL_COST_TERRA = 3.0;   // cost to terraform
 export constexpr double FUEL_COST_QUARRY = 2.0;  // cost to mine resources
 export constexpr double FUEL_COST_PLOW = 2.0;
+export constexpr fuel_t ATMOSPHERE_PROCESSOR_FUEL_USE = 3.0;
 export constexpr int RES_COST_DOME = 1;
 export constexpr int RES_COST_WPLANT = 1;
 export constexpr double FUEL_COST_WPLANT = 1.0;
 
 export constexpr int UPDATE_TROOP_COST = 1;
 
+export constexpr resource_t MOB_POINTS_PER_PLANET_GUN = 1000;
 export constexpr gun_count_t PLAN_FIRE_LIM =
     20;  // max fire strength from planets
 
 export constexpr int TECH_SEE_STABILITY = 15;  // min tech to see star stability
+export constexpr int TERMINAL_NOVA_STAGE = 14;
+export constexpr resource_t NOVA_RESOURCE_DEPOSIT = 1;
+export constexpr Percentage NOVA_FERTILITY_LOSS{20};
+export constexpr Percentage NOVA_RADIATION_CASUALTY_RATE{50};
 
 export constexpr int TECH_EXPLORE = 10;  // min tech to see your whole planet
 
@@ -222,6 +246,11 @@ export constexpr double AFV_FUEL_COST = 1.0;
 export constexpr double MECH_ATTACK = 3.0;
 
 // Ground and boarding combat constants
+export constexpr armor_t LANDING_DEFENSE_MULTIPLIER = 2;
+export constexpr Percentage BOARDING_TRANSLATION_GAIN{25};
+export constexpr double COMBAT_TECH_SCALE = 0.01;
+export constexpr double MECH_ARMOR_SCALE = 0.01;
+export constexpr double GARRISON_FORCE_SCALE = 0.01;
 export constexpr population_t MILITARY_COMBAT_MULTIPLIER =
     10;  // Combat weight of 1 military troop relative to 1 civilian
 export constexpr double COMBAT_FLOOR_EPSILON =
@@ -291,20 +320,11 @@ export constexpr SectorValues<int> sector_defense_bonus = {
     .wasted = 0,
 };
 
-/**
- * \brief Scales used in production efficiency etc.
- * \param x Integer from 0-100
- * \return Float 0.0 - 1.0 (logscaleOB 0.5 - .95)
- */
-export constexpr double logscale(const int x) {
-  return std::log10(static_cast<double>(x) + 1.0) / 2.0;
-}
-
-/**
- * \brief Calculates the gun range for a given technology level.
- * \param tech The technology level.
- * \return The computed gun range as a double.
- */
-export constexpr double gun_range(double tech) {
-  return logscale(static_cast<int>(tech + 1.0)) * SYSTEMSIZE;
+/// \brief Calculates maximum weapon range for a given technology level:
+/// 0.5 * log10(max(0, tech) + 2) * SYSTEMSIZE.
+export [[nodiscard]] constexpr double gun_range(double tech) noexcept {
+  if (!(tech > 0.0)) tech = 0.0;
+  constexpr double max_tech = std::numeric_limits<double>::max() / 2.0;
+  if (tech > max_tech) tech = max_tech;
+  return 0.5 * std::log10(tech + 2.0) * SYSTEMSIZE;
 }

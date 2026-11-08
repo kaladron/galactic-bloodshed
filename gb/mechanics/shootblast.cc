@@ -354,8 +354,7 @@ do_damage(EntityManager& em, ShipShotAttackerKind attacker_kind, player_t who,
 
   /* set laser strength for ships to maximum safe limit */
   if (ship.fire_laser()) {
-    const auto safe = static_cast<weapon_power_t>(
-        std::max(0.0, (1.0 - .01 * ship.damage()) * ship.tech() / 4.0));
+    const weapon_power_t safe = ship.max_safe_laser_strength();
     if (ship.fire_laser() > safe) ship.fire_laser() = safe;
   }
 
@@ -430,7 +429,7 @@ static SalvoHitRoll roll_salvo_hits(double dist, bool focus,
   hit_count_t hits = 0;
   hit_odds_t hit_probability = 0;
   if (focus) {
-    hit_probability = Percentage{(prob.value() * prob.value()) / 100};
+    hit_probability = quadratic_hit_odds(prob);
     if (success(hit_probability)) hits = guns;
   } else {
     for (auto _ : std::views::iota(weapon_power_t{0}, guns)) {
@@ -475,15 +474,28 @@ hit_odds(double range, double tech, damage_t fdam, bool fev, bool tev,
     return {0, 0};
   }
 
-  double fev_d = fev ? 1.0 : 0.0;
-  double tev_d = tev ? 1.0 : 0.0;
-  double a =
-      std::log10(1.0 + (double)tech) * 80.0 * std::pow((double)body, 0.33333);
-  double b = 72.0 / ((2.0 + tev_d) * (2.0 + fev_d) *
-                     (18.0 + (double)tspeed + (double)fspeed));
-  double c = a * b / static_cast<double>(gun_caliber(caliber));
-  const auto factor = static_cast<weapon_range_t>(
-      std::max(0.0, c * fdam.complement().as_fraction())); /* 50% hit range */
+  if (!(tech > 0.0)) tech = 0.0;
+  constexpr double max_tech = std::numeric_limits<double>::max() / 2.0;
+  if (tech > max_tech) tech = max_tech;
+
+  const double fev_d = fev ? 1.0 : 0.0;
+  const double tev_d = tev ? 1.0 : 0.0;
+  const double a =
+      std::log10(1.0 + tech) * 80.0 * std::cbrt(static_cast<double>(body));
+  const double b =
+      72.0 /
+      ((2.0 + tev_d) * (2.0 + fev_d) *
+       (18.0 + static_cast<double>(tspeed) + static_cast<double>(fspeed)));
+  const double raw_factor =
+      (a * b / static_cast<double>(gun_caliber(caliber))) *
+      fdam.complement().as_fraction();
+  constexpr auto max_range_val =
+      static_cast<double>(std::numeric_limits<weapon_range_t>::max());
+  const weapon_range_t factor =
+      !(raw_factor > 0.0) ? 0
+      : (raw_factor >= max_range_val)
+          ? std::numeric_limits<weapon_range_t>::max()
+          : static_cast<weapon_range_t>(raw_factor); /* 50% hit range */
   hit_odds_t odds = 0;
   if (factor > 0) {
     const double raw_odds =

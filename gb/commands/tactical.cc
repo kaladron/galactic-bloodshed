@@ -212,7 +212,7 @@ TacticalReportEntry TacticalItem::build_report_entry(
     if (target.get() == this) continue;
 
     const double dist = coords_.distance_to(target->coordinates());
-    if (dist >= params.weapon_range) continue;
+    if (dist > params.weapon_range) continue;
 
     if (auto target_row =
             target->build_target_entry(g, ctx, race, dist, params)) {
@@ -305,7 +305,7 @@ ShipTacticalItem::build_target_entry(GameObj& g, TacticalContext& ctx,
                tspeed, body, firer.caliber, defense);
 
   if (firer.laser_focused) {
-    prob = Percentage{(prob.value() * prob.value()) / 100};
+    prob = quadratic_hit_odds(prob);
   }
 
   const char relation_indicator = race.is_at_war_with(s.owner())   ? '-'

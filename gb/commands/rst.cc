@@ -105,7 +105,7 @@ RstWeaponsRow build_weapons_row(const Ship& s) {
       .has_laser = s.laser(),
       .cew = s.cew(),
       .cew_range = s.cew_range(),
-      .safe_cew = static_cast<int>((1.0 - .01 * s.damage()) * s.tech() / 4.0),
+      .safe_cew = s.max_safe_laser_strength(),
       .battery_summary = s.battery_summary(),
       .damage = s.damage(),
       .ship_class = std::move(class_with_type),

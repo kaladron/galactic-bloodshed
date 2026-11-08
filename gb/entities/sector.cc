@@ -12,7 +12,7 @@ module gb.entities;
 // Population operation implementations with invariant protection
 namespace {
 // Reasonable maximum population per sector
-constexpr population_t kMaxPopulationPerSector = 10'000'000;
+constexpr population_t max_population_per_sector = 10'000'000;
 }  // namespace
 
 void Sector::add_popn(population_t amount) noexcept {
@@ -21,8 +21,8 @@ void Sector::add_popn(population_t amount) noexcept {
   population_t new_popn = data_.popn;
 
   // Saturate at max to prevent overflow
-  if (data_.popn > kMaxPopulationPerSector - amount) {
-    new_popn = kMaxPopulationPerSector;
+  if (data_.popn > max_population_per_sector - amount) {
+    new_popn = max_population_per_sector;
     log_invariant_violation(
         "Sector", "popn", std::format("{} + {}", data_.popn, amount), new_popn);
   } else {
@@ -69,8 +69,8 @@ void Sector::add_troops(population_t amount) noexcept {
   if (amount == 0) return;
 
   population_t new_troops = data_.troops;
-  if (data_.troops > kMaxPopulationPerSector - amount) {
-    new_troops = kMaxPopulationPerSector;
+  if (data_.troops > max_population_per_sector - amount) {
+    new_troops = max_population_per_sector;
     log_invariant_violation("Sector", "troops",
                             std::format("{} + {}", data_.troops, amount),
                             new_troops);
@@ -174,33 +174,26 @@ void Sector::degrade_efficiency(int delta) noexcept {
   data_.eff.adjust(-delta);
 }
 
-namespace {
-// Supernova stellar radiation and environmental constants
-constexpr resource_t nova_resource_deposit = 1;
-constexpr Percentage fertility_loss_percent{20};   // 20% fertility loss
-constexpr int terminal_nova_stage = 14;            // Final stellar explosion
-constexpr Percentage radiation_casualty_rate{50};  // ~50% casualties per turn
-}  // namespace
-
 void Sector::apply_supernova(int stage) noexcept {
   // Heavy element nucleosynthesis from stellar radiation deposits mineral
   // resources.
-  data_.resource += nova_resource_deposit;
+  data_.resource += NOVA_RESOURCE_DEPOSIT;
 
   // Intense thermal and ionizing radiation degrades planetary agricultural
   // fertility.
-  data_.fert -= (data_.fert.value() * fertility_loss_percent.value()) / 100;
+  data_.fert -= (data_.fert.value() * NOVA_FERTILITY_LOSS.value()) / 100;
 
   // Stage 14 represents the terminal stellar explosion, completely incinerating
   // all life.
-  if (stage >= terminal_nova_stage) {
+  if (stage >= TERMINAL_NOVA_STAGE) {
     clear_popn();
     clear_troops();
     clear_owner();
   } else {
     // Active nova radiation: kills approximately 50% of the living population
     // per turn.
-    auto deaths = round_rand(data_.popn, radiation_casualty_rate.as_fraction());
+    auto deaths =
+        round_rand(data_.popn, NOVA_RADIATION_CASUALTY_RATE.as_fraction());
     subtract_popn(deaths);
   }
 
@@ -303,10 +296,11 @@ population_t calculate_population_change(const Race& race, const Sector& s,
   }
 
   // Overpopulation starvation die-off: range [0, min(2 * diff, popn)]
-  // Saturate 2 * diff to prevent integer overflow
+  // Saturate OVERPOPULATION_DIE_OFF_MULTIPLIER * diff to prevent overflow
   const population_t max_die_off =
-      (diff > std::numeric_limits<population_t>::max() / 2)
+      (diff > std::numeric_limits<population_t>::max() /
+                  OVERPOPULATION_DIE_OFF_MULTIPLIER)
           ? popn
-          : std::min(2 * diff, popn);
+          : std::min(OVERPOPULATION_DIE_OFF_MULTIPLIER * diff, popn);
   return -uniform_rand(0, max_die_off);
 }

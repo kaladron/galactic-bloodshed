@@ -133,7 +133,8 @@ void Server::do_accept() {
 }
 
 void Server::schedule_next_event() {
-  timer_.expires_after(std::chrono::milliseconds(100));  // 100ms tick
+  constexpr auto server_tick_interval = std::chrono::milliseconds{100};
+  timer_.expires_after(server_tick_interval);
   timer_.async_wait([this](asio::error_code ec) {
     if (ec || shutdown_flag_) return;
     on_timer();

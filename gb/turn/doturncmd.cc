@@ -552,7 +552,7 @@ ap_t compute_star_action_points(int num_ships, population_t popn,
                                 EntityManager& entity_manager) {
   double popn_val = std::max(0.0, static_cast<double>(popn));
   ap_t APs = round_rand(static_cast<double>(num_ships) / 10.0 +
-                        5.0 * std::log10(1.0 + popn_val));
+                        STAR_AP_POPULATION_SCALE * std::log10(1.0 + popn_val));
 
   if (compute_governed_status(race, entity_manager)) {
     return APs;
@@ -578,7 +578,7 @@ void fix_stability(EntityManager& em, Star& s) {
   int a;
 
   if (s.nova_stage() > 0) {
-    if (s.nova_stage() > 14) {
+    if (s.nova_stage() > TERMINAL_NOVA_STAGE) {
       s.stability() = 20;
       s.nova_stage() = 0;
       const std::string telegram_msg =

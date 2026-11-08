@@ -68,7 +68,9 @@ Coordinates Planet::random_adjacent_coordinates(Coordinates from) const {
 }
 
 void Planet::update_climate(int temp_variance) noexcept {
-  data_.temp = data_.rtemp + temp_variance + uniform_rand(-5, 5);
+  data_.temp =
+      data_.rtemp + temp_variance +
+      uniform_rand(-PLANET_TEMP_RANDOM_VARIANCE, PLANET_TEMP_RANDOM_VARIANCE);
 }
 
 money_t plinfo::collect_tax(Race::gov& gov, const Race& race) noexcept {
@@ -79,7 +81,7 @@ money_t plinfo::collect_tax(Race::gov& gov, const Race& race) noexcept {
   prod_money = round_rand(popn * tax.value(), INCOME_FACTOR);
   gov.money += prod_money;
   gov.income += prod_money;
-  tax += std::min(newtax.value() - tax.value(), 5);
+  tax += std::min(newtax.value() - tax.value(), MAX_TAX_STEP_PER_UPDATE);
   return prod_money;
 }
 

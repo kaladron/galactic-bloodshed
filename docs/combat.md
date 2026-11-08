@@ -74,7 +74,7 @@ $$D = \sqrt{(x_{\text{target}} - x_{\text{attacker}})^2 + (y_{\text{target}} - y
 
 Maximum kinetic weapon range scales logarithmically with imperial scientific technology:
 
-$$R_{\text{max}} = \log_{10}(\text{Technology} + 1) \times \text{System Scale}$$
+$$R_{\text{max}} = \frac{1}{2}\log_{10}(\text{Technology} + 2) \times \text{System Scale}$$
 
 Targets positioned beyond $`R_{\text{max}}`$ cannot be engaged by kinetic batteries.
 

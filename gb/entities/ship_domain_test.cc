@@ -41,6 +41,52 @@ void test_hull_efficiency() {
   expect_near(ship.hull_efficiency(), 0.0);
 }
 
+void test_laser_overload_thresholds() {
+  std::println(std::cout, "Testing Ship::max_safe_laser_strength() and "
+                          "laser_explosion_threshold()...");
+  Ship ship;
+  ship.tech() = 100.0;
+
+  ship.admin_override_damage(0);
+  test::expect_eq(ship.max_safe_laser_strength(), 25);
+  test::expect_eq(ship.laser_explosion_threshold(), 50);
+
+  ship.admin_override_damage(25);
+  test::expect_eq(ship.max_safe_laser_strength(), 18);
+  test::expect_eq(ship.laser_explosion_threshold(), 37);
+
+  ship.admin_override_damage(100);
+  test::expect_eq(ship.max_safe_laser_strength(), 0);
+  test::expect_eq(ship.laser_explosion_threshold(), 0);
+
+  // Non-positive, NaN, and extreme technology levels clamp without overflow UB
+  ship.admin_override_damage(0);
+  ship.tech() = -40.0;
+  test::expect_eq(ship.max_safe_laser_strength(), 0);
+  test::expect_eq(ship.laser_explosion_threshold(), 0);
+
+  ship.tech() = std::numeric_limits<double>::quiet_NaN();
+  test::expect_eq(ship.max_safe_laser_strength(), 0);
+  test::expect_eq(ship.laser_explosion_threshold(), 0);
+
+  ship.tech() = 1e20;
+  test::expect_eq(ship.max_safe_laser_strength(),
+                  std::numeric_limits<weapon_power_t>::max());
+  test::expect_eq(ship.laser_explosion_threshold(),
+                  std::numeric_limits<weapon_power_t>::max());
+
+  // gun_range scales continuously with tech and clamps non-positive/NaN/+inf
+  expect_near(gun_range(0.0), 0.5 * std::log10(2.0) * SYSTEMSIZE);
+  expect_near(gun_range(98.0), SYSTEMSIZE);
+  test::expect_gt(gun_range(0.5), gun_range(0.0));
+  test::expect_lt(gun_range(0.5), gun_range(1.0));
+  expect_near(gun_range(-10.0), gun_range(0.0));
+  expect_near(gun_range(std::numeric_limits<double>::quiet_NaN()),
+              gun_range(0.0));
+  test::expect_true(
+      std::isfinite(gun_range(std::numeric_limits<double>::infinity())));
+}
+
 void test_crew_ratio() {
   std::println(std::cout, "Testing Ship::crew_ratio()...");
   ship_struct sdata{
@@ -2364,6 +2410,7 @@ void test_subclass_special_data_clamping() {
 
 int main() {
   test_hull_efficiency();
+  test_laser_overload_thresholds();
   test_crew_ratio();
   test_fuel_predicates();
   test_available_resource_capacity();

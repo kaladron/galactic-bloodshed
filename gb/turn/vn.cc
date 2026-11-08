@@ -253,16 +253,16 @@ shipnum_t construct_replicated_vn(EntityManager& em, AutonomousShip& parent,
   Ship& s2 = *ship_handle;
   s2.name() = AutonomousShip::generate_binary_name();
   s2.set_coordinates(parent.coordinates());
-  s2.add_fuel(0.5 * parent.fuel());
-  s2.armor() = parent.armor() + 1;
-  s2.tech() = parent.tech() + 20.0;
+  s2.add_fuel(VN_REPLICATION_FUEL_SHARE * parent.fuel());
+  s2.armor() = parent.armor() + VN_REPLICATION_ARMOR_BONUS;
+  s2.tech() = parent.tech() + VN_REPLICATION_TECH_BONUS;
   if (auto* auto_ship = s2.as<AutonomousShip>()) {
     auto_ship->inherit_vn_mind_from(parent);
   }
   s2.land_on_planet(planet.star_id(), planet.planet_order(),
                     parent.land_coords());
 
-  parent.consume_fuel(parent.fuel() * 0.5);
+  parent.consume_fuel(parent.fuel() * VN_REPLICATION_FUEL_SHARE);
 
   return s2.number();
 }
@@ -285,11 +285,11 @@ shipnum_t construct_replicated_berserker(EntityManager& em,
   auto ship_handle = em.create_ship(ShipType::OTYPE_BERS, 1);
   Ship& s2 = *ship_handle;
   s2.set_coordinates(parent.coordinates());
-  s2.add_fuel(5.0 * parent.fuel());
-  parent.consume_fuel(parent.fuel() * 0.5);
-  s2.armor() = parent.armor() + 11;
-  s2.tech() = parent.tech() + 100.0;
-  s2.add_destruct(500);
+  s2.add_fuel(BERSERKER_REPLICATION_FUEL_MULTIPLIER * parent.fuel());
+  parent.consume_fuel(parent.fuel() * VN_REPLICATION_FUEL_SHARE);
+  s2.armor() = parent.armor() + BERSERKER_REPLICATION_ARMOR_BONUS;
+  s2.tech() = parent.tech() + BERSERKER_REPLICATION_TECH_BONUS;
+  s2.add_destruct(BERSERKER_INITIAL_DESTRUCT);
   if (auto* auto_ship = s2.as<AutonomousShip>()) {
     auto_ship->inherit_berserker_mind_from(parent, stats.VN_brain.most_mad);
   }
@@ -316,9 +316,10 @@ shipnum_t construct_replicated_berserker(EntityManager& em,
 /// \return Total number of new machines constructed.
 int replicate_machines(EntityManager& em, AutonomousShip& parent,
                        Planet& planet, const TurnStats& stats) {
-  const ShipType shipbuild = (stats.VN_brain.total_mad > 100 && bool_rand())
-                                 ? ShipType::OTYPE_BERS
-                                 : ShipType::OTYPE_VN;
+  const ShipType shipbuild =
+      (stats.VN_brain.total_mad > VN_BERSERKER_ANGER_THRESHOLD && bool_rand())
+          ? ShipType::OTYPE_BERS
+          : ShipType::OTYPE_VN;
   const auto& tmpl = ship_template(shipbuild);
   const resource_t cost = tmpl.build_cost;
   if (parent.resource() < cost) {

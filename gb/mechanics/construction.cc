@@ -407,7 +407,8 @@ scrap_single_ship(EntityManager& em, Ship& s, const Race& race) {
   const bool foreign_sector =
       (is_landed_on_planet && sect_owner != 0 && sect_owner != race.Playernum);
 
-  resource_t scrapval = s.effective_cost() / 2 + s.resource();
+  resource_t scrapval =
+      s.effective_cost() / SCRAP_RECOVERY_DIVISOR + s.resource();
   fuel_t fuelval = s.fuel();
   resource_t destval = s.destruct();
   population_t troopval = s.troops();
@@ -1194,7 +1195,8 @@ upgrade_single_ship(EntityManager& entity_manager, Ship& dirship,
         UpgradeError{.reason = UpgradeErrorReason::CannotDowngrade});
   }
 
-  resource_t netcost = race.God ? 0 : 2 * (newcost - oldcost);
+  resource_t netcost =
+      race.God ? 0 : SHIP_MODIFICATION_COST_MULTIPLIER * (newcost - oldcost);
   if (!race.God && netcost == 0) {
     netcost = 1;
   }

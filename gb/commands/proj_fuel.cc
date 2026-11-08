@@ -163,6 +163,7 @@ FuelSimulationResult simulate_optimal_fuel(const Ship& ship,
   double fuel_usage = level;
   bool opt_settings = false;
   segments_t number_segments = 0;
+  constexpr fuel_t fuel_solver_tolerance = 0.05;
 
   while (true) {
     SimulatedShip tmpship(ship);
@@ -175,7 +176,7 @@ FuelSimulationResult simulate_optimal_fuel(const Ship& ship,
     number_segments = segs;
     fuel_usage = level;
     opt_settings = true;
-    if (tmpship.fuel() < 0.05) {
+    if (tmpship.fuel() < fuel_solver_tolerance) {
       break;
     }
     level -= tmpship.fuel();

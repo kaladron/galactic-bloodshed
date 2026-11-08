@@ -64,6 +64,13 @@ hit_odds(double range, double tech, damage_t fdam, bool fev, bool tev,
          speed_t fspeed, speed_t tspeed, ship_size_t body, guntype_t caliber,
          armor_t defense);
 
+/// \brief Computes focused-laser hit probability (p^2 / 100) from base hit
+/// odds.
+export [[nodiscard]] constexpr hit_odds_t
+quadratic_hit_odds(hit_odds_t prob) noexcept {
+  return hit_odds_t{(prob.value() * prob.value()) / 100};
+}
+
 /// \brief Salvo saturation rule: every 5 hits reduce target effective armor by
 /// 1 for that attack (help/fireformula.md).
 export constexpr unsigned int HITS_PER_ARMOR_PENETRATION = 5;

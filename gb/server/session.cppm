@@ -192,8 +192,10 @@ private:
   std::string process_telnet_sequences(std::string_view raw);
   bool enqueue_complete_lines();
 
+  static constexpr std::size_t read_chunk_buffer_size = MAX_COMMAND_LEN * 16;
+
   asio::ip::tcp::socket socket_;
-  std::array<char, MAX_COMMAND_LEN * 16> read_chunk_{};
+  std::array<char, read_chunk_buffer_size> read_chunk_{};
   std::string line_buffer_;
   std::string out_buffer_;               // Where send() writes go
   std::deque<std::string> write_queue_;  // Pending async writes (internal)

@@ -136,10 +136,11 @@ void finalize_boarding_ownership_and_morale(EntityManager& em, Ship& s,
   race.increase_translation(report.old_defender_owner);
 
   if (!report.surviving_boarders && !defender_wiped_out) {
-    alien.increase_translation(attacker_player, 25);
+    alien.increase_translation(attacker_player, BOARDING_TRANSLATION_GAIN);
   }
   if (report.captured) {
-    race.increase_translation(report.old_defender_owner, 25);
+    race.increase_translation(report.old_defender_owner,
+                              BOARDING_TRANSLATION_GAIN);
   }
 }
 
@@ -166,16 +167,18 @@ resolve_boarding_combat(EntityManager& em, Ship& s, Ship& s2,
 
       remove_ship_boarders(s, what, report.surviving_boarders, race.mass);
 
-      report.attack_strength = report.surviving_boarders *
-                               (what == PopulationType::MIL
-                                    ? MILITARY_COMBAT_MULTIPLIER * race.fighters
-                                    : 1) *
-                               percent_to_fraction(race.tech) *
-                               morale_factor(race.morale - alien.morale);
-      report.defense_strength = (s2.popn() + MILITARY_COMBAT_MULTIPLIER *
-                                                 s2.troops() * alien.fighters) *
-                                percent_to_fraction(alien.tech) *
-                                morale_factor(alien.morale - race.morale);
+      report.attack_strength =
+          static_cast<double>(report.surviving_boarders *
+                              (what == PopulationType::MIL
+                                   ? MILITARY_COMBAT_MULTIPLIER * race.fighters
+                                   : 1)) *
+          (COMBAT_TECH_SCALE * race.tech) *
+          morale_factor(race.morale - alien.morale);
+      report.defense_strength =
+          static_cast<double>(s2.popn() + MILITARY_COMBAT_MULTIPLIER *
+                                              s2.troops() * alien.fighters) *
+          (COMBAT_TECH_SCALE * alien.tech) *
+          morale_factor(alien.morale - race.morale);
 
       report.hyperdrive_deactivated = maneuver_ship_to_target(s, s2, fuel);
 
@@ -467,7 +470,7 @@ constexpr double calculate_boarding_attack_strength(population_t boarders,
           ? attacker.fighters * MILITARY_COMBAT_MULTIPLIER
           : 1;
   return static_cast<double>(boarders * force_weight) *
-         percent_to_fraction(attacker.tech) *
+         (COMBAT_TECH_SCALE * attacker.tech) *
          (attacker.sector_compatibility(sect) + COMBAT_FLOOR_EPSILON) *
          sect.combat_defense_factor() *
          morale_factor(attacker.morale - defender.morale);
@@ -479,7 +482,8 @@ constexpr double calculate_boarding_defense_strength(const Ship& ship,
   const population_t crew_weight =
       ship.popn() +
       ship.troops() * MILITARY_COMBAT_MULTIPLIER * defender.fighters;
-  return static_cast<double>(crew_weight) * percent_to_fraction(defender.tech) *
+  return static_cast<double>(crew_weight) *
+         (COMBAT_TECH_SCALE * defender.tech) *
          (static_cast<double>(ship.effective_armor()) + COMBAT_FLOOR_EPSILON) *
          ship.hull_efficiency() *
          morale_factor(defender.morale - attacker.morale);

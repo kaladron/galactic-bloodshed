@@ -104,7 +104,8 @@ public:
   SessionRegistry& session_registry;  ///< Session registry for notifications
 
   // Public utility fields (direct access retained for legacy code patterns)
-  double zoom[2] = {0.5, 0.5};  ///< last coords for zoom
+  double zoom[2] = {DEFAULT_MAP_ZOOM,
+                    DEFAULT_MAP_ZOOM};  ///< last coords for zoom
 
   // Constructor for new Server-based architecture
   explicit GameObj(EntityManager& em, SessionRegistry& registry)

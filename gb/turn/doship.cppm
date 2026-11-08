@@ -85,7 +85,8 @@ export void do_oap(Ship& ship, TurnStats& stats);
 export void do_mirror(SpaceMirrorShip& ship, EntityManager& entity_manager,
                       TurnStats& stats);
 export void do_meta_infect(player_t who, starnum_t star, planetnum_t pnum,
-                           Planet& p, EntityManager& entity_manager);
+                           Planet& p, EntityManager& entity_manager,
+                           bool pod_terraform = POD_TERRAFORM);
 export int infect_planet(player_t who, starnum_t star, planetnum_t pnum,
                          EntityManager& entity_manager);
 export void do_ap(Ship& ship, EntityManager& entity_manager);

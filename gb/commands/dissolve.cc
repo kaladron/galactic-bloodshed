@@ -78,10 +78,10 @@ void dissolve_empire_colonies(GameObj& g, player_t playernum, bool waste) {
 
 namespace GB::commands {
 
-bool dissolve(const command_t& argv, GameObj& g) {
+bool dissolve(const command_t& argv, GameObj& g, bool dissolve_enabled) {
   const player_t playernum = g.player();
   const governor_t governor = g.governor();
-  if (!DISSOLVE) {
+  if (!dissolve_enabled) {
     g.out << "Dissolve has been disabled. Please notify diety.\n";
     return false;
   }
@@ -129,6 +129,10 @@ bool dissolve(const command_t& argv, GameObj& g) {
 
   g.present(result);
   return true;
+}
+
+bool dissolve(const command_t& argv, GameObj& g) {
+  return dissolve(argv, g, DISSOLVE);
 }
 
 const CommandDescriptor dissolve_cmd{

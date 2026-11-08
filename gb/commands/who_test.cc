@@ -79,12 +79,15 @@ void test_who_matrix() {
   test::expect_false(out.contains("Klingons"));
   // Deity session should be visible to normal players when not invisible
   test::expect_contains(out, "Deity");
-  // Non-god sees coward count or Finished depending on SHOW_COWARDS
-  if (SHOW_COWARDS) {
-    test::expect_contains(out, "1 coward");
-  } else {
-    test::expect_contains(out, "Finished.");
-  }
+  // Non-god sees Finished when show_cowards = false and coward count when true
+  g.out.str("");
+  test::expect_true(GB::commands::who({"who"}, g, /*show_cowards=*/false));
+  test::expect_contains(g.out.str(), "Finished.");
+  test::expect_false(g.out.str().contains("coward"));
+
+  g.out.str("");
+  test::expect_true(GB::commands::who({"who"}, g, /*show_cowards=*/true));
+  test::expect_contains(g.out.str(), "1 coward");
 
   // Deity toggles invisible -> hidden from normal Player 1, coward count
   // increases
@@ -95,9 +98,9 @@ void test_who_matrix() {
       GB::commands::dispatch_command(g, GB::commands::who_cmd, {"who"}));
   out = g.out.str();
   test::expect_false(out.contains("Deity"));
-  if (SHOW_COWARDS) {
-    test::expect_contains(out, "2 cowards");
-  }
+  g.out.str("");
+  test::expect_true(GB::commands::who({"who"}, g, /*show_cowards=*/true));
+  test::expect_contains(g.out.str(), "2 cowards");
   // Reset deity invisible toggle
   ctx.em.mutate_race(player_t{3},
                      [](Race& r) { r.leader().toggle.invisible = false; });

@@ -380,6 +380,25 @@ void test_do_meta_infect() {
   do_meta_infect(player_t{1}, starnum_t{1}, planetnum_t{1}, planet, em);
   test::expect_gt(planet.info(player_t{1}).numsectsowned, 0);
   test::expect_eq(planet.info(player_t{1}).explored, 1);
+
+  // Verify pod_terraform = false preserves native sector type vs
+  // pod_terraform = true terraforming to race.likesbest
+  Planet pod_planet{1, 2, PlanetType::WATER, Coordinates{1, 1}};
+  PlanetRepository(store).save(pod_planet);
+  SectorMap pod_smap(pod_planet);
+  pod_smap.get({0, 0}).set_owner(0);
+  pod_smap.get({0, 0}).set_type(SectorType::SEC_SEA);
+  pod_smap.get({0, 0}).set_condition(SectorType::SEC_WASTED);
+  SectorRepository(store).save_map(pod_smap);
+
+  do_meta_infect(1, 1, 2, pod_planet, em, /*pod_terraform=*/false);
+  test::expect_eq(em.peek_sectormap(1, 2)->get({0, 0}).get_condition(),
+                  SectorType::SEC_SEA);
+
+  em.mutate_sectormap(1, 2, [](SectorMap& m) { m.get({0, 0}).set_owner(0); });
+  do_meta_infect(1, 1, 2, pod_planet, em, /*pod_terraform=*/true);
+  test::expect_eq(em.peek_sectormap(1, 2)->get({0, 0}).get_condition(),
+                  SectorType::SEC_LAND);
 }
 
 void test_intercept_missile_by_pdn() {

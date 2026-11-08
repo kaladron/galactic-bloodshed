@@ -54,13 +54,6 @@ export constexpr const char* WELCOME_FILE = "welcome.txt";
 export constexpr const char* LEAVE_MESSAGE =
     "\n*** Thank you for playing Galactic Bloodshed ***\n";
 
-export constexpr bool EXTERNAL_TRIGGER =
-    false;  // if you wish to allow the below passwords to
-            // trigger updates and movement segments
-export constexpr const char* UPDATE_PASSWORD = "put_your_update_password_here";
-export constexpr const char* SEGMENT_PASSWORD =
-    "put_your_segment_password_here";
-
 using namespace std::chrono_literals;
 export constexpr auto DEFAULT_UPDATE_TIME = 30min;  // update time (minutes!)
 export constexpr auto DEFAULT_RANDOM_UPDATE_RANGE = 0min;  // again, in minutes.
@@ -94,7 +87,6 @@ export constexpr bool POD_TERRAFORM =
     false;                              // Pods will terraform infected sectors
 export constexpr bool VOTING = true;    // Allow player voting
 export constexpr bool DISSOLVE = true;  // Allow players to dissolve
-export constexpr bool DEFENSE = true;   // Allow planetary guns
 export constexpr bool MARKET = true;    // Enable the market
 
 export constexpr Percentage VICTORY_PERCENT{10};

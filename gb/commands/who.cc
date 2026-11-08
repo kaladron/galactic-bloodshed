@@ -14,13 +14,13 @@ module commands;
 
 namespace GB::commands {
 
-bool who(const command_t&, GameObj& g) {
+bool who(const command_t&, GameObj& g, bool show_cowards) {
   const std::time_t now = std::time(nullptr);
   const bool is_god = g.god();
 
   GB::presentation::WhoViewModel vm{
       .now = now,
-      .show_cowards = SHOW_COWARDS,
+      .show_cowards = show_cowards,
   };
 
   // Get all connected sessions as metadata (no Session type exposure)
@@ -56,6 +56,10 @@ bool who(const command_t&, GameObj& g) {
 
   g.present(vm);
   return true;
+}
+
+bool who(const command_t& argv, GameObj& g) {
+  return who(argv, g, SHOW_COWARDS);
 }
 
 const CommandDescriptor who_cmd{

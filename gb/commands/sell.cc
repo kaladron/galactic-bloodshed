@@ -19,8 +19,6 @@ bool sell(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player();
   const governor_t Governor = g.governor();
 
-  if (!MARKET) return false;
-
   auto snum = g.snum();
   auto pnum = g.pnum();
 

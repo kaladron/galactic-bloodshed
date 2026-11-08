@@ -133,17 +133,9 @@ void print_server_usage(const char* prog_name) {
                "exit");
 }
 
-std::string format_startup_banner(std::time_t current_time,
-                                  bool include_trigger_passwords) {
-  std::string banner =
-      std::format("      ***   Galactic Bloodshed v{} ***\n\n      {}\n",
-                  GB_VERSION, format_timestamp(current_time));
-  if (include_trigger_passwords) {
-    banner += std::format("      The update password is '{}'.\n"
-                          "      The segment password is '{}'.\n",
-                          UPDATE_PASSWORD, SEGMENT_PASSWORD);
-  }
-  return banner;
+std::string format_startup_banner(std::time_t current_time) {
+  return std::format("      ***   Galactic Bloodshed v{} ***\n\n      {}\n",
+                     GB_VERSION, format_timestamp(current_time));
 }
 
 void initialize_schedule_state(ServerState& state, const ServerConfig& config,

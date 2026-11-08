@@ -139,7 +139,6 @@ build_registry() {
         reg(weapons_cmd);
         reg(factories_cmd);
         reg(scrap_cmd);
-        reg(sell_cmd);
         reg(stars_cmd);
         reg(status_cmd);
         reg(survey_cmd);
@@ -179,17 +178,18 @@ build_registry() {
         reg(make_cmd);
         reg(modify_cmd);
         reg(transfer_cmd);
+        reg(treasury_cmd);
         reg(walk_cmd);
         reg(invite_cmd);
         reg(uninvite_cmd);
-        if (MARKET) {
+        if constexpr (MARKET) {
           reg(bid_cmd);
-          reg(treasury_cmd);
+          reg(sell_cmd);
         }
         reg(allocate_cmd);
         reg(schedule_cmd);
         reg(time_cmd);
-        if (VOTING) {
+        if constexpr (VOTING) {
           reg(vote_cmd);
         }
 

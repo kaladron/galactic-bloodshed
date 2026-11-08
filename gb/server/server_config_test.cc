@@ -205,28 +205,11 @@ void test_initialize_block_data() {
 void test_format_startup_banner() {
   const std::time_t now = 1700000000;
   const std::string expected_time = format_timestamp(now);
-
-  // Branch 1: include_trigger_passwords = false
-  {
-    const std::string banner = format_startup_banner(now, false);
-    test::expect_contains(banner, GB_VERSION);
-    test::expect_contains(banner, expected_time);
-    test::expect_false(banner.contains("password is"));
-    test::expect_false(banner.contains(UPDATE_PASSWORD));
-    test::expect_false(banner.contains(SEGMENT_PASSWORD));
-  }
-
-  // Branch 2: include_trigger_passwords = true
-  {
-    const std::string banner = format_startup_banner(now, true);
-    test::expect_contains(banner, GB_VERSION);
-    test::expect_contains(banner, expected_time);
-    test::expect_contains(
-        banner, std::format("The update password is '{}'.", UPDATE_PASSWORD));
-    test::expect_contains(
-        banner, std::format("The segment password is '{}'.", SEGMENT_PASSWORD));
-    test::expect_false(banner.contains("%s"));
-  }
+  const std::string banner = format_startup_banner(now);
+  test::expect_contains(banner, GB_VERSION);
+  test::expect_contains(banner, expected_time);
+  test::expect_false(banner.contains("password is"));
+  test::expect_false(banner.contains("%s"));
 }
 
 }  // namespace

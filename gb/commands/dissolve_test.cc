@@ -161,6 +161,13 @@ void test_dissolve_domain_errors() {
   ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_UNIV);
 
+  // 0. Feature switch disabled (dissolve_enabled = false)
+  test::expect_false(GB::commands::dissolve({"dissolve", "testpass", "govpass"},
+                                            g, /*dissolve_enabled=*/false));
+  test::expect_contains(g.out.str(), "Dissolve has been disabled.");
+  test::expect_false(ctx.em.peek_race(1)->dissolved);
+  g.out.str("");
+
   // 1. Min args (< 3 args via dispatcher and direct handler)
   ctx.assert_dispatch_rejected(g, {"dissolve", "testpass"});
   test::expect_contains(

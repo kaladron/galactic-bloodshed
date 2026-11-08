@@ -49,6 +49,13 @@ void test_live_registry_integrity() {
     // 4. Lookup by key returns the exact same descriptor pointer
     test::expect_eq(GB::commands::find_command_descriptor(key), desc_ptr);
   }
+  test::expect_ne(GB::commands::find_command_descriptor("treasury"), nullptr);
+  test::expect_eq(GB::commands::find_command_descriptor("bid") != nullptr,
+                  MARKET);
+  test::expect_eq(GB::commands::find_command_descriptor("sell") != nullptr,
+                  MARKET);
+  test::expect_eq(GB::commands::find_command_descriptor("vote") != nullptr,
+                  VOTING);
 }
 
 void test_find_command_descriptor_not_found() {

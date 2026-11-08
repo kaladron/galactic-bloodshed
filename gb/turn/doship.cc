@@ -76,7 +76,7 @@ void do_habitat(Ship& ship, EntityManager& entity_manager) {
 }
 
 void do_meta_infect(player_t who, starnum_t star, planetnum_t pnum, Planet& p,
-                    EntityManager& entity_manager) {
+                    EntityManager& entity_manager, bool pod_terraform) {
   entity_manager.mutate_sectormap(star, pnum, [&](SectorMap& smap) {
     auto& s = smap.get_random();
 
@@ -101,10 +101,7 @@ void do_meta_infect(player_t who, starnum_t star, planetnum_t pnum, Planet& p,
     s.set_troops(0);
     s.set_popn_exact(who_race.number_sexes);
     s.set_owner(who);
-    s.set_condition(s.get_type());
-    if (POD_TERRAFORM) {
-      s.set_condition(who_race.likesbest);
-    }
+    s.set_condition(pod_terraform ? who_race.likesbest : s.get_type());
   });
 }
 

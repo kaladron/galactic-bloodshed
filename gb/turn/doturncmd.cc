@@ -67,8 +67,10 @@ void do_turn(EntityManager& entity_manager, SessionRegistry&, bool update) {
     process_stars_and_planets(state, update);
     process_races(state, update);
     output_ground_attacks(state.entity_manager);
-    if (update) {
-      process_market_transactions(state.entity_manager);
+    if constexpr (MARKET) {
+      if (update) {
+        process_market_transactions(state.entity_manager);
+      }
     }
     process_ship_masses_and_ownership(state);
     process_ship_turns(state, update);
@@ -175,8 +177,6 @@ static void process_races(TurnState& state, bool update) {
  * \param entity_manager Database entity manager for persistent storage
  */
 void process_market_transactions(EntityManager& entity_manager) {
-  if (!MARKET) return;
-
   auto barrier = entity_manager.create_deletion_barrier();
 
   /* reset market - note: CommodList filters out null/invalid entries */
@@ -266,7 +266,7 @@ static void process_ship_turns(TurnState& state, bool update) {
     }
   }
 
-  if (MARKET) {
+  if constexpr (MARKET) {
     /* do maintenance costs */
     if (update) {
       for (const Ship& s : ShipList::readonly(
@@ -444,7 +444,7 @@ void advance_race_technology(Race& race, const TurnStats& stats,
   race.morale += stats.power_stats(player).planets_owned;
   race.turn += 1;
   check_technological_discoveries(entity_manager, race);
-  if (MARKET) {
+  if constexpr (MARKET) {
     race.deduct_all_maintenance();
   }
 }

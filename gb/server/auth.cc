@@ -77,16 +77,6 @@ void check_connect(Session& session, std::string_view message) {
     session.set_ui_mode(UiMode::JSON);
   }
 
-  if (EXTERNAL_TRIGGER) {
-    if (race_password == SEGMENT_PASSWORD) {
-      do_segment(session.entity_manager(), session.registry(), 1, 0);
-      return;
-    } else if (race_password == UPDATE_PASSWORD) {
-      do_update(session.entity_manager(), session.registry(), true);
-      return;
-    }
-  }
-
   auto [Playernum, Governor] =
       getracenum(session.entity_manager(), race_password, gov_password);
 

@@ -81,7 +81,7 @@ void telegram_star(EntityManager& em, starnum_t star, player_t sender,
 std::vector<TelegramItem> teleg_read(EntityManager& em, player_t player,
                                      governor_t governor) {
   auto telegrams = em.get_telegrams(player, governor);
-  if (!telegrams.empty()) {
+  if (!telegrams.empty() && !em.peek_race(player)->Guest) {
     em.delete_telegrams(player, governor);
   }
   return telegrams;
@@ -89,17 +89,17 @@ std::vector<TelegramItem> teleg_read(EntityManager& em, player_t player,
 
 std::vector<NewsItem> news_read(EntityManager& em, player_t player,
                                 governor_t governor, NewsType type) {
+  const auto& race = *em.peek_race(player);
   const auto last_read_id =
-      em.peek_race(player)->governor(governor).newspos[type];
+      race.Guest ? 0 : race.governor(governor).newspos[type];
   auto news_items = em.get_news_since(type, last_read_id);
-  if (news_items.empty()) {
+  if (news_items.empty() || race.Guest) {
     return news_items;
   }
 
   const auto latest_id = std::ranges::max(news_items, {}, &NewsItem::id).id;
-  em.mutate_race(player, [&](Race& race) {
-    race.governor(governor).newspos[type] = latest_id;
-  });
+  em.mutate_race(
+      player, [&](Race& r) { r.governor(governor).newspos[type] = latest_id; });
   return news_items;
 }
 

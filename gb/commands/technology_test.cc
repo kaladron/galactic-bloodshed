@@ -35,8 +35,10 @@ void test_technology_happy_paths() {
   g.set_snum(1);
   g.set_pnum(1);
 
-  // 1. Query current technology investment (costs 1 AP)
-  ctx.assert_dispatch_success(g, {"technology"}, 1);
+  // 1. Query current technology investment (0 AP, zero DB writes)
+  const auto before_query = ctx.db.total_changes();
+  ctx.assert_dispatch_success(g, {"technology"}, 0);
+  test::expect_eq(ctx.db.total_changes(), before_query);
   test::expect_contains(g.out.str(), "Current investment : 100");
   test::expect_contains(g.out.str(), "Technology production/update:");
 
@@ -57,9 +59,11 @@ void test_technology_happy_paths() {
   test::expect_contains(g.out.str(), R"("type":"planet")");
   test::expect_contains(g.out.str(), R"("tech_invest":3000000000)");
 
-  // 4. Query technology investment in JSON mode
+  // 4. Query technology investment in JSON mode (0 AP, zero DB writes)
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"technology"}, 1);
+  const auto before_json_query = ctx.db.total_changes();
+  ctx.assert_dispatch_success(g, {"technology"}, 0);
+  test::expect_eq(ctx.db.total_changes(), before_json_query);
   test::expect_contains(g.out.str(), R"("type":"planet")");
   test::expect_contains(g.out.str(), R"("tech_invest":3000000000)");
 }
@@ -67,7 +71,7 @@ void test_technology_happy_paths() {
 // Test technology command with insufficient AP
 void test_technology_insufficient_ap() {
   TestContext ctx;
-  setup_technology_world(ctx, 0);  // 0 AP (needs 1)
+  setup_technology_world(ctx, 0);  // 0 AP (query succeeds, mutation needs 1)
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -76,6 +80,10 @@ void test_technology_insufficient_ap() {
   g.set_snum(1);
   g.set_pnum(1);
 
+  ctx.assert_dispatch_success(g, {"technology"}, 0);
+  test::expect_contains(g.out.str(), "Current investment : 100");
+
+  g.out.str("");
   ctx.assert_dispatch_rejected(g, {"technology", "500"});
   test::expect_contains(g.out.str(), "You don't have 1 action points there.");
   test::expect_eq(ctx.em.peek_planet(1, 1)->info(1).tech_invest, 100);

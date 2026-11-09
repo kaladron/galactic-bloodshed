@@ -935,10 +935,12 @@ void test_entity_manager_with_scoped_peeks() {
       [](const ServerState& st) { return st.welcome_message; });
   test::expect_eq(msg, "Welcome to GB!");
 
-  // 8. with_ship_exam
+  // 8. with_ship_exam (pure read-only default synthesis, zero DB writes)
+  const auto before_exam = db.total_changes();
   auto exam_name = em.with_ship_exam(
       ShipType::OTYPE_PROBE, [](const ShipExam& ex) { return ex.name; });
   test::expect_eq(exam_name, "Space Probe");
+  test::expect_eq(db.total_changes(), before_exam);
 
   // 9. with_planet_and_sectors
   bool paired_check = em.with_planet_and_sectors(

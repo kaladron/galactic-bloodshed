@@ -58,6 +58,9 @@ public:
   // Check if database is open
   [[nodiscard]] bool is_open() const noexcept;
 
+  // Total row modifications (INSERT/UPDATE/DELETE) on this connection
+  [[nodiscard]] std::int64_t total_changes() const noexcept;
+
   // Planet queries
   int count_non_asteroid_planets();
 };

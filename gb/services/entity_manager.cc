@@ -589,17 +589,15 @@ void EntityManager::release_server_state() {
 }
 
 namespace {
-ShipExam load_or_create_ship_exam(ShipExamRepository& repo,
-                                  ShipType ship_type) {
+ShipExam load_or_default_ship_exam(ShipExamRepository& repo,
+                                   ShipType ship_type) {
   if (auto existing = repo.find_by_type(ship_type)) {
     return std::move(*existing);
   }
   const auto& tmpl = ship_template(ship_type);
-  ShipExam new_exam{.ship_type = ship_type,
-                    .name = std::string(tmpl.name),
-                    .description = std::format("{}\n", tmpl.name)};
-  repo.save(new_exam);
-  return new_exam;
+  return ShipExam{.ship_type = ship_type,
+                  .name = std::string(tmpl.name),
+                  .description = std::format("{}\n", tmpl.name)};
 }
 }  // namespace
 
@@ -608,7 +606,7 @@ EntityHandle<ShipExam> EntityManager::get_ship_exam(ShipType ship_type) {
       this, ship_type, ship_exam_cache, ship_exam_refcount,
       [this](ShipType type) {
         return std::optional<ShipExam>(
-            load_or_create_ship_exam(storage_->ship_exams, type));
+            load_or_default_ship_exam(storage_->ship_exams, type));
       },
       [this](ShipExam& exam) { storage_->ship_exams.save(exam); },
       [this](ShipType type) { release_ship_exam(type); });
@@ -618,7 +616,7 @@ const ShipExam* EntityManager::peek_ship_exam(ShipType ship_type) {
   return peek_entity_impl<ShipExam>(
       ship_type, ship_exam_cache, [this](ShipType type) {
         return std::optional<ShipExam>(
-            load_or_create_ship_exam(storage_->ship_exams, type));
+            load_or_default_ship_exam(storage_->ship_exams, type));
       });
 }
 

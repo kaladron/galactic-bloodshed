@@ -91,6 +91,13 @@ bool Database::is_open() const noexcept {
   return impl_ && impl_->conn != nullptr;
 }
 
+std::int64_t Database::total_changes() const noexcept {
+  if (!is_open()) {
+    return 0;
+  }
+  return sqlite3_total_changes64(impl_->conn);
+}
+
 void Database::execute_sql(const char* sql, const char* action_name) {
   if (!is_open()) {
     throw SqliteError("Database connection is not open");

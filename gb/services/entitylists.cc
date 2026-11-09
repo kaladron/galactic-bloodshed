@@ -326,6 +326,10 @@ ShipHandle ScopedCommandableShips::Iterator::operator*() const {
   return ShipList::acquire_handle(*em_, *it_);
 }
 
+const Ship& ScopedCommandableShips::Iterator::peek() const {
+  return *em_->peek_ship(*it_);
+}
+
 bool ScopedCommandableShips::Iterator::operator==(const Iterator& other) const {
   return it_ == other.it_;
 }
@@ -334,14 +338,24 @@ bool ScopedCommandableShips::Iterator::operator!=(const Iterator& other) const {
   return it_ != other.it_;
 }
 
-ScopedCommandableShips::Iterator ScopedCommandableShips::begin() const {
+ScopedCommandableShips::Iterator ScopedCommandableShips::begin() {
   return Iterator(*em_, ctx_, filter_, require_active_, ship_ids_.begin(),
                   ship_ids_.end());
 }
 
-ScopedCommandableShips::Iterator ScopedCommandableShips::end() const {
+ScopedCommandableShips::Iterator ScopedCommandableShips::end() {
   return Iterator(*em_, ctx_, filter_, require_active_, ship_ids_.end(),
                   ship_ids_.end());
+}
+
+ScopedCommandableShips::ReadonlyIterator ScopedCommandableShips::begin() const {
+  return ReadonlyIterator(Iterator(*em_, ctx_, filter_, require_active_,
+                                   ship_ids_.begin(), ship_ids_.end()));
+}
+
+ScopedCommandableShips::ReadonlyIterator ScopedCommandableShips::end() const {
+  return ReadonlyIterator(Iterator(*em_, ctx_, filter_, require_active_,
+                                   ship_ids_.end(), ship_ids_.end()));
 }
 
 std::tuple<player_t, governor_t> getracenum(EntityManager& entity_manager,

@@ -80,8 +80,10 @@ void test_password_change_validation_and_modes() {
   test::expect_contains(g.out.str(), "No such governor");
 
   g.out.str("");
+  const auto before_inactive = ctx.db.total_changes();
   ctx.assert_dispatch_rejected(g, {"governors", "9", "password", "newpass"});
   test::expect_contains(g.out.str(), "That governor is inactive");
+  test::expect_eq(ctx.db.total_changes(), before_inactive);
 
   g.out.str("");
   ctx.setup_game_obj(g, 1, 2);
@@ -105,8 +107,10 @@ void test_password_change_validation_and_modes() {
 
   ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });
   g.out.str("");
+  const auto before_guest = ctx.db.total_changes();
   ctx.assert_dispatch_rejected(g, {"governors", "2", "password", "evennewer"});
   test::expect_contains(g.out.str(), "Guest races cannot change passwords");
+  test::expect_eq(ctx.db.total_changes(), before_guest);
 }
 
 }  // namespace

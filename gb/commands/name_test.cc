@@ -3,6 +3,7 @@
 /// \file name_test.cc
 /// \brief Test name command database persistence and validation rules
 
+import dallib;
 import gb.entities;
 import gb.services;
 import test;
@@ -384,6 +385,48 @@ void test_name_permissions_scope_and_json() {
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "sector", "Alpha"});
     test::expect_contains(g.out.str(), "I don't know what you mean.");
+  }
+
+  // TEST: Foreign/captured ship, unauthorized governor, and destroyed/missing
+  // ship rejections (zero DB writes), plus deity override
+  {
+    const auto enemy_fac = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
+                               .owned_by(2, 1)
+                               .named("EnemyHull")
+                               .with_on(false)
+                               .build();
+    g.set_level(ScopeLevel::LEVEL_SHIP);
+    g.set_shipno(enemy_fac);
+    const auto before_rejects = ctx.db.total_changes();
+    g.out.str("");
+    ctx.assert_dispatch_rejected(g, {"name", "ship", "Hijacked"});
+    test::expect_contains(g.out.str(), "You don't own ship #");
+    g.out.str("");
+    ctx.assert_dispatch_rejected(g, {"name", "class", "HijackedClass"});
+    test::expect_contains(g.out.str(), "You don't own ship #");
+    test::expect_eq(ctx.em.peek_ship(enemy_fac)->name(), "EnemyHull");
+
+    // Unauthorized governor on own race's ship & destroyed/deleted ship ID
+    g.set_shipno(ship_id);
+    g.set_governor(2);
+    g.out.str("");
+    ctx.assert_dispatch_rejected(g, {"name", "ship", "WrongGov"});
+    test::expect_contains(g.out.str(), "You don't own ship #");
+    g.set_governor(1);
+
+    g.set_shipno(9999);
+    g.out.str("");
+    ctx.assert_dispatch_rejected(g, {"name", "ship", "Ghost"});
+    test::expect_contains(g.out.str(), "You don't own ship #9999.");
+    test::expect_eq(ctx.db.total_changes(), before_rejects);
+
+    // Deity can rename a foreign ship
+    g.set_god(true);
+    g.set_shipno(enemy_fac);
+    g.out.str("");
+    ctx.assert_dispatch_success(g, {"name", "ship", "DeityNamed"});
+    test::expect_eq(ctx.em.peek_ship(enemy_fac)->name(), "DeityNamed");
+    g.set_god(false);
   }
 
   // TEST: JSON mode output

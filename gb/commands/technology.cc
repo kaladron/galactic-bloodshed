@@ -41,6 +41,13 @@ bool technology(const command_t& argv, GameObj& g) {
   }
   const money_t invest = scan_res->value();
 
+  constexpr ap_t tech_ap_cost = 1;
+  if (!g.deduct_ap(g.snum(), tech_ap_cost)) {
+    g.out << std::format("You don't have {} action points there.\n",
+                         tech_ap_cost);
+    return false;
+  }
+
   double new_prod = 0.0;
   g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {
     auto& info = p.info(player);
@@ -56,7 +63,7 @@ const CommandDescriptor technology_cmd{
     .name = "technology",
     .roles = {.star_control = true},
     .scopes = AllowedScopes::planet_only(),
-    .ap = APCost::fixed_star(1),
+    .ap = APCost::dynamic(),
     .min_args = 1,
     .syntax = "technology [<investment>]",
     .description = "Query or set planetary technology investment",

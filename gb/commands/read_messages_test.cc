@@ -193,6 +193,20 @@ void test_read_news() {
   // Post a new single combat article
   post(ctx.em, "Second clash reported at Sol\n", NewsType::COMBAT);
 
+  // Guest race reading news or telegrams does not mutate DB or consume items
+  ctx.em.mutate_race(2, [](Race& r) { r.Guest = true; });
+  push_telegram(ctx.em, 2, 1, "Guest welcome notice\n");
+  GameObj guest_g(ctx.em, registry);
+  ctx.setup_game_obj(guest_g, 2, 1);
+  const auto before_guest_read = ctx.db.total_changes();
+  ctx.assert_dispatch_success(guest_g, {"read", "news"});
+  test::expect_contains(guest_g.out.str(), "Second clash reported at Sol");
+  guest_g.out.str("");
+  ctx.assert_dispatch_success(guest_g, {"read"});
+  test::expect_contains(guest_g.out.str(), "Guest welcome notice");
+  test::expect_eq(ctx.db.total_changes(), before_guest_read);
+  test::expect_true(ctx.em.has_telegrams(2, 1));
+
   ctx.assert_dispatch_success(g, {"read", "news"});
   std::string updated_news = g.out.str();
   test::expect_contains(updated_news, "Second clash reported at Sol");

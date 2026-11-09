@@ -926,7 +926,8 @@ resolve_explicit_ship(EntityManager& em, const ScopeContext& ctx,
  * are silently skipped without marking their handles dirty, and early-exits
  * after yielding the matching ship when `filter` is an explicit `#shipno`.
  */
-export class ScopedCommandableShips {
+export class ScopedCommandableShips
+    : public ReadonlyFactory<ScopedCommandableShips> {
 public:
   ScopedCommandableShips(EntityManager& em, const ScopeContext& ctx,
                          std::string_view filter, bool require_active = false);
@@ -951,6 +952,7 @@ public:
     Iterator& operator++();
     Iterator operator++(int);
     [[nodiscard]] ShipHandle operator*() const;
+    [[nodiscard]] const Ship& peek() const;
     [[nodiscard]] bool operator==(const Iterator& other) const;
     [[nodiscard]] bool operator!=(const Iterator& other) const;
 
@@ -965,8 +967,28 @@ public:
     std::vector<shipnum_t>::const_iterator end_{};
   };
 
-  [[nodiscard]] Iterator begin() const;
-  [[nodiscard]] Iterator end() const;
+  class ReadonlyIterator {
+  public:
+    explicit ReadonlyIterator(Iterator it) : it_(std::move(it)) {}
+    ReadonlyIterator& operator++() {
+      ++it_;
+      return *this;
+    }
+    [[nodiscard]] const Ship& operator*() const {
+      return it_.peek();
+    }
+    [[nodiscard]] bool operator==(const ReadonlyIterator& other) const {
+      return it_ == other.it_;
+    }
+
+  private:
+    Iterator it_;
+  };
+
+  [[nodiscard]] Iterator begin();
+  [[nodiscard]] Iterator end();
+  [[nodiscard]] ReadonlyIterator begin() const;
+  [[nodiscard]] ReadonlyIterator end() const;
 
 private:
   EntityManager* em_{nullptr};

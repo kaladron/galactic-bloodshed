@@ -12,6 +12,26 @@ import std;
 
 module commands;
 
+namespace {
+
+const Ship* resolve_owned_scoped_ship(GameObj& g) {
+  const Ship* ship = nullptr;
+  try {
+    ship = g.entity_manager.peek_ship(g.shipno());
+  } catch (const EntityNotFoundError&) {
+    g.out << std::format("You don't own ship #{}.\n", g.shipno());
+    return nullptr;
+  }
+  if (!g.god() &&
+      (ship->owner() != g.player() || !ship->is_authorized_for(g.governor()))) {
+    g.out << std::format("You don't own ship #{}.\n", ship->number());
+    return nullptr;
+  }
+  return ship;
+}
+
+}  // namespace
+
 namespace GB::commands {
 
 bool name(const command_t& argv, GameObj& g) {
@@ -42,6 +62,9 @@ bool name(const command_t& argv, GameObj& g) {
 
   if (argv[1] == "ship") {
     if (g.level() == ScopeLevel::LEVEL_SHIP) {
+      if (!resolve_owned_scoped_ship(g)) {
+        return false;
+      }
       g.entity_manager.mutate_ship(
           g.shipno(), [&](Ship& ship) { ship.name() = formatted_name; });
       g.present(GB::presentation::NameResult{
@@ -55,26 +78,25 @@ bool name(const command_t& argv, GameObj& g) {
   }
   if (argv[1] == "class") {
     if (g.level() == ScopeLevel::LEVEL_SHIP) {
-      bool ok = false;
-      g.entity_manager.mutate_ship(g.shipno(), [&](Ship& ship) {
-        if (ship.type() != ShipType::OTYPE_FACTORY) {
-          g.out << "You are not at a factory!\n";
-          return;
-        }
-        if (ship.on()) {
-          g.out << "This factory is already on line.\n";
-          return;
-        }
-        ship.shipclass() = formatted_name;
-        ok = true;
-      });
-      if (ok) {
-        g.present(GB::presentation::NameResult{
-            .target = GB::presentation::NameTarget::Class,
-            .name = formatted_name,
-        });
+      const Ship* current_ship = resolve_owned_scoped_ship(g);
+      if (!current_ship) {
+        return false;
       }
-      return ok;
+      if (current_ship->type() != ShipType::OTYPE_FACTORY) {
+        g.out << "You are not at a factory!\n";
+        return false;
+      }
+      if (current_ship->on()) {
+        g.out << "This factory is already on line.\n";
+        return false;
+      }
+      g.entity_manager.mutate_ship(
+          g.shipno(), [&](Ship& ship) { ship.shipclass() = formatted_name; });
+      g.present(GB::presentation::NameResult{
+          .target = GB::presentation::NameTarget::Class,
+          .name = formatted_name,
+      });
+      return true;
     }
     g.out << "You have to 'cs' to a factory to name the ship class.\n";
     return false;

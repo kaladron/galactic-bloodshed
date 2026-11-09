@@ -118,7 +118,14 @@ void test_order_happy_path() {
   std::println(std::cout, "\nTest 7: Display all orders to g.out");
   {
     g.out.str("");
+    const auto before_changes = ctx.db.total_changes();
     ctx.assert_dispatch_success(g, {"order"});
+    test::expect_eq(ctx.db.total_changes(), before_changes);
+    test::expect_contains(g.out.str(), "TestShip");
+
+    g.out.str("");
+    ctx.assert_dispatch_success(g, {"order", "#1"});
+    test::expect_eq(ctx.db.total_changes(), before_changes);
     test::expect_contains(g.out.str(), "TestShip");
   }
 }
@@ -539,6 +546,9 @@ void test_order_factory_activation_and_errors() {
   ctx.assert_dispatch_success(
       g, {"order", std::format("#{}", rad_id), "evade", "on"});
   test::expect_contains(g.out.str(), "is irradiated");
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"order"});
+  test::expect_contains(g.out.str(), "RadShip");
 
   // 4. Crewless ship (non-robotic) cannot be given orders
   const auto ghost_id = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)
@@ -758,10 +768,12 @@ void test_navigation_and_combat_order_mcdc_and_json() {
   ctx.assert_dispatch_success(
       g, {"order", std::format("#{}", omcl_id), "retaliate", "on"});
 
-  // 5. UiMode::JSON rendering of order query
+  // 5. UiMode::JSON rendering of order query (zero DB writes)
   g.out.str("");
   g.set_ui_mode(UiMode::JSON);
+  const auto json_before_changes = ctx.db.total_changes();
   ctx.assert_dispatch_success(g, {"order", "#1"});
+  test::expect_eq(ctx.db.total_changes(), json_before_changes);
   test::expect_contains(g.out.str(), R"("type":"message")");
   test::expect_contains(g.out.str(), R"(TestShip)");
   test::expect_contains(g.out.str(), R"("type":"ship")");

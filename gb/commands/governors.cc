@@ -30,23 +30,19 @@ bool governors(const command_t& argv, GameObj& g) {
       g.out << "You can only change your own password.\n";
       return false;
     }
-    bool success = false;
-    g.entity_manager.mutate_race(Playernum, [&](Race& race) {
-      if (race.Guest) {
-        g.out << "Guest races cannot change passwords.\n";
-        return;
-      }
-      if (!race.has_governor(gov)) {
-        g.out << "That governor is inactive.\n";
-        return;
-      }
-      race.governor(gov).password = argv[3];
-      success = true;
-    });
-    if (success) {
-      g.present(GB::presentation::make_output_message("Password changed.\n"));
+    const auto& current_race = *g.entity_manager.peek_race(Playernum);
+    if (current_race.Guest) {
+      g.out << "Guest races cannot change passwords.\n";
+      return false;
     }
-    return success;
+    if (!current_race.has_governor(gov)) {
+      g.out << "That governor is inactive.\n";
+      return false;
+    }
+    g.entity_manager.mutate_race(
+        Playernum, [&](Race& race) { race.governor(gov).password = argv[3]; });
+    g.present(GB::presentation::make_output_message("Password changed.\n"));
+    return true;
   }
 
   GB::presentation::GovernorsViewModel vm{

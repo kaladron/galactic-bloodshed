@@ -8,6 +8,7 @@ module;
 import gb.entities;
 import gb.mechanics;
 import gb.presentation.navigation;
+import gb.presentation.ship_ops;
 import gb.services;
 import std;
 
@@ -15,15 +16,18 @@ module commands;
 
 namespace GB::commands {
 bool order(const command_t& argv, GameObj& g) {
-  player_t playernum = g.player();
-  governor_t governor = g.governor();
-
   g.present(ShipOrdersHeader{});
-  if (argv.size() == 1) {
-    const ShipList ships(g.entity_manager, g, ShipList::IterationType::Scope);
-    for (const Ship& ship : ships) {
-      if (validate_commandable(ship, playernum, governor)) {
-        g.present(query_ship_order(g.entity_manager, ship));
+  if (argv.size() <= 2) {
+    const std::string_view filter =
+        (argv.size() == 1) ? std::string_view{"*"} : std::string_view{argv[1]};
+    GB::presentation::SightContext sight;
+    for (const Ship& ship : ScopedCommandableShips::readonly(g, filter)) {
+      g.present(query_ship_order(g.entity_manager, ship));
+      if (g.ui_mode() == UiMode::JSON) {
+        if (auto sv = GB::presentation::project_ship_view(
+                g.entity_manager, g.scope_context(), ship, &sight)) {
+          g.out << GB::presentation::render_json_ship_view(*sv);
+        }
       }
     }
     return true;
@@ -31,17 +35,12 @@ bool order(const command_t& argv, GameObj& g) {
 
   for (auto ship_handle : ScopedCommandableShips(g, argv[1])) {
     Ship& ship = *ship_handle;
-
-    if (argv.size() > 2) {
-      if (auto res =
-              give_orders(g.entity_manager, g.scope_context(), argv, ship);
-          res) {
-        g.present(*res);
-      } else {
-        g.out << GB::presentation::format_order_error(res.error());
-      }
+    if (auto res = give_orders(g.entity_manager, g.scope_context(), argv, ship);
+        res) {
+      g.present(*res);
+    } else {
+      g.out << GB::presentation::format_order_error(res.error());
     }
-
     g.present(query_ship_order(g.entity_manager, ship));
   }
   return true;

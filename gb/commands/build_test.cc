@@ -38,9 +38,14 @@ void test_build_happy_paths() {
   g.set_snum(1);
   g.set_pnum(1);
 
-  // 1. Build info query (0 AP)
+  // 1. Build info queries (0 AP, zero DB writes including peek_ship_exam)
+  const auto before_info = ctx.db.total_changes();
   ctx.assert_dispatch_success(g, {"build", "?"}, 0);
   test::expect_contains(g.out.str(), "Default ship parameters");
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"build", "?", ":"}, 0);
+  test::expect_contains(g.out.str(), "Space Probe");
+  test::expect_eq(ctx.db.total_changes(), before_info);
 
   // 2. Test: Build a probe on planet (1 AP deducted dynamically)
   g.out.str("");

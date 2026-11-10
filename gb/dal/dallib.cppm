@@ -20,6 +20,11 @@ public:
   }
 };
 
+export class ReadOnlyError : public std::runtime_error {
+public:
+  explicit ReadOnlyError(const std::string& msg) : std::runtime_error(msg) {}
+};
+
 struct DatabaseImpl;
 export class Database;
 export void initialize_schema(Database& db);
@@ -55,6 +60,24 @@ public:
   // Run lightweight SQLite maintenance
   void optimize();
 
+  // Scoped read-only enforcement across all operations on this connection
+  class ReadOnlyScope {
+    Database* db_{nullptr};
+
+  public:
+    explicit ReadOnlyScope(Database& db) noexcept;
+    ~ReadOnlyScope() noexcept;
+    ReadOnlyScope(const ReadOnlyScope&) = delete;
+    ReadOnlyScope& operator=(const ReadOnlyScope&) = delete;
+    ReadOnlyScope(ReadOnlyScope&& other) noexcept;
+    ReadOnlyScope& operator=(ReadOnlyScope&&) = delete;
+  };
+
+  [[nodiscard]] ReadOnlyScope create_read_only_scope() noexcept {
+    return ReadOnlyScope(*this);
+  }
+  [[nodiscard]] bool is_read_only() const noexcept;
+
   // Check if database is open
   [[nodiscard]] bool is_open() const noexcept;
 
@@ -87,6 +110,15 @@ export class JsonStore {
 
 public:
   explicit JsonStore(Database& database);
+
+  using ReadOnlyScope = Database::ReadOnlyScope;
+
+  [[nodiscard]] ReadOnlyScope create_read_only_scope() noexcept {
+    return db.create_read_only_scope();
+  }
+  [[nodiscard]] bool is_read_only() const noexcept {
+    return db.is_read_only();
+  }
 
   // Generic CRUD operations
   bool store(const std::string& table, const KeyValue& id,

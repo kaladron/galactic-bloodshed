@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file dispatch_pipeline_test.cc
+/// \brief Unit tests for dispatch_command preconditions, transactions, and
+/// Guest read-only enforcement.
+
 import commands;
 import dallib;
 import gb.entities;
@@ -803,6 +807,94 @@ void test_json_dirty_entity_auto_emission() {
   ctx.verify_universe_invariants();
 }
 
+void test_guest_read_only_scope_enforcement() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 10; });
+  ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });
+  const auto sid = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)
+                       .owned_by(1, 1)
+                       .named("GuestProbe")
+                       .in_planet_orbit(1, 1)
+                       .with_crew(10, 0)
+                       .build();
+
+  RecordingSessionRegistry registry;
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 1);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(1);
+
+  // 1. Read-only modes succeed under Guest ReadOnlyScope with zero DB writes
+  const auto before = ctx.db.total_changes();
+  for (command_t cmd :
+       {command_t{"order"}, command_t{"technology"}, command_t{"toggle"}}) {
+    g.out.clear();
+    test::expect_true(GB::commands::dispatch_command(g, cmd));
+  }
+  test::expect_eq(ctx.db.total_changes(), before);
+
+  // 2. Mutating modes without .no_guests abort cleanly (ASCII & JSON),
+  // truncating partial g.out headers and rolling back outbox & transactions
+  const std::array<command_t, 3> mutating_cmds{{
+      {"order", std::format("#{}", sid), "evade", "on"},
+      {"technology", "500"},
+      {"post", "Hacked"},
+  }};
+  for (UiMode mode : {UiMode::ASCII, UiMode::JSON}) {
+    g.set_ui_mode(mode);
+    for (const auto& cmd : mutating_cmds) {
+      g.out.clear();
+      test::expect_false(GB::commands::dispatch_command(g, cmd));
+      test::expect_contains(g.out.str(),
+                            "Guest races cannot modify game state.");
+      test::expect_false(g.out.str().contains("Ship Orders"));
+    }
+  }
+  g.set_ui_mode(UiMode::ASCII);
+
+  // Fixed-AP command + staged notification rolls back outbox and deducts 0 AP
+  GB::commands::CommandDescriptor fixed_ap_cmd{
+      .name = "guest_fixed_ap",
+      .scopes = GB::commands::AllowedScopes::any(),
+      .ap = GB::commands::APCost::fixed_star(2),
+      .handler = [](const command_t&, GameObj& game) -> bool {
+        game.session_registry.notify_race(2, "leaked");
+        return true;
+      },
+  };
+  g.out.clear();
+  test::expect_false(
+      GB::commands::dispatch_command(g, fixed_ap_cmd, {"guest_fixed_ap"}));
+  test::expect_true(registry.notifications.empty());
+  test::expect_eq(ctx.em.peek_star(1)->AP(1), 10U);
+  test::expect_false(ctx.em.peek_ship(sid)->protect().evade);
+  test::expect_eq(ctx.db.total_changes(), before);
+
+  // 3. Deity override (!g.god()) bypasses Guest read-only enforcement
+  g.set_god(true);
+  test::expect_true(
+      GB::commands::dispatch_command(g, fixed_ap_cmd, {"guest_fixed_ap"}));
+  test::expect_eq(ctx.em.peek_star(1)->AP(1), 8U);
+
+  // 4. Non-Guest internal ReadOnlyError rethrows fail-fast instead of masking
+  g.set_god(false);
+  ctx.em.mutate_race(1, [](Race& r) { r.Guest = false; });
+  GB::commands::CommandDescriptor buggy_ro_cmd{
+      .name = "buggy_ro",
+      .scopes = GB::commands::AllowedScopes::any(),
+      .handler = [](const command_t&, GameObj& game) -> bool {
+        auto guard = game.entity_manager.create_read_only_scope();
+        game.entity_manager.mutate_star(1, [](Star& s) { s.AP(1) = 99; });
+        return true;
+      },
+  };
+  test::expect_throws<ReadOnlyError>(
+      [&] { GB::commands::dispatch_command(g, buggy_ro_cmd, {"buggy_ro"}); });
+  test::expect_eq(ctx.em.peek_star(1)->AP(1), 8U);
+}
+
 }  // namespace
 
 int main() {
@@ -817,6 +909,7 @@ int main() {
   test_dispatch_by_command_name();
   test_edge_cases_and_socket_outbox();
   test_json_dirty_entity_auto_emission();
+  test_guest_read_only_scope_enforcement();
 
   std::println(std::cout, "✓ dispatch_pipeline_test passed!");
   return 0;

@@ -231,6 +231,36 @@ int main() {
     std::println(std::cout, "✓ SqliteError thrown on non-existent table store");
   }
 
+  // ReadOnlyScope blocks all 4 write methods and Database::optimize across
+  // all JsonStore instances on the connection
+  {
+    JsonStore second_store(db);
+    const auto before = db.total_changes();
+    test::expect_false(store.is_read_only());
+    {
+      auto outer = store.create_read_only_scope();
+      auto moved = std::move(outer);
+      test::expect_true(db.is_read_only());
+      test::expect_true(store.is_read_only());
+      test::expect_true(second_store.is_read_only());
+      test::expect_true(store.retrieve("tbl_star", 1).has_value());
+      test::expect_eq(store.count_where("tbl_news"), 0);
+      test::expect_throws<ReadOnlyError>([&] { db.optimize(); });
+      test::expect_throws<ReadOnlyError>(
+          [&] { store.store("tbl_star", 77, R"({"id":77})"); });
+      test::expect_throws<ReadOnlyError>([&] {
+        store.store_multi("tbl_planet", {{"star_id", 10}, {"planet_order", 9}},
+                          R"({"name":"Blocked"})");
+      });
+      test::expect_throws<ReadOnlyError>([&] { store.remove("tbl_star", 1); });
+      test::expect_throws<ReadOnlyError>(
+          [&] { second_store.remove_where("tbl_star", "id = ?", {1}); });
+      test::expect_eq(db.total_changes(), before);
+    }
+    test::expect_false(store.is_read_only());
+    test::expect_true(store.store("tbl_star", 77, R"({"id":77})"));
+  }
+
   std::println(std::cout, "\nAll JsonStore tests passed!");
   return 0;
 }

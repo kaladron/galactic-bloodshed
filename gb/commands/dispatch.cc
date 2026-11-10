@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/// \file dispatch.cc
+/// \brief Centralized player command precondition, transaction, and Guest
+/// read-only dispatch pipeline.
+
 module;
 
 import gb.entities;
@@ -100,10 +104,7 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
     g.session_registry.begin_outbox();
   }
 
-  bool success = false;
-  try {
-    success = desc.handler(argv, g);
-  } catch (...) {
+  const auto abort_dispatch = [&]() {
     if (track_json_deltas) {
       g.entity_manager.clear_dirty_entities();
       g.entity_manager.stop_mutation_tracking();
@@ -112,26 +113,52 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
       g.session_registry.rollback_outbox();
       txn->rollback();
     }
-    throw;
-  }
+  };
 
-  // 6. Deduct Fixed AP on success
-  if (success && desc.ap.amount > 0) {
-    if (desc.ap.model == APModel::FixedStar) {
-      g.entity_manager.mutate_star(
-          g.snum(), [&](Star& star) { star.AP(g.player()) -= desc.ap.amount; });
-    } else if (desc.ap.model == APModel::FixedUniv) {
-      g.entity_manager.mutate_universe(
-          [&](Universe& u) { u.deduct_AP(g.player(), desc.ap.amount); });
+  const bool guest_read_only = (g.race != nullptr && g.race->Guest && !g.god());
+  const std::size_t out_checkpoint = g.out.view().size();
+
+  bool success = false;
+  try {
+    std::optional<EntityManager::ReadOnlyScope> guest_guard;
+    if (guest_read_only) {
+      guest_guard.emplace(g.entity_manager);
     }
+    success = desc.handler(argv, g);
+
+    // 6. Deduct Fixed AP on success
+    if (success && desc.ap.amount > 0) {
+      if (desc.ap.model == APModel::FixedStar) {
+        g.entity_manager.mutate_star(g.snum(), [&](Star& star) {
+          star.AP(g.player()) -= desc.ap.amount;
+        });
+      } else if (desc.ap.model == APModel::FixedUniv) {
+        g.entity_manager.mutate_universe(
+            [&](Universe& u) { u.deduct_AP(g.player(), desc.ap.amount); });
+      }
+    }
+  } catch (const ReadOnlyError&) {
+    abort_dispatch();
+    if (!guest_read_only) {
+      throw;
+    }
+    g.out.truncate(out_checkpoint);
+    g.present(GB::presentation::make_output_message(
+        "Guest races cannot modify game state.\n"));
+    return false;
+  } catch (...) {
+    abort_dispatch();
+    throw;
   }
 
   if (txn) {
     if (success) {
       txn->commit();
       for (const auto& item : g.session_registry.commit_outbox()) {
-        push_telegram(g.entity_manager, item.player, item.governor,
-                      item.message);
+        if (!guest_read_only) {
+          push_telegram(g.entity_manager, item.player, item.governor,
+                        item.message);
+        }
       }
     } else {
       g.session_registry.rollback_outbox();

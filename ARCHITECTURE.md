@@ -503,6 +503,7 @@ The application layer handles player interaction, input parsing, command dispatc
    - Verifies permissions, valid scope, and minimum arguments.
    - Pre-checks that the player has sufficient AP to pay the command's fixed cost.
    - Opens an `EntityManager::Transaction` (`BEGIN IMMEDIATE`) and `SessionRegistry::begin_outbox()`.
+   - For non-deity `Guest` sessions (`g.race->Guest && !g.god()`), activates `EntityManager::ReadOnlyScope` (backed by the connection-wide `Database::ReadOnlyScope` counter) so any mutable handle acquisition, entity creation/deletion, or SQLite write throws `ReadOnlyError` fail-closed, rolling back the transaction and `SocketOutbox` and reporting `"Guest races cannot modify game state."` (while non-Guest `ReadOnlyError` violations rethrow fail-fast).
    - Starts mutation tracking on `EntityManager` when operating in `UiMode::JSON`.
    - Invokes the command handler (`bool (*)(const command_t& argv, GameObj& g)`).
    - Deducts fixed AP **only** when the handler returns `true`, commits the SQLite transaction, and flushes `SessionRegistry::commit_outbox()`. If the handler returns `false` or throws an exception, the transaction and `SocketOutbox` are rolled back with 0 AP deducted.

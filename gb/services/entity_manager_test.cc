@@ -1360,6 +1360,52 @@ void test_entity_manager_mutation_tracking() {
       "  ✓ EntityManager mutation tracking and DirtyEntitySet verified");
 }
 
+void test_entity_manager_read_only_scope() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+  JsonStore raw_store(db);
+  Race r{};
+  r.Playernum = 1;
+  r.name = "GuestRace";
+  em.create_race(r);
+  StarRepository(raw_store).save(Star{1, "Sol"});
+  const shipnum_t sid = em.create_ship(ShipType::OTYPE_PROBE, 1)->number();
+  Ship probe_copy(em.peek_ship(sid)->to_struct());
+  const auto before = db.total_changes();
+  {
+    auto guard = em.create_read_only_scope();
+    test::expect_true(em.is_read_only());
+    test::expect_eq(em.peek_star(1)->get_name(), "Sol");
+    bool lambda_ran = false;
+    test::expect_throws<ReadOnlyError>(
+        [&] { em.mutate_star(1, [&](Star&) { lambda_ran = true; }); });
+    test::expect_false(lambda_ran);
+    test::expect_throws<ReadOnlyError>(
+        [&] { em.create_ship(ShipType::OTYPE_PROBE, 1); });
+    test::expect_throws<ReadOnlyError>([&] { em.delete_ship(sid); });
+    test::expect_throws<ReadOnlyError>([&] { em.kill_ship(1, probe_copy); });
+    test::expect_true(probe_copy.alive());
+    test::expect_throws<ReadOnlyError>(
+        [&] { em.post_news(NewsType::ANNOUNCE, "blocked"); });
+    test::expect_throws<ReadOnlyError>(
+        [&] { em.post_telegram(1, 1, "blocked"); });
+    test::expect_throws<ReadOnlyError>(
+        [&] { raw_store.store("tbl_star", 1, R"({"name":"Bypass"})"); });
+    test::expect_eq(db.total_changes(), before);
+  }
+  // DAL-initiated ReadOnlyScope synchronizes with EntityManager::is_read_only()
+  {
+    auto dal_guard = db.create_read_only_scope();
+    test::expect_true(em.is_read_only());
+    test::expect_throws<ReadOnlyError>(
+        [&] { em.mutate_star(1, [](Star&) {}); });
+  }
+  test::expect_false(em.is_read_only());
+  em.mutate_star(1, [](Star& s) { s.set_name("WritableAgain"); });
+  test::expect_eq(em.peek_star(1)->get_name(), "WritableAgain");
+}
+
 int main() {
   test_entity_manager_basic();
   test_entity_manager_caching();
@@ -1388,6 +1434,7 @@ int main() {
   test_entity_manager_count_non_asteroid_planets();
   test_entity_manager_create_race();
   test_entity_manager_mutation_tracking();
+  test_entity_manager_read_only_scope();
 
   std::println(std::cout, "\n✅ All EntityManager tests passed!");
   return 0;

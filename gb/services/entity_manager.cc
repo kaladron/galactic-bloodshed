@@ -24,21 +24,23 @@ peek_entity_impl(Key key,
                  std::unordered_map<Key, std::unique_ptr<Entity>>& cache,
                  FindFn find_fn) {
   // Check if already cached
-  auto it = cache.find(key);
-  if (it != cache.end()) {
+  if (auto it = cache.find(key); it != cache.end()) {
     return it->second.get();
   }
 
   // Load from repository if not cached
-  auto entity_opt = find_fn(key);
-  if (!entity_opt) {
+  auto found = find_fn(key);
+  if (!found) {
     return nullptr;
   }
 
   // Cache the entity without incrementing refcount (read-only peek)
-  auto [iter, inserted] =
-      cache.emplace(key, std::make_unique<Entity>(std::move(*entity_opt)));
-  return iter->second.get();
+  if constexpr (std::is_same_v<decltype(found), std::unique_ptr<Entity>>) {
+    return cache.emplace(key, std::move(found)).first->second.get();
+  } else {
+    return cache.emplace(key, std::make_unique<Entity>(std::move(*found)))
+        .first->second.get();
+  }
 }
 
 template <typename Entity, typename Key, typename FindFn, typename SaveFn,
@@ -48,6 +50,10 @@ get_entity_impl(EntityManager* manager, Key key,
                 std::unordered_map<Key, std::unique_ptr<Entity>>& cache,
                 std::unordered_map<Key, int>& refcount, FindFn find_fn,
                 SaveFn save_fn, ReleaseFn release_fn) {
+  if (manager->is_read_only()) {
+    throw ReadOnlyError(
+        "ReadOnlyScope blocked mutable entity handle acquisition");
+  }
   Entity* entity = peek_entity_impl(key, cache, std::move(find_fn));
   if (!entity) {
     return {manager, nullptr, [](Entity&) {}};
@@ -60,6 +66,55 @@ get_entity_impl(EntityManager* manager, Key key,
             }
           },
           [release_fn, key]() { release_fn(key); }};
+}
+
+template <typename Entity, typename LoadFn>
+Entity* peek_singleton_impl(std::unique_ptr<Entity>& cache, LoadFn load_fn) {
+  if (!cache) {
+    auto loaded = load_fn();
+    if (!loaded) {
+      return nullptr;
+    }
+    cache = std::make_unique<Entity>(std::move(*loaded));
+  }
+  return cache.get();
+}
+
+template <typename Entity, typename LoadFn, typename SaveFn, typename ReleaseFn>
+EntityHandle<Entity> get_singleton_impl(EntityManager* manager,
+                                        std::unique_ptr<Entity>& cache,
+                                        int& refcount, LoadFn load_fn,
+                                        SaveFn save_fn, ReleaseFn release_fn) {
+  if (manager->is_read_only()) {
+    throw ReadOnlyError(
+        "ReadOnlyScope blocked mutable singleton handle acquisition");
+  }
+  Entity* entity = peek_singleton_impl(cache, std::move(load_fn));
+  if (!entity) {
+    return {manager, nullptr, [](Entity&) {}};
+  }
+  refcount++;
+  return {manager, entity,
+          [manager, save_fn](Entity& e) {
+            if (!manager->is_deferred_write()) {
+              save_fn(e);
+            }
+          },
+          std::move(release_fn)};
+}
+
+template <typename Id>
+void queue_deletion_impl(const EntityManager& manager, std::vector<Id>& pending,
+                         Id id, std::string_view fn_name) {
+  if (manager.is_read_only()) {
+    throw ReadOnlyError(
+        std::format("ReadOnlyScope blocked EntityManager::{}", fn_name));
+  }
+  if (!manager.is_deletion_barrier_active()) {
+    throw DeletionBarrierRequiredError(std::format(
+        "{}({}) called without an active DeletionBarrier", fn_name, id));
+  }
+  pending.push_back(id);
 }
 
 template <typename Entity, typename Key>
@@ -108,6 +163,8 @@ struct EntityManager::Storage {
   ShipExamRepository ship_exams;
   NewsRepository news;
   TelegramRepository telegrams;
+  std::optional<Database::ReadOnlyScope> db_read_only;
+  int read_only_depth = 0;
 
   explicit Storage(Database& database)
       : db(database), store(database), races(store), ships(store),
@@ -121,6 +178,26 @@ EntityManager::EntityManager(Database& database)
     : storage_(std::make_unique<Storage>(database)) {}
 
 EntityManager::~EntityManager() = default;
+
+bool EntityManager::is_read_only() const noexcept {
+  return storage_ && storage_->db.is_read_only();
+}
+
+EntityManager::ReadOnlyScope::ReadOnlyScope(EntityManager& em) noexcept
+    : em_(&em) {
+  if (++em_->storage_->read_only_depth == 1) {
+    em_->storage_->db_read_only.emplace(em_->storage_->db);
+  }
+}
+
+EntityManager::ReadOnlyScope::~ReadOnlyScope() noexcept {
+  if (em_ && --em_->storage_->read_only_depth == 0) {
+    em_->storage_->db_read_only.reset();
+  }
+}
+
+EntityManager::ReadOnlyScope::ReadOnlyScope(ReadOnlyScope&& other) noexcept
+    : em_(std::exchange(other.em_, nullptr)) {}
 
 // Race entity methods
 EntityHandle<Race> EntityManager::get_race(player_t player) {
@@ -188,48 +265,41 @@ EntityHandle<Race> EntityManager::create_race(const Race& race_data) {
 
 // Ship entity methods
 EntityHandle<Ship> EntityManager::get_ship(shipnum_t num) {
-  auto it = ship_cache.find(num);
-  if (it == ship_cache.end()) {
-    if (std::ranges::contains(pending_ship_deletions_, num)) {
-      throw EntityNotFoundError(std::format("Ship not found: ship_id={}", num));
-    }
-    auto ship_ptr = storage_->ships.find_ship(num);
-    if (!ship_ptr) {
-      throw EntityNotFoundError(std::format("Ship not found: ship_id={}", num));
-    }
-    it = ship_cache.emplace(num, std::move(ship_ptr)).first;
+  auto handle = get_entity_impl<Ship>(
+      this, num, ship_cache, ship_refcount,
+      [this](shipnum_t n) -> std::unique_ptr<Ship> {
+        if (std::ranges::contains(pending_ship_deletions_, n)) {
+          return nullptr;
+        }
+        return storage_->ships.find_ship(n);
+      },
+      [this](Ship& s) {
+        if (!std::ranges::contains(pending_ship_deletions_, s.number())) {
+          storage_->ships.save(s);
+          if (tracking_mutations_) {
+            dirty_entities_.ships.insert(s.number());
+          }
+        }
+      },
+      [this](shipnum_t n) { release_ship(n); });
+  if (!handle.get()) {
+    throw EntityNotFoundError(std::format("Ship not found: ship_id={}", num));
   }
-  ship_refcount[num]++;
-  return {this, it->second.get(),
-          [this](Ship& s) {
-            if (!is_deferred_write() &&
-                !std::ranges::contains(pending_ship_deletions_, s.number())) {
-              storage_->ships.save(s);
-              if (tracking_mutations_) {
-                dirty_entities_.ships.insert(s.number());
-              }
-            }
-          },
-          [this, num]() { release_ship(num); }};
+  return handle;
 }
 
 const Ship* EntityManager::peek_ship(shipnum_t num) {
-  auto it = ship_cache.find(num);
-  if (it != ship_cache.end()) {
-    return it->second.get();
-  }
-
-  if (std::ranges::contains(pending_ship_deletions_, num)) {
+  const auto* ship = peek_entity_impl<Ship>(
+      num, ship_cache, [this](shipnum_t n) -> std::unique_ptr<Ship> {
+        if (std::ranges::contains(pending_ship_deletions_, n)) {
+          return nullptr;
+        }
+        return storage_->ships.find_ship(n);
+      });
+  if (!ship) {
     throw EntityNotFoundError(std::format("Ship not found: ship_id={}", num));
   }
-
-  auto ship_ptr = storage_->ships.find_ship(num);
-  if (!ship_ptr) {
-    throw EntityNotFoundError(std::format("Ship not found: ship_id={}", num));
-  }
-
-  auto [iter, inserted] = ship_cache.emplace(num, std::move(ship_ptr));
-  return iter->second.get();
+  return ship;
 }
 
 void EntityManager::release_ship(shipnum_t num) {
@@ -259,10 +329,10 @@ EntityHandle<Ship> EntityManager::create_ship(std::unique_ptr<Ship> ship) {
   shipnum_t num =
       ship->number() != 0 ? ship->number() : storage_->ships.next_ship_number();
   ship->number() = num;
-  std::erase(pending_ship_deletions_, num);
 
-  // Save immediately to database
+  // Save immediately to database before mutating in-memory caches
   storage_->ships.save(*ship);
+  std::erase(pending_ship_deletions_, num);
   if (tracking_mutations_) {
     dirty_entities_.deleted_ships.erase(num);
     dirty_entities_.ships.insert(num);
@@ -277,32 +347,24 @@ EntityHandle<Ship> EntityManager::create_ship(ShipType type, player_t owner) {
 }
 
 void EntityManager::delete_ship(shipnum_t num) {
-  if (!deletion_barrier_active_) {
-    throw DeletionBarrierRequiredError(std::format(
-        "delete_ship({}) called without an active DeletionBarrier", num));
-  }
-  pending_ship_deletions_.push_back(num);
+  queue_deletion_impl(*this, pending_ship_deletions_, num, "delete_ship");
 }
 
 void EntityManager::delete_commod(int id) {
-  if (!deletion_barrier_active_) {
-    throw DeletionBarrierRequiredError(std::format(
-        "delete_commod({}) called without an active DeletionBarrier", id));
-  }
-  pending_commod_deletions_.push_back(id);
+  queue_deletion_impl(*this, pending_commod_deletions_, id, "delete_commod");
 }
 
 EntityHandle<Commod> EntityManager::create_commod(commod_struct init_data) {
   // Get next available commod ID
   int id = storage_->commods.next_available_id();
-  std::erase(pending_commod_deletions_, id);
 
   // Assign ID and construct validated Commod
   init_data.id = id;
   Commod new_commod{init_data};
 
-  // Save through repository (DAL)
+  // Save through repository (DAL) before mutating in-memory caches
   storage_->commods.save(new_commod);
+  std::erase(pending_commod_deletions_, id);
   if (tracking_mutations_) {
     dirty_entities_.deleted_commods.erase(commodnum_t{id});
     dirty_entities_.commods.insert(commodnum_t{id});
@@ -491,41 +553,31 @@ void EntityManager::release_power(player_t id) {
 
 // Universe entity methods (singleton)
 EntityHandle<Universe> EntityManager::get_universe() {
-  if (!global_universe_cache) {
-    auto universe_opt = storage_->universe_repo.get_global_data();
-    if (!universe_opt) {
-      throw EntityNotFoundError("Universe not found");
-    }
-    global_universe_cache = std::make_unique<Universe>(*universe_opt);
+  auto handle = get_singleton_impl<Universe>(
+      this, global_universe_cache, global_universe_refcount,
+      [this]() { return storage_->universe_repo.get_global_data(); },
+      [this](Universe& sd) {
+        storage_->universe_repo.save(sd);
+        if (tracking_mutations_) {
+          dirty_entities_.universe_dirty = true;
+        }
+      },
+      [this]() { release_universe(); });
+  if (!handle.get()) {
+    throw EntityNotFoundError("Universe not found");
   }
-  global_universe_refcount++;
-  return {this, global_universe_cache.get(),
-          [this](Universe& sd) {
-            if (!is_deferred_write()) {
-              storage_->universe_repo.save(sd);
-              if (tracking_mutations_) {
-                dirty_entities_.universe_dirty = true;
-              }
-            }
-          },
-          [this]() { release_universe(); }};
+  return handle;
 }
 
 const Universe* EntityManager::peek_universe() {
-  // Check if already cached
-  if (global_universe_cache) {
-    return global_universe_cache.get();
-  }
-
-  // Load from repository if not cached
-  auto universe_opt = storage_->universe_repo.get_global_data();
-  if (!universe_opt) {
+  const auto* u =
+      peek_singleton_impl<Universe>(global_universe_cache, [this]() {
+        return storage_->universe_repo.get_global_data();
+      });
+  if (!u) {
     throw EntityNotFoundError("Universe not found");
   }
-
-  // Cache the entity (but don't increment refcount - this is read-only)
-  global_universe_cache = std::make_unique<Universe>(*universe_opt);
-  return global_universe_cache.get();
+  return u;
 }
 
 int EntityManager::count_non_asteroid_planets() {
@@ -540,46 +592,26 @@ void EntityManager::release_universe() {
 
 // ServerState entity methods (singleton)
 EntityHandle<ServerState> EntityManager::get_server_state() {
-  bool created_default = false;
-  if (!server_state_cache) {
-    if (auto state_opt = storage_->server_state_repo.get_state()) {
-      server_state_cache = std::make_unique<ServerState>(*state_opt);
-    } else {
-      server_state_cache = std::make_unique<ServerState>();
-      created_default = true;
-    }
-  }
-  server_state_refcount++;
-  return {this, server_state_cache.get(),
-          [this](ServerState& state) {
-            if (!is_deferred_write()) {
-              storage_->server_state_repo.save(state);
-              if (tracking_mutations_) {
-                dirty_entities_.server_state_dirty = true;
-              }
-            }
-          },
-          [this]() { release_server_state(); }, created_default};
+  return get_singleton_impl<ServerState>(
+      this, server_state_cache, server_state_refcount,
+      [this]() {
+        return std::optional<ServerState>(
+            storage_->server_state_repo.get_state().value_or(ServerState{}));
+      },
+      [this](ServerState& state) {
+        storage_->server_state_repo.save(state);
+        if (tracking_mutations_) {
+          dirty_entities_.server_state_dirty = true;
+        }
+      },
+      [this]() { release_server_state(); });
 }
 
 const ServerState* EntityManager::peek_server_state() {
-  // Check if already cached
-  if (server_state_cache) {
-    return server_state_cache.get();
-  }
-
-  // Load from repository if not cached
-  auto state_opt = storage_->server_state_repo.get_state();
-  if (!state_opt) {
-    // If not in DB, create default state
-    ServerState default_state{};
-    server_state_cache = std::make_unique<ServerState>(default_state);
-    return server_state_cache.get();
-  }
-
-  // Cache the entity (but don't increment refcount - this is read-only)
-  server_state_cache = std::make_unique<ServerState>(*state_opt);
-  return server_state_cache.get();
+  return peek_singleton_impl<ServerState>(server_state_cache, [this]() {
+    return std::optional<ServerState>(
+        storage_->server_state_repo.get_state().value_or(ServerState{}));
+  });
 }
 
 void EntityManager::release_server_state() {
@@ -837,6 +869,9 @@ EntityManager::find_player_by_name(const std::string& name) {
 }
 
 void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
+  if (is_read_only()) {
+    throw ReadOnlyError("ReadOnlyScope blocked EntityManager::kill_ship");
+  }
   if (auto* auto_ship = ship.as<AutonomousShip>()) {
     auto_ship->set_who_killed(Playernum);
   }

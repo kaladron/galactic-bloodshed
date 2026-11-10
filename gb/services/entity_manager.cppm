@@ -9,6 +9,8 @@ import dallib;
 import gb.entities;
 import std;
 
+export using ::ReadOnlyError;
+
 // Exception thrown when an entity is not found in the database
 // This represents a programming error or data corruption, not an expected
 // condition
@@ -608,6 +610,24 @@ public:
   [[nodiscard]] bool is_deletion_barrier_active() const noexcept {
     return deletion_barrier_active_;
   }
+
+  // ReadOnlyScope RAII guard blocking all service and DAL mutations
+  class ReadOnlyScope {
+    EntityManager* em_{nullptr};
+
+  public:
+    explicit ReadOnlyScope(EntityManager& em) noexcept;
+    ~ReadOnlyScope() noexcept;
+    ReadOnlyScope(const ReadOnlyScope&) = delete;
+    ReadOnlyScope& operator=(const ReadOnlyScope&) = delete;
+    ReadOnlyScope(ReadOnlyScope&& other) noexcept;
+    ReadOnlyScope& operator=(ReadOnlyScope&&) = delete;
+  };
+
+  [[nodiscard]] ReadOnlyScope create_read_only_scope() noexcept {
+    return ReadOnlyScope(*this);
+  }
+  [[nodiscard]] bool is_read_only() const noexcept;
 
 private:
   // Release methods called by EntityHandle destructor

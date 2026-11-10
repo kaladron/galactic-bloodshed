@@ -87,6 +87,12 @@ public:
     buffer_.clear();
   }
 
+  void truncate(std::size_t size) noexcept {
+    if (size < buffer_.size()) {
+      buffer_.resize(size);
+    }
+  }
+
   [[nodiscard]] bool empty() const noexcept {
     return buffer_.empty();
   }

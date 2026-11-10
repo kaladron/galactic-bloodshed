@@ -91,6 +91,25 @@ bool Database::is_open() const noexcept {
   return impl_ && impl_->conn != nullptr;
 }
 
+Database::ReadOnlyScope::ReadOnlyScope(Database& db) noexcept : db_(&db) {
+  if (db_->impl_) {
+    ++db_->impl_->read_only_depth;
+  }
+}
+
+Database::ReadOnlyScope::~ReadOnlyScope() noexcept {
+  if (db_ && db_->impl_) {
+    --db_->impl_->read_only_depth;
+  }
+}
+
+Database::ReadOnlyScope::ReadOnlyScope(ReadOnlyScope&& other) noexcept
+    : db_(std::exchange(other.db_, nullptr)) {}
+
+bool Database::is_read_only() const noexcept {
+  return impl_ && impl_->read_only_depth > 0;
+}
+
 std::int64_t Database::total_changes() const noexcept {
   if (!is_open()) {
     return 0;
@@ -140,6 +159,9 @@ bool Database::is_in_transaction() const {
 void Database::optimize() {
   if (!is_open()) {
     throw SqliteError("Database not open");
+  }
+  if (is_read_only()) {
+    throw ReadOnlyError("ReadOnlyScope blocked Database::optimize");
   }
   exec_sql(impl_->conn, "PRAGMA optimize;", "Failed to optimize database");
 }

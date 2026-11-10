@@ -15,6 +15,7 @@ module dallib:impl;
 /// Internal implementation struct holding the raw SQLite connection handle.
 struct DatabaseImpl {
   sqlite3* conn = nullptr;
+  int read_only_depth = 0;
 
   ~DatabaseImpl() {
     if (conn) {

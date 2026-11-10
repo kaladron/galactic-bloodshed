@@ -69,11 +69,22 @@ SqliteStmtPtr prepare_table_stmt(sqlite3* conn, const std::string& table,
 
 JsonStore::JsonStore(Database& database) : db(database) {}
 
+namespace {
+void require_writable(const JsonStore& store, std::string_view op,
+                      std::string_view table) {
+  if (store.is_read_only()) {
+    throw ReadOnlyError(
+        std::format("ReadOnlyScope blocked {} on '{}'", op, table));
+  }
+}
+}  // namespace
+
 bool JsonStore::store(const std::string& table, const KeyValue& id,
                       const std::string& json) {
   if (!db.is_open()) {
     throw SqliteError("Database connection is not open");
   }
+  require_writable(*this, "store", table);
 
   std::string sql =
       std::format("INSERT INTO {} (id, data) VALUES (?, ?) "
@@ -145,6 +156,7 @@ bool JsonStore::remove(const std::string& table, const KeyValue& id) {
   if (!db.is_open()) {
     throw SqliteError("Database connection is not open");
   }
+  require_writable(*this, "remove", table);
 
   std::string sql = std::format("DELETE FROM {} WHERE id = ?", table);
 
@@ -241,6 +253,7 @@ bool JsonStore::store_multi(
   if (!db.is_open()) {
     throw SqliteError("Database connection is not open");
   }
+  require_writable(*this, "store_multi", table);
   if (keys.empty()) return false;
 
   std::string key_columns;
@@ -398,6 +411,7 @@ bool JsonStore::remove_where(const std::string& table,
   if (!db.is_open()) {
     throw SqliteError("Database connection is not open");
   }
+  require_writable(*this, "remove_where", table);
 
   const std::string sql =
       where_clause.empty()

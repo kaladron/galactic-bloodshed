@@ -448,7 +448,7 @@ void test_intercept_missile_by_pdn() {
                               .owned_by(2)
                               .in_planet_orbit(1, 1)
                               .build();
-  ctx.em.mutate_ship(dead_pdn_id, [&](Ship& s) { ctx.em.kill_ship(1, s); });
+  ctx.em.mutate_ship(dead_pdn_id, [&](Ship& s) { ctx.em.destroy_ship(s); });
 
   ctx.em.mutate_ship(missile_id, [&](Ship& m) {
     test::expect_false(intercept_missile_by_pdn(m, ctx.em));
@@ -631,8 +631,8 @@ void test_domissile_integration() {
 
   // Remove PDN for subsequent tests (clear m1's destshipno first so FK isn't
   // violated)
-  ctx.em.mutate_ship(m1_id, [&](Ship& m) { ctx.em.kill_ship(1, m); });
-  ctx.em.mutate_ship(pdn_id, [&](Ship& s) { ctx.em.kill_ship(1, s); });
+  ctx.em.mutate_ship(m1_id, [&](Ship& m) { ctx.em.destroy_ship(m); });
+  ctx.em.mutate_ship(pdn_id, [&](Ship& s) { ctx.em.destroy_ship(s); });
 
   // 2. Missile arrives at planet without PDN -> strikes planet surface
   ctx.em.mutate_planet(
@@ -809,7 +809,7 @@ void test_detonate_mine_against_ships() {
                           .owned_by(2)
                           .in_star_orbit(1)
                           .build();
-  ctx.em.mutate_ship(dead_id, [&](Ship& s) { ctx.em.kill_ship(1, s); });
+  ctx.em.mutate_ship(dead_id, [&](Ship& s) { ctx.em.destroy_ship(s); });
 
   shipnum_t can_id = TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST)
                          .owned_by(2)
@@ -1870,7 +1870,7 @@ void test_special_subsystems_extended() {
   em.purge_all_telegrams();
   do_mirror(*mirror_ship, em, stats);
   const auto* target_after = em.peek_ship(target_handle->number());
-  // Destroyed ship is killed via em.kill_ship
+  // Destroyed ship is killed via kill_ship
   test::expect_true(target_after == nullptr || target_after->alive() == 0);
   const auto self_telegrams = em.get_telegrams(1, 1);
   test::expect_eq(self_telegrams.size(), 1U);

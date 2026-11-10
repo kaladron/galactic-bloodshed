@@ -1147,7 +1147,7 @@ void test_process_planetary_ships() {
                                .with_alive(true)
                                .with_on(true)
                                .build();
-  em.mutate_ship(dead_plow_id, [&](Ship& s) { em.kill_ship(1, s); });
+  em.mutate_ship(dead_plow_id, [&](Ship& s) { em.destroy_ship(s); });
 
   // 2. Active Landed Plow on (1, 1) moving South to (1, 2)
   auto plow_handle = TestShipBuilder(em, ShipType::OTYPE_PLOW)

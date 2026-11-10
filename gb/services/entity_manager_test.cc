@@ -414,10 +414,11 @@ void test_entity_manager_destroy_ship() {
   test::expect_true(dirty.races.empty());
   test::expect_eq(em.peek_race(1)->morale, 1000);
 
-  // Gov_ship FK cleared even for STYPE_POD / OTYPE_FACTORY government ships
+  // Gov_ship FK cleared across habitat, pod, and factory government ships
   for (auto [ship_id, ship_type] :
        {std::pair{shipnum_t{101}, ShipType::STYPE_POD},
-        std::pair{shipnum_t{102}, ShipType::OTYPE_FACTORY}}) {
+        std::pair{shipnum_t{102}, ShipType::OTYPE_FACTORY},
+        std::pair{shipnum_t{103}, ShipType::STYPE_HABITAT}}) {
     Ship gov_ship(ship_struct{
         .number = ship_id, .owner = 1, .type = ship_type, .alive = 1});
     ships.save(gov_ship);
@@ -429,135 +430,6 @@ void test_entity_manager_destroy_ship() {
   std::println(std::cout,
                "  ✓ destroy_ship retires ships and clears Gov_ship across all "
                "ship types without altering morale");
-}
-
-void test_entity_manager_kill_ship() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
-
-  std::println(std::cout, "Test: EntityManager kill_ship()");
-
-  Race victim{};
-  victim.Playernum = 1;
-  victim.name = "Victim";
-  victim.morale = 1000;
-
-  Race killer{};
-  killer.Playernum = 2;
-  killer.name = "Killer";
-  killer.morale = 1000;
-
-  JsonStore store(db);
-  RaceRepository races(store);
-  races.save(victim);
-  races.save(killer);
-
-  ship_struct ship_data{};
-  ship_data.number = 100;
-  ship_data.owner = 1;
-  ship_data.type = ShipType::STYPE_FIGHTER;
-  ship_data.alive = 1;
-  ship_data.build_cost = 50;
-
-  Ship ship(ship_data);
-  ShipRepository ships(store);
-  ships.save(ship);
-
-  em.kill_ship(2, ship);
-  std::println(std::cout, "  ✓ kill_ship executed without errors");
-
-  test::expect_eq(ship.alive(), 0);
-  test::expect_eq(ship.notified(), 0);
-  std::println(std::cout, "  ✓ Ship marked as dead (alive=0, notified=0)");
-
-  em.with_race(1, [](const Race& v) { test::expect_lt(v.morale, 1000); });
-  em.with_race(2, [](const Race& k) { test::expect_gt(k.morale, 1000); });
-  std::println(std::cout, "  ✓ Morale adjustments persisted for both races");
-
-  StarRepository(store).save(Star{5, "Star5"});
-  ship_struct vn_data{};
-  vn_data.number = 200;
-  vn_data.owner = 1;
-  vn_data.type = ShipType::OTYPE_VN;
-  vn_data.alive = 1;
-  vn_data.whatorbits = ScopeLevel::LEVEL_STAR;
-  vn_data.storbits = 5;
-
-  Ship vn_ship(vn_data);
-  ships.save(vn_ship);
-
-  Universe univ_data{};
-  univ_data.set_vn_hits(1, 5);
-  UniverseRepository univ_repo(store);
-  univ_repo.save(univ_data);
-
-  em.kill_ship(2, vn_ship);
-  std::println(std::cout, "  ✓ VN ship killed without errors");
-
-  em.with_universe([&](const Universe& univ) {
-    test::expect_eq(univ.vn_hits(2), 1U);
-    test::expect_eq(univ.vn_primary_star(2), starnum_t{5});
-  });
-  std::println(std::cout, "  ✓ VN tracking (vn_targets) updated correctly");
-
-  ship_struct pod_data{};
-  pod_data.number = 300;
-  pod_data.owner = 1;
-  pod_data.type = ShipType::STYPE_POD;
-  pod_data.alive = 1;
-
-  Ship pod_ship(pod_data);
-  ships.save(pod_ship);
-
-  int v_morale_before = 0;
-  em.with_race(1, [&](const Race& v) { v_morale_before = v.morale; });
-  em.kill_ship(2, pod_ship);
-  em.with_race(
-      1, [&](const Race& v) { test::expect_eq(v.morale, v_morale_before); });
-  std::println(std::cout, "  ✓ Pod death does not affect morale");
-}
-
-void test_entity_manager_kill_ship_gov_ship() {
-  Database db(":memory:");
-  initialize_schema(db);
-  EntityManager em(db);
-
-  std::println(std::cout, "Test: EntityManager kill_ship() with Gov_ship");
-
-  Race victim{};
-  victim.Playernum = 1;
-  victim.name = "Victim";
-  Race killer{};
-  killer.Playernum = 2;
-  killer.name = "Killer";
-  killer.morale = 1000;
-
-  JsonStore store(db);
-  RaceRepository races(store);
-  races.save(victim);
-  races.save(killer);
-
-  ship_struct ship_data{};
-  ship_data.number = 100;
-  ship_data.owner = 1;
-  ship_data.type = ShipType::STYPE_HABITAT;
-  ship_data.alive = 1;
-
-  Ship ship(ship_data);
-  ShipRepository ships(store);
-  ships.save(ship);
-
-  victim.Gov_ship = shipnum_t{100};
-  races.save(victim);
-
-  em.kill_ship(2, ship);
-  std::println(std::cout, "  ✓ Government ship killed");
-
-  em.with_race(
-      1, [](const Race& v) { test::expect_eq(v.Gov_ship, std::nullopt); });
-  std::println(std::cout,
-               "  ✓ Gov_ship field cleared when government ship is killed");
 }
 
 void test_peek_star_throws_on_not_found() {
@@ -1365,8 +1237,8 @@ void test_entity_manager_mutation_tracking() {
   test::expect_false(post_del.commods.contains(commod_id));
   test::expect_true(post_del.deleted_commods.contains(commod_id));
 
-  // Test release_ship deletion when not in barrier (e.g. kill_ship on an alive
-  // ship)
+  // Test release_ship deletion when not in barrier (e.g. destroy_ship on an
+  // alive ship)
   shipnum_t ship2_id = 0;
   {
     auto sh2 = em.create_ship(ShipType::STYPE_SHUTTLE, 1);
@@ -1374,9 +1246,9 @@ void test_entity_manager_mutation_tracking() {
   }
   // Mutate ship2
   em.mutate_ship(ship2_id, [](Ship& s) { s.name() = "Ship2"; });
-  // kill_ship without DeletionBarrier triggers immediate deletion via
+  // destroy_ship without DeletionBarrier triggers immediate deletion via
   // release_ship
-  em.mutate_ship(ship2_id, [&](Ship& s) { em.kill_ship(1, s); });
+  em.mutate_ship(ship2_id, [&](Ship& s) { em.destroy_ship(s); });
   DirtyEntitySet post_kill = em.take_dirty_entities();
   test::expect_false(post_kill.ships.contains(ship2_id));
   test::expect_true(post_kill.deleted_ships.contains(ship2_id));
@@ -1436,7 +1308,6 @@ void test_entity_manager_read_only_scope() {
         [&] { em.create_ship(ShipType::OTYPE_PROBE, 1); });
     test::expect_throws<ReadOnlyError>([&] { em.delete_ship(sid); });
     test::expect_throws<ReadOnlyError>([&] { em.destroy_ship(probe_copy); });
-    test::expect_throws<ReadOnlyError>([&] { em.kill_ship(1, probe_copy); });
     test::expect_true(probe_copy.alive());
     test::expect_throws<ReadOnlyError>(
         [&] { em.post_news(NewsType::ANNOUNCE, "blocked"); });
@@ -1471,8 +1342,6 @@ int main() {
   test_entity_manager_singleton_server_state();
   test_entity_manager_get_player();
   test_entity_manager_destroy_ship();
-  test_entity_manager_kill_ship();
-  test_entity_manager_kill_ship_gov_ship();
   test_peek_star_throws_on_not_found();
   test_peek_planet_throws_on_not_found();
   test_peek_sectormap_throws_on_not_found();

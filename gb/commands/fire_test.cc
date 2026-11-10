@@ -354,7 +354,7 @@ void test_protecting_ship_retaliation() {
   test::expect_gt(attacker->damage(), 0);
 
   // 2. Dead protecting ship does NOT retaliate
-  ctx.em.mutate_ship(3, [&](Ship& s) { ctx.em.kill_ship(1, s); });
+  ctx.em.mutate_ship(3, [&](Ship& s) { ctx.em.destroy_ship(s); });
   const auto attacker_damage_before = ctx.em.peek_ship(1)->damage();
 
   ctx.assert_dispatch_success(g, {"fire", "#1", "#2", "10"}, 1);

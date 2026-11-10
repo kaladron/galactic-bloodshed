@@ -44,7 +44,7 @@ void test_star_spatial_parity(TestContext& ctx) {
                       .in_star_orbit(1)
                       .with_alive(true)
                       .build();
-  ctx.em.mutate_ship(s2, [&](Ship& s) { ctx.em.kill_ship(1, s); });
+  ctx.em.mutate_ship(s2, [&](Ship& s) { ctx.em.destroy_ship(s); });
 
   const auto s3 = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
                       .owned_by(2)
@@ -114,7 +114,7 @@ void test_planet_spatial_parity(TestContext& ctx) {
                       .in_planet_orbit(1, 1)
                       .with_alive(true)
                       .build();
-  ctx.em.mutate_ship(p3, [&](Ship& s) { ctx.em.kill_ship(1, s); });
+  ctx.em.mutate_ship(p3, [&](Ship& s) { ctx.em.destroy_ship(s); });
 
   // 1. Query via ShipRepository indexed spatial query
   auto indexed_alive = ships_repo.find_on_planet(starnum_t{1}, planetnum_t{1});

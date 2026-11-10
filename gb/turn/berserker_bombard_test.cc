@@ -97,7 +97,7 @@ int main() {
     ship.notified() = 0;
     ship.destruct() = 0;
     // Disable PDN defense
-    ctx.em.mutate_ship(2, [&](Ship& s) { ctx.em.kill_ship(1, s); });
+    ctx.em.mutate_ship(2, [&](Ship& s) { ctx.em.destroy_ship(s); });
 
     int no_weapon_destroyed = berserker_bombard(ctx.em, ship, planet, race1);
     test::expect_eq(no_weapon_destroyed, 0);
@@ -143,7 +143,7 @@ int main() {
                                  .with_alive(true)
                                  .in_planet_orbit(1, 3)
                                  .build();
-    ctx.em.mutate_ship(dead_pdn_id, [&](Ship& s) { ctx.em.kill_ship(1, s); });
+    ctx.em.mutate_ship(dead_pdn_id, [&](Ship& s) { ctx.em.destroy_ship(s); });
 
     test::expect_false(
         check_orbital_pdn_defense(ctx.em, orbit_planet, player_t{1}));

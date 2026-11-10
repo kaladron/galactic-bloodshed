@@ -1381,10 +1381,9 @@ void test_mirror_aim_and_formatting_helpers() {
                     1u);  // NE (slope = -1.0, yt < y)
   });
 
-  // Verify kill_ship clears any SpaceMirrorShip aimed at the destroyed ship to
-  // maintain foreign key referential integrity
-  ctx.em.mutate_ship(target_ship_id,
-                     [&](Ship& t) { ctx.em.kill_ship(player_t{1}, t); });
+  // Verify destroy_ship clears any SpaceMirrorShip aimed at the destroyed ship
+  // to maintain foreign key referential integrity
+  ctx.em.mutate_ship(target_ship_id, [&](Ship& t) { ctx.em.destroy_ship(t); });
   const auto* mirror_after_kill =
       ctx.em.peek_ship(mirror_id)->as<SpaceMirrorShip>();
   test::expect_eq(mirror_after_kill->aimed_level(), ScopeLevel::LEVEL_UNIV);

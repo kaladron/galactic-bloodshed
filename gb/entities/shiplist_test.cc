@@ -550,8 +550,8 @@ int main() {
     std::println(std::cout, "✓ Test 6 passed: All iteration found {} ships",
                  all_count);
 
-    // Destroy ship #10 via kill_ship (hard-deleted from tbl_ship)
-    ctx.em.mutate_ship(10, [&](Ship& s) { ctx.em.kill_ship(1, s); });
+    // Destroy ship #10 via destroy_ship (hard-deleted from tbl_ship)
+    ctx.em.mutate_ship(10, [&](Ship& s) { ctx.em.destroy_ship(s); });
   }
 
   // IterationType::AllAlive - iterates only alive ships
@@ -703,7 +703,7 @@ int main() {
       visited_mutable.push_back(handle->number());
       if (handle->number() == 1) {
         kill_ctx.em.mutate_ship(
-            2, [&](Ship& target) { kill_ctx.em.kill_ship(1, target); });
+            2, [&](Ship& target) { kill_ctx.em.destroy_ship(target); });
       }
     }
     test::expect_eq(visited_mutable, (std::vector<shipnum_t>{1, 3}));
@@ -717,7 +717,7 @@ int main() {
       visited_readonly.push_back(ship.number());
       if (ship.number() == 1) {
         kill_ctx.em.mutate_ship(
-            3, [&](Ship& target) { kill_ctx.em.kill_ship(1, target); });
+            3, [&](Ship& target) { kill_ctx.em.destroy_ship(target); });
       }
     }
     test::expect_eq(visited_readonly, (std::vector<shipnum_t>{1}));
@@ -984,7 +984,7 @@ int main() {
     }
     dws.rollback();
     cmd_ctx.em.mutate_ship(
-        4, [&](Ship& target) { cmd_ctx.em.kill_ship(1, target); });
+        4, [&](Ship& target) { cmd_ctx.em.destroy_ship(target); });
 
     // 5. Exercise LEVEL_UNIV, LEVEL_PLAN, and LEVEL_SHIP scopes + mid-loop
     //    hard-deletion on ScopedCommandableShips.
@@ -1008,7 +1008,7 @@ int main() {
         ids.push_back(h->number());
         if (h->number() == 1) {
           cmd_ctx.em.mutate_ship(
-              5, [&](Ship& target) { cmd_ctx.em.kill_ship(1, target); });
+              5, [&](Ship& target) { cmd_ctx.em.destroy_ship(target); });
         }
       }
       test::expect_eq(ids, (std::vector<shipnum_t>{1}));

@@ -111,7 +111,7 @@ void test_cew_syntax_and_target_validation() {
           .named("Doomed")
           .in_star_orbit(1, SystemCoordinates{110.0, 210.0})
           .build();
-  ctx.em.mutate_ship(temp_target, [&](Ship& s) { ctx.em.kill_ship(1, s); });
+  ctx.em.mutate_ship(temp_target, [&](Ship& s) { ctx.em.destroy_ship(s); });
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"cew", "#1", std::format("#{}", temp_target.value)});

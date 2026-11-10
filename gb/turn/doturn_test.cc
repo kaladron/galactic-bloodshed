@@ -7,6 +7,7 @@
 import dallib;
 import gb.creator;
 import gb.entities;
+import gb.mechanics;
 import gb.repositories;
 import gb.services;
 import gb.turn;
@@ -1351,8 +1352,8 @@ void test_end_to_end_multi_turn_game_lifecycle() {
 
   // 7. Simulate mid-game combat ship destruction (destroying carrier and
   // Player 4's government ship) and verify FK scrubbing + Turn 2 update
-  em.mutate_ship(carrier_id, [&](Ship& s) { em.kill_ship(2, s); });
-  em.mutate_ship(enrolled[2].gov_ship, [&](Ship& s) { em.kill_ship(2, s); });
+  em.mutate_ship(carrier_id, [&](Ship& s) { kill_ship(em, 2, s); });
+  em.mutate_ship(enrolled[2].gov_ship, [&](Ship& s) { kill_ship(em, 2, s); });
 
   test::expect_throws<EntityNotFoundError>(
       [&]() { (void)em.peek_ship(carrier_id); });

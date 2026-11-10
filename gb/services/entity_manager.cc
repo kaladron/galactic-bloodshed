@@ -868,56 +868,6 @@ EntityManager::find_player_by_name(const std::string& name) {
   return std::nullopt;
 }
 
-void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
-  if (is_read_only()) {
-    throw ReadOnlyError("ReadOnlyScope blocked EntityManager::kill_ship");
-  }
-  if (auto* auto_ship = ship.as<AutonomousShip>()) {
-    if (Playernum != 0) auto_ship->set_who_killed(Playernum);
-  }
-  if (ship.owner() != 0 && ship.type() != ShipType::STYPE_POD &&
-      ship.type() != ShipType::OTYPE_FACTORY) {
-    /* pods don't do things to morale, ditto for factories */
-    mutate_race(ship.owner(), [&](Race& victim) {
-      if (Playernum != ship.owner()) {
-        if (Playernum != 0 && !victim.God) {
-          if (ship.type() != ShipType::OTYPE_VN) {
-            mutate_race(Playernum, [&](Race& killer) {
-              killer.adjust_morale(victim, static_cast<int>(ship.build_cost()));
-            });
-          }
-        }
-      } else if (!ship.docked() && ship.max_crew_capacity()) {
-        victim.morale -= 2L * ship.build_cost(); /* scuttle/scrap */
-      }
-    });
-  }
-
-  if (const auto* auto_ship = ship.as<AutonomousShip>()) {
-    if (const auto killer = auto_ship->who_killed(); killer && *killer != 0) {
-      mutate_universe([&](Universe& Sdata) {
-        Sdata.record_vn_kill(*killer, ship.orbited_star(),
-                             uniform_rand(0, 1) == 0);
-      });
-    }
-  }
-
-  if (const auto* tox = ship.as<ToxicWasteShip>()) {
-    if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN) {
-      mutate_planet(ship.storbits(), ship.pnumorbits(), [&](Planet& planet) {
-        planet.toxic() += tox->toxic_level();
-      });
-    }
-  }
-
-  if (ship.number() != 0) {
-    for (auto ship_handle : ShipList::in_carrier(*this, ship.number())) {
-      kill_ship(Playernum, *ship_handle);
-    }
-  }
-  destroy_ship(ship);
-}
-
 namespace {
 void scrub_ship_foreign_keys(EntityManager& em, shipnum_t target_id) {
   if (target_id == 0) return;
@@ -995,6 +945,12 @@ void EntityManager::destroy_ship(Ship& ship) {
   ship.clear_destination();
   scrub_ship_foreign_keys(*this, ship.number());
 
+  // Re-append after recursive child retirements so pending_ship_deletions_
+  // drains in leaf-first post-order during DeferredWriteScope::commit().
+  if (ship.number() != 0) {
+    std::erase(pending_ship_deletions_, ship.number());
+    pending_ship_deletions_.push_back(ship.number());
+  }
   if (!ship_refcount.contains(ship.number())) {
     release_ship(ship.number());
   }

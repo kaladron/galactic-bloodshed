@@ -207,7 +207,7 @@ int main() {
     JsonStore store(db);
     ShipRepository ships(store);
     ships.save(dead_quarry);
-    em.kill_ship(1, dead_quarry);
+    em.destroy_ship(dead_quarry);
 
     // Should be able to build at (7,7) since existing quarry is destroyed
     auto result = can_build_on_sector(em, ShipType::OTYPE_QUARRY, race, planet,

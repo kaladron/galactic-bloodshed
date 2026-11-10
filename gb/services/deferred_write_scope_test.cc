@@ -250,7 +250,7 @@ void test_deferred_write_deletion_rollback_and_commit(TestContext& ctx) {
   // inside DeferredWriteScope, then rollback
   {
     auto scope = ctx.em.create_deferred_write_scope();
-    ctx.em.mutate_ship(ship20_id, [&](Ship& s) { ctx.em.kill_ship(5, s); });
+    ctx.em.mutate_ship(ship20_id, [&](Ship& s) { ctx.em.destroy_ship(s); });
     {
       auto barrier = ctx.em.create_deletion_barrier();
       ctx.em.delete_commod(10);
@@ -286,7 +286,7 @@ void test_deferred_write_deletion_rollback_and_commit(TestContext& ctx) {
   // 2. Delete ship20_id and commod #10 inside DeferredWriteScope and commit
   {
     auto scope = ctx.em.create_deferred_write_scope();
-    ctx.em.mutate_ship(ship20_id, [&](Ship& s) { ctx.em.kill_ship(5, s); });
+    ctx.em.mutate_ship(ship20_id, [&](Ship& s) { ctx.em.destroy_ship(s); });
     {
       auto barrier = ctx.em.create_deletion_barrier();
       ctx.em.delete_commod(10);

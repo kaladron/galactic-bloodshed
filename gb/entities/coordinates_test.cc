@@ -543,7 +543,7 @@ int main() {
                            .in_star_orbit(1, UniverseCoordinates{0.0, 0.0})
                            .build_handle();
     const shipnum_t dead_ship_id = dead_handle->number();
-    ctx.em.kill_ship(1, *dead_handle);
+    ctx.em.destroy_ship(*dead_handle);
 
     ScopeContext scope_ctx{
         .player = 1,

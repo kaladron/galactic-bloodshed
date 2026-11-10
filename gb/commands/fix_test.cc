@@ -82,7 +82,7 @@ void test_fix_ship_dead_persistence() {
 
   ctx.em.mutate_ship(ship_id, [&](Ship& s) {
     s.admin_destroy();
-    ctx.em.kill_ship(1, s);
+    ctx.em.destroy_ship(s);
   });
 
   ctx.em.clear_cache();
@@ -328,14 +328,25 @@ void test_fix_command_dispatch() {
   test::expect_throws<EntityNotFoundError>(
       [&]() { ctx.em.peek_ship(ship1_id); });
 
-  // Also verify ASCII "destroyed" output on a second ship
+  // Verify ASCII "destroyed" output and administrative purity (no morale or
+  // planet toxicity side effects when removing a mortal's ToxicWasteShip)
   g.set_ui_mode(UiMode::ASCII);
-  const auto ship2_id =
-      TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE).owned_by(1, 1).build();
+  const auto p1_morale = ctx.em.peek_race(1)->morale;
+  const auto p2_morale = ctx.em.peek_race(2)->morale;
+  const auto planet_toxic = ctx.em.peek_planet(1, 1)->toxic();
+  const auto ship2_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TOXWC)
+                            .owned_by(2, 1)
+                            .in_planet_orbit(1, 1)
+                            .with_build_cost(100)
+                            .with_special(WasteData{.toxic = 40})
+                            .build();
   g.set_shipno(ship2_id);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"fix", "ship", "dead"});
   test::expect_contains(g.out.str(), "destroyed");
+  test::expect_eq(ctx.em.peek_race(1)->morale, p1_morale);
+  test::expect_eq(ctx.em.peek_race(2)->morale, p2_morale);
+  test::expect_eq(ctx.em.peek_planet(1, 1)->toxic(), planet_toxic);
 }
 
 int main() {

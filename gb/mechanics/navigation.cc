@@ -390,7 +390,7 @@ void handle_sublight_out_of_fuel(EntityManager& em, Ship& s,
       is_expendable_or_probe_ship(s)) {
     push_telegram(em, s.owner(), s.governor(),
                   std::format("{} has been lost in deep space.", s));
-    em.kill_ship(s.owner(), s);
+    kill_ship(em, s.owner(), s);
   }
 }
 
@@ -1919,7 +1919,7 @@ land_on_planet_sector(EntityManager& em, Ship& s, std::string_view target_arg,
       res.ship_damage = s.damage();
       res.ship_fuel = s.fuel();
       res.required_fuel = fuel;
-      em.kill_ship(s.owner(), s);
+      kill_ship(em, s.owner(), s);
       outcome = std::move(res);
       return;
     }

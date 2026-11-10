@@ -359,7 +359,7 @@ do_damage(EntityManager& em, ShipShotAttackerKind attacker_kind, player_t who,
   }
 
   const damage_t total_damage = ship.damage();
-  if (damage_result.destroyed) em.kill_ship(who, ship);
+  if (damage_result.destroyed) kill_ship(em, who, ship);
   ship.build_cost() = cost(ship);
 
   return ShipShotResult{
@@ -720,7 +720,7 @@ std::optional<MineDetonationReport> domine(Ship& ship, bool detonate,
       .planet_strike = detonate_mine_against_planet(ship, entity_manager),
   };
 
-  entity_manager.kill_ship(ship.owner(), ship);
+  kill_ship(entity_manager, ship.owner(), ship);
   return report;
 }
 
@@ -740,4 +740,75 @@ detonate_ship_mine(EntityManager& entity_manager, Ship& ship) {
     return std::unexpected(DetonateError::DetonationFailed);
   }
   return *report;
+}
+
+namespace {
+constexpr bool is_morale_exempt_ship(ShipType type) noexcept {
+  return type == ShipType::STYPE_POD || type == ShipType::OTYPE_FACTORY;
+}
+
+void apply_kill_ship_mechanics_recursive(EntityManager& em, player_t destroyer,
+                                         Ship& ship) {
+  record_autonomous_ship_kill(em, destroyer, ship);
+  apply_ship_kill_morale(em, destroyer, ship);
+  apply_toxic_waste_fallout(em, ship);
+  if (ship.number() != 0) {
+    for (auto child_handle : ShipList::in_carrier(em, ship.number())) {
+      apply_kill_ship_mechanics_recursive(em, destroyer, *child_handle);
+    }
+  }
+}
+}  // namespace
+
+void record_autonomous_ship_kill(EntityManager& em, player_t destroyer,
+                                 Ship& ship) {
+  auto* auto_ship = ship.as<AutonomousShip>();
+  if (!auto_ship) return;
+  if (destroyer != 0) {
+    auto_ship->set_who_killed(destroyer);
+  }
+  if (const auto killer = auto_ship->who_killed(); killer && *killer != 0) {
+    em.mutate_universe([&](Universe& universe) {
+      universe.record_vn_kill(*killer, ship.orbited_star(),
+                              uniform_rand(0, 1) == 0);
+    });
+  }
+}
+
+void apply_ship_kill_morale(EntityManager& em, player_t destroyer,
+                            const Ship& ship) {
+  if (ship.owner() == 0 || is_morale_exempt_ship(ship.type())) {
+    return;
+  }
+  if (destroyer != ship.owner()) {
+    if (destroyer == 0 || ship.type() == ShipType::OTYPE_VN) return;
+    if (em.peek_race(ship.owner())->God) return;
+    em.mutate_race(ship.owner(), [&](Race& victim) {
+      em.mutate_race(destroyer, [&](Race& killer) {
+        killer.adjust_morale(victim, static_cast<int>(ship.build_cost()));
+      });
+    });
+    return;
+  }
+  if (!ship.docked() && ship.max_crew_capacity()) {
+    em.mutate_race(ship.owner(), [&](Race& victim) {
+      victim.morale -= 2L * ship.build_cost();
+    });
+  }
+}
+
+void apply_toxic_waste_fallout(EntityManager& em, const Ship& ship) {
+  const auto* tox = ship.as<ToxicWasteShip>();
+  if (!tox || ship.whatorbits() != ScopeLevel::LEVEL_PLAN) return;
+  em.mutate_planet(ship.storbits(), ship.pnumorbits(), [&](Planet& planet) {
+    planet.toxic() += tox->toxic_level();
+  });
+}
+
+void kill_ship(EntityManager& em, player_t destroyer, Ship& ship) {
+  if (em.is_read_only()) {
+    throw ReadOnlyError("ReadOnlyScope blocked kill_ship");
+  }
+  apply_kill_ship_mechanics_recursive(em, destroyer, ship);
+  em.destroy_ship(ship);
 }

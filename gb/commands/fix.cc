@@ -141,7 +141,7 @@ bool fix_ship(const command_t& argv, GameObj& g) {
     } else if (argv[2] == "dead") {
       const std::string label = std::format("{}", s);
       s.admin_destroy();
-      g.entity_manager.kill_ship(g.player(), s);
+      g.entity_manager.destroy_ship(s);
       result = GB::presentation::FixResult{
           .target = GB::presentation::FixTarget::Ship,
           .property = "dead",

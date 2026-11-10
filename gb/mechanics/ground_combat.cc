@@ -193,7 +193,7 @@ PeopleAttackMechResult people_attack_mech(EntityManager& em, Ship& ship,
   const damage_t damage =
       Percentage::clamped(uniform_rand(0, round_rand(damage_ceiling)));
   if (ship.apply_damage(damage).destroyed) {
-    em.kill_ship(race.Playernum, ship);
+    kill_ship(em, race.Playernum, ship);
   }
   const auto collateral = do_collateral(ship, damage, alien.mass);
   return PeopleAttackMechResult{

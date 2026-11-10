@@ -7,6 +7,7 @@ module;
 
 import std;
 import gb.entities;
+import gb.mechanics;
 import gb.presentation;
 import gb.services;
 
@@ -26,7 +27,7 @@ std::vector<shipnum_t> destroy_empire_ships(GameObj& g, player_t playernum) {
       continue;
     }
     destroyed.push_back(ship.number());
-    g.entity_manager.kill_ship(playernum, ship);
+    kill_ship(g.entity_manager, playernum, ship);
   }
   return destroyed;
 }

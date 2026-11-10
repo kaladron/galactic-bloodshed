@@ -489,7 +489,7 @@ scrap_single_ship(EntityManager& em, Ship& s, const Race& race) {
     });
   }
 
-  em.kill_ship(race.Playernum, s);
+  kill_ship(em, race.Playernum, s);
 
   if (is_landed_on_planet) {
     em.mutate_sectormap(s.storbits(), s.pnumorbits(), [&](SectorMap& smap) {

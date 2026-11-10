@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /// \file entity_manager_kill_ship_test.cc
-/// \brief Unit tests for EntityManager::kill_ship() mechanics, recursive
-/// destruction, and VN telemetry.
+/// \brief Unit tests for gb.mechanics kill_ship() helpers, EntityManager
+/// ship retirement, recursive destruction, and VN telemetry.
 
 import dallib;
 import gb.entities;
+import gb.mechanics;
 import gb.services;
 import test;
 import std;
@@ -64,7 +65,7 @@ int main() {
     ship.notified() = 1;
     ship.build_cost() = 100;
 
-    em.kill_ship(1, ship);
+    kill_ship(em, 1, ship);
 
     test::expect_eq(ship.alive(), 0);
     test::expect_eq(ship.notified(), 0);
@@ -80,7 +81,7 @@ int main() {
                            .build_handle();
     auto& ship = *ship_handle;
 
-    em.kill_ship(1, ship);
+    kill_ship(em, 1, ship);
 
     auto* vn = ship.as<VonNeumannShip>();
     test::expect_ne(vn, nullptr);
@@ -108,7 +109,7 @@ int main() {
     races.save(victim_race);
     em.clear_cache();  // Force reload
 
-    em.kill_ship(1, ship);
+    kill_ship(em, 1, ship);
 
     // Clear cache and reload to see the persisted changes
     em.clear_cache();
@@ -118,8 +119,11 @@ int main() {
     std::println(std::cout, "✓ Gov_ship cleared when government ship killed");
   }
 
-  // Morale adjustment for non-VN kills
+  // Morale adjustment for combat kills, scuttle penalties, and exemptions
   {
+    em.mutate_race(1, [](Race& r) { r.morale = 1000; });
+    em.mutate_race(2, [](Race& r) { r.morale = 1000; });
+
     auto ship_handle = TestShipBuilder(em, ShipType::STYPE_DREADNT)
                            .owned_by(2)
                            .with_alive(true)
@@ -127,18 +131,31 @@ int main() {
     auto& ship = *ship_handle;
     ship.build_cost() = 1000;
 
-    em.kill_ship(1, ship);
+    kill_ship(em, 1, ship);
 
-    // Morale adjustment occurs (adjust_morale was called)
-    // We can't predict exact values without implementing adjust_morale,
-    // but we can verify that the races were accessed
-    const auto* attacker_after = em.peek_race(1);
-    const auto* victim_after = em.peek_race(2);
+    test::expect_gt(em.peek_race(1)->morale, 1000);
+    test::expect_lt(em.peek_race(2)->morale, 1000);
 
-    // Note: We can't predict exact morale values without implementing
-    // adjust_morale, but we can verify that the races were loaded and saved
-    test::expect_ne(attacker_after, nullptr);
-    test::expect_ne(victim_after, nullptr);
+    // Pod death, docked scuttle, and unowned/natural kills do not alter morale
+    const auto m2_before = em.peek_race(2)->morale;
+    auto pod_handle =
+        TestShipBuilder(em, ShipType::STYPE_POD).owned_by(2).build_handle();
+    kill_ship(em, 1, *pod_handle);
+    test::expect_eq(em.peek_race(2)->morale, m2_before);
+
+    Ship unowned{};
+    unowned.owner() = 0;
+    unowned.build_cost() = 50;
+    apply_ship_kill_morale(em, 0, unowned);
+
+    auto scuttle_handle = TestShipBuilder(em, ShipType::STYPE_SHUTTLE)
+                              .owned_by(2)
+                              .with_max_crew(10)
+                              .build_handle();
+    scuttle_handle->build_cost() = 25;
+    apply_ship_kill_morale(em, 2, *scuttle_handle);
+    test::expect_eq(em.peek_race(2)->morale, m2_before - 50);
+    em.destroy_ship(*scuttle_handle);
     std::println(std::cout, "✓ Morale adjustment occurs on kill");
   }
 
@@ -152,7 +169,7 @@ int main() {
                            .build_handle();
     auto& ship = *ship_handle;
 
-    em.kill_ship(1, ship);
+    kill_ship(em, 1, ship);
 
     // Check VN hitlist was updated
     const auto* universe_after = em.peek_universe();
@@ -172,7 +189,7 @@ int main() {
                            .build_handle();
     auto& ship = *ship_handle;
 
-    em.kill_ship(1, ship);
+    kill_ship(em, 1, ship);
 
     // Check planet toxicity increased
     const auto* planet_after = em.peek_planet(1, 1);
@@ -213,7 +230,7 @@ int main() {
     em.clear_cache();
 
     // Phase 3: Kill ship2 - should undock ship1
-    em.mutate_ship(ship2_num, [&](Ship& ship2) { em.kill_ship(1, ship2); });
+    em.mutate_ship(ship2_num, [&](Ship& ship2) { kill_ship(em, 1, ship2); });
 
     // Phase 4: Verify ship1 was undocked
     em.clear_cache();
@@ -263,7 +280,7 @@ int main() {
 
     // Phase 3: Kill the carrier - should recursively kill fighters
     em.mutate_ship(carrier_num,
-                   [&](Ship& carrier) { em.kill_ship(1, carrier); });
+                   [&](Ship& carrier) { kill_ship(em, 1, carrier); });
 
     // Phase 4: Verify all ships are hard-deleted from database
     em.clear_cache();
@@ -358,7 +375,7 @@ int main() {
     }
 
     em.clear_cache();
-    em.mutate_ship(target_id, [&](Ship& target) { em.kill_ship(1, target); });
+    em.mutate_ship(target_id, [&](Ship& target) { kill_ship(em, 1, target); });
 
     em.clear_cache();
     const auto* mirror_after = em.peek_ship(mirror_id)->as<SpaceMirrorShip>();
@@ -398,7 +415,7 @@ int main() {
     {
       auto scope = em.create_deferred_write_scope();
       em.mutate_ship(deferred_ship_id,
-                     [&](Ship& target) { em.kill_ship(1, target); });
+                     [&](Ship& target) { kill_ship(em, 1, target); });
       scope.commit();
     }
 
@@ -410,6 +427,17 @@ int main() {
                  "commit()");
   }
 
-  std::println(std::cout, "\n✅ All EntityManager::kill_ship() tests passed!");
+  // ReadOnlyScope blocks kill_ship before mutating AutonomousShip in memory
+  {
+    auto vn_handle =
+        TestShipBuilder(em, ShipType::OTYPE_VN).owned_by(2).build_handle();
+    Ship vn_copy(vn_handle->to_struct());
+    em.destroy_ship(*vn_handle);
+    auto ro = em.create_read_only_scope();
+    test::expect_throws<ReadOnlyError>([&] { kill_ship(em, 1, vn_copy); });
+    test::expect_eq(vn_copy.as<VonNeumannShip>()->who_killed(), std::nullopt);
+  }
+
+  std::println(std::cout, "\n✅ All kill_ship() tests passed!");
   return 0;
 }

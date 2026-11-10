@@ -760,3 +760,22 @@ export struct WalkResult {
 export std::expected<WalkResult, WalkError>
 execute_afv_walk(EntityManager& em, shipnum_t shipno, char direction,
                  player_t player, governor_t governor, bool god = false);
+
+/// \brief Records autonomous (Von Neumann / Berserker) destruction attribution
+/// and updates the global Von Neumann vengeance target table.
+export void record_autonomous_ship_kill(EntityManager& em, player_t destroyer,
+                                        Ship& ship);
+
+/// \brief Applies combat kill morale transfers or scuttle morale penalties when
+/// a ship is destroyed.
+export void apply_ship_kill_morale(EntityManager& em, player_t destroyer,
+                                   const Ship& ship);
+
+/// \brief Applies planetary toxicity fallout when an orbiting ToxicWasteShip is
+/// destroyed.
+export void apply_toxic_waste_fallout(EntityManager& em, const Ship& ship);
+
+/// \brief Applies gameplay destruction effects (morale, Von Neumann tracking,
+/// toxic waste fallout) across a ship and any docked craft, then retires the
+/// ship hierarchy via EntityManager::destroy_ship.
+export void kill_ship(EntityManager& em, player_t destroyer, Ship& ship);

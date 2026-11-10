@@ -58,7 +58,7 @@ check_overload(EntityManager& entity_manager, Ship& ship, int cew,
         .location_display = dispshiploc(entity_manager, ship),
         .ship_display = std::format("{}", ship),
     };
-    entity_manager.kill_ship(ship.owner(), ship);
+    kill_ship(entity_manager, ship.owner(), ship);
     return {0, event};
   }
   if (uniform_rand(0, strength) > ship.max_safe_laser_strength()) {

@@ -139,7 +139,7 @@ void do_pod(SporePodShip& ship, EntityManager& entity_manager) {
                         {.pod_display = std::format("{}", ship),
                          .orbit_path = prin_ship_orbits(entity_manager, ship),
                          .colonized_planet_name = colonized}));
-      entity_manager.kill_ship(ship.owner(), ship);
+      kill_ship(entity_manager, ship.owner(), ship);
       return;
     }
 
@@ -154,7 +154,7 @@ void do_pod(SporePodShip& ship, EntityManager& entity_manager) {
           entity_manager, ship.owner(), ship.governor(),
           GB::presentation::render_spore_pod_decay(
               std::format("{}", ship), prin_ship_orbits(entity_manager, ship)));
-      entity_manager.kill_ship(ship.owner(), ship);
+      kill_ship(entity_manager, ship.owner(), ship);
       return;
     }
 
@@ -182,7 +182,7 @@ void do_atmosphere_canister(CanisterShip& ship, EntityManager& entity_manager,
   }
 
   /* timer expired; destroy canister */
-  entity_manager.kill_ship(ship.owner(), ship);
+  kill_ship(entity_manager, ship.owner(), ship);
 
   const std::string telegram =
       GB::presentation::render_atmosphere_device_dissipated(
@@ -251,7 +251,7 @@ void do_mirror(SpaceMirrorShip& ship, EntityManager& entity_manager,
                  .damage_applied = dmg_res.damage_applied,
                  .destroyed = dmg_res.destroyed});
         if (dmg_res.destroyed) {
-          entity_manager.kill_ship(ship.owner(), target);
+          kill_ship(entity_manager, ship.owner(), target);
         }
         push_telegram(entity_manager, target.owner(), target.governor(),
                       telegram);
@@ -357,7 +357,7 @@ bool process_ship_supernova(Ship& ship, const Star& star,
   auto dmg =
       5UL * star.nova_stage() / ((ship.effective_armor() + 1) * state.segments);
   if (ship.apply_damage(dmg).destroyed) {
-    em.kill_ship(ship.owner(), ship);
+    kill_ship(em, ship.owner(), ship);
     return false;
   }
   return true;
@@ -491,7 +491,7 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
             TurnStats& stats) {
   if (!ship.prepare_for_flight(update)) {
     if (!ship.alive()) {
-      entity_manager.kill_ship(ship.owner(), ship);
+      kill_ship(entity_manager, ship.owner(), ship);
     }
     return;
   }
@@ -567,7 +567,7 @@ void execute_missile_planet_strike(Ship& missile,
                 push_telegram(
                     entity_manager, missile.owner(), missile.governor(),
                     GB::presentation::render_bombard_long(*result_opt));
-                entity_manager.kill_ship(missile.owner(), missile);
+                kill_ship(entity_manager, missile.owner(), missile);
                 const std::string orbit_path =
                     prin_ship_orbits(entity_manager, missile);
                 const std::string sectors_destroyed_msg =
@@ -619,7 +619,7 @@ void execute_missile_ship_strike(Ship& missile, EntityManager& entity_manager) {
                       long_buf);
         post(entity_manager, short_buf, NewsType::COMBAT);
       }
-      entity_manager.kill_ship(missile.owner(), missile);
+      kill_ship(entity_manager, missile.owner(), missile);
     }
   });
 }

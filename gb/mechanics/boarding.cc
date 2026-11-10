@@ -74,7 +74,7 @@ void apply_boarding_casualties(EntityManager& em, Ship& s, Ship& s2,
     report.attacker_damage = Percentage::clamped(uniform_rand(
         0, round_rand(25.0 * (b2strength + 1.0) / (bstrength + 1.0))));
     if (s.apply_damage(report.attacker_damage).destroyed) {
-      em.kill_ship(attacker_player, s);
+      kill_ship(em, attacker_player, s);
     }
 
     report.defender_civ_casualties = std::min(
@@ -91,7 +91,7 @@ void apply_boarding_casualties(EntityManager& em, Ship& s, Ship& s2,
     report.defender_damage = Percentage::clamped(uniform_rand(
         0, round_rand(25.0 * (bstrength + 1.0) / (b2strength + 1.0))));
     if (s2.apply_damage(report.defender_damage).destroyed) {
-      em.kill_ship(attacker_player, s2);
+      kill_ship(em, attacker_player, s2);
     }
     return;
   }
@@ -102,7 +102,7 @@ void apply_boarding_casualties(EntityManager& em, Ship& s, Ship& s2,
         Percentage::clamped(uniform_rand(0, 10 * s2.destruct()));
     report.attacker_damage += report.booby_damage.value();
     if (s.apply_damage(report.booby_damage).destroyed) {
-      em.kill_ship(attacker_player, s);
+      kill_ship(em, attacker_player, s);
     }
   }
 }
@@ -519,7 +519,7 @@ void resolve_manned_landed_boarding(EntityManager& em, Ship& ship,
     res.ship_damage = Percentage::clamped(
         uniform_rand(0, round_rand(MAX_BOARDING_COLLATERAL_DAMAGE * ratio)));
     if (ship.apply_damage(res.ship_damage).destroyed) {
-      em.kill_ship(attacker_player, ship);
+      kill_ship(em, attacker_player, ship);
     }
   }
   res.surviving_boarders = boarders - res.attacker_casualties;
@@ -540,7 +540,7 @@ void resolve_booby_trap_boarding(EntityManager& em, Ship& ship,
   res.surviving_boarders = boarders - casualties;
   res.ship_damage = res.booby_damage;
   if (ship.apply_damage(res.booby_damage).destroyed) {
-    em.kill_ship(attacker_player, ship);
+    kill_ship(em, attacker_player, ship);
   }
 }
 

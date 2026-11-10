@@ -483,6 +483,7 @@ public:
 
   // Business logic operations (service layer)
   std::optional<player_t> find_player_by_name(const std::string& name);
+  void destroy_ship(Ship& ship);
   void kill_ship(player_t destroyer, Ship& ship);
   [[nodiscard]] std::optional<UniverseCoordinates>
   resolve_mirror_target_coordinates(const SpaceMirrorShip& mirror);

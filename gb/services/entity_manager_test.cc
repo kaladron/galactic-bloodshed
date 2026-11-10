@@ -380,6 +380,57 @@ void test_entity_manager_get_player() {
                "IDs and reject missing gap IDs");
 }
 
+void test_entity_manager_destroy_ship() {
+  Database db(":memory:");
+  initialize_schema(db);
+  EntityManager em(db);
+
+  std::println(std::cout, "Test: EntityManager destroy_ship()");
+
+  Race owner{};
+  owner.Playernum = 1;
+  owner.name = "Owner";
+  owner.morale = 1000;
+
+  JsonStore store(db);
+  RaceRepository(store).save(owner);
+  ShipRepository ships(store);
+
+  ship_struct fighter_data{
+      .number = 100,
+      .owner = 1,
+      .build_cost = 50,
+      .type = ShipType::STYPE_FIGHTER,
+      .alive = 1,
+  };
+  Ship fighter(fighter_data);
+  ships.save(fighter);
+
+  em.begin_mutation_tracking();
+  em.destroy_ship(fighter);
+  DirtyEntitySet dirty = em.take_dirty_entities();
+  test::expect_eq(fighter.alive(), 0);
+  test::expect_eq(fighter.notified(), 0);
+  test::expect_true(dirty.races.empty());
+  test::expect_eq(em.peek_race(1)->morale, 1000);
+
+  // Gov_ship FK cleared even for STYPE_POD / OTYPE_FACTORY government ships
+  for (auto [ship_id, ship_type] :
+       {std::pair{shipnum_t{101}, ShipType::STYPE_POD},
+        std::pair{shipnum_t{102}, ShipType::OTYPE_FACTORY}}) {
+    Ship gov_ship(ship_struct{
+        .number = ship_id, .owner = 1, .type = ship_type, .alive = 1});
+    ships.save(gov_ship);
+    em.mutate_race(1, [&](Race& r) { r.Gov_ship = ship_id; });
+    em.destroy_ship(gov_ship);
+    em.clear_cache();
+    test::expect_eq(em.peek_race(1)->Gov_ship, std::nullopt);
+  }
+  std::println(std::cout,
+               "  ✓ destroy_ship retires ships and clears Gov_ship across all "
+               "ship types without altering morale");
+}
+
 void test_entity_manager_kill_ship() {
   Database db(":memory:");
   initialize_schema(db);
@@ -1384,6 +1435,7 @@ void test_entity_manager_read_only_scope() {
     test::expect_throws<ReadOnlyError>(
         [&] { em.create_ship(ShipType::OTYPE_PROBE, 1); });
     test::expect_throws<ReadOnlyError>([&] { em.delete_ship(sid); });
+    test::expect_throws<ReadOnlyError>([&] { em.destroy_ship(probe_copy); });
     test::expect_throws<ReadOnlyError>([&] { em.kill_ship(1, probe_copy); });
     test::expect_true(probe_copy.alive());
     test::expect_throws<ReadOnlyError>(
@@ -1418,6 +1470,7 @@ int main() {
   test_entity_manager_singleton_universe();
   test_entity_manager_singleton_server_state();
   test_entity_manager_get_player();
+  test_entity_manager_destroy_ship();
   test_entity_manager_kill_ship();
   test_entity_manager_kill_ship_gov_ship();
   test_peek_star_throws_on_not_found();

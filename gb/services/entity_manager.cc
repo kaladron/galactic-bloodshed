@@ -873,22 +873,14 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
     throw ReadOnlyError("ReadOnlyScope blocked EntityManager::kill_ship");
   }
   if (auto* auto_ship = ship.as<AutonomousShip>()) {
-    auto_ship->set_who_killed(Playernum);
+    if (Playernum != 0) auto_ship->set_who_killed(Playernum);
   }
-  ship.alive() = 0;
-  ship.notified() = 0; /* prepare the ship for recycling */
-  if (ship.number() != 0) {
-    std::erase(pending_ship_deletions_, ship.number());
-    pending_ship_deletions_.push_back(ship.number());
-  }
-
-  if (ship.type() != ShipType::STYPE_POD &&
+  if (ship.owner() != 0 && ship.type() != ShipType::STYPE_POD &&
       ship.type() != ShipType::OTYPE_FACTORY) {
     /* pods don't do things to morale, ditto for factories */
     mutate_race(ship.owner(), [&](Race& victim) {
-      if (victim.Gov_ship == ship.number()) victim.Gov_ship = std::nullopt;
       if (Playernum != ship.owner()) {
-        if (!victim.God) {
+        if (Playernum != 0 && !victim.God) {
           if (ship.type() != ShipType::OTYPE_VN) {
             mutate_race(Playernum, [&](Race& killer) {
               killer.adjust_morale(victim, static_cast<int>(ship.build_cost()));
@@ -902,12 +894,12 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
   }
 
   if (const auto* auto_ship = ship.as<AutonomousShip>()) {
-    mutate_universe([&](Universe& Sdata) {
-      if (const auto killer = auto_ship->who_killed()) {
+    if (const auto killer = auto_ship->who_killed(); killer && *killer != 0) {
+      mutate_universe([&](Universe& Sdata) {
         Sdata.record_vn_kill(*killer, ship.orbited_star(),
                              uniform_rand(0, 1) == 0);
-      }
-    });
+      });
+    }
   }
 
   if (const auto* tox = ship.as<ToxicWasteShip>()) {
@@ -918,50 +910,39 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
     }
   }
 
-  /* undock the stuff docked with it */
-  if (ship.moored_ship_id()) {
-    ship.undock_from_ship();
+  if (ship.number() != 0) {
+    for (auto ship_handle : ShipList::in_carrier(*this, ship.number())) {
+      kill_ship(Playernum, *ship_handle);
+    }
   }
+  destroy_ship(ship);
+}
 
-  /* if this ship is inside a carrier, adjust the carrier's hangar and mass */
-  if (ship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
-    const shipnum_t carrier_id = ship.destshipno().value();
-    mutate_ship(carrier_id,
-                [&](Ship& carrier) { carrier.unload_docked_craft(ship); });
-    propagate_ancestor_mass_delta(carrier_id, -ship.mass());
-  }
-
-  /* landed ships are killed */
-  for (auto ship_handle : ShipList::in_carrier(*this, ship.number())) {
-    Ship& s = *ship_handle;   // Get mutable reference
-    kill_ship(Playernum, s);  // Recursive call to member function
-  }
-
-  ship.clear_destination();
-
-  /* clear any foreign key references to this ship on other alive ships */
-  for (shipnum_t other_id : ships_alive()) {
-    const auto* other = peek_ship(other_id);
+namespace {
+void scrub_ship_foreign_keys(EntityManager& em, shipnum_t target_id) {
+  if (target_id == 0) return;
+  for (shipnum_t other_id : em.ships_alive()) {
+    const auto* other = em.peek_ship(other_id);
     if (const auto* mirror = other->as<SpaceMirrorShip>()) {
-      if (mirror->aimed_ship() == ship.number()) {
-        mutate_as<SpaceMirrorShip>(other_id,
-                                   [](SpaceMirrorShip& m) { m.clear_aim(); });
+      if (mirror->aimed_ship() == target_id) {
+        em.mutate_as<SpaceMirrorShip>(
+            other_id, [](SpaceMirrorShip& m) { m.clear_aim(); });
       }
     } else if (const auto* trans = other->as<TransporterShip>()) {
-      if (trans->target_ship() == ship.number()) {
-        mutate_as<TransporterShip>(other_id, [](TransporterShip& t) {
+      if (trans->target_ship() == target_id) {
+        em.mutate_as<TransporterShip>(other_id, [](TransporterShip& t) {
           t.set_target_ship(std::nullopt);
         });
       }
     }
-    if (other->protect().ship == ship.number()) {
-      mutate_ship(other_id, [](Ship& s) {
+    if (other->protect().ship == target_id) {
+      em.mutate_ship(other_id, [](Ship& s) {
         s.protect().ship = std::nullopt;
         s.protect().on = false;
       });
     }
-    if (other->destshipno() == ship.number()) {
-      mutate_ship(other_id, [](Ship& s) {
+    if (other->destshipno() == target_id) {
+      em.mutate_ship(other_id, [](Ship& s) {
         if (s.is_docked()) {
           s.undock_from_ship();
         } else {
@@ -970,11 +951,50 @@ void EntityManager::kill_ship(player_t Playernum, Ship& ship) {
       });
     }
   }
+}
+}  // namespace
 
-  if (ship.number() != 0) {
-    std::erase(pending_ship_deletions_, ship.number());
+void EntityManager::destroy_ship(Ship& ship) {
+  if (is_read_only()) {
+    throw ReadOnlyError("ReadOnlyScope blocked EntityManager::destroy_ship");
+  }
+  ship.alive() = 0;
+  ship.notified() = 0; /* prepare the ship for recycling */
+  if (ship.number() != 0 &&
+      !std::ranges::contains(pending_ship_deletions_, ship.number())) {
     pending_ship_deletions_.push_back(ship.number());
   }
+
+  if (ship.owner() != 0 && ship.number() != 0 &&
+      peek_race(ship.owner())->Gov_ship == ship.number()) {
+    mutate_race(ship.owner(), [](Race& r) { r.Gov_ship = std::nullopt; });
+  }
+
+  /* undock the stuff docked with it */
+  if (ship.moored_ship_id()) {
+    ship.undock_from_ship();
+  }
+
+  /* if this ship is inside a living carrier, adjust hangar and ancestor mass */
+  if (ship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
+    const shipnum_t carrier_id = ship.destshipno().value();
+    if (!std::ranges::contains(pending_ship_deletions_, carrier_id)) {
+      mutate_ship(carrier_id,
+                  [&](Ship& carrier) { carrier.unload_docked_craft(ship); });
+      propagate_ancestor_mass_delta(carrier_id, -ship.mass());
+    }
+  }
+
+  /* landed ships are retired recursively */
+  if (ship.number() != 0) {
+    for (auto ship_handle : ShipList::in_carrier(*this, ship.number())) {
+      destroy_ship(*ship_handle);
+    }
+  }
+
+  ship.clear_destination();
+  scrub_ship_foreign_keys(*this, ship.number());
+
   if (!ship_refcount.contains(ship.number())) {
     release_ship(ship.number());
   }

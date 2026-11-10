@@ -312,9 +312,9 @@ void test_kill_ship_carrier_and_child_accounting() {
   auto dock_res = em.dock_carrier(fighter_id, carrier_id);
   test::expect_true(dock_res.has_value());
 
-  // Killing the child ship directly should update the living carrier's hangar
+  // Retiring the child ship directly should update the living carrier's hangar
   // and mass
-  em.mutate_ship(fighter_id, [&](Ship& f) { em.kill_ship(1, f); });
+  em.mutate_ship(fighter_id, [&](Ship& f) { em.destroy_ship(f); });
 
   em.clear_cache();
   const auto* carrier_after = em.peek_ship(carrier_id);
@@ -324,13 +324,23 @@ void test_kill_ship_carrier_and_child_accounting() {
 
   test::expect_throws<EntityNotFoundError>([&]() { em.peek_ship(fighter_id); });
 
-  // 3-tier cascade test: Supercarrier -> Subcarrier -> Fighter
+  // 3-tier intermediate carrier retirement: destroying Subcarrier while
+  // Supercarrier (+ sibling escort) survives must not double-subtract nested
+  // craft mass from Supercarrier
   const auto super_id = TestShipBuilder(em, ShipType::STYPE_CARRIER)
                             .owned_by(1)
                             .with_alive(true)
                             .in_star_orbit(1)
                             .with_max_hanger(50)
                             .build();
+  const double super_base_mass = em.peek_ship(super_id)->mass();
+  const auto sibling_id = TestShipBuilder(em, ShipType::STYPE_FIGHTER)
+                              .owned_by(1)
+                              .with_alive(true)
+                              .in_star_orbit(1)
+                              .with_size(10)
+                              .build();
+  const double sibling_mass = em.peek_ship(sibling_id)->mass();
   const auto sub_id = TestShipBuilder(em, ShipType::STYPE_CARRIER)
                           .owned_by(1)
                           .with_alive(true)
@@ -345,16 +355,27 @@ void test_kill_ship_carrier_and_child_accounting() {
                             .with_size(5)
                             .build();
 
+  test::expect_true(em.dock_carrier(sibling_id, super_id).has_value());
   test::expect_true(em.dock_carrier(craft_id, sub_id).has_value());
   test::expect_true(em.dock_carrier(sub_id, super_id).has_value());
 
-  // Killing Supercarrier destroys Subcarrier and craft recursively
-  em.mutate_ship(super_id, [&](Ship& s) { em.kill_ship(1, s); });
+  em.mutate_ship(sub_id, [&](Ship& sub) { em.destroy_ship(sub); });
+
+  em.clear_cache();
+  const auto* super_after_sub = em.peek_ship(super_id);
+  test::expect_eq(super_after_sub->hanger(), 10);
+  test::expect_lt(
+      std::abs(super_after_sub->mass() - (super_base_mass + sibling_mass)),
+      1e-6);
+  test::expect_throws<EntityNotFoundError>([&]() { em.peek_ship(sub_id); });
+  test::expect_throws<EntityNotFoundError>([&]() { em.peek_ship(craft_id); });
+
+  // Retiring Supercarrier destroys remaining docked craft recursively
+  em.mutate_ship(super_id, [&](Ship& s) { em.destroy_ship(s); });
 
   em.clear_cache();
   test::expect_throws<EntityNotFoundError>([&]() { em.peek_ship(super_id); });
-  test::expect_throws<EntityNotFoundError>([&]() { em.peek_ship(sub_id); });
-  test::expect_throws<EntityNotFoundError>([&]() { em.peek_ship(craft_id); });
+  test::expect_throws<EntityNotFoundError>([&]() { em.peek_ship(sibling_id); });
 }
 
 void test_ancestor_carriers_and_corrupt_db_cycles() {

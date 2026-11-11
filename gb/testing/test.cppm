@@ -8,10 +8,6 @@
 /// This is a standalone module to avoid linking test utilities into production
 /// binaries.
 
-module;
-
-#include <cassert>
-
 export module test;
 
 import commands;

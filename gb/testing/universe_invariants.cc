@@ -3,10 +3,6 @@
 /// \file universe_invariants.cc
 /// \brief Implementation of cross-entity integrity invariant verification.
 
-module;
-
-#include <cassert>
-
 module test;
 
 import commands;

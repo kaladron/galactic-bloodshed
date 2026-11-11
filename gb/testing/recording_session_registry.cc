@@ -4,10 +4,6 @@
 /// \brief Implementation of RecordingSessionRegistry mock for testing
 /// notifications.
 
-module;
-
-#include <cassert>
-
 module test;
 
 import gb.entities;

@@ -665,6 +665,31 @@ int main() {
     }
   }
 
+  // --- constexpr parse_int & string_to_shipnum ---
+  {
+    static_assert(parse_int("0") == 0);
+    static_assert(parse_int("-42") == -42);
+    static_assert(parse_int<std::uint8_t>("255") == 255);
+    static_assert(!parse_int<std::uint8_t>("256").has_value());
+    static_assert(!parse_int<std::uint8_t>("-1").has_value());
+    static_assert(!parse_int("+5").has_value());
+    static_assert(!parse_int(" 5").has_value());
+    static_assert(!parse_int("5 ").has_value());
+    static_assert(!parse_int("5abc").has_value());
+    static_assert(!parse_int("").has_value());
+    static_assert(!parse_int("-").has_value());
+    static_assert(!parse_int("--1").has_value());
+    static_assert(string_to_shipnum("##17") == shipnum_t{17});
+    static_assert(!string_to_shipnum("#0").has_value());
+
+    test::expect_eq(parse_int<std::int32_t>("-2147483648"),
+                    std::numeric_limits<std::int32_t>::min());
+    test::expect_eq(parse_int<std::int32_t>("2147483647"),
+                    std::numeric_limits<std::int32_t>::max());
+    test::expect_false(parse_int<std::int32_t>("2147483648").has_value());
+    test::expect_false(parse_int<std::int32_t>("-2147483649").has_value());
+  }
+
   std::println(std::cout, "✓ All Coordinates & API Integration tests passed!");
   return 0;
 }

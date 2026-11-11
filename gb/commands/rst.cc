@@ -263,19 +263,7 @@ std::optional<shipnum_t::value_type> parse_ship_arg(std::string_view arg_sv) {
   while (arg_sv.starts_with('#')) {
     arg_sv.remove_prefix(1);
   }
-  if (arg_sv.empty()) {
-    return std::nullopt;
-  }
-  if (arg_sv.front() != '-' && (arg_sv.front() < '0' || arg_sv.front() > '9')) {
-    return std::nullopt;
-  }
-  shipnum_t::value_type value = 0;
-  const auto [ptr, ec] =
-      std::from_chars(arg_sv.data(), arg_sv.data() + arg_sv.size(), value);
-  if (ec != std::errc{} || ptr != arg_sv.data() + arg_sv.size()) {
-    return std::nullopt;
-  }
-  return value;
+  return parse_int<shipnum_t::value_type>(arg_sv);
 }
 
 bool run_rst(const command_t& argv, GameObj& g, const RstReportFlags& flags) {

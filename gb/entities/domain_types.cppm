@@ -8,10 +8,23 @@ export module gb.entities:types;
 
 import gb.log;
 import std;
-import scnlib;
 
 // Re-export basic types from standalone types module
 export import types;
+
+/// \brief Strictly parses a base-10 integer consuming the entire string_view
+/// (rejecting leading '+' or whitespace, trailing characters, and overflow).
+export template <std::integral T = int>
+  requires(!std::same_as<std::remove_cv_t<T>, bool>)
+[[nodiscard]] constexpr std::optional<T>
+parse_int(std::string_view s) noexcept {
+  T value{};
+  const auto [ptr, ec] = std::from_chars(s.data(), s.data() + s.size(), value);
+  if (ec != std::errc{} || ptr != s.data() + s.size()) {
+    return std::nullopt;
+  }
+  return value;
+}
 
 export using command_t = std::vector<std::string>;
 
@@ -984,8 +997,6 @@ export struct Coordinates {
    * \return Coordinates if successfully parsed, empty optional otherwise.
    */
   static std::optional<Coordinates> parse(std::string_view str) {
-    int x_val = 0;
-    int y_val = 0;
     auto comma_pos = str.find(',');
     if (comma_pos == std::string_view::npos) {
       return std::nullopt;
@@ -994,6 +1005,8 @@ export struct Coordinates {
     auto x_str = str.substr(0, comma_pos);
     auto y_str = str.substr(comma_pos + 1);
 
+    // TODO(C++29): Adopt standard <ascii> character utilities (P3688) once
+    // available in libc++.
     while (!x_str.empty() &&
            std::isspace(static_cast<unsigned char>(x_str.front()))) {
       x_str.remove_prefix(1);
@@ -1011,23 +1024,13 @@ export struct Coordinates {
       y_str.remove_suffix(1);
     }
 
-    if (x_str.empty() || y_str.empty()) {
+    auto x_val = parse_int<int>(x_str);
+    auto y_val = parse_int<int>(y_str);
+    if (!x_val || !y_val) {
       return std::nullopt;
     }
 
-    auto [p1, ec1] =
-        std::from_chars(x_str.data(), x_str.data() + x_str.size(), x_val);
-    if (ec1 != std::errc{} || p1 != x_str.data() + x_str.size()) {
-      return std::nullopt;
-    }
-
-    auto [p2, ec2] =
-        std::from_chars(y_str.data(), y_str.data() + y_str.size(), y_val);
-    if (ec2 != std::errc{} || p2 != y_str.data() + y_str.size()) {
-      return std::nullopt;
-    }
-
-    return Coordinates{x_val, y_val};
+    return Coordinates{*x_val, *y_val};
   }
 };
 
@@ -1198,40 +1201,18 @@ export [[nodiscard]] constexpr char first_char(std::string_view s) noexcept {
 }
 
 namespace detail {
-template <std::integral T>
-[[nodiscard]] inline std::optional<T> parse_strict_integer(std::string_view s) {
-  if (s.empty()) {
-    return std::nullopt;
-  }
-  const unsigned char first = static_cast<unsigned char>(s.front());
-  if constexpr (std::is_signed_v<T>) {
-    if (!std::isdigit(first) && s.front() != '-') {
-      return std::nullopt;
-    }
-  } else {
-    if (!std::isdigit(first)) {
-      return std::nullopt;
-    }
-  }
-  auto res = scn::scan<T>(s, "{}");
-  if (!res || !res->range().empty()) {
-    return std::nullopt;
-  }
-  return res->value();
-}
-
-[[nodiscard]] inline std::optional<std::pair<int, int>>
-parse_axis_range(std::string_view part) {
+[[nodiscard]] constexpr std::optional<std::pair<int, int>>
+parse_axis_range(std::string_view part) noexcept {
   const auto colon = part.find(':');
   if (colon != std::string_view::npos) {
-    auto low = parse_strict_integer<int>(part.substr(0, colon));
-    auto high = parse_strict_integer<int>(part.substr(colon + 1));
+    auto low = parse_int<int>(part.substr(0, colon));
+    auto high = parse_int<int>(part.substr(colon + 1));
     if (!low || !high) {
       return std::nullopt;
     }
     return std::make_pair(*low, *high);
   }
-  auto val = parse_strict_integer<int>(part);
+  auto val = parse_int<int>(part);
   if (!val) {
     return std::nullopt;
   }
@@ -1244,12 +1225,12 @@ parse_axis_range(std::string_view part) {
  * \param s User-provided input string
  * \return If the user provided a valid number, return it.
  */
-export [[nodiscard]] inline std::optional<shipnum_t>
-string_to_shipnum(std::string_view s) {
+export [[nodiscard]] constexpr std::optional<shipnum_t>
+string_to_shipnum(std::string_view s) noexcept {
   while (s.starts_with('#')) {
     s.remove_prefix(1);
   }
-  auto val = detail::parse_strict_integer<shipnum_t::value_type>(s);
+  auto val = parse_int<shipnum_t::value_type>(s);
   if (val.has_value() && *val > 0) {
     return shipnum_t{*val};
   }

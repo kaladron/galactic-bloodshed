@@ -25,6 +25,8 @@ module;
 
 #include <scn/scan.h>
 
+// TODO(C++29): Replace third-party scnlib with standard std::scan (P1729) once
+// available in libc++.
 export module scnlib;
 
 export namespace scn {

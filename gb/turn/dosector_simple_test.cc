@@ -11,8 +11,6 @@ import gb.turn;
 import test;
 import std;
 
-#include <cstring>
-
 namespace {
 
 // Helper function to create a test sector

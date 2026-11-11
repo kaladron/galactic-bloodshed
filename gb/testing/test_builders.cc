@@ -4,10 +4,6 @@
 /// \brief Implementation of TestShipBuilder and TestWorldBuilder fixture
 /// builders.
 
-module;
-
-#include <cassert>
-
 module test;
 
 import dallib;

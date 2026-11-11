@@ -337,16 +337,8 @@ std::optional<SectorType> parse_sector_type(char c) {
 // Parse a string as a non-negative player number without throwing or accepting
 // trailing non-digit characters.
 std::optional<int> parse_player_number(std::string_view arg) {
-  if (arg.empty() || arg.front() < '0' || arg.front() > '9') {
-    return std::nullopt;
-  }
-  int value = 0;
-  const auto [ptr, ec] =
-      std::from_chars(arg.data(), arg.data() + arg.size(), value);
-  if (ec != std::errc{} || ptr != arg.data() + arg.size()) {
-    return std::nullopt;
-  }
-  return value;
+  const auto val = parse_int<int>(arg);
+  return (val && *val >= 0) ? val : std::nullopt;
 }
 
 }  // namespace

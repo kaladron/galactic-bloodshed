@@ -4,10 +4,6 @@
 /// \brief Server service module implementing SessionRegistry and asynchronous
 /// network loop.
 
-module;
-
-#include <csignal>
-
 export module server;
 
 import asio;

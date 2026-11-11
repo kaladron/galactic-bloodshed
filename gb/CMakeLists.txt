@@ -126,7 +126,7 @@ target_sources(
           entities/ship/ship_subclasses.cc
           entities/ship/ship_templates.cc
           entities/star.cc)
-target_link_libraries(gb_entities PUBLIC gb_log strong_id_module types_module scnlib_module)
+target_link_libraries(gb_entities PUBLIC gb_log strong_id_module types_module)
 
 # Standalone Tier-2 Data Repositories Library (gb.repositories has zero Glaze imports; gb.repositories.glaze provides opt-in Glaze schemas)
 add_library(gb_repositories)

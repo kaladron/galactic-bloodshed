@@ -16,18 +16,8 @@ module server_config;
 
 namespace {
 
-std::optional<int> parse_int_arg(std::string_view str) {
-  if (str.empty()) return std::nullopt;
-  int value = 0;
-  auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(), value);
-  if (ec != std::errc{} || ptr != str.data() + str.size()) {
-    return std::nullopt;
-  }
-  return value;
-}
-
 bool parse_port_option(ServerConfig& config, std::string_view val) {
-  auto port = parse_int_arg(val);
+  auto port = parse_int(val);
   if (!port) {
     GB::log::error("Invalid port number \"{}\".", val);
     config.has_error = true;
@@ -44,7 +34,7 @@ bool handle_positional_arg(ServerConfig& config, int& positional_index,
     config.has_error = true;
     return false;
   }
-  auto value = parse_int_arg(arg);
+  auto value = parse_int(arg);
   if (!value) {
     GB::log::error("Invalid numerical argument \"{}\".", arg);
     config.has_error = true;

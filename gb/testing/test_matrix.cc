@@ -3,10 +3,6 @@
 /// \file test_matrix.cc
 /// \brief Implementation of TestCommandMatrix 4-way test runner helpers.
 
-module;
-
-#include <cassert>
-
 module test;
 
 import commands;

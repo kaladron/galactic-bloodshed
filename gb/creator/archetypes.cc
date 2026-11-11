@@ -128,17 +128,15 @@ const RaceArchetype* find_archetype(std::string_view query) {
   query = query.substr(first, last - first + 1);
 
   // 1. Check if query is a 1-based numeric index ("1".."11")
-  std::size_t idx = 0;
-  auto [ptr, ec] =
-      std::from_chars(query.data(), query.data() + query.size(), idx);
-  if (ec == std::errc{} && ptr == query.data() + query.size()) {
-    if (idx >= 1 && idx <= race_archetypes.size()) {
-      return &race_archetypes[idx - 1];
-    }
-    return nullptr;
+  if (const auto idx = parse_int<std::size_t>(query)) {
+    return (*idx >= 1 && *idx <= race_archetypes.size())
+               ? &race_archetypes[*idx - 1]
+               : nullptr;
   }
 
   // Convert query to lowercase for case-insensitive matching
+  // TODO(C++29): Adopt standard <ascii> character utilities (P3688) once
+  // available in libc++.
   std::string lower_query(query);
   std::ranges::transform(lower_query, lower_query.begin(), [](unsigned char c) {
     return static_cast<char>(std::tolower(c));

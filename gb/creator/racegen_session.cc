@@ -18,6 +18,8 @@ namespace GB::creator {
 
 namespace {
 
+// TODO(C++29): Adopt standard <ascii> character utilities (P3688) once
+// available in libc++.
 std::string to_lower(std::string_view s) {
   return s | std::views::transform([](char c) {
            return static_cast<char>(
@@ -121,13 +123,17 @@ std::optional<bool> parse_bool(std::string_view s) {
 template <typename T>
 std::optional<T> parse_number(std::string_view s) {
   s = trim(s);
-  if (s.empty()) return std::nullopt;
-  T val{};
-  auto [ptr, ec] = std::from_chars(s.data(), s.data() + s.size(), val);
-  if (ec == std::errc{} && ptr == s.data() + s.size()) {
-    return val;
+  if constexpr (std::integral<T>) {
+    return parse_int<T>(s);
+  } else {
+    if (s.empty()) return std::nullopt;
+    T val{};
+    auto [ptr, ec] = std::from_chars(s.data(), s.data() + s.size(), val);
+    if (ec == std::errc{} && ptr == s.data() + s.size() && std::isfinite(val)) {
+      return val;
+    }
+    return std::nullopt;
   }
-  return std::nullopt;
 }
 
 }  // namespace

@@ -3,9 +3,6 @@
 /// \file makeuniv.cc
 /// \brief Universe creation command-line utility.
 
-#include <unistd.h>
-#include <cstdlib>
-
 import std;
 import dallib;
 import gb.entities;
@@ -14,17 +11,52 @@ import gb.creator;
 
 namespace {
 
-std::optional<int> parse_int(std::string_view s) noexcept {
-  int val = 0;
-  auto [ptr, ec] = std::from_chars(s.data(), s.data() + s.size(), val);
-  if (ec == std::errc{} && ptr == s.data() + s.size()) {
-    return val;
-  }
-  return std::nullopt;
-}
-
 bool is_valid_token(std::string_view s) noexcept {
   return !s.empty() && !s.contains(' ');
+}
+
+void print_usage() {
+  std::println(
+      std::cout,
+      "Usage: makeuniv [-a] [-b] [-d] [-e E] [-l MIN] [-m MAX] [-s N] "
+      "[-p|--print-planets] [-w|--print-stars] [--deity-password <pass>] "
+      "[--deity-gov-password <pass>] [-D|--database|--db <path>] "
+      "[-v|--version] [-h|--help]\n"
+      "  -a                         Autoload star names.\n"
+      "  -b                         Autoload planet names.\n"
+      "  -d                         Use all defaults and autoloaded names "
+      "(requires deity passwords).\n"
+      "  -e E                       Make E% of stars have no planets.\n"
+      "  -l MIN                     Other systems will have at least MIN "
+      "planets.\n"
+      "  -m MAX                     Other systems will have at most  MAX "
+      "planets.\n"
+      "  -s S                       The universe will have S stars.\n"
+      "  -p, --print-planets        Print info and map of planets generated.\n"
+      "  -w, --print-stars          Print info on stars generated.\n"
+      "  --deity-password <pass>    Password for the Deity race.\n"
+      "  --deity-gov-password <pass> Password for the Deity leader.\n"
+      "  -D, --database, --db <path> Path to SQLite database (default: {})\n"
+      "  -v, --version              Display version information and exit.\n"
+      "  -h, --help                 Display this help message and exit.\n",
+      default_db_path().string());
+}
+
+bool parse_bounded_opt(std::string_view flag, int& i, int argc, char* argv[],
+                       int min_val, int max_val, int& out) {
+  if (i + 1 >= argc) {
+    std::println(std::cerr, "Option \"{}\" requires an argument.", flag);
+    return false;
+  }
+  const auto val = parse_int(argv[++i]);
+  if (!val || *val < min_val || *val > max_val) {
+    std::println(std::cerr,
+                 "Invalid argument \"{}\" for \"{}\" (expected {}..{}).",
+                 argv[i], flag, min_val, max_val);
+    return false;
+  }
+  out = *val;
+  return true;
 }
 
 }  // namespace
@@ -43,7 +75,8 @@ int main(int argc, char* argv[]) {
   for (int i = 1; i < argc; ++i) {
     std::string_view arg = argv[i];
     if (arg == "-h" || arg == "--help") {
-      goto usage;
+      print_usage();
+      return 0;
     }
     if (arg == "-v" || arg == "--version") {
       std::println(std::cout, "makeuniv {}", GB_VERSION);
@@ -93,10 +126,13 @@ int main(int argc, char* argv[]) {
       db_path = arg.substr(std::string_view("--database=").size());
     } else if (arg.starts_with("--db=")) {
       db_path = arg.substr(std::string_view("--db=").size());
-    } else if (argv[i][0] != '-') {
-      goto usage;
+    } else if (!arg.starts_with('-') || arg.size() != 2) {
+      std::println(std::cerr, "Unknown option \"{}\".\n", arg);
+      print_usage();
+      return 1;
     } else {
-      switch (argv[i][1]) {
+      int parsed_val = 0;
+      switch (arg[1]) {
         case 'a':
           config.auto_name_stars = true;
           star_names_set = true;
@@ -106,34 +142,30 @@ int main(int argc, char* argv[]) {
           planet_names_set = true;
           break;
         case 'e':
-          if (i + 1 >= argc) {
-            std::println(std::cerr, "Option \"-e\" requires an argument.");
+          if (!parse_bounded_opt("-e", i, argc, argv, 0, 100,
+                                 config.planetless_chance_percent)) {
             return 1;
           }
-          config.planetless_chance_percent = std::atoi(argv[++i]);
           break;
         case 'l':
-          if (i + 1 >= argc) {
-            std::println(std::cerr, "Option \"-l\" requires an argument.");
+          if (!parse_bounded_opt("-l", i, argc, argv, 1, 10,
+                                 config.min_planets)) {
             return 1;
           }
-          config.min_planets = std::atoi(argv[++i]);
           min_planets_set = true;
           break;
         case 'm':
-          if (i + 1 >= argc) {
-            std::println(std::cerr, "Option \"-m\" requires an argument.");
+          if (!parse_bounded_opt("-m", i, argc, argv, 1, 10,
+                                 config.max_planets)) {
             return 1;
           }
-          config.max_planets = std::atoi(argv[++i]);
           max_planets_set = true;
           break;
         case 's':
-          if (i + 1 >= argc) {
-            std::println(std::cerr, "Option \"-s\" requires an argument.");
+          if (!parse_bounded_opt("-s", i, argc, argv, 1, 255, parsed_val)) {
             return 1;
           }
-          config.num_stars = static_cast<starnum_t>(std::atoi(argv[++i]));
+          config.num_stars = static_cast<starnum_t>(parsed_val);
           num_stars_set = true;
           break;
         case 'p':
@@ -146,58 +178,19 @@ int main(int argc, char* argv[]) {
           interactive = false;
           break;
         default:
-          std::println(std::cout, "Unknown option \"{}\".\n", argv[i]);
-usage:
-          std::println(std::cout,
-                       "Usage: makeuniv [-a] [-b] [-d] [-e E] [-l MIN] [-m "
-                       "MAX] [-s N] [-p|--print-planets] "
-                       "[-w|--print-stars] [--deity-password <pass>] "
-                       "[--deity-gov-password <pass>] [-D|--database|--db "
-                       "<path>] [-v|--version] [-h|--help]");
-          std::println(std::cout,
-                       "  -a                         Autoload star names.");
-          std::println(std::cout,
-                       "  -b                         Autoload planet names.");
-          std::println(std::cout,
-                       "  -d                         Use all defaults and "
-                       "autoloaded names (requires deity passwords).");
-          std::println(
-              std::cout,
-              "  -e E                       Make E% of stars have no planets.");
-          std::println(std::cout,
-                       "  -l MIN                     Other systems will have "
-                       "at least MIN planets.");
-          std::println(std::cout,
-                       "  -m MAX                     Other systems will have "
-                       "at most  MAX planets.");
-          std::println(
-              std::cout,
-              "  -s S                       The universe will have S stars.");
-          std::println(std::cout,
-                       "  -p, --print-planets        Print info and map of "
-                       "planets generated.");
-          std::println(
-              std::cout,
-              "  -w, --print-stars          Print info on stars generated.");
-          std::println(
-              std::cout,
-              "  --deity-password <pass>    Password for the Deity race.");
-          std::println(
-              std::cout,
-              "  --deity-gov-password <pass> Password for the Deity leader.");
-          std::println(std::cout,
-                       "  -D, --database, --db <path> Path to SQLite database "
-                       "(default: {})",
-                       default_db_path().string());
-          std::println(std::cout,
-                       "  -v, --version              Display version "
-                       "information and exit.");
-          std::println(std::cout,
-                       "  -h, --help                 Display this help message "
-                       "and exit.\n");
-          return 0;
+          std::println(std::cerr, "Unknown option \"{}\".\n", arg);
+          print_usage();
+          return 1;
       }
     }
+  }
+
+  if (min_planets_set && max_planets_set &&
+      config.min_planets > config.max_planets) {
+    std::println(std::cerr,
+                 "Error: Minimum planets ({}) cannot exceed maximum ({}).",
+                 config.min_planets, config.max_planets);
+    return 1;
   }
 
   if (!interactive) {
@@ -206,8 +199,8 @@ usage:
     config.print_planet_info = true;
     config.print_star_info = true;
     if (!num_stars_set) config.num_stars = 128;
-    if (!min_planets_set) config.min_planets = 1;
-    if (!max_planets_set) config.max_planets = 10;
+    if (!min_planets_set) config.min_planets = std::min(1, config.max_planets);
+    if (!max_planets_set) config.max_planets = std::max(10, config.min_planets);
 
     if (!is_valid_token(config.deity_password) ||
         !is_valid_token(config.deity_gov_password)) {

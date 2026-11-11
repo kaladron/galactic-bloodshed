@@ -137,16 +137,19 @@ void test_rst_dispatch() {
   ctx.assert_dispatch_rejected(g, {"report", "#0"});
   test::expect_contains(g.out.str(), "no such ship");
 
-  g.out.str("");
-  ctx.assert_dispatch_rejected(g, {"report", "#abc"});
-  test::expect_contains(g.out.str(), "invalid ship argument");
+  for (const auto& bad : {"#abc", "#12abc", "#99999999999999999999", "#"}) {
+    g.out.str("");
+    ctx.assert_dispatch_rejected(g, {"report", bad});
+    test::expect_contains(g.out.str(), "invalid ship argument");
+  }
 
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"report", "?"});
   test::expect_contains(g.out.str(), "no valid ship letters found");
   std::println(std::cout, "    ✓ report error cases rejected");
 
-  // 10. Spore Pod temperature suffix
+  // 10. Spore Pod temperature suffix & sparse ship table (ship #2 deleted
+  // while higher ID pod_id exists: pod_id > num_ships() succeeds, #2 rejects)
   const auto pod_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
                           .owned_by(1)
                           .named("PodAlpha")
@@ -154,10 +157,17 @@ void test_rst_dispatch() {
                           .with_size(10)
                           .with_pod(88)
                           .build();
+  ctx.em.mutate_ship(2, [&](Ship& s) { ctx.em.destroy_ship(s); });
+  ctx.assert_dispatch_rejected(g, {"report", "#2"});
+  test::expect_contains(g.out.str(), "no such ship");
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"stats", std::format("#{}", pod_id)});
   test::expect_contains(g.out.str(), "10 (88)");
+  g.set_level(ScopeLevel::LEVEL_SHIP);
+  g.set_shipno(2);
+  ctx.assert_dispatch_rejected(g, {"report"});
+  test::expect_contains(g.out.str(), "Unable to retrieve ship");
   std::println(std::cout, "    ✓ pod temperature suffix displayed");
 }
 

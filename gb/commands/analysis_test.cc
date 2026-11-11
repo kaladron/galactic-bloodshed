@@ -530,6 +530,14 @@ int main() {
     ctx.assert_dispatch_rejected(g, {"analysis", "99"});
     test::expect_contains(g.out.str(), "No such player #");
 
+    // Overflowing, trailing-garbage, and high-bit player numbers reject
+    // cleanly without throwing std::out_of_range or signed-char UB
+    ctx.assert_dispatch_rejected(g, {"analysis", "99999999999999999999"});
+    test::expect_contains(g.out.str(), "Unrecognized argument");
+    ctx.assert_dispatch_rejected(g, {"analysis", "1abc"});
+    test::expect_contains(g.out.str(), "Unrecognized argument");
+    ctx.assert_dispatch_rejected(g, {"analysis", "\xff"});
+
     ctx.assert_dispatch_success(g, {"analysis", ""});
 
     ctx.assert_dispatch_rejected(g, {"analysis", "q"});

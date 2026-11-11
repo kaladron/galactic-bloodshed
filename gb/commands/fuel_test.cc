@@ -53,12 +53,13 @@ void test_fuel_matrix() {
   ctx.assert_dispatch_rejected(g, {"fuel", "#1", "/Vega", "extra"});
   test::expect_contains(g.out.str(), "Invalid number of options");
 
-  // 4. Non-numeric #ship and #0 (verifies no nullopt dereference crash)
+  // 4. Non-numeric #ship, #0, trailing garbage, and integer overflow
   g.out.str("");
-  ctx.assert_dispatch_rejected(g, {"fuel", "#abc", "/Vega"});
-  test::expect_contains(g.out.str(), "rst: no such ship #abc");
-  ctx.assert_dispatch_rejected(g, {"fuel", "#0", "/Vega"});
-  test::expect_contains(g.out.str(), "rst: no such ship #0");
+  for (const auto& bad :
+       {"#abc", "#0", "#12abc", "#99999999999999999999", "#"}) {
+    ctx.assert_dispatch_rejected(g, {"fuel", bad, "/Vega"});
+    test::expect_contains(g.out.str(), "rst: no such ship");
+  }
 
   // 5. Unowned ship, landed ship without destination, stationary ship, factory
   shipnum_t enemy_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
@@ -192,6 +193,22 @@ void test_fuel_matrix() {
       g, {"fuel", std::format("#{}", ship_num.value), "/Vega"});
   test::expect_contains(g.out.str(), R"("type":"message")");
   test::expect_contains(g.out.str(), "FUEL ESTIMATES");
+  g.set_ui_mode(UiMode::ASCII);
+
+  // 8. Sparse ship IDs: destroy stopped_ship so highest ship ID exceeds
+  // num_ships(), verifying high-ID ship succeeds and deleted ID rejects cleanly
+  shipnum_t sparse_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+                              .owned_by(1, 1)
+                              .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
+                              .with_speed(2)
+                              .with_fuel(100.0)
+                              .build();
+  ctx.em.mutate_ship(stopped_ship, [&](Ship& s) { ctx.em.destroy_ship(s); });
+  ctx.assert_dispatch_success(g, {"fuel", std::format("#{}", sparse_ship),
+                                  std::format("#{}", near_target)});
+  ctx.assert_dispatch_rejected(
+      g, {"fuel", std::format("#{}", stopped_ship), "/Vega"});
+  test::expect_contains(g.out.str(), "Ship not found.");
 
   ctx.verify_universe_invariants();
 }

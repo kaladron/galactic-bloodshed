@@ -35,6 +35,18 @@ int main() {
 
     auto g = GB::parse_ship_selection("frd");
     test::expect_false(g.has_value());
+
+    // Malformed, zero, high-bit, and out-of-range inputs must return nullopt
+    // without throwing std::out_of_range or triggering signed-char UB
+    test::expect_false(
+        GB::parse_ship_selection("#99999999999999999999").has_value());
+    test::expect_false(
+        GB::parse_ship_selection("99999999999999999999").has_value());
+    test::expect_false(GB::parse_ship_selection("#12abc").has_value());
+    test::expect_false(GB::parse_ship_selection("12abc").has_value());
+    test::expect_false(GB::parse_ship_selection("#0").has_value());
+    test::expect_false(GB::parse_ship_selection("#").has_value());
+    test::expect_false(GB::parse_ship_selection("\xff").has_value());
   }
 
   // Test is_ship_number_filter

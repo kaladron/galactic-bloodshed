@@ -476,10 +476,36 @@ void parse_tactical_filter_arg(std::string_view arg, TacticalContext& ctx) {
   }
 }
 
+const Ship* try_peek_ship(EntityManager& em, shipnum_t shipno) {
+  try {
+    return em.peek_ship(shipno);
+  } catch (const EntityNotFoundError&) {
+    return nullptr;
+  }
+}
+
+std::optional<shipnum_t::value_type> parse_ship_arg(std::string_view arg_sv) {
+  while (arg_sv.starts_with('#')) {
+    arg_sv.remove_prefix(1);
+  }
+  if (arg_sv.empty()) {
+    return std::nullopt;
+  }
+  if (arg_sv.front() != '-' && (arg_sv.front() < '0' || arg_sv.front() > '9')) {
+    return std::nullopt;
+  }
+  shipnum_t::value_type value = 0;
+  const auto [ptr, ec] =
+      std::from_chars(arg_sv.data(), arg_sv.data() + arg_sv.size(), value);
+  if (ec != std::errc{} || ptr != arg_sv.data() + arg_sv.size()) {
+    return std::nullopt;
+  }
+  return value;
+}
+
 bool collect_explicit_ships_tactical(
     const command_t& argv, GameObj& g, TacticalContext& ctx,
     std::vector<std::unique_ptr<TacticalItem>>& items) {
-  const shipnum_t n_ships = g.entity_manager.num_ships();
   std::size_t ship_arg_end = argv.size();
   if (argv.size() == 3 && !argv[2].empty() && argv[2].front() != '#') {
     parse_tactical_filter_arg(argv[2], ctx);
@@ -487,19 +513,14 @@ bool collect_explicit_ships_tactical(
   }
 
   for (std::size_t l = 1; l < ship_arg_end; ++l) {
-    std::string_view arg_sv = argv[l];
-    if (!arg_sv.empty() && arg_sv.front() == '#') {
-      arg_sv.remove_prefix(1);
-    }
-    auto scan_res = scn::scan<underlying_type_t<shipnum_t>>(arg_sv, "{}");
-    if (!scan_res) {
+    const auto raw_shipno = parse_ship_arg(argv[l]);
+    if (!raw_shipno) {
       g.out << std::format("tactical: invalid ship argument {}\n", argv[l]);
       return false;
     }
-    shipnum_t shipno{scan_res->value()};
-    const auto* ship = (shipno >= 1 && shipno <= n_ships)
-                           ? g.entity_manager.peek_ship(shipno)
-                           : nullptr;
+    const shipnum_t shipno{*raw_shipno};
+    const auto* ship =
+        (*raw_shipno >= 1) ? try_peek_ship(g.entity_manager, shipno) : nullptr;
     if (!ship) {
       g.out << std::format("tactical: no such ship #{} \n", shipno);
       return false;
@@ -527,7 +548,7 @@ bool collect_scoped_tactical_items(
                  "scope to a ship.\n";
         return false;
       }
-      const auto* scoped_ship = g.entity_manager.peek_ship(g.shipno());
+      const auto* scoped_ship = try_peek_ship(g.entity_manager, g.shipno());
       if (!scoped_ship) {
         g.out << std::format("Error: Unable to retrieve ship #{} data.\n",
                              g.shipno());

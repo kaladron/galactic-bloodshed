@@ -334,11 +334,19 @@ std::optional<SectorType> parse_sector_type(char c) {
   return std::nullopt;
 }
 
-// Parse a string as a player number
-std::optional<int> parse_player_number(const std::string& arg) {
-  if (arg.empty() || !std::isdigit(static_cast<unsigned char>(arg[0])))
+// Parse a string as a non-negative player number without throwing or accepting
+// trailing non-digit characters.
+std::optional<int> parse_player_number(std::string_view arg) {
+  if (arg.empty() || arg.front() < '0' || arg.front() > '9') {
     return std::nullopt;
-  return std::stoi(arg);
+  }
+  int value = 0;
+  const auto [ptr, ec] =
+      std::from_chars(arg.data(), arg.data() + arg.size(), value);
+  if (ec != std::errc{} || ptr != arg.data() + arg.size()) {
+    return std::nullopt;
+  }
+  return value;
 }
 
 }  // namespace

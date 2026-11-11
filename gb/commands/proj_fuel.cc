@@ -44,7 +44,7 @@ const Ship* validate_fuel_ship(const command_t& argv, GameObj& g) {
     return nullptr;
   }
   auto shipno = string_to_shipnum(argv[1]);
-  if (!shipno || *shipno > g.entity_manager.num_ships() || *shipno < 1) {
+  if (!shipno) {
     g.out << std::format("rst: no such ship {}\n", argv[1]);
     return nullptr;
   }

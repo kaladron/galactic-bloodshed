@@ -24,17 +24,7 @@ namespace GB {
  */
 export std::optional<shipnum_t>
 parse_ship_selection(std::string_view selection) {
-  // Strip leading '#' characters
-  while (selection.size() > 1 && selection.front() == '#') {
-    selection.remove_prefix(1);
-  }
-
-  // Check if it's a number
-  if (!selection.empty() && std::isdigit(selection.front())) {
-    return std::stoi(std::string(selection.begin(), selection.end()));
-  }
-
-  return std::nullopt;
+  return string_to_shipnum(selection);
 }
 
 /**

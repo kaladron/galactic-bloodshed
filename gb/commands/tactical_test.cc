@@ -229,17 +229,39 @@ void test_tactical_explicit_ship_and_filters() {
   ctx.assert_dispatch_rejected(g, {"tactical", "#999"});
   test::expect_contains(g.out.str(), "no such ship");
 
-  // Malformed ship number: tactical #abc
-  g.out.str("");
-  ctx.assert_dispatch_rejected(g, {"tactical", "#abc"});
-  test::expect_contains(g.out.str(), "invalid ship argument");
+  // Malformed, trailing-garbage, #0, and overflowing ship numbers
+  for (const auto& bad : {"#abc", "#12abc", "#99999999999999999999", "#"}) {
+    g.out.str("");
+    ctx.assert_dispatch_rejected(g, {"tactical", bad});
+    test::expect_contains(g.out.str(), "invalid ship argument");
+  }
+  ctx.assert_dispatch_rejected(g, {"tactical", "#0"});
+  test::expect_contains(g.out.str(), "no such ship");
 
-  // Ship scope with shipno == 0
+  // Sparse ship table: destroy ship #1 while higher-numbered ships exist
+  const auto high_ship = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)
+                             .owned_by(1)
+                             .named("HighIdShip")
+                             .in_planet_orbit(1, 1)
+                             .with_guns(guntype_t::MEDIUM, 2)
+                             .with_crew(10, 0)
+                             .build();
+  ctx.em.mutate_ship(ships.factory, [&](Ship& s) { ctx.em.destroy_ship(s); });
+  ctx.assert_dispatch_rejected(g,
+                               {"tactical", std::format("#{}", ships.factory)});
+  test::expect_contains(g.out.str(), "no such ship");
+  ctx.assert_dispatch_success(g, {"tactical", std::format("#{}", high_ship)});
+  test::expect_contains(g.out.str(), "HighIdShip");
+
+  // Ship scope with shipno == 0 or destroyed scoped ship (#1)
   g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_shipno(0);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"tactical"});
   test::expect_contains(g.out.str(), "No ship is currently scoped");
+  g.set_shipno(ships.factory);
+  ctx.assert_dispatch_rejected(g, {"tactical"});
+  test::expect_contains(g.out.str(), "Unable to retrieve ship");
 
   // JSON mode output
   g.set_ui_mode(UiMode::JSON);

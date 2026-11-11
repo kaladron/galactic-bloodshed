@@ -6,7 +6,6 @@ import gb.entities;
 import gb.mechanics;
 import gb.presentation.combat;
 import gb.services;
-import scnlib;
 import std;
 
 module commands;
@@ -57,9 +56,8 @@ bool defend(const command_t& argv, GameObj& g) {
 
   std::optional<weapon_power_t> requested_strength;
   if (argv.size() >= 4) {
-    auto parsed = scn::scan<weapon_power_t>(argv[3], "{}");
-    requested_strength =
-        parsed && parsed->value() > 0 ? parsed->value() : weapon_power_t{0};
+    auto parsed = parse_int<weapon_power_t>(argv[3]);
+    requested_strength = parsed && *parsed > 0 ? *parsed : weapon_power_t{0};
   }
 
   auto res = defend_planet_against_ship(g.entity_manager, g.snum(), g.pnum(),

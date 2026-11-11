@@ -10,7 +10,6 @@ import gb.mechanics;
 import gb.presentation.ship_ops;
 import gb.services;
 import std;
-import scnlib;
 
 module commands;
 
@@ -20,12 +19,12 @@ bool grant(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
 
-  auto parsed_gov = scn::scan<int>(argv[1], "{}");
-  if (!parsed_gov || parsed_gov->value() < 1) {
+  auto parsed_gov = parse_int<governor_t::value_type>(argv[1]);
+  if (!parsed_gov || *parsed_gov < 1) {
     g.out << "Bad governor number.\n";
     return false;
   }
-  governor_t gov{static_cast<governor_t::value_type>(parsed_gov->value())};
+  governor_t gov{*parsed_gov};
 
   if (!g.race->has_governor(gov)) {
     g.out << "That governor is not active.\n";
@@ -75,12 +74,12 @@ bool grant(const command_t& argv, GameObj& g) {
       g.out << "Indicate the amount of money.\n";
       return false;
     }
-    auto parsed_amount = scn::scan<long>(argv[3], "{}");
+    auto parsed_amount = parse_int<money_t>(argv[3]);
     if (!parsed_amount) {
       g.out << "Invalid amount.\n";
       return false;
     }
-    long amount = parsed_amount->value();
+    money_t amount = *parsed_amount;
     g.entity_manager.mutate_race(Playernum, [&](Race& race_mut) {
       auto& donor = race_mut.governor(Governor);
       auto& recipient = race_mut.governor(gov);

@@ -5,7 +5,6 @@ module;
 import gb.entities;
 import gb.presentation;
 import gb.services;
-import scnlib;
 import std;
 
 module commands;
@@ -108,14 +107,14 @@ bool place_bid(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  auto parsed_lot = scn::scan<int>(argv[1], "{}");
-  auto parsed_bid = scn::scan<money_t>(argv[2], "{}");
+  auto parsed_lot = parse_int<int>(argv[1]);
+  auto parsed_bid = parse_int<money_t>(argv[2]);
   if (!parsed_lot || !parsed_bid) {
     g.out << "Illegal lot number.\n";
     return false;
   }
-  int lot = parsed_lot->value();
-  money_t bid_amount = parsed_bid->value();
+  int lot = *parsed_lot;
+  money_t bid_amount = *parsed_bid;
   if ((lot <= 0) || lot > g.entity_manager.max_commod_id()) {
     g.out << "Illegal lot number.\n";
     return false;

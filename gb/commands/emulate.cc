@@ -8,7 +8,6 @@ module;
 import gb.entities;
 import gb.presentation.empire_views;
 import gb.services;
-import scnlib;
 import std;
 
 module commands;
@@ -21,14 +20,14 @@ bool emulate(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  auto p_res = scn::scan<player_t::value_type>(argv[1], "{}");
-  auto g_res = scn::scan<governor_t::value_type>(argv[2], "{}");
-  if (!p_res || !p_res->range().empty() || !g_res || !g_res->range().empty()) {
+  auto p_res = parse_int<player_t::value_type>(argv[1]);
+  auto g_res = parse_int<governor_t::value_type>(argv[2]);
+  if (!p_res || !g_res) {
     g.out << "Invalid player or governor number.\n";
     return false;
   }
-  const player_t new_player = p_res->value();
-  const governor_t new_gov = g_res->value();
+  const player_t new_player = *p_res;
+  const governor_t new_gov = *g_res;
 
   const Race* race = nullptr;
   try {

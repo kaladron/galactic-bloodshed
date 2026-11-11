@@ -236,7 +236,8 @@ void test_upgrade_numeric_attributes_and_validations() {
 
   const auto target_fuel = ctx.em.peek_ship(ship_id)->max_fuel() + 25;
   ctx.assert_dispatch_success(
-      g, {"upgrade", "fuel", std::to_string(target_fuel)}, 1);
+      g, {"upgrade", "fuel", std::format("{}", static_cast<int>(target_fuel))},
+      1);
   test::expect_eq(ctx.em.peek_ship(ship_id)->max_fuel(), target_fuel);
 
   const auto target_destruct = ctx.em.peek_ship(ship_id)->max_destruct() + 15;

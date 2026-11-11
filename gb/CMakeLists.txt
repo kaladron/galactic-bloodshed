@@ -195,7 +195,7 @@ target_sources(
           mechanics/victory.cc)
 target_link_libraries(
   gb_mechanics
-  PUBLIC gb_entities gb_services scnlib_module)
+  PUBLIC gb_entities gb_services)
 
 # Standalone Tier-4b Presentation & Protocol Rendering Library (ASCII & Glaze JSON)
 add_library(gb_presentation)

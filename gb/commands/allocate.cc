@@ -8,18 +8,17 @@ module commands;
 import gb.entities;
 import gb.presentation;
 import gb.services;
-import scnlib;
 import std;
 
 namespace GB::commands {
 bool allocate(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
-  auto scanned = scn::scan<int>(argv[1], "{}");
-  if (!scanned || scanned->value() <= 0) {
+  auto scanned = parse_int<int>(argv[1]);
+  if (!scanned || *scanned <= 0) {
     g.out << "You must specify a positive amount of APs to allocate.\n";
     return false;
   }
-  const auto alloc = static_cast<ap_t>(scanned->value());
+  const auto alloc = static_cast<ap_t>(*scanned);
 
   const auto& univ = *g.entity_manager.peek_universe();
   const auto& star_ref = *g.entity_manager.peek_star(g.snum());

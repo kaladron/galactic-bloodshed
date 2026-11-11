@@ -9,7 +9,6 @@ import gb.entities;
 import gb.mechanics;
 import gb.presentation.combat;
 import gb.services;
-import scnlib;
 import std;
 
 module commands;
@@ -75,8 +74,8 @@ bool bombard(const command_t& argv, GameObj& g) {
       argv.size() > 2 ? std::optional<std::string_view>{argv[2]} : std::nullopt;
   std::optional<weapon_power_t> requested_strength;
   if (argv.size() > 3) {
-    auto parsed = scn::scan<weapon_power_t>(argv[3], "{}");
-    requested_strength = parsed ? parsed->value() : -1;
+    auto parsed = parse_int<weapon_power_t>(argv[3]);
+    requested_strength = parsed.value_or(-1);
   }
 
   bool any_fired = false;

@@ -9,7 +9,6 @@ import std;
 import gb.entities;
 import gb.presentation;
 import gb.services;
-import scnlib;
 
 module commands;
 
@@ -41,8 +40,8 @@ bool declare(const command_t& argv, GameObj& g) {
       result.relation = GB::presentation::DiplomaticRelation::Alliance;
       result.rare_quip = success(5);
       if (argv.size() > 3) {
-        if (auto parsed = scn::scan<int>(argv[3], "{}")) {
-          result.translation_modifier = std::max(parsed->value(), 30);
+        if (auto parsed = parse_int<int>(argv[3])) {
+          result.translation_modifier = std::max(*parsed, 30);
         }
       }
       break;

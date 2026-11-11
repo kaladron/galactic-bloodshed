@@ -320,6 +320,15 @@ void test_bless_error_handling() {
   ctx.assert_dispatch_rejected(g, {"bless", "2", "fuel", "bad"});
   test::expect_contains(g.out.str(), "Invalid amount.");
 
+  // Documented +amount prefix succeeds while trailing garbage and NaN reject
+  ctx.assert_dispatch_success(g, {"bless", "2", "fuel", "+25"});
+  ctx.assert_dispatch_rejected(g, {"bless", "2", "fuel", "25abc"});
+  test::expect_contains(g.out.str(), "Invalid amount.");
+  ctx.assert_dispatch_rejected(g, {"bless", "2", "mass", "2.5abc"});
+  test::expect_contains(g.out.str(), "Invalid numeric value.");
+  ctx.assert_dispatch_rejected(g, {"bless", "2", "mass", "nan"});
+  test::expect_contains(g.out.str(), "Invalid numeric value.");
+
   ctx.verify_universe_invariants();
 }
 

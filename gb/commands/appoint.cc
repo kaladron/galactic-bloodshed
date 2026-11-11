@@ -8,7 +8,6 @@ module;
 import gb.entities;
 import gb.presentation.empire_views;
 import gb.services;
-import scnlib;
 import std;
 
 module commands;
@@ -30,12 +29,12 @@ bool appoint(const command_t& argv, GameObj& g) {
     return true;
   }
 
-  const auto parsed_gov = scn::scan<governor_t::value_type>(argv[1], "{}");
-  if (!parsed_gov || parsed_gov->value() < 1) {
+  const auto parsed_gov = parse_int<governor_t::value_type>(argv[1]);
+  if (!parsed_gov || *parsed_gov < 1) {
     g.out << "No such governor.\n";
     return false;
   }
-  const governor_t gov{parsed_gov->value()};
+  const governor_t gov{*parsed_gov};
 
   bool success = false;
   g.entity_manager.mutate_race(Playernum, [&](Race& race) {

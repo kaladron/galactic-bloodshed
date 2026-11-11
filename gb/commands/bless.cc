@@ -169,12 +169,19 @@ std::optional<bool> bless_race_flags(player_t who, std::string_view prop,
   return std::nullopt;
 }
 
+std::optional<int> parse_bless_int(std::string_view val_str) noexcept {
+  if (val_str.starts_with('+') && val_str.size() > 1 && val_str[1] != '-') {
+    val_str.remove_prefix(1);
+  }
+  return parse_int<int>(val_str);
+}
+
 std::optional<bool> bless_race_floats(player_t who, std::string_view prop,
                                       std::string_view val_str, GameObj& g) {
   for (const auto& entry : race_float_props) {
     if (entry.name == prop) {
       auto val = scn::scan<double>(val_str, "{}");
-      if (!val) {
+      if (!val || !val->range().empty() || !std::isfinite(val->value())) {
         g.out << "Invalid numeric value.\n";
         return false;
       }
@@ -193,16 +200,15 @@ std::optional<bool> bless_race_ints(player_t who, std::string_view prop,
                                     std::string_view val_str, GameObj& g) {
   for (const auto& entry : race_int_props) {
     if (entry.name == prop) {
-      auto val = scn::scan<int>(val_str, "{}");
+      auto val = parse_bless_int(val_str);
       if (!val) {
         g.out << "Invalid amount.\n";
         return false;
       }
       g.entity_manager.mutate_race(
-          who, [&](Race& race) { entry.apply(race, val->value()); });
-      emit_blessing(g, {.target_player = who,
-                        .property = entry.property,
-                        .value = val->value()});
+          who, [&](Race& race) { entry.apply(race, *val); });
+      emit_blessing(
+          g, {.target_player = who, .property = entry.property, .value = *val});
       return true;
     }
   }
@@ -213,17 +219,16 @@ std::optional<bool> bless_race_prefs(player_t who, std::string_view prop,
                                      std::string_view val_str, GameObj& g) {
   for (const auto& entry : sector_prefs) {
     if (entry.name == prop) {
-      auto val = scn::scan<int>(val_str, "{}");
+      auto val = parse_bless_int(val_str);
       if (!val) {
         g.out << "Invalid preference percentage.\n";
         return false;
       }
       g.entity_manager.mutate_race(who, [&](Race& race) {
-        race.likes[entry.type] = 0.01 * static_cast<double>(val->value());
+        race.likes[entry.type] = 0.01 * static_cast<double>(*val);
       });
-      emit_blessing(g, {.target_player = who,
-                        .property = entry.property,
-                        .value = val->value()});
+      emit_blessing(
+          g, {.target_player = who, .property = entry.property, .value = *val});
       return true;
     }
   }
@@ -274,15 +279,15 @@ std::optional<bool> bless_planet_or_star(player_t who, std::string_view prop,
   }
 
   if (prop == "planetpopulation") {
-    auto val = scn::scan<int>(val_str, "{}");
+    auto val = parse_bless_int(val_str);
     if (!val) {
       g.out << "Invalid population count.\n";
       return false;
     }
     g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
-      planet.info(who).popn = val->value();
+      planet.info(who).popn = *val;
     });
-    emit_planet_blessing(g, who, BlessProperty::PlanetPopulation, val->value());
+    emit_planet_blessing(g, who, BlessProperty::PlanetPopulation, *val);
     return true;
   }
 
@@ -294,15 +299,15 @@ std::optional<bool> bless_planet_or_star(player_t who, std::string_view prop,
   }
 
   if (prop == "numsectsowned") {
-    auto val = scn::scan<int>(val_str, "{}");
+    auto val = parse_bless_int(val_str);
     if (!val) {
       g.out << "Invalid sector count.\n";
       return false;
     }
     g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
-      planet.info(who).numsectsowned = val->value();
+      planet.info(who).numsectsowned = *val;
     });
-    emit_planet_blessing(g, who, BlessProperty::NumSectsOwned, val->value());
+    emit_planet_blessing(g, who, BlessProperty::NumSectsOwned, *val);
     return true;
   }
 
@@ -411,13 +416,13 @@ bool bless(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  auto parsed_amount = scn::scan<int>(val_str, "{}");
+  auto parsed_amount = parse_bless_int(val_str);
   if (!parsed_amount) {
     g.out << "Invalid amount.\n";
     return false;
   }
 
-  return bless_commodity(who, *commod, parsed_amount->value(), g);
+  return bless_commodity(who, *commod, *parsed_amount, g);
 }
 
 const CommandDescriptor bless_cmd{

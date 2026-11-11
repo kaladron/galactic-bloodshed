@@ -119,10 +119,14 @@ void test_grant_dispatch() {
   test::expect_contains(g.out.str(), "That governor is not active.");
   std::println(std::cout, "    ✓ Inactive governor rejection verified");
 
-  // 12. Bad governor number (< 1)
+  // 12. Bad governor number (< 1, integer overflow, and trailing garbage)
   g.out.str("");
-  ctx.assert_dispatch_rejected(g, {"grant", "0", "money", "100"});
-  test::expect_contains(g.out.str(), "Bad governor number.");
+  for (const auto& bad_gov : {"0", "-1", "99999999999999999999", "2abc"}) {
+    ctx.assert_dispatch_rejected(g, {"grant", bad_gov, "money", "100"});
+    test::expect_contains(g.out.str(), "Bad governor number.");
+  }
+  ctx.assert_dispatch_rejected(g, {"grant", "2", "money", "100abc"});
+  test::expect_contains(g.out.str(), "Invalid amount.");
   std::println(std::cout, "    ✓ Bad governor number rejection verified");
 
   // 13. Command matrix validation (roles, guests, governor, scopes)

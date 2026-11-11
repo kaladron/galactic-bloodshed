@@ -9,7 +9,6 @@ import gb.entities;
 import gb.services;
 import gb.mechanics;
 import gb.presentation;
-import scnlib;
 import std;
 
 module commands;
@@ -25,12 +24,12 @@ bool disarm(const command_t& argv, GameObj& g) {
 
   std::optional<population_t> requested_amount{std::nullopt};
   if (argv.size() >= 3) {
-    auto count_res = scn::scan<population_t>(argv[2], "{}");
-    if (!count_res || count_res->value() <= 0) {
+    auto count_res = parse_int<population_t>(argv[2]);
+    if (!count_res || *count_res <= 0) {
       g.out << "You must specify a positive number of civs to arm.\n";
       return false;
     }
-    requested_amount = count_res->value();
+    requested_amount = *count_res;
   }
 
   auto res = disarm_sector_militia(g.entity_manager, g.snum(), g.pnum(),

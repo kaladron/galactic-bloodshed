@@ -10,7 +10,6 @@ import gb.entities;
 import gb.mechanics;
 import gb.presentation.combat;
 import gb.services;
-import scnlib;
 
 module commands;
 
@@ -41,10 +40,7 @@ std::optional<population_t> parse_requested_boarders(const command_t& argv) {
   if (argv.size() < 4) {
     return std::nullopt;
   }
-  if (auto scan_res = scn::scan<population_t>(argv[3], "{}")) {
-    return scan_res->value();
-  }
-  return std::nullopt;
+  return parse_int<population_t>(argv[3]);
 }
 
 void notify_boarding_outcome(GameObj& g, const BoardingOutcomeReport& b) {

@@ -5,7 +5,6 @@
 
 module;
 
-import scnlib;
 import std;
 
 module gb.mechanics;
@@ -194,12 +193,12 @@ std::expected<OrderUpdate, OrderError> order_protect(const command_t& argv,
 std::expected<OrderUpdate, OrderError> order_navigate(const command_t& argv,
                                                       Ship& ship) {
   if (argv.size() >= 5) {
-    auto bearing = scn::scan<unsigned>(argv[3], "{}");
-    auto turns = scn::scan<unsigned>(argv[4], "{}");
-    if (bearing && turns && turns->value() > 0) {
+    auto bearing = parse_int<unsigned>(argv[3]);
+    auto turns = parse_int<unsigned>(argv[4]);
+    if (bearing && turns && *turns > 0) {
       ship.navigate().on = true;
-      ship.navigate().bearing = bearing->value() % 360;
-      ship.navigate().turns = turns->value();
+      ship.navigate().bearing = *bearing % 360;
+      ship.navigate().turns = *turns;
     } else {
       ship.navigate().on = false;
       ship.navigate().turns = 0;
@@ -383,8 +382,8 @@ std::expected<OrderUpdate, OrderError> order_laser(const command_t& argv,
   }
   if (argv.size() > 3 && argv[3] == "on") {
     if (argv.size() > 4) {
-      auto res = scn::scan<weapon_power_t>(argv[4], "{}");
-      ship.fire_laser() = (res && res->value() > 0) ? res->value() : 0;
+      auto res = parse_int<weapon_power_t>(argv[4]);
+      ship.fire_laser() = (res && *res > 0) ? *res : 0;
     } else {
       ship.fire_laser() = 0;
     }
@@ -403,13 +402,13 @@ std::expected<OrderUpdate, OrderError> order_merchant(const command_t& argv,
     ship.merchant() = 0;
     return OrderUpdate{};
   }
-  auto res = scn::scan<int>(argv[3], "{}");
-  if (!res || res->value() < 0 || res->value() > MAX_ROUTES) {
+  auto res = parse_int<int>(argv[3]);
+  if (!res || *res < 0 || *res > MAX_ROUTES) {
     return std::unexpected(OrderError{
         .reason = OrderErrorReason::BadRouteNumber,
     });
   }
-  ship.merchant() = res->value();
+  ship.merchant() = *res;
   return OrderUpdate{};
 }
 
@@ -425,13 +424,13 @@ std::expected<OrderUpdate, OrderError> order_speed(const command_t& argv,
         .reason = OrderErrorReason::InvalidSpeed,
     });
   }
-  auto res = scn::scan<speed_t::value_type>(argv[3], "{}");
-  if (!res || res->value() < 0) {
+  auto res = parse_int<speed_t::value_type>(argv[3]);
+  if (!res || *res < 0) {
     return std::unexpected(OrderError{
         .reason = OrderErrorReason::InvalidSpeed,
     });
   }
-  ship.speed() = std::min(speed_t{res->value()}, ship.max_speed_capacity());
+  ship.speed() = std::min(speed_t{*res}, ship.max_speed_capacity());
   return OrderUpdate{};
 }
 
@@ -447,14 +446,14 @@ std::expected<OrderUpdate, OrderError> order_salvo(const command_t& argv,
         .reason = OrderErrorReason::InvalidSalvoGunCount,
     });
   }
-  auto res = scn::scan<gun_count_t>(argv[3], "{}");
-  if (!res || res->value() < 0) {
+  auto res = parse_int<gun_count_t>(argv[3]);
+  if (!res || *res < 0) {
     return std::unexpected(OrderError{
         .reason = OrderErrorReason::InvalidSalvoGunCount,
     });
   }
   const auto* battery = ship.active_gun_battery();
-  ship.retaliate() = battery ? std::min(res->value(), battery->count) : 0;
+  ship.retaliate() = battery ? std::min(*res, battery->count) : 0;
   return OrderUpdate{};
 }
 
@@ -473,13 +472,13 @@ order_battery(const command_t& argv, Ship& ship, ActiveBattery mode) {
     ship.retaliate() = std::min(ship.retaliate(), battery.count);
     return OrderUpdate{};
   }
-  auto res = scn::scan<gun_count_t>(argv[3], "{}");
-  if (!res || res->value() < 0) {
+  auto res = parse_int<gun_count_t>(argv[3]);
+  if (!res || *res < 0) {
     return std::unexpected(OrderError{
         .reason = OrderErrorReason::InvalidBatteryGunCount,
     });
   }
-  ship.retaliate() = std::min(res->value(), battery.count);
+  ship.retaliate() = std::min(*res, battery.count);
   ship.guns() = mode;
   return OrderUpdate{};
 }
@@ -576,8 +575,8 @@ std::expected<OrderUpdate, OrderError> order_trigger(const command_t& argv,
     mine->set_trigger_radius(0);
     return OrderUpdate{};
   }
-  auto res = scn::scan<weapon_range_t>(argv[3], "{}");
-  mine->set_trigger_radius((res && res->value() > 0) ? res->value() : 0);
+  auto res = parse_int<weapon_range_t>(argv[3]);
+  mine->set_trigger_radius((res && *res > 0) ? *res : 0);
   return OrderUpdate{};
 }
 
@@ -680,8 +679,8 @@ std::expected<OrderUpdate, OrderError> order_intensity(const command_t& argv,
   if (auto* mirror = ship.as<SpaceMirrorShip>()) {
     int val = 0;
     if (argv.size() > 3) {
-      if (auto res = scn::scan<int>(argv[3], "{}")) {
-        val = res->value();
+      if (auto res = parse_int<int>(argv[3])) {
+        val = *res;
       }
     }
     mirror->set_intensity(std::clamp(val, 0, 100));

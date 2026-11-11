@@ -8,7 +8,6 @@ module;
 import gb.entities;
 import gb.presentation.empire_views;
 import gb.services;
-import scnlib;
 import std;
 
 module commands;
@@ -24,12 +23,12 @@ bool parse_optional_int(const command_t& argv, GameObj& g,
     out_val = std::nullopt;
     return true;
   }
-  auto parsed = scn::scan<int>(argv[3], "{}");
+  auto parsed = parse_int<int>(argv[3]);
   if (!parsed) {
     g.out << "Invalid numeric value.\n";
     return false;
   }
-  out_val = parsed->value();
+  out_val = *parsed;
   return true;
 }
 

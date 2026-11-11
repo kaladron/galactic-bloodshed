@@ -54,6 +54,9 @@ int main() {
   ctx.assert_dispatch_rejected(g, {"allocate", "abc"});
   test::expect_contains(
       g.out.str(), "You must specify a positive amount of APs to allocate.");
+  ctx.assert_dispatch_rejected(g, {"allocate", "15abc"});
+  test::expect_contains(
+      g.out.str(), "You must specify a positive amount of APs to allocate.");
   std::println(std::cout, "    ✓ Non-positive/invalid allocation rejected");
 
   // 4. Over-allocation rejection (more than universe has)

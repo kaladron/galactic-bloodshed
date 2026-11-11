@@ -6,7 +6,6 @@
 
 module;
 
-import scnlib;
 import std;
 
 module gb.mechanics;
@@ -64,11 +63,11 @@ int getcount(const command_t& argv, const std::size_t elem) {
   if (argv.size() <= elem) {
     return 1;
   }
-  auto res = scn::scan<int>(argv[elem], "{}");
+  auto res = parse_int<int>(argv[elem]);
   if (!res) {
     return 0;
   }
-  return std::max(res->value(), 0);
+  return std::max(*res, 0);
 }
 
 std::expected<void, PlanetBuildError>
@@ -521,11 +520,11 @@ constexpr speed_t MIN_FACTORY_SPEED = 1;
 constexpr speed_t MAX_FACTORY_SPEED = 9;
 
 std::optional<int> parse_non_negative_int(std::string_view arg) {
-  auto res = scn::scan<int>(arg, "{}");
-  if (!res || res->value() < 0) {
+  auto res = parse_int<int>(arg);
+  if (!res || *res < 0) {
     return std::nullopt;
   }
-  return res->value();
+  return *res;
 }
 
 std::expected<void, FactoryModifyError>

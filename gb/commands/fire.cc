@@ -9,7 +9,6 @@ import gb.entities;
 import gb.mechanics;
 import gb.presentation.combat;
 import gb.services;
-import scnlib;
 import std;
 
 module commands;
@@ -92,12 +91,12 @@ bool fire(const command_t& argv, GameObj& g) {
 
   std::optional<weapon_power_t> requested_strength;
   if (argv.size() >= 4) {
-    auto parsed = scn::scan<weapon_power_t>(argv[3], "{}");
-    if (!parsed || parsed->value() < 0) {
+    auto parsed = parse_int<weapon_power_t>(argv[3]);
+    if (!parsed || *parsed < 0) {
       g.out << "No attack.\n";
       return false;
     }
-    requested_strength = parsed->value();
+    requested_strength = *parsed;
   }
 
   bool any_fired = false;

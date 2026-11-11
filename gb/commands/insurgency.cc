@@ -8,7 +8,6 @@ module;
 import gb.entities;
 import gb.presentation;
 import gb.services;
-import scnlib;
 import std;
 
 module commands;
@@ -82,12 +81,12 @@ bool insurgency(const command_t& argv, GameObj& g) {
       return;
     }
 
-    auto parsed_amount = scn::scan<money_t>(argv[2], "{}");
-    if (!parsed_amount || parsed_amount->value() <= 0) {
+    auto parsed_amount = parse_int<money_t>(argv[2]);
+    if (!parsed_amount || *parsed_amount <= 0) {
       g.out << "You have to use a positive amount of money.\n";
       return;
     }
-    money_t amount = parsed_amount->value();
+    money_t amount = *parsed_amount;
     if (g.current_governor().money < amount) {
       g.out << "Nice try.\n";
       return;

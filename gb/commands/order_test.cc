@@ -1042,6 +1042,12 @@ void test_special_ship_order_mcdc_and_notices() {
   test::expect_contains(g.out.str(), R"("type":"planet")");
   g.set_ui_mode(UiMode::ASCII);
 
+  // 7. Trailing garbage on numeric ship orders rejects cleanly
+  ctx.assert_dispatch_success(g, {"order", "#1", "speed", "3abc"});
+  test::expect_contains(g.out.str(), "Specify a positive speed.");
+  ctx.assert_dispatch_success(g, {"order", "#1", "merchant", "1abc"});
+  test::expect_contains(g.out.str(), "Bad route number");
+
   std::println(std::cout,
                "    ✓ Special ship order MC/DC and notices verified");
 }

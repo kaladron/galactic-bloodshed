@@ -10,7 +10,6 @@ import gb.entities;
 import gb.mechanics;
 import gb.presentation.combat;
 import gb.services;
-import scnlib;
 
 module commands;
 
@@ -31,8 +30,7 @@ std::optional<population_t> parse_capture_boarders(const command_t& argv) {
   if (argv.size() < 3) {
     return std::nullopt;
   }
-  auto parsed = scn::scan<population_t>(argv[2], "{}");
-  return parsed ? parsed->value() : population_t{0};
+  return parse_int<population_t>(argv[2]).value_or(population_t{0});
 }
 
 void notify_capture_result(GameObj& g, const LandedBoardingResult& res) {

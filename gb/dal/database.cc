@@ -166,6 +166,36 @@ void Database::optimize() {
   exec_sql(impl_->conn, "PRAGMA optimize;", "Failed to optimize database");
 }
 
+void Database::copy_to(Database& dst) const {
+  if (!is_open() || !dst.is_open()) {
+    throw SqliteError("Database connection is not open");
+  }
+  if (dst.is_read_only()) {
+    throw ReadOnlyError("ReadOnlyScope blocked Database::copy_to");
+  }
+  if (is_in_transaction() || dst.is_in_transaction()) {
+    throw SqliteError("Cannot copy database while a transaction is active");
+  }
+  if (this == &dst) {
+    return;
+  }
+
+  sqlite3_backup* backup =
+      sqlite3_backup_init(dst.impl_->conn, "main", impl_->conn, "main");
+  if (!backup) {
+    throw SqliteError(std::format("Failed to init SQLite backup: {}",
+                                  sqlite3_errmsg(dst.impl_->conn)),
+                      sqlite3_errcode(dst.impl_->conn));
+  }
+  const int step_rc = sqlite3_backup_step(backup, -1);
+  const int finish_rc = sqlite3_backup_finish(backup);
+  if (step_rc != SQLITE_DONE || finish_rc != SQLITE_OK) {
+    throw SqliteError(std::format("Failed to copy SQLite database: {}",
+                                  sqlite3_errmsg(dst.impl_->conn)),
+                      finish_rc != SQLITE_OK ? finish_rc : step_rc);
+  }
+}
+
 int Database::count_non_asteroid_planets() {
   if (!is_open()) {
     throw SqliteError("Database connection is not open");

@@ -809,7 +809,7 @@ void test_json_dirty_entity_auto_emission() {
 
 void test_guest_read_only_scope_enforcement() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_standard_universe().with_populated_planet(1, 1, 1, 1000);
   ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 10; });
   ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });
   const auto sid = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)
@@ -828,19 +828,38 @@ void test_guest_read_only_scope_enforcement() {
 
   // 1. Read-only modes succeed under Guest ReadOnlyScope with zero DB writes
   const auto before = ctx.db.total_changes();
-  for (command_t cmd :
-       {command_t{"order"}, command_t{"technology"}, command_t{"toggle"}}) {
+  for (command_t cmd : {
+           command_t{"order"},
+           command_t{"technology"},
+           command_t{"mobilize"},
+           command_t{"route"},
+           command_t{"read"},
+           command_t{"read", "news"},
+           command_t{"toggle"},
+           command_t{"build", "?"},
+           command_t{"stars"},
+           command_t{"help"},
+           command_t{"cs", "/Sol/Earth"},
+       }) {
     g.out.clear();
-    test::expect_true(GB::commands::dispatch_command(g, cmd));
+    test::expect_true(
+        GB::commands::dispatch_command(g, cmd),
+        std::format("Guest read-only {} failed: {}", cmd[0], g.out.str()));
   }
   test::expect_eq(ctx.db.total_changes(), before);
 
   // 2. Mutating modes without .no_guests abort cleanly (ASCII & JSON),
   // truncating partial g.out headers and rolling back outbox & transactions
-  const std::array<command_t, 3> mutating_cmds{{
-      {"order", std::format("#{}", sid), "evade", "on"},
+  const std::string ship_arg = std::format("#{}", sid);
+  const std::array<command_t, 8> mutating_cmds{{
+      {"order", ship_arg, "evade", "on"},
       {"technology", "500"},
+      {"mobilize", "50"},
+      {"toxicity", "50"},
+      {"route", "1", "/Sol/Earth"},
+      {"motto", "Hacked"},
       {"post", "Hacked"},
+      {"examine", ship_arg},
   }};
   for (UiMode mode : {UiMode::ASCII, UiMode::JSON}) {
     g.set_ui_mode(mode);

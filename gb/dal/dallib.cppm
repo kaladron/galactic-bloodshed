@@ -60,6 +60,10 @@ public:
   // Run lightweight SQLite maintenance
   void optimize();
 
+  // Atomically clone all pages of this database into dst (used for fast
+  // in-memory test snapshots).
+  void copy_to(Database& dst) const;
+
   // Scoped read-only enforcement across all operations on this connection
   class ReadOnlyScope {
     Database* db_{nullptr};

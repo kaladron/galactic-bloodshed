@@ -6,6 +6,7 @@
 import commands;
 import dallib;
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import test;
 import std;
@@ -529,7 +530,7 @@ void test_test_command_matrix() {
       g.out << "Domain error occurred\n";
       return false;
     }
-    g.out << "Command succeeded\n";
+    g.present(GB::presentation::make_output_message("Command succeeded\n"));
     return true;
   };
 
@@ -551,8 +552,39 @@ void test_test_command_matrix() {
       .with_expected_star_ap(5)
       .run_matrix(g);
 
-  // Star AP was originally 100, deducted 5 on happy path
+  // Star AP was originally 100, deducted 5 on happy path (JSON pass restored)
   test::expect_eq(ctx.em.peek_star(1)->AP(player_t{1}), 95);
+
+  // Read-only Guest-allowed command succeeds as Guest under ReadOnlyScope
+  GB::commands::CommandDescriptor ro_matrix_cmd{
+      .name = "matrix_ro_cmd",
+      .scopes = GB::commands::AllowedScopes::planet_only(),
+      .min_args = 2,
+      .handler = matrix_cmd_handler,
+  };
+  TestCommandMatrix(ctx, ro_matrix_cmd)
+      .with_valid_argv({"matrix_ro_cmd", "good"})
+      .with_invalid_argv({"matrix_ro_cmd", "bad"})
+      .with_valid_scope(ScopeLevel::LEVEL_PLAN)
+      .run_matrix(g);
+
+  // Mutating command without .no_guests is rejected as Guest via ReadOnlyScope
+  GB::commands::CommandDescriptor mut_matrix_cmd{
+      .name = "matrix_mut_cmd",
+      .scopes = GB::commands::AllowedScopes::planet_only(),
+      .handler =
+          [](const command_t&, GameObj& game) {
+            game.entity_manager.mutate_block(
+                game.player(), [](Block& b) { b.motto() = "Mutated"; });
+            game.present(GB::presentation::make_output_message("Mutated\n"));
+            return true;
+          },
+  };
+  TestCommandMatrix(ctx, mut_matrix_cmd)
+      .with_valid_argv({"matrix_mut_cmd"})
+      .with_valid_scope(ScopeLevel::LEVEL_PLAN)
+      .run_matrix(g);
+  test::expect_eq(ctx.em.peek_block(1)->motto(), "Mutated");
   std::println(std::cout, "  ✓ TestCommandMatrix verified successfully");
 }
 

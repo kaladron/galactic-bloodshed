@@ -488,6 +488,30 @@ int main() {
                  "✓ SqliteError and KeyValue helpers work as expected");
   }
 
+  // Test Database::copy_to snapshot/restore and guard conditions
+  {
+    Database src(":memory:");
+    initialize_schema(src);
+    JsonStore src_store(src);
+    StarRepository(src_store).save(Star{1, "Sol"});
+
+    Database snap(":memory:");
+    src.copy_to(snap);
+    StarRepository(src_store).save(Star{1, "MutatedSol"});
+    snap.copy_to(src);
+    test::expect_eq(StarRepository(src_store).find_by_number(1)->get_name(),
+                    "Sol");
+
+    {
+      auto ro = snap.create_read_only_scope();
+      test::expect_throws<ReadOnlyError>([&] { src.copy_to(snap); });
+    }
+    src.begin_transaction();
+    test::expect_throws<SqliteError>([&] { src.copy_to(snap); });
+    src.rollback();
+    std::println(std::cout, "✓ Database::copy_to snapshot and guards work");
+  }
+
   std::println(std::cout, "\nAll Database tests passed!");
   return 0;
 }

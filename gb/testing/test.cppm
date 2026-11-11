@@ -606,18 +606,25 @@ public:
   /// rejection + 0 AP deduction.
   void run_scope_checks(GameObj& g) const;
 
-  /// Run Guest Rejection check: marks race as guest or tests guest player,
-  /// asserting rejection + 0 AP deduction.
+  /// Run Guest role check: marks race as Guest (non-deity) and verifies
+  /// mutating / restricted commands are rejected with 0 DB writes while
+  /// permitted read-only commands succeed under ReadOnlyScope with 0 DB writes.
   void run_guest_check(GameObj& g) const;
+
+  /// Run UiMode::JSON check: snapshots and restores the database while
+  /// executing valid_argv in JSON mode, asserting valid NDJSON envelopes and at
+  /// most one "session" stanza. Returns true if valid_argv modified the DB.
+  bool run_json_mode_check(GameObj& g) const;
 
   /// Run Domain Error check: executes invalid_argv and asserts rejection + 0
   /// AP deduction.
   void run_domain_error_check(GameObj& g) const;
 
-  /// Run standard 4-way command matrix tests in sequence.
+  /// Run standard command matrix checks in sequence.
   void run_matrix(GameObj& g) const;
 
 private:
+  void run_guest_check(GameObj& g, bool expect_rejected) const;
   TestContext& ctx_;
   const GB::commands::CommandDescriptor& desc_;
   command_t valid_argv_;

@@ -138,7 +138,7 @@ void spread(EntityManager& entity_manager, const Planet& pl, Sector& s,
     const double base_migrants = race.adventurism *
                                  static_cast<double>(s.get_popn()) *
                                  s.get_fert().complement().as_fraction();
-    const auto raw_migrants = round_rand(base_migrants);
+    const auto raw_migrants = round_rand<population_t>(base_migrants);
     if (raw_migrants <= race.number_sexes) {
       return;
     }

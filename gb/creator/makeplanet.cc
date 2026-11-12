@@ -131,7 +131,7 @@ namespace {
 void MakeEarthAtmosphere(Planet& planet, const int chance) {
   int atmos = 100;
 
-  if (uniform_rand(0, 99) > chance) {
+  if (uniform_rand(0, 99) >= chance) {
     /* oxygen-reducing atmosphere */
     atmos -= (planet.conditions().oxygen = uniform_rand(10, 25));
     atmos -= (planet.conditions().nitrogen = uniform_rand(20, atmos - 20));
@@ -272,7 +272,7 @@ void Makesurface(const Planet& p, SectorMap& smap) {
     s.set_fert(uniform_rand(Fmin[p.type()][s.get_type()],
                             Fmax[p.type()][s.get_type()]));
 
-    if (uniform_rand(0, 1000) < x_chance[s.get_type()]) {
+    if (uniform_rand(0, 999) < x_chance[s.get_type()]) {
       s.set_crystals(uniform_rand(4, 8));
     }
   }
@@ -320,7 +320,8 @@ Planet makeplanet(double dist, short stemp, PlanetType type, starnum_t star_id,
       } else {
         auto atmos =
             100 - (planet.conditions().hydrogen = uniform_rand(30, 75));
-        atmos -= (planet.conditions().helium = uniform_rand(20, atmos / 2));
+        atmos -= (planet.conditions().helium =
+                      uniform_rand(std::min(20, atmos / 2), atmos / 2));
         atmos -= (planet.conditions().methane = uniform_rand(0, 1));
         atmos -= (planet.conditions().oxygen = 0);
         atmos -= (planet.conditions().co2 = uniform_rand(0, 1));
@@ -338,7 +339,9 @@ Planet makeplanet(double dist, short stemp, PlanetType type, starnum_t star_id,
         auto atmos = 100 - (planet.conditions().co2 = uniform_rand(30, 45));
         atmos -= (planet.conditions().nitrogen = uniform_rand(10, atmos / 2));
         atmos -= (planet.conditions().sulfur =
-                      uniform_rand(0, 1) ? 0 : uniform_rand(20, atmos / 2));
+                      uniform_rand(0, 1)
+                          ? 0
+                          : uniform_rand(std::min(20, atmos / 2), atmos / 2));
         planet.conditions().other = atmos;
       } else {
         planet.conditions().co2 = 0;
@@ -375,7 +378,9 @@ Planet makeplanet(double dist, short stemp, PlanetType type, starnum_t star_id,
         auto atmos = 100 - (planet.conditions().co2 = uniform_rand(30, 45));
         atmos -= (planet.conditions().nitrogen = uniform_rand(10, atmos / 2));
         atmos -= (planet.conditions().sulfur =
-                      uniform_rand(0, 1) ? 0 : uniform_rand(20, atmos / 2));
+                      uniform_rand(0, 1)
+                          ? 0
+                          : uniform_rand(std::min(20, atmos / 2), atmos / 2));
         planet.conditions().other = atmos;
       } else {
         planet.conditions().co2 = 0;

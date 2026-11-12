@@ -308,6 +308,8 @@ int main() {
     ctx.em.mutate_ship(afv_id, [](Ship& s) {
       s.alive() = true;
       s.repair_damage(100);
+      s.popn() = 1;
+      s.set_primary_battery(2, guntype_t::MEDIUM);
       s.destruct() = 5;
     });
     population_t civ = 20;

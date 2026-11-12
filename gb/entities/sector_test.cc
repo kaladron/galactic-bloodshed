@@ -544,15 +544,17 @@ void test_sector_recover_fertility() {
   Race race{};
   race.fertilize = 100;
 
-  // 1. Natural fertilization increases fertility up to 100
-  Sector sector(sector_struct{
-      .fert = 98,
-      .type = SectorType::SEC_LAND,
-      .condition = SectorType::SEC_LAND,
-  });
+  // 1. Natural fertilization at 100% succeeds on every roll up to 100
   seed_rand(42);
-  sector.recover_fertility(race);
-  test::expect_true(sector.get_fert() >= 98 && sector.get_fert() <= 100);
+  for (int i = 0; i < 200; ++i) {
+    Sector sector(sector_struct{
+        .fert = 98,
+        .type = SectorType::SEC_LAND,
+        .condition = SectorType::SEC_LAND,
+    });
+    sector.recover_fertility(race);
+    test::expect_eq(sector.get_fert(), 99);
+  }
 
   // 2. Fertility is strictly capped at 100
   Sector max_fert(sector_struct{

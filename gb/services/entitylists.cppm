@@ -546,7 +546,7 @@ public:
 
   explicit StarList(EntityManager& em) : Base(em) {}
 
-  template <typename URBG = std::mt19937>
+  template <typename URBG = std::mt19937_64>
   [[nodiscard]] static auto shuffle(EntityManager& em, URBG& g) {
     const auto max_star = em.max_star_id();
     std::vector<starnum_t> indices;
@@ -570,7 +570,7 @@ public:
     return shuffle(em, game_rng());
   }
 
-  template <typename URBG = std::mt19937>
+  template <typename URBG = std::mt19937_64>
   [[nodiscard]] auto shuffle(URBG& g) const {
     return shuffle(this->entity_manager(), g);
   }
@@ -599,7 +599,7 @@ public:
   PlanetList(EntityManager& em, starnum_t star)
       : Base(em, star, em.peek_star(star)->numplanets()) {}
 
-  template <typename URBG = std::mt19937>
+  template <typename URBG = std::mt19937_64>
   [[nodiscard]] static auto shuffle(EntityManager& em, starnum_t star,
                                     planetnum_t numplanets, URBG& g) {
     std::vector<planetnum_t> indices(
@@ -618,7 +618,7 @@ public:
     return shuffle(em, star, numplanets, game_rng());
   }
 
-  template <typename URBG = std::mt19937>
+  template <typename URBG = std::mt19937_64>
   [[nodiscard]] static auto shuffle(EntityManager& em, starnum_t star,
                                     const Star& star_data, URBG& g) {
     return shuffle(em, star, star_data.numplanets(), g);
@@ -629,7 +629,7 @@ public:
     return shuffle(em, star, star_data.numplanets(), game_rng());
   }
 
-  template <typename URBG = std::mt19937>
+  template <typename URBG = std::mt19937_64>
   [[nodiscard]] static auto shuffle(EntityManager& em, starnum_t star,
                                     URBG& g) {
     return shuffle(em, star, em.peek_star(star)->numplanets(), g);
@@ -639,7 +639,7 @@ public:
     return shuffle(em, star, em.peek_star(star)->numplanets(), game_rng());
   }
 
-  template <typename URBG = std::mt19937>
+  template <typename URBG = std::mt19937_64>
   [[nodiscard]] auto shuffle(URBG& g) const {
     return shuffle(this->entity_manager(), this->primary_key(), this->count(),
                    g);

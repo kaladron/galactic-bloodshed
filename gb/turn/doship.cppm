@@ -53,7 +53,7 @@ export void doabm(Ship& ship, EntityManager& entity_manager);
 /// \param ship Weapon plant ship.
 /// \param entity_manager Entity manager for owner race lookups.
 /// \return Quantity of destructive charges produced.
-export int do_weapon_plant(Ship& ship, EntityManager& entity_manager);
+export resource_t do_weapon_plant(Ship& ship, EntityManager& entity_manager);
 
 /// \brief Executes automated or crewed damage repair and resource consumption.
 /// \param ship Ship undergoing maintenance.

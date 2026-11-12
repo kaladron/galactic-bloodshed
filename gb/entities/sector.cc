@@ -202,7 +202,7 @@ void Sector::apply_supernova(int stage) noexcept {
 
 void Sector::recover_fertility(const Race& race) noexcept {
   if (!is_wasted() && race.fertilize > 0 && data_.fert < 100 &&
-      uniform_rand(0, 100) < race.fertilize) {
+      success(race.fertilize.value())) {
     ++data_.fert;
   }
 

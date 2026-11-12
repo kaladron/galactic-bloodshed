@@ -42,6 +42,7 @@ void seed_standard_races(EntityManager& em) {
 }  // namespace
 
 TestContext::TestContext() : db(":memory:"), em(db) {
+  seed_rand(1337);
   initialize_schema(db);
   Universe u{};
   JsonStore store(db);

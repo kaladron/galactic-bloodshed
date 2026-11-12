@@ -91,7 +91,11 @@ void select_berserker_destination(EntityManager& em, AutonomousShip& ship,
   }
 
   const auto& star = *em.peek_star(dest_star_id);
-  ship.set_planet_destination(dest_star_id, star.get_random_planet_index());
+  if (const auto pnum = star.get_random_planet_index(); pnum > 0) {
+    ship.set_planet_destination(dest_star_id, pnum);
+  } else {
+    ship.set_star_destination(dest_star_id);
+  }
 
   if (ship.hyper_drive().has && ship.mounted()) {
     ship.hyper_drive().on = true;
@@ -127,8 +131,11 @@ void select_vn_destination(EntityManager& em, AutonomousShip& ship) {
   }
 
   const auto& dest_star = *em.peek_star(dest_star_id);
-  ship.set_planet_destination(dest_star_id,
-                              dest_star.get_random_planet_index());
+  if (const auto pnum = dest_star.get_random_planet_index(); pnum > 0) {
+    ship.set_planet_destination(dest_star_id, pnum);
+  } else {
+    ship.set_star_destination(dest_star_id);
+  }
   ship.set_busy(true);
   ship.speed() = ship_template(ShipType::OTYPE_VN).base_speed;
 }

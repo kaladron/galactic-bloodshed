@@ -9,7 +9,7 @@ import std;
 export void seed_rand(unsigned int seed);
 export bool success(int x);
 export bool bool_rand(double p = 0.5);
-export std::mt19937& game_rng();
+export std::mt19937_64& game_rng();
 
 export template <typename Target>
   requires((std::integral<Target> || std::floating_point<Target>) &&
@@ -79,9 +79,22 @@ export inline double uniform_rand() {
 export template <std::integral Result = int>
 Result round_rand(std::floating_point auto x) {
   const auto d = static_cast<double>(x);
-  const auto floor_x = std::floor(d);
-  const auto rounded =
-      (uniform_rand() > (d - floor_x)) ? floor_x : (floor_x + 1.0);
+  if (!std::isfinite(d)) {
+    return Result{0};
+  }
+  constexpr auto min_bound =
+      static_cast<double>(std::numeric_limits<Result>::min());
+  constexpr auto max_bound =
+      static_cast<double>(std::numeric_limits<Result>::max());
+  if (d <= min_bound) {
+    return std::numeric_limits<Result>::min();
+  }
+  if (d >= max_bound) {
+    return std::numeric_limits<Result>::max();
+  }
+  const double floor_x = std::floor(d);
+  const double frac = d - floor_x;
+  const double rounded = (uniform_rand() < frac) ? (floor_x + 1.0) : floor_x;
   return static_cast<Result>(rounded);
 }
 

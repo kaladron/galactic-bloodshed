@@ -3,9 +3,6 @@
 /// \file GB_server.cc
 /// \brief Main game server executable.
 
-#include <unistd.h>
-#include <cstdlib>
-
 import std;
 import asio;
 import dallib;
@@ -61,7 +58,6 @@ int main(int argc, char** argv) {
       GB::log::info("Last Update {:3d} : {}", 0, format_timestamp(clk));
       GB::log::info("Last Segment {:2d} : {}", state.nsegments_done,
                     format_timestamp(clk));
-      srandom(static_cast<unsigned int>(getpid()));
       GB::log::info("Next Update {}  : {}", 1,
                     format_timestamp(state.next_update_time));
       GB::log::info("Next Segment   : {}",

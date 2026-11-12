@@ -131,7 +131,8 @@ void do_pod(SporePodShip& ship, EntityManager& entity_manager) {
 
       auto i = star.get_random_planet_index();
       const std::optional<std::string> colonized =
-          infect_planet(ship.owner(), ship.storbits(), i, entity_manager)
+          (i > 0 &&
+           infect_planet(ship.owner(), ship.storbits(), i, entity_manager))
               ? std::optional{star.get_planet_name(i)}
               : std::nullopt;
       push_telegram(entity_manager, ship.owner(), ship.governor(),
@@ -698,9 +699,16 @@ void doabm(Ship& ship, EntityManager& entity_manager) {
   }
 }
 
-int do_weapon_plant(Ship& ship, EntityManager& entity_manager) {
+resource_t do_weapon_plant(Ship& ship, EntityManager& entity_manager) {
+  const auto clamp_batches = [](double x) noexcept -> resource_t {
+    if (!std::isfinite(x) || x <= 0.0) return 0;
+    constexpr auto max_d =
+        static_cast<double>(std::numeric_limits<resource_t>::max());
+    return (x >= max_d) ? std::numeric_limits<resource_t>::max()
+                        : static_cast<resource_t>(std::floor(x));
+  };
   const auto& race = *entity_manager.peek_race(ship.owner());
-  auto maxrate = static_cast<int>(race.tech / 2.0);
+  const resource_t maxrate = clamp_batches(race.tech / 2.0);
 
   if (ship.crew_ratio() <= 0.0 || ship.hull_efficiency() <= 0.0) {
     return 0;
@@ -709,11 +717,10 @@ int do_weapon_plant(Ship& ship, EntityManager& entity_manager) {
   double available_batches = std::min(static_cast<double>(ship.resource()) /
                                           static_cast<double>(RES_COST_WPLANT),
                                       ship.fuel() / FUEL_COST_WPLANT);
-  auto rate = round_rand(available_batches * ship.hull_efficiency() *
-                         ship.crew_ratio());
-  rate = std::min({rate, maxrate,
-                   static_cast<int>(ship.resource() / RES_COST_WPLANT),
-                   static_cast<int>(ship.fuel() / FUEL_COST_WPLANT)});
+  auto rate = round_rand<resource_t>(
+      available_batches * ship.hull_efficiency() * ship.crew_ratio());
+  rate = std::min({rate, maxrate, ship.resource() / RES_COST_WPLANT,
+                   clamp_batches(ship.fuel() / FUEL_COST_WPLANT)});
   if (rate <= 0) {
     return 0;
   }

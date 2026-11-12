@@ -50,5 +50,8 @@ void Star::clear_all_inhabitants() noexcept {
 }
 
 planetnum_t Star::get_random_planet_index() const {
+  if (numplanets() <= 0) {
+    return planetnum_t{0};
+  }
   return uniform_rand(1, numplanets());
 }

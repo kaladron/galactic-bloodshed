@@ -10,6 +10,26 @@ import std;
 int main() {
   std::println(std::cout, "=== Testing Random Number Generator Functions ===");
 
+  // 0. Per-thread random_device seeding (distinct from hardcoded 1337 and
+  // across threads) before seed_rand() is called
+  {
+    std::uint64_t t1_draw = 0;
+    std::uint64_t t2_draw = 0;
+    {
+      std::jthread t1([&] { t1_draw = game_rng()(); });
+      std::jthread t2([&] { t2_draw = game_rng()(); });
+    }
+    std::mt19937_64 fixed_1337(1337);
+    const auto fixed_draw = fixed_1337();
+    test::expect_ne(t1_draw, fixed_draw);
+    test::expect_ne(t2_draw, fixed_draw);
+    test::expect_ne(t1_draw, t2_draw);
+  }
+
+  seed_rand(42);
+  const auto deterministic_first = game_rng()();
+  seed_rand(42);
+  test::expect_eq(game_rng()(), deterministic_first);
   seed_rand(42);
 
   // 1. uniform_rand() default [0.0, 1.0)
@@ -56,10 +76,24 @@ int main() {
   test::expect_false(bool_rand(0.0));
   test::expect_true(bool_rand(1.0));
 
-  // 7. round_rand exact, fractional, integer division, and integer*float
-  // scaling
+  // 7. round_rand exact, fractional, non-finite, saturation, integer division,
+  // and integer*float scaling
   test::expect_eq(round_rand(0.0), 0);
+  test::expect_eq(round_rand(-0.0), 0);
   test::expect_eq(round_rand(5.0), 5);
+  test::expect_eq(round_rand(-5.0), -5);
+  test::expect_eq(round_rand(std::numeric_limits<double>::quiet_NaN()), 0);
+  test::expect_eq(round_rand(std::numeric_limits<double>::infinity()), 0);
+  test::expect_eq(round_rand(-std::numeric_limits<double>::infinity()), 0);
+  test::expect_eq(round_rand<std::int32_t>(1e20),
+                  std::numeric_limits<std::int32_t>::max());
+  test::expect_eq(round_rand<std::int32_t>(-1e20),
+                  std::numeric_limits<std::int32_t>::min());
+  test::expect_eq(round_rand<std::uint32_t>(-0.75), 0U);
+  test::expect_eq(round_rand<std::int64_t>(1e30),
+                  std::numeric_limits<std::int64_t>::max());
+  test::expect_eq(round_rand<std::int64_t>(-1e30),
+                  std::numeric_limits<std::int64_t>::min());
   for (int i = 0; i < 50; ++i) {
     int r = round_rand(2.4);
     test::expect_true(r == 2 || r == 3, "round_rand(2.4) must be 2 or 3");

@@ -5,26 +5,31 @@
 
 module;
 
-#include <cstdlib>
-
 import std;
 
 module gb.entities;
 
 namespace {
-std::mt19937& get_rng() {
-  thread_local std::mt19937 rng(1337);
+std::mt19937_64 make_seeded_rng() {
+  std::random_device rd;
+  std::array<std::random_device::result_type, 8> entropy{};
+  std::ranges::generate(entropy, std::ref(rd));
+  std::seed_seq seq(entropy.begin(), entropy.end());
+  return std::mt19937_64(seq);
+}
+
+std::mt19937_64& get_rng() {
+  thread_local std::mt19937_64 rng = make_seeded_rng();
   return rng;
 }
 }  // namespace
 
-std::mt19937& game_rng() {
+std::mt19937_64& game_rng() {
   return get_rng();
 }
 
 void seed_rand(unsigned int seed) {
   get_rng().seed(seed);
-  srandom(seed);
 }
 
 bool success(int x) {

@@ -313,6 +313,10 @@ int main() {
   // get_random_planet_index tests
   std::println(std::cout, "Star get_random_planet_index tests...");
   {
+    // Case 0: Empty star (0 planets) returns sentinel 0
+    Star star0{1, "Void"};
+    test::expect_eq(star0.get_random_planet_index(), planetnum_t{0});
+
     // Case 1: Single planet system always returns index 1
     Star star1(
         star_struct{.name = "Solo", .pnames = {"SingleWorld"}, .star_id = 1});

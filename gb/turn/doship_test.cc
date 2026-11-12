@@ -396,8 +396,12 @@ void test_do_meta_infect() {
 
   SectorRepository(store).save_map(smap);
 
-  // Infect planet sector
-  do_meta_infect(player_t{1}, starnum_t{1}, planetnum_t{1}, planet, em);
+  // Infect planet sector (2 of the 4 sectors are infectable)
+  seed_rand(42);
+  for (int attempt = 0;
+       attempt < 16 && planet.info(player_t{1}).numsectsowned == 0; ++attempt) {
+    do_meta_infect(player_t{1}, starnum_t{1}, planetnum_t{1}, planet, em);
+  }
   test::expect_gt(planet.info(player_t{1}).numsectsowned, 0);
   test::expect_eq(planet.info(player_t{1}).explored, 1);
 
@@ -1850,6 +1854,7 @@ void test_special_subsystems_extended() {
   test::expect_eq(stats.temp_add(1, 1), 100);
 
   // 5. Space mirror destroys target ship when damage exceeds 100
+  seed_rand(42);
   auto target_handle = TestShipBuilder(em, ShipType::STYPE_SHUTTLE)
                            .owned_by(1)
                            .with_size(10)

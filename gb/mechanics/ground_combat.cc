@@ -238,6 +238,15 @@ GroundAttackResult ground_attack(const GroundAttackParams& p) {
 
   const population_t casualty_scale =
       std::min(attacker_effective_scale, defender_effective_scale);
+  if (casualty_scale <= 0 || astrength <= 0.0 || dstrength <= 0.0) {
+    return GroundAttackResult{
+        .attack_strength = astrength,
+        .defense_strength = dstrength,
+        .surviving_attackers = p.attacker_force,
+        .surviving_defender_civ = p.defender_civ,
+        .surviving_defender_mil = p.defender_mil,
+    };
+  }
 
   population_t attacker_casualties = uniform_rand(
       0, round_rand(casualty_scale / attacker_divisor, dstrength / astrength));

@@ -327,6 +327,32 @@ void test_ground_assault_matrix() {
   star.record_ground_assault(attacker, defender, 2);
   star.clear_all_ground_assaults();
   test::expect_eq(star.ground_assault_count(attacker, defender), 0U);
+
+  // Zero-defender and zero-attacker ground_attack guard (no 0 * Inf NaN UB)
+  Race r1{};
+  r1.Playernum = 1;
+  r1.fighters = 5;
+  r1.morale = 10;
+  Race r2{};
+  r2.Playernum = 2;
+  r2.fighters = 5;
+  r2.morale = 10;
+  const auto zero_def = ground_attack({
+      .attacker = r1,
+      .defender = r2,
+      .attacker_force = 50,
+      .attacker_type = PopulationType::MIL,
+      .defender_civ = 0,
+      .defender_mil = 0,
+      .attacker_defense_bonus = 1,
+      .defender_defense_bonus = 1,
+      .attacker_compatibility = 100.0,
+      .defender_compatibility = 100.0,
+  });
+  test::expect_eq(zero_def.surviving_attackers, 50);
+  test::expect_eq(zero_def.attacker_casualties, 0);
+  test::expect_eq(zero_def.defender_civ_casualties, 0);
+  test::expect_eq(zero_def.defender_mil_casualties, 0);
   std::println(std::cout, "  ✓ ground_assault_matrix passed");
 }
 

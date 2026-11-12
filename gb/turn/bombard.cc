@@ -36,17 +36,25 @@ find_bombardment_target(EntityManager& entity_manager, const Ship& ship,
           return s.is_bombardable_by(ship.owner());
         });
 
-        // 1. Look for an active enemy colony or programmed target first
+        // 1. Look for a programmed Berserker target first
+        if (programmed_target.has_value()) {
+          for (const Sector& sect : candidates) {
+            if (sect.get_owner() == *programmed_target) {
+              target = sect.coords();
+              return;
+            }
+          }
+        }
+
+        // 2. Look for an active enemy colony at war with the attacker
         for (const Sector& sect : candidates) {
-          const player_t owner = sect.get_owner();
-          if (attacker_race.is_at_war_with(owner) ||
-              programmed_target == owner) {
+          if (attacker_race.is_at_war_with(sect.get_owner())) {
             target = sect.coords();
             return;
           }
         }
 
-        // 2. If no enemy colonies exist, fall back to any foreign colony
+        // 3. If no enemy colonies exist, fall back to any foreign colony
         for (const Sector& sect : candidates) {
           target = sect.coords();
           return;

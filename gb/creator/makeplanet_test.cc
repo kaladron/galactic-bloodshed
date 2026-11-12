@@ -193,6 +193,34 @@ void test_multipass_surface_generation() {
   std::println(std::cout, "  ✓ multi-pass surface generation passed");
 }
 
+void test_atmosphere_rng_invariants() {
+  std::println(std::cout, "Test: Forest oxygen & non-inverted gas bounds");
+
+  seed_rand(2026);
+  for (int i = 0; i < 500; ++i) {
+    std::optional<SectorMap> smap;
+    Planet forest =
+        GB::creator::makeplanet(300.0, 5000, PlanetType::FOREST, 1, 1, smap);
+    test::expect_ge(forest.conditions().oxygen, 10);
+    test::expect_le(forest.conditions().methane, 1);
+  }
+
+  for (const PlanetType type :
+       {PlanetType::GASGIANT, PlanetType::MARS, PlanetType::ICEBALL}) {
+    for (int i = 0; i < 100; ++i) {
+      std::optional<SectorMap> smap;
+      Planet p = GB::creator::makeplanet(400.0, 5000, type, 1, 1, smap);
+      const auto& c = p.conditions();
+      test::expect_ge(c.other, 0);
+      const int sum = c.hydrogen.value() + c.helium.value() +
+                      c.methane.value() + c.oxygen.value() + c.co2.value() +
+                      c.nitrogen.value() + c.sulfur.value() + c.other.value();
+      test::expect_true(sum == 100 || sum == 0);
+    }
+  }
+  std::println(std::cout, "  ✓ atmosphere RNG invariants passed");
+}
+
 int main() {
   test_temperature_calculation();
   test_makeplanet_types();
@@ -201,6 +229,7 @@ int main() {
   test_asteroid_generation();
   test_cold_planet_polar_icing();
   test_multipass_surface_generation();
+  test_atmosphere_rng_invariants();
 
   std::println(std::cout, "\n✅ All makeplanet tests passed!");
   return 0;

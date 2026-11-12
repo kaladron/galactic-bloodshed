@@ -265,13 +265,14 @@ Effective orbital bombardment power (`bombard <ship> [<x,y> [<strength>]]`) is b
   $$r = 0.4 \times S$$
   If target coordinates `<x,y>` are omitted, a random sector on the planet is targeted.
 - **Distance-Attenuated Sector Damage Factor**: Each sector at distance $d \le r$ from ground zero sustains a blast intensity factor:
-  $$\text{Factor}(d) = \frac{0.2 \times S \times K}{d + 1}$$
+  $$\text{Factor}(d) = \frac{0.3 \times S \times K}{d + 1}$$
   where $K \in \{1, 2, 3\}$ is the active gun caliber multiplier ($K = 1$ for armed combat lasers).
 - **Landed Armored Fighting Vehicles (AFVs)**: Landed AFVs (`R`) can bombard only adjacent sectors ($\max(|dx|, |dy|) \le 1$), bypass orbital Point Defense Network deterrence, and are immune to surface-to-orbit gun and orbital fleet retaliation.
 
 ### Surface Devastation, Nuclear Fallout, and Retaliation
-- **Entrenched Troop Fortification Shelter**: Civilian populations suffer casualties whenever $\text{Factor}(d) > 0$, reduced by half on plated sectors. Entrenched military troops are sheltered from bombardment casualties unless the local blast intensity exceeds five times the sector's natural terrain defense bonus:
+- **Civilian & Entrenched Troop Casualties**: Civilian populations draw bombardment casualties uniformly from $\left[0, \left\lfloor \frac{\text{Factor}(d)}{10} \times P_{\text{civ}} \right\rfloor\right]$, halved on plated sectors and clamped to $P_{\text{civ}}$. Entrenched military troops are sheltered from bombardment casualties unless the local blast intensity exceeds five times the sector's natural terrain defense bonus:
   $$\text{Factor}(d) > 5.0 \times \text{Defense}_{\text{terrain}}$$
+  Above that threshold, troop casualties are drawn uniformly from $\left[0, \left\lfloor \frac{\text{Factor}(d)}{20} \times P_{\text{mil}} \right\rfloor\right]$, halved on plated sectors and clamped to $P_{\text{mil}}$.
 - **Terraforming Stripping**: High-intensity blasts ($\text{Factor}(d) \ge 5.0$) have a $1$-in-$11$ chance of stripping surface terraforming or plating back to the sector's underlying geological type if a random roll ($[0, 6]$) equals or exceeds $`\text{Defense}_{\text{terrain}}`$.
 - **Wasteland Conversion & Fallout**: Sectors where $\operatorname{round}(\text{Factor}(d))$ exceeds terrain fortification times a random roll ($[0, 10]$) are converted into radioactive wasteland (`%`), eliminating civilian populations and increasing planetary atmospheric toxicity:
   $$\Delta \text{Toxicity} = (100 - \text{Toxicity}) \times \frac{N_{\text{destroyed}}}{N_{\text{total\_sectors}}}$$

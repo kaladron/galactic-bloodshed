@@ -305,7 +305,7 @@ void test_protecting_ship_retaliation() {
       .owned_by(2, 1)
       .named("Escort")
       .in_star_orbit(1, SystemCoordinates{110.0, 210.0})
-      .with_guns(guntype_t::HEAVY, 10)
+      .with_guns(guntype_t::MEDIUM, 4)
       .with_destruct(100)
       .with_crew(10, 10)
       .with_fuel(1000.0)

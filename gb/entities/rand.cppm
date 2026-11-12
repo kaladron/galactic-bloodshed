@@ -76,6 +76,18 @@ export inline double uniform_rand() {
   return uniform_rand(0.0, 1.0);
 }
 
+export template <std::integral IntType>
+  requires(!std::same_as<IntType, bool>)
+IntType binomial_rand(IntType trials, double p) {
+  if (trials <= 0 || !std::isfinite(p) || p <= 0.0) {
+    return IntType{0};
+  }
+  if (p >= 1.0) {
+    return trials;
+  }
+  return std::binomial_distribution<IntType>(trials, p)(game_rng());
+}
+
 export template <std::integral Result = int>
 Result round_rand(std::floating_point auto x) {
   const auto d = static_cast<double>(x);

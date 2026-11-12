@@ -401,6 +401,35 @@ void test_capture_booby_trap_robot_ship() {
                     g.out.str().contains("VICTORY") ||
                     g.out.str().contains("DESTROYED"));
 
+  // O(1) binomial booby-trap lethality on 10,000,000 boarders & exact 100% kill
+  const auto reset_boarding_popn = [&] {
+    ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
+      smap.get(Coordinates{5, 5}).set_popn_exact(10'000'000);
+    });
+    ctx.em.mutate_planet(1, 1, [&](Planet& p) {
+      p.sync_demographics(*ctx.em.peek_sectormap(1, 1));
+    });
+  };
+  reset_boarding_popn();
+  bool saw_100pct_booby = false;
+  for (int attempt = 0; attempt < 20 && !saw_100pct_booby; ++attempt) {
+    const shipnum_t heavy_trap = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
+                                     .owned_by(2, 1)
+                                     .landed_on(1, 1, Coordinates(5, 5))
+                                     .with_crew(0, 0)
+                                     .with_destruct(100)
+                                     .build();
+    const auto trap_res = execute_landed_ship_boarding(
+        ctx.em, heavy_trap, 10'000'000, PopulationType::CIV, 1, 1);
+    if (trap_res.booby_damage == 100) {
+      test::expect_eq(trap_res.attacker_casualties, 10'000'000);
+      test::expect_eq(trap_res.surviving_boarders, 0);
+      saw_100pct_booby = true;
+    }
+    reset_boarding_popn();
+  }
+  test::expect_true(saw_100pct_booby);
+
   ctx.verify_universe_invariants();
 }
 

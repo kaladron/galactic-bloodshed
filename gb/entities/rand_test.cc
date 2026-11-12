@@ -141,6 +141,20 @@ int main() {
                       "uniform_rand(-2.5, 2.5) must be in [-2.5, 2.5)");
   }
 
+  // 9. binomial_rand edge guards and O(1) large-population draws
+  test::expect_eq(binomial_rand<population_t>(0, 0.5), 0);
+  test::expect_eq(binomial_rand<population_t>(-5, 0.5), 0);
+  test::expect_eq(binomial_rand<population_t>(1000, 0.0), 0);
+  test::expect_eq(binomial_rand<population_t>(1000, -0.25), 0);
+  test::expect_eq(binomial_rand<population_t>(
+                      1000, std::numeric_limits<double>::quiet_NaN()),
+                  0);
+  test::expect_eq(binomial_rand<population_t>(1000, 1.0), 1000);
+  test::expect_eq(binomial_rand<population_t>(1000, 1.5), 1000);
+  const auto large_draw = binomial_rand<population_t>(10'000'000, 0.25);
+  test::expect_gt(large_draw, 2'450'000);
+  test::expect_lt(large_draw, 2'550'000);
+
   std::println(std::cout, "✓ All Random Number Generator tests passed!");
   return 0;
 }

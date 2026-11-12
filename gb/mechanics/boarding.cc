@@ -532,10 +532,8 @@ void resolve_booby_trap_boarding(EntityManager& em, Ship& ship,
                                  player_t attacker_player,
                                  LandedBoardingResult& res) {
   res.booby_damage = Percentage::clamped(uniform_rand(0, 10 * ship.destruct()));
-  population_t casualties = 0;
-  for (population_t i = 0; i < boarders; ++i) {
-    casualties += (uniform_rand(1, 100) < res.booby_damage);
-  }
+  const population_t casualties =
+      binomial_rand(boarders, res.booby_damage.as_fraction());
   res.attacker_casualties = casualties;
   res.surviving_boarders = boarders - casualties;
   res.ship_damage = res.booby_damage;

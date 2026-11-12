@@ -146,8 +146,8 @@ void test_shoot_ship_to_planet_valid_attack() {
   auto& s = smap.get(Coordinates{1, 1});
   s.set_owner(player_t{2});
   s.set_popn_exact(100);
-  s.set_condition(SectorType::SEC_SEA);
-  s.set_type(SectorType::SEC_SEA);
+  s.set_condition(SectorType::SEC_LAND);
+  s.set_type(SectorType::SEC_LAND);
 
   // Far sector owned by player 5 with mobilization so sum_mob[5] > 0 when
   // !planet.has_info(5)
@@ -166,7 +166,7 @@ void test_shoot_ship_to_planet_valid_attack() {
   ship.tech() = 10.0;
   ship.size() = 10;
 
-  auto res = shoot_ship_to_planet(ctx.em, ship, planet, 8, Coordinates{1, 1},
+  auto res = shoot_ship_to_planet(ctx.em, ship, planet, 15, Coordinates{1, 1},
                                   smap, 0, guntype_t::HEAVY);
   test::expect_true(res.has_value());
   test::expect_ge(res->sectors_destroyed, 0);
@@ -235,6 +235,76 @@ void test_shoot_ship_to_planet_cylindrical_seam_symmetry() {
 
   std::println(std::cout,
                "  ✓ shoot_ship_to_planet cylindrical seam symmetry passed");
+}
+
+void test_shoot_ship_to_planet_sub10_and_plated_casualties() {
+  std::println(
+      std::cout,
+      "Test: shoot_ship_to_planet sub-10 fac and high-fac plated casualties");
+
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  Planet planet(ctx.em.peek_planet(1, 1)->get_struct());
+  planet.dimensions() = Coordinates{5, 5};
+
+  Ship ship{};
+  ship.number() = 1;
+  ship.owner() = 1;
+  ship.type() = ShipType::OTYPE_CANIST;
+  ship.enter_planet_orbit(1, 1);
+  ship.alive() = true;
+  ship.on() = true;
+
+  // 1. Sub-10 fac (strength=9, HEAVY => fac = 0.3 * 9 * 3 = 8.1 > 5.0 * 1):
+  // when sector survives wasteland roll, both civilians and troops suffer
+  // non-zero casualties (previously (int)(8.1/10) == 0 and (int)(8.1/20) == 0).
+  seed_rand(42);
+  bool saw_unwasted_civ_loss = false;
+  bool saw_unwasted_mil_loss = false;
+  for (int trial = 0;
+       trial < 100 && (!saw_unwasted_civ_loss || !saw_unwasted_mil_loss);
+       ++trial) {
+    SectorMap smap(planet);
+    auto& sec = smap.get(Coordinates{2, 2});
+    sec.set_owner(2);
+    sec.set_popn_exact(1000);
+    sec.set_troops(1000);
+    sec.set_condition(SectorType::SEC_LAND);
+    sec.set_type(SectorType::SEC_LAND);
+
+    auto res = shoot_ship_to_planet(ctx.em, ship, planet, 9, Coordinates{2, 2},
+                                    smap, false, guntype_t::HEAVY);
+    test::expect_true(res.has_value());
+    if (!sec.is_wasted()) {
+      if (sec.get_popn() < 1000) saw_unwasted_civ_loss = true;
+      if (sec.get_troops() < 1000) saw_unwasted_mil_loss = true;
+    }
+  }
+  test::expect_true(saw_unwasted_civ_loss);
+  test::expect_true(saw_unwasted_mil_loss);
+
+  // 2. High-fac strike (strength=30, HEAVY => fac = 27.0) on plated sector
+  // (defense_bonus=3, /2 plated divisor) can wipe 100% of civilians without
+  // wasteland conversion because fac/10.0 = 2.7 is intentionally unclamped.
+  bool saw_plated_full_civ_wipe = false;
+  for (int trial = 0; trial < 100 && !saw_plated_full_civ_wipe; ++trial) {
+    SectorMap smap(planet);
+    auto& sec = smap.get(Coordinates{2, 2});
+    sec.set_owner(2);
+    sec.set_popn_exact(200);
+    sec.set_troops(200);
+    sec.set_type(SectorType::SEC_LAND);
+    sec.plate();
+
+    auto res = shoot_ship_to_planet(ctx.em, ship, planet, 30, Coordinates{2, 2},
+                                    smap, false, guntype_t::HEAVY);
+    test::expect_true(res.has_value());
+    if (!sec.is_wasted() && sec.get_popn() == 0) {
+      saw_plated_full_civ_wipe = true;
+    }
+  }
+  test::expect_true(saw_plated_full_civ_wipe);
 }
 
 void test_hit_odds_sizing() {
@@ -424,6 +494,20 @@ void test_do_collateral_casualties() {
   test::expect_eq(ship.popn(), 0);
   test::expect_eq(ship.troops(), 0);
   test::expect_eq(ship.mass(), initial_mass - 80.0 * 2.0);
+
+  // O(1) binomial collateral damage on 10,000,000-colonist habitat ship
+  Ship mega_hab{ship_struct{
+      .max_crew = 10'000'000,
+      .popn = 10'000'000,
+      .troops = 1'000'000,
+  }};
+  mega_hab.set_mass(mega_hab.local_mass(1.0));
+  seed_rand(42);
+  const CollateralDamage mega_res = do_collateral(mega_hab, 50, 1.0);
+  test::expect_gt(mega_res.civilian_casualties, 4'950'000);
+  test::expect_lt(mega_res.civilian_casualties, 5'050'000);
+  test::expect_gt(mega_res.military_casualties, 490'000);
+  test::expect_lt(mega_res.military_casualties, 510'000);
 
   std::println(std::cout, "  ✓ do_collateral casualty tracking passed");
 }
@@ -664,6 +748,7 @@ int main() {
   test_shoot_ship_to_planet_invalid_cases();
   test_shoot_ship_to_planet_valid_attack();
   test_shoot_ship_to_planet_cylindrical_seam_symmetry();
+  test_shoot_ship_to_planet_sub10_and_plated_casualties();
   test_hit_odds_sizing();
   test_zero_body_ship_combat();
   test_penetration_factor_domain();

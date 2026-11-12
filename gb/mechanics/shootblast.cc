@@ -187,8 +187,6 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
   auto& target = smap.get(target_sector);
   player_t oldowner = target.get_owner();
 
-  std::flat_map<player_t, int> sum_mob{};
-
   for (auto& s : smap) {
     const double d = pl.cylindrical_distance(s.coords(), target_sector);
 
@@ -198,27 +196,32 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
 
       const player_t sector_owner = s.get_owner();
       if (sector_owner != 0) {
-        population_t kills = 0;
+        const auto clamp_to_popn = [](double x) noexcept -> population_t {
+          if (!std::isfinite(x) || x <= 0.0) return 0;
+          constexpr auto max_pop =
+              static_cast<double>(std::numeric_limits<population_t>::max());
+          return (x >= max_pop) ? std::numeric_limits<population_t>::max()
+                                : static_cast<population_t>(std::floor(x));
+        };
         if (s.get_popn()) {
-          kills = uniform_rand(0, static_cast<int>(fac / 10.0) * s.get_popn()) /
-                  (1 + s.is_plated());
-          if (kills > s.get_popn())
-            s.clear_popn();
-          else
-            s.subtract_popn(kills);
+          const population_t max_civ_kills =
+              clamp_to_popn((fac / 10.0) * static_cast<double>(s.get_popn()));
+          const population_t kills =
+              uniform_rand<population_t>(0, max_civ_kills) /
+              (1 + s.is_plated());
+          s.subtract_popn(kills);
         }
         // Entrenched troops are sheltered unless blast intensity exceeds
         // TROOP_BOMBARD_FORTIFICATION_SCALE times the sector defense bonus.
         if (s.get_troops() &&
             (fac > TROOP_BOMBARD_FORTIFICATION_SCALE *
                        static_cast<double>(s.defense_bonus()))) {
-          kills =
-              uniform_rand(0, static_cast<int>(fac / 20.0) * s.get_troops()) /
+          const population_t max_mil_kills =
+              clamp_to_popn((fac / 20.0) * static_cast<double>(s.get_troops()));
+          const population_t kills =
+              uniform_rand<population_t>(0, max_mil_kills) /
               (1 + s.is_plated());
-          if (kills > s.get_troops())
-            s.set_troops(0);
-          else
-            s.set_troops(s.get_troops() - kills);
+          s.set_troops(kills >= s.get_troops() ? 0 : s.get_troops() - kills);
         }
 
         s.clear_owner_if_empty();
@@ -252,17 +255,15 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
         s.deplete_resource(std::lround(fac));
       }
     }
-    if (s.get_owner() != 0) sum_mob[s.get_owner()] += s.get_mobilization();
   }
+  pl.sync_demographics(smap);
   auto num_sectors = pl.num_sectors();
   for (const Race& race : RaceList::readonly(em)) {
     player_t i = race.Playernum;
-    auto it = sum_mob.find(i);
-    int mob = (it != sum_mob.end()) ? it->second : 0;
-    if (!pl.has_info(i) && mob == 0) {
+    if (!pl.has_info(i)) {
       continue;
     }
-    pl.info(i).mob_points = mob;
+    const int mob = pl.info(i).mob_points;
     pl.info(i).comread = mob / num_sectors;
     pl.info(i).guns = planet_guns(mob);
   }
@@ -291,13 +292,8 @@ static std::pair<radiation_t, radiation_t> do_radiation(Ship& ship, double tech,
                           : 0;
   const auto body = std::max<ship_size_t>(1, ship.shipbody());
 
-  hit_count_t penetrate = 0;
   const double r = std::pow(fac, static_cast<double>(arm));
-
-  /* check to see how many hits penetrate */
-  for (auto _ : std::views::iota(hit_count_t{0}, hits)) {
-    if (uniform_rand() <= r) penetrate += 1;
-  }
+  const hit_count_t penetrate = binomial_rand(hits, r);
 
   const radiation_t dosage =
       std::clamp(round_rand(40 * penetrate, body), 0, 100);
@@ -332,13 +328,8 @@ do_damage(EntityManager& em, ShipShotAttackerKind attacker_kind, player_t who,
   const auto body_size = std::max<ship_size_t>(1, ship.shipbody());
   const double body = std::sqrt(0.1 * static_cast<double>(body_size));
 
-  hit_count_t penetrate = 0;
   const double r = std::pow(fac, static_cast<double>(arm));
-
-  /* check to see how many hits penetrate */
-  for (auto _ : std::views::iota(hit_count_t{0}, hits)) {
-    if (uniform_rand() <= r) penetrate += 1;
-  }
+  const hit_count_t penetrate = binomial_rand(hits, r);
 
   damage_t damage = Percentage::clamped(
       round_rand(gun_caliber(caliber) * penetrate, SHIP_DAMAGE / body));
@@ -432,9 +423,7 @@ static SalvoHitRoll roll_salvo_hits(double dist, bool focus,
     hit_probability = quadratic_hit_odds(prob);
     if (success(hit_probability)) hits = guns;
   } else {
-    for (auto _ : std::views::iota(weapon_power_t{0}, guns)) {
-      if (success(prob)) hits++;
-    }
+    hits = binomial_rand<hit_count_t>(guns, prob.as_fraction());
     hit_probability = prob;
   }
 
@@ -520,15 +509,13 @@ static hit_odds_t cew_hit_odds(double range, weapon_range_t cew_range) {
 
 static CriticalHitResult do_critical_hits(hit_count_t penetrate, Ship& ship,
                                           guntype_t caliber) {
-  hit_count_t crithits = 0;
   damage_t critdam = 0;
   const int caliber_val = std::max(1, gun_caliber(caliber));
   const auto eff_size = std::max<ship_size_t>(1, ship.shipbody() / caliber_val);
-  for (auto _ : std::views::iota(hit_count_t{0}, penetrate)) {
-    if (!uniform_rand(0, eff_size - 1)) {
-      crithits += 1;
-      critdam += uniform_rand(0, 100);
-    }
+  const hit_count_t crithits =
+      binomial_rand(penetrate, 1.0 / static_cast<double>(eff_size));
+  for (hit_count_t i = 0; i < crithits && critdam < 100; ++i) {
+    critdam += uniform_rand(0, 100);
   }
 
   CriticalHitSystemsDamage systems{};
@@ -566,27 +553,15 @@ static CriticalHitResult do_critical_hits(hit_count_t penetrate, Ship& ship,
 
 CollateralDamage do_collateral(Ship& ship, damage_t damage, double race_mass) {
   /* compute crew/troop casualties */
-  population_t casualties = 0;
-  population_t casualties1 = 0;
-  gun_count_t primgundamage = 0;
-  gun_count_t secgundamage = 0;
-
-  for (auto _ : std::views::iota(population_t{0}, ship.popn())) {
-    casualties += success(damage);
-  }
-  for (auto _ : std::views::iota(population_t{0}, ship.troops())) {
-    casualties1 += success(damage);
-  }
+  const double p = damage.as_fraction();
+  const population_t casualties = binomial_rand(ship.popn(), p);
+  const population_t casualties1 = binomial_rand(ship.troops(), p);
   auto applied = ship.apply_casualties(casualties, casualties1, race_mass);
-  for (auto _ :
-       std::views::iota(gun_count_t{0}, ship.primary_battery().count)) {
-    primgundamage += success(damage);
-  }
+  const gun_count_t primgundamage =
+      binomial_rand(ship.primary_battery().count, p);
   const auto prim_lost = ship.damage_primary_guns(primgundamage);
-  for (auto _ :
-       std::views::iota(gun_count_t{0}, ship.secondary_battery().count)) {
-    secgundamage += success(damage);
-  }
+  const gun_count_t secgundamage =
+      binomial_rand(ship.secondary_battery().count, p);
   const auto sec_lost = ship.damage_secondary_guns(secgundamage);
   return {
       .civilian_casualties = applied.crew,

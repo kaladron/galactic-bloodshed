@@ -8,7 +8,6 @@ module;
 import gb.entities;
 import gb.presentation.empire_views;
 import gb.services;
-import scnlib;
 import std;
 
 module commands;
@@ -61,12 +60,12 @@ namespace GB::commands {
 bool revoke(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
 
-  const auto parsed_gov = scn::scan<governor_t::value_type>(argv[1], "{}");
-  if (!parsed_gov || parsed_gov->value() < 1) {
+  const auto parsed_gov = parse_int<governor_t::value_type>(argv[1]);
+  if (!parsed_gov || *parsed_gov < 1) {
     g.out << "No such governor.\n";
     return false;
   }
-  const governor_t gov{parsed_gov->value()};
+  const governor_t gov{*parsed_gov};
 
   if (Race::is_leader(gov)) {
     g.out << "You can't revoke your leadership!\n";
@@ -74,12 +73,12 @@ bool revoke(const command_t& argv, GameObj& g) {
   }
   governor_t j = Race::leader_id;
   if (argv.size() >= 4) {
-    const auto parsed_j = scn::scan<governor_t::value_type>(argv[3], "{}");
-    if (!parsed_j || parsed_j->value() < 1) {
+    const auto parsed_j = parse_int<governor_t::value_type>(argv[3]);
+    if (!parsed_j || *parsed_j < 1) {
       g.out << "You can't give stuff to that governor!\n";
       return false;
     }
-    j = governor_t{parsed_j->value()};
+    j = governor_t{*parsed_j};
   }
   bool success = false;
   money_t transferred = 0;

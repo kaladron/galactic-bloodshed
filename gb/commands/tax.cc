@@ -9,7 +9,6 @@ import gb.entities;
 import gb.presentation;
 import gb.services;
 import std;
-import scnlib;
 
 module commands;
 
@@ -30,12 +29,12 @@ bool tax(const command_t& argv, GameObj& g) {
     return true;
   }
 
-  auto parsed_tax = scn::scan<int>(argv[1], "{}");
-  if (!parsed_tax || parsed_tax->value() > 100 || parsed_tax->value() < 0) {
+  auto parsed_tax = parse_int<int>(argv[1]);
+  if (!parsed_tax || *parsed_tax > 100 || *parsed_tax < 0) {
     g.out << "Illegal value.\n";
     return false;
   }
-  const auto new_tax = static_cast<Percentage>(parsed_tax->value());
+  const auto new_tax = static_cast<Percentage>(*parsed_tax);
 
   g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
     planet.info(Playernum).newtax = new_tax;

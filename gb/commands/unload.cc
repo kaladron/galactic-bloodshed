@@ -7,7 +7,6 @@ module;
 
 import gb.entities;
 import gb.services;
-import scnlib;
 import std;
 
 module commands;
@@ -22,12 +21,13 @@ bool unload(const command_t& argv, GameObj& g) {
 
   std::int64_t requested_amt = 0;
   if (argv.size() > 3) {
-    auto parsed_amt = scn::scan<std::int64_t>(argv[3], "{}");
-    if (!parsed_amt) {
+    auto parsed_amt = parse_int<std::int64_t>(argv[3]);
+    if (!parsed_amt ||
+        *parsed_amt == std::numeric_limits<std::int64_t>::min()) {
       g.out << "Invalid amount.\n";
       return false;
     }
-    requested_amt = parsed_amt->value();
+    requested_amt = *parsed_amt;
   }
 
   const char commod = first_char(argv[2]);

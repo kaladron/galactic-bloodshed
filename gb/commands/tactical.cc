@@ -13,7 +13,6 @@ module;
 import gb.entities;
 import gb.presentation;
 import gb.services;
-import scnlib;
 import std;
 
 module commands;
@@ -466,14 +465,17 @@ bool is_ship_number_arg(std::string_view arg) {
           std::isdigit(static_cast<unsigned char>(arg.front())));
 }
 
-void parse_tactical_filter_arg(std::string_view arg, TacticalContext& ctx) {
+bool parse_tactical_filter_arg(std::string_view arg, TacticalContext& ctx) {
   if (!arg.empty() && std::isdigit(static_cast<unsigned char>(arg.front()))) {
-    if (auto res = scn::scan<player_t::value_type>(arg, "{}")) {
-      ctx.filter_player = player_t{res->value()};
+    auto res = parse_int<player_t::value_type>(arg);
+    if (!res || *res < 1) {
+      return false;
     }
-  } else {
-    ctx.shiplist = std::string(arg);
+    ctx.filter_player = player_t{*res};
+    return true;
   }
+  ctx.shiplist = std::string(arg);
+  return true;
 }
 
 const Ship* try_peek_ship(EntityManager& em, shipnum_t shipno) {
@@ -496,7 +498,10 @@ bool collect_explicit_ships_tactical(
     std::vector<std::unique_ptr<TacticalItem>>& items) {
   std::size_t ship_arg_end = argv.size();
   if (argv.size() == 3 && !argv[2].empty() && argv[2].front() != '#') {
-    parse_tactical_filter_arg(argv[2], ctx);
+    if (!parse_tactical_filter_arg(argv[2], ctx)) {
+      g.out << "No such player.\n";
+      return false;
+    }
     ship_arg_end = 2;
   }
 
@@ -565,8 +570,9 @@ bool tactical(const command_t& argv, GameObj& g) {
       return true;
     }
     ctx.shiplist = argv[1];
-    if (argv.size() == 3) {
-      parse_tactical_filter_arg(argv[2], ctx);
+    if (argv.size() == 3 && !parse_tactical_filter_arg(argv[2], ctx)) {
+      g.out << "No such player.\n";
+      return false;
     }
   }
 

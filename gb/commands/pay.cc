@@ -9,7 +9,6 @@ import gb.entities;
 import gb.presentation;
 import gb.services;
 import std;
-import scnlib;
 
 module commands;
 
@@ -23,12 +22,12 @@ bool pay(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  auto parsed_amount = scn::scan<money_t>(argv[2], "{}");
+  auto parsed_amount = parse_int<money_t>(argv[2]);
   if (!parsed_amount) {
     g.out << "Invalid amount.\n";
     return false;
   }
-  money_t amount = parsed_amount->value();
+  money_t amount = *parsed_amount;
   if (amount <= 0) {
     g.out << "You have to give a player a positive amount of money.\n";
     return false;

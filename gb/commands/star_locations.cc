@@ -8,7 +8,6 @@ module;
 import gb.entities;
 import gb.presentation.planet_views;
 import gb.services;
-import scnlib;
 import std;
 
 module commands;
@@ -22,12 +21,12 @@ bool star_locations(const command_t& argv, GameObj& g) {
 
   int max_dist = 999999;
   if (argv.size() == 2) {
-    auto scan_res = scn::scan<int>(argv[1], "{}");
-    if (!scan_res || !scan_res->range().empty() || scan_res->value() < 0) {
+    auto scan_res = parse_int<int>(argv[1]);
+    if (!scan_res || *scan_res < 0) {
       g.out << "Bad distance value.\n";
       return false;
     }
-    max_dist = scan_res->value();
+    max_dist = *scan_res;
   }
 
   GB::presentation::StarLocationsViewModel vm{.max_distance = max_dist};

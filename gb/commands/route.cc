@@ -8,7 +8,6 @@ module;
 import gb.entities;
 import gb.presentation;
 import gb.services;
-import scnlib;
 import std;
 
 module commands;
@@ -19,12 +18,12 @@ namespace {
  * @brief Parse and validate a 1-based route index (`1..MAX_ROUTES`).
  */
 std::optional<int> parse_route_index(std::string_view arg, GameObj& g) {
-  const auto parsed = scn::scan<int>(arg, "{}");
-  if (!parsed || parsed->value() < 1 || parsed->value() > MAX_ROUTES) {
+  const auto parsed = parse_int<int>(arg);
+  if (!parsed || *parsed < 1 || *parsed > MAX_ROUTES) {
     g.out << "Bad route number.\n";
     return std::nullopt;
   }
-  return parsed->value();
+  return *parsed;
 }
 
 /**

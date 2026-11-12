@@ -14,7 +14,6 @@ module;
 import gb.entities;
 import gb.presentation;
 import gb.services;
-import scnlib;
 import std;
 
 module commands;
@@ -32,12 +31,12 @@ bool mobilize(const command_t& argv, GameObj& g) {
     return true;
   }
 
-  auto scanned = scn::scan<int>(argv[1], "{}");
-  if (!scanned || scanned->value() > 100 || scanned->value() < 0) {
+  auto scanned = parse_int<int>(argv[1]);
+  if (!scanned || *scanned > 100 || *scanned < 0) {
     g.out << "Illegal value.\n";
     return false;
   }
-  const auto sum_mob = static_cast<Percentage>(scanned->value());
+  const auto sum_mob = static_cast<Percentage>(*scanned);
 
   if (!g.deduct_ap(g.snum(), APcount)) {
     g.out << std::format("You don't have {} action points there.\n", APcount);

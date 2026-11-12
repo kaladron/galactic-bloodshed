@@ -8,7 +8,6 @@ module;
 import gb.entities;
 import gb.presentation.planet_views;
 import gb.services;
-import scnlib;
 import std;
 
 module commands;
@@ -34,12 +33,12 @@ bool technology(const command_t& argv, GameObj& g) {
     return true;
   }
 
-  auto scan_res = scn::scan<money_t>(argv[1], "{}");
-  if (!scan_res || !scan_res->range().empty() || scan_res->value() < 0) {
+  auto scan_res = parse_int<money_t>(argv[1]);
+  if (!scan_res || *scan_res < 0) {
     g.out << "Illegal value.\n";
     return false;
   }
-  const money_t invest = scan_res->value();
+  const money_t invest = *scan_res;
 
   constexpr ap_t tech_ap_cost = 1;
   if (!g.deduct_ap(g.snum(), tech_ap_cost)) {

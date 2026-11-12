@@ -58,6 +58,8 @@ void test_toxicity_dispatch() {
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"toxicity", "abc"});
   test::expect_contains(g.out.str(), "Illegal value");
+  ctx.assert_dispatch_rejected(g, {"toxicity", "50abc"});
+  test::expect_contains(g.out.str(), "Illegal value");
   std::println(std::cout, "    ✓ Illegal values rejected");
 
   // 3. JSON UI mode

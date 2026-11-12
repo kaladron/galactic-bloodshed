@@ -514,9 +514,15 @@ void test_tactical_orbits_and_argument_edge_cases() {
   test::expect_contains(g.out.str(), "EnemyCruiser");
   test::expect_false(g.out.str().contains("EnemyTank"));
 
-  // Empty filter strings
+  // Empty and malformed player filter strings
   ctx.assert_dispatch_success(g, {"tactical", "", ""});
   ctx.assert_dispatch_rejected(g, {"tactical", destroyer_arg, ""});
+  for (const auto& bad_player : {"0", "2abc", "99999999999999999999"}) {
+    ctx.assert_dispatch_rejected(g, {"tactical", "C", bad_player});
+    test::expect_contains(g.out.str(), "No such player.");
+    ctx.assert_dispatch_rejected(g, {"tactical", destroyer_arg, bad_player});
+    test::expect_contains(g.out.str(), "No such player.");
+  }
   ctx.assert_dispatch_rejected(g, {"tactical", "#0"});
 
   // Unexplored star at LEVEL_STAR

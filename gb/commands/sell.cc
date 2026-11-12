@@ -9,7 +9,6 @@ import gb.entities;
 import gb.presentation;
 import gb.services;
 import std;
-import scnlib;
 
 module commands;
 
@@ -24,12 +23,12 @@ bool sell(const command_t& argv, GameObj& g) {
 
   /* get information on sale */
   char commod = first_char(argv[1]);
-  auto parsed_amount = scn::scan<resource_t>(argv[2], "{}");
-  if (!parsed_amount || parsed_amount->value() <= 0) {
+  auto parsed_amount = parse_int<resource_t>(argv[2]);
+  if (!parsed_amount || *parsed_amount <= 0) {
     g.out << "Try using positive values.\n";
     return false;
   }
-  resource_t amount = parsed_amount->value();
+  resource_t amount = *parsed_amount;
 
   const auto& p_peek = *g.entity_manager.peek_planet(snum, pnum);
 

@@ -8,7 +8,6 @@ module;
 import gb.entities;
 import gb.presentation.combat;
 import gb.services;
-import scnlib;
 import std;
 
 module commands;
@@ -19,8 +18,7 @@ bool dispatch_planet_sector_movement(const command_t& argv, GameObj& g,
                                      PopulationType what) {
   std::optional<population_t> requested_count;
   if (argv.size() >= 4) {
-    auto count_res = scn::scan<population_t>(argv[3], "{}");
-    requested_count = count_res ? count_res->value() : 0;
+    requested_count = parse_int<population_t>(argv[3]).value_or(0);
   }
 
   const auto res = execute_planet_sector_movement(

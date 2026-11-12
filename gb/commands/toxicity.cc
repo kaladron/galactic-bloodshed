@@ -8,7 +8,6 @@ module;
 import gb.entities;
 import gb.presentation;
 import gb.services;
-import scnlib;
 import std;
 
 module commands;
@@ -16,12 +15,12 @@ module commands;
 namespace GB::commands {
 
 bool toxicity(const command_t& argv, GameObj& g) {
-  auto scanned = scn::scan<int>(argv[1], "{}");
-  if (!scanned || scanned->value() > 100 || scanned->value() < 0) {
+  auto scanned = parse_int<int>(argv[1]);
+  if (!scanned || *scanned > 100 || *scanned < 0) {
     g.out << "Illegal value.\n";
     return false;
   }
-  const int thresh = scanned->value();
+  const int thresh = *scanned;
 
   std::optional<Percentage> new_val;
   g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& p) {

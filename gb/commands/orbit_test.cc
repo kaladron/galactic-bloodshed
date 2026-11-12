@@ -197,8 +197,10 @@ void test_orbit_domain_errors() {
   g.set_level(ScopeLevel::LEVEL_STAR);
   g.set_snum(1);
 
-  // 1. Invalid option number format
+  // 1. Invalid option number format (non-numeric and trailing garbage)
   ctx.assert_dispatch_rejected(g, {"orbit", "-abc"});
+  test::expect_contains(g.out.str(), "Bad number");
+  ctx.assert_dispatch_rejected(g, {"orbit", "-1abc"});
   test::expect_contains(g.out.str(), "Bad number");
 
   // 2. Invalid target scope path

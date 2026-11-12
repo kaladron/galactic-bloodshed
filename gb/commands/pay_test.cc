@@ -80,6 +80,8 @@ void test_pay_dispatch() {
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"pay", "2", "abc"});
   test::expect_contains(g.out.str(), "Invalid amount.");
+  ctx.assert_dispatch_rejected(g, {"pay", "2", "100abc"});
+  test::expect_contains(g.out.str(), "Invalid amount.");
   std::println(
       std::cout,
       "    ✓ Negative, zero, and non-numeric amount rejection verified");

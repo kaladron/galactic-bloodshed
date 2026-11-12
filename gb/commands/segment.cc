@@ -9,7 +9,6 @@ import gb.entities;
 import gb.presentation.empire_views;
 import gb.services;
 import gb.turn;
-import scnlib;
 import std;
 
 module commands;
@@ -24,12 +23,12 @@ bool segment(const command_t& argv, GameObj& g) {
 
   int seg_num = 0;
   if (argv.size() == 2) {
-    auto res = scn::scan<int>(argv[1], "{}");
-    if (!res || !res->range().empty() || res->value() < 0) {
+    auto res = parse_int<int>(argv[1]);
+    if (!res || *res < 0) {
       g.out << "Invalid segment number.\n";
       return false;
     }
-    seg_num = res->value();
+    seg_num = *res;
   }
 
   g.session_registry.flush_all();

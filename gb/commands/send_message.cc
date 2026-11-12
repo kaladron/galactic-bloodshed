@@ -8,7 +8,6 @@ module;
 import gb.entities;
 import gb.presentation.empire_views;
 import gb.services;
-import scnlib;
 import std;
 
 module commands;
@@ -67,14 +66,14 @@ parse_player_message_route(const command_t& argv, const Race& alien,
     g.out << "Syntax: send <race> [<governor>] <message>\n";
     return std::nullopt;
   }
-  auto parsed_gov = scn::scan<int>(argv[2], "{}");
-  if (!parsed_gov || parsed_gov->value() < 1 ||
-      !alien.has_governor(governor_t{parsed_gov->value()})) {
+  auto parsed_gov = parse_int<governor_t::value_type>(argv[2]);
+  if (!parsed_gov || *parsed_gov < 1 ||
+      !alien.has_governor(governor_t{*parsed_gov})) {
     g.out << "No such governor.\n";
     return std::nullopt;
   }
   return PlayerMessageRoute{
-      .target_gov = governor_t{parsed_gov->value()},
+      .target_gov = governor_t{*parsed_gov},
       .body_start = 3,
   };
 }

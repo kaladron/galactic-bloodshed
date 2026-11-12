@@ -9,7 +9,6 @@ import gb.entities;
 import gb.mechanics;
 import gb.presentation.ship_ops;
 import gb.services;
-import scnlib;
 import std;
 
 namespace GB::commands {
@@ -21,12 +20,12 @@ bool jettison(const command_t& argv, GameObj& g) {
 
   int requested_amount = 0;
   if (argv.size() > 3) {
-    auto parsed = scn::scan<int>(argv[3], "{}");
+    auto parsed = parse_int<int>(argv[3]);
     if (!parsed) {
       g.out << "Invalid amount.\n";
       return false;
     }
-    requested_amount = parsed->value();
+    requested_amount = *parsed;
   }
 
   const char commod = first_char(argv[2]);

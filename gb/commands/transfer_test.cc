@@ -192,10 +192,12 @@ int main() {
     ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "x", "10000"});
     ctx.assert_dispatch_rejected(g, {"transfer", "NoSuchRace", "r", "10"});
     ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "", "10"});
+    ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "rockets", "10"});
     ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "z", "10"});
     ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "r", "-10"});
     ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "r", "0"});
     ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "r", "abc"});
+    ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "r", "10abc"});
 
     // Should not have changed (command fails with error message)
     ctx.em.clear_cache();

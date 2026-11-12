@@ -8,7 +8,6 @@ module;
 import gb.entities;
 import gb.presentation;
 import gb.services;
-import scnlib;
 import std;
 
 module commands;
@@ -31,19 +30,18 @@ bool transfer(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  auto scan_result = scn::scan<char>(argv[2], "{}");
-  if (!scan_result) {
+  if (argv[2].size() != 1) {
     g.out << "Invalid commodity type.\n";
     return false;
   }
-  commod = scan_result->value();
+  commod = argv[2][0];
 
-  auto parsed_give = scn::scan<resource_t>(argv[3], "{}");
-  if (!parsed_give || parsed_give->value() <= 0) {
+  auto parsed_give = parse_int<resource_t>(argv[3]);
+  if (!parsed_give || *parsed_give <= 0) {
     g.out << "You must give a positive amount.\n";
     return false;
   }
-  resource_t give = parsed_give->value();
+  resource_t give = *parsed_give;
 
   bool ok = false;
   CommodType type = CommodType::RESOURCE;

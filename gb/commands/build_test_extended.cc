@@ -406,11 +406,14 @@ void test_planet_and_factory_mcdc_branches() {
   auto& registry = get_test_session_registry();
   GameObj g(fixture.em, registry);
 
-  // 1. Non-numeric build count handled safely via scn::scan
+  // 1. Non-numeric and trailing-garbage build counts handled safely via
+  // parse_int
   fixture.init_game_obj(g);
-  g.out.str("");
-  test::expect_false(GB::commands::build({"build", ":", "5,5", "abc"}, g));
-  test::expect_contains(g.out.str(), "Give a positive number of builds.\n");
+  for (const auto& bad : {"abc", "2abc"}) {
+    g.out.str("");
+    test::expect_false(GB::commands::build({"build", ":", "5,5", bad}, g));
+    test::expect_contains(g.out.str(), "Give a positive number of builds.\n");
+  }
 
   // 2. Planet build on wasted sector rejected for mortal, allowed for God
   fixture.em.mutate_sectormap(

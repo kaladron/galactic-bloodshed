@@ -69,6 +69,8 @@ void test_victory_dispatch() {
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"victory", "abc"});
   test::expect_contains(g.out.str(), "Invalid count specified");
+  ctx.assert_dispatch_rejected(g, {"victory", "1abc"});
+  test::expect_contains(g.out.str(), "Invalid count specified");
   std::println(std::cout, "    ✓ victory rejected non-numeric count");
 
   // 4. God mode includes passwords

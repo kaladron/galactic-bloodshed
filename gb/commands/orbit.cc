@@ -10,7 +10,6 @@ import gb.entities;
 import gb.mechanics;
 import gb.presentation.planet_views;
 import gb.services;
-import scnlib;
 
 module commands;
 
@@ -51,12 +50,12 @@ bool parse_flag_group(std::string_view flags, OrbitOptions& opts, GameObj& g) {
         opts.show_planet_names = false;
         break;
       default: {
-        auto scan_res = scn::scan<int>(flags, "{}");
+        auto scan_res = parse_int<int>(flags);
         if (!scan_res) {
           g.out << std::format("Bad number {}.\n", flags);
           return false;
         }
-        opts.suppress_id = scan_res->value();
+        opts.suppress_id = *scan_res;
         return true;
       }
     }

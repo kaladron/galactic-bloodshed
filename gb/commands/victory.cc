@@ -8,19 +8,18 @@ module commands;
 import gb.entities;
 import gb.presentation;
 import gb.services;
-import scnlib;
 import std;
 
 namespace GB::commands {
 bool victory(const command_t& argv, GameObj& g) {
   std::optional<int> requested_count;
   if (argv.size() > 1) {
-    auto scan_res = scn::scan<int>(argv[1], "{}");
-    if (!scan_res || scan_res->value() < 1) {
+    auto scan_res = parse_int<int>(argv[1]);
+    if (!scan_res || *scan_res < 1) {
       g.out << "Invalid count specified.\n";
       return false;
     }
-    requested_count = scan_res->value();
+    requested_count = *scan_res;
   }
 
   auto viclist = create_victory_list(g.entity_manager);

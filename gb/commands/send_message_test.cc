@@ -196,6 +196,10 @@ void test_send_validation_errors() {
   test::expect_contains(g.out.str(), "No such governor.");
 
   g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"send", "2", "1abc", "Hello"});
+  test::expect_contains(g.out.str(), "No such governor.");
+
+  g.out.str("");
   ctx.assert_dispatch_rejected(g, {"send", "2", "99", "Hello"});
   test::expect_contains(g.out.str(), "No such governor.");
 

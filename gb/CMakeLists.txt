@@ -248,7 +248,7 @@ target_sources(
           turn/vn.cc)
 target_link_libraries(
   gb_turn
-  PUBLIC gb_entities gb_services gb_mechanics gb_presentation strong_id_module dallib types_module scnlib_module)
+  PUBLIC gb_entities gb_services gb_mechanics gb_presentation strong_id_module dallib types_module)
 
 add_library(gb_creator)
 target_sources(
@@ -631,7 +631,7 @@ gb_add_test(unload_test SOURCES commands/unload_test.cc)
 gb_add_test(unpledge_test SOURCES commands/unpledge_test.cc)
 gb_add_test(update_test SOURCES commands/update_test.cc)
 gb_add_test(upgrade_test SOURCES commands/upgrade_test.cc)
-gb_add_test(victory_test SOURCES commands/victory_test.cc EXTRA_LIBS scnlib_module)
+gb_add_test(victory_test SOURCES commands/victory_test.cc)
 gb_add_test(vn_test SOURCES turn/vn_test.cc)
 gb_add_test(vote_test SOURCES commands/vote_test.cc EXTRA_LIBS session notification)
 gb_add_test(walk_test SOURCES commands/walk_test.cc)

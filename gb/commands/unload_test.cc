@@ -125,11 +125,13 @@ void test_unload_syntax_and_errors() {
       g, {"unload", std::format("#{}", ship_id.value), ""});
   test::expect_contains(g.out.str(), "Unload what?");
 
-  // 3. Invalid non-numeric amount
-  g.out.str("");
-  ctx.assert_dispatch_rejected(
-      g, {"unload", std::format("#{}", ship_id.value), "r", "notanumber"});
-  test::expect_contains(g.out.str(), "Invalid amount");
+  // 3. Invalid non-numeric, trailing-garbage, and INT64_MIN amounts
+  for (const auto& bad_amt : {"notanumber", "50abc", "-9223372036854775808"}) {
+    g.out.str("");
+    ctx.assert_dispatch_rejected(
+        g, {"unload", std::format("#{}", ship_id.value), "r", bad_amt});
+    test::expect_contains(g.out.str(), "Invalid amount");
+  }
 
   // 4. Unknown commodity
   g.out.str("");

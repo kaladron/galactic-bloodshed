@@ -62,6 +62,23 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
     return false;
   }
 
+  // 3b. Active LEVEL_SHIP Liveness & Parent-Scope Refresh
+  if (g.level() == ScopeLevel::LEVEL_SHIP && desc.name != "cs") {
+    const shipnum_t prev_shipno = g.shipno();
+    if (!g.reconcile_scope()) {
+      const Place reset_place{g.level(), g.snum(), g.pnum(), g.shipno()};
+      const std::string dest = reset_place.to_string(g.entity_manager);
+      const std::string msg =
+          (prev_shipno > 0)
+              ? std::format("Ship #{} no longer exists; scope reset to {}.\n",
+                            prev_shipno, dest)
+              : std::format("No ship is currently scoped; scope reset to {}.\n",
+                            dest);
+      g.present(GB::presentation::make_output_message(msg));
+      return false;
+    }
+  }
+
   // 4. Fixed-Cost AP Pre-check
   if (desc.ap.model == APModel::FixedStar) {
     try {
@@ -164,6 +181,10 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
       g.session_registry.rollback_outbox();
       txn->rollback();
     }
+  }
+
+  if (g.level() == ScopeLevel::LEVEL_SHIP && (success || desc.name == "cs")) {
+    (void)g.reconcile_scope();
   }
 
   if (track_json_deltas) {

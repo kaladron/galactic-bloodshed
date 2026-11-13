@@ -190,8 +190,12 @@ void test_map_dispatch() {
   std::println(std::cout, "    ✓ Map at universe level fell back to orbit");
 
   // 4. Bad scope: Map at ship level
+  const auto probe_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
+                            .owned_by(1, 1)
+                            .in_planet_orbit(1, 1)
+                            .build();
   g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(1);
+  g.set_shipno(probe_id);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"map"});
   test::expect_contains(g.out.str(), "Bad scope");

@@ -279,6 +279,38 @@ void test_process_command_fail_fast_logging_and_rollback() {
                             "scope=SHIP(snum=4,pnum=2,shipno=7)");
     }
   }
+
+  // 4. Scrapping the currently scoped ship reconciles scope before do_prompt
+  {
+    TestContext ctx;
+    ctx.with_standard_universe().with_populated_planet(1, 1, 2, 500,
+                                                       Coordinates{2, 2});
+    ctx.em.mutate_star(1, [](Star& star) { star.AP(2) = 20; });
+    const shipnum_t fac_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
+                                 .owned_by(2, 1)
+                                 .landed_on(1, 1, Coordinates{2, 2})
+                                 .with_crew(5, 0)
+                                 .build();
+    asio::io_context io;
+    Server server(io, 0, ctx.em);
+    GameObj g(ctx.em, server);
+    ctx.setup_game_obj(g, 2, 1);
+    g.set_level(ScopeLevel::LEVEL_PLAN);
+    g.set_snum(1);
+    g.set_pnum(1);
+
+    server.process_command(g, {"cs", std::format("#{}", fac_id)});
+    test::expect_eq(g.level(), ScopeLevel::LEVEL_SHIP);
+    g.out.clear();
+    server.process_command(g, {"scrap", std::format("#{}", fac_id)});
+    test::expect_false(server.has_fatal_error());
+    test::expect_eq(g.level(), ScopeLevel::LEVEL_PLAN);
+    test::expect_contains(g.out.str(), "/Sol/Earth");
+    g.out.clear();
+    server.process_command(g, {"ship", std::format("{}", fac_id)});
+    test::expect_false(server.has_fatal_error());
+    test::expect_contains(g.out.str(), "no such ship");
+  }
 }
 
 }  // namespace

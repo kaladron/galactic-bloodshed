@@ -175,6 +175,7 @@ void test_launch_from_carrier_all_scopes() {
                               .landed_on(1, 1, {5, 5})
                               .with_max_hanger(100)
                               .build();
+  g.set_shipno(carrier_id);
 
   // 1. Online factory berthed in carrier cannot be launched
   const auto fac_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
@@ -337,6 +338,7 @@ void test_launch_mcdc_undock_observers_and_json() {
                               .landed_on(1, 1, {5, 5})
                               .with_max_hanger(100)
                               .build();
+  g.set_shipno(carrier_id);
   const auto off_fac_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
                               .owned_by(1, 1)
                               .with_on(false)

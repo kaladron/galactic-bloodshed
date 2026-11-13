@@ -340,6 +340,7 @@ void test_fix_command_dispatch() {
                             .with_build_cost(100)
                             .with_special(WasteData{.toxic = 40})
                             .build();
+  g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_shipno(ship2_id);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"fix", "ship", "dead"});

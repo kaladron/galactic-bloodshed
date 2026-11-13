@@ -536,18 +536,8 @@ bool collect_scoped_tactical_items(
       star_get_tactical_items(g, items, g.player(), g.snum());
       return true;
     case ScopeLevel::LEVEL_SHIP: {
-      if (g.shipno() == 0) {
-        g.out << "Error: No ship is currently scoped. Use 'cs #<shipno>' to "
-                 "scope to a ship.\n";
-        return false;
-      }
-      const auto* scoped_ship = try_peek_ship(g.entity_manager, g.shipno());
-      if (!scoped_ship) {
-        g.out << std::format("Error: Unable to retrieve ship #{} data.\n",
-                             g.shipno());
-        return false;
-      }
-      collect_ship_area_items(g, items, *scoped_ship);
+      const auto& scoped_ship = *g.entity_manager.peek_ship(g.shipno());
+      collect_ship_area_items(g, items, scoped_ship);
       return true;
     }
   }

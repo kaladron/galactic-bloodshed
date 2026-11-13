@@ -77,3 +77,72 @@ bool GameObj::check_commandable(const Ship& ship) {
 
   return true;
 }
+
+bool GameObj::reconcile_scope() {
+  if (level_ != ScopeLevel::LEVEL_SHIP) {
+    carrier_ancestors_.clear();
+    return true;
+  }
+  if (shipno_ > 0) {
+    try {
+      const auto* ship = entity_manager.peek_ship(shipno_);
+      carrier_ancestors_ = entity_manager.ancestor_carriers(shipno_);
+      const Ship* root =
+          carrier_ancestors_.empty()
+              ? ship
+              : entity_manager.peek_ship(carrier_ancestors_.back());
+      switch (root->whatorbits()) {
+        case ScopeLevel::LEVEL_PLAN:
+          snum_ = root->storbits();
+          pnum_ = root->pnumorbits();
+          break;
+        case ScopeLevel::LEVEL_STAR:
+          snum_ = root->storbits();
+          pnum_ = 0;
+          break;
+        case ScopeLevel::LEVEL_UNIV:
+        case ScopeLevel::LEVEL_SHIP:
+          snum_ = 0;
+          pnum_ = 0;
+          break;
+      }
+      return true;
+    } catch (const EntityNotFoundError&) {
+    }
+  }
+
+  const auto saved_ancestors = std::move(carrier_ancestors_);
+  carrier_ancestors_.clear();
+  for (const shipnum_t anc_id : saved_ancestors) {
+    try {
+      (void)entity_manager.peek_ship(anc_id);
+      shipno_ = anc_id;
+      (void)reconcile_scope();
+      return false;
+    } catch (const EntityNotFoundError&) {
+    }
+  }
+
+  shipno_ = 0;
+  if (snum_ > 0) {
+    try {
+      const auto* star = entity_manager.peek_star(snum_);
+      if (pnum_ > 0 && pnum_ <= star->numplanets()) {
+        try {
+          (void)entity_manager.peek_planet(snum_, pnum_);
+          level_ = ScopeLevel::LEVEL_PLAN;
+          return false;
+        } catch (const EntityNotFoundError&) {
+        }
+      }
+      level_ = ScopeLevel::LEVEL_STAR;
+      pnum_ = 0;
+      return false;
+    } catch (const EntityNotFoundError&) {
+    }
+  }
+  level_ = ScopeLevel::LEVEL_UNIV;
+  snum_ = 0;
+  pnum_ = 0;
+  return false;
+}

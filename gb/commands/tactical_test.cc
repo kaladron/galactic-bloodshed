@@ -259,9 +259,10 @@ void test_tactical_explicit_ship_and_filters() {
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"tactical"});
   test::expect_contains(g.out.str(), "No ship is currently scoped");
+  g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_shipno(ships.factory);
   ctx.assert_dispatch_rejected(g, {"tactical"});
-  test::expect_contains(g.out.str(), "Unable to retrieve ship");
+  test::expect_contains(g.out.str(), "no longer exists; scope reset");
 
   // JSON mode output
   g.set_ui_mode(UiMode::JSON);

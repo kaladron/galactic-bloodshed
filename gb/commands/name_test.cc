@@ -417,11 +417,13 @@ void test_name_permissions_scope_and_json() {
     g.set_shipno(9999);
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "ship", "Ghost"});
-    test::expect_contains(g.out.str(), "You don't own ship #9999.");
+    test::expect_contains(g.out.str(),
+                          "Ship #9999 no longer exists; scope reset");
     test::expect_eq(ctx.db.total_changes(), before_rejects);
 
     // Deity can rename a foreign ship
     g.set_god(true);
+    g.set_level(ScopeLevel::LEVEL_SHIP);
     g.set_shipno(enemy_fac);
     g.out.str("");
     ctx.assert_dispatch_success(g, {"name", "ship", "DeityNamed"});

@@ -183,6 +183,7 @@ bool cs(const command_t& argv, GameObj& g) {
     g.set_snum(where->snum);
     g.set_pnum(where->pnum);
     g.set_shipno(where->shipno);
+    (void)g.reconcile_scope();
     return true;
   }
 

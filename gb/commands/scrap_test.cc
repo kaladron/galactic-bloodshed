@@ -5,6 +5,7 @@
 
 import commands;
 import gb.entities;
+import gb.presentation.session;
 import gb.presentation.ship_ops;
 import gb.services;
 import test;
@@ -406,6 +407,155 @@ void test_scrap_toxic_waste_warning() {
   ctx.verify_universe_invariants();
 }
 
+void test_scrap_query_and_scope_reconciliation() {
+  TestContext ctx;
+  ctx.with_standard_universe().with_populated_planet(1, 1, 1, 1000,
+                                                     Coordinates{5, 5});
+  ctx.em.mutate_race(1, [](Race& r) { r.tech = 200.0; });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) {
+    p.info(1).resource = 5000;
+    p.info(1).fuel = 500;
+  });
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 1);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(1);
+
+  // Starting #1 Shuttle, then build #2 Factory, #3 Terraformer, #4 Waste
+  // Canister, and #5 Cruiser
+  const auto shuttle_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                              .owned_by(1, 1)
+                              .landed_on(1, 1, {5, 5})
+                              .with_crew(10, 0)
+                              .with_fuel(50.0)
+                              .build();
+  test::expect_eq(shuttle_id, shipnum_t{1});
+  ctx.assert_dispatch_success(g, {"build", "F", "5,5"});
+  ctx.assert_dispatch_success(g, {"build", "T", "5,5"});
+  ctx.assert_dispatch_success(g, {"build", "w", "5,5"});
+  const auto carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
+                              .owned_by(1, 1)
+                              .in_star_orbit(1, {50.0, 0.0})
+                              .with_crew(50, 0)
+                              .with_fuel(100.0)
+                              .with_max_hanger(50)
+                              .with_speed(4)
+                              .build();
+  test::expect_eq(carrier_id, shipnum_t{5});
+  ctx.em.mutate_ship(2, [](Ship& s) { s.popn() = 5; });
+  ctx.em.mutate_ship(3, [](Ship& s) { s.popn() = 5; });
+
+  // Issue #58 workflow: scrap #3 (Terraformer), then query 'ship 3' & 'ship #3'
+  ctx.assert_dispatch_success(g, {"scrap", "#3"});
+  for (const auto* arg : {"3", "#3"}) {
+    g.out.str("");
+    ctx.assert_dispatch_rejected(g, {"ship", arg});
+    test::expect_contains(g.out.str(), "no such ship");
+  }
+  // Scrap #2 (Factory) while scoped directly to #2 (cs #2 -> scrap #2)
+  ctx.assert_dispatch_success(g, {"cs", "#2"});
+  test::expect_eq(g.level(), ScopeLevel::LEVEL_SHIP);
+  test::expect_eq(g.shipno(), shipnum_t{2});
+  ctx.assert_dispatch_success(g, {"scrap", "#2"});
+  test::expect_eq(g.level(), ScopeLevel::LEVEL_PLAN);
+  test::expect_eq(g.shipno(), shipnum_t{0});
+  test::expect_contains(GB::presentation::do_prompt(g), "/Sol/Earth");
+
+  for (const auto* arg : {"2", "#2"}) {
+    g.out.str("");
+    ctx.assert_dispatch_rejected(g, {"ship", arg});
+    test::expect_contains(g.out.str(), "no such ship");
+  }
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"ship"});
+  test::expect_contains(g.out.str(), "Shuttle");
+  test::expect_contains(g.out.str(), "Tox Waste Canistr");
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"ship", "1"});
+  test::expect_contains(g.out.str(), "Shuttle");
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"ship", "#1"});
+  test::expect_contains(g.out.str(), "Shuttle");
+
+  // Nested carrier -> star-orbit -> deep-space scope reconciliation, plus
+  // parent refresh when a scoped ship moves to another star before dying
+  const auto child_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+                            .owned_by(1, 1)
+                            .docked_to(carrier_id, 1)
+                            .with_crew(2, 0)
+                            .build();
+  ctx.assert_dispatch_success(g, {"cs", std::format("#{}", child_id)});
+  ctx.assert_dispatch_success(g, {"scrap", std::format("#{}", child_id)});
+  test::expect_eq(g.level(), ScopeLevel::LEVEL_SHIP);
+  test::expect_eq(g.shipno(), carrier_id);
+  test::expect_contains(GB::presentation::do_prompt(g), "/Sol/#5");
+
+  ctx.assert_dispatch_success(g, {"scrap", "#5"});
+  test::expect_eq(g.level(), ScopeLevel::LEVEL_STAR);
+  test::expect_contains(GB::presentation::do_prompt(g), "/Sol");
+
+  const auto roam_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+                           .owned_by(1, 1)
+                           .landed_on(1, 1, {5, 5})
+                           .with_crew(2, 0)
+                           .build();
+  ctx.assert_dispatch_success(g, {"cs", std::format("#{}", roam_id)});
+  ctx.em.mutate_ship(roam_id, [](Ship& s) { s.enter_star_orbit(2); });
+  test::expect_true(g.reconcile_scope());
+  ctx.em.mutate_ship(roam_id, [&](Ship& s) { ctx.em.destroy_ship(s); });
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"report"});
+  test::expect_contains(g.out.str(), "scope reset to /Vega");
+  test::expect_eq(g.level(), ScopeLevel::LEVEL_STAR);
+  test::expect_eq(g.snum(), starnum_t{2});
+
+  const auto deep_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+                           .owned_by(1, 1)
+                           .in_deep_space()
+                           .with_crew(2, 0)
+                           .build();
+  ctx.em.mutate_universe([](Universe& u) { u.set_AP(1, 5); });
+  ctx.assert_dispatch_success(g, {"cs", std::format("#{}", deep_id)});
+  ctx.assert_dispatch_success(g, {"scrap", std::format("#{}", deep_id)});
+  test::expect_eq(g.level(), ScopeLevel::LEVEL_UNIV);
+
+  // Stale LEVEL_SHIP pre-dispatch guard & ':' Place::resolve safety
+  g.set_level(ScopeLevel::LEVEL_SHIP);
+  g.set_snum(1);
+  g.set_pnum(1);
+  g.set_shipno(3);
+  const auto colon_res = Place::resolve(ctx.em, g.scope_context(), ":");
+  test::expect_false(colon_res.has_value());
+  test::expect_eq(colon_res.error().kind, PlaceErrorKind::ShipNotFound);
+
+  for (const command_t& cmd :
+       {command_t{"fuel", "#1", ":"}, command_t{"build", ":", "1"},
+        command_t{"make", "f"}, command_t{"modify", "armor", "5"},
+        command_t{"upgrade", "speed", "4"}}) {
+    g.set_level(ScopeLevel::LEVEL_SHIP);
+    g.set_snum(1);
+    g.set_pnum(1);
+    g.set_shipno(3);
+    g.out.str("");
+    ctx.assert_dispatch_rejected(g, cmd);
+    test::expect_contains(
+        g.out.str(), "Ship #3 no longer exists; scope reset to /Sol/Earth");
+    test::expect_eq(g.level(), ScopeLevel::LEVEL_PLAN);
+  }
+  g.set_god(true);
+  g.set_level(ScopeLevel::LEVEL_SHIP);
+  g.set_shipno(3);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"fix", "ship", "fuel", "10"});
+  test::expect_contains(g.out.str(),
+                        "Ship #3 no longer exists; scope reset to /Sol/Earth");
+
+  ctx.verify_universe_invariants();
+}
+
 }  // namespace
 
 int main() {
@@ -415,6 +565,7 @@ int main() {
   test_scrap_toxic_waste_warning();
   test_scrap_insufficient_ap();
   test_scrap_domain_errors();
+  test_scrap_query_and_scope_reconciliation();
 
   std::println(std::cout, "✓ scrap_test passed!");
   return 0;

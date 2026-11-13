@@ -543,7 +543,12 @@ int main() {
     ctx.assert_dispatch_rejected(g, {"analysis", "q"});
     test::expect_contains(g.out.str(), "Unrecognized argument: q");
 
+    const auto ship_scope_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
+                                   .owned_by(1, 1)
+                                   .in_planet_orbit(1, 1)
+                                   .build();
     g.set_level(ScopeLevel::LEVEL_SHIP);
+    g.set_shipno(ship_scope_id);
     ctx.assert_dispatch_rejected(g, {"analysis"});
     test::expect_contains(g.out.str(), "You can only analyze planets");
 

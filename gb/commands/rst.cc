@@ -334,23 +334,11 @@ bool run_rst(const command_t& argv, GameObj& g, const RstReportFlags& flags) {
       break;
 
     case ScopeLevel::LEVEL_SHIP: {
-      if (g.shipno() == 0) {
-        g.out << "Error: No ship is currently scoped. Use 'cs #<shipno>' to "
-                 "scope to a ship.\n";
-        return false;
-      }
-
-      const auto* scoped_ship = try_peek_ship(g.entity_manager, g.shipno());
-      if (!scoped_ship) {
-        g.out << std::format("Error: Unable to retrieve ship #{} data.\n",
-                             g.shipno());
-        return false;
-      }
-
-      collect_ship_report(g, vm, *scoped_ship, report_types);
+      const auto& scoped_ship = *g.entity_manager.peek_ship(g.shipno());
+      collect_ship_report(g, vm, scoped_ship, report_types);
 
       for (const Ship& ship : ShipList::readonly_in_carrier(
-               g.entity_manager, scoped_ship->number())) {
+               g.entity_manager, scoped_ship.number())) {
         collect_ship_report(g, vm, ship, report_types);
       }
       break;

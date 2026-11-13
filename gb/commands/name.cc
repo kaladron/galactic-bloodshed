@@ -15,13 +15,7 @@ module commands;
 namespace {
 
 const Ship* resolve_owned_scoped_ship(GameObj& g) {
-  const Ship* ship = nullptr;
-  try {
-    ship = g.entity_manager.peek_ship(g.shipno());
-  } catch (const EntityNotFoundError&) {
-    g.out << std::format("You don't own ship #{}.\n", g.shipno());
-    return nullptr;
-  }
+  const Ship* ship = g.entity_manager.peek_ship(g.shipno());
   if (!g.god() &&
       (ship->owner() != g.player() || !ship->is_authorized_for(g.governor()))) {
     g.out << std::format("You don't own ship #{}.\n", ship->number());

@@ -199,9 +199,13 @@ public:
   }
   void set_shipno(shipnum_t s) {
     shipno_ = s;
+    carrier_ancestors_.clear();
   }
   void set_level(ScopeLevel l) {
     level_ = l;
+    if (l != ScopeLevel::LEVEL_SHIP) {
+      carrier_ancestors_.clear();
+    }
   }
   void set_ui_mode(UiMode mode) noexcept {
     ui_mode_ = mode;
@@ -252,6 +256,13 @@ public:
   /// Emits the diagnostic message for a CommandableError on `ship` to `out`.
   void report_commandable_error(const Ship& ship, CommandableError error);
 
+  /// Verifies that a `ScopeLevel::LEVEL_SHIP` scope still points to a live
+  /// ship, refreshing cached carrier/celestial parent coordinates when alive or
+  /// stepping up to the innermost surviving carrier / celestial scope when the
+  /// ship no longer exists. Returns `false` if the scoped ship was missing and
+  /// the scope was stepped up.
+  bool reconcile_scope();
+
   /// Renders a view model or command result to `out` via the active
   /// polymorphic Presenter.
   template <typename ViewModel>
@@ -274,4 +285,5 @@ private:
   bool color_ = false;
   UniverseCoordinates universe_center_{0.0, 0.0};
   SystemCoordinates system_center_{0.0, 0.0};
+  std::vector<shipnum_t> carrier_ancestors_{};
 };

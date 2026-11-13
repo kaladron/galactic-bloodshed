@@ -168,9 +168,12 @@ void test_distance_dispatch() {
 
   g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_shipno(999);
+  const auto dot_res = Place::resolve(ctx.em, g.scope_context(), ".");
+  test::expect_false(dot_res.has_value());
+  test::expect_eq(dot_res.error().kind, PlaceErrorKind::ShipNotFound);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"distance", ".", "/Sol"});
-  test::expect_contains(g.out.str(), "Ship not found.");
+  test::expect_contains(g.out.str(), "Ship #999 no longer exists; scope reset");
 
   // 16. UiMode::JSON output
   g.set_level(ScopeLevel::LEVEL_UNIV);

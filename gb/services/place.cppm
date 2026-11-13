@@ -306,6 +306,16 @@ std::expected<Place, PlaceError> Place::resolve(EntityManager& em,
   std::expected<void, PlaceError> step;
   switch (string.front()) {
     case ':':
+      if (place.level == ScopeLevel::LEVEL_SHIP) {
+        try {
+          (void)em.peek_ship(place.shipno);
+        } catch (const EntityNotFoundError&) {
+          step = std::unexpected(PlaceError{
+              .kind = PlaceErrorKind::ShipNotFound,
+              .target = {},
+          });
+        }
+      }
       break;
     case '/':
       place.level = ScopeLevel::LEVEL_UNIV;

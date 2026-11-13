@@ -65,9 +65,16 @@ void test_update_matrix() {
   g.set_god(true);
   ctx.assert_dispatch_rejected(g, {"@@update", "extra"});
   test::expect_contains(g.out.str(), "Syntax: @@update");
+  const auto probe_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
+                            .owned_by(1, 1)
+                            .in_deep_space()
+                            .build();
   for (auto scope : {ScopeLevel::LEVEL_UNIV, ScopeLevel::LEVEL_STAR,
                      ScopeLevel::LEVEL_PLAN, ScopeLevel::LEVEL_SHIP}) {
     g.set_level(scope);
+    if (scope == ScopeLevel::LEVEL_SHIP) {
+      g.set_shipno(probe_id);
+    }
     g.out.str("");
     test::expect_true(GB::commands::dispatch_command(
         g, GB::commands::update_cmd, {"@@update"}));

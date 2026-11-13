@@ -167,7 +167,7 @@ void test_rst_dispatch() {
   g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_shipno(2);
   ctx.assert_dispatch_rejected(g, {"report"});
-  test::expect_contains(g.out.str(), "Unable to retrieve ship");
+  test::expect_contains(g.out.str(), "Ship #2 no longer exists; scope reset");
   std::println(std::cout, "    ✓ pod temperature suffix displayed");
 }
 
@@ -280,6 +280,7 @@ void test_rst_filters_scopes_and_json() {
   test::expect_contains(g.out.str(), "No ship is currently scoped");
 
   g.out.str("");
+  g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_shipno(1);
   ctx.assert_dispatch_success(g, {"report"});
   test::expect_contains(g.out.str(), "Hermes");

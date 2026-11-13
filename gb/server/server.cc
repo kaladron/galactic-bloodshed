@@ -189,6 +189,12 @@ void Server::check_turn_events(std::time_t current_time) {
       }
     }
     if (pending_turn_ || (go_time_ > 0 && current_time >= go_time_)) {
+      for (auto& session : sessions_) {
+        if (!session->is_disconnected() && session->connected() &&
+            session->game_obj().level() == ScopeLevel::LEVEL_SHIP) {
+          (void)session->game_obj().reconcile_scope();
+        }
+      }
       phase = turn_phase_name(state);
       do_next_thing(entity_manager_, *this);
       go_time_ = 0;
@@ -387,6 +393,7 @@ void Server::process_command(GameObj& g, const command_t& argv,
 
     /* compute the prompt and send to the player */
     if (!g.disconnect_requested() && !g.shutdown_requested()) {
+      g.reconcile_scope();
       g.out << GB::presentation::do_prompt(g);
     }
     g.race = nullptr;

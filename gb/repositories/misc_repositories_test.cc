@@ -345,8 +345,61 @@ void test_ship_exam_repository() {
   test::expect_false(repo.find_by_type(ShipType::STYPE_POD).has_value());
   test::expect_true(repo.find_by_type(ShipType::STYPE_SHUTTLE).has_value());
 
-  // Test seed_from_file using pkg_data_path("exam.dat")
+  // Test seed_from_file using pkg_data_path("exam.dat"): verify all 47
+  // canonical ShipType headings, build-damage parity with ship_templates, and
+  // absence of non-canonical mod drift.
   {
+    static constexpr std::array<std::string_view, NUMSTYPES> expected_headings =
+        {
+            "Spore Pod",
+            "Shuttle",
+            "Carrier",
+            "Dreadnaught",
+            "Battleship",
+            "Interceptor",
+            "Cruiser",
+            "Destroyer",
+            "Fighter Group",
+            "Explorer",
+            "Space Habitat",
+            "Space Station",
+            "Orbital Assault Platform",
+            "Cargo Ship",
+            "Tanker",
+            "Godship",
+            "Space Mine",
+            "Space Mirror",
+            "Space Telescope",
+            "Ground Telescope",
+            "Tractor-Repulsor Beam",
+            "Atmosphere Processor",
+            "Dust Canister",
+            "Greenhouse Gases",
+            "Von Neumann Machine",
+            "Berserker",
+            "Governmental Center",
+            "Mind Control Laser",
+            "Toxic Waste Container",
+            "Space Probe",
+            "Gamma Ray Laser",
+            "Factory",
+            "Terraforming Device",
+            "Berserker Control Center",
+            "Berserker Autofac",
+            "Audio-Vibratory-Physio-Molecular Transport Device",
+            "Missile",
+            "Planetary Defense Network",
+            "Quarry",
+            "Space Plow",
+            "Dome",
+            "Weapons Plant",
+            "Space Port",
+            "Anti-Ballistic Missile Battery",
+            "AFV",
+            "Bunker",
+            "Lander",
+        };
+
     Database seed_db(":memory:");
     initialize_schema(seed_db);
     JsonStore seed_store(seed_db);
@@ -354,12 +407,34 @@ void test_ship_exam_repository() {
     test::expect_true(
         seed_repo.seed_from_file(pkg_data_path("exam.dat").string()));
     for (int i = 0; i < NUMSTYPES; ++i) {
-      auto exam = seed_repo.find_by_type(static_cast<ShipType>(i));
+      const auto stype = static_cast<ShipType>(i);
+      auto exam = seed_repo.find_by_type(stype);
       test::expect_true(exam.has_value());
       test::expect_false(exam->description.contains('\r'));
+
+      const auto newline_pos = exam->description.find('\n');
+      const std::string_view first_line =
+          (newline_pos == std::string::npos)
+              ? std::string_view(exam->description)
+              : std::string_view(exam->description).substr(0, newline_pos);
+      test::expect_eq(first_line,
+                      expected_headings[static_cast<std::size_t>(i)]);
+      test::expect_ne(newline_pos, std::string::npos);
+
+      const auto& tmpl = ship_template(stype);
+      if (tmpl.base_damage > 0) {
+        test::expect_contains(exam->description,
+                              std::format("{}% damage", tmpl.base_damage));
+      } else {
+        test::expect_false(exam->description.contains("% damage"));
+      }
+      for (std::string_view bogus :
+           {"Mine Sweeper", "Colonizer", "Light Carrier", "Dhuttle",
+            "Super Pod", "Traktori-vetosade", "48% damage", "72% damage",
+            "autoscrap", "limit command", "order i aim"}) {
+        test::expect_false(exam->description.contains(bogus));
+      }
     }
-    auto pod_exam = seed_repo.find_by_type(ShipType::STYPE_POD);
-    test::expect_contains(pod_exam->description, "Spore Pod");
   }
 
   // Test seed_from_file validation: missing file, wrong section counts, and

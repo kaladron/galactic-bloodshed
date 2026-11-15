@@ -199,6 +199,9 @@ ServerStateRepository::deserialize(const std::string& json_str) const {
   return std::nullopt;
 }
 
+// TODO(C++26): Replace runtime file loading and tbl_ship_exam seeding with
+// compile-time #embed (P1967R14) once Clang enables #embed in -std=c++26
+// without -Wc23-extensions and clang-scan-deps tracks embedded dependencies.
 bool ShipExamRepository::seed_from_file(const std::string& path) {
   std::ifstream file(path, std::ios::binary);
   if (!file.is_open()) {

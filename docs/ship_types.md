@@ -32,7 +32,7 @@ mindmap
       Battleship [B]
       Dreadnaught [D]
       Carrier [X]
-      Space Mine [!]
+      Space Mine [+]
       Missile [^]
     Logistics & Transport
       Cargo Ship [c]
@@ -43,7 +43,7 @@ mindmap
       Station [S]
       Orbital Assault Platform [O]
       Space Port [J]
-      Space Mirror [+]
+      Space Mirror [M]
       Mind Control Laser [l]
       AVPM Transporter [[]
     Planetary Facilities & Defense
@@ -107,7 +107,7 @@ The primary combat arm of the navy, ranging from swarm strike craft to super-cap
 | **Battleship** | `B` | 200 | 20 | 7 | 6 | 200 | 235 | 400 | 30 | 30 | H / M | Yes | Hyper, Crystal, CEW, Mod, Maint |
 | **Dreadnaught** | `D` | 300 | 40 | 10 | 6 | 500 | 500 | 500 | 60 | 60 | H / M | Yes | Hyper, Crystal, CEW, Mod, Maint |
 | **Carrier** | `X` | 250 | 30 | 5 | 4 | 1000 | 600 | 800 | 30 | 30 | H / M | Yes | 200 Hangar, Hyper, Crystal, Repair, Maint |
-| **Space Mine** | `!` | 50 | 30 | 1 | 2 | 20 | 0 | 25 | 0 | 0 | — | No | Switch, Proximity Detonation, No Maint |
+| **Space Mine** | `+` | 50 | 30 | 1 | 2 | 20 | 0 | 25 | 0 | 0 | — | No | Switch, Proximity Detonation, No Maint |
 | **Missile** | `^` | 50 | 5 | 0 | 6 | 5 | 0 | 10 | 0 | 0 | — | No | Switch, Guided Kinetic Ordnance, No Maint |
 
 ### Tactical Notes
@@ -115,7 +115,7 @@ The primary combat arm of the navy, ranging from swarm strike craft to super-cap
 - **Fighter Group (`f`)**: Fast, carrier-borne strike craft with high sub-light velocity ($9$) and heavy concentrated firepower relative to hull displacement.
 - **Carrier (`X`)**: Mobile naval base boasting a $200$-capacity parasite craft hangar. Carries extensive fuel/ammo reserves and provides fleet repair capabilities.
 - **Battleship (`B`) & Dreadnaught (`D`)**: Heavy armored battle line vessels designed for fleet-to-fleet slugfests and planetary siege operations.
-- **Space Mine (`!`)**: Deployable perimeter area-denial munition that triggers on unallied ships entering proximity.
+- **Space Mine (`+`)**: Deployable perimeter area-denial munition that triggers on unallied ships entering proximity.
 
 ---
 
@@ -146,14 +146,14 @@ Large orbital structures acting as regional command centers, industrial shipyard
 | **Station** | `S` | 100 | 10 | 1 | 4 | 2000 | 5000 | 250 | 50 | 20 (M) | Starport, Repair, Defense Depot |
 | **Ob Asst Pltfrm** | `O` | 200 | 40 | 5 | 4 | 2000 | 1400 | 1000 | 200 | 50 (H/M) | Hyper, Crystal, CEW, Laser Mount, Repair |
 | **Space Port** | `J` | 0 | 50 | 3 | 0 | 0 | 0 | 0 | 100 | 0 | Starport, Trade & Commerce Hub, Maint |
-| **Space Mirror** | `+` | 100 | 100 | 0 | 2 | 20 | 200 | 10 | 5 | 1 (L) | Focused Solar Beam / Terraforming |
+| **Space Mirror** | `M` | 100 | 100 | 0 | 2 | 20 | 200 | 10 | 5 | 1 (L) | Focused Solar Beam / Terraforming |
 | **Mind Control Lsr** | `l` | 350 | 50 | 1 | 4 | 100 | 25 | 0 | 2 | 0 | Switch, Planetary Enslavement Laser |
 | **AVPM Transporter** | `[` | 200 | 300 | 0 | 0 | 1000 | 1000 | 1000 | 100 | 0 | Switch, Anti-Matter Mass Transporter |
 
 ### Tactical Notes
 - **Habitat (`H`)**: Massive space colony housing up to $2000$ colonists in orbit. Acts as an operational starport and internal shipyard capable of manufacturing factories, pods, and light craft. Automatically scoops $+200.0\text{ fuel}$ per update when orbiting gas giants.
 - **Space Port (`J`)**: Essential planetary infrastructure for market bidding, merchant shipping, commodity trading, and off-world exports.
-- **Space Mirror (`+`)**: Orbiting solar reflector array operating within its current star system. When aimed at a planet with configured intensity $\in [0, 100]$, it redirects stellar energy to raise atmospheric temperature ($`\Delta T = \operatorname{round}\!\left((1 - 0.01 \times \text{Damage}) \times I_{\text{effective}}\right)`$). It can also be aimed at hostile vessels in the same system as a thermal weapon or aimed at its host star to increase stellar instability toward nova collapse.
+- **Space Mirror (`M`)**: Orbiting solar reflector array operating within its current star system. When aimed at a planet with configured intensity $\in [0, 100]$, it redirects stellar energy to raise atmospheric temperature ($`\Delta T = \operatorname{round}\!\left((1 - 0.01 \times \text{Damage}) \times I_{\text{effective}}\right)`$). It can also be aimed at hostile vessels in the same system as a thermal weapon or aimed at its host star to increase stellar instability toward nova collapse.
 - **Orbital Assault Platform (`O`)**: Formidable heavy fortress armed with $50$ heavy guns and concentrated energy weapons. In planetary orbit, it projects a continuous intimidation aura over the colony below, blockading merchant trade and demoralizing defending populations.
 
 ---

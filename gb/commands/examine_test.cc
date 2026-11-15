@@ -6,6 +6,7 @@
 import commands;
 import dallib;
 import gb.entities;
+import gb.repositories;
 import gb.services;
 import test;
 import std;
@@ -107,10 +108,51 @@ void test_examine_dispatch() {
   ctx.verify_universe_invariants();
 }
 
+void test_examine_seeded_catalog_alignment() {
+  TestContext ctx;
+  ctx.with_standard_universe();
+
+  JsonStore store(ctx.db);
+  ShipExamRepository exams(store);
+  test::expect_true(exams.seed_from_file(pkg_data_path("exam.dat").string()));
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 1);
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(1);
+
+  const std::array<std::pair<ShipType, std::string_view>, 8> samples = {{
+      {ShipType::STYPE_GOD, "Godship"},
+      {ShipType::STYPE_MINE, "Space Mine"},
+      {ShipType::OTYPE_TRACT, "Tractor-Repulsor Beam"},
+      {ShipType::OTYPE_VN, "Von Neumann Machine"},
+      {ShipType::OTYPE_OMCL, "Mind Control Laser"},
+      {ShipType::OTYPE_FACTORY, "Factory"},
+      {ShipType::OTYPE_PORT, "Space Port"},
+      {ShipType::STYPE_LANDER, "Lander"},
+  }};
+
+  for (const auto& [stype, expected_heading] : samples) {
+    const shipnum_t shipno = TestShipBuilder(ctx.em, stype)
+                                 .owned_by(1)
+                                 .in_star_orbit(starnum_t{1})
+                                 .build();
+    g.out.str("");
+    ctx.assert_dispatch_success(g,
+                                {"examine", std::format("#{}", shipno.value)});
+    test::expect_contains(g.out.str(), expected_heading);
+  }
+  std::println(std::cout,
+               "    ✓ examine aligned with seeded exam.dat descriptions");
+  ctx.verify_universe_invariants();
+}
+
 }  // namespace
 
 int main() {
   test_examine_dispatch();
+  test_examine_seeded_catalog_alignment();
 
   std::println(std::cout, "All examine tests passed!");
   return 0;

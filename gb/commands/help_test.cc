@@ -72,9 +72,36 @@ void test_help_command_dispatch() {
   ctx.assert_dispatch_success(g, {"help", ":"});
   test::expect_contains(g.out.str(), "# ANNOUNCE");
 
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"help", "@@segment"});
+  test::expect_contains(g.out.str(), "# SEGMENT");
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"help", "@@shutdown"});
+  test::expect_contains(g.out.str(), "# SHUTDOWN");
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"help", "!"});
+  test::expect_contains(g.out.str(), "# SHOUT");
+
+  // Every registered command and alias in CommandRegistry resolves via help
+  for (const auto& [name, desc] : GB::commands::get_command_registry()) {
+    g.out.str("");
+    ctx.assert_dispatch_success(g, {"help", std::string{name}});
+    test::expect_false(g.out.str().empty());
+  }
+
   // 3. Domain Error: Non-existent and empty topics
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"help", "this_topic_does_not_exist"});
+  test::expect_contains(g.out.str(), "Help on that subject unavailable.");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"help", "@@"});
+  test::expect_contains(g.out.str(), "Help on that subject unavailable.");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"help", "@@../help"});
   test::expect_contains(g.out.str(), "Help on that subject unavailable.");
 
   g.out.str("");

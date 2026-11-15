@@ -43,9 +43,12 @@ resolve_help_path(std::string_view topic, std::string_view help_dir_override) {
   if (auto path = resolve_help_file(topic, help_dir_override)) {
     return path;
   }
+  if (topic.starts_with("@@")) {
+    return resolve_help_file(topic.substr(2), help_dir_override);
+  }
   if (const auto* desc = find_command_descriptor(topic);
       desc != nullptr && desc->name != topic) {
-    return resolve_help_file(desc->name, help_dir_override);
+    return resolve_help_path(desc->name, help_dir_override);
   }
   return std::nullopt;
 }

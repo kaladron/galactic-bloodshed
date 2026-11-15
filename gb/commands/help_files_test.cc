@@ -162,30 +162,40 @@ void test_all_help_headers_links_and_registry_parity() {
   }
   test::expect_eq(indexed_topics.size(), topics.size());
 
-  // Every entry in commands.md must resolve to a help file and mortal command.
+  // Every entry in commands.md must resolve to a help file and registered
+  // command (mortal above "## Deity Commands", deity below).
+  const auto strip_deity_prefix = [](std::string_view cmd) {
+    return cmd.starts_with("@@") ? cmd.substr(2) : cmd;
+  };
   const auto& registry = GB::commands::get_command_registry();
   std::set<std::string> command_doc_entries;
   {
     std::ifstream cmd_index(help_dir / "commands.md");
     test::expect_true(cmd_index.is_open());
+    bool in_deity_section = false;
     for (std::string line; std::getline(cmd_index, line);) {
+      if (line == "## Deity Commands") {
+        in_deity_section = true;
+        continue;
+      }
       const auto sep = line.find(" -- ");
       if (sep == std::string::npos) continue;
       std::string cmd = line.substr(0, sep);
-      test::expect_true(topics.contains(cmd));
+      test::expect_true(topics.contains(std::string{strip_deity_prefix(cmd)}));
       const auto it = registry.find(cmd);
       test::expect_true(it != registry.end());
       if (it != registry.end()) {
-        test::expect_false(it->second->roles.god_only);
+        test::expect_eq(it->second->roles.god_only, in_deity_section);
       }
       command_doc_entries.insert(std::move(cmd));
     }
   }
 
-  // Every mortal command must have a help page and commands.md listing.
+  // Every registered command (mortal and deity) must have a help page and
+  // commands.md listing.
   for (const auto& [name, desc] : registry) {
-    if (desc->roles.god_only) continue;
-    test::expect_true(topics.contains(std::string{desc->name}));
+    test::expect_true(
+        topics.contains(std::string{strip_deity_prefix(desc->name)}));
     if (name == desc->name) {
       test::expect_true(command_doc_entries.contains(std::string{name}));
     }
@@ -300,11 +310,12 @@ void test_command_help_ap_header_parity() {
   };
 
   for (const auto& [name, desc] : GB::commands::get_command_registry()) {
-    if (desc->roles.god_only) continue;
-    if (!std::filesystem::exists(help_dir / std::format("{}.md", name))) {
+    const std::string_view topic =
+        name.starts_with("@@") ? name.substr(2) : name;
+    if (!std::filesystem::exists(help_dir / std::format("{}.md", topic))) {
       continue;
     }
-    const auto brackets = extract_name_ap_brackets(name);
+    const auto brackets = extract_name_ap_brackets(topic);
     test::expect_false(brackets.empty());
     for (const auto& ap_text : brackets) {
       switch (desc->ap.model) {

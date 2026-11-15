@@ -59,3 +59,7 @@ OTHER -
 	dissolve	help		move		quit
 	repair		route		technology	time
 	toggle		toxicity	vote		zoom
+
+DEITY -
+	bless		emulate		fix		purge
+	shout		shutdown

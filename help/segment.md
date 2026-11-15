@@ -1,5 +1,11 @@
 # SEGMENT
 
+## Name
+   @@segment [0] -- trigger a movement segment (deity only)
+
+## Syntax
+   @@segment [seg_num]
+
 CONCEPT: movement segment
 
 	A movement segment (or a move seg) is a procedure during which the
@@ -12,6 +18,8 @@ when you arrive at your destination, at which time your ship stops moving.
 is a move seg, any of your ships which are currently trying to repair them-
 selves, regardless of how they incurred damage, will have their damage
 percent reduced by some amount.
+	Deities can manually trigger a movement segment from any scope with
+`@@segment [seg_num]`.
 
 ## See Also
-  update
+  update, shutdown

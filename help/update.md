@@ -1,5 +1,11 @@
 # UPDATE
 
+## Name
+   @@update [0] -- trigger a full game update (deity only)
+
+## Syntax
+   @@update
+
 ## Concept
 
 	An update is a "glorified move seg."  Basically, everything that
@@ -24,6 +30,8 @@ updates always occur at 4 am for you, you might want to pass on the game.
 If you aren't on at updates, enemies often get the chance of jump into your
 system and start attacking while you aren't on to defend yourself.  This
 can have disastrous effects.
+	Deities can manually trigger a full turn update from any scope with
+`@@update`.
 
 ## See Also
-  segment
+  segment, shutdown

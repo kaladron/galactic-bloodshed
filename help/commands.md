@@ -125,3 +125,14 @@ who -- describe who is currently connected to a race
 whois -- give the race name given the race's number 
 
 zoom -- declare zoom values
+
+## Deity Commands
+
+@@segment -- trigger a movement segment (deity only)
+@@shutdown -- initiate server shutdown (deity only)
+@@update -- trigger a full game update (deity only)
+bless -- bestow divine blessings upon a player (deity only)
+emulate -- emulate another player and governor (deity only)
+fix -- inspect or override planet and ship state (deity only)
+purge -- purge all Galactic News items (deity only)
+shout -- send an administrative broadcast to all sessions (deity only)

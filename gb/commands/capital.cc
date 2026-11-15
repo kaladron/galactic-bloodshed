@@ -41,7 +41,18 @@ bool capital(const command_t& argv, GameObj& g) {
           g.out << "You can't do that!\n";
           return false;
         }
-        if (!s.is_landed()) {
+        bool valid_site = s.is_landed();
+        if (!valid_site && s.whatorbits() == ScopeLevel::LEVEL_SHIP &&
+            s.destshipno().has_value()) {
+          const auto* carrier = g.entity_manager.peek_ship(*s.destshipno());
+          if (carrier && carrier->type() == ShipType::STYPE_HABITAT &&
+              (carrier->whatorbits() == ScopeLevel::LEVEL_PLAN ||
+               carrier->whatorbits() == ScopeLevel::LEVEL_STAR)) {
+            valid_site = true;
+            snum = carrier->storbits();
+          }
+        }
+        if (!valid_site) {
           g.out << "Try landing this ship first!\n";
           return false;
         }

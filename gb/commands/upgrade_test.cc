@@ -490,9 +490,10 @@ void test_upgrade_preconditions_and_carrier_hangar() {
   test::expect_contains(g.out.str(),
                         "This upgrade requires an engineering technology of");
 
-  // Insufficient onboard resources rejection
+  // Insufficient onboard and carrier resources rejection
   ctx.em.mutate_race(1, [](Race& r) { r.tech = 25000.0; });
   ctx.em.mutate_ship(cruiser_id, [](Ship& s) { s.resource() = 0; });
+  ctx.em.mutate_ship(carrier_id, [](Ship& c) { c.resource() = 0; });
   ctx.setup_game_obj(g);
   g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_shipno(cruiser_id);
@@ -654,6 +655,63 @@ void test_upgrade_json_god_mode_and_edge_cases() {
   test::expect_contains(g.out.str(), R"("type":"ship")");
   test::expect_eq(ctx.em.peek_ship(ship1_id)->armor(), 50);
   test::expect_eq(ctx.em.peek_ship(ship1_id)->resource(), res_before_god);
+
+  // 7. Mortal zero-cargo Fighter upgrades using planetary and carrier stores,
+  // and Gamma Ray Laser rejects CEW upgrades
+  ctx.em.mutate_race(1, [](Race& r) {
+    r.God = false;
+    r.tech = 500.0;
+    r.discoveries.cew = true;
+  });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 50; });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(1).resource = 500; });
+  ctx.setup_game_obj(g);
+  g.set_ui_mode(UiMode::ASCII);
+
+  const shipnum_t landed_ftr = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+                                   .owned_by(1, 1)
+                                   .landed_on(1, 1, {0, 0})
+                                   .with_resource(0)
+                                   .build();
+  g.set_level(ScopeLevel::LEVEL_SHIP);
+  g.set_shipno(landed_ftr);
+  g.set_snum(1);
+  ctx.assert_dispatch_success(g, {"upgrade", "armor", "5"}, 1);
+  test::expect_eq(ctx.em.peek_ship(landed_ftr)->armor(), 5);
+  test::expect_lt(ctx.em.peek_planet(1, 1)->info(1).resource, 500);
+
+  const shipnum_t carrier = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
+                                .owned_by(1, 1)
+                                .in_star_orbit(1)
+                                .with_resource(300)
+                                .with_max_hanger(200)
+                                .with_crew(30, 0)
+                                .build();
+  const shipnum_t berthed_ftr = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+                                    .owned_by(1, 1)
+                                    .in_star_orbit(1)
+                                    .with_resource(0)
+                                    .build();
+  ctx.em.mutate_ship(berthed_ftr,
+                     [&](Ship& f) { f.dock_into_carrier(carrier); });
+  ctx.em.mutate_ship(carrier, [&](Ship& c) {
+    c.load_docked_craft(*ctx.em.peek_ship(berthed_ftr));
+  });
+  g.set_shipno(berthed_ftr);
+  ctx.assert_dispatch_success(g, {"upgrade", "armor", "5"}, 1);
+  test::expect_eq(ctx.em.peek_ship(berthed_ftr)->armor(), 5);
+  test::expect_lt(ctx.em.peek_ship(carrier)->resource(), 300);
+
+  const shipnum_t gr_id = TestShipBuilder(ctx.em, ShipType::OTYPE_GR)
+                              .owned_by(1, 1)
+                              .landed_on(1, 1, {0, 0})
+                              .with_damage(0)
+                              .with_resource(50)
+                              .build();
+  g.set_shipno(gr_id);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"upgrade", "cew", "strength", "5"});
+  test::expect_contains(g.out.str(), "doesn't exist or can't be modified");
 
   std::println(std::cout,
                "    ✓ JSON output, God mode, battery activation, and edge "

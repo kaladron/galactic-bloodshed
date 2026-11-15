@@ -481,8 +481,11 @@ public:
 /// Guarantees that hypothetical modifications cannot be persisted to the
 /// database.
 export class SimulatedShip : public Ship {
+  shipnum_t source_ship_number_{0};
+
 public:
-  explicit SimulatedShip(const Ship& base) : Ship(base.get_struct()) {
+  explicit SimulatedShip(const Ship& base)
+      : Ship(base.get_struct()), source_ship_number_(base.number()) {
     data_.number = 0;  // Neutralize entity identity: cannot match or overwrite
                        // real entities
   }
@@ -491,12 +494,20 @@ public:
     return true;
   }
 
-  /// \brief Sets simulated fuel and updates mass accordingly, clamped to max
-  /// capacity.
+  /// \brief Original carrier ship ID for read-only hangar mass aggregation.
+  [[nodiscard]] shipnum_t source_ship_number() const noexcept {
+    return source_ship_number_;
+  }
+
+  /// \brief Sets simulated fuel and updates mass accordingly while preserving
+  /// carried hangar craft mass, clamped to max capacity.
   void set_simulated_fuel(fuel_t fuel, double race_mass = 1.0) noexcept {
+    const double carried =
+        (data_.hanger > 0) ? std::max(0.0, data_.mass - local_mass(race_mass))
+                           : 0.0;
     const auto max_cap = static_cast<double>(max_fuel_capacity());
     data_.fuel = std::clamp(fuel, 0.0, max_cap);
-    data_.mass = local_mass(race_mass);
+    data_.mass = local_mass(race_mass) + carried;
   }
 };
 
@@ -512,7 +523,6 @@ static_assert(sizeof(TerraformerShip) == sizeof(Ship));
 static_assert(sizeof(GroundPlowShip) == sizeof(Ship));
 static_assert(sizeof(TransporterShip) == sizeof(Ship));
 static_assert(sizeof(ToxicWasteShip) == sizeof(Ship));
-static_assert(sizeof(SimulatedShip) == sizeof(Ship));
 
 export template <>
 struct ShipTypeTraits<AutonomousShip> {

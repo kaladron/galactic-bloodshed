@@ -421,6 +421,56 @@ void test_fuel_output_and_do_trip_branches() {
     test::expect_true(ok_hyper);
     test::expect_eq(segs_hyper, 2U);
   }
+  {
+    // Carrier carrying heavy craft in hangar preserves carried mass in
+    // SimulatedShip / domass (and works cleanly in Guest read-only sessions)
+    const auto empty_carrier_id =
+        TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
+            .owned_by(1, 1)
+            .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
+            .with_fuel(500.0)
+            .with_speed(4)
+            .build();
+    const auto loaded_carrier_id =
+        TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
+            .owned_by(1, 1)
+            .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
+            .with_fuel(500.0)
+            .with_speed(4)
+            .with_max_hanger(200)
+            .build();
+    const auto heavy_cargo_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
+                                    .owned_by(1, 1)
+                                    .docked_to(loaded_carrier_id, 1)
+                                    .with_resource(1000)
+                                    .build();
+    test::expect_gt(ctx.em.peek_ship(heavy_cargo_id)->local_mass(), 0.0);
+
+    SimulatedShip sim_empty{*ctx.em.peek_ship(empty_carrier_id)};
+    SimulatedShip sim_loaded{*ctx.em.peek_ship(loaded_carrier_id)};
+    const auto [ok_empty, _] =
+        do_trip(ship_dest, sim_empty, 500.0, 0.0, target_coords, ctx.em);
+    const auto [ok_loaded, __] =
+        do_trip(ship_dest, sim_loaded, 500.0, 0.0, target_coords, ctx.em);
+    test::expect_true(ok_empty);
+    test::expect_true(ok_loaded);
+    test::expect_lt(sim_loaded.fuel(), sim_empty.fuel());
+
+    // Guest read-only session running 'fuel' on a loaded carrier succeeds
+    auto& registry = get_test_session_registry();
+    GameObj guest_g(ctx.em, registry);
+    ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });
+    ctx.setup_game_obj(guest_g, 1, 1);
+    guest_g.set_level(ScopeLevel::LEVEL_SHIP);
+    guest_g.set_shipno(loaded_carrier_id);
+    guest_g.set_snum(1);
+    ctx.assert_dispatch_success(guest_g,
+                                {"fuel",
+                                 std::format("#{}", loaded_carrier_id.value),
+                                 std::format("#{}", target_id.value)},
+                                0);
+    ctx.em.mutate_race(1, [](Race& r) { r.Guest = false; });
+  }
 }
 
 }  // namespace

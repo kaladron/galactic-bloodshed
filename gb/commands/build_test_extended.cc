@@ -674,6 +674,49 @@ void test_non_factory_ship_mcdc_and_hangar_accounting() {
   test::expect_contains(g.out.str(), "Not enough hanger space.\n");
   test::expect_eq(fixture.get_ship(tight_hab)->hanger(), probe_size);
 
+  // 5. Online Factory berthed inside a Habitat builds into the Habitat hangar
+  shipnum_t fac_hab = TestShipBuilder(fixture.em, ShipType::STYPE_HABITAT)
+                          .owned_by(1, 1)
+                          .in_star_orbit(fixture.star_id)
+                          .with_resource(500)
+                          .with_fuel(200.0)
+                          .with_max_hanger(100)
+                          .with_hanger(15)
+                          .with_crew(100, 0)
+                          .build();
+  auto hab_fac = TestShipBuilder(fixture.em, ShipType::OTYPE_FACTORY)
+                     .owned_by(1, 1)
+                     .docked_to(fac_hab, fixture.star_id)
+                     .with_crew(20, 0)
+                     .with_damage(0)
+                     .with_on(true)
+                     .build_handle();
+  hab_fac->set_factory_blueprint(ShipType::STYPE_SHUTTLE,
+                                 fixture.em.peek_race(1));
+  const shipnum_t hab_fac_id = hab_fac->number();
+  hab_fac.save();
+
+  fixture.init_game_obj(g, ScopeLevel::LEVEL_SHIP, hab_fac_id);
+  g.out.str("");
+  test::expect_true(GB::commands::build({"build", "2"}, g));
+  test::expect_eq(fixture.em.ships_in_hangar(fac_hab).size(), 3U);
+  test::expect_lt(fixture.get_ship(fac_hab)->resource(), 500);
+  test::expect_gt(fixture.get_ship(fac_hab)->hanger(), 15);
+
+  // Online Factory berthed inside a non-Habitat carrier is rejected
+  shipnum_t carrier_id = TestShipBuilder(fixture.em, ShipType::STYPE_CARRIER)
+                             .owned_by(1, 1)
+                             .in_star_orbit(fixture.star_id)
+                             .with_max_hanger(200)
+                             .with_crew(30, 0)
+                             .build();
+  fixture.em.mutate_ship(hab_fac_id,
+                         [&](Ship& s) { s.dock_into_carrier(carrier_id); });
+  fixture.init_game_obj(g, ScopeLevel::LEVEL_SHIP, hab_fac_id);
+  g.out.str("");
+  test::expect_false(GB::commands::build({"build", "1"}, g));
+  test::expect_contains(g.out.str(), "Factories must be landed on a planet.\n");
+
   std::println(std::cout,
                "✓ Non-factory ship MC/DC and hangar accounting test passed");
 }

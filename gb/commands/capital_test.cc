@@ -100,6 +100,45 @@ void test_capital_matrix() {
   test::expect_contains(g.out.str(),
                         "Only the leader (Governor 1) may use this command.");
 
+  // 4. Governmental Center berthed inside a Habitat in stellar orbit succeeds,
+  // whereas one inside a deep-space Habitat is rejected
+  ctx.setup_game_obj(g, 1, 1);
+  g.set_snum(1);
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(player_t{1}) = 100; });
+  const shipnum_t star_hab = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
+                                 .owned_by(1, 1)
+                                 .in_star_orbit(1)
+                                 .with_max_hanger(100)
+                                 .with_crew(50, 0)
+                                 .build();
+  const shipnum_t hab_gov = TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
+                                .owned_by(1, 1)
+                                .docked_to(star_hab, 1)
+                                .with_crew(10, 0)
+                                .build();
+  ctx.assert_dispatch_success(g, {"capital", std::format("#{}", hab_gov.value)},
+                              /*expected_star_ap_deducted=*/50);
+  test::expect_eq(ctx.em.peek_race(1)->Gov_ship, hab_gov);
+
+  const shipnum_t deep_hab = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
+                                 .owned_by(1, 1)
+                                 .in_deep_space()
+                                 .with_max_hanger(100)
+                                 .with_crew(50, 0)
+                                 .build();
+  const shipnum_t deep_gov = TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
+                                 .owned_by(1, 1)
+                                 .in_deep_space()
+                                 .with_crew(10, 0)
+                                 .build();
+  ctx.em.mutate_ship(deep_gov, [&](Ship& s) {
+    s.dock_into_carrier(*ctx.em.peek_ship(deep_hab));
+  });
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g,
+                               {"capital", std::format("#{}", deep_gov.value)});
+  test::expect_contains(g.out.str(), "Try landing this ship first!");
+
   ctx.verify_universe_invariants();
 }
 

@@ -190,6 +190,7 @@ export enum class OrderErrorReason {
   ThisShipHasNoSwitch,
   DamagedShipsCannotBeActivated,
   ShipAlreadyActivated,
+  FactoryNoDesign,
   FactoryBeingTransported,
   InsufficientHabitatResourcesForFactory,
   InsufficientHabitatHangarForFactory,

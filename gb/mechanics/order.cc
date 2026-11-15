@@ -228,6 +228,11 @@ std::expected<OrderUpdate, OrderError> order_switch(Ship& ship) {
         .reason = OrderErrorReason::ShipBeingTransported,
     });
   }
+  if (!ship.on() && ship.damage()) {
+    return std::unexpected(OrderError{
+        .reason = OrderErrorReason::DamagedShipsCannotBeActivated,
+    });
+  }
   ship.on() = !ship.on();
   OrderUpdateNotice notice = OrderUpdateNotice::None;
   if (ship.type() == ShipType::STYPE_MINE) {
@@ -768,6 +773,11 @@ std::expected<OrderUpdate, OrderError> order_on(EntityManager& em,
     });
   }
   if (ship.type() == ShipType::OTYPE_FACTORY) {
+    if (!ship.has_factory_design()) {
+      return std::unexpected(OrderError{
+          .reason = OrderErrorReason::FactoryNoDesign,
+      });
+    }
     std::expected<resource_t, OrderError> oncost{0};
     if (ship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
       oncost = activate_factory_on_habitat(em, ship);

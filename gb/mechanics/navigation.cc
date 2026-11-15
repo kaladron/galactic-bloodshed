@@ -50,6 +50,33 @@ CapturedShipsReport capture_stuff(EntityManager& em, const Ship& ship) {
   };
 }
 
+namespace {
+
+struct CarriedHangarTotals {
+  double mass{0.0};
+  hangar_t hanger{0};
+};
+
+CarriedHangarTotals compute_carried_hangar_readonly(EntityManager& em,
+                                                    shipnum_t carrier_id) {
+  if (carrier_id == 0) return {};
+  CarriedHangarTotals totals{};
+  for (const Ship& nested : ShipList::readonly_in_carrier(em, carrier_id)) {
+    double rmass = 1.0;
+    if (nested.owner() != 0) {
+      if (const auto* race = em.peek_race(nested.owner())) {
+        rmass = race->mass;
+      }
+    }
+    const auto sub = compute_carried_hangar_readonly(em, nested.number());
+    totals.mass += nested.local_mass(rmass) + sub.mass;
+    totals.hanger += nested.size();
+  }
+  return totals;
+}
+
+}  // namespace
+
 void domass(Ship& ship, EntityManager& entity_manager) {
   // Get race mass from EntityManager
   double rmass = 1.0;
@@ -58,6 +85,15 @@ void domass(Ship& ship, EntityManager& entity_manager) {
     if (race) {
       rmass = race->mass;
     }
+  }
+
+  if (ship.is_simulation()) {
+    const auto* sim = static_cast<const SimulatedShip*>(&ship);
+    const auto totals = compute_carried_hangar_readonly(
+        entity_manager, sim->source_ship_number());
+    ship.hanger() = totals.hanger;
+    ship.set_mass(ship.local_mass(rmass) + totals.mass);
+    return;
   }
 
   double carried_mass = 0.0;

@@ -185,11 +185,10 @@ struct ShipBuildPlan {
   bool outside;
 };
 
-std::optional<ShipBuildPlan> validate_factory_ship_build(const command_t& argv,
-                                                         GameObj& g,
-                                                         const Ship& builder,
-                                                         starnum_t snum,
-                                                         planetnum_t pnum) {
+std::optional<ShipBuildPlan>
+validate_factory_ship_build(const command_t& argv, GameObj& g,
+                            const Ship& builder, ScopeLevel build_level,
+                            starnum_t snum, planetnum_t pnum) {
   const auto& race = *g.race;
   int count = parse_ship_build_count(argv, true);
   if (!count) {
@@ -213,6 +212,10 @@ std::optional<ShipBuildPlan> validate_factory_ship_build(const command_t& argv,
   if (const auto build_ok = can_build_on_ship(what, race, builder); !build_ok) {
     g.out << build_ok.error();
     return std::nullopt;
+  }
+  if (build_level == ScopeLevel::LEVEL_SHIP) {
+    return ShipBuildPlan{
+        .what = what, .land_coords = bcoords, .count = count, .outside = false};
   }
   const auto& planet = *g.entity_manager.peek_planet(snum, pnum);
   const auto& star = *g.entity_manager.peek_star(snum);
@@ -278,9 +281,60 @@ validate_non_factory_ship_build(const command_t& argv, GameObj& g,
                        .outside = outside};
 }
 
+bool execute_single_habitat_factory_build(GameObj& g, const Ship& builder,
+                                          const ShipBuildPlan& plan) {
+  const player_t Playernum = g.player();
+  const governor_t Governor = g.governor();
+  const auto& race = *g.race;
+  const auto& habitat_ref = *g.entity_manager.peek_ship(*builder.destshipno());
+  Ship habitat(habitat_ref.to_struct());
+  auto newship = getfactship(builder);
+  const resource_t shipcost = newship->build_cost();
+
+  if (!habitat.can_fit_in_hangar(newship->size())) {
+    g.out << "Not enough hanger space.\n";
+    return false;
+  }
+  if (habitat.resource() < shipcost) {
+    g.out << std::format("You need {}r to construct this ship.\n", shipcost);
+    return false;
+  }
+  if (habitat.whatorbits() == ScopeLevel::LEVEL_UNIV) {
+    if (!g.deduct_univ_ap(1)) {
+      g.out << "You need 1 universe action point.\n";
+      return false;
+    }
+  } else {
+    if (!g.deduct_ap(habitat.storbits(), 1)) {
+      g.out << "You don't have 1 action points there.\n";
+      return false;
+    }
+  }
+
+  g.present(create_ship_by_ship(g.entity_manager, Playernum, Governor, race,
+                                false, *newship, habitat));
+  const auto [load_crew, load_fuel] =
+      (g.current_governor().toggle.autoload &&
+       plan.what != ShipType::OTYPE_TRANSDEV && !race.God)
+          ? autoload_at_ship(*newship, habitat, race.mass)
+          : std::pair<population_t, fuel_t>{0, 0.0};
+
+  g.present(
+      initialize_new_ship(race, Governor, *newship, load_fuel, load_crew));
+  habitat.load_docked_craft(*newship);
+  g.entity_manager.create_ship(std::move(newship));
+  g.entity_manager.mutate_ship(habitat.number(),
+                               [&](Ship& h) { h = Ship(habitat.to_struct()); });
+  return true;
+}
+
 bool execute_single_factory_build(GameObj& g, Ship& builder,
-                                  const ShipBuildPlan& plan, starnum_t snum,
+                                  const ShipBuildPlan& plan,
+                                  ScopeLevel build_level, starnum_t snum,
                                   planetnum_t pnum) {
+  if (build_level == ScopeLevel::LEVEL_SHIP) {
+    return execute_single_habitat_factory_build(g, builder, plan);
+  }
   const player_t Playernum = g.player();
   const governor_t Governor = g.governor();
   const auto& race = *g.race;
@@ -375,8 +429,8 @@ bool execute_single_non_factory_ship_build(GameObj& g, Ship& builder,
 bool execute_ship_build_command(const command_t& argv, GameObj& g) {
   const auto& builder_ref = *g.entity_manager.peek_ship(g.shipno());
   Ship builder(builder_ref.to_struct());
-  const auto build_loc =
-      build_at_ship(g.player(), g.governor(), g.god(), builder);
+  const auto build_loc = build_at_ship(g.player(), g.governor(), g.god(),
+                                       builder, &g.entity_manager);
   if (!build_loc) {
     g.out << GB::presentation::format_ship_build_error(build_loc.error());
     g.out << "You can't build here.\n";
@@ -386,7 +440,8 @@ bool execute_ship_build_command(const command_t& argv, GameObj& g) {
 
   std::optional<ShipBuildPlan> plan;
   if (builder.type() == ShipType::OTYPE_FACTORY) {
-    plan = validate_factory_ship_build(argv, g, builder, snum, pnum);
+    plan =
+        validate_factory_ship_build(argv, g, builder, build_level, snum, pnum);
   } else {
     plan = validate_non_factory_ship_build(argv, g, builder);
   }
@@ -398,7 +453,8 @@ bool execute_ship_build_command(const command_t& argv, GameObj& g) {
   for (int _ : std::views::iota(0, plan->count)) {
     bool built =
         (builder.type() == ShipType::OTYPE_FACTORY)
-            ? execute_single_factory_build(g, builder, *plan, snum, pnum)
+            ? execute_single_factory_build(g, builder, *plan, build_level, snum,
+                                           pnum)
             : execute_single_non_factory_ship_build(g, builder, *plan, snum);
     if (!built) {
       break;

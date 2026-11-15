@@ -157,6 +157,8 @@ std::string format_order_error(const OrderError& err) {
       return "Damaged ships cannot be activated.\n";
     case OrderErrorReason::ShipAlreadyActivated:
       return "This ship is already activated.\n";
+    case OrderErrorReason::FactoryNoDesign:
+      return "No ship type specified. Use 'make' first.\n";
     case OrderErrorReason::FactoryBeingTransported:
       return "The factory is currently being transported.\n";
     case OrderErrorReason::InsufficientHabitatResourcesForFactory:

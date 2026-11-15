@@ -457,7 +457,8 @@ void test_order_factory_activation_and_errors() {
   g.set_pnum(1);
 
   // 1. Landed Factory on Earth (starts damaged at 75% like newly built
-  // factories; can be turned off while offline and activated while damaged)
+  // factories; can be turned off while offline and activated while damaged,
+  // provided a blueprint has been designated via make)
   auto f1 = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
                 .owned_by(1)
                 .named("PlanetFact")
@@ -466,9 +467,20 @@ void test_order_factory_activation_and_errors() {
                 .with_damage(75)
                 .with_on(false)
                 .build_handle();
-  f1->build_cost() = 50;
   const auto f1_id = f1->number();
   const std::string f1_arg = std::format("#{}", f1_id);
+  f1.save();
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"order", f1_arg, "on"});
+  test::expect_contains(g.out.str(),
+                        "No ship type specified. Use 'make' first.");
+  test::expect_eq(ctx.em.peek_ship(f1_id)->on(), 0);
+
+  ctx.em.mutate_ship(f1_id, [](Ship& s) {
+    s.build_type() = ShipType::STYPE_SHUTTLE;
+    s.build_cost() = 50;
+  });
 
   ctx.assert_dispatch_success(g, {"order", f1_arg, "off"});
 
@@ -516,6 +528,7 @@ void test_order_factory_activation_and_errors() {
                 .owned_by(1)
                 .named("HabFact")
                 .docked_to(hab, 1)
+                .with_build_type(ShipType::STYPE_SHUTTLE)
                 .with_crew(5, 0)
                 .with_size(20)
                 .with_on(false)
@@ -955,8 +968,20 @@ void test_special_ship_order_mcdc_and_notices() {
   g.out.str("");
   ctx.assert_dispatch_success(g, {"order", std::format("#{}", mine_id), "on"});
   test::expect_contains(g.out.str(), "Damaged ships cannot be activated.");
+  g.out.str("");
+  ctx.assert_dispatch_success(g,
+                              {"order", std::format("#{}", mine_id), "switch"});
+  test::expect_contains(g.out.str(), "Damaged ships cannot be activated.");
+  test::expect_eq(ctx.em.peek_ship(mine_id)->on(), 0);
 
   ctx.em.mutate_ship(mine_id, [](Ship& s) { s.repair_damage(20); });
+  ctx.assert_dispatch_success(g, {"order", std::format("#{}", mine_id), "on"});
+  // Damaged active ship can still be toggled off via switch
+  ctx.em.mutate_ship(mine_id, [](Ship& s) { s.admin_override_damage(10); });
+  ctx.assert_dispatch_success(g,
+                              {"order", std::format("#{}", mine_id), "switch"});
+  test::expect_eq(ctx.em.peek_ship(mine_id)->on(), 0);
+  ctx.em.mutate_ship(mine_id, [](Ship& s) { s.repair_damage(10); });
   ctx.assert_dispatch_success(g, {"order", std::format("#{}", mine_id), "on"});
   g.out.str("");
   ctx.assert_dispatch_success(g, {"order", std::format("#{}", mine_id), "on"});
@@ -984,6 +1009,7 @@ void test_special_ship_order_mcdc_and_notices() {
   auto f_err = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
                    .owned_by(1, 1)
                    .docked_to(1, 1)
+                   .with_build_type(ShipType::STYPE_SHUTTLE)
                    .with_crew(5, 0)
                    .with_max_hanger(100)
                    .with_size(1)

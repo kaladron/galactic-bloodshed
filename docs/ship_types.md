@@ -170,7 +170,7 @@ Fixed surface installations constructed on planetary sectors to govern populatio
 | **Quarry** | `q` | 0 | 10 | 1 | 0 | 200 | 50 | 0 | Automated Mineral Extraction |
 | **Dome** | `Y` | 10 | 10 | 1 | 100 | 0 | 20 | 0 | Colonist Atmospheric Shelter |
 | **Bunker** | `b` | 10 | 100 | 15 | 100 | 100 | 100 | 0 | Heavy Ground Fortification, 100 Troops, 20 Hangar |
-| **Gamma Ray Laser** | `G` | 100 | 30 | 3 | 50 | 0 | 40 | 20 (L) | Surface-to-Orbit Defensive Battery, CEW |
+| **Gamma Ray Laser** | `G` | 100 | 30 | 3 | 50 | 0 | 40 | 20 (L) | Surface-to-Orbit Defensive Battery, Radiation Mode |
 | **Planet Def Net** | `P` | 200 | 100 | 10 | 50 | 0 | 50 | 20 (H) | Automated Orbital Defense Shield / Berserker Deterrent |
 | **ABM Battery** | `&` | 100 | 50 | 5 | 5 | 0 | 5 | 5 (L) | Anti-Ballistic Missile Interception |
 | **Mech AFV** | `R` | 50 | 20 | 2 | 5 | 20 | 1 | 2 (L) | Armored Fighting Vehicle for Ground Assault |

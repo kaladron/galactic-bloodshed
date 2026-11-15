@@ -147,7 +147,7 @@ can_build_on_ship(ShipType what, const Race& race, const Ship& builder) {
 
 std::expected<ShipBuildLocation, ShipBuildError>
 build_at_ship(const player_t playernum, const governor_t governor,
-              const bool god, const Ship& builder) {
+              const bool god, const Ship& builder, EntityManager* em) {
   if (const auto cmd_ok =
           validate_commandable(builder, playernum, governor, god);
       !cmd_ok) {
@@ -168,17 +168,32 @@ build_at_ship(const player_t playernum, const governor_t governor,
   if (!builder.popn()) {
     return std::unexpected(ShipBuildError::NoCrew);
   }
-  if (builder.is_docked()) {
+  if (builder.is_docked() &&
+      !(builder.type() == ShipType::OTYPE_FACTORY &&
+        builder.whatorbits() == ScopeLevel::LEVEL_SHIP)) {
     return std::unexpected(ShipBuildError::ShipDocked);
   }
   if (builder.damage()) {
     return std::unexpected(ShipBuildError::ShipDamaged);
   }
-  if (builder.type() == ShipType::OTYPE_FACTORY && !builder.on()) {
-    return std::unexpected(ShipBuildError::FactoryNotOnline);
-  }
-  if (builder.type() == ShipType::OTYPE_FACTORY && !builder.is_landed()) {
-    return std::unexpected(ShipBuildError::FactoryNotLanded);
+  if (builder.type() == ShipType::OTYPE_FACTORY) {
+    if (!builder.on()) {
+      return std::unexpected(ShipBuildError::FactoryNotOnline);
+    }
+    if (builder.whatorbits() == ScopeLevel::LEVEL_SHIP && em &&
+        builder.destshipno().has_value()) {
+      const auto* carrier = em->peek_ship(*builder.destshipno());
+      if (carrier && carrier->type() == ShipType::STYPE_HABITAT) {
+        return ShipBuildLocation{
+            .level = ScopeLevel::LEVEL_SHIP,
+            .snum = carrier->storbits(),
+            .pnum = carrier->pnumorbits(),
+        };
+      }
+    }
+    if (!builder.is_landed()) {
+      return std::unexpected(ShipBuildError::FactoryNotLanded);
+    }
   }
   return ShipBuildLocation{
       .level = builder.whatorbits(),
@@ -1162,10 +1177,21 @@ void commit_ship_upgrade(EntityManager& entity_manager, Ship& dirship,
   dirship.laser() = candidate.laser();
 
   dirship.recalculate_hull_stats(race.God);
-  dirship.consume_resource(netcost);
+  const resource_t from_ship = std::min(netcost, dirship.resource());
+  const resource_t remaining = netcost - from_ship;
+  dirship.consume_resource(from_ship);
+  if (remaining > 0 && dirship.is_landed()) {
+    entity_manager.mutate_planet(
+        dirship.storbits(), dirship.pnumorbits(), [&](Planet& planet) {
+          planet.info(race.Playernum).resource -= remaining;
+        });
+  }
 
   if (dirship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
     entity_manager.mutate_ship(*dirship.destshipno(), [&](Ship& carrier) {
+      if (remaining > 0 && carrier.owner() == race.Playernum) {
+        carrier.consume_resource(remaining);
+      }
       carrier.unload_docked_craft(old_size, old_mass);
       carrier.load_docked_craft(dirship);
     });
@@ -1227,7 +1253,22 @@ upgrade_single_ship(EntityManager& entity_manager, Ship& dirship,
     netcost = 1;
   }
 
-  if (netcost > dirship.resource()) {
+  resource_t available = dirship.resource();
+  if (dirship.is_landed()) {
+    const auto* planet =
+        entity_manager.peek_planet(dirship.storbits(), dirship.pnumorbits());
+    if (planet && planet->has_info(race.Playernum)) {
+      available += planet->info(race.Playernum).resource;
+    }
+  } else if (dirship.whatorbits() == ScopeLevel::LEVEL_SHIP &&
+             dirship.destshipno().has_value()) {
+    const auto* carrier = entity_manager.peek_ship(*dirship.destshipno());
+    if (carrier && carrier->owner() == race.Playernum) {
+      available += carrier->resource();
+    }
+  }
+
+  if (netcost > available) {
     return std::unexpected(UpgradeError{
         .reason = UpgradeErrorReason::InsufficientResources,
         .old_cost = oldcost,

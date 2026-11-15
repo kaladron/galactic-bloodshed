@@ -71,7 +71,7 @@ get_build_type(std::string_view token) {
 export std::unique_ptr<Ship> getship(ShipType, const Race&);
 export std::expected<ShipBuildLocation, ShipBuildError>
 build_at_ship(player_t playernum, governor_t governor, bool god,
-              const Ship& builder);
+              const Ship& builder, EntityManager* em = nullptr);
 export CreatedShipSummary create_ship_by_planet(EntityManager& entity_manager,
                                                 player_t, governor_t,
                                                 const Race&, Ship&, Planet&,

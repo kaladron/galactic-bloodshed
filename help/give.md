@@ -1,7 +1,7 @@
 # GIVE
 
 ## Name
-   give [3] -- give a mutual ally a ship.
+   give [5] -- give a mutual ally a ship.
 
 ## Syntax
    give <race> <ship>

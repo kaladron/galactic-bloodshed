@@ -1,7 +1,7 @@
 # PAY
 
 ## Name
-   pay [variable] -- pay money to another race
+   pay [0] -- pay money to another race
 
 ## Syntax
    pay <race> <amount>

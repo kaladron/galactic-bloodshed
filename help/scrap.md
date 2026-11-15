@@ -1,7 +1,7 @@
 # SCRAP
 
 ## Name
-   scrap [0] -- junk a ship
+   scrap [1] -- junk a ship
 
 ## Syntax
    scrap <#shipnum>

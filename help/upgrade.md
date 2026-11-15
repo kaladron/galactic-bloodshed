@@ -1,7 +1,7 @@
 # UPGRADE
 
 ## Name
-   upgrade [0] -- upgrade attributes of a ship.
+   upgrade [1] -- upgrade attributes of a ship.
 
 ## Syntax
    upgrade <attribute> <value>

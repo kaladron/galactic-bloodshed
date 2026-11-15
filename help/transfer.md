@@ -1,7 +1,7 @@
 # TRANSFER
 
 ## Name
-   transfer [0] -- transfer supplies to alien stockpiles
+   transfer [1] -- transfer supplies to alien stockpiles
 
 ## Syntax
    transfer <race> <commodity> <amount>

@@ -16,58 +16,29 @@ through financial means, that they have had enough of their bloody
 dictator and should rise in revolt. This command will only work at planet
 scope.  You must have population in that planet's system, before you can
 attempt an insurgency.  The probability of a successful insurgency is
-given by the following formula: 
+given by the following formula, using morale_factor(d) = atan(d / 10000) / pi + 0.5:
 
- chance = tax factor * inhabiting factor * money factor * minimum money factor
+ x = (funds * victim_tax_rate / victim_planet_pop)
+     * morale_factor(your_morale - victim_morale)
+     * morale_factor((your_system_pop - victim_system_pop) / 50)
+     * morale_factor(10 * (your_fight * your_planet_troops
+                           - victim_fight * victim_planet_troops))
+     / 50
 
-------
-					   victim
- tax factor = TAX_RATE * 0.8  +   0.2 *  -------------
-					(victim + 1000) 
-victim = your victims population in system
+ chance (%) = round_rand((200 / pi) * atan(x))
 
- So tax factor will be 0.2 if TAX_RATE is 0% and colony is big.
-There is safety factor that keeps tax factor near 0.0 if colony is very small.
---------
-				  popula
- inhabiting factor =  sqrt (-------------------)
-			     (popula + victim)
-popula = your population in system
-victim = your victims population in system
+   All funds invested in the insurgency are spent whether the attempt
+succeeds or fails.
 
- If you have a lot of population in system compared your victims population
-chance of successful insurgency will be much higher.
----------
-			2 * money
- money factor     =  ---------------
-		    (money + colony)
-
-money = amount of money you spend
-colony = victim population on colony in question
-----------
-			     money
- minimum money factor =  --------------
-			 (money + 4000)
-
-money = amount of money you spend
-
- This one prevents attempts to cause revoults too cheap. Factor dissapears
-(closes to 1) when amount of movey is big.
-----------
-
-  If the attempt fails, some of money spent on it goes to victim and
-the rest of it is lost permanently. 
- If the attempt succeeds, each individual sector occupied by the player is
-evaluated for revoult. The chance that a sector will revolt is 
-
-revolt chance = compability factor * morale factor * 0.5 * military factor.
-
-compability factor is your compability % to sectortype in question.
-morale factor depends on  your and victims morale.
-military factor makes succeed harder if there is troops in sector.
-
-If the sector revolts, all troops are killed, and the instigating
-player gains control of the sector. 
+   If the attempt succeeds, each populated sector owned by the victim on
+the planet is evaluated for revolt:
+  1) Base sector revolt roll succeeds with probability equal to the
+     victim's planetary tax rate (%).
+  2) Garrisoned troops suppress the revolt when a uniform roll in
+     1..sector_popn is <= 10 * victim_fight * sector_troops.
+  3) Otherwise the sector transfers to the instigator, defending troops
+     are eliminated, random civilian casualties occur, and the instigator
+     inherits the victim's planetary tax rate.
 
 ## See Also
 	money, tax, treasury

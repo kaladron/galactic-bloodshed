@@ -1,7 +1,7 @@
 # PAGE
 
 ## Name
-   page [0] -- tell anothe player that you are looking for them
+   page [0-1] -- tell anothe player that you are looking for them
 
 ## Syntax
    page <player>

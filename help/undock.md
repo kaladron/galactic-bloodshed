@@ -1,7 +1,7 @@
 # UNDOCK
 
 ## Name
-   undock [0] -- undock a ship
+   undock [0-1] -- undock a ship
 
 ## Syntax
    undock <#shipnum>

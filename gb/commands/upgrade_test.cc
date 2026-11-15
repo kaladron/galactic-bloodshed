@@ -229,10 +229,10 @@ void test_upgrade_numeric_attributes_and_validations() {
       g, {"upgrade", "cargo", std::to_string(target_cargo)}, 1);
   test::expect_eq(ctx.em.peek_ship(ship_id)->max_resource(), target_cargo);
 
-  const auto target_hanger = ctx.em.peek_ship(ship_id)->max_hanger() + 5;
+  const auto target_hangar = ctx.em.peek_ship(ship_id)->max_hanger() + 5;
   ctx.assert_dispatch_success(
-      g, {"upgrade", "hanger", std::to_string(target_hanger)}, 1);
-  test::expect_eq(ctx.em.peek_ship(ship_id)->max_hanger(), target_hanger);
+      g, {"upgrade", "hangar", std::to_string(target_hangar)}, 1);
+  test::expect_eq(ctx.em.peek_ship(ship_id)->max_hanger(), target_hangar);
 
   const auto target_fuel = ctx.em.peek_ship(ship_id)->max_fuel() + 25;
   ctx.assert_dispatch_success(
@@ -246,7 +246,7 @@ void test_upgrade_numeric_attributes_and_validations() {
   test::expect_eq(ctx.em.peek_ship(ship_id)->max_destruct(), target_destruct);
 
   std::println(std::cout,
-               "    ✓ Crew, cargo, hanger, fuel, destruct upgrades verified");
+               "    ✓ Crew, cargo, hangar, fuel, destruct upgrades verified");
 }
 
 void test_upgrade_weapons_and_systems() {
@@ -467,14 +467,14 @@ void test_upgrade_preconditions_and_carrier_hangar() {
   test::expect_contains(g.out.str(), "You cannot upgrade damaged ships.");
   ctx.em.mutate_ship(cruiser_id, [](Ship& s) { s.repair_damage(10); });
 
-  // Carrier hangar overflow rejection when expanding hanger by +50
+  // Carrier hangar overflow rejection when expanding hangar by +50
   g.out.str("");
-  ctx.assert_dispatch_rejected(g, {"upgrade", "hanger", "80"});
+  ctx.assert_dispatch_rejected(g, {"upgrade", "hangar", "80"});
   test::expect_contains(g.out.str(), "Not enough free hanger space on");
 
   // Expand carrier max_hanger and verify docked cruiser upgrade updates carrier
   ctx.em.mutate_ship(carrier_id, [](Ship& c) { c.max_hanger() = 500; });
-  ctx.assert_dispatch_success(g, {"upgrade", "hanger", "80"}, 1);
+  ctx.assert_dispatch_success(g, {"upgrade", "hangar", "80"}, 1);
   const auto new_cruiser_size = ctx.em.peek_ship(cruiser_id)->size();
   test::expect_gt(new_cruiser_size, initial_cruiser_size);
   test::expect_eq(ctx.em.peek_ship(carrier_id)->hanger(), new_cruiser_size);

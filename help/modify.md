@@ -13,15 +13,15 @@ the 'standard' design and a cost for producing the ship is evaluated
 based on these attributes. Specifically, the following attributes may
 be altered:
 
-	armor, size, crew, fuel, cargo, destruct, speed, hyperdrive.
+	armor, hangar, crew, fuel, cargo, destruct, speed, mount, hyperdrive.
 
 along with the special modification commands below.
 
    The modify command reports the current cost of producing the ship
 type at the factory. 
    A base mass is also computed, the mass of the ship with nothing loaded 
-on board. Each point of armor has a mass of 1 while each gun and point 
-of size has a mass of 1/10.
+on board: 1.0 plus 1.0 per armor point, 0.2 per structural body size point,
+0.1 per hangar point, and 0.2 per gun times its caliber multiplier.
 
 Special systems:
 	laser - A player can mount/dismount combat lasers by using

@@ -1,7 +1,7 @@
 # DISSOLVE
 
 ## Name
-   dissolve -- resign your forces from play in the game.
+   dissolve [0] -- resign your forces from play in the game.
 
 ## Syntax
    dissolve <password>

@@ -1,7 +1,7 @@
 # MODIFYFORMULA
 
 ## Name
-  modify -- modify attributes of a ship being designed at a factory.
+   modify [0] -- modify attributes of a ship being designed at a factory.
 
 ## Syntax
   modify <attribute> <value>
@@ -10,39 +10,34 @@
 
    Once a ship design has been specified for a factory, you may alter
 the design attributes to suit your needs. Each attribute is compared to
-the 'standard' design and a cost for producing the ship is evaluated
-based on these attributes. Specifically, the following attributes may
-be altered:
+the 'standard' design and both a build cost and a complexity (minimum
+technology requirement) are evaluated. Specifically, the following
+attributes may be altered:
 
-	armor, size, crew, fuel, cargo, destruct, speed, hyperdrive.
+	armor, hangar, crew, fuel, cargo, destruct, speed, mount, hyperdrive.
 
 along with the special modification commands below.
 
-   The modify command reports the current cost of producing the ship
-type at the factory. Basically, the cost of producing the ship is 
-determined, after evaluating the total 'advantage' and total
-'disadvantage', by
-		(cost) = (base cost) * ( 1 + advantage ) / ( 1 + disadvantage ).
-An advantage/disadvantage is computed, for each modifiable attribute,
-by	( (new value) + 1) / ( (standard value) + 1) - 1.
-For each attribute, if this number is positive it is considered to be an
-'advantage' and if it is negative, the absolute value of it is considered
-to be a 'disadvantage'.
+   Build cost sums weighted attribute terms:
+	base template cost + 1.0 * (primary + secondary guns)
+	+ 0.05 * (crew + cargo + fuel + destruct)
+	+ 0.50 * speed^1.5 + 0.50 * hangar + 3.50 * armor^1.5
+	+ 0.003 * (cew_strength * cew_range)
+multiplied by sqrt(1 + 0.5 * N), where N is the count of installed
+hyperdrive, laser, cloak, and crystal mount systems.
 
-   All ships built at a factory may have hyper-space jump capabilities
-by installing 'hyperdrive'. Having this is assumed to be an advantage
-of 1.
+   Design complexity compares each modified stat against its standard
+template value via ((new + 1) / (standard + 1)) - 1, accumulating
+positive terms as 'advantage' and negative magnitudes as 'disadvantage':
+	deviation  = sqrt((1 + advantage) * exp(-disadvantage / 10))
+	normalized = 1 + 10 * (deviation - 1) / sqrt(base_tech + 1)
+	complexity = base_tech * normalized^2
+If complexity exceeds your race's technology, the ship cannot be built.
 
-   Each point of armor above the standard amount is considered as an
-advantage. Each point below the standard is a disadvantage.
-
-   The maximum value by which an attribute may be modified to is dependent
-on the technology the factory used to construct the ship by
-	(max value) = MAX(1 ,tech/100) * (standard value)
-
-   A base mass is also computed, the mass of the ship with nothing loaded 
-on board. Each point of armor has a mass of 1 while each gun and point 
-of size has a mass of 1/10.
+   Base mass (empty hull) is:
+	1.0 + 1.0 * armor + 0.2 * body_size + 0.1 * hangar
+	+ 0.2 * (primary_guns * caliber_mult + secondary_guns * caliber_mult)
+where caliber_mult is 1 (light), 2 (medium), or 3 (heavy).
 
 Special systems:
 	laser - A player can mount/dismount combat lasers by using

@@ -116,7 +116,8 @@ void test_modify_attributes_and_batteries() {
   ctx.assert_dispatch_success(g, {"modify", "crew", "150"});
   ctx.assert_dispatch_success(g, {"modify", "cargo", "300"});
   ctx.assert_dispatch_success(g, {"modify", "resource", "350"});
-  ctx.assert_dispatch_success(g, {"modify", "hanger", "80"});
+  ctx.assert_dispatch_success(g, {"modify", "hangar", "80"});
+  ctx.assert_dispatch_rejected(g, {"modify", "hanger", "75"});
   ctx.assert_dispatch_success(g, {"modify", "fuel", "250"});
   ctx.assert_dispatch_success(g, {"modify", "destruct", "120"});
   ctx.assert_dispatch_success(g, {"modify", "speed", "6"});
@@ -297,7 +298,7 @@ void test_modify_template_capability_restrictions() {
   ctx.assert_dispatch_rejected(g, {"modify", "laser"});
   ctx.assert_dispatch_rejected(g, {"modify", "crew", "10"});
   ctx.assert_dispatch_rejected(g, {"modify", "cargo", "10"});
-  ctx.assert_dispatch_rejected(g, {"modify", "hanger", "10"});
+  ctx.assert_dispatch_rejected(g, {"modify", "hangar", "10"});
 
   // 2. Space Telescope ('='): modifiable, but max_destruct == 0.
   ctx.assert_dispatch_success(g, {"make", "="});

@@ -42,6 +42,10 @@ void setup_test_world(TestContext& ctx) {
 }
 
 void test_walk_role_and_domain_errors() {
+  test::expect_eq(GB::commands::walk_cmd.ap.model,
+                  GB::commands::APModel::Dynamic);
+  test::expect_eq(GB::commands::walk_cmd.ap.amount, 0);
+
   TestContext ctx;
   setup_test_world(ctx);
 

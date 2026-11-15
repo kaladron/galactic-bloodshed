@@ -1,7 +1,7 @@
 # CAPITAL
 
 ## Name
-   capital [5] -- designate the new seat of government
+   capital [0 or 50] -- designate the new seat of government
 
 ## Syntax
     capital [#shipnum]

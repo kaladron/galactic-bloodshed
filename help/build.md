@@ -1,7 +1,7 @@
 # BUILD
 
 ## Name
-   build [0] -- construct a ship
+   build [0-1] -- construct a ship
 
 ## Syntax
 Current Scope       Syntax

@@ -89,7 +89,7 @@ const CommandDescriptor walk_cmd{
     .name = "walk",
     .roles = {.no_guests = true},
     .scopes = AllowedScopes::any(),
-    .ap = APCost::free(),
+    .ap = APCost::dynamic(),
     .min_args = 3,
     .syntax = "walk <ship> <direction>",
     .description = "Move an AFV from one sector to another",

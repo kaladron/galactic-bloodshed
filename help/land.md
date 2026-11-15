@@ -7,8 +7,8 @@
    land <#shipnum | ship types> [ <x,y> | #<shipnum>]
 
 ## Description
-  This command lands ships on planets or one some types of ships. To 
-do so the ship must be closer than 45 distance units away from the planet 
+  This command lands ships on planets or on some types of ships. To 
+do so the ship must be within 10.0 distance units of the planet 
 or ship it is trying to land on. 
 
   This maneuver costs an amount of fuel proportional to the mass of the

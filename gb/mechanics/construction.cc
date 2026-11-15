@@ -597,7 +597,7 @@ enum class ShipAttr {
   Armor,
   Crew,
   Cargo,
-  Hanger,
+  Hangar,
   Fuel,
   Destruct,
   Speed,
@@ -615,7 +615,7 @@ std::optional<ShipAttr> parse_ship_attribute(std::string_view name) {
       {"crew", ShipAttr::Crew},
       {"cargo", ShipAttr::Cargo},
       {"resource", ShipAttr::Cargo},
-      {"hanger", ShipAttr::Hanger},
+      {"hangar", ShipAttr::Hangar},
       {"fuel", ShipAttr::Fuel},
       {"destruct", ShipAttr::Destruct},
       {"speed", ShipAttr::Speed},
@@ -674,7 +674,7 @@ modify_simple_attribute(Ship& dirship, const Race& race,
       dirship.max_resource() =
           std::min<resource_t>(value, MAX_FACTORY_CAPACITY);
       return {};
-    case ShipAttr::Hanger:
+    case ShipAttr::Hangar:
       if (!btmpl.max_hangar) break;
       dirship.max_hanger() = std::min<hangar_t>(value, MAX_FACTORY_CAPACITY);
       return {};
@@ -1010,7 +1010,7 @@ upgrade_simple_attribute(Ship& ship, const Ship& dirship, const Race& race,
           std::max(dirship.max_resource(),
                    std::min<resource_t>(value, MAX_FACTORY_CAPACITY));
       return {};
-    case ShipAttr::Hanger:
+    case ShipAttr::Hangar:
       if (!btmpl.max_hangar) break;
       ship.max_hanger() =
           std::max(dirship.max_hanger(),

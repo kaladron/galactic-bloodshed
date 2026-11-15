@@ -30,16 +30,15 @@ try one huge investment.
 Repair yourself to spend each try about as much money as victims population 
 is in target planet.
 
-  If the attempt fails, some of money spent on it goes to victim and
-the rest of it is lost permanently. 
- If the attempt succeeds, each individual sector occupied by the player is
-evaluated for revoult. Troops on sector will reduce chance of revolt.
-So you can defend your important secors by arming civilians on those sectors.
+  All money spent on the insurgency is consumed whether the attempt
+succeeds or fails.
+ If the attempt succeeds, each populated sector occupied by the victim is
+evaluated for revolt based on the victim's tax rate. Troops on a sector
+reduce its chance of revolt, so you can defend important sectors by arming
+civilians on them.
 
 If the sector revolts, all troops are killed, and the instigating
-player gains control of the sector. 
-
-NOTE, only sectors that are combatible to you can revolt.
+player gains control of the sector and inherits the victim's tax rate.
 
 ## See Also
 	insuformula, money, tax, treasury

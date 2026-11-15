@@ -4,7 +4,7 @@
   [0] announce -- make an announcement              
   [0] broadcast -- make a global announcement   
   [0] think -- make an announcement to your governors and raceleader
-  [1] post -- post a news message to all players
+  [0] post -- post a news message to all players
 
 ## Syntax
        announce <message>
@@ -26,8 +26,7 @@ through the game interface.
    If a player uses think command, only currently logged in own race 
 govenors and raceleader receives the message.
 
-   Messages can also be posted to the news using the 'post' command. This
-(depending on game settings) costs action points.
+   Messages can also be posted to the news using the 'post' command.
 
 ## See Also
    page, who, read, toggle

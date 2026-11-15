@@ -1,7 +1,7 @@
 # SELL
 
 ## Name
-   sell [20] -- Put a lot of commodities up for sale in the market
+   sell [1-20] -- Put a lot of commodities up for sale in the market
 
 ## Syntax
    sell <commodity> <amount>

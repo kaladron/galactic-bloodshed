@@ -1,7 +1,7 @@
 # DUMP
 
 ## Name
-   dump [0] -- give another player your exploration data
+   dump [10] -- give another player your exploration data
 
 ## Syntax
    dump <race> [list of stars]

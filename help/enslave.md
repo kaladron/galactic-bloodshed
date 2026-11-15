@@ -1,7 +1,7 @@
 # ENSLAVE
 
 ## Name
-   enslave [1] -- enslave a world
+   enslave [2] -- enslave a world
 
 ## Syntax
    enslave <shipnumber>

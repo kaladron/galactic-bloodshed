@@ -1,7 +1,7 @@
 # DECLARE
 
 ## Name
-   declare [0] -- state relations with other races
+   declare [1] -- state relations with other races
 
 ## Syntax
    declare <race> <status> 

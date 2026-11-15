@@ -270,6 +270,59 @@ void test_ships_build_and_order_help_parity() {
   }
 }
 
+void test_command_help_ap_header_parity() {
+  std::println(std::cout,
+               "Test: Command help [AP] headers match CommandDescriptor::ap");
+
+  const auto help_dir = get_help_dir();
+  const auto extract_name_ap_brackets = [&](std::string_view topic) {
+    std::ifstream file(help_dir / std::format("{}.md", topic));
+    test::expect_true(file.is_open());
+    std::vector<std::string> brackets;
+    bool in_name = false;
+    for (std::string line; std::getline(file, line);) {
+      if (line.starts_with("## Name") || line.starts_with("## NAME")) {
+        in_name = true;
+        continue;
+      }
+      if (!in_name) continue;
+      if (line.starts_with('#')) break;
+      for (std::size_t pos = 0;
+           (pos = line.find('[', pos)) != std::string::npos;) {
+        const auto close = line.find(']', pos + 1);
+        test::expect_ne(close, std::string::npos);
+        if (close == std::string::npos) break;
+        brackets.push_back(line.substr(pos + 1, close - pos - 1));
+        pos = close + 1;
+      }
+    }
+    return brackets;
+  };
+
+  for (const auto& [name, desc] : GB::commands::get_command_registry()) {
+    if (desc->roles.god_only) continue;
+    if (!std::filesystem::exists(help_dir / std::format("{}.md", name))) {
+      continue;
+    }
+    const auto brackets = extract_name_ap_brackets(name);
+    test::expect_false(brackets.empty());
+    for (const auto& ap_text : brackets) {
+      switch (desc->ap.model) {
+        case GB::commands::APModel::Free:
+          test::expect_eq(ap_text, std::string{"0"});
+          break;
+        case GB::commands::APModel::FixedStar:
+        case GB::commands::APModel::FixedUniv:
+          test::expect_eq(ap_text, std::to_string(desc->ap.amount));
+          break;
+        case GB::commands::APModel::Dynamic:
+          test::expect_ne(ap_text, std::string{"0"});
+          break;
+      }
+    }
+  }
+}
+
 int main() {
   test_help_files_exist();
   test_help_file_readable();
@@ -277,6 +330,7 @@ int main() {
   test_nonexistent_help_file();
   test_all_help_headers_links_and_registry_parity();
   test_ships_build_and_order_help_parity();
+  test_command_help_ap_header_parity();
 
   std::println(std::cout, "\n✅ All help_test tests passed!");
   return 0;

@@ -959,11 +959,11 @@ III. -- Playing the Game
                > load #1456 x 1 (assuming you have a crystal on the planet)
                > mount #1456 (now you can take advantage of your xtal mount)
 
-               Say I wanted to increase the hanger capacity of my T, here's
+               Say I wanted to increase the hangar capacity of my T, here's
                how I would do it:
                > cs #1456
                > load #1456 r 2 (This can cost 2 or 4, depending on your T)
-               > upgrade hanger 6 (Default hanger of a T is 5...you must
+               > upgrade hangar 6 (Default hangar of a T is 5...you must
                also have a high enough tech to build this kind
                of ship)
 

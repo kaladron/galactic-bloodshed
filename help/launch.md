@@ -1,7 +1,7 @@
 # LAUNCH
 
 ## Name
-   launch [0] -- launch a ship
+   launch [0-1] -- launch a ship
 
 ## Syntax
    launch <#shipnum>

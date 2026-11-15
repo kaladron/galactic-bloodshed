@@ -43,7 +43,7 @@ sector.  As the planet's population increases toward this figure,
 environmental conditions, represented by toxicity, worsen.  Toxicity also
 affects the maximum population of the sectors on the planet, sometimes
 causing an increased death rate and massive damage to the planet beyond a
-certain threshold (85).
+certain threshold (70).
 
    To deal with this you have to build toxic waste canisters.  Each one can
 hold up to 20 units of waste, but can be built with less.  The canisters, if

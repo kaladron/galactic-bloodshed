@@ -23,8 +23,11 @@ bool segment(const command_t& argv, GameObj& g) {
 
   int seg_num = 0;
   if (argv.size() == 2) {
+    const auto* state = g.entity_manager.peek_server_state();
+    const int max_segs =
+        state ? static_cast<int>(std::max<segments_t>(1, state->segments)) : 1;
     auto res = parse_int<int>(argv[1]);
-    if (!res || *res < 0) {
+    if (!res || *res < 0 || *res > max_segs) {
       g.out << "Invalid segment number.\n";
       return false;
     }

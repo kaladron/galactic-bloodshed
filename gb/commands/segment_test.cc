@@ -6,6 +6,7 @@
 import commands;
 import dallib;
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import test;
 import std;
@@ -38,6 +39,8 @@ void test_segment_matrix() {
     state.segments = 4;
     state.update_time_minutes = 60;
     state_repo.save(state);
+
+    UniverseRepository(store).save(Universe{});
   }
 
   // --- Case 1: Happy Path (God user runs @@segment without arg) ---
@@ -71,7 +74,7 @@ void test_segment_matrix() {
   // --- Case 3: Domain Error (Invalid segment argument and extra args) ---
   ctx.setup_game_obj(g, 1, 1);
   g.set_god(true);
-  for (std::string_view bad : {"invalid", "2abc", "-1"}) {
+  for (std::string_view bad : {"invalid", "2abc", "-1", "5"}) {
     ctx.assert_dispatch_rejected(g, {"@@segment", std::string(bad)});
     test::expect_contains(g.out.str(), "Invalid segment number.");
   }
@@ -93,11 +96,14 @@ void test_segment_matrix() {
     test::expect_true(GB::commands::dispatch_command(
         g, GB::commands::segment_cmd, {"@@segment"}));
   }
+  test::expect_eq(ctx.em.peek_server_state()->nsegments_done, 4U);
   g.set_ui_mode(UiMode::JSON);
   ctx.assert_dispatch_success(g, {"@@segment", "2"});
   test::expect_contains(g.out.str(), R"("type":"message")");
   test::expect_contains(g.out.str(),
                         "Starting segment movement...\\nSegment completed.\\n");
+  test::expect_contains(GB::presentation::do_prompt(g),
+                        R"("race_name":"DeityRace")");
 }
 
 }  // namespace

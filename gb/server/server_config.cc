@@ -131,7 +131,8 @@ std::string format_startup_banner(std::time_t current_time) {
 void initialize_schedule_state(ServerState& state, const ServerConfig& config,
                                std::time_t current_time) {
   state.update_time_minutes = config.update_time.count();
-  state.segments = config.segments;
+  state.segments =
+      (config.segments <= 1) ? 1U : static_cast<segments_t>(config.segments);
   state.record_server_start(current_time);
 
   if (state.next_update_time == 0) {
@@ -142,7 +143,10 @@ void initialize_schedule_state(ServerState& state, const ServerConfig& config,
     state.next_segment_time =
         current_time +
         std::chrono::seconds{no_segments_schedule_offset}.count();
+    state.nsegments_done = state.segments;
   } else {
+    state.nsegments_done =
+        std::clamp<segments_t>(state.nsegments_done, 1U, state.segments);
     if (state.next_segment_time == 0) {
       state.next_segment_time =
           current_time + (state.update_time_minutes * 60 / state.segments);

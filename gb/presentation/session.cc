@@ -61,7 +61,7 @@ SessionView build_session_view(const GameObj& g) {
         .update_interval_minutes = state->update_time_minutes,
         .segments_per_update = state->segments,
         .segments_done = state->nsegments_done,
-        .current_segment = state->nsegments_done == state->segments
+        .current_segment = state->nsegments_done >= state->segments
                                ? 1
                                : state->nsegments_done + 1,
         .next_segment_time = state->next_segment_time,

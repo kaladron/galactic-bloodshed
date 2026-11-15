@@ -19,7 +19,7 @@ is a move seg, any of your ships which are currently trying to repair them-
 selves, regardless of how they incurred damage, will have their damage
 percent reduced by some amount.
 	Deities can manually trigger a movement segment from any scope with
-`@@segment [seg_num]`.
+`@@segment [seg_num]` (where `seg_num`, if given, is `0` or `1..segments`).
 
 ## See Also
   update, shutdown

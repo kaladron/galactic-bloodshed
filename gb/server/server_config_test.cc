@@ -137,6 +137,7 @@ void test_initialize_schedule_state_first_run() {
 
   test::expect_eq(state.update_time_minutes, 60);
   test::expect_eq(state.segments, 4);
+  test::expect_eq(state.nsegments_done, 1);
   test::expect_eq(state.next_update_time, now + 3600);
   test::expect_eq(state.next_segment_time, now + 900);
 }
@@ -150,7 +151,33 @@ void test_initialize_schedule_state_single_segment() {
   initialize_schedule_state(state, config, now);
 
   test::expect_eq(state.segments, 1);
+  test::expect_eq(state.nsegments_done, 1);
   test::expect_eq(state.next_segment_time, now + (144 * 3600));
+}
+
+void test_initialize_schedule_state_clamps_segments() {
+  // Non-positive config.segments clamps to 1 segment with nsegments_done = 1
+  {
+    ServerState state{};
+    ServerConfig config{
+        .port = 2020, .update_time = std::chrono::minutes(60), .segments = 0};
+    initialize_schedule_state(state, config, 1000000);
+    test::expect_eq(state.segments, 1);
+    test::expect_eq(state.nsegments_done, 1);
+  }
+
+  // Persisted nsegments_done larger than new config.segments clamps cleanly
+  {
+    ServerState state{};
+    state.nsegments_done = 5;
+    state.next_update_time = 1003600;
+    state.next_segment_time = 1000900;
+    ServerConfig config{
+        .port = 2020, .update_time = std::chrono::minutes(60), .segments = 3};
+    initialize_schedule_state(state, config, 1000000);
+    test::expect_eq(state.segments, 3);
+    test::expect_eq(state.nsegments_done, 3);
+  }
 }
 
 void test_initialize_schedule_state_catchup_past_segments() {
@@ -225,6 +252,7 @@ int main() {
   test_parse_server_args_errors();
   test_initialize_schedule_state_first_run();
   test_initialize_schedule_state_single_segment();
+  test_initialize_schedule_state_clamps_segments();
   test_initialize_schedule_state_catchup_past_segments();
   test_initialize_block_data();
   test_format_startup_banner();

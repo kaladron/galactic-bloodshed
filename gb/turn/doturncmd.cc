@@ -764,22 +764,37 @@ ScheduleCalculation compute_segment_schedule(const ServerState& state,
   const segments_t segs = std::max<segments_t>(1, state.segments);
   ScheduleCalculation result{};
 
+  if (segs <= 1) {
+    result.next_segment_time = current_time + (144 * 3600);
+    result.nsegments_done = segs;
+    result.next_update_time =
+        (override && target_segment > 0)
+            ? current_time + (state.update_time_minutes * 60)
+            : state.next_update_time;
+    return result;
+  }
+
   if (override) {
     result.next_segment_time =
         current_time + (state.update_time_minutes * 60) / segs;
     if (target_segment > 0) {
-      result.nsegments_done = target_segment;
+      const segments_t clamped =
+          std::min<segments_t>(segs, static_cast<segments_t>(target_segment));
+      result.nsegments_done = clamped;
       result.next_update_time =
-          current_time +
-          (state.update_time_minutes * 60 * (segs - target_segment + 1)) / segs;
+          current_time + (state.update_time_minutes * 60 *
+                          static_cast<std::time_t>(segs - clamped + 1)) /
+                             static_cast<std::time_t>(segs);
     } else {
-      result.nsegments_done = state.nsegments_done + 1;
+      result.nsegments_done =
+          std::min<segments_t>(segs, state.nsegments_done + 1);
       result.next_update_time = state.next_update_time;
     }
   } else {
     result.next_segment_time =
         state.next_segment_time + (state.update_time_minutes * 60) / segs;
-    result.nsegments_done = state.nsegments_done + 1;
+    result.nsegments_done =
+        std::min<segments_t>(segs, state.nsegments_done + 1);
     result.next_update_time = state.next_update_time;
   }
 
@@ -868,6 +883,7 @@ void do_segment(EntityManager& entity_manager,
 
   std::time_t next_seg_time = 0;
   segments_t segs_done = 0;
+  segments_t total_segs = 1;
 
   entity_manager.mutate_server_state([&](ServerState& state) {
     auto calc = compute_segment_schedule(state, clk, override != 0, segment);
@@ -878,12 +894,14 @@ void do_segment(EntityManager& entity_manager,
 
     next_seg_time = state.next_segment_time;
     segs_done = state.nsegments_done;
+    total_segs = std::max<segments_t>(1, state.segments);
   });
 
   session_registry.set_update_in_progress(true);
   if (!fakeit) do_turn(entity_manager, session_registry, false);
   session_registry.set_update_in_progress(false);
-  GB::log::info("Next Segment {:2d} : {}", segs_done,
+  GB::log::info("Next Segment {:2d} : {}",
+                segs_done >= total_segs ? 1U : segs_done + 1U,
                 format_timestamp(next_seg_time));
   clk = std::time(nullptr);
   std::string segment_msg =

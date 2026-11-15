@@ -17,12 +17,12 @@ namespace GB::commands {
 
 bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
                       const command_t& argv) {
+  const auto sync_race = [&]() {
+    g.race =
+        (g.player() > 0) ? g.entity_manager.peek_race(g.player()) : nullptr;
+  };
   // Ensure g.race is valid and synchronized with current player
-  if (g.player() > 0) {
-    g.race = g.entity_manager.peek_race(g.player());
-  } else {
-    g.race = nullptr;
-  }
+  sync_race();
 
   // 1. Role & Permission Verification
   if (desc.roles.god_only && !g.god()) {
@@ -157,14 +157,17 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
   } catch (const ReadOnlyError&) {
     abort_dispatch();
     if (!guest_read_only) {
+      g.race = nullptr;
       throw;
     }
+    sync_race();
     g.out.truncate(out_checkpoint);
     g.present(GB::presentation::make_output_message(
         "Guest races cannot modify game state.\n"));
     return false;
   } catch (...) {
     abort_dispatch();
+    g.race = nullptr;
     throw;
   }
 
@@ -182,6 +185,10 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
       txn->rollback();
     }
   }
+
+  // Re-bind g.race in case txn->rollback() or handler cache clearing
+  // invalidated race_cache.
+  sync_race();
 
   if (g.level() == ScopeLevel::LEVEL_SHIP && (success || desc.name == "cs")) {
     (void)g.reconcile_scope();

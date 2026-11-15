@@ -6,6 +6,7 @@
 
 import dallib;
 import gb.entities;
+import gb.presentation;
 import gb.services;
 import commands;
 import test;
@@ -217,6 +218,154 @@ void test_dispatch_command_transaction_failure(TestContext& ctx) {
   std::println(std::cout, "✓ test_dispatch_command_transaction_failure passed");
 }
 
+void test_transaction_rollback_clears_pending_deletions(TestContext& ctx) {
+  ctx.em.clear_cache();
+
+  ctx.em.mutate_star(starnum_t{1}, [](Star& star) {
+    star.set_planet_name(planetnum_t{1}, "Earth");
+  });
+  {
+    JsonStore store(ctx.db);
+    PlanetRepository(store).save(Planet{{.star_id = 1, .planet_order = 1}});
+  }
+
+  const shipnum_t ship_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
+                                .owned_by(1, 1)
+                                .in_deep_space()
+                                .build();
+  int commod_id = 0;
+  {
+    auto ch = ctx.em.create_commod(commod_struct{
+        .owner = 1,
+        .governor = 1,
+        .type = CommodType::FUEL,
+        .amount = 10,
+        .star_from = 1,
+        .planet_from = 1,
+    });
+    commod_id = ch->id();
+  }
+
+  // Queue ship and commodity deletions behind a DeletionBarrier, then rollback
+  // the transaction before the barrier drains.
+  {
+    auto txn = ctx.em.begin_transaction();
+    auto barrier = ctx.em.create_deletion_barrier();
+    ctx.em.mutate_ship(ship_id, [&](Ship& ship) { ctx.em.destroy_ship(ship); });
+    ctx.em.delete_commod(commod_id);
+    txn.rollback();
+  }
+
+  // Subsequent DeletionBarrier drain must NOT delete the rolled-back entities.
+  {
+    auto barrier = ctx.em.create_deletion_barrier();
+  }
+  ctx.em.clear_cache();
+  const auto* ship = ctx.em.peek_ship(ship_id);
+  test::expect_ne(ship, nullptr);
+  test::expect_true(ship->alive());
+  test::expect_ne(ctx.em.peek_commod(commod_id), nullptr);
+
+  std::println(std::cout,
+               "✓ test_transaction_rollback_clears_pending_deletions passed");
+}
+
+void test_dispatch_rebinds_g_race_in_json_mode(TestContext& ctx) {
+  ctx.em.clear_cache();
+
+  Race mortal{};
+  mortal.Playernum = 5;
+  mortal.name = "JsonRollbackRace";
+  mortal.governor(governor_t{1}).name = "JsonLeader";
+
+  Race guest{};
+  guest.Playernum = 6;
+  guest.name = "JsonGuestRace";
+  guest.Guest = true;
+  guest.governor(governor_t{1}).name = "GuestLeader";
+
+  {
+    JsonStore store(ctx.db);
+    RaceRepository repo(store);
+    repo.save(mortal);
+    repo.save(guest);
+    UniverseRepository(store).save(Universe{});
+  }
+
+  auto& registry = get_test_session_registry();
+
+  // 1. Failed transactional command rebinds g.race for JSON do_prompt
+  {
+    GameObj g(ctx.em, registry);
+    ctx.setup_game_obj(g, 5, 1);
+    g.set_ui_mode(UiMode::JSON);
+
+    static const GB::commands::CommandDescriptor fail_json_cmd{
+        .name = "mock_json_fail",
+        .scopes = GB::commands::AllowedScopes::any(),
+        .handler = [](const command_t&, GameObj& game) -> bool {
+          game.entity_manager.mutate_race(player_t{5},
+                                          [](Race& r) { r.tech = 123.0; });
+          return false;
+        },
+    };
+
+    test::expect_false(
+        GB::commands::dispatch_command(g, fail_json_cmd, {"mock_json_fail"}));
+    test::expect_eq(g.race, ctx.em.peek_race(player_t{5}));
+    test::expect_contains(GB::presentation::do_prompt(g),
+                          R"("race_name":"JsonRollbackRace")");
+  }
+
+  // 2. Guest ReadOnlyError rollback rebinds g.race for JSON do_prompt
+  {
+    GameObj g(ctx.em, registry);
+    ctx.setup_game_obj(g, 6, 1);
+    g.set_ui_mode(UiMode::JSON);
+
+    static const GB::commands::CommandDescriptor guest_mutate_cmd{
+        .name = "mock_guest_mutate",
+        .scopes = GB::commands::AllowedScopes::any(),
+        .handler = [](const command_t&, GameObj& game) -> bool {
+          game.entity_manager.mutate_race(player_t{6},
+                                          [](Race& r) { r.tech = 50.0; });
+          return true;
+        },
+    };
+
+    test::expect_false(GB::commands::dispatch_command(g, guest_mutate_cmd,
+                                                      {"mock_guest_mutate"}));
+    test::expect_eq(g.race, ctx.em.peek_race(player_t{6}));
+    test::expect_contains(GB::presentation::do_prompt(g),
+                          R"("race_name":"JsonGuestRace")");
+  }
+
+  // 3. Non-transactional cache-clearing command rebinds g.race
+  {
+    GameObj g(ctx.em, registry);
+    ctx.setup_game_obj(g, 5, 1);
+    g.set_ui_mode(UiMode::JSON);
+
+    static const GB::commands::CommandDescriptor clear_cache_cmd{
+        .name = "mock_clear_cache",
+        .scopes = GB::commands::AllowedScopes::any(),
+        .handler = [](const command_t&, GameObj& game) -> bool {
+          game.entity_manager.clear_cache();
+          return true;
+        },
+        .transactional = false,
+    };
+
+    test::expect_true(GB::commands::dispatch_command(g, clear_cache_cmd,
+                                                     {"mock_clear_cache"}));
+    test::expect_eq(g.race, ctx.em.peek_race(player_t{5}));
+    test::expect_contains(GB::presentation::do_prompt(g),
+                          R"("race_name":"JsonRollbackRace")");
+  }
+
+  std::println(std::cout, "✓ test_dispatch_rebinds_g_race_in_json_mode passed");
+}
+
 }  // namespace
 
 int main() {
@@ -228,6 +377,8 @@ int main() {
   test_transaction_raii_rollback(ctx);
   test_dispatch_command_transaction_success(ctx);
   test_dispatch_command_transaction_failure(ctx);
+  test_transaction_rollback_clears_pending_deletions(ctx);
+  test_dispatch_rebinds_g_race_in_json_mode(ctx);
 
   std::println(std::cout, "\nAll Transaction tests passed!");
   return 0;

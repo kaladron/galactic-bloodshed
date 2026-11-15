@@ -393,6 +393,8 @@ void Server::process_command(GameObj& g, const command_t& argv,
 
     /* compute the prompt and send to the player */
     if (!g.disconnect_requested() && !g.shutdown_requested()) {
+      g.race =
+          (g.player() > 0) ? g.entity_manager.peek_race(g.player()) : nullptr;
       g.reconcile_scope();
       g.out << GB::presentation::do_prompt(g);
     }

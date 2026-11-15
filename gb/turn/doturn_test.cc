@@ -942,6 +942,24 @@ void test_schedule_calculation_pure() {
   test::expect_eq(override_seg.nsegments_done, 2U);
   test::expect_eq(override_seg.next_update_time, 11'900);
 
+  // 5b. Clamping on override without target when nsegments_done == segments,
+  //     out-of-range target_segment (> segments), and single-segment game
+  state.nsegments_done = 4;
+  auto clamped_inc = compute_segment_schedule(
+      state, /*current_time=*/9'200, /*override=*/true, /*target_segment=*/0);
+  test::expect_eq(clamped_inc.nsegments_done, 4U);
+
+  auto clamped_target = compute_segment_schedule(
+      state, /*current_time=*/9'200, /*override=*/true, /*target_segment=*/10);
+  test::expect_eq(clamped_target.nsegments_done, 4U);
+  test::expect_eq(clamped_target.next_update_time, 10'100);
+
+  auto single_seg = compute_segment_schedule(
+      single_seg_state, /*current_time=*/10'000, /*override=*/true,
+      /*target_segment=*/0);
+  test::expect_eq(single_seg.nsegments_done, 1U);
+  test::expect_eq(single_seg.next_segment_time, 10'000 + (144 * 3600));
+
   // 6. ServerState::record_server_start
   std::time_t t = 1'700'000'000;
   state.record_server_start(t);
@@ -1021,6 +1039,21 @@ void test_do_next_thing_dispatch() {
   test::expect_true(reg.has_broadcast("DOING UPDATE"));
   test::expect_true(reg.has_broadcast("Update"));
   test::expect_eq(state2->nupdates_done, updates_before + 1);
+
+  // 3. Single-segment game (segments = 1, nsegments_done = 1) dispatches
+  // do_update() directly instead of no-op do_segment()
+  ctx.em.mutate_server_state([](ServerState& s) {
+    s.segments = 1;
+    s.nsegments_done = 1;
+  });
+  reg.clear_notifications();
+  const unsigned int single_updates_before =
+      ctx.em.peek_server_state()->nupdates_done;
+  do_next_thing(ctx.em, reg);
+  const auto* state3 = ctx.em.peek_server_state();
+  test::expect_eq(state3->nsegments_done, 1U);
+  test::expect_true(reg.has_broadcast("DOING UPDATE"));
+  test::expect_eq(state3->nupdates_done, single_updates_before + 1);
 }
 
 void test_advance_race_technology() {

@@ -39,7 +39,7 @@ bool schedule(const command_t&, GameObj& g) {
       .update_time_minutes = state->update_time_minutes,
       .segments = state->segments,
       .current_time = format_timestamp(clk),
-      .next_segment_number = state->nsegments_done == state->segments
+      .next_segment_number = state->nsegments_done >= state->segments
                                  ? 1
                                  : state->nsegments_done + 1,
       .next_segment_time = format_timestamp(state->next_segment_time),

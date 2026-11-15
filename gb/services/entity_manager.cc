@@ -1223,6 +1223,8 @@ void EntityManager::Transaction::commit() {
 void EntityManager::Transaction::rollback() {
   if (active_) {
     em_->storage_->db.rollback();
+    em_->pending_ship_deletions_.clear();
+    em_->pending_commod_deletions_.clear();
     em_->clear_cache();
     active_ = false;
   }

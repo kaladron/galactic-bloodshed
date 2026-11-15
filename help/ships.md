@@ -9,11 +9,6 @@ star, causing it to explode, possibly seeding a random planet in that star
 system. Deterioration builds up in a Pod and will eventually cause it to 
 decay. Pods usually last around four updates.
 
-Super Pod
-
-   Super pod is like normal pod except it is slightly faster and 
-seeds sectors in star system three times more likely.
-
 Toxic Waste Container
 
     This is a sealed container used to store environmental poisons.
@@ -28,10 +23,10 @@ must be built in a Factory, see the help topic 'build'. After being
 built, descend to the ship's scope and specify the ship type this Factory 
 will be able to produce with the 'make' command. The stats of the ship to 
 be produced can then be modified by using the 'modify' command. Finally, 
-the Factory must ordered online with the 'order' command. Once activated
+the Factory must be ordered 'on' with the 'order' command. Once activated
 it cannot be turned off, nor can the specification of the ships it is to
 manufacture be altered in any way. 
-    A Factory is built with 48% damage. This represents the time it will
+    A Factory is built with 75% damage. This represents the time it will
 take to start up production. Damage will repair itself during movement 
 segments automatically. To begin repairing however the ship must first be 
 ordered 'on'.
@@ -39,15 +34,14 @@ ordered 'on'.
 
 Quarry
 
-    This ship is used to mine resources from a sector. The amount of 
-resources per update mined from a sector with a Quarry is five.
-    This disadvantage of Quarries is not only that they will reduce
+    This ship is used to strip-mine resources from a sector. When landed,
+manned, and switched on, a Quarry produces resources each update in
+proportion to its crew complement and the owner's metabolism.
+    The disadvantage of Quarries is not only that they will reduce
 the fertility of a sector by the amount of resources produced, but they 
 also will turn the sector into waste and increase the toxicity on the 
 planet.
     Mining requires two fuel per update.
-NOTE:  This is useful ship only if resource depocity is infinite, so newbie
-ask deity about that before build any quarrys.
 
 Weapons Plant
 
@@ -56,7 +50,7 @@ and fuel, and these are converted into destruct during each update. Each
 destruct produced costs one fuel and one resource point. The maximum 
 amount of destruct a fully manned and undamaged plant can produce in one 
 update is given by the owner's current technology divided by two.
-    This ship is built with 72% damage. Construction must be completed 
+    This ship is built with 75% damage. Construction must be completed 
 manually.
 
 Space Port
@@ -66,20 +60,20 @@ function and therefore has little armor and no weapons. In order to buy
 or sell from a planet, you must have one of these, or a ship with port 
 abilities in an undamaged state there. Other than the Space Port, the 
 only other ships available to conduct merchant transactions are: @, H, and S.
-    This ship is built with 72% damage. Construction must be completed 
+    This ship is built with 75% damage. Construction must be completed 
 manually.
 
 Governmental Center
 
     This represents the seat of government of an entire civilization.
 Although superficially a ship, it is not designed to be moved; if your
-capitol is not landed on a planet, it produces no action points. However
+capital is not landed on a planet, it produces no action points. However
 it can be launched and landed like any other ship should an emergency 
-arise. If a capitol is destroyed another one must be designated with the 
-'capitol' command. Note that it is possible to maintain more than one 
+arise. If a capital is destroyed another one must be designated with the 
+'capital' command. Note that it is possible to maintain more than one 
 government center; this has no benefit beyond serving as a backup in the 
-case of destruction of the current capitol.
-    This ship is built with 72% damage. Construction must be completed 
+case of destruction of the current capital.
+    This ship is built with 75% damage. Construction must be completed 
 manually.
 
 Ground Telescope
@@ -88,7 +82,7 @@ Ground Telescope
 the nearest planets for mapping purposes. The tech level of a race 
 determines the telescope's range at build time. Ranges for telescopes 
 built before the next update are listed in a race's profile.
-    Usage: order i aim <target planet>	 
+    Usage: order \ aim <target planet>
 
 Space Plow
 
@@ -96,10 +90,7 @@ Space Plow
 Once activated and given a move command (see the command 'order' for more 
 help), a fully manned and undamaged plow will increase the 
 fertility of each sector traversed by 10%. If it reaches the north or 
-south of the planet map, it will bounce off and continue. There is also
-a jump option to move plow automaticly into own low fertility sector,
-when sector reaches fertility ordered with limit command.
-See also how to use stockpile (help order).
+south of the planet map, it will bounce off and continue.
     The Space Plow uses two fuel per update. Plowing can increase the 
 toxicity level on a planet.
 
@@ -113,50 +104,18 @@ the maximum cargo. The Shuttle, however, cannot take off or land with
 this extra cargo. Shuttles are one of the few classes of ships that can
 construct other ships.
 
-The Mighty Dhuttle
-
-	Approximately ten years ago scientists found a design of an alien
-ship from a distant planet around star Orion. After months of decoding
-engineers were able to construct the ship, which resembles very much our
-shuttle. It is believed, though, that this dhuttle is a design of an extinct
-race that was superior to us in technology. Dhuttle has one mighty light
-gun for defence and attack purposes and it has no need for armor
-whatsoever.
-
-	There are two notable differences between shuttles and dhuttles. 
-A shuttle makes normal marks of rocketlaunch on the ground when it is launched
-but dhuttle engraves a certain pattern to the earth. Big thing here is that
-the exhaust pipes of both designs are the same.
-
-      This pattern made by a dhuttle is a triangle in center of which you
-can perceive letters HUT. Two points of the triangle have also letters. On
-one point of the triangle letters form a word GEM and on the other one a
-word of Jurmut. However, in the last year there have been reports of a
-word on the third point also. This third word has reported to have a form
-of Ix, Hitchhiker, Romans or Turtles. It seems that the final form of the
-third word is not yet fixed, which, in fact, implies that this alien race
-is not extinct but lives somewhere in the galaxy... 
-
-	The other difference is a very special feature. The noise caused
-by a dhuttlelaunch sounds like cry: 'Creepy will return!'
-
 Bunker
 
     A heavily fortified position. Use it to store supplies and AFVs
 in, as well as offering a haven for ships.
-    This ship is built with 48% damage. Construction must be completed 
+    This ship is built with 50% damage. Construction must be completed 
 manually.
 
 Dome
 
-    This ship can be used to increase sector efficiencies. At maximum crew 
-the efficiency an undamaged Dome can increase the efficiency by 5% per 
-update. A Dome must be switched on to be effective. If a Dome is set to 
-autoscrap (with the 'order' command), the Dome will be automatically 
-scrapped upon reaching a sector efficiency of 100%. There is a jump option
-for dome to make it automaticly jump into own low efficiency sector, when
-sector reaches efficiency ordered with limit command. See also how to use
-stockpile (help order).
+    This ship can be used to increase sector efficiencies. At maximum crew,
+an undamaged Dome can increase the efficiency of its sector by 5% per
+update. A Dome must be landed and switched on to be effective.
     A dome uses one resource per update.
 
 Space Probe
@@ -165,13 +124,6 @@ Space Probe
 robotic and requires no crew, but reports data from its explorations to 
 the building race as if it were manned. It is extremely fast and can be
 useful for analyzing the strategic deployments of enemy ships. 
-
-Colonizer
-
-   A unarmed, lightly armored recon ship, with a large crew compartment,
-and ample resource space, this ship is perfect for scouting out prospective
-homes for your race.
-   This ship is built with 20% damage.  Construct must be completed manually.
 
 Dust Canister
 
@@ -199,7 +151,6 @@ Explorer
 It has increased range over shuttle and it's the smalest shiptype 
 capable to jump. It is more hevily armed than shuttle. This is not a ship
 to tangle with warships, although it is rather ideal for armed recon.
-     This ship is built with 48% damage. Construction must be completed manually.
 
 Missile
 
@@ -222,7 +173,7 @@ ground-based telescope. The tech level of a race determines the
 telescope's range at build time. Ranges for telescopes built before the 
 next update are listed in a race's profile.
 
-## Afv
+AFV
 
     This machine is a land based Armored Fighting Vehicle. These type of 
 ships may fire on other ships if adjacent. The may also bombard adjacent 
@@ -230,18 +181,7 @@ sectors. AFVs may only attack other landed ships. AFVs can be moved using
 the 'walk' command.
 NOTE: These are weaker than they look.
 
-Mine Sweeper
-
-    A medium armored and armed ship, capable of seeking (automatically) 
-out mines and destroying them before other ships come in contact with
-them. The Sweeper is not particularly fast, but it have kind of shotgun
-cannons. These cannons give better hit probability against mines than
-cannons of any other ship. The sweeper is best used when loaded into a
-faster ship and sent out before exploring a unknown system.
-    This ship is built with 48% damage. Construction must be completed 
-manually.
-
-Mine Fields 
+Space Mine
 
     This device is a proximity mine, exploding on contact with enemy
 ships or, if set with the 'order' command, showering them with deadly 
@@ -252,18 +192,9 @@ also altered with the 'order' command.
     Alien space mines are difficult to detect. They are invisible on the
 solar system maps but can be detected with the `tactical' command. 
 Their precise locations may be difficult to triangulate. They also possess
-a high defense strength since they are small objects and difficult to hit
-nonetheless find. A Mine Sweeper can facilitate rooting out these 
-dangerous surprises.
+a high defense strength since they are small objects and difficult to hit.
     Mines are triggered by ships moving inside of their assigned trigger 
 radius, or by owner using detonate command.
-
-Light Carrier
-
-    This is a low tech - small carrier, usefully for transporting shuttles
-or domes to your colonies.  They have light armor, and only minimal guns for
-defensive purposes.  
-  This ship is built with 48% damage.  Construct must be completed manually.
 
 Terraforming Device
 
@@ -299,7 +230,7 @@ is evaluated after missile movement, but before impact is evaluated.
 ABMs represent a last line of defense against missile attacks and are
 executed automatically. The more batteries a planet has the more chance
 of intercepting and incoming missile.
-    This ship is built with 48% damage. Construction must be completed 
+    This ship is built with 50% damage. Construction must be completed 
 manually.
 
 Destroyer
@@ -308,7 +239,7 @@ Destroyer
 armor, this ship can provide decent star system security at the lower 
 technology levels, and later can be produced en masse to fill in a fleet. 
 It is always a good choice for escort duty.
-    This ship is built with 48% damage. Construction must be completed 
+    This ship is built with 50% damage. Construction must be completed 
 manually.
 
 Tanker
@@ -334,7 +265,7 @@ shuttles can build.
     Stations are unusual in that they can repair themselves for free,
 without charging resources. Ships docked with or landed on a station can 
 also take advantage of this feature.
-    This ship is built with 72% damage. Construction must be completed 
+    This ship is built with 75% damage. Construction must be completed 
 manually.
 
 Space Habitat
@@ -354,7 +285,7 @@ rate, normally 200 fuel per update. The Habitat must be switched on with
 the order command before it will produce resources. 
     Habitats are the only ships in which citizens feel comfortable enough to 
 reproduce freely.
-    This ship is built with 72% damage. Construction must be completed 
+    This ship is built with 75% damage. Construction must be completed 
 manually.
 
 Fighter Group
@@ -376,7 +307,7 @@ increase the radiation level. A weaker shot will have no effect at all.
 population each update. Each movement segment, a ship may have a chance  
 of becoming inactive due to the radiation levels in the ship. 
 Gamma Ray Laser is second generation of planetary defence guns after @.
-    This ship is built with 72% damage. Construction must be completed 
+    This ship is built with 75% damage. Construction must be completed 
 manually.
 
 Space Mirror
@@ -390,7 +321,7 @@ this amount may be reduced by damage to the Mirror or by range.
 damage done to the ship is proportional to the intensity set on the Mirror 
 and inversely related to the target's size and the range to the target. 
     This ship also has attitude jets for maneuvering. 
-    This ship is built with 72% damage. Construction must be completed 
+    This ship is built with 75% damage. Construction must be completed 
 manually.
 
 Cruiser
@@ -399,7 +330,7 @@ Cruiser
 range of the Interceptor, the Cruiser boasts heavy caliber firepower and 
 substantially more armor. These ships can provide a strong foundation for
 a powerful fleet.
-    This ship is built with 48% damage. Construction must be completed 
+    This ship is built with 50% damage. Construction must be completed 
 manually.
 
 Interceptor
@@ -410,7 +341,7 @@ range via its large fuel capacity, which can even outdistance
 a standard Cruiser class ship. An Interceptor is very fast, it's like
 the 'Porche' of the battlefield and an excellent choice for 
 lengthy, but potentially dangerous patrols.
-    This ship is built with 48% damage. Construction must be completed 
+    This ship is built with 50% damage. Construction must be completed 
 manually.
 
 Lander
@@ -420,7 +351,7 @@ with decent hanger space for transporting AFVs. With its heavy armor it
 can successfully survive planetary defense fire enough to establish a 
 significantly large landing party on a planet. It also carries plenty of 
 firepower for bombarding runs. The Lander is quite slow, however.
-    This ship is built with 48% damage. Construction must be completed 
+    This ship is built with 50% damage. Construction must be completed 
 manually.
 
 Orbital Assault Platform
@@ -431,7 +362,7 @@ recalcitrant worlds (with the 'enslave' command). It can also be used
 for constructing other ships as can shuttles and habitats, however it
 cannot reproduce citizens or manufacture resources.
     An OAP must be built in space and is too large to be landed on a planet.
-    This ship is built with 72% damage. Construction must be completed
+    This ship is built with 75% damage. Construction must be completed
 manually.
 
 Planetary Defense Network
@@ -440,7 +371,7 @@ Planetary Defense Network
 gamma ray lasers)  which prevent enemy players to fire at planets as long 
 as they are present. Before a player may attack sectors with orbiting ships, 
 all planetary defense systems must be eliminated.
-    This ship is built with 72% damage. Construction must be completed 
+    This ship is built with 75% damage. Construction must be completed 
 manually.
 
 Audio-Vibatory-Physio-Molecular Transport Device
@@ -453,7 +384,7 @@ with the 'order' command.
 target ship is set to `0' cargo will not be transported anywhere and will
 remain in the hopper. Both the sending and target Transporters must be 
 landed and undamaged to transport material.
-    This ship is built with 48% damage. Construction must be completed 
+    This ship is built with 50% damage. Construction must be completed 
 manually.
 
 Battleship
@@ -461,7 +392,7 @@ Battleship
     Although not quite the mighty Dreadnaught, the Battleship is the basic 
 heavy class combat ship. With its excellent armor and heavy firepower, 
 this ship works well for general-purpose assaults, and fleet duty.
-    This ship is built with 48% damage. Construction must be completed 
+    This ship is built with 50% damage. Construction must be completed 
 manually.
 
 Dreadnaught
@@ -469,7 +400,7 @@ Dreadnaught
     This ship is the largest and best armored combat vessel. With twice the 
 gunpower of the Battleship and heavy-duty armor, the Dreadnaught makes an 
 excellent flagship for any navy.
-    This ship is built with 48% damage. Construction must be completed 
+    This ship is built with 50% damage. Construction must be completed 
 manually.
 
 Carrier
@@ -479,5 +410,41 @@ companion ships. Any real battle group will be equipped with one of
 these massive machines. They are not amazingly armored, but are armed about
 equivalent to a Battleship. These ships are so large, they can not land on 
 planets and must be built in space.
-    This ship is built with 48% damage. Construction must be completed 
+    This ship is built with 50% damage. Construction must be completed 
 manually.
+
+Von Neumann Machine
+
+    An unmanned, self-replicating robotic probe that autonomously navigates to
+star systems, strip-mines surface sectors, constructs replicas in orbit, and
+dispatches offspring to other systems.
+
+Godship
+
+    An omnipotent administrative starship available only to deities (`!`),
+replenishing its fuel, destruct, and crew reserves each update.
+
+Berserker
+
+    A deity-spawned autonomous robotic war machine (`V`) that pursues target
+races across star systems and executes automated planetary bombardment.
+
+Tractor-Repulsor Beam
+
+    A high-energy tractor-repulsor beam projector (`-`). Not currently
+programmed for construction.
+
+Mind Control Laser
+
+    An orbital mind-control laser platform (`l`). Not currently programmed for
+construction.
+
+Berserker Control Center
+
+    An automated machine-intelligence command installation (`;`). Deity-only;
+not currently programmed for construction.
+
+Berserker Autofac
+
+    An automated deep-space Berserker fabrication facility (`Z`). Deity-only;
+not currently programmed for construction.

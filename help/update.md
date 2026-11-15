@@ -25,11 +25,5 @@ If you aren't on at updates, enemies often get the chance of jump into your
 system and start attacking while you aren't on to defend yourself.  This
 can have disastrous effects.
 
-This clears up a bit what is happening during updates to TKY type ships:
-* process move orders (only T and K)
-* hop if sector is ready and autoscrap if hop fails
-* do your things to sector
-* autoscrap Y's
-
 ## See Also
   segment

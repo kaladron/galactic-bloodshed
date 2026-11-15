@@ -28,8 +28,8 @@ of all the default parameters for all ship types. Given a
 specific ship type, this variant will print a short description 
 of the ship, where the ship can be built, and the default 
 parameters for that ship.
- Some ships are built with a damage. Ships repair themselves 
-at rate 24% every update if there is resourses and civilians in
+ Some ships are built with damage. Ships repair themselves 
+at a rate of 25% every update if there are resources and civilians in
 ship or on sector where ship is landed on.
     The other variants of the build command arise since ships can 
 be built in a variety of locations in Galactic Bloodshed: on a 
@@ -73,7 +73,7 @@ a more detailed description, see the manual section on ships):
     needed to build its specified ship. The type of ship produced 
     and the design specifications cannot be changed once the Factory 
     is online!
-   6) Factories are built with 48% - 75% damage. They do not require 
+   6) Factories are built with 75% damage. They do not require 
     resources to be fixed but will repair themselves over the course 
     of several updates--{{but only after they have been ordered online}}.
    7) Once the Factory is completely repaired, change scope to the 

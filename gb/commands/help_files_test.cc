@@ -218,12 +218,65 @@ void test_all_help_headers_links_and_registry_parity() {
   }
 }
 
+void test_ships_build_and_order_help_parity() {
+  std::println(std::cout,
+               "Test: ships.md, build.md, order.md, and update.md match "
+               "canonical mechanics");
+
+  const auto help_dir = get_help_dir();
+  const auto read_all = [&](std::string_view name) {
+    std::ifstream file(help_dir / std::format("{}.md", name));
+    test::expect_true(file.is_open());
+    return std::string(std::istreambuf_iterator<char>(file),
+                       std::istreambuf_iterator<char>());
+  };
+
+  for (const auto& entry : std::filesystem::directory_iterator(help_dir)) {
+    if (entry.path().extension() != ".md") continue;
+    const std::string text = read_all(entry.path().stem().string());
+    for (std::string_view hut_holdover :
+         {"Super Pod", "Dhuttle", "Colonizer", "Mine Sweeper", "Light Carrier",
+          "autoscrap", "order stockpile", "48% damage", "72% damage"}) {
+      test::expect_eq(text.find(hut_holdover), std::string::npos);
+    }
+  }
+
+  const std::string ships_md = read_all("ships");
+  for (std::string_view canonical_ship :
+       {"Godship", "Von Neumann Machine", "Berserker", "Tractor-Repulsor Beam",
+        "Mind Control Laser", "Berserker Control Center", "Berserker Autofac",
+        R"(order \ aim)"}) {
+    test::expect_contains(ships_md, canonical_ship);
+  }
+
+  const std::string build_md = read_all("build");
+  test::expect_contains(build_md, "25%");
+  test::expect_eq(build_md.find("24%"), std::string::npos);
+
+  const std::string order_md = read_all("order");
+  for (std::string_view order_subcmd :
+       {"merchant",  "destination", "speed",   "jump",      "impact",
+        "scatter",   "on",          "off",     "switch",    "aim",
+        "intensity", "transport",   "evade",   "primary",   "secondary",
+        "bombard",   "retaliate",   "laser",   "focus",     "navigate",
+        "protect",   "salvo",       "defense", "explosive", "radiative",
+        "move",      "trigger"}) {
+    test::expect_contains(order_md, order_subcmd);
+  }
+  for (std::string_view removed_subcmd :
+       {"order <shipnumber> online", "  hop --", "  limit --",
+        "  disperse --"}) {
+    test::expect_eq(order_md.find(removed_subcmd), std::string::npos);
+  }
+}
+
 int main() {
   test_help_files_exist();
   test_help_file_readable();
   test_help_file_format();
   test_nonexistent_help_file();
   test_all_help_headers_links_and_registry_parity();
+  test_ships_build_and_order_help_parity();
 
   std::println(std::cout, "\n✅ All help_test tests passed!");
   return 0;

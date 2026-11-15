@@ -17,32 +17,23 @@ cruisers in the current scope.
 the user of illegal orders.
 
  If no shipnumber is specified, the program will list the orders of all ships
-in the current ship. If a shipnumber is specified, but no other arguments are
+in the current scope. If a shipnumber is specified, but no other arguments are
 given, the orders for that ship will be displayed.
 
 Currently the orders that can be changed are:
 
   merchant -- Controls whether or not ship is in merchant mode. See
-
 	'help route' for details.
-	Syntax: order (shipnumber) merchant (off/route number)
+	Syntax: order <shipnumber> merchant <off/route number>
 
   destination -- The ship will attempt to move towards the star/planet/ship
 	specified.  This order cannot be changed for ships that are landed
-	or docked. 
-	Syntax: order (shipnumber) destination (destination)
+	or docked.
+	Syntax: order <shipnumber> destination <destination>
 
   speed -- Change the speed of a ship. All speed factors are between 0 and 9.
 	Higher speeds used fuel less efficiently than lower speeds.
-	Syntax: order (shipnumber) speed (speed factor)
-
-  use stockpile -- Many of ships use stockplies. That means you don't need 
-	to load	resources in ships to repair or use them. It is enaugh if 
-	there is resos or fuel on planet where they are landed.
-	Syntax: order stockpile (on or off)
-	NOTE: Ships work before planet produces new goodies. So if you
-	want your ships to use stockpile be sure there is one to use
-	BEFORE an update.
+	Syntax: order <shipnumber> speed <speed factor>
 
   jump -- This orders the ship to activate it's hyper-space engines in order to
 	jump to another star system. The ship cannot be ordered to navigate
@@ -51,24 +42,25 @@ Currently the orders that can be changed are:
 	When the engines are activated and charge is complete, the ship will
 	automatically jump to the destination system (specified with order). 
 	Ships that do not have	hyper-drive may not use this option. 	
-	Syntax: order jump (on or off)
+	Syntax: order <shipnumber> jump <on or off>
 
   impact -- A missile can be designated an impact sector. Upon reaching
 	the destination planet it will explode centered upon the designated
 	sector. A missile must have destruct loaded on board to be effective.
-	Syntax: order (shipnumber) impact (x,y)
+	Syntax: order <shipnumber> impact <x,y>
 
   scatter -- A missile can be designated to impact on a random sector. When
 	this is set, impact order above is undone. Ordering an impact sector
 	undoes this order.
-	Syntax: order (shipnumber) scatter
+	Syntax: order <shipnumber> scatter
 
-  switch -- Many devices have an on/off switch to activate or deactivate
-	them. This option toggles the on or off status.
+  on / off / switch -- Devices and installations with a power switch can be
+	activated with 'on', deactivated with 'off', or toggled with 'switch'.
+	Factories are brought online permanently with 'on' and cannot be turned
+	off once activated.
+	Syntax: order <shipnumber> on
+	Syntax: order <shipnumber> off
 	Syntax: order <shipnumber> switch
-
-  online -- Factories can be turned online by issuing this command.
-	Syntax: order <shipnumber> online
 
   aim -- Change the ship/object 'aimed at'.  There are several ship
 	types that can do this, with a different effect for each.
@@ -95,6 +87,10 @@ Currently the orders that can be changed are:
 	Syntax: order <shipnumber> primary [<strength>]
 	Syntax: order <shipnumber> secondary [<strength>]
 
+  bombard -- When enabled on an orbiting warship, automatically bombards
+	enemy or neutral planetary sectors during updates.
+	Syntax: order <shipnumber> bombard <on or off>
+
   retaliate -- normally, if a ship is attacked and suffers damage, it
 	and all ships assigned to protect will immediately retaliate
 	with one salvo against the violating ships. A ship can also
@@ -107,7 +103,11 @@ Currently the orders that can be changed are:
 	For ever point of strength, a laser used 2 fuel points instead
 	destruct for the attack. The ship must have lasers mounted as
 	well as a crystal in the hyperdrive.
-	Syntax: order <shipnumber> laser <on or off> <default strength>
+	Syntax: order <shipnumber> laser <on or off> [<default strength>]
+
+  focus -- Focuses mounted combat lasers for higher per-shot intensity at
+	increased risk of crystal burnout.
+	Syntax: order <shipnumber> focus <on or off>
 
   navigate -- while this is on the destination described above is 
 	ignored and instead, the ship will travel in the direction
@@ -138,9 +138,6 @@ Currently the orders that can be changed are:
 	its host planet is attacked.
 	Syntax: order <shipnumber> defense <on or off>
 
-  switch -- Turn mines and transporters on or off.
-	Syntax: order <shipnumber> switch
-
   explosive -- If the ship is a mine or a gamma ray laser, this command sets 
 	it to be in explosive mode which can damage ships.
 	Syntax: order <shipnumber> explosive
@@ -149,33 +146,16 @@ Currently the orders that can be changed are:
 	gamma ray lasers incapacitate ships.
 	Syntax: order <shipnumber> radiative
 
-  move  -- If the ship is a terraforming device of space plow, the direction
-	it is to move across the planet.  The direction is given as a single
-	digit, similar to those used in the regular "move" command.
-	Syntax: order <shipnumber> move <x>
-
-  hop -- If ship is terraformer, space plow or dome, hop order can be given.
-	If hop is on (default) ship will automaticly change sector it's 
-	working on when sector becomes ready (fertilty, efficiency reaches 
-	% set by limit). Plow will hop into the lowest fertility, dome in
-	lowest efficiency combatible own or empty sector, and terraformer into
-	another non compatible and non wasteland, own or empty sector.
-
-  limit -- Limit will set the target efficiency combapility or fertility when 
-	Y, T or K will jump into next sector.
-	Syntax: order <ship> limit <wanted %> 
-
-  autoscrap -- When YKT type of ship got nothing else to do and autoscrap 
-	is ordered on, ship will automaticly scrap itself.
+  move -- If the ship is a terraforming device or space plow, sets the
+	direction sequence (`1`..`9`, optionally ending with `c` to cycle or `s`
+	to stop) it traverses across planetary sectors.
+	Syntax: order <shipnumber> move <sequence>
 
   trigger -- If the ship is a mine the trigger radius can be specified.
 	Syntax: order <shipnumber> trigger <trigger radius>
 
-  disperse -- Will mine disperse when it becomes empty. Word of warning..
-	empty mines are easy to capture by you enemy.
-
-  Ships that are landed or docked, or have no crew and are not robotic
-ships, cannot be given orders.
+  Irradiated inactive ships, and non-robotic ships (other than Transporters)
+with no crew aboard, cannot be given orders.
 
 ## See Also
  scope, actionpoints

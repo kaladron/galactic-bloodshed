@@ -17,7 +17,7 @@ namespace GB::commands {
 namespace {
 
 std::optional<std::filesystem::path>
-resolve_help_path(std::string_view topic, std::string_view help_dir_override) {
+resolve_help_file(std::string_view topic, std::string_view help_dir_override) {
   if (topic.empty() || topic.find_first_of("/\\.") != std::string_view::npos) {
     return std::nullopt;
   }
@@ -34,6 +34,18 @@ resolve_help_path(std::string_view topic, std::string_view help_dir_override) {
     if (std::filesystem::is_regular_file(dev_path)) {
       return dev_path;
     }
+  }
+  return std::nullopt;
+}
+
+std::optional<std::filesystem::path>
+resolve_help_path(std::string_view topic, std::string_view help_dir_override) {
+  if (auto path = resolve_help_file(topic, help_dir_override)) {
+    return path;
+  }
+  if (const auto* desc = find_command_descriptor(topic);
+      desc != nullptr && desc->name != topic) {
+    return resolve_help_file(desc->name, help_dir_override);
   }
   return std::nullopt;
 }

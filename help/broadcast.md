@@ -17,4 +17,4 @@ broadcast Boo!      (Sends the message 'Boo!' to every player logged
                         in and ungaged.)
 
 ## See Also
-	communication, announce, think
+	communications, announce, think

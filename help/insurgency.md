@@ -42,4 +42,4 @@ player gains control of the sector.
 NOTE, only sectors that are combatible to you can revolt.
 
 ## See Also
-	money, tax, treasury
+	insuformula, money, tax, treasury

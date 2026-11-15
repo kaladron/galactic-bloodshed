@@ -34,4 +34,4 @@ distance, if the other ship is not an ally.
 You may declare war, alliance, or neutrality.
 
 ## See Also
-   commmunication, relations
+   communications, relation

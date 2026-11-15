@@ -23,4 +23,4 @@ Alliance blocks do not force alliances among its members.
 In fact, it solely is used for political purposes. 
 
 ## See Also
-	block, power, relations
+	block, power, relation

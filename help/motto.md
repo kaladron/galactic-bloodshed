@@ -12,4 +12,4 @@ will show up on individual block reports. This is strictly for
 entertainment/communications and has no effect on the play of the game.
 
 ## See Also
-   blocks
+   block

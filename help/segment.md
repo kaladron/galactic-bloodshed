@@ -1,4 +1,4 @@
-SEGMENT                        Galactic Bloodsched	        	SEGMENT
+# SEGMENT
 
 CONCEPT: movement segment
 

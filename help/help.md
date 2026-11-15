@@ -9,22 +9,21 @@
 You can ask more help about these items
 
 CONCEPTS -
-	actionpoints	automove	civilians	colony
-	combat		commands	commodities	communications
-	crystal		descriptions	discoveries	hyperdrive
-	lasers		maintain	military	missiles
-	money		morale		races		ranks
-	scope		segment		ships		speed
-	telegram	update		use_stockpile
+	actionpoints	civilians	colony		combat
+	commands	commodities	communications	crystal
+	description	discoveries	fireformula	hyperdrive
+	insuformula	lasers		maintain	military
+	missiles	modifyformula	money		morale
+	races		scope		segment		ships
+	speed		telegram	update
 
 COMBAT -
 	assault		bombard		capture		cew
 	defend		enslave		fire
 
 COMMUNICATIONS -
-	announce	broadcast	emote		highlight
-	page		post		read		send
-	think
+	announce	broadcast	highlight	page
+	post		read		send		think
 
 INFORMATION -
 	analysis	autoreport	colonies	distance
@@ -44,8 +43,8 @@ MONETARY -
 
 RELATIONS  -
 	appoint		block		declare		give
-	grant		invite		pledge		promote
-	relation	revoke		uninvite	unpledge
+	grant		invite		pledge		relation
+	revoke		uninvite	unpledge
 
 SHIPS -
 	build		detonate	dismount	dock
@@ -56,8 +55,7 @@ SHIPS -
 	walk		weapons
 
 OTHER -
-	allocate	bug		capital		cs
-	center		dissolve	help		move
-	quit		repair		route		technology
-	time		toggle		toxicity	vote
-	zoom
+	allocate	capital		cs		center
+	dissolve	help		move		quit
+	repair		route		technology	time
+	toggle		toxicity	vote		zoom

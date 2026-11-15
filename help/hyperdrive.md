@@ -40,4 +40,4 @@ If ship don't have enaugh fuel to do jump, instead of jumping hyperdrive
 will turn off.
 
 ## See Also
-	order, crystal, laser, modify, mount, upgrade
+	order, crystal, lasers, modify, mount, upgrade

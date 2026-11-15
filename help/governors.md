@@ -16,4 +16,4 @@ race leader can change the password of any of the governors, while governors
 can only change their own password.
 
 ## See Also
-   appoint, grant, name, revoke, promote
+   appoint, grant, name, revoke

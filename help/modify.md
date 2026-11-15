@@ -41,4 +41,4 @@ Special systems:
 		Some ships may not have secondary gun systems.
 
 ## See Also
-	make, build, lasers, cew
+	make, build, modifyformula, lasers, cew

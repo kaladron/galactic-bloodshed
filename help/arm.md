@@ -39,4 +39,4 @@ arm 1,5 20  (arm 20 civs from sector 1,5; will cost (20/(sector
                 costs 7d and 100 money)
 
 ## See Also
-	military, destruct, disarm, mobilize
+	military, commodities, disarm, mobilize

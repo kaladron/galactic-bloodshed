@@ -82,4 +82,4 @@ alert. If the planet is attacked, all ships defending will
 retaliate against the intruder.
 
 ## See Also
-  bombard, defend, tactical, order
+  bombard, defend, fireformula, tactical, order

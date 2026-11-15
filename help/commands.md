@@ -12,7 +12,6 @@ bid -- list market items and make a bid
 block -- display list of power blocks
 bombard -- fire ship's weapons at planet
 broadcast -- send a message to all players logged in
-bug -- send deity a bug report
 build -- construct a ship
 
 capital -- designate the new seat of government
@@ -34,7 +33,6 @@ distance -- get the distance between two objects
 dock -- dock two ships together
 dump -- give another player your exploration data
 
-emote -- send message to all players loggeg in using third person
 enslave -- enslave a world
 examine -- look at ship/object
 explore -- global survey of explored worlds
@@ -80,14 +78,12 @@ pledge -- say 'yes' to an invitation to join a block
 post -- Write a message to Galactic News 
 power -- list empires and their approximate influnces
 production -- show latest planet production statistics
-prance -- prance happily around
 profile -- racial profile
-promote -- promote your governor
 
 quit -- disconnect from the server 
 
 read -- read messages sent to you or read Galactic News
-relations -- state relations
+relation -- state relations
 repair -- repair wasteland sectors
 report -- navigational ship report
 revoke -- remove governor's powers

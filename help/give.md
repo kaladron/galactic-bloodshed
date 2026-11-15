@@ -12,4 +12,4 @@ The ship becomes immediately under the new player's control. Ship must
 be without crew and military. Spore pods cannot have their ownership changed.
 
 ## See Also
-    declare, relations
+    declare, relation

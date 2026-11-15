@@ -59,10 +59,18 @@ void test_help_command_dispatch() {
   ctx.assert_dispatch_success(g, {"help"});
   test::expect_false(g.out.str().empty());
 
-  // 2. Happy Path: Topic help success
+  // 2. Happy Path: Topic and alias help success
   g.out.str("");
   ctx.assert_dispatch_success(g, {"help", "build"});
   test::expect_contains(g.out.str(), "Finished.");
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"help", "dist"});
+  test::expect_contains(g.out.str(), "# DISTANCE");
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"help", ":"});
+  test::expect_contains(g.out.str(), "# ANNOUNCE");
 
   // 3. Domain Error: Non-existent and empty topics
   g.out.str("");

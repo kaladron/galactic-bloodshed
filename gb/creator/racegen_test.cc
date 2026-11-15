@@ -222,6 +222,42 @@ void test_validation_rules() {
       !errors.empty() &&
           errors[0].contains("You can't have negative points left"),
       "should reject negative remaining points in rigorous mode");
+
+  // 9. Rigorous: uncommon (1.01x) sectors on Iceball, Forest, and Desert must
+  // not satisfy the common-sector homeworld requirement.
+  spec = GB::creator::race_archetypes[0].to_enrollment_spec(
+      PlanetType::ICEBALL, /*randomize=*/false);
+  spec.password = "validpass";
+  spec.address = "player@game.org";
+  spec.metabolism = 0.5;
+  spec.sector_compatibilities = {.land = 1.0, .plated = 1.0};
+  errors = engine.validate(spec, true, true);
+  test::expect_true(
+      std::ranges::any_of(errors,
+                          [](const std::string& e) {
+                            return e.contains("common on your home planet");
+                          }),
+      "Iceball race with only 100% Land must fail common-sector check");
+
+  spec.home_planet_type = PlanetType::FOREST;
+  spec.sector_compatibilities = {.sea = 1.0, .plated = 1.0};
+  errors = engine.validate(spec, true, true);
+  test::expect_true(
+      std::ranges::any_of(errors,
+                          [](const std::string& e) {
+                            return e.contains("common on your home planet");
+                          }),
+      "Forest race with only 100% Ocean must fail common-sector check");
+
+  spec.home_planet_type = PlanetType::DESERT;
+  spec.sector_compatibilities = {.land = 1.0, .mount = 1.0, .plated = 1.0};
+  errors = engine.validate(spec, true, true);
+  test::expect_true(
+      std::ranges::any_of(errors,
+                          [](const std::string& e) {
+                            return e.contains("common on your home planet");
+                          }),
+      "Desert race without 100% Desert must fail common-sector check");
 }
 
 void test_archetypes_valid_and_within_budget() {

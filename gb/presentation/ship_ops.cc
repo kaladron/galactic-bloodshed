@@ -585,21 +585,14 @@ bool mortal_can_see_ship(EntityManager& em, const Ship& ship, player_t player,
 }
 
 ShipFactoryBlueprintView project_factory_blueprint(const Ship& ship) {
+  if (!ship.has_factory_design()) {
+    return ShipFactoryBlueprintView{
+        .configured = false,
+        .build_type = ShipType::OTYPE_FACTORY,
+        .build_type_letter = ' ',
+    };
+  }
   const ShipType btype = ship.build_type();
-  if (btype == ShipType::STYPE_POD) {
-    return ShipFactoryBlueprintView{
-        .configured = false,
-        .build_type = ShipType::OTYPE_FACTORY,
-        .build_type_letter = ' ',
-    };
-  }
-  if (btype == ShipType::OTYPE_FACTORY) {
-    return ShipFactoryBlueprintView{
-        .configured = false,
-        .build_type = ShipType::OTYPE_FACTORY,
-        .build_type_letter = ' ',
-    };
-  }
 
   const bool has_hd = (ship.hyper_drive().has != 0);
   return ShipFactoryBlueprintView{

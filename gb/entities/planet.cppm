@@ -417,37 +417,83 @@ public:
     return to_string(data_.type);
   }
 
+  /// \brief Returns the homeworld sector compatibility cost multiplier (`1.0`
+  /// for common native sectors, `1.01` for uncommon native sectors, and `>
+  /// 1.01` for alien biome penalties).
+  [[nodiscard]] constexpr double
+  compat_cost_multiplier(SectorType sector) const noexcept {
+    return compat_cost_multiplier(data_.type, sector);
+  }
+
+  /// \brief Returns the homeworld sector compatibility cost multiplier for a
+  /// planet type and sector type.
+  [[nodiscard]] static constexpr double
+  compat_cost_multiplier(PlanetType planet, SectorType sector) noexcept {
+    constexpr PlanetValues<SectorValues<double, 99.0>> multipliers = {
+        .earth = {.sea = 1.00,
+                  .land = 1.00,
+                  .mount = 2.00,
+                  .gas = 99.00,
+                  .ice = 1.01,
+                  .forest = 1.50,
+                  .desert = 3.00,
+                  .plated = 1.01},
+        .mars = {.sea = 1.01,
+                 .land = 1.00,
+                 .mount = 1.00,
+                 .gas = 99.00,
+                 .ice = 1.01,
+                 .forest = 1.01,
+                 .desert = 1.00,
+                 .plated = 1.01},
+        .iceball = {.sea = 3.00,
+                    .land = 1.01,
+                    .mount = 1.00,
+                    .gas = 99.00,
+                    .ice = 1.00,
+                    .forest = 1.50,
+                    .desert = 2.00,
+                    .plated = 1.01},
+        .gasgiant = {.gas = 1.00},
+        .water = {.sea = 1.00,
+                  .land = 1.50,
+                  .mount = 3.00,
+                  .gas = 99.00,
+                  .ice = 1.01,
+                  .forest = 1.01,
+                  .desert = 3.00,
+                  .plated = 1.01},
+        .forest = {.sea = 1.01,
+                   .land = 1.50,
+                   .mount = 2.00,
+                   .gas = 99.00,
+                   .ice = 1.01,
+                   .forest = 1.00,
+                   .desert = 3.00,
+                   .plated = 1.01},
+        .desert = {.sea = 3.00,
+                   .land = 1.01,
+                   .mount = 1.01,
+                   .gas = 99.00,
+                   .ice = 1.50,
+                   .forest = 3.00,
+                   .desert = 1.00,
+                   .plated = 1.01},
+    };
+    return multipliers[planet][sector];
+  }
+
   /// \brief Returns whether a sector type is common (native) on this planet.
   [[nodiscard]] constexpr bool
   is_common_sector(SectorType sector) const noexcept {
     return is_common_sector(data_.type, sector);
   }
 
-  /// \brief Returns whether a sector type is common (native) on a planet type.
+  /// \brief Returns whether a sector type is common (native) on a planet type
+  /// (`compat_cost_multiplier == 1.0`).
   [[nodiscard]] static constexpr bool
   is_common_sector(PlanetType planet, SectorType sector) noexcept {
-    switch (planet) {
-      case PlanetType::EARTH:
-        return sector == SectorType::SEC_SEA || sector == SectorType::SEC_LAND;
-      case PlanetType::FOREST:
-        return sector == SectorType::SEC_SEA ||
-               sector == SectorType::SEC_FOREST;
-      case PlanetType::DESERT:
-      case PlanetType::MARS:
-        return sector == SectorType::SEC_LAND ||
-               sector == SectorType::SEC_MOUNT ||
-               sector == SectorType::SEC_DESERT;
-      case PlanetType::WATER:
-        return sector == SectorType::SEC_SEA;
-      case PlanetType::ICEBALL:
-        return sector == SectorType::SEC_LAND ||
-               sector == SectorType::SEC_MOUNT || sector == SectorType::SEC_ICE;
-      case PlanetType::GASGIANT:
-        return sector == SectorType::SEC_GAS;
-      case PlanetType::ASTEROID:
-        return false;
-    }
-    std::unreachable();
+    return compat_cost_multiplier(planet, sector) == 1.0;
   }
 
   [[nodiscard]] std::uint32_t expltimer() const noexcept {

@@ -151,80 +151,6 @@ double sector_compat_covariance(SectorType a, SectorType b) {
   return 0.0;
 }
 
-double planet_compat_cov_multiplier(PlanetType planet, SectorType sector) {
-  // TODO(C++26): Use std::inplace_vector when it lands in libc++ and make
-  // constexpr when P3372 (constexpr containers and adaptors) lands.
-  static const std::flat_map<PlanetType, SectorCompatibilities> cov_map = {
-      {PlanetType::EARTH,
-       {.sea = 1.00,
-        .land = 1.00,
-        .mount = 2.00,
-        .gas = 99.00,
-        .ice = 1.01,
-        .forest = 1.50,
-        .desert = 3.00,
-        .plated = 1.01}},
-      {PlanetType::FOREST,
-       {.sea = 1.01,
-        .land = 1.50,
-        .mount = 2.00,
-        .gas = 99.00,
-        .ice = 1.01,
-        .forest = 1.00,
-        .desert = 3.00,
-        .plated = 1.01}},
-      {PlanetType::DESERT,
-       {.sea = 3.00,
-        .land = 1.01,
-        .mount = 1.01,
-        .gas = 99.00,
-        .ice = 1.50,
-        .forest = 3.00,
-        .desert = 1.00,
-        .plated = 1.01}},
-      {PlanetType::WATER,
-       {.sea = 1.00,
-        .land = 1.50,
-        .mount = 3.00,
-        .gas = 99.00,
-        .ice = 1.01,
-        .forest = 1.01,
-        .desert = 3.00,
-        .plated = 1.01}},
-      {PlanetType::MARS,
-       {.sea = 1.01,
-        .land = 1.00,
-        .mount = 1.00,
-        .gas = 99.00,
-        .ice = 1.01,
-        .forest = 1.01,
-        .desert = 1.00,
-        .plated = 1.01}},
-      {PlanetType::ICEBALL,
-       {.sea = 3.00,
-        .land = 1.01,
-        .mount = 1.00,
-        .gas = 99.00,
-        .ice = 1.00,
-        .forest = 1.50,
-        .desert = 2.00,
-        .plated = 1.01}},
-      {PlanetType::GASGIANT,
-       {.sea = 99.00,
-        .land = 99.00,
-        .mount = 99.00,
-        .gas = 1.00,
-        .ice = 99.00,
-        .forest = 99.00,
-        .desert = 99.00,
-        .plated = 99.00}},
-  };
-  if (auto it = cov_map.find(planet); it != cov_map.end()) {
-    return it->second[sector];
-  }
-  return 1.0;
-}
-
 }  // namespace
 
 RacegenEngine::RacegenEngine() {
@@ -479,7 +405,7 @@ RacegenEngine::calculate_cost(const RaceEnrollmentSpec& spec) const noexcept {
 
   for (SectorType st : settleable_sector_types) {
     const double multiplier =
-        planet_compat_cov_multiplier(spec.home_planet_type, st);
+        Planet::compat_cost_multiplier(spec.home_planet_type, st);
     if (multiplier > 1.01) {
       raw_sector_costs[st] *= multiplier;
     }

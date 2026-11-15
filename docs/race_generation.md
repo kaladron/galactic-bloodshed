@@ -140,16 +140,16 @@ Adapting to divergent environments incurs steep evolutionary overhead:
 
 Your ancestral homeworld environment provides natural advantages and point subsidies:
 
-| Home World Archetype | Point Cost | Ecological & Strategic Trade-offs |
-| :--- | :---: | :--- |
-| **Earth** | $+75$ pts | High natural land and water abundance; optimal starting balance. |
-| **Forest** | $+50$ pts | Rich organic biomass; moderate land/water availability. |
-| **Desert** | $+50$ pts | Abundant mineral extraction; limited agricultural zones. |
-| **Water** | $+50$ pts | Vast aquatic surface area; restricted dry construction space. |
-| **Airless (Mars)** | $-25$ pts | Harsh vacuum regolith; subsidized with $+25$ bonus points to spend on traits. |
-| **Iceball** | $-25$ pts | Sub-zero cryogenic glaciers; subsidized with $+25$ bonus points. |
-| **Gas Giant (Jovian)** | $+600$ pts | Complete immunity to terrestrial ground invasion; floating atmospheric cities. |
-| **Asteroid** | *N/A* | **Invalid homeworld.** Asteroids cannot support capital founding. |
+| Home World Archetype | Point Cost | Common Native Sectors (`1.00x`, `*`) | Ecological & Strategic Trade-offs |
+| :--- | :---: | :--- | :--- |
+| **Earth** | $+75$ pts | Ocean, Land | High natural land and water abundance; optimal starting balance. |
+| **Forest** | $+50$ pts | Forest | Rich organic biomass; moderate land/water availability. |
+| **Desert** | $+50$ pts | Desert | Abundant mineral extraction; limited agricultural zones. |
+| **Water** | $+50$ pts | Ocean | Vast aquatic surface area; restricted dry construction space. |
+| **Airless (Mars)** | $-25$ pts | Land, Mountain, Desert | Harsh vacuum regolith; subsidized with $+25$ bonus points to spend on traits. |
+| **Iceball** | $-25$ pts | Mountain, Ice | Sub-zero cryogenic glaciers; subsidized with $+25$ bonus points. |
+| **Gas Giant (Jovian)** | $+600$ pts | Gas | Complete immunity to terrestrial ground invasion; floating atmospheric cities. |
+| **Asteroid** | *N/A* | *None* | **Invalid homeworld.** Asteroids cannot support capital founding. |
 
 ---
 

@@ -2285,8 +2285,10 @@ void test_subclass_special_data_clamping() {
 
   Ship fac{};
   fac.type() = ShipType::OTYPE_FACTORY;
-  fac.build_type() = ShipType::OTYPE_FACTORY;
+  test::expect_eq(fac.build_type(), ShipType::STYPE_POD);
   test::expect_false(carrier.has_factory_design());
+  test::expect_false(fac.has_factory_design());
+  fac.build_type() = ShipType::OTYPE_FACTORY;
   test::expect_false(fac.has_factory_design());
   fac.build_type() = ShipType::STYPE_FIGHTER;
   test::expect_true(fac.has_factory_design());

@@ -194,9 +194,11 @@ public:
   }
 
   /// \brief Returns whether this factory ship has been programmed with a ship
-  /// design.
+  /// design (`STYPE_POD` default zero-init and `OTYPE_FACTORY` both denote an
+  /// unconfigured blueprint).
   [[nodiscard]] bool has_factory_design() const noexcept {
     return data_.type == ShipType::OTYPE_FACTORY &&
+           data_.build_type != ShipType::STYPE_POD &&
            data_.build_type != ShipType::OTYPE_FACTORY;
   }
 

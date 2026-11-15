@@ -735,42 +735,65 @@ int main() {
     test::expect_eq(abs_via_coords, UniverseCoordinates(5100.0, 9800.0));
   }
 
-  // Test 21: Planet is_common_sector native terrain queries
+  // Test 21: Planet compat_cost_multiplier & is_common_sector parity
   {
     Planet earth{1, 1, PlanetType::EARTH, Coordinates{10, 10}};
     test::expect_true(earth.is_common_sector(SectorType::SEC_SEA));
     test::expect_true(earth.is_common_sector(SectorType::SEC_LAND));
     test::expect_false(earth.is_common_sector(SectorType::SEC_GAS));
     test::expect_false(earth.is_common_sector(SectorType::SEC_DESERT));
+    test::expect_eq(earth.compat_cost_multiplier(SectorType::SEC_SEA), 1.0);
+    test::expect_eq(earth.compat_cost_multiplier(SectorType::SEC_DESERT), 3.0);
 
-    // Static constexpr queries
-    test::expect_true(
+    static_assert(
         Planet::is_common_sector(PlanetType::GASGIANT, SectorType::SEC_GAS));
-    test::expect_false(
-        Planet::is_common_sector(PlanetType::GASGIANT, SectorType::SEC_LAND));
-
-    test::expect_true(
+    static_assert(
+        !Planet::is_common_sector(PlanetType::GASGIANT, SectorType::SEC_LAND));
+    static_assert(
         Planet::is_common_sector(PlanetType::WATER, SectorType::SEC_SEA));
-    test::expect_false(
-        Planet::is_common_sector(PlanetType::WATER, SectorType::SEC_LAND));
-
-    test::expect_true(
+    static_assert(
+        !Planet::is_common_sector(PlanetType::WATER, SectorType::SEC_LAND));
+    static_assert(
         Planet::is_common_sector(PlanetType::FOREST, SectorType::SEC_FOREST));
-    test::expect_true(
-        Planet::is_common_sector(PlanetType::FOREST, SectorType::SEC_SEA));
-
-    test::expect_true(
+    static_assert(
+        !Planet::is_common_sector(PlanetType::FOREST, SectorType::SEC_SEA));
+    static_assert(
         Planet::is_common_sector(PlanetType::DESERT, SectorType::SEC_DESERT));
-    test::expect_true(
-        Planet::is_common_sector(PlanetType::DESERT, SectorType::SEC_LAND));
-    test::expect_true(
-        Planet::is_common_sector(PlanetType::DESERT, SectorType::SEC_MOUNT));
-
-    test::expect_true(
+    static_assert(
+        !Planet::is_common_sector(PlanetType::DESERT, SectorType::SEC_LAND));
+    static_assert(
+        !Planet::is_common_sector(PlanetType::DESERT, SectorType::SEC_MOUNT));
+    static_assert(
+        Planet::is_common_sector(PlanetType::MARS, SectorType::SEC_LAND));
+    static_assert(
+        Planet::is_common_sector(PlanetType::MARS, SectorType::SEC_MOUNT));
+    static_assert(
+        Planet::is_common_sector(PlanetType::MARS, SectorType::SEC_DESERT));
+    static_assert(
         Planet::is_common_sector(PlanetType::ICEBALL, SectorType::SEC_ICE));
+    static_assert(
+        Planet::is_common_sector(PlanetType::ICEBALL, SectorType::SEC_MOUNT));
+    static_assert(
+        !Planet::is_common_sector(PlanetType::ICEBALL, SectorType::SEC_LAND));
+    static_assert(
+        !Planet::is_common_sector(PlanetType::ASTEROID, SectorType::SEC_LAND));
 
-    test::expect_false(
-        Planet::is_common_sector(PlanetType::ASTEROID, SectorType::SEC_LAND));
+    for (PlanetType pt :
+         {PlanetType::EARTH, PlanetType::ASTEROID, PlanetType::MARS,
+          PlanetType::ICEBALL, PlanetType::GASGIANT, PlanetType::WATER,
+          PlanetType::FOREST, PlanetType::DESERT}) {
+      for (SectorType st :
+           {SectorType::SEC_SEA, SectorType::SEC_LAND, SectorType::SEC_MOUNT,
+            SectorType::SEC_GAS, SectorType::SEC_ICE, SectorType::SEC_FOREST,
+            SectorType::SEC_DESERT, SectorType::SEC_PLATED,
+            SectorType::SEC_WASTED}) {
+        test::expect_eq(Planet::is_common_sector(pt, st),
+                        Planet::compat_cost_multiplier(pt, st) == 1.0);
+        if (st == SectorType::SEC_WASTED || pt == PlanetType::ASTEROID) {
+          test::expect_false(Planet::is_common_sector(pt, st));
+        }
+      }
+    }
   }
 
   // Test 22: is_enslaved_to_foreign predicate
@@ -1104,15 +1127,18 @@ int main() {
     planet.type() = PlanetType::FOREST;
     test::expect_eq(planet.type_symbol(), ')');
     test::expect_eq(planet.type_name(), "Forest");
-    test::expect_true(planet.is_common_sector(SectorType::SEC_SEA));
+    test::expect_false(planet.is_common_sector(SectorType::SEC_SEA));
     test::expect_true(planet.is_common_sector(SectorType::SEC_FOREST));
     test::expect_false(planet.is_common_sector(SectorType::SEC_LAND));
 
     planet.type() = PlanetType::ICEBALL;
-    test::expect_true(planet.is_common_sector(SectorType::SEC_LAND));
+    test::expect_false(planet.is_common_sector(SectorType::SEC_LAND));
     test::expect_true(planet.is_common_sector(SectorType::SEC_MOUNT));
+    test::expect_true(planet.is_common_sector(SectorType::SEC_ICE));
     test::expect_false(planet.is_common_sector(SectorType::SEC_SEA));
     planet.type() = PlanetType::DESERT;
+    test::expect_true(planet.is_common_sector(SectorType::SEC_DESERT));
+    test::expect_false(planet.is_common_sector(SectorType::SEC_LAND));
     test::expect_false(planet.is_common_sector(SectorType::SEC_SEA));
 
     planet.maxpopn() = 100;

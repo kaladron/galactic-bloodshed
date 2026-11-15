@@ -245,7 +245,11 @@ UniverseGenerationResult UniverseGenerator::generate(Database& db) {
   result.planet_count = db.count_non_asteroid_planets();
 
   ShipExamRepository exam_repo(store);
-  exam_repo.seed_from_file(config_.exam_file);
+  if (!exam_repo.seed_from_file(config_.exam_file)) {
+    throw std::runtime_error(std::format(
+        "UniverseGenerator: failed to seed ship exam descriptions from '{}'",
+        config_.exam_file));
+  }
 
   return result;
 }

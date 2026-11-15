@@ -264,6 +264,19 @@ void test_universe_generator_deity_password_validation() {
     test::expect_throws<std::invalid_argument>([&]() { gen.generate(db); });
   }
 
+  // 5. Missing/invalid exam_file fails fast instead of seeding empty exams
+  {
+    Database db(":memory:");
+    GB::creator::UniverseConfig cfg{
+        .num_stars = 1,
+        .exam_file = "/nonexistent/exam.dat",
+        .deity_password = "godpass",
+        .deity_gov_password = "govpass",
+    };
+    GB::creator::UniverseGenerator gen(cfg);
+    test::expect_throws<std::runtime_error>([&]() { gen.generate(db); });
+  }
+
   std::println(std::cout, "  ✓ Deity password validation (MC/DC) passed");
 }
 

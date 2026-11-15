@@ -200,43 +200,46 @@ ServerStateRepository::deserialize(const std::string& json_str) const {
 }
 
 bool ShipExamRepository::seed_from_file(const std::string& path) {
-  std::ifstream file(path);
+  std::ifstream file(path, std::ios::binary);
   if (!file.is_open()) {
     return false;
   }
   std::string content((std::istreambuf_iterator<char>(file)),
                       std::istreambuf_iterator<char>());
   file.close();
+  std::erase(content, '\r');
 
-  std::vector<std::string> sections;
+  std::vector<std::string> descriptions;
+  descriptions.reserve(NUMSTYPES);
   std::size_t start = 0;
-  std::size_t end = content.find('~');
-  while (end != std::string::npos) {
-    sections.push_back(content.substr(start, end - start));
-    start = end + 1;
-    end = content.find('~', start);
-  }
-  if (start < content.size()) {
-    sections.push_back(content.substr(start));
-  }
-
-  int type = 0;
-  for (const auto& section : sections) {
-    auto first = section.find_first_not_of(" \t\n\r");
-    if (first == std::string::npos) continue;
-    auto last = section.find_last_not_of(" \t\n\r");
-    std::string trimmed = section.substr(first, (last - first + 1));
-
-    if (type < NUMSTYPES) {
-      auto stype = static_cast<ShipType>(type);
-      ShipExam exam{.ship_type = stype,
-                    .name = std::string(ship_template(stype).name),
-                    .description = trimmed};
-      save(exam);
-      type++;
+  while (start <= content.size()) {
+    const std::size_t end = content.find('~', start);
+    const std::string_view section =
+        (end == std::string::npos)
+            ? std::string_view(content).substr(start)
+            : std::string_view(content).substr(start, end - start);
+    const auto first = section.find_first_not_of(" \t\n");
+    if (first != std::string_view::npos) {
+      const auto last = section.find_last_not_of(" \t\n");
+      descriptions.emplace_back(section.substr(first, last - first + 1));
     }
+    if (end == std::string::npos) break;
+    start = end + 1;
   }
-  return type > 0;
+
+  if (descriptions.size() != static_cast<std::size_t>(NUMSTYPES)) {
+    return false;
+  }
+
+  for (int type = 0; type < NUMSTYPES; ++type) {
+    const auto stype = static_cast<ShipType>(type);
+    save(ShipExam{
+        .ship_type = stype,
+        .name = std::string(ship_template(stype).name),
+        .description = std::move(descriptions[static_cast<std::size_t>(type)]),
+    });
+  }
+  return true;
 }
 
 std::optional<std::string>

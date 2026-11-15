@@ -351,12 +351,52 @@ void test_ship_exam_repository() {
     initialize_schema(seed_db);
     JsonStore seed_store(seed_db);
     ShipExamRepository seed_repo(seed_store);
-    bool seeded = seed_repo.seed_from_file(pkg_data_path("exam.dat").string());
-    if (seeded) {
-      auto pod_exam = seed_repo.find_by_type(ShipType::STYPE_POD);
-      test::expect_true(pod_exam.has_value());
-      test::expect_contains(pod_exam->description, "Spore Pod");
+    test::expect_true(
+        seed_repo.seed_from_file(pkg_data_path("exam.dat").string()));
+    for (int i = 0; i < NUMSTYPES; ++i) {
+      auto exam = seed_repo.find_by_type(static_cast<ShipType>(i));
+      test::expect_true(exam.has_value());
+      test::expect_false(exam->description.contains('\r'));
     }
+    auto pod_exam = seed_repo.find_by_type(ShipType::STYPE_POD);
+    test::expect_contains(pod_exam->description, "Spore Pod");
+  }
+
+  // Test seed_from_file validation: missing file, wrong section counts, and
+  // CRLF normalization
+  {
+    Database val_db(":memory:");
+    initialize_schema(val_db);
+    JsonStore val_store(val_db);
+    ShipExamRepository val_repo(val_store);
+
+    test::expect_false(
+        val_repo.seed_from_file("/nonexistent/path/to/exam.dat"));
+
+    const auto tmp_exam =
+        std::filesystem::temp_directory_path() / "test_ship_exam_seed.dat";
+    auto write_sections = [&](int count) {
+      std::ofstream out(tmp_exam, std::ios::binary);
+      for (int i = 0; i < count; ++i) {
+        out << "~\r\nHeading " << i << "\r\nBody line " << i << "\r\n";
+      }
+    };
+
+    write_sections(NUMSTYPES - 1);
+    test::expect_false(val_repo.seed_from_file(tmp_exam.string()));
+    test::expect_false(val_repo.find_by_type(ShipType::STYPE_POD).has_value());
+
+    write_sections(NUMSTYPES + 1);
+    test::expect_false(val_repo.seed_from_file(tmp_exam.string()));
+    test::expect_false(val_repo.find_by_type(ShipType::STYPE_POD).has_value());
+
+    write_sections(NUMSTYPES);
+    test::expect_true(val_repo.seed_from_file(tmp_exam.string()));
+    auto crlf_exam = val_repo.find_by_type(ShipType::STYPE_POD);
+    test::expect_true(crlf_exam.has_value());
+    test::expect_eq(crlf_exam->description, "Heading 0\nBody line 0");
+
+    std::filesystem::remove(tmp_exam);
   }
 
   std::println(std::cout, "✓ All ShipExamRepository tests passed");

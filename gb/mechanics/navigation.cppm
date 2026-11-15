@@ -251,15 +251,6 @@ export std::expected<OrderUpdate, OrderError>
 give_orders(EntityManager& em, const ScopeContext& scope_ctx,
             const command_t& argv, Ship& ship);
 
-export enum class JettisonCommodity {
-  Crystals,
-  Crew,
-  Military,
-  Destruct,
-  Fuel,
-  Resources,
-};
-
 export enum class JettisonErrorReason {
   ShipLanded,
   ShipIrradiated,
@@ -276,7 +267,7 @@ export struct JettisonError {
 };
 
 export struct JettisonResult {
-  JettisonCommodity commodity{JettisonCommodity::Resources};
+  ShipCargoType commodity{ShipCargoType::Resource};
   int amount{0};
   std::string ship_display{};
   shipnum_t ship_number{0};

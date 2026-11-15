@@ -530,7 +530,15 @@ export template <>
 struct ShipTypeTraits<SpaceMirrorShip> {
   using payload_type = AimedAtData;
   [[nodiscard]] static constexpr bool matches(ShipType type) noexcept {
-    return type >= ShipType::STYPE_MIRROR && type <= ShipType::OTYPE_TRACT;
+    switch (type) {
+      case ShipType::STYPE_MIRROR:
+      case ShipType::OTYPE_STELE:
+      case ShipType::OTYPE_GTELE:
+      case ShipType::OTYPE_TRACT:
+        return true;
+      default:
+        return false;
+    }
   }
 };
 

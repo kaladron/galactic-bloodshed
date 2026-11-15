@@ -48,22 +48,22 @@ std::string render_jettison_error(const JettisonError& err) {
 
 std::string render_jettison_result(const JettisonResult& res) {
   switch (res.commodity) {
-    case JettisonCommodity::Crystals:
+    case ShipCargoType::Crystal:
       return std::format("{} crystal{} jettisoned.\n", res.amount,
                          (res.amount == 1) ? "" : "s");
-    case JettisonCommodity::Crew:
+    case ShipCargoType::Crew:
       return std::format("{} crew {} into deep space.\n"
                          "Complement of {} is now {}.\n",
                          res.amount,
                          (res.amount == 1) ? "hurls itself" : "hurl themselves",
                          res.ship_display, res.remaining_complement);
-    case JettisonCommodity::Military:
+    case ShipCargoType::Troops:
       return std::format("{} military {} into deep space.\n"
                          "Complement of ship #{} is now {}.\n",
                          res.amount,
                          (res.amount == 1) ? "hurls itself" : "hurl themselves",
                          res.ship_number, res.remaining_complement);
-    case JettisonCommodity::Destruct: {
+    case ShipCargoType::Destruct: {
       std::string out = std::format("{} destruct jettisoned.\n", res.amount);
       if (res.check_boobytrap) {
         std::format_to(std::back_inserter(out), "\n{} {}\n", res.ship_display,
@@ -72,9 +72,9 @@ std::string render_jettison_result(const JettisonResult& res) {
       }
       return out;
     }
-    case JettisonCommodity::Fuel:
+    case ShipCargoType::Fuel:
       return std::format("{} fuel jettisoned.\n", res.amount);
-    case JettisonCommodity::Resources:
+    case ShipCargoType::Resource:
       return std::format("{} resources jettisoned.\n", res.amount);
   }
   std::unreachable();

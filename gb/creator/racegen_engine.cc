@@ -17,78 +17,64 @@ namespace GB::creator {
 
 namespace {
 
-enum class AttributeIndex : std::size_t {
-  Adventurism = 0,
-  Absorb = 1,
-  Birthrate = 2,
-  CollectiveIQ = 3,
-  Fertilize = 4,
-  IQ = 5,
-  Fight = 6,
-  Pods = 7,
-  Mass = 8,
-  Sexes = 9,
-  Metabolism = 10,
-};
-
-constexpr std::string_view to_string(AttributeIndex idx) noexcept {
+constexpr std::string_view to_string(RaceAttribute idx) noexcept {
   switch (idx) {
-    case AttributeIndex::Adventurism:
+    case RaceAttribute::Adventurism:
       return "Adventurism";
-    case AttributeIndex::Absorb:
+    case RaceAttribute::Absorb:
       return "Absorb";
-    case AttributeIndex::Birthrate:
+    case RaceAttribute::Birthrate:
       return "Birthrate";
-    case AttributeIndex::CollectiveIQ:
+    case RaceAttribute::CollectiveIQ:
       return "Collective IQ";
-    case AttributeIndex::Fertilize:
+    case RaceAttribute::Fertilize:
       return "Fertilize";
-    case AttributeIndex::IQ:
+    case RaceAttribute::IQ:
       return "IQ";
-    case AttributeIndex::Fight:
+    case RaceAttribute::Fight:
       return "Fight";
-    case AttributeIndex::Pods:
+    case RaceAttribute::Pods:
       return "Pods";
-    case AttributeIndex::Mass:
+    case RaceAttribute::Mass:
       return "Mass";
-    case AttributeIndex::Sexes:
+    case RaceAttribute::Sexes:
       return "Sexes";
-    case AttributeIndex::Metabolism:
+    case RaceAttribute::Metabolism:
       return "Metabolism";
   }
 }
 
-std::string attribute_name(const RaceEnrollmentSpec& spec, AttributeIndex idx) {
-  if (idx == AttributeIndex::IQ && spec.collective_iq) {
+std::string attribute_name(const RaceEnrollmentSpec& spec, RaceAttribute idx) {
+  if (idx == RaceAttribute::IQ && spec.collective_iq) {
     return "IQ Limit";
   }
   return std::string(to_string(idx));
 }
 
 double get_attribute_value(const RaceEnrollmentSpec& spec,
-                           AttributeIndex idx) noexcept {
+                           RaceAttribute idx) noexcept {
   switch (idx) {
-    case AttributeIndex::Adventurism:
+    case RaceAttribute::Adventurism:
       return spec.adventurism;
-    case AttributeIndex::Absorb:
+    case RaceAttribute::Absorb:
       return spec.absorb ? 1.0 : 0.0;
-    case AttributeIndex::Birthrate:
+    case RaceAttribute::Birthrate:
       return spec.birthrate;
-    case AttributeIndex::CollectiveIQ:
+    case RaceAttribute::CollectiveIQ:
       return spec.collective_iq ? 1.0 : 0.0;
-    case AttributeIndex::Fertilize:
+    case RaceAttribute::Fertilize:
       return spec.fertilize.as_fraction();
-    case AttributeIndex::IQ:
+    case RaceAttribute::IQ:
       return static_cast<double>(std::max(spec.iq, spec.iq_limit));
-    case AttributeIndex::Fight:
+    case RaceAttribute::Fight:
       return static_cast<double>(spec.fighters);
-    case AttributeIndex::Pods:
+    case RaceAttribute::Pods:
       return spec.pods ? 1.0 : 0.0;
-    case AttributeIndex::Mass:
+    case RaceAttribute::Mass:
       return spec.mass;
-    case AttributeIndex::Sexes:
+    case RaceAttribute::Sexes:
       return static_cast<double>(spec.number_sexes);
-    case AttributeIndex::Metabolism:
+    case RaceAttribute::Metabolism:
       return spec.metabolism;
   }
 }
@@ -154,151 +140,139 @@ double sector_compat_covariance(SectorType a, SectorType b) {
 }  // namespace
 
 RacegenEngine::RacegenEngine() {
-  // 0: Adventurism
-  base_attr_[0] = {.e_factor = 0.0,
-                   .e_fudge = 0.0,
-                   .e_hinge = 0.0,
-                   .l_factor = 300.0,
-                   .minimum = 0.05,
-                   .init = 0.4,
-                   .maximum = 0.99,
-                   .is_integral = 0};
-  // 1: Absorb
-  base_attr_[1] = {.e_factor = 0.0,
-                   .e_fudge = 0.0,
-                   .e_hinge = 0.0,
-                   .l_factor = 200.0,
-                   .minimum = 0.0,
-                   .init = 0.0,
-                   .maximum = 1.0,
-                   .is_integral = 2};
-  // 2: Birthrate
-  base_attr_[2] = {.e_factor = 0.0,
-                   .e_fudge = 0.0,
-                   .e_hinge = 0.0,
-                   .l_factor = 500.0,
-                   .minimum = 0.2,
-                   .init = 0.6,
-                   .maximum = 1.0,
-                   .is_integral = 0};
-  // 3: Collective IQ
-  base_attr_[3] = {.e_factor = 0.0,
-                   .e_fudge = 0.0,
-                   .e_hinge = 0.0,
-                   .l_factor = -350.5,
-                   .minimum = 0.0,
-                   .init = 0.0,
-                   .maximum = 1.0,
-                   .is_integral = 2};
-  // 4: Fertilize
-  base_attr_[4] = {.e_factor = 200.0,
-                   .e_fudge = 1.0,
-                   .e_hinge = 1.0,
-                   .l_factor = 300.0,
-                   .minimum = 0.0,
-                   .init = 0.0,
-                   .maximum = 1.0,
-                   .is_integral = 0};
-  // 5: IQ
-  base_attr_[5] = {.e_factor = 100.0,
-                   .e_fudge = 0.03,
-                   .e_hinge = 140.0,
-                   .l_factor = 6.0,
-                   .minimum = 50.0,
-                   .init = 150.0,
-                   .maximum = 220.0,
-                   .is_integral = 1};
-  // 6: Fight
-  base_attr_[6] = {.e_factor = 10.0,
-                   .e_fudge = 0.4,
-                   .e_hinge = 6.0,
-                   .l_factor = 65.0,
-                   .minimum = 1.0,
-                   .init = 4.0,
-                   .maximum = 20.0,
-                   .is_integral = 1};
-  // 7: Pods
-  base_attr_[7] = {.e_factor = 0.0,
-                   .e_fudge = 0.0,
-                   .e_hinge = 0.0,
-                   .l_factor = 200.0,
-                   .minimum = 0.0,
-                   .init = 0.0,
-                   .maximum = 1.0,
-                   .is_integral = 2};
-  // 8: Mass
-  base_attr_[8] = {.e_factor = 100.0,
-                   .e_fudge = 1.0,
-                   .e_hinge = 3.1,
-                   .l_factor = -100.0,
-                   .minimum = 0.1,
-                   .init = 1.0,
-                   .maximum = 3.0,
-                   .is_integral = 0};
-  // 9: Sexes
-  base_attr_[9] = {.e_factor = 2.2,
-                   .e_fudge = -0.5,
-                   .e_hinge = 9.0,
-                   .l_factor = -3.0,
-                   .minimum = 1.0,
-                   .init = 2.0,
-                   .maximum = 53.0,
-                   .is_integral = 1};
-  // 10: Metabolism
-  base_attr_[10] = {.e_factor = 300.0,
-                    .e_fudge = 1.0,
-                    .e_hinge = 1.3,
-                    .l_factor = 700.0,
-                    .minimum = 0.1,
-                    .init = 1.0,
-                    .maximum = 4.0,
-                    .is_integral = 0};
+  base_attr_[std::to_underlying(RaceAttribute::Adventurism)] = {
+      .e_factor = 0.0,
+      .e_fudge = 0.0,
+      .e_hinge = 0.0,
+      .l_factor = 300.0,
+      .minimum = 0.05,
+      .init = 0.4,
+      .maximum = 0.99,
+      .is_integral = 0};
+  base_attr_[std::to_underlying(RaceAttribute::Absorb)] = {.e_factor = 0.0,
+                                                           .e_fudge = 0.0,
+                                                           .e_hinge = 0.0,
+                                                           .l_factor = 200.0,
+                                                           .minimum = 0.0,
+                                                           .init = 0.0,
+                                                           .maximum = 1.0,
+                                                           .is_integral = 2};
+  base_attr_[std::to_underlying(RaceAttribute::Birthrate)] = {.e_factor = 0.0,
+                                                              .e_fudge = 0.0,
+                                                              .e_hinge = 0.0,
+                                                              .l_factor = 500.0,
+                                                              .minimum = 0.2,
+                                                              .init = 0.6,
+                                                              .maximum = 1.0,
+                                                              .is_integral = 0};
+  base_attr_[std::to_underlying(RaceAttribute::CollectiveIQ)] = {
+      .e_factor = 0.0,
+      .e_fudge = 0.0,
+      .e_hinge = 0.0,
+      .l_factor = -350.5,
+      .minimum = 0.0,
+      .init = 0.0,
+      .maximum = 1.0,
+      .is_integral = 2};
+  base_attr_[std::to_underlying(RaceAttribute::Fertilize)] = {.e_factor = 200.0,
+                                                              .e_fudge = 1.0,
+                                                              .e_hinge = 1.0,
+                                                              .l_factor = 300.0,
+                                                              .minimum = 0.0,
+                                                              .init = 0.0,
+                                                              .maximum = 1.0,
+                                                              .is_integral = 0};
+  base_attr_[std::to_underlying(RaceAttribute::IQ)] = {.e_factor = 100.0,
+                                                       .e_fudge = 0.03,
+                                                       .e_hinge = 140.0,
+                                                       .l_factor = 6.0,
+                                                       .minimum = 50.0,
+                                                       .init = 150.0,
+                                                       .maximum = 220.0,
+                                                       .is_integral = 1};
+  base_attr_[std::to_underlying(RaceAttribute::Fight)] = {.e_factor = 10.0,
+                                                          .e_fudge = 0.4,
+                                                          .e_hinge = 6.0,
+                                                          .l_factor = 65.0,
+                                                          .minimum = 1.0,
+                                                          .init = 4.0,
+                                                          .maximum = 20.0,
+                                                          .is_integral = 1};
+  base_attr_[std::to_underlying(RaceAttribute::Pods)] = {.e_factor = 0.0,
+                                                         .e_fudge = 0.0,
+                                                         .e_hinge = 0.0,
+                                                         .l_factor = 200.0,
+                                                         .minimum = 0.0,
+                                                         .init = 0.0,
+                                                         .maximum = 1.0,
+                                                         .is_integral = 2};
+  base_attr_[std::to_underlying(RaceAttribute::Mass)] = {.e_factor = 100.0,
+                                                         .e_fudge = 1.0,
+                                                         .e_hinge = 3.1,
+                                                         .l_factor = -100.0,
+                                                         .minimum = 0.1,
+                                                         .init = 1.0,
+                                                         .maximum = 3.0,
+                                                         .is_integral = 0};
+  base_attr_[std::to_underlying(RaceAttribute::Sexes)] = {.e_factor = 2.2,
+                                                          .e_fudge = -0.5,
+                                                          .e_hinge = 9.0,
+                                                          .l_factor = -3.0,
+                                                          .minimum = 1.0,
+                                                          .init = 2.0,
+                                                          .maximum = 53.0,
+                                                          .is_integral = 1};
+  base_attr_[std::to_underlying(RaceAttribute::Metabolism)] = {
+      .e_factor = 300.0,
+      .e_fudge = 1.0,
+      .e_hinge = 1.3,
+      .l_factor = 700.0,
+      .minimum = 0.1,
+      .init = 1.0,
+      .maximum = 4.0,
+      .is_integral = 0};
 
-  auto attr_range = [this](AttributeIndex idx) {
+  auto attr_range = [this](RaceAttribute idx) {
     auto i = std::to_underlying(idx);
     return base_attr_[i].maximum - base_attr_[i].minimum;
   };
 
-  const auto adv_idx = std::to_underlying(AttributeIndex::Adventurism);
-  const auto brt_idx = std::to_underlying(AttributeIndex::Birthrate);
-  const auto col_idx = std::to_underlying(AttributeIndex::CollectiveIQ);
-  const auto frt_idx = std::to_underlying(AttributeIndex::Fertilize);
-  const auto iq_idx = std::to_underlying(AttributeIndex::IQ);
-  const auto fgt_idx = std::to_underlying(AttributeIndex::Fight);
-  const auto mas_idx = std::to_underlying(AttributeIndex::Mass);
-  const auto sex_idx = std::to_underlying(AttributeIndex::Sexes);
-  const auto met_idx = std::to_underlying(AttributeIndex::Metabolism);
+  const auto adv_idx = std::to_underlying(RaceAttribute::Adventurism);
+  const auto brt_idx = std::to_underlying(RaceAttribute::Birthrate);
+  const auto col_idx = std::to_underlying(RaceAttribute::CollectiveIQ);
+  const auto frt_idx = std::to_underlying(RaceAttribute::Fertilize);
+  const auto iq_idx = std::to_underlying(RaceAttribute::IQ);
+  const auto fgt_idx = std::to_underlying(RaceAttribute::Fight);
+  const auto mas_idx = std::to_underlying(RaceAttribute::Mass);
+  const auto sex_idx = std::to_underlying(RaceAttribute::Sexes);
+  const auto met_idx = std::to_underlying(RaceAttribute::Metabolism);
 
   // Normal race covariances
-  normal_cov_[adv_idx][iq_idx] = -0.40 / attr_range(AttributeIndex::IQ);
-  normal_cov_[brt_idx][iq_idx] = 0.20 / attr_range(AttributeIndex::IQ);
-  normal_cov_[brt_idx][mas_idx] = 0.40 / attr_range(AttributeIndex::Mass);
-  normal_cov_[brt_idx][sex_idx] = 0.90 / attr_range(AttributeIndex::Sexes);
-  normal_cov_[brt_idx][met_idx] =
-      -0.20 / attr_range(AttributeIndex::Metabolism);
-  normal_cov_[frt_idx][met_idx] =
-      -0.20 / attr_range(AttributeIndex::Metabolism);
-  normal_cov_[fgt_idx][iq_idx] = -0.20 / attr_range(AttributeIndex::IQ);
+  normal_cov_[adv_idx][iq_idx] = -0.40 / attr_range(RaceAttribute::IQ);
+  normal_cov_[brt_idx][iq_idx] = 0.20 / attr_range(RaceAttribute::IQ);
+  normal_cov_[brt_idx][mas_idx] = 0.40 / attr_range(RaceAttribute::Mass);
+  normal_cov_[brt_idx][sex_idx] = 0.90 / attr_range(RaceAttribute::Sexes);
+  normal_cov_[brt_idx][met_idx] = -0.20 / attr_range(RaceAttribute::Metabolism);
+  normal_cov_[frt_idx][met_idx] = -0.20 / attr_range(RaceAttribute::Metabolism);
+  normal_cov_[fgt_idx][iq_idx] = -0.20 / attr_range(RaceAttribute::IQ);
   normal_cov_[fgt_idx][adv_idx] =
-      -0.05 / attr_range(AttributeIndex::Adventurism);
-  normal_cov_[fgt_idx][mas_idx] = -0.20 / attr_range(AttributeIndex::Mass);
-  normal_cov_[fgt_idx][met_idx] =
-      -0.05 / attr_range(AttributeIndex::Metabolism);
-  normal_cov_[met_idx][mas_idx] = 0.15 / attr_range(AttributeIndex::Mass);
-  normal_cov_[met_idx][iq_idx] = -0.10 / attr_range(AttributeIndex::IQ);
-  normal_cov_[iq_idx][mas_idx] = -0.25 / attr_range(AttributeIndex::Mass);
+      -0.05 / attr_range(RaceAttribute::Adventurism);
+  normal_cov_[fgt_idx][mas_idx] = -0.20 / attr_range(RaceAttribute::Mass);
+  normal_cov_[fgt_idx][met_idx] = -0.05 / attr_range(RaceAttribute::Metabolism);
+  normal_cov_[met_idx][mas_idx] = 0.15 / attr_range(RaceAttribute::Mass);
+  normal_cov_[met_idx][iq_idx] = -0.10 / attr_range(RaceAttribute::IQ);
+  normal_cov_[iq_idx][mas_idx] = -0.25 / attr_range(RaceAttribute::Mass);
 
   // Metamorph race covariances
   morph_cov_[adv_idx][iq_idx] = 0.0;
-  morph_cov_[brt_idx][mas_idx] = 0.10 / attr_range(AttributeIndex::Mass);
-  morph_cov_[brt_idx][sex_idx] = 0.50 / attr_range(AttributeIndex::Sexes);
-  morph_cov_[brt_idx][met_idx] = -0.10 / attr_range(AttributeIndex::Metabolism);
-  morph_cov_[frt_idx][met_idx] = -0.30 / attr_range(AttributeIndex::Metabolism);
-  morph_cov_[fgt_idx][adv_idx] =
-      -0.10 / attr_range(AttributeIndex::Adventurism);
-  morph_cov_[fgt_idx][mas_idx] = -0.20 / attr_range(AttributeIndex::Mass);
-  morph_cov_[fgt_idx][met_idx] = -0.15 / attr_range(AttributeIndex::Metabolism);
-  morph_cov_[met_idx][mas_idx] = 0.05 / attr_range(AttributeIndex::Mass);
+  morph_cov_[brt_idx][mas_idx] = 0.10 / attr_range(RaceAttribute::Mass);
+  morph_cov_[brt_idx][sex_idx] = 0.50 / attr_range(RaceAttribute::Sexes);
+  morph_cov_[brt_idx][met_idx] = -0.10 / attr_range(RaceAttribute::Metabolism);
+  morph_cov_[frt_idx][met_idx] = -0.30 / attr_range(RaceAttribute::Metabolism);
+  morph_cov_[fgt_idx][adv_idx] = -0.10 / attr_range(RaceAttribute::Adventurism);
+  morph_cov_[fgt_idx][mas_idx] = -0.20 / attr_range(RaceAttribute::Mass);
+  morph_cov_[fgt_idx][met_idx] = -0.15 / attr_range(RaceAttribute::Metabolism);
+  morph_cov_[met_idx][mas_idx] = 0.05 / attr_range(RaceAttribute::Mass);
   morph_cov_[iq_idx][mas_idx] = 0.0;
   morph_cov_[iq_idx][col_idx] = 0.0;
 
@@ -358,14 +332,14 @@ RacegenEngine::calculate_cost(const RaceEnrollmentSpec& spec) const noexcept {
   // 1. Calculate attribute costs
   for (std::size_t i = 0; i < num_race_attributes; ++i) {
     const auto& p = base_attr_[i];
-    const auto attr_idx = static_cast<AttributeIndex>(i);
+    const auto attr_idx = static_cast<RaceAttribute>(i);
     const double val = get_attribute_value(spec, attr_idx);
     double cost =
         std::exp(p.e_fudge * (val - p.e_hinge)) * p.e_factor + val * p.l_factor;
     for (std::size_t j = 0; j < num_race_attributes; ++j) {
       if (cov[i][j] != 0.0) {
         cost *= (1.0 + cov[i][j] * get_attribute_value(
-                                       spec, static_cast<AttributeIndex>(j)));
+                                       spec, static_cast<RaceAttribute>(j)));
       }
     }
     cost += p.l_fudge;
@@ -435,7 +409,7 @@ std::vector<std::string> RacegenEngine::validate(const RaceEnrollmentSpec& spec,
   // 1. Attribute bounds and validity
   for (std::size_t i = 0; i < num_race_attributes; ++i) {
     const auto& p = base_attr_[i];
-    const auto attr_idx = static_cast<AttributeIndex>(i);
+    const auto attr_idx = static_cast<RaceAttribute>(i);
     const double val = get_attribute_value(spec, attr_idx);
     const std::string name = attribute_name(spec, attr_idx);
 

@@ -778,78 +778,82 @@ jettison_ship_cargo(Ship& ship, char commod, int requested_amount,
     });
   }
 
-  switch (commod) {
-    case 'x': {
+  const auto cargo = char_to_ship_cargo(commod);
+  if (!cargo) {
+    return std::unexpected(
+        JettisonError{.reason = JettisonErrorReason::InvalidCommodity});
+  }
+
+  switch (*cargo) {
+    case ShipCargoType::Crystal: {
       auto amt = resolve_jettison_amount(requested_amount,
                                          static_cast<int>(ship.crystals()));
       if (!amt) return std::unexpected(amt.error());
       ship.consume_crystals(*amt);
       return JettisonResult{
-          .commodity = JettisonCommodity::Crystals,
+          .commodity = ShipCargoType::Crystal,
           .amount = *amt,
       };
     }
-    case 'c': {
+    case ShipCargoType::Crew: {
       auto amt = resolve_jettison_amount(requested_amount,
                                          static_cast<int>(ship.popn()));
       if (!amt) return std::unexpected(amt.error());
       ship.remove_popn(*amt, race_mass);
       return JettisonResult{
-          .commodity = JettisonCommodity::Crew,
+          .commodity = ShipCargoType::Crew,
           .amount = *amt,
           .ship_display = std::format("{}", ship),
           .remaining_complement = ship.popn(),
       };
     }
-    case 'm': {
+    case ShipCargoType::Troops: {
       auto amt = resolve_jettison_amount(requested_amount,
                                          static_cast<int>(ship.troops()));
       if (!amt) return std::unexpected(amt.error());
       ship.remove_troops(*amt, race_mass);
       return JettisonResult{
-          .commodity = JettisonCommodity::Military,
+          .commodity = ShipCargoType::Troops,
           .amount = *amt,
           .ship_number = ship.number(),
           .remaining_complement = ship.troops(),
       };
     }
-    case 'd': {
+    case ShipCargoType::Destruct: {
       auto amt = resolve_jettison_amount(requested_amount,
                                          static_cast<int>(ship.destruct()));
       if (!amt) return std::unexpected(amt.error());
       ship.consume_destruct(*amt);
       return JettisonResult{
-          .commodity = JettisonCommodity::Destruct,
+          .commodity = ShipCargoType::Destruct,
           .amount = *amt,
           .ship_display = std::format("{}", ship),
           .check_boobytrap = !ship.max_crew_capacity(),
           .still_boobytrapped = ship.destruct() > 0,
       };
     }
-    case 'f': {
+    case ShipCargoType::Fuel: {
       auto amt = resolve_jettison_amount(requested_amount,
                                          static_cast<int>(ship.fuel()));
       if (!amt) return std::unexpected(amt.error());
       ship.consume_fuel(static_cast<double>(*amt));
       return JettisonResult{
-          .commodity = JettisonCommodity::Fuel,
+          .commodity = ShipCargoType::Fuel,
           .amount = *amt,
       };
     }
-    case 'r': {
+    case ShipCargoType::Resource: {
       auto amt = resolve_jettison_amount(requested_amount,
                                          static_cast<int>(ship.resource()));
       if (!amt) return std::unexpected(amt.error());
       ship.consume_resource(*amt);
       return JettisonResult{
-          .commodity = JettisonCommodity::Resources,
+          .commodity = ShipCargoType::Resource,
           .amount = *amt,
       };
     }
-    default:
-      return std::unexpected(
-          JettisonError{.reason = JettisonErrorReason::InvalidCommodity});
   }
+  std::unreachable();
 }
 
 std::expected<MountCrystalResult, MountCrystalError>

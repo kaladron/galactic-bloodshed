@@ -18,16 +18,16 @@ export namespace GB::presentation {
 
 /// Logical channel classification for canonical `"message"` stanzas.
 enum class MessageChannel : std::uint8_t {
-  Output,           ///< Direct confirmation or diagnostic text from a command
-  Telegram,         ///< Stored or incoming player telegram
-  NewsDeclaration,  ///< Galactic news: diplomatic declarations
-  NewsCombat,       ///< Galactic news: combat headlines
-  NewsBusiness,     ///< Galactic news: commerce & transfers
-  NewsBulletin,     ///< Galactic news: public posts & nova bulletins
-  Announce,         ///< Live system-wide announce / shout / think
-  Broadcast,        ///< Live galaxy-wide broadcast
-  Page,             ///< Live governor page alert
-  Help,             ///< Manual / help topic content
+  Output = 0,    ///< Direct confirmation or diagnostic text from a command
+  Telegram = 1,  ///< Stored or incoming player telegram
+  NewsDeclaration = 2,  ///< Galactic news: diplomatic declarations
+  NewsCombat = 3,       ///< Galactic news: combat headlines
+  NewsBusiness = 4,     ///< Galactic news: commerce & transfers
+  NewsBulletin = 5,     ///< Galactic news: public posts & nova bulletins
+  Announce = 6,         ///< Live system-wide announce / shout / think
+  Broadcast = 7,        ///< Live galaxy-wide broadcast
+  Page = 8,             ///< Live governor page alert
+  Help = 9,             ///< Manual / help topic content
 };
 
 /// Canonical `"message"` wire-protocol stanza

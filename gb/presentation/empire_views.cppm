@@ -17,9 +17,9 @@ export namespace GB::presentation {
 /// Diplomatic stance declared via `declare <race> <alliance|neutral|war>`
 /// or between two empires.
 enum class DiplomaticRelation : std::uint8_t {
-  Neutral,
-  Allied,
-  AtWar,
+  Neutral = 0,
+  Allied = 1,
+  AtWar = 2,
   Alliance = Allied,
   War = AtWar,
 };
@@ -1148,14 +1148,14 @@ render_victory_announcement(const VictoryAnnouncementViewModel& vm);
 
 /// Governor configuration flag modified by `toggle <option>`.
 enum class ToggleOption : std::uint8_t {
-  Inverse,
-  Color,
-  DoubleDigits,
-  Geography,
-  Gag,
-  Autoload,
-  Invisible,
-  Compatibility,
+  Inverse = 0,
+  Color = 1,
+  DoubleDigits = 2,
+  Geography = 3,
+  Gag = 4,
+  Autoload = 5,
+  Invisible = 6,
+  Compatibility = 7,
 };
 
 /// View model for `toggle` (display all governor configuration options).

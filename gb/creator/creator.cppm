@@ -471,7 +471,24 @@ private:
                         UniverseGenerationResult& result);
 };
 
+/// Attribute slot indices for racegen point cost calculations.
+export enum class RaceAttribute : std::size_t {
+  Adventurism = 0,
+  Absorb = 1,
+  Birthrate = 2,
+  CollectiveIQ = 3,
+  Fertilize = 4,
+  IQ = 5,
+  Fight = 6,
+  Pods = 7,
+  Mass = 8,
+  Sexes = 9,
+  Metabolism = 10,
+};
+
 export constexpr std::size_t num_race_attributes = 11;
+static_assert(std::to_underlying(RaceAttribute::Metabolism) + 1 ==
+              num_race_attributes);
 
 /// Itemized cost breakdown resulting from race point calculations.
 export struct RaceCostBreakdown {
@@ -483,38 +500,41 @@ export struct RaceCostBreakdown {
   int total_cost{0};
   int points_remaining{STARTING_POINTS};
 
+  [[nodiscard]] constexpr int cost_of(RaceAttribute attr) const noexcept {
+    return attribute_costs[std::to_underlying(attr)];
+  }
   [[nodiscard]] int adventurism() const noexcept {
-    return attribute_costs[0];
+    return cost_of(RaceAttribute::Adventurism);
   }
   [[nodiscard]] int absorb() const noexcept {
-    return attribute_costs[1];
+    return cost_of(RaceAttribute::Absorb);
   }
   [[nodiscard]] int birthrate() const noexcept {
-    return attribute_costs[2];
+    return cost_of(RaceAttribute::Birthrate);
   }
   [[nodiscard]] int collective_iq() const noexcept {
-    return attribute_costs[3];
+    return cost_of(RaceAttribute::CollectiveIQ);
   }
   [[nodiscard]] int fertilize() const noexcept {
-    return attribute_costs[4];
+    return cost_of(RaceAttribute::Fertilize);
   }
   [[nodiscard]] int iq() const noexcept {
-    return attribute_costs[5];
+    return cost_of(RaceAttribute::IQ);
   }
   [[nodiscard]] int fight() const noexcept {
-    return attribute_costs[6];
+    return cost_of(RaceAttribute::Fight);
   }
   [[nodiscard]] int pods() const noexcept {
-    return attribute_costs[7];
+    return cost_of(RaceAttribute::Pods);
   }
   [[nodiscard]] int mass() const noexcept {
-    return attribute_costs[8];
+    return cost_of(RaceAttribute::Mass);
   }
   [[nodiscard]] int sexes() const noexcept {
-    return attribute_costs[9];
+    return cost_of(RaceAttribute::Sexes);
   }
   [[nodiscard]] int metabolism() const noexcept {
-    return attribute_costs[10];
+    return cost_of(RaceAttribute::Metabolism);
   }
 };
 

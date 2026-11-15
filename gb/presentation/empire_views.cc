@@ -1439,11 +1439,25 @@ constexpr std::string_view on_off_upper(bool v) {
 }
 
 constexpr std::string_view toggle_option_label(ToggleOption option) {
-  constexpr std::array<std::string_view, 8> labels{
-      "inverse", "color",    "double_digits", "geography",
-      "gag",     "autoload", "invisible",     "compatibility",
-  };
-  return labels.at(std::to_underlying(option));
+  switch (option) {
+    case ToggleOption::Inverse:
+      return "inverse";
+    case ToggleOption::Color:
+      return "color";
+    case ToggleOption::DoubleDigits:
+      return "double_digits";
+    case ToggleOption::Geography:
+      return "geography";
+    case ToggleOption::Gag:
+      return "gag";
+    case ToggleOption::Autoload:
+      return "autoload";
+    case ToggleOption::Invisible:
+      return "invisible";
+    case ToggleOption::Compatibility:
+      return "compatibility";
+  }
+  std::unreachable();
 }
 
 }  // namespace

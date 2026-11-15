@@ -43,30 +43,33 @@ bool transfer(const command_t& argv, GameObj& g) {
   }
   resource_t give = *parsed_give;
 
+  const auto type_opt = char_to_commod_type(commod);
+  if (!type_opt) {
+    g.out << "What?\n";
+    return false;
+  }
+  const CommodType type = *type_opt;
+
   bool ok = false;
-  CommodType type = CommodType::RESOURCE;
   g.entity_manager.mutate_planet(g.snum(), g.pnum(), [&](Planet& planet) {
-    switch (commod) {
-      case 'r': {
+    switch (type) {
+      case CommodType::RESOURCE: {
         if (give > planet.info(Playernum).resource) {
           g.out << std::format("You don't have {} on this planet.\n", give);
           return;
         }
         planet.info(Playernum).resource -= give;
         planet.info(player).resource += give;
-        type = CommodType::RESOURCE;
       } break;
-      case 'x':
-      case '&': {
+      case CommodType::CRYSTAL: {
         if (give > planet.info(Playernum).crystals) {
           g.out << std::format("You don't have {} on this planet.\n", give);
           return;
         }
         planet.info(Playernum).crystals -= give;
         planet.info(player).crystals += give;
-        type = CommodType::CRYSTAL;
       } break;
-      case 'f': {
+      case CommodType::FUEL: {
         if (give > planet.info(Playernum).fuel) {
           g.out << std::format("You don't have {} fuel on this planet.\n",
                                give);
@@ -74,9 +77,8 @@ bool transfer(const command_t& argv, GameObj& g) {
         }
         planet.info(Playernum).fuel -= give;
         planet.info(player).fuel += give;
-        type = CommodType::FUEL;
       } break;
-      case 'd': {
+      case CommodType::DESTRUCT: {
         if (give > planet.info(Playernum).destruct) {
           g.out << std::format("You don't have {} destruct on this planet.\n",
                                give);
@@ -84,11 +86,7 @@ bool transfer(const command_t& argv, GameObj& g) {
         }
         planet.info(Playernum).destruct -= give;
         planet.info(player).destruct += give;
-        type = CommodType::DESTRUCT;
       } break;
-      default:
-        g.out << "What?\n";
-        return;
     }
     ok = true;
   });

@@ -1063,15 +1063,23 @@ void test_carrier_craft_loading_and_unloading() {
 void test_ship_cargo_transfer() {
   std::println(std::cout, "Testing Ship::transfer_cargo_to()...");
 
-  // Test char_to_ship_cargo mapping
+  // Test char_to_ship_cargo and char_to_commod_type mapping
   test::expect_eq(char_to_ship_cargo('r'), ShipCargoType::Resource);
   test::expect_eq(char_to_ship_cargo('d'), ShipCargoType::Destruct);
   test::expect_eq(char_to_ship_cargo('f'), ShipCargoType::Fuel);
   test::expect_eq(char_to_ship_cargo('x'), ShipCargoType::Crystal);
-  test::expect_eq(char_to_ship_cargo('&'), ShipCargoType::Crystal);
+  test::expect_eq(char_to_ship_cargo('&'), std::nullopt);
   test::expect_eq(char_to_ship_cargo('c'), ShipCargoType::Crew);
   test::expect_eq(char_to_ship_cargo('m'), ShipCargoType::Troops);
   test::expect_eq(char_to_ship_cargo('z'), std::nullopt);
+
+  test::expect_eq(char_to_commod_type('r'), CommodType::RESOURCE);
+  test::expect_eq(char_to_commod_type('d'), CommodType::DESTRUCT);
+  test::expect_eq(char_to_commod_type('f'), CommodType::FUEL);
+  test::expect_eq(char_to_commod_type('x'), CommodType::CRYSTAL);
+  test::expect_eq(char_to_commod_type('&'), std::nullopt);
+  test::expect_eq(char_to_commod_type('c'), std::nullopt);
+  test::expect_eq(char_to_commod_type('z'), std::nullopt);
 
   // Set up source and destination ships
   ship_struct src_data{

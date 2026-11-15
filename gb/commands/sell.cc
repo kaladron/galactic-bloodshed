@@ -53,43 +53,41 @@ bool sell(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  CommodType item;
-  switch (commod) {
-    case 'r':
+  const auto item_opt = char_to_commod_type(commod);
+  if (!item_opt) {
+    g.out << "Permitted commodities are r, d, f, and x.\n";
+    return false;
+  }
+  const CommodType item = *item_opt;
+  switch (item) {
+    case CommodType::RESOURCE:
       if (!p_peek.info(Playernum).resource) {
         g.out << "You don't have any resources here to sell!\n";
         return false;
       }
       amount = std::min<resource_t>(amount, p_peek.info(Playernum).resource);
-      item = CommodType::RESOURCE;
       break;
-    case 'd':
+    case CommodType::DESTRUCT:
       if (!p_peek.info(Playernum).destruct) {
         g.out << "You don't have any destruct here to sell!\n";
         return false;
       }
       amount = std::min<resource_t>(amount, p_peek.info(Playernum).destruct);
-      item = CommodType::DESTRUCT;
       break;
-    case 'f':
+    case CommodType::FUEL:
       if (!p_peek.info(Playernum).fuel) {
         g.out << "You don't have any fuel here to sell!\n";
         return false;
       }
       amount = std::min<resource_t>(amount, p_peek.info(Playernum).fuel);
-      item = CommodType::FUEL;
       break;
-    case 'x':
+    case CommodType::CRYSTAL:
       if (!p_peek.info(Playernum).crystals) {
         g.out << "You don't have any crystals here to sell!\n";
         return false;
       }
       amount = std::min<resource_t>(amount, p_peek.info(Playernum).crystals);
-      item = CommodType::CRYSTAL;
       break;
-    default:
-      g.out << "Permitted commodities are r, d, f, and x.\n";
-      return false;
   }
 
   ap_t APcount = std::min<ap_t>(20, static_cast<ap_t>(amount));

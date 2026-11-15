@@ -28,12 +28,17 @@ parse_int(std::string_view s) noexcept {
 
 export using command_t = std::vector<std::string>;
 
+// Persisted as whatorbits / whatdest in tbl_ship (checked against 0..3 in SQL).
 export enum class ScopeLevel {
-  LEVEL_UNIV,
-  LEVEL_STAR,
-  LEVEL_PLAN,
-  LEVEL_SHIP
+  LEVEL_UNIV = 0,
+  LEVEL_STAR = 1,
+  LEVEL_PLAN = 2,
+  LEVEL_SHIP = 3,
 };
+static_assert(std::to_underlying(ScopeLevel::LEVEL_UNIV) == 0 &&
+              std::to_underlying(ScopeLevel::LEVEL_STAR) == 1 &&
+              std::to_underlying(ScopeLevel::LEVEL_PLAN) == 2 &&
+              std::to_underlying(ScopeLevel::LEVEL_SHIP) == 3);
 
 export enum PlanetType {
   EARTH = 0,
@@ -182,12 +187,17 @@ struct std::formatter<PlanetType> {
   }
 };
 
+// Persisted as type integer column in tbl_news.
 export enum class NewsType {
-  ANNOUNCE,
-  COMBAT,
-  DECLARATION,
-  TRANSFER,
+  ANNOUNCE = 0,
+  COMBAT = 1,
+  DECLARATION = 2,
+  TRANSFER = 3,
 };
+static_assert(std::to_underlying(NewsType::ANNOUNCE) == 0 &&
+              std::to_underlying(NewsType::COMBAT) == 1 &&
+              std::to_underlying(NewsType::DECLARATION) == 2 &&
+              std::to_underlying(NewsType::TRANSFER) == 3);
 
 /// Named values indexed by NewsType (e.g., last-read SQLite news item IDs).
 export template <typename T = news_id_t>
@@ -442,6 +452,27 @@ export enum class CommodType {
   FUEL = 2,
   CRYSTAL = 3,
 };
+static_assert(std::to_underlying(CommodType::RESOURCE) == 0 &&
+              std::to_underlying(CommodType::DESTRUCT) == 1 &&
+              std::to_underlying(CommodType::FUEL) == 2 &&
+              std::to_underlying(CommodType::CRYSTAL) == 3);
+
+/// Parses a single-character commodity abbreviation ('r', 'd', 'f', 'x').
+export constexpr std::optional<CommodType>
+char_to_commod_type(char c) noexcept {
+  switch (c) {
+    case 'r':
+      return CommodType::RESOURCE;
+    case 'd':
+      return CommodType::DESTRUCT;
+    case 'f':
+      return CommodType::FUEL;
+    case 'x':
+      return CommodType::CRYSTAL;
+    default:
+      return std::nullopt;
+  }
+}
 export template <>
 struct std::formatter<CommodType> : std::formatter<std::string_view> {
   auto format(CommodType type, format_context& ctx) const {

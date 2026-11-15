@@ -1647,6 +1647,17 @@ ship_template(ShipType type) noexcept {
   return ship_templates[0];
 }
 
+static_assert([]() consteval {
+  for (std::size_t i = 0; i < ship_templates.size(); ++i) {
+    if (ship_templates[i].type != static_cast<ShipType>(i)) return false;
+    if (ship_templates[i].name.empty()) return false;
+    for (std::size_t j = i + 1; j < ship_templates.size(); ++j) {
+      if (ship_templates[i].letter == ship_templates[j].letter) return false;
+    }
+  }
+  return true;
+}());
+
 /// \brief Returns an array containing the classification letters of all ship
 /// types.
 export [[nodiscard]] constexpr std::array<char, NUMSTYPES>

@@ -100,8 +100,7 @@ char_to_ship_cargo(char c) noexcept {
       return ShipCargoType::Destruct;
     case 'f':  // Fuel
       return ShipCargoType::Fuel;
-    case 'x':  // Crystals ('x' or legacy '&')
-    case '&':
+    case 'x':  // Crystals
       return ShipCargoType::Crystal;
     case 'c':  // Civilian crew
       return ShipCargoType::Crew;
@@ -213,146 +212,147 @@ export inline constexpr ActiveBattery SECONDARY = ActiveBattery::SECONDARY;
 export enum ShipType : int {
   /// \brief Biological spore pod ('p') launched to seed meta-colonies across
   /// star systems.
-  STYPE_POD,
+  STYPE_POD = 0,
   /// \brief Light sublight personnel transport and planetary shuttle ('s').
-  STYPE_SHUTTLE,
+  STYPE_SHUTTLE = 1,
   /// \brief Heavy fleet capital carrier ('X') equipped with massive hangar bays
   /// for carried craft.
-  STYPE_CARRIER,
+  STYPE_CARRIER = 2,
   /// \brief Super-heavy dreadnaught battleship ('D') featuring heavy armor and
   /// dual gun batteries.
-  STYPE_DREADNT,
+  STYPE_DREADNT = 3,
   /// \brief Front-line capital battleship ('B') designed for sustained orbital
   /// and deep-space combat.
-  STYPE_BATTLE,
+  STYPE_BATTLE = 4,
   /// \brief Fast high-acceleration interceptor ('I') optimized for patrol and
   /// dogfighting.
-  STYPE_INTCPT,
+  STYPE_INTCPT = 5,
   /// \brief Medium multi-role combat cruiser ('C') balancing firepower, armor,
   /// and range.
-  STYPE_CRUISER,
+  STYPE_CRUISER = 6,
   /// \brief Fleet escort destroyer ('d') specialized for anti-fighter and
   /// screening operations.
-  STYPE_DESTROYER,
+  STYPE_DESTROYER = 7,
   /// \brief Parasite fighter group ('f') carried in hangars for short-range
   /// combat sorties.
-  STYPE_FIGHTER,
+  STYPE_FIGHTER = 8,
   /// \brief Long-range sensor explorer ('e') built for stellar reconnaissance
   /// and mapping.
-  STYPE_EXPLORER,
+  STYPE_EXPLORER = 9,
   /// \brief Massive self-contained orbital habitat ('H') housing civilian
   /// population and nested factories.
-  STYPE_HABITAT,
+  STYPE_HABITAT = 10,
   /// \brief Heavy orbital space station ('S') serving as a military redoubt or
   /// logistical hub.
-  STYPE_STATION,
+  STYPE_STATION = 11,
   /// \brief Orbital Assault Platform ('O') providing orbital bombardment and
   /// surface intimidation.
-  STYPE_OAP,
+  STYPE_OAP = 12,
   /// \brief Heavy cargo transport ('c') built for bulk commodity and resource
   /// hauling.
-  STYPE_CARGO,
+  STYPE_CARGO = 13,
   /// \brief Specialized liquid fuel transport ('t') supplying operational
   /// fleets.
-  STYPE_TANKER,
+  STYPE_TANKER = 14,
   /// \brief Invulnerable deity administration vessel ('!') with infinite fuel
   /// and ordnance recharge.
-  STYPE_GOD,
+  STYPE_GOD = 15,
   /// \brief Autonomous proximity space mine ('+') detonating when hostile
   /// vessels enter detection radius.
-  STYPE_MINE,
+  STYPE_MINE = 16,
   /// \brief Orbital space mirror ('M') focusing stellar radiation to warm
   /// planets or scorch targets.
-  STYPE_MIRROR,
+  STYPE_MIRROR = 17,
   /// \brief Orbital space telescope ('=') providing long-range stellar
   /// surveillance.
-  OTYPE_STELE,
+  OTYPE_STELE = 18,
   /// \brief Surface-based ground telescope ('\') providing deep-space tracking
   /// from planetary soil.
-  OTYPE_GTELE,
+  OTYPE_GTELE = 19,
   /// \brief Orbital tractor-repulsor beam projector ('-') manipulating local
   /// ship vectors.
-  OTYPE_TRACT,
+  OTYPE_TRACT = 20,
   /// \brief Atmospheric processor ('a') actively terraforming atmospheric
   /// composition over time.
-  OTYPE_AP,
+  OTYPE_AP = 21,
   /// \brief Atmospheric dust canister ('g') cooling planetary climates through
   /// aerosol dispersal.
-  OTYPE_CANIST,
+  OTYPE_CANIST = 22,
   /// \brief Greenhouse gas canister ('h') warming planetary climates through
   /// thermal trapping.
-  OTYPE_GREEN,
+  OTYPE_GREEN = 23,
   /// \brief Self-replicating Von Neumann machine ('v') harvesting resources to
   /// build planetary copies.
-  OTYPE_VN,
+  OTYPE_VN = 24,
   /// \brief Rogue autonomous Berserker war machine ('V') hunting and destroying
   /// alien life.
-  OTYPE_BERS,
+  OTYPE_BERS = 25,
   /// \brief Planetary Government Center ('@') anchoring planetary
   /// administration and sector taxation.
-  OTYPE_GOV,
+  OTYPE_GOV = 26,
   /// \brief Orbital Mind Control Laser ('l') projecting pacification beams onto
   /// rebellious populations.
-  OTYPE_OMCL,
+  OTYPE_OMCL = 27,
   /// \brief Hazardous toxic waste canister ('w') dumping nuclear and chemical
   /// slag onto planet surfaces.
-  OTYPE_TOXWC,
+  OTYPE_TOXWC = 28,
   /// \brief Unmanned automated space probe (':') for expendable planetary and
   /// system reconnaissance.
-  OTYPE_PROBE,
+  OTYPE_PROBE = 29,
   /// \brief Orbital gamma-ray laser weapon ('G') delivering high-energy
   /// directed-energy surface strikes.
-  OTYPE_GR,
+  OTYPE_GR = 30,
   /// \brief Surface industrial manufacturing factory ('F') producing weapons
   /// and consumer goods.
-  OTYPE_FACTORY,
+  OTYPE_FACTORY = 31,
   /// \brief Mobile planetary terraforming device ('T') engineering surface soil
   /// and vegetation.
-  OTYPE_TERRA,
+  OTYPE_TERRA = 32,
   /// \brief Berserker control center (';') coordinating autonomous machine
   /// fleets.
-  OTYPE_BERSCTLC,
+  OTYPE_BERSCTLC = 33,
   /// \brief Automated Berserker assembly complex ('Z') continuously fabricating
   /// robotic war machines.
-  OTYPE_AUTOFAC,
+  OTYPE_AUTOFAC = 34,
   /// \brief AVPM orbital matter transporter ('[') beaming cargo and resources
   /// directly to surfaces.
-  OTYPE_TRANSDEV,
+  OTYPE_TRANSDEV = 35,
   /// \brief Guided orbital bombardment or anti-ship missile ('^') detonating on
   /// impact.
-  STYPE_MISSILE,
+  STYPE_MISSILE = 36,
   /// \brief Planetary surface defense battery network ('P') firing at hostile
   /// ships in orbit.
-  OTYPE_PLANDEF,
+  OTYPE_PLANDEF = 37,
   /// \brief Heavy surface mineral extraction quarry ('q') harvesting planetary
   /// metals and resources.
-  OTYPE_QUARRY,
+  OTYPE_QUARRY = 38,
   /// \brief Surface-crawling mechanized space plow ('K') excavating and
   /// restructuring terrain sectors.
-  OTYPE_PLOW,
+  OTYPE_PLOW = 39,
   /// \brief Pressurized environmental biodome ('Y') shielding delicate
   /// colonists from hostile climates.
-  OTYPE_DOME,
+  OTYPE_DOME = 40,
   /// \brief Heavy surface weapons plant ('W') fabricating ordnance and
   /// destructive munitions.
-  OTYPE_WPLANT,
+  OTYPE_WPLANT = 41,
   /// \brief Commercial orbital spaceport ('J') facilitating interstellar trade
   /// and passenger embarkation.
-  OTYPE_PORT,
+  OTYPE_PORT = 42,
   /// \brief Anti-Ballistic Missile battery ('&') intercepting incoming missiles
   /// and orbital strikes.
-  OTYPE_ABM,
+  OTYPE_ABM = 43,
   /// \brief Armored fighting vehicle / mechanized combat walker ('R') for
   /// planetary ground warfare.
-  OTYPE_AFV,
+  OTYPE_AFV = 44,
   /// \brief Fortified military command bunker ('b') protecting troops and
   /// leadership from bombardment.
-  OTYPE_BUNKER,
+  OTYPE_BUNKER = 45,
   /// \brief Surface assault transport and planetary landing craft ('L').
-  STYPE_LANDER,
+  STYPE_LANDER = 46,
 };
 
 export inline constexpr int NUMSTYPES = (ShipType::STYPE_LANDER + 1);
+static_assert(NUMSTYPES == 47);
 
 export inline constexpr int SHIP_NAMESIZE = 18;
 

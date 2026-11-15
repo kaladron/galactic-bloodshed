@@ -88,10 +88,10 @@ can_build_at_planet(const player_t playernum, const governor_t governor,
 }
 
 std::optional<ShipType> get_build_type(const char shipc) {
-  for (std::size_t i = 0; i < NUMSTYPES; ++i) {
-    if (ship_templates[i].letter == shipc) return ShipType{static_cast<int>(i)};
+  for (const auto& tmpl : ship_templates) {
+    if (tmpl.letter == shipc) return tmpl.type;
   }
-  return {};
+  return std::nullopt;
 }
 
 std::expected<void, std::string> can_build_this(const ShipType what,

@@ -152,7 +152,7 @@ int main() {
     std::println(std::cout, "✓ Destruct transferred");
   }
 
-  std::println(std::cout, "Transfer crystals ('x' and '&' in JSON mode)");
+  std::println(std::cout, "Transfer crystals ('x' in ASCII and JSON mode)");
   {
     const auto* p_before = ctx.em.peek_planet(1, 1);
     int p1_crystals_before = p_before->info(player_t{1}).crystals;
@@ -161,7 +161,7 @@ int main() {
     ctx.assert_dispatch_success(g, {"transfer", "Receiver", "x", "10"}, 1);
     g.set_ui_mode(UiMode::JSON);
     g.out.str("");
-    ctx.assert_dispatch_success(g, {"transfer", "Receiver", "&", "5"}, 1);
+    ctx.assert_dispatch_success(g, {"transfer", "Receiver", "x", "5"}, 1);
     test::expect_contains(g.out.str(), R"("type":"message")");
     test::expect_contains(
         g.out.str(), R"(5 crystal(s) transferred from player 1 to player #2)");
@@ -193,6 +193,7 @@ int main() {
     ctx.assert_dispatch_rejected(g, {"transfer", "NoSuchRace", "r", "10"});
     ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "", "10"});
     ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "rockets", "10"});
+    ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "&", "5"});
     ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "z", "10"});
     ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "r", "-10"});
     ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "r", "0"});

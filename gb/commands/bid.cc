@@ -14,18 +14,7 @@ namespace {
 
 std::optional<CommodType> parse_commod_type(std::string_view arg) {
   if (arg.empty()) return std::nullopt;
-  switch (arg[0]) {
-    case 'r':
-      return CommodType::RESOURCE;
-    case 'd':
-      return CommodType::DESTRUCT;
-    case 'f':
-      return CommodType::FUEL;
-    case 'x':
-      return CommodType::CRYSTAL;
-    default:
-      return std::nullopt;
-  }
+  return char_to_commod_type(arg[0]);
 }
 
 void present_commodities(GameObj& g, std::optional<CommodType> filter) {

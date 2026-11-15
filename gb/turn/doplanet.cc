@@ -493,11 +493,13 @@ std::optional<shipnum_t>
 build_automated_waste_can(EntityManager& entity_manager, const Star& star,
                           Planet& planet, SectorMap& smap, const Race& race) {
   auto& info = planet.info(race);
+  const resource_t build_cost = Shipcost(ShipType::OTYPE_TOXWC, race);
   if (!info.tox_thresh.has_value() || planet.toxic() < *info.tox_thresh ||
-      info.resource < Shipcost(ShipType::OTYPE_TOXWC, race)) {
+      info.resource < build_cost) {
     return std::nullopt;
   }
 
+  info.resource -= build_cost;
   const int t = std::min(TOXMAX, static_cast<int>(planet.toxic()));
   planet.toxic() -= t;
 
@@ -509,8 +511,10 @@ build_automated_waste_can(EntityManager& entity_manager, const Star& star,
   auto ship_handle = entity_manager.create_ship(ShipType::OTYPE_TOXWC, player);
   Ship& ship = *ship_handle;
   ship.governor() = star.governor(player);
+  ship.tech() = race.tech;
+  ship.shipclass() = "Standard";
   ship.set_coordinates(coords);
-  ship.build_cost() = Shipcost(ShipType::OTYPE_TOXWC, race);
+  ship.build_cost() = build_cost;
   if (auto* waste = ship.as<ToxicWasteShip>()) {
     waste->set_toxic_level(t);
   }

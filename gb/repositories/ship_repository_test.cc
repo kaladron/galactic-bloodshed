@@ -625,6 +625,10 @@ int main() {
         ShipFactory::create_from_template(ShipType::OTYPE_TOXWC, player_t{1});
     test::expect_true(tox != nullptr);
     test::expect_true(tox->as<ToxicWasteShip>() != nullptr);
+    test::expect_eq(tox->speed(),
+                    ship_template(ShipType::OTYPE_TOXWC).base_speed);
+    test::expect_eq(tox->max_speed(),
+                    ship_template(ShipType::OTYPE_TOXWC).base_speed);
 
     std::println(
         std::cout,

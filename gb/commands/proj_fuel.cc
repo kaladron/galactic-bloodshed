@@ -45,7 +45,7 @@ const Ship* validate_fuel_ship(const command_t& argv, GameObj& g) {
   }
   auto shipno = string_to_shipnum(argv[1]);
   if (!shipno) {
-    g.out << std::format("rst: no such ship {}\n", argv[1]);
+    g.out << std::format("fuel: no such ship {}\n", argv[1]);
     return nullptr;
   }
   const Ship* ship = nullptr;

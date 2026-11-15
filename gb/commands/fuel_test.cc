@@ -8,6 +8,7 @@ import gb.entities;
 import gb.mechanics;
 import gb.presentation.navigation;
 import gb.services;
+import gb.turn;
 import test;
 import std;
 
@@ -58,7 +59,7 @@ void test_fuel_matrix() {
   for (const auto& bad :
        {"#abc", "#0", "#12abc", "#99999999999999999999", "#"}) {
     ctx.assert_dispatch_rejected(g, {"fuel", bad, "/Vega"});
-    test::expect_contains(g.out.str(), "rst: no such ship");
+    test::expect_contains(g.out.str(), "fuel: no such ship");
   }
 
   // 5. Unowned ship, landed ship without destination, stationary ship, factory
@@ -209,6 +210,56 @@ void test_fuel_matrix() {
   ctx.assert_dispatch_rejected(
       g, {"fuel", std::format("#{}", stopped_ship), "/Vega"});
   test::expect_contains(g.out.str(), "Ship not found.");
+
+  // 9. Issue #59: Space Probe (:) and auto-spawned Toxic Waste Container (w)
+  // in star orbit and on planetary surface project fuel cleanly without manual
+  // speed overrides, even when earlier ships were scrapped (id > num_ships()).
+  shipnum_t probe_id = 0;
+  {
+    auto probe = ctx.em.create_ship(ShipType::OTYPE_PROBE, 1);
+    probe->governor() = 1;
+    probe->enter_star_orbit(1);
+    const auto star_coords = ctx.em.peek_star(1)->coordinates();
+    probe->set_coordinates(star_coords + SystemCoordinates{514.11, 0.0});
+    probe->add_fuel(19.54);
+    probe_id = probe->number();
+  }
+  std::optional<shipnum_t> toxwc_id;
+  ctx.em.with_star(1, [&](const Star& star) {
+    ctx.em.with_race(1, [&](const Race& race) {
+      ctx.em.mutate_planet_and_sectors(1, 1, [&](Planet& pl, SectorMap& smap) {
+        pl.toxic() = 40;
+        pl.info(1).tox_thresh = 20;
+        pl.info(1).resource = 100;
+        toxwc_id = build_automated_waste_can(ctx.em, star, pl, smap, race);
+      });
+    });
+  });
+  test::expect_true(toxwc_id.has_value());
+
+  // Fuel the landed auto-spawned canister and verify projection from planet
+  // surface to /Vega, then launch into /Sol orbit alongside the probe and
+  // verify `fuel #<id> /Sol` succeeds for both.
+  ctx.em.mutate_star(2, [](Star& s) { s.mark_explored_by(1); });
+  ctx.em.mutate_ship(*toxwc_id, [](Ship& s) { s.add_fuel(19.54); });
+  ctx.assert_dispatch_success(g,
+                              {"fuel", std::format("#{}", *toxwc_id), "/Vega"});
+  test::expect_contains(g.out.str(), "FUEL ESTIMATES");
+
+  ctx.em.mutate_ship(*toxwc_id, [&](Ship& s) {
+    s.enter_star_orbit(1);
+    const auto star_coords = ctx.em.peek_star(1)->coordinates();
+    s.set_coordinates(star_coords + SystemCoordinates{514.11, 0.0});
+  });
+  ctx.assert_dispatch_success(g,
+                              {"fuel", std::format("#{}", probe_id), "/Sol"});
+  test::expect_contains(g.out.str(), "At Current Fuel Cargo");
+  test::expect_contains(g.out.str(), "At Optimum Fuel Level");
+
+  ctx.assert_dispatch_success(g,
+                              {"fuel", std::format("#{}", *toxwc_id), "/Sol"});
+  test::expect_contains(g.out.str(), "At Current Fuel Cargo");
+  test::expect_contains(g.out.str(), "At Optimum Fuel Level");
 
   ctx.verify_universe_invariants();
 }

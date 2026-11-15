@@ -581,6 +581,8 @@ int main() {
     test::expect_eq(bers->storbits(), planet.star_id());
     test::expect_eq(bers->pnumorbits(), planet.planet_order());
     test::expect_eq(bers->type(), ShipType::OTYPE_BERS);
+    test::expect_eq(bers->speed(),
+                    ship_template(ShipType::OTYPE_BERS).base_speed);
     test::expect_eq(bers->tech(), 600.0);
     test::expect_eq(bers->armor(), 13);    // parent armor (2) + 11
     test::expect_eq(bers->fuel(), 200.0);  // 5 * 40

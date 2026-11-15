@@ -1562,25 +1562,35 @@ void test_build_automated_waste_can() {
   test::expect_false(res2.has_value());
   test::expect_eq(planet.toxic(), 80);
 
-  // 3. Threshold met (50 <= 80), but insufficient resources (0) -> returns
-  // nullopt
+  // 3. Threshold met (50 <= 80), but insufficient resources (cost - 1) ->
+  // returns nullopt without deducting resources or toxicity
+  const resource_t toxwc_cost = Shipcost(ShipType::OTYPE_TOXWC, race);
+  test::expect_gt(toxwc_cost, resource_t{0});
   planet.info(race).tox_thresh = 50;
-  planet.info(race).resource = 0;
+  planet.info(race).resource = toxwc_cost - 1;
   auto res3 = build_automated_waste_can(em, star, planet, smap, race);
   test::expect_false(res3.has_value());
   test::expect_eq(planet.toxic(), 80);
+  test::expect_eq(planet.info(race).resource, toxwc_cost - 1);
 
-  // 4. Threshold met and resources available -> builds toxic waste can holding
-  // min(TOXMAX, 80) = 20
+  // 4. Threshold met and resources available -> deducts Shipcost, builds toxic
+  // waste can holding min(TOXMAX, 80) = 20 with canonical speed, tech, & class
   planet.info(race).resource = 1000;
   auto res4 = build_automated_waste_can(em, star, planet, smap, race);
   test::expect_true(res4.has_value());
   test::expect_eq(planet.toxic(), 80 - TOXMAX);
+  test::expect_eq(planet.info(race).resource, 1000 - toxwc_cost);
 
   const auto* ship = em.peek_ship(*res4);
   test::expect_true(ship != nullptr);
   test::expect_eq(ship->type(), ShipType::OTYPE_TOXWC);
   test::expect_eq(ship->owner(), player_t{1});
+  test::expect_eq(ship->governor(), star.governor(player_t{1}));
+  test::expect_eq(ship->speed(),
+                  ship_template(ShipType::OTYPE_TOXWC).base_speed);
+  test::expect_eq(ship->tech(), race.tech);
+  test::expect_eq(ship->shipclass(), "Standard");
+  test::expect_eq(ship->build_cost(), toxwc_cost);
   test::expect_true(ship->docked());
   test::expect_true(smap.in_bounds(ship->land_coords()));
   test::expect_eq(ship->as<ToxicWasteShip>()->toxic_level(),
@@ -2570,11 +2580,14 @@ void test_process_planet_economy_automated_waste_can() {
   TurnStats stats{};
   process_planet_economy(em, star, planet, smap, stats);
 
-  // Toxicity reduced by TOXMAX (20): 50 - 20 = 30.
+  // Toxicity reduced by TOXMAX (20): 50 - 20 = 30, and Shipcost(OTYPE_TOXWC)
+  // deducted from planetary resources (500 - 10 = 490).
   // Then update_planet_toxicity adds popn / maxpopn = 100 / 1000 = 0 ->
   // stays 30.
+  const resource_t toxwc_cost = Shipcost(ShipType::OTYPE_TOXWC, race);
   test::expect_eq(planet.toxic(), 30);
-  test::expect_eq(planet.info(player_t{1}).resource, 500);
+  test::expect_eq(planet.info(player_t{1}).resource, 500 - toxwc_cost);
+  test::expect_eq(stats.power_stats(player_t{1}).resource, 500 - toxwc_cost);
 }
 
 void test_reset_planet_turn_state() {

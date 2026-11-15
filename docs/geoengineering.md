@@ -99,8 +99,8 @@ flowchart TD
 ```
 
 ### Toxic Waste Canisters (`w`)
-- **Environmental Remediation**: Colonies construct canisters to purge up to $20$ points of toxicity from their biospheres.
-- **Offensive Biological Warfare**: Canisters can be transported aboard starships and detonated inside hostile enemy atmospheres, rapidly spiking planetary pollution past critical safety limits.
+- **Environmental Remediation**: Colonies construct canisters (`build w` or automated turn-update construction via `toxicity <threshold>`) for $10$ resources (`20` fuel capacity, cruise speed $4$) to purge up to $20$ points of toxicity from their biospheres.
+- **Offensive Biological Warfare**: Canisters can be fueled and launched under their own sublight propulsion or transported aboard starships and detonated (or destroyed in orbit) at hostile worlds, spiking planetary pollution past critical safety limits.
 
 ### Environmental Disaster Thresholds
 When planetary toxicity exceeds **$30\%$ Toxicity**, the world enters ecological crisis:

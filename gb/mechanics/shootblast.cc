@@ -774,10 +774,26 @@ void apply_ship_kill_morale(EntityManager& em, player_t destroyer,
 
 void apply_toxic_waste_fallout(EntityManager& em, const Ship& ship) {
   const auto* tox = ship.as<ToxicWasteShip>();
-  if (!tox || ship.whatorbits() != ScopeLevel::LEVEL_PLAN) return;
-  em.mutate_planet(ship.storbits(), ship.pnumorbits(), [&](Planet& planet) {
-    planet.toxic() += tox->toxic_level();
-  });
+  if (!tox) return;
+
+  std::optional<std::pair<starnum_t, planetnum_t>> target_planet;
+  if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN) {
+    target_planet = {ship.storbits(), ship.pnumorbits()};
+  } else if (ship.whatorbits() == ScopeLevel::LEVEL_SHIP &&
+             ship.number() != 0) {
+    const auto ancestors = em.ancestor_carriers(ship.number());
+    if (!ancestors.empty()) {
+      const auto* root = em.peek_ship(ancestors.back());
+      if (root && root->whatorbits() == ScopeLevel::LEVEL_PLAN) {
+        target_planet = {root->storbits(), root->pnumorbits()};
+      }
+    }
+  }
+  if (!target_planet) return;
+
+  em.mutate_planet(
+      target_planet->first, target_planet->second,
+      [&](Planet& planet) { planet.toxic() += tox->toxic_level(); });
 }
 
 void kill_ship(EntityManager& em, player_t destroyer, Ship& ship) {

@@ -403,6 +403,33 @@ void test_scrap_toxic_waste_warning() {
 
   ctx.em.clear_cache();
   test::expect_throws<EntityNotFoundError>([&]() { ctx.em.peek_ship(tox_id); });
+  test::expect_eq(static_cast<int>(ctx.em.peek_planet(1, 1)->toxic()), 25);
+
+  // Berthing a loaded Toxic Waste Canister inside a landed Carrier and
+  // scrapping it must still release its stored toxicity onto the planet
+  auto landed_carrier = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
+                            .owned_by(player_t{1}, governor_t{1})
+                            .landed_on(1, 1, Coordinates{5, 5})
+                            .with_crew(10, 0)
+                            .with_max_hanger(200)
+                            .build();
+  auto berthed_tox = TestShipBuilder(ctx.em, ShipType::OTYPE_TOXWC)
+                         .owned_by(player_t{1}, governor_t{1})
+                         .landed_on(1, 1, Coordinates{5, 5})
+                         .with_crew(1, 0)
+                         .with_special(WasteData{.toxic = 20})
+                         .build();
+  test::expect_true(
+      ctx.em.dock_carrier(berthed_tox, landed_carrier).has_value());
+
+  g.set_level(ScopeLevel::LEVEL_SHIP);
+  g.set_shipno(landed_carrier);
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"scrap", std::format("#{}", berthed_tox.value)}, 1);
+  test::expect_contains(g.out.str(),
+                        "WARNING: This will release 20 toxin points");
+  test::expect_eq(static_cast<int>(ctx.em.peek_planet(1, 1)->toxic()), 45);
 
   ctx.verify_universe_invariants();
 }

@@ -599,7 +599,7 @@ int main() {
     test::expect_true(cargo->base_mass() > 0);
     test::expect_true(cargo->build_cost() > 0);
 
-    // 2. Combat ship with primary battery
+    // 2. Combat ship with primary and secondary batteries
     auto battle =
         ShipFactory::create_from_template(ShipType::STYPE_BATTLE, player_t{1});
     test::expect_true(battle != nullptr);
@@ -609,7 +609,12 @@ int main() {
     test::expect_eq(battle->max_resource(), 235);
     test::expect_eq(battle->guns(), ActiveBattery::PRIMARY);
     test::expect_eq(battle->primary_battery().count, 30);
+    test::expect_eq(battle->secondary_battery().count, 30);
+    test::expect_eq(battle->secondary_battery().caliber, guntype_t::MEDIUM);
     test::expect_eq(battle->retaliate(), 30);
+    test::expect_true(battle->get_struct().base_mass > 0.0);
+    test::expect_eq(battle->complexity(),
+                    ship_template(ShipType::STYPE_BATTLE).base_tech);
 
     // 3. Autonomous VN ship with progenitor
     auto vn =

@@ -210,6 +210,10 @@ std::optional<ShipBuildPlan> validate_factory_ship_build(const command_t& argv,
   }
   Coordinates bcoords = builder.land_coords();
   ShipType what = builder.build_type();
+  if (const auto build_ok = can_build_on_ship(what, race, builder); !build_ok) {
+    g.out << build_ok.error();
+    return std::nullopt;
+  }
   const auto& planet = *g.entity_manager.peek_planet(snum, pnum);
   const auto& star = *g.entity_manager.peek_star(snum);
   if (const auto res =
@@ -221,8 +225,8 @@ std::optional<ShipBuildPlan> validate_factory_ship_build(const command_t& argv,
   }
   const auto& sectormap = *g.entity_manager.peek_sectormap(snum, pnum);
   const auto& sector = sectormap.get(bcoords);
-  auto result = can_build_on_sector(g.entity_manager, what, race, planet,
-                                    sector, bcoords);
+  auto result = validate_sector_build_site(g.entity_manager, what, race, planet,
+                                           sector, bcoords);
   if (!result) {
     g.out << result.error();
     return std::nullopt;

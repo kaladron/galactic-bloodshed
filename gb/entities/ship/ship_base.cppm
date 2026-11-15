@@ -222,6 +222,10 @@ public:
   /// gun batteries, crew, cargo, fuel, destruct, and hangar capacities.
   [[nodiscard]] ship_size_t calculate_size() const noexcept;
 
+  /// \brief Synchronizes derived hull size, base_mass, mass (preserving loaded
+  /// cargo and hangar craft deltas), build_cost, and complexity.
+  void recalculate_hull_stats(bool free_build = false) noexcept;
+
   [[nodiscard]] constexpr double tech() const noexcept {
     return data_.tech;
   }
@@ -1421,26 +1425,35 @@ public:
   }
 
   /// \brief Deity override: sets fuel clamped to capacity and synchronizes
-  /// mass.
+  /// mass while preserving carried hangar craft mass.
   void admin_override_fuel(fuel_t amt, double race_mass = 1.0) noexcept {
+    const double carried =
+        (data_.hanger > 0) ? std::max(0.0, data_.mass - local_mass(race_mass))
+                           : 0.0;
     data_.fuel = std::clamp(amt, 0.0, static_cast<double>(max_fuel_capacity()));
-    data_.mass = local_mass(race_mass);
+    data_.mass = local_mass(race_mass) + carried;
   }
 
   /// \brief Deity override: sets cargo resources clamped to capacity and
-  /// synchronizes mass.
+  /// synchronizes mass while preserving carried hangar craft mass.
   void admin_override_resource(resource_t amt,
                                double race_mass = 1.0) noexcept {
+    const double carried =
+        (data_.hanger > 0) ? std::max(0.0, data_.mass - local_mass(race_mass))
+                           : 0.0;
     data_.resource = std::clamp<resource_t>(amt, 0, max_resource_capacity());
-    data_.mass = local_mass(race_mass);
+    data_.mass = local_mass(race_mass) + carried;
   }
 
   /// \brief Deity override: sets destruct charges clamped to capacity and
-  /// synchronizes mass.
+  /// synchronizes mass while preserving carried hangar craft mass.
   void admin_override_destruct(resource_t amt,
                                double race_mass = 1.0) noexcept {
+    const double carried =
+        (data_.hanger > 0) ? std::max(0.0, data_.mass - local_mass(race_mass))
+                           : 0.0;
     data_.destruct = std::clamp<resource_t>(amt, 0, max_destruct_capacity());
-    data_.mass = local_mass(race_mass);
+    data_.mass = local_mass(race_mass) + carried;
   }
 
   /// \brief Deity override: sets warp crystal charges clamped to capacity.

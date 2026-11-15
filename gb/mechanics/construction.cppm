@@ -83,6 +83,10 @@ can_build_at_planet(player_t playernum, governor_t governor, const Star& star,
 export std::expected<void, std::string> can_build_this(ShipType what,
                                                        const Race& race);
 export std::expected<void, std::string>
+validate_sector_build_site(EntityManager& entity_manager, ShipType what,
+                           const Race& race, const Planet& planet,
+                           const Sector& sector, const Coordinates& c);
+export std::expected<void, std::string>
 can_build_on_sector(EntityManager& entity_manager, ShipType what,
                     const Race& race, const Planet& planet,
                     const Sector& sector, const Coordinates& c);

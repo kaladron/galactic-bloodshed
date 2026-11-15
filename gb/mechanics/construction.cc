@@ -26,10 +26,9 @@ module gb.mechanics;
  * @return std::expected<void, std::string> Success or an error message string.
  */
 std::expected<void, std::string>
-can_build_on_sector(EntityManager& entity_manager, const ShipType what,
-                    const Race& race, const Planet& planet,
-                    const Sector& sector, const Coordinates& c) {
-  auto shipc = ship_template(what).letter;
+validate_sector_build_site(EntityManager& entity_manager, const ShipType what,
+                           const Race& race, const Planet& planet,
+                           const Sector& sector, const Coordinates& c) {
   if (!sector.get_popn()) {
     return std::unexpected("You have no more civs in the sector!\n");
   }
@@ -39,13 +38,6 @@ can_build_on_sector(EntityManager& entity_manager, const ShipType what,
   if (sector.get_owner() != race.Playernum && !race.God) {
     return std::unexpected("You don't own that sector.\n");
   }
-  if (!ship_template(what).can_build_on_planet() && !race.God) {
-    std::string temp = std::format(
-        "This ship type cannot be built on a planet.\nUse 'build ? {}' to find "
-        "out where it can be built.\n",
-        shipc);
-    return std::unexpected(temp);
-  }
   if (what == ShipType::OTYPE_QUARRY) {
     for (const Ship& s : ShipList::readonly_on_planet(
              entity_manager, planet.star_id(), planet.planet_order())) {
@@ -53,6 +45,24 @@ can_build_on_sector(EntityManager& entity_manager, const ShipType what,
         return std::unexpected("There already is a quarry here.\n");
       }
     }
+  }
+  return {};
+}
+
+std::expected<void, std::string>
+can_build_on_sector(EntityManager& entity_manager, const ShipType what,
+                    const Race& race, const Planet& planet,
+                    const Sector& sector, const Coordinates& c) {
+  if (const auto site_ok = validate_sector_build_site(entity_manager, what,
+                                                      race, planet, sector, c);
+      !site_ok) {
+    return site_ok;
+  }
+  if (!ship_template(what).can_build_on_planet() && !race.God) {
+    return std::unexpected(std::format(
+        "This ship type cannot be built on a planet.\nUse 'build ? {}' to find "
+        "out where it can be built.\n",
+        ship_template(what).letter));
   }
   return {};
 }
@@ -225,10 +235,12 @@ CreatedShipSummary create_ship_by_planet(EntityManager& entity_manager,
   newship.tech() = race.tech;
   const auto& star = *entity_manager.peek_star(snum);
   newship.set_coordinates(planet.absolute_coordinates(star));
-  newship.shipclass() = (((newship.type() == ShipType::OTYPE_TERRA) ||
-                          (newship.type() == ShipType::OTYPE_PLOW))
-                             ? "5"
-                             : "Standard");
+  if (newship.shipclass().empty()) {
+    newship.shipclass() = (((newship.type() == ShipType::OTYPE_TERRA) ||
+                            (newship.type() == ShipType::OTYPE_PLOW))
+                               ? "5"
+                               : "Standard");
+  }
   newship.land_on_planet(snum, pnum, land_coords);
   planet.info(Playernum).resource -= newship.build_cost();
 
@@ -271,10 +283,12 @@ CreatedShipSummary create_ship_by_ship(EntityManager& entity_manager,
   newship.tech() = race.tech;
   newship.set_coordinates(builder.coordinates());
   newship.set_land_coords(builder.land_coords());
-  newship.shipclass() = (((newship.type() == ShipType::OTYPE_TERRA) ||
-                          (newship.type() == ShipType::OTYPE_PLOW))
-                             ? "5"
-                             : "Standard");
+  if (newship.shipclass().empty()) {
+    newship.shipclass() = (((newship.type() == ShipType::OTYPE_TERRA) ||
+                            (newship.type() == ShipType::OTYPE_PLOW))
+                               ? "5"
+                               : "Standard");
+  }
   builder.consume_resource(newship.build_cost());
 
   return CreatedShipSummary{
@@ -293,12 +307,18 @@ std::unique_ptr<Ship> getship(ShipType i, const Race& r) {
   ship->mount() = r.God && tmpl.can_mount;
   ship->hyper_drive() = {.has = r.God && tmpl.can_hyperjump};
   ship->laser() = r.God && tmpl.can_mount_laser;
-  ship->build_cost() = r.God ? 0 : cost(*ship);
+  ship->recalculate_hull_stats(r.God);
   return ship;
 }
 
 std::unique_ptr<Ship> getfactship(const Ship& b) {
+  const ActiveBattery active_guns =
+      b.primary_battery().has_guns()
+          ? ActiveBattery::PRIMARY
+          : (b.secondary_battery().has_guns() ? ActiveBattery::SECONDARY
+                                              : ActiveBattery::NONE);
   ship_struct data{
+      .shipclass = b.shipclass(),
       .armor = b.armor(),
       .max_crew = b.max_crew(),
       .max_resource = b.max_resource(),
@@ -311,18 +331,18 @@ std::unique_ptr<Ship> getfactship(const Ship& b) {
       .hyper_drive = {.has = b.hyper_drive().has},
       .cew = b.cew(),
       .cew_range = b.cew_range(),
+      .cloak = b.cloak(),
       .laser = b.laser(),
       .type = b.build_type(),
-      .guns = b.primary_battery().has_guns() ? ActiveBattery::PRIMARY
-                                             : ActiveBattery::NONE,
+      .guns = active_guns,
       .primary_battery = b.primary_battery(),
       .secondary_battery = b.secondary_battery(),
       .max_hanger = b.max_hanger(),
   };
 
   auto s = ShipFactory::create(std::move(data));
-  s->size() = s->calculate_size();
-  s->set_mass(s->base_mass());
+  s->recalculate_hull_stats();
+  s->build_cost() = b.build_cost();
   return s;
 }
 
@@ -390,8 +410,17 @@ scrap_single_ship(EntityManager& em, Ship& s, const Race& race) {
       .reclaimed = s.docked(),
   };
 
-  if (s.whatorbits() == ScopeLevel::LEVEL_PLAN) {
-    if (const auto* tox = s.as<ToxicWasteShip>()) {
+  if (const auto* tox = s.as<ToxicWasteShip>()) {
+    bool at_planet = (s.whatorbits() == ScopeLevel::LEVEL_PLAN);
+    if (!at_planet && s.whatorbits() == ScopeLevel::LEVEL_SHIP &&
+        s.number() != 0) {
+      const auto ancestors = em.ancestor_carriers(s.number());
+      if (!ancestors.empty()) {
+        const auto* root = em.peek_ship(ancestors.back());
+        at_planet = (root && root->whatorbits() == ScopeLevel::LEVEL_PLAN);
+      }
+    }
+    if (at_planet) {
       result.toxin_released = tox->toxic_level();
     }
   }
@@ -759,6 +788,7 @@ finalize_factory_design_stats(Ship& dirship, const Race& race,
   dirship.size() = dirship.calculate_size();
   const ship_size_t design_size = dirship.size();
   const double base_mass = dirship.base_mass();
+  dirship.to_struct().base_mass = base_mass;
   dirship.complexity() = complexity(dirship);
 
   dirship.size() = original_state.size;
@@ -1105,7 +1135,7 @@ void commit_ship_upgrade(EntityManager& entity_manager, Ship& dirship,
                          resource_t netcost) {
   const ship_size_t old_size = dirship.size();
   const double old_mass = dirship.mass();
-  const double old_base_mass = dirship.base_mass();
+  dirship.to_struct().base_mass = dirship.base_mass();
 
   dirship.armor() = candidate.armor();
   dirship.max_crew() = candidate.max_crew();
@@ -1124,18 +1154,15 @@ void commit_ship_upgrade(EntityManager& entity_manager, Ship& dirship,
     } else if (dirship.secondary_battery().has_guns()) {
       dirship.active_battery() = ActiveBattery::SECONDARY;
     }
+    dirship.retaliate() = dirship.active_guns();
+    dirship.protect().retaliate = dirship.active_guns() > 0;
   }
   dirship.cew() = candidate.cew();
   dirship.cew_range() = candidate.cew_range();
   dirship.laser() = candidate.laser();
 
-  dirship.size() = dirship.calculate_size();
-  const double new_base_mass = dirship.base_mass();
-  dirship.to_struct().base_mass = new_base_mass;
-  dirship.set_mass(dirship.mass() + (new_base_mass - old_base_mass));
+  dirship.recalculate_hull_stats(race.God);
   dirship.consume_resource(netcost);
-  dirship.build_cost() = race.God ? 0 : static_cast<resource_t>(cost(dirship));
-  dirship.complexity() = complexity(dirship);
 
   if (dirship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
     entity_manager.mutate_ship(*dirship.destshipno(), [&](Ship& carrier) {

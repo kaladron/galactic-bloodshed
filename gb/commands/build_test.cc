@@ -166,7 +166,7 @@ void test_build_from_ships() {
                              .with_resource(5000)
                              .with_crew(100, 0)
                              .with_on(true)
-                             .with_build_type(ShipType::OTYPE_PROBE)
+                             .with_build_type(ShipType::STYPE_SHUTTLE)
                              .build();
 
   g.set_level(ScopeLevel::LEVEL_SHIP);
@@ -213,6 +213,77 @@ void test_build_from_ships() {
   test::expect_eq(ctx.em.num_ships(), shipnum_t{initial_ships.value + 8});
 }
 
+void test_factory_all_classes_and_toxic_waste() {
+  TestContext ctx;
+  setup_test_world(ctx);
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 200; });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) {
+    p.info(player_t{1}).resource = 500000;
+    p.toxic() = 50;
+  });
+
+  auto& registry = get_test_session_registry();
+  GameObj g(ctx.em, registry);
+  ctx.setup_game_obj(g, 1, 1);
+
+  // 1. Planetary `build w` preserves extracted 20% toxic payload on new ship
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(1);
+  g.set_pnum(1);
+  ctx.assert_dispatch_success(g, {"build", "w", "5,5", "1"}, 1);
+  test::expect_eq(static_cast<int>(ctx.em.peek_planet(1, 1)->toxic()), 30);
+  const auto* waste_ship = ctx.em.peek_ship(1)->as<ToxicWasteShip>();
+  test::expect_ne(waste_ship, nullptr);
+  test::expect_eq(waste_ship->toxic_level(), 20);
+
+  // 2. Mortal Factory `make` -> `order on` -> `build` succeeds for all
+  //    factory-buildable ship classes (build_time == 8), preserving shipclass,
+  //    cloak, secondary batteries, and secondary-only active_battery/retaliate.
+  ctx.em.mutate_race(1, [](Race& r) { r.discoveries.cloak = true; });
+  g.race = ctx.em.peek_race(1);
+
+  const auto& fac_tmpl = ship_template(ShipType::OTYPE_FACTORY);
+  for (const auto& tmpl : ship_templates) {
+    if (!tmpl.can_be_built_by(fac_tmpl) || tmpl.is_god_only ||
+        tmpl.type == ShipType::STYPE_POD) {
+      continue;
+    }
+    const shipnum_t fac_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
+                                 .owned_by(1, 1)
+                                 .landed_on(1, 1, {5, 5})
+                                 .with_damage(0)
+                                 .with_on(false)
+                                 .with_crew(20, 0)
+                                 .build();
+    g.set_level(ScopeLevel::LEVEL_SHIP);
+    g.set_shipno(fac_id);
+    ctx.assert_dispatch_success(g, {"make", std::string(1, tmpl.letter)});
+    if (tmpl.type == ShipType::STYPE_CRUISER) {
+      ctx.em.mutate_ship(fac_id, [](Ship& f) {
+        f.cloak() = true;
+        f.set_primary_battery(0, guntype_t::NONE);
+      });
+    }
+    ctx.assert_dispatch_success(
+        g, {"order", std::format("#{}", fac_id.value), "on"});
+    const shipnum_t next_id = ctx.em.next_available_ship_number();
+    ctx.assert_dispatch_success(g, {"build"}, 1);
+
+    const auto* built = ctx.em.peek_ship(next_id);
+    test::expect_ne(built, nullptr);
+    test::expect_eq(built->type(), tmpl.type);
+    test::expect_eq(built->shipclass(), std::format("mod {}", fac_id.value));
+    test::expect_true(built->get_struct().base_mass > 0.0);
+    if (tmpl.type == ShipType::STYPE_CRUISER) {
+      test::expect_true(built->cloak());
+      test::expect_eq(built->guns(), ActiveBattery::SECONDARY);
+      test::expect_eq(built->retaliate(), tmpl.max_guns);
+    } else if (tmpl.has_secondary()) {
+      test::expect_eq(built->secondary_battery().count, tmpl.max_guns);
+    }
+  }
+}
+
 }  // namespace
 
 int main() {
@@ -221,6 +292,7 @@ int main() {
   test_build_domain_errors();
   test_build_info_queries();
   test_build_from_ships();
+  test_factory_all_classes_and_toxic_waste();
 
   std::println(std::cout, "✓ build_test passed!");
   return 0;

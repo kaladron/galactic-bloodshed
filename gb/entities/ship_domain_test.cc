@@ -1465,14 +1465,44 @@ void test_blueprint_complexity_defense_and_capture() {
     }
   }
 
-  // Verify exhaustive SpecialData invariant across all ship templates (standard
-  // hulls hold std::monostate; specialty hulls hold their exact payload_type)
+  // Verify exhaustive SpecialData, unmodified complexity == base_tech, and
+  // base_mass invariants across all 47 ship templates
   for (const auto& tmpl : ship_templates) {
     auto tmpl_ship = ShipFactory::create_from_template(tmpl.type, 1);
     test::expect_true(tmpl_ship != nullptr);
     test::expect_true(
         holds_expected_special_data(tmpl.type, tmpl_ship->to_struct().special));
+    expect_near(complexity(*tmpl_ship), tmpl.base_tech);
+    expect_near(tmpl_ship->complexity(), tmpl.base_tech);
+    test::expect_true(tmpl_ship->get_struct().base_mass > 0.0);
+    if (tmpl.has_secondary()) {
+      test::expect_eq(tmpl_ship->secondary_battery().count, tmpl.max_guns);
+    }
   }
+
+  // set_factory_blueprint resets cew_range and preserves Factory hull size
+  auto fac = ShipFactory::create_from_template(ShipType::OTYPE_FACTORY, 1);
+  const ship_size_t fac_hull_size = fac->size();
+  fac->set_factory_blueprint(ShipType::STYPE_BATTLE, race1);
+  fac->cew() = 10;
+  fac->cew_range() = 200;
+  fac->set_factory_blueprint(ShipType::STYPE_EXPLORER, race1);
+  test::expect_eq(fac->cew(), 0);
+  test::expect_eq(fac->cew_range(), 0);
+  test::expect_eq(fac->size(), fac_hull_size);
+
+  // admin_override_fuel/resource/destruct preserve carried hangar craft mass
+  auto carrier_tmpl =
+      ShipFactory::create_from_template(ShipType::STYPE_CARRIER, 1);
+  auto child_tmpl =
+      ShipFactory::create_from_template(ShipType::STYPE_FIGHTER, 1);
+  carrier_tmpl->load_docked_craft(*child_tmpl);
+  const double expected_carried = child_tmpl->mass();
+  carrier_tmpl->admin_override_fuel(50.0, 1.0);
+  carrier_tmpl->admin_override_resource(10, 1.0);
+  carrier_tmpl->admin_override_destruct(5, 1.0);
+  expect_near(carrier_tmpl->mass(),
+              carrier_tmpl->local_mass(1.0) + expected_carried);
   const auto cruiser_tmpl =
       ShipFactory::create_from_template(ShipType::STYPE_CRUISER, 1);
   test::expect_true(std::holds_alternative<std::monostate>(

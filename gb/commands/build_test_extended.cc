@@ -102,7 +102,7 @@ void test_factory_multiple_builds() {
   BuildTestFixture fixture;
   shipnum_t initial_ships = fixture.count_ships();
 
-  // Create a factory ship landed at 5,5 configured to build probes
+  // Create a factory ship landed at 5,5 configured to build shuttles
   shipnum_t factory_num =
       TestShipBuilder(fixture.em, ShipType::OTYPE_FACTORY)
           .owned_by(1, 1)
@@ -110,7 +110,7 @@ void test_factory_multiple_builds() {
           .with_resource(10000)
           .with_crew(100, 0)
           .with_on(true)
-          .with_build_type(ShipType::OTYPE_PROBE)
+          .with_build_type(ShipType::STYPE_SHUTTLE)
           .build();
 
   auto& registry = get_test_session_registry();
@@ -282,7 +282,7 @@ void test_ship_build_error_paths() {
                              .with_resource(1000)
                              .with_crew(100, 0)
                              .with_on(true)
-                             .with_build_type(ShipType::OTYPE_PROBE)
+                             .with_build_type(ShipType::STYPE_SHUTTLE)
                              .build();
 
   fixture.init_game_obj(g, ScopeLevel::LEVEL_SHIP, factory_id);
@@ -478,6 +478,21 @@ void test_planet_and_factory_mcdc_branches() {
       g.out.str(),
       "This factory has not been designated to build a ship type.\n");
 
+  // Non-factory-buildable blueprint (e.g. Probe) rejected on mortal factory
+  shipnum_t bad_fac = TestShipBuilder(fixture.em, ShipType::OTYPE_FACTORY)
+                          .owned_by(1, 1)
+                          .landed_on(fixture.star_id, fixture.planet_id, {5, 5})
+                          .with_resource(1000)
+                          .with_crew(100, 0)
+                          .with_on(true)
+                          .with_build_type(ShipType::OTYPE_PROBE)
+                          .build();
+  fixture.init_game_obj(g, ScopeLevel::LEVEL_SHIP, bad_fac);
+  g.out.str("");
+  test::expect_false(GB::commands::build({"build", "1"}, g));
+  test::expect_contains(g.out.str(),
+                        "This ship type cannot be built by a Factory.");
+
   // Designated factory: tech check, planet check, sector check, resource check,
   // AP check, and autoloading
   shipnum_t fac_id = TestShipBuilder(fixture.em, ShipType::OTYPE_FACTORY)
@@ -486,7 +501,7 @@ void test_planet_and_factory_mcdc_branches() {
                          .with_resource(1000)
                          .with_crew(100, 0)
                          .with_on(true)
-                         .with_build_type(ShipType::OTYPE_PROBE)
+                         .with_build_type(ShipType::STYPE_SHUTTLE)
                          .build();
 
   fixture.em.mutate_race(1, [](Race& r) { r.tech = 1.0; });

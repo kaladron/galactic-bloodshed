@@ -103,6 +103,14 @@ std::unique_ptr<Ship> ShipFactory::create(ship_struct data) {
 std::unique_ptr<Ship> ShipFactory::create_from_template(ShipType type,
                                                         player_t owner) {
   const auto& tmpl = ship_template(type);
+  const auto primary =
+      GunBattery::create(tmpl.max_guns, shipdata_primary(type));
+  const auto secondary =
+      GunBattery::create(tmpl.max_guns, shipdata_secondary(type));
+  const ActiveBattery active_guns =
+      primary.has_guns() ? ActiveBattery::PRIMARY
+                         : (secondary.has_guns() ? ActiveBattery::SECONDARY
+                                                 : ActiveBattery::NONE);
   ship_struct data{
       .owner = owner,
       .name = std::string(tmpl.name),
@@ -115,22 +123,19 @@ std::unique_ptr<Ship> ShipFactory::create_from_template(ShipType type,
       .build_type = type,
       .build_cost = tmpl.build_cost,
       .special = default_special_data(type, owner),
-      .retaliate = tmpl.max_guns,
+      .retaliate = primary.has_guns() ? primary.count : secondary.count,
       .type = type,
       .speed = tmpl.base_speed,
       .active = true,
       .alive = true,
-      .guns = tmpl.has_primary() ? ActiveBattery::PRIMARY : ActiveBattery::NONE,
-      .primary_battery =
-          GunBattery::create(tmpl.max_guns, shipdata_primary(type)),
-      .secondary_battery = GunBattery::create(0, shipdata_secondary(type)),
+      .guns = active_guns,
+      .primary_battery = primary,
+      .secondary_battery = secondary,
       .max_hanger = tmpl.max_hangar,
   };
 
   auto ship = create(std::move(data));
-  ship->size() = ship->calculate_size();
-  ship->set_mass(ship->base_mass());
-  ship->build_cost() = cost(*ship);
+  ship->recalculate_hull_stats();
   return ship;
 }
 

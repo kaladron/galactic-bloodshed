@@ -33,6 +33,19 @@ ship_size_t Ship::calculate_size() const noexcept {
   return static_cast<ship_size_t>(std::floor(calculated));
 }
 
+void Ship::recalculate_hull_stats(bool free_build) noexcept {
+  const double prev_base_mass = data_.base_mass;
+  data_.size = calculate_size();
+  data_.base_mass = base_mass();
+  if (prev_base_mass > 0.0 && data_.mass >= prev_base_mass) {
+    set_mass(data_.mass + (data_.base_mass - prev_base_mass));
+  } else {
+    set_mass(data_.base_mass);
+  }
+  data_.build_cost = free_build ? 0 : ::cost(*this);
+  data_.complexity = ::complexity(*this);
+}
+
 resource_t cost(const Ship& s) {
   /* compute how much it costs to build this ship */
   double factor = 0.0;
@@ -177,8 +190,9 @@ double complexity(const Ship& s) {
   const auto& tmpl = ship_template(s.build_type());
   SystemCost cost;
 
-  cost.add(s.primary_battery().count, tmpl.max_guns);
-  cost.add(s.secondary_battery().count, tmpl.max_guns);
+  cost.add(s.primary_battery().count, tmpl.has_primary() ? tmpl.max_guns : 0);
+  cost.add(s.secondary_battery().count,
+           tmpl.has_secondary() ? tmpl.max_guns : 0);
   cost.add(s.max_crew(), tmpl.max_crew);
   cost.add(s.max_resource(), tmpl.max_resource);
   cost.add(s.max_fuel(), tmpl.max_fuel);
@@ -211,6 +225,7 @@ double complexity(const Ship& s) {
 void Ship::set_factory_blueprint(ShipType build_type,
                                  const Race* race) noexcept {
   const auto& itmpl = ship_template(build_type);
+  const ship_size_t own_size = data_.size;
   data_.build_type = build_type;
   data_.armor = itmpl.base_armor;
   data_.guns = ActiveBattery::NONE;
@@ -226,12 +241,16 @@ void Ship::set_factory_blueprint(ShipType build_type,
   data_.max_speed = itmpl.base_speed;
   apply_blueprint_capabilities(data_, itmpl, race);
   data_.cew = 0;
+  data_.cew_range = 0;
   data_.mode = 0;
   data_.size = calculate_size();
   const bool free_build = race ? race->God : false;
   data_.build_cost = free_build ? 0 : ::cost(*this);
   data_.base_mass = base_mass();
   data_.complexity = ::complexity(*this);
+  if (data_.type == ShipType::OTYPE_FACTORY && own_size > 0) {
+    data_.size = own_size;
+  }
 }
 
 void Ship::initialize_constructed_state(const Race& race, governor_t gov,
@@ -251,9 +270,11 @@ void Ship::initialize_constructed_state(const Race& race, governor_t gov,
   data_.active = true;
   data_.protect.retaliate = active_guns() > 0;
   admin_override_damage(race.God ? damage_t{0} : get_template().base_damage);
-  data_.retaliate = data_.primary_battery.count;
+  data_.retaliate = active_guns();
   set_mass(local_mass(race.mass));
-  data_.special = default_special_data(data_.type, race.Playernum);
+  if (data_.type != ShipType::OTYPE_TOXWC) {
+    data_.special = default_special_data(data_.type, race.Playernum);
+  }
 }
 
 /// Determine whether the ship crashed or not.

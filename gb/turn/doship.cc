@@ -680,10 +680,11 @@ void doabm(Ship& ship, EntityManager& entity_manager) {
         /* attack the missile/mine */
         const weapon_power_t numdest = std::min(
             {ship.retal_strength(), ship.destruct_power(), ship.retaliate()});
-        ship.consume_destruct(numdest);
+        if (numdest <= 0) return;
         auto const& s2sresult =
             shoot_ship_to_ship(entity_manager, ship, target, numdest, 0);
         if (s2sresult) {
+          ship.consume_destruct(numdest);
           const std::string short_buf =
               GB::presentation::render_ship_shot_short(*s2sresult);
           const std::string long_buf =

@@ -301,6 +301,24 @@ int main() {
         victim_telegrams[0].message.contains("bombarded sector 5,5"));
   }
 
+  // =========================================================================
+  // Test 9: Switched-off or non-orbiting Berserker conserves destruct ammo
+  // =========================================================================
+  {
+    auto off_bers = TestShipBuilder(ctx.em, ShipType::OTYPE_BERS)
+                        .owned_by(1)
+                        .with_alive(true)
+                        .with_on(false)
+                        .with_guns(guntype_t::HEAVY, 40, ActiveBattery::PRIMARY)
+                        .with_destruct(500)
+                        .in_planet_orbit(1, 4)
+                        .build_handle();
+    Planet target_planet(ctx.em.peek_planet(1, 4)->get_struct());
+    test::expect_eq(berserker_bombard(ctx.em, *off_bers, target_planet, race1),
+                    0);
+    test::expect_eq(off_bers->destruct(), 500);
+  }
+
   std::println(std::cout, "berserker_bombard_test: All tests passed!");
   return 0;
 }

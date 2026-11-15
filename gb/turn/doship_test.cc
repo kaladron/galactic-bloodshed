@@ -1006,6 +1006,17 @@ void test_doabm_intercept() {
                            .with_alive(true)
                            .build_handle();
 
+  // 3. Out-of-range hostile missile in orbit (must not drain ABM destruct)
+  auto distant_handle =
+      TestShipBuilder(em, ShipType::STYPE_MISSILE)
+          .owned_by(2)
+          .with_size(1)
+          .with_tech(10.0)
+          .in_planet_orbit(1, 1, UniverseCoordinates{10000.0, 10000.0})
+          .with_active(true)
+          .with_alive(true)
+          .build_handle();
+
   auto abm_handle = TestShipBuilder(em, ShipType::OTYPE_ABM)
                         .owned_by(1)
                         .with_size(1)
@@ -1015,7 +1026,7 @@ void test_doabm_intercept() {
                         .with_crew(10, 1)
                         .in_planet_orbit(1, 1)
                         .targeting_planet(1, 1)
-                        .with_retaliate(50)
+                        .with_retaliate(10)
                         .with_guns(guntype_t::HEAVY, 10, ActiveBattery::PRIMARY)
                         .with_active(true)
                         .with_alive(true)
@@ -1025,7 +1036,10 @@ void test_doabm_intercept() {
   abm.land_on_planet();
 
   doabm(abm, em);
-  test::expect_lt(abm.destruct(), 50);
+  // Only the in-range hostile missile fired 10 destruct; the out-of-range
+  // missile did not drain an extra salvo
+  test::expect_eq(abm.destruct(), 40);
+  test::expect_eq(em.peek_ship(distant_handle->number())->damage(), 0);
   em.with_ship(hostile_handle->number(), [](const Ship& updated_hostile) {
     test::expect_gt(updated_hostile.damage(), 0);
   });

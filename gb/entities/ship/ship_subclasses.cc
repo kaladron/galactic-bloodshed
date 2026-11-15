@@ -193,7 +193,7 @@ resource_t AutonomousShip::mine_sector(Sector& sector) {
   const resource_t prod = (newres == oldres) ? 1 : (oldres - newres);
   sector.set_resource(oldres - prod);
   if (type() == ShipType::OTYPE_VN) {
-    add_resource(prod);
+    accumulate_replication_resources(prod);
   } else if (type() == ShipType::OTYPE_BERS) {
     add_destruct(5 * prod);
   }

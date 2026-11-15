@@ -53,11 +53,11 @@ Even when an empire owns a generation-1 Von Neumann probe, the machine's autonom
 ### Generational Hardware Evolution
 Each autonomous machine carries an internal cybernetic mind tracking its lineage and mission state:
 - **Progenitor**: The ancestral empire that constructed the generation-1 seed machine.
-- **Generational Counter**: Starts at $`g = 1`$ for newly built probes. Every replicated Von Neumann probe increments the generation counter ($`g_{\text{child}} = g_{\text{parent}} + 1`$), whereas a newly mobilized Berserker retains its parent's current generation number ($`g_{\text{child}} = g_{\text{parent}}`$).
+- **Generational Counter**: Starts at $`g = 1`$ for newly built probes. Every replicated Von Neumann probe or newly mobilized Berserker increments the generation counter ($`g_{\text{child}} = g_{\text{parent}} + 1`$).
 - **Iterative Hardware Upgrades**:
   - **Replicated Von Neumann Probe**: $`\text{Tech}_{\text{child}} = \text{Tech}_{\text{parent}} + 20.0`$ and $`\text{Armor}_{\text{child}} = \text{Armor}_{\text{parent}} + 1`$.
   - **Replicated Berserker Warship**: $`\text{Tech}_{\text{child}} = \text{Tech}_{\text{parent}} + 100.0`$ and $`\text{Armor}_{\text{child}} = \text{Armor}_{\text{parent}} + 11`$.
-- **Binary Designations**: Replicated Von Neumann probes assign themselves random binary hull names between $3$ and $10$ bits in length (e.g. `"1010011"`, `"01101"`).
+- **Hull Designations**: Replicated Von Neumann probes assign themselves random binary hull names between $3$ and $10$ bits in length (e.g. `"1010011"`, `"01101"`), while replicated Berserkers name themselves with the lowercase hexadecimal empire ID of their primary target (or `"0"` if untargeted).
 
 ---
 
@@ -69,24 +69,24 @@ When an active, busy machine arrives in planetary orbit around its target world 
 - **Resource Sector Scan**: On terrestrial worlds, the machine scans all surface sectors in random order and lands on the first sector containing positive mineral deposits ($`\text{Sector Minerals} > 0`$), setting its mission state to **busy**. If the entire planet is devoid of mineral resources, the machine clears its busy flag without landing.
 
 ### Sector Strip-Mining and Onboard Synthesis
-During each planetary update pass, a landed, busy Von Neumann probe strip-mines its current sector:
+During each planetary update pass, any landed machine that is either **busy** or **underfueled** strip-mines its current sector:
 
 $$\text{Extracted Yield} = \max\Big(1,\; \text{Sector Minerals} - \lfloor 0.5 \times \text{Sector Minerals} \rfloor\Big)$$
 
 - **Guaranteed Depletion**: At least $1$ mineral unit is always extracted when a sector has positive reserves, preventing infinite mining loops on trace deposits ($1$ resource remaining).
 - **Cargo & Propellant Synthesis**:
-  - **Von Neumann Probe (`v`)**: Adds $\text{Extracted Yield}$ to its onboard **mineral cargo** (clamped to its $20$-unit cargo capacity, or higher if modified) and adds an equal amount ($\text{Extracted Yield}$) to its **fuel tank**.
-  - **Berserker (`V`)**: Converts extracted minerals into $5 \times \text{Extracted Yield}$ **destruct ordnance** and adds $\text{Extracted Yield}$ to its **fuel tank**.
-- **Sector Depletion and Toroidal Roaming**: If the occupied sector's mineral reserves have reached $0$, the probe instead roams to a random adjacent sector (wrapping seamlessly across the planet's east/west longitudinal seam while respecting north/south polar boundaries).
+  - **Von Neumann Probe (`v`)**: Accumulates $\text{Extracted Yield}$ directly as internal replication feedstock (beyond the $20$-unit manual cargo loading cap) and adds an equal amount ($\text{Extracted Yield}$) to its **fuel tank** (clamped to tank capacity).
+  - **Berserker (`V`)**: Converts extracted minerals into $5 \times \text{Extracted Yield}$ **destruct ordnance** and adds $\text{Extracted Yield}$ to its **fuel tank** (clearing its busy state once both fuel and destruct magazines reach full capacity).
+- **Sector Depletion and Toroidal Roaming**: If the occupied sector's mineral reserves have reached $0$, the machine instead roams to a random adjacent sector (wrapping seamlessly across the planet's east/west longitudinal seam while respecting north/south polar boundaries).
 
 ### Colony Stockpile Raids
 During the naval simulation phase, any landed machine that does not launch into orbit raids local planetary stockpiles:
-- The machine shuffles all empires in the galaxy and selects the first empire that owns at least one surface sector on the planet.
-- It siphons up to the Von Neumann base construction cost ($100$ resources) directly from that victim's planetary resource stockpile:
+- The machine shuffles all non-System empires (`Empires #2` and above) and selects the first empire with positive planetary resource stockpiles on that world.
+- It siphons up to the Von Neumann base construction cost ($100$ resources, capped for Berserkers by remaining destruct magazine space) directly from that victim's planetary resource stockpile:
 
 $$\text{Stolen Resources} = \min\Big(\text{Victim Planetary Resources},\; 100\Big)$$
 
-- **Von Neumann Probes (`v`)** store the stolen minerals in their **resource cargo bay** to fuel self-replication.
+- **Von Neumann Probes (`v`)** store the stolen minerals directly as internal replication feedstock.
 - **Berserkers (`V`)** convert the stolen minerals $1:1$ into **destruct ammo**.
 - An automated theft bulletin telegram is dispatched to the victim empire (and to the machine's owner if distinct from the victim).
 
@@ -147,7 +147,7 @@ When $\text{Total Galactic Hostility} > 100$, all landed Von Neumann probes ente
 | **Crew Staffing Exemption** | $0$ Crew Required | Fires all $40$ heavy guns and repairs hull damage without living crew. |
 
 ### Autonomous Star Routing
-When an unlanded, busy machine selects its next interstellar destination during the naval phase:
+When a newly launched, unassigned (`busy = false`) machine selects its next interstellar destination during the naval phase (marking itself `busy = true` once routed so in-flight machines retain their locked destination):
 - **Von Neumann Probes (`v`)**:
   1. Compute the **closest** and **second-closest** star systems to the probe's current coordinates (excluding its current star system).
   2. If the closest star system is not already marked as inhabited by the autonomous System (`Empire #1`), target a random planet in the closest star system.

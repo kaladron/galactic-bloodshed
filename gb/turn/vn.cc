@@ -158,7 +158,15 @@ void order_VN(EntityManager& em, Ship& ship) {
 /// \param ship Autonomous ship performing the theft.
 /// \return StealResult containing victim ID and quantity stolen.
 StealResult steal_planetary_resources(EntityManager& em, AutonomousShip& ship) {
-  auto candidate_ids = shuffled_indices(1, em.max_race_player().value + 1);
+  const resource_t vn_cost = ship_template(ShipType::OTYPE_VN).build_cost;
+  const resource_t max_take =
+      (ship.type() == ShipType::OTYPE_BERS)
+          ? std::min(ship.available_destruct_capacity(), vn_cost)
+          : vn_cost;
+  if (max_take <= 0) return StealResult{};
+
+  auto candidate_ids = shuffled_indices(2, em.max_race_player().value + 1);
+  if (candidate_ids.empty()) return StealResult{};
   std::vector<player_t> race_order;
   race_order.reserve(candidate_ids.size());
   for (int id : candidate_ids) {
@@ -171,15 +179,14 @@ StealResult steal_planetary_resources(EntityManager& em, AutonomousShip& ship) {
     auto victim = planet_mut.select_victim_to_steal_from(race_order);
     if (!victim) return;
     f = *victim;
-    prod = std::min(planet_mut.info(f).resource,
-                    ship_template(ShipType::OTYPE_VN).build_cost);
+    prod = std::min(planet_mut.info(f).resource, max_take);
     planet_mut.info(f).resource -= prod;
   });
 
   if (f == 0) return StealResult{};
 
   if (ship.type() == ShipType::OTYPE_VN) {
-    ship.add_resource(prod);
+    ship.accumulate_replication_resources(prod);
   } else if (ship.type() == ShipType::OTYPE_BERS) {
     ship.add_destruct(prod);
   }
@@ -223,7 +230,7 @@ bool try_launch_unassigned_vn(EntityManager& em, AutonomousShip& ship) {
 /*  do_VN() -- called by doship() */
 void do_VN(EntityManager& em, AutonomousShip& ship, TurnStats& stats) {
   if (!ship.is_landed()) {
-    if (!ship.is_busy()) {
+    if (ship.is_busy()) {
       return;
     }
 
@@ -260,9 +267,10 @@ shipnum_t construct_replicated_vn(EntityManager& em, AutonomousShip& parent,
   Ship& s2 = *ship_handle;
   s2.name() = AutonomousShip::generate_binary_name();
   s2.set_coordinates(parent.coordinates());
-  s2.add_fuel(VN_REPLICATION_FUEL_SHARE * parent.fuel());
   s2.armor() = parent.armor() + VN_REPLICATION_ARMOR_BONUS;
   s2.tech() = parent.tech() + VN_REPLICATION_TECH_BONUS;
+  s2.recalculate_hull_stats();
+  s2.add_fuel(VN_REPLICATION_FUEL_SHARE * parent.fuel());
   if (auto* auto_ship = s2.as<AutonomousShip>()) {
     auto_ship->inherit_vn_mind_from(parent);
   }
@@ -291,15 +299,20 @@ shipnum_t construct_replicated_berserker(EntityManager& em,
 
   auto ship_handle = em.create_ship(ShipType::OTYPE_BERS, 1);
   Ship& s2 = *ship_handle;
+  const int target_id =
+      stats.VN_brain.most_mad ? stats.VN_brain.most_mad->value : 0;
+  s2.name() = std::format("{:x}", target_id);
   s2.set_coordinates(parent.coordinates());
-  s2.add_fuel(BERSERKER_REPLICATION_FUEL_MULTIPLIER * parent.fuel());
-  parent.consume_fuel(parent.fuel() * VN_REPLICATION_FUEL_SHARE);
   s2.armor() = parent.armor() + BERSERKER_REPLICATION_ARMOR_BONUS;
   s2.tech() = parent.tech() + BERSERKER_REPLICATION_TECH_BONUS;
+  s2.recalculate_hull_stats();
+  s2.add_fuel(BERSERKER_REPLICATION_FUEL_MULTIPLIER * parent.fuel());
+  parent.consume_fuel(parent.fuel() * VN_REPLICATION_FUEL_SHARE);
   s2.add_destruct(BERSERKER_INITIAL_DESTRUCT);
   if (auto* auto_ship = s2.as<AutonomousShip>()) {
     auto_ship->inherit_berserker_mind_from(parent, stats.VN_brain.most_mad);
   }
+  s2.on() = true;
   s2.protect() = ProtectData{.planet = true, .retaliate = true};
   s2.hyper_drive() = HyperDriveData{
       .charge = HYPER_DRIVE_READY_CHARGE, .on = false, .has = true};
@@ -388,7 +401,7 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
   }
 
   if (auto_ship->is_landed()) {
-    if (auto_ship->type() == ShipType::OTYPE_VN && auto_ship->is_busy()) {
+    if (auto_ship->is_busy() || !auto_ship->is_fully_fueled()) {
       /* first try and make some resources(VNs) by ourselves.
          more might be stolen in doship */
       auto& s = smap.get(auto_ship->land_coords());
@@ -399,7 +412,13 @@ void planet_doVN(Ship& ship, Planet& planet, SectorMap& smap,
         /* mine the sector */
         auto_ship->mine_sector(s);
       }
+    }
+    if (auto_ship->type() == ShipType::OTYPE_VN && auto_ship->is_busy()) {
       replicate_machines(entity_manager, *auto_ship, planet, stats);
+    } else if (auto_ship->type() == ShipType::OTYPE_BERS &&
+               auto_ship->is_busy() && auto_ship->is_fully_fueled() &&
+               auto_ship->destruct() >= auto_ship->max_destruct_capacity()) {
+      auto_ship->set_busy(false);
     }
   } else {
     attempt_planet_landing(entity_manager, *auto_ship, planet, smap);

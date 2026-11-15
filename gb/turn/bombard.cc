@@ -127,6 +127,11 @@ void dispatch_bombardment_alerts(EntityManager& entity_manager,
  */
 int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
                       const Race& r) {
+  if (!ship.alive() || (ship.has_switch() && !ship.on()) ||
+      ship.whatorbits() != ScopeLevel::LEVEL_PLAN) {
+    return 0;
+  }
+
   // Get star for telegrams - lookup once for efficiency
   const auto& star = *entity_manager.peek_star(ship.storbits());
 
@@ -177,7 +182,6 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
   entity_manager.with_sectormap(
       ship.storbits(), ship.pnumorbits(),
       [&](const SectorMap& smap) { oldown = smap.get(*target).get_owner(); });
-  ship.consume_destruct(str);
 
   std::optional<BombardResult> opt_result;
   entity_manager.mutate_sectormap(
@@ -187,6 +191,7 @@ int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
                                  smap, false, guntype_t::NONE);
       });
   if (!opt_result) return 0;
+  ship.consume_destruct(str);
   const auto& result = *opt_result;
   /* (0=dont get smap) */
   const auto numdest = result.sectors_destroyed;

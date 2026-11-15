@@ -325,6 +325,14 @@ int main() {
     test::expect_eq(one_yield, 1);
     test::expect_eq(sector.get_resource(), 0);
 
+    // Uncustomized template VN (max_resource = 20) accumulates mined resources
+    // past the 20-unit manual cargo limit up to replication threshold
+    auto tmpl_vn = ShipFactory::create_from_template(ShipType::OTYPE_VN, 1);
+    sector.set_resource(300);
+    test::expect_eq(tmpl_vn->as<VonNeumannShip>()->mine_sector(sector), 150);
+    test::expect_eq(tmpl_vn->resource(), 150);
+    test::expect_true(std::abs(tmpl_vn->mass() - tmpl_vn->local_mass()) < 1e-6);
+
     std::println(std::cout,
                  "  ✓ mine_sector extracts resources and fuel correctly");
   }
@@ -383,17 +391,12 @@ int main() {
     em.mutate_planet(1, 1,
                      [](Planet& p) { p.info(player_t{2}).resource = 1000; });
 
-    ship_struct vn_data{};
-    vn_data.number = 304;
-    vn_data.owner = 1;
-    vn_data.max_resource = 100;
-    vn_data.resource = 0;
-    vn_data.storbits = 1;
-    vn_data.pnumorbits = 1;
-    vn_data.type = ShipType::OTYPE_VN;
-    auto vn_ship = ShipFactory::create(vn_data);
+    auto vn_ship =
+        ShipFactory::create_from_template(ShipType::OTYPE_VN, player_t{1});
+    vn_ship->enter_planet_orbit(1, 1);
     auto* vn = vn_ship->as<VonNeumannShip>();
     test::expect_true(vn != nullptr);
+    test::expect_eq(vn->max_resource_capacity(), 20);
 
     const auto vn_cost = ship_template(ShipType::OTYPE_VN).build_cost;
     auto result = steal_planetary_resources(em, *vn);
@@ -423,6 +426,14 @@ int main() {
     const auto owner_tele = em.get_telegrams(1, 1);
     test::expect_eq(owner_tele.size(), 1U);
     test::expect_contains(owner_tele[0].message, "resources stolen from [2]");
+
+    // Fully armed Berserker (500/500 destruct) does not vaporize colony stock
+    bers_thief->add_destruct(500);
+    const auto p2_before = em.peek_planet(1, 1)->info(player_t{2}).resource;
+    auto full_bers_steal = steal_planetary_resources(em, *bers_thief);
+    test::expect_eq(full_bers_steal.amount, 0);
+    test::expect_eq(em.peek_planet(1, 1)->info(player_t{2}).resource,
+                    p2_before);
 
     std::println(
         std::cout,
@@ -490,6 +501,7 @@ int main() {
     test::expect_eq(child->armor(), 3);
     test::expect_eq(child->fuel(), 30.0);
     test::expect_eq(child->owner(), player_t{1});
+    test::expect_true(std::abs(child->mass() - child->local_mass()) < 1e-6);
 
     auto* child_vn = child->as<VonNeumannShip>();
     test::expect_true(child_vn != nullptr);
@@ -587,6 +599,9 @@ int main() {
     test::expect_eq(bers->armor(), 13);    // parent armor (2) + 11
     test::expect_eq(bers->fuel(), 200.0);  // 5 * 40
     test::expect_eq(bers->destruct(), 500);
+    test::expect_true(bers->on());
+    test::expect_eq(bers->name(), "3");
+    test::expect_true(std::abs(bers->mass() - bers->local_mass()) < 1e-6);
     test::expect_true(bers->hyper_drive().has);
     test::expect_eq(bers->hyper_drive().charge, HYPER_DRIVE_READY_CHARGE);
     test::expect_false(bers->hyper_drive().on);
@@ -596,7 +611,7 @@ int main() {
     test::expect_true(bers_ship != nullptr);
     test::expect_eq(bers_ship->progenitor(), player_t{2});
     test::expect_eq(bers_ship->target(), player_t{3});
-    test::expect_eq(bers_ship->generation(), 2);
+    test::expect_eq(bers_ship->generation(), 3);
     test::expect_false(bers_ship->is_busy());
 
     auto p2_telegrams = em.get_telegrams(player_t{2}, Race::leader_id);
@@ -854,7 +869,8 @@ int main() {
     auto cargo = ShipFactory::create(cargo_data);
     test::expect_true(cargo->as<AutonomousShip>() == nullptr);
 
-    // 2. Unlanded, non-busy VN is ignored
+    // 2. Newly launched, non-busy VN selects a destination and marks itself
+    // busy
     ship_struct unlanded_idle_data{};
     unlanded_idle_data.number = 702;
     unlanded_idle_data.owner = 1;
@@ -864,22 +880,26 @@ int main() {
     unlanded_idle_data.special = MindData{.busy = false};
     auto unlanded_idle = ShipFactory::create(unlanded_idle_data);
     do_VN(em, *unlanded_idle->as<AutonomousShip>(), stats);
-    test::expect_eq(unlanded_idle->whatdest(), ScopeLevel::LEVEL_UNIV);
+    test::expect_eq(unlanded_idle->deststar(), starnum_t{3});
+    test::expect_eq(unlanded_idle->whatdest(), ScopeLevel::LEVEL_PLAN);
+    test::expect_true(unlanded_idle->as<AutonomousShip>()->is_busy());
 
-    // 3. Unlanded, busy VN orders destination
+    // 3. In-flight, busy VN keeps its existing destination without re-rolling
     ship_struct unlanded_busy_data{};
     unlanded_busy_data.number = 703;
     unlanded_busy_data.owner = 1;
     unlanded_busy_data.type = ShipType::OTYPE_VN;
     unlanded_busy_data.storbits = 1;
-    unlanded_busy_data.whatdest = ScopeLevel::LEVEL_UNIV;
+    unlanded_busy_data.deststar = 4;
+    unlanded_busy_data.destpnum = 1;
+    unlanded_busy_data.whatdest = ScopeLevel::LEVEL_PLAN;
     unlanded_busy_data.special = MindData{.busy = true};
     auto unlanded_busy = ShipFactory::create(unlanded_busy_data);
     do_VN(em, *unlanded_busy->as<AutonomousShip>(), stats);
-    test::expect_eq(unlanded_busy->deststar(), starnum_t{3});
+    test::expect_eq(unlanded_busy->deststar(), starnum_t{4});
     test::expect_eq(unlanded_busy->whatdest(), ScopeLevel::LEVEL_PLAN);
 
-    // 3b. Unlanded, busy Berserker orders destination
+    // 3b. Newly launched, non-busy Berserker orders destination & hyperdrive
     stats.VN_brain.most_mad = player_t{2};
     ship_struct unlanded_bers_data{};
     unlanded_bers_data.number = 706;
@@ -889,11 +909,12 @@ int main() {
     unlanded_bers_data.whatdest = ScopeLevel::LEVEL_UNIV;
     unlanded_bers_data.hyper_drive.has = true;
     unlanded_bers_data.mounted = true;
-    unlanded_bers_data.special = MindData{.busy = true};
+    unlanded_bers_data.special = MindData{.busy = false};
     auto unlanded_bers = ShipFactory::create(unlanded_bers_data);
     do_VN(em, *unlanded_bers->as<AutonomousShip>(), stats);
     test::expect_eq(unlanded_bers->deststar(), starnum_t{2});
     test::expect_eq(unlanded_bers->whatdest(), ScopeLevel::LEVEL_PLAN);
+    test::expect_true(unlanded_bers->as<AutonomousShip>()->is_busy());
 
     // 4. Landed, fully-fueled VN launches to space
     ship_struct landed_fueled_data{};
@@ -1001,6 +1022,36 @@ int main() {
     planet_doVN(*orbiting_vn, planet, smap, em, stats);
     test::expect_ne(orbiting_vn->land_coords(), old_coords);
 
+    // 5. Newly replicated (busy = false, underfueled) VN offspring mines fuel
+    // to full capacity, launches on do_VN, and picks a star destination
+    auto offspring_vn =
+        ShipFactory::create_from_template(ShipType::OTYPE_VN, player_t{1});
+    offspring_vn->land_on_planet(1, 1, Coordinates{1, 1});
+    offspring_vn->as<VonNeumannShip>()->set_busy(false);
+    offspring_vn->add_fuel(25.0);
+    smap.get(Coordinates{1, 1}).set_resource(100);
+    planet_doVN(*offspring_vn, planet, smap, em, stats);
+    test::expect_true(offspring_vn->is_fully_fueled());
+    do_VN(em, *offspring_vn->as<AutonomousShip>(), stats);
+    test::expect_false(offspring_vn->is_landed());
+    do_VN(em, *offspring_vn->as<AutonomousShip>(), stats);
+    test::expect_true(offspring_vn->as<AutonomousShip>()->is_busy());
+    test::expect_eq(offspring_vn->whatdest(), ScopeLevel::LEVEL_PLAN);
+
+    // 6. Landed rearming Berserker mines until full fuel + destruct, then
+    // clears busy so it can launch
+    auto rearm_bers =
+        ShipFactory::create_from_template(ShipType::OTYPE_BERS, player_t{1});
+    rearm_bers->land_on_planet(1, 1, Coordinates{3, 3});
+    rearm_bers->as<BerserkerShip>()->set_busy(true);
+    rearm_bers->add_fuel(950.0);
+    rearm_bers->add_destruct(400);
+    smap.get(Coordinates{3, 3}).set_resource(200);
+    planet_doVN(*rearm_bers, planet, smap, em, stats);
+    test::expect_true(rearm_bers->is_fully_fueled());
+    test::expect_eq(rearm_bers->destruct(), 500);
+    test::expect_false(rearm_bers->as<BerserkerShip>()->is_busy());
+
     std::println(
         std::cout,
         "  ✓ planet_doVN handles landing, mining, roaming, and replication");
@@ -1080,15 +1131,29 @@ int main() {
       test::expect_eq(empty_steal.amount, 0);
 
       em.purge_all_telegrams();
+      // Player 1 stockpiles are protected from VN theft
       em.mutate_planet(1, 1,
                        [](Planet& p) { p.info(player_t{1}).resource = 300; });
+      auto skip_p1 =
+          steal_planetary_resources(em, *vn_ship->as<AutonomousShip>());
+      test::expect_eq(skip_p1.victim, player_t{0});
+      test::expect_eq(skip_p1.amount, 0);
+      test::expect_eq(em.peek_planet(1, 1)->info(player_t{1}).resource, 300);
+
+      // Mortal seed VN (owner = 2) stealing from Player 2 sends a single
+      // telegram (f == ship.owner())
+      vn_ship->owner() = player_t{2};
+      em.mutate_planet(1, 1, [](Planet& p) {
+        p.info(player_t{1}).resource = 0;
+        p.info(player_t{2}).resource = 300;
+      });
       auto self_steal =
           steal_planetary_resources(em, *vn_ship->as<AutonomousShip>());
-      test::expect_eq(self_steal.victim, player_t{1});
+      test::expect_eq(self_steal.victim, player_t{2});
       test::expect_gt(self_steal.amount, 0);
-      auto tele = em.get_telegrams(1, 1);
+      auto tele = em.get_telegrams(2, Race::leader_id);
       test::expect_eq(tele.size(), 1U);
-      test::expect_contains(tele.back().message, "resources stolen from [1]");
+      test::expect_contains(tele.back().message, "resources stolen from [2]");
     }
 
     // 5. replicate_machines coin flip, attempt_planet_landing, and planet_doVN

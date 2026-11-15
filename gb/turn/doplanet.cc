@@ -453,7 +453,7 @@ void process_planetary_ships(EntityManager& entity_manager, Planet& planet,
           planet_doVN(ship, planet, smap, entity_manager, stats);
           break;
         case ShipType::OTYPE_BERS:
-          if (!ship.destruct() || !ship.bombard())
+          if (ship.is_landed() || !ship.destruct() || !ship.bombard())
             planet_doVN(ship, planet, smap, entity_manager, stats);
           else
             execute_berserker_bombardment(entity_manager, ship, planet);

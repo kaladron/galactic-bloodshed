@@ -102,11 +102,19 @@ public:
     data_.special = MindData{
         .progenitor = parent.progenitor(),
         .target_player = target_player,
-        .generation = parent.generation(),
+        .generation = parent.generation() + 1,
         .busy = false,
         .tampered = false,
         .who_killed = parent.who_killed(),
     };
+  }
+
+  /// \brief Accumulates mined or raided mineral feedstock for self-replication,
+  /// updating hull mass without clamping to the manual cargo bay limit.
+  void accumulate_replication_resources(resource_t amt) noexcept {
+    if (amt <= 0) return;
+    data_.resource += amt;
+    data_.mass += static_cast<double>(amt) * MASS_RESOURCE;
   }
 
   /// \brief Mines resources from a sector, transferring extracted yield to

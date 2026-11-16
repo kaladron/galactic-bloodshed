@@ -37,11 +37,9 @@ void Ship::recalculate_hull_stats(bool free_build) noexcept {
   const double prev_base_mass = data_.base_mass;
   data_.size = calculate_size();
   data_.base_mass = base_mass();
-  if (prev_base_mass > 0.0 && data_.mass >= prev_base_mass) {
-    set_mass(data_.mass + (data_.base_mass - prev_base_mass));
-  } else {
-    set_mass(data_.base_mass);
-  }
+  const double cargo_mass =
+      prev_base_mass > 0.0 ? std::max(0.0, data_.mass - prev_base_mass) : 0.0;
+  set_mass(data_.base_mass + cargo_mass);
   data_.build_cost = free_build ? 0 : ::cost(*this);
   data_.complexity = ::complexity(*this);
 }
@@ -116,7 +114,7 @@ void apply_blueprint_capabilities(ship_struct& data, const ShipTemplate& itmpl,
   data.mount = itmpl.can_mount && (!race || race->discoveries.crystal);
   data.hyper_drive.has =
       itmpl.can_hyperjump && (!race || race->discoveries.hyperdrive);
-  data.cloak = itmpl.can_cloak && (!race || race->discoveries.cloak);
+  data.cloak = itmpl.can_cloak;
   data.laser = itmpl.can_mount_laser && (!race || race->discoveries.laser);
 }
 
@@ -249,7 +247,7 @@ void Ship::set_factory_blueprint(ShipType build_type,
   data_.build_cost = free_build ? 0 : ::cost(*this);
   data_.base_mass = base_mass();
   data_.complexity = ::complexity(*this);
-  if (data_.type == ShipType::OTYPE_FACTORY && own_size > 0) {
+  if (data_.type == ShipType::OTYPE_FACTORY) {
     data_.size = own_size;
   }
 }

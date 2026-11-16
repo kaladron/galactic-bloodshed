@@ -25,10 +25,7 @@ resolve_preferred_sector(const GB::creator::RaceEnrollmentSpec& spec) {
           ? default_compat
           : spec.sector_compatibilities;
 
-  if (spec.preferred_sector.has_value() &&
-      *spec.preferred_sector != SectorType::SEC_PLATED &&
-      *spec.preferred_sector != SectorType::SEC_WASTED &&
-      likes[*spec.preferred_sector] == 1.0) {
+  if (spec.preferred_sector.has_value()) {
     return *spec.preferred_sector;
   }
 

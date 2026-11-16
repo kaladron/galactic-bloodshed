@@ -181,7 +181,7 @@ constexpr bool iequals_ascii(std::string_view a, std::string_view b) noexcept {
 /// (case-insensitive, ASCII-trimmed).
 export constexpr std::optional<PlanetType>
 parse_planet_type(std::string_view input) noexcept {
-  static constexpr std::array<std::pair<std::string_view, PlanetType>, 19>
+  static constexpr std::array<std::pair<std::string_view, PlanetType>, 21>
       aliases{{
           {"earth", PlanetType::EARTH},
           {"class m", PlanetType::EARTH},
@@ -202,11 +202,10 @@ parse_planet_type(std::string_view input) noexcept {
           {"gasgiant", PlanetType::GASGIANT},
           {"jovian", PlanetType::GASGIANT},
           {"gas", PlanetType::GASGIANT},
+          {"j", PlanetType::GASGIANT},
+          {"g", PlanetType::GASGIANT},
       }};
   const std::string_view key = detail::trim_ascii(input);
-  if (detail::iequals_ascii(key, "j") || detail::iequals_ascii(key, "g")) {
-    return PlanetType::GASGIANT;
-  }
   for (const auto& [name, val] : aliases) {
     if (detail::iequals_ascii(name, key)) return val;
   }

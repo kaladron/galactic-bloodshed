@@ -249,7 +249,7 @@ EntityHandle<Race> EntityManager::create_race(const Race& race_data) {
   // name and ensure self-membership if uncustomized)
   std::optional<Block> block_to_save;
   if (auto cached_it = block_cache.find(player);
-      cached_it != block_cache.end() && cached_it->second) {
+      cached_it != block_cache.end()) {
     if (cached_it->second->motto().empty()) {
       cached_it->second->name() = new_race.name;
     }
@@ -283,7 +283,12 @@ EntityHandle<Race> EntityManager::create_race(const Race& race_data) {
     power_cache.insert_or_assign(player, std::make_unique<Power>(seeded_power));
   }
 
-  race_cache.insert_or_assign(player, std::make_unique<Race>(new_race));
+  if (auto cached_race = race_cache.find(player);
+      cached_race != race_cache.end()) {
+    *cached_race->second = new_race;
+  } else {
+    race_cache.emplace(player, std::make_unique<Race>(new_race));
+  }
   return get_race(player);
 }
 

@@ -466,6 +466,23 @@ void test_jovian_and_terrestrial_sector_validation() {
                           }),
       "rigorous validation must reject terrestrial race with only plated "
       "compatibility");
+
+  // 3. SEC_WASTED preferred_sector, whitespace governor_password, short valid
+  // password, and <100% preferred_sector compatibility toggles
+  terran.sector_compatibilities = {.land = 1.0, .forest = 0.5, .plated = 1.0};
+  terran.preferred_sector = SectorType::SEC_WASTED;
+  test::expect_false(engine.validate(terran, true, false).empty());
+  terran.preferred_sector = SectorType::SEC_FOREST;
+  terran.governor_password = "bad gov";
+  test::expect_false(engine.validate(terran, true, false).empty());
+  terran.governor_password = "govpass";
+  terran.password = "ab";
+  errors = engine.validate(terran, true, true);
+  test::expect_true(std::ranges::any_of(
+      errors, [](const std::string& e) { return e.contains("at least"); }));
+  test::expect_true(std::ranges::any_of(errors, [](const std::string& e) {
+    return e.contains("Preferred sector must have 100% compatibility");
+  }));
 }
 
 }  // namespace

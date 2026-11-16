@@ -619,11 +619,19 @@ void test_modify_field_abbreviations_and_input_validation() {
   test::expect_true(session.execute_command("modify fert 0"));
   test::expect_eq(session.spec().fertilize, 0);
 
-  // Invalid numeric and trailing-character inputs for double and int fields
+  // Invalid numeric, non-finite, and trailing-character inputs for double/int
   test::expect_false(session.modify_field("mass", "abc"));
+  test::expect_false(session.modify_field("mass", "nan"));
   test::expect_false(session.modify_field("mass", "1.5kg"));
   test::expect_false(session.modify_field("fight", "abc"));
   test::expect_false(session.modify_field("fight", "10x"));
+
+  // Switching home planet clears preferred_sector when its compatibility < 1.0
+  test::expect_true(session.modify_field("land", "100%"));
+  test::expect_true(session.modify_field("pref", "land"));
+  session.mutable_spec().sector_compatibilities.land = 0.5;
+  test::expect_true(session.modify_field("planet", "mars"));
+  test::expect_false(session.spec().preferred_sector.has_value());
 }
 
 void test_enroll_guest_and_validation_failure() {

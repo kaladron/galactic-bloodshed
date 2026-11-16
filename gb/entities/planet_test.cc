@@ -1118,7 +1118,16 @@ int main() {
     static_assert(to_string(PlanetType::DESERT) == "Desert");
 
     test::expect_eq(std::format("{}", PlanetType::EARTH), "Earth");
+    test::expect_eq(std::format("{:8}", PlanetType::EARTH), "Earth   ");
     test::expect_eq(std::format("{:d}", PlanetType::GASGIANT), "4");
+    test::expect_eq(std::format("{}", SectorType::SEC_LAND), "land");
+    test::expect_eq(std::format("{:8}", SectorType::SEC_LAND), "land    ");
+    test::expect_eq(std::format("{:d}", SectorType::SEC_LAND), "1");
+    test::expect_eq(parse_planet_type("j"), PlanetType::GASGIANT);
+    test::expect_eq(parse_planet_type("g"), PlanetType::GASGIANT);
+    test::expect_false(Race::is_valid_password(""));
+    test::expect_false(Race::is_valid_password("has\ttab"));
+    test::expect_true(Race::is_valid_password("cleanpass"));
 
     Planet planet{1, 1, PlanetType::GASGIANT, Coordinates{5, 5}};
     test::expect_eq(planet.type_symbol(), '~');

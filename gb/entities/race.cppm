@@ -205,14 +205,8 @@ public:
   /// (non-empty and containing no ASCII whitespace).
   [[nodiscard]] static constexpr bool
   is_valid_password(std::string_view token) noexcept {
-    if (token.empty()) return false;
-    for (char c : token) {
-      if (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\v' ||
-          c == '\f') {
-        return false;
-      }
-    }
-    return true;
+    return !token.empty() &&
+           token.find_first_of(" \t\n\r\v\f") == std::string_view::npos;
   }
 
   /// Returns true if the given governor ID is the race leader.

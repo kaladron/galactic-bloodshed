@@ -536,8 +536,6 @@ std::vector<std::string> RacegenEngine::validate(const RaceEnrollmentSpec& spec,
     }
 
     if (spec.preferred_sector.has_value() &&
-        spec.preferred_sector != SectorType::SEC_PLATED &&
-        spec.preferred_sector != SectorType::SEC_WASTED &&
         spec.sector_compatibilities[*spec.preferred_sector] != 1.0) {
       errors.push_back("Preferred sector must have 100% compatibility.");
     }

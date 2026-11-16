@@ -1089,40 +1089,59 @@ void test_entity_manager_create_race() {
   Race race{};
   race.name = "Martians";
 
-  auto race_handle = ctx.em.create_race(race);
-  player_t p5 = race_handle->Playernum;
-  test::expect_eq(p5, 5);
+  player_t p5{0};
+  {
+    auto race_handle = ctx.em.create_race(race);
+    p5 = race_handle->Playernum;
+    test::expect_eq(p5, 5);
 
-  const auto* created_race = ctx.em.peek_race(p5);
-  test::expect_ne(created_race, nullptr);
-  test::expect_eq(created_race->name, "Martians");
-  test::expect_eq(created_race->Playernum, p5);
+    const auto* created_race = ctx.em.peek_race(p5);
+    test::expect_ne(created_race, nullptr);
+    test::expect_eq(created_race->name, "Martians");
+    test::expect_eq(created_race->Playernum, p5);
 
-  // Auto-seeded block and power checks in cache
-  const auto* created_block = ctx.em.peek_block(p5);
-  test::expect_ne(created_block, nullptr);
-  test::expect_eq(created_block->Playernum(), p5);
-  test::expect_eq(created_block->name(), "Martians");
+    // Auto-seeded block and power checks in cache
+    const auto* created_block = ctx.em.peek_block(p5);
+    test::expect_ne(created_block, nullptr);
+    test::expect_eq(created_block->Playernum(), p5);
+    test::expect_eq(created_block->name(), "Martians");
 
-  const auto* created_power = ctx.em.peek_power(p5);
-  test::expect_ne(created_power, nullptr);
-  test::expect_eq(created_power->id(), p5);
+    const auto* created_power = ctx.em.peek_power(p5);
+    test::expect_ne(created_power, nullptr);
+    test::expect_eq(created_power->id(), p5);
 
-  // Persistence check across cache flush/clear
+    // Re-seeding over an already-cached Race/Block/Power preserves live
+    // EntityHandle<Race> pointer stability without heap-use-after-free
+    Race r5_cached{};
+    r5_cached.Playernum = p5;
+    r5_cached.name = "MartiansCached";
+    (void)ctx.em.create_race(r5_cached);
+    test::expect_eq(race_handle->name, "MartiansCached");
+    test::expect_eq(ctx.em.peek_block(p5)->name(), "MartiansCached");
+  }
+
+  // Persistence check across cache flush/clear and DB-only re-seeding
   ctx.em.clear_cache();
 
   const auto* persisted_race = ctx.em.peek_race(p5);
   test::expect_ne(persisted_race, nullptr);
-  test::expect_eq(persisted_race->name, "Martians");
+  test::expect_eq(persisted_race->name, "MartiansCached");
 
   const auto* persisted_block = ctx.em.peek_block(p5);
   test::expect_ne(persisted_block, nullptr);
   test::expect_eq(persisted_block->Playernum(), p5);
-  test::expect_eq(persisted_block->name(), "Martians");
+  test::expect_eq(persisted_block->name(), "MartiansCached");
 
   const auto* persisted_power = ctx.em.peek_power(p5);
   test::expect_ne(persisted_power, nullptr);
   test::expect_eq(persisted_power->id(), p5);
+
+  ctx.em.clear_cache();
+  Race r5_db{};
+  r5_db.Playernum = p5;
+  r5_db.name = "MartiansDb";
+  (void)ctx.em.create_race(r5_db);
+  test::expect_eq(ctx.em.peek_block(p5)->name(), "MartiansDb");
 
   std::println(
       std::cout,
@@ -1317,6 +1336,19 @@ void test_entity_manager_read_only_scope() {
         [&] { raw_store.store("tbl_star", 1, R"({"name":"Bypass"})"); });
     test::expect_eq(db.total_changes(), before);
   }
+  // Nested and move-constructed ReadOnlyScope preserve depth counting
+  {
+    auto outer = em.create_read_only_scope();
+    auto moved_outer = std::move(outer);
+    {
+      auto inner = em.create_read_only_scope();
+      test::expect_true(em.is_read_only());
+    }
+    test::expect_true(em.is_read_only());
+    (void)moved_outer;
+  }
+  test::expect_false(em.is_read_only());
+
   // DAL-initiated ReadOnlyScope synchronizes with EntityManager::is_read_only()
   {
     auto dal_guard = db.create_read_only_scope();

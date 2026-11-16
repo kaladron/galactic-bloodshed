@@ -687,6 +687,7 @@ void test_preferred_sector_tiebreak_and_uncommon_preference() {
       .build();
   TestPlanetBuilder(em, db, 3, PlanetType::MARS, Coordinates{5, 5}, 2)
       .named("Companion3")
+      .with_all_sectors(SectorType::SEC_LAND)
       .build();
 
   GB::creator::EnrollmentService service(em);
@@ -751,6 +752,21 @@ void test_preferred_sector_tiebreak_and_uncommon_preference() {
     test::expect_eq(smap.get(res3.capital_coords).get_condition(),
                     SectorType::SEC_FOREST);
   });
+
+  // 4. Default preferred_sector on Mars skips uncommon SEC_SEA and selects
+  // common SEC_LAND
+  GB::creator::RaceEnrollmentSpec mars_default{
+      .name = "Aresians",
+      .password = "marspass",
+      .address = "ares@olympus.org",
+      .home_planet_type = PlanetType::MARS,
+      .target_planet = std::pair{starnum_t{3}, planetnum_t{2}},
+      .sector_compatibilities = {.land = 1.0, .mount = 1.0, .plated = 1.0},
+  };
+  auto res4 = service.enroll_player(mars_default);
+  test::expect_true(res4.success, res4.message);
+  test::expect_eq(em.peek_race(res4.player_num)->likesbest,
+                  SectorType::SEC_LAND);
 
   std::println(
       std::cout,

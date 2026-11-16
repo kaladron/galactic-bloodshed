@@ -1480,7 +1480,8 @@ void test_blueprint_complexity_defense_and_capture() {
     }
   }
 
-  // set_factory_blueprint resets cew_range and preserves Factory hull size
+  // set_factory_blueprint resets cew_range, preserves Factory hull size, and
+  // gates mount/hyperdrive/cloak/laser on template capability and Race tech
   auto fac = ShipFactory::create_from_template(ShipType::OTYPE_FACTORY, 1);
   const ship_size_t fac_hull_size = fac->size();
   fac->set_factory_blueprint(ShipType::STYPE_BATTLE, race1);
@@ -1490,6 +1491,30 @@ void test_blueprint_complexity_defense_and_capture() {
   test::expect_eq(fac->cew(), 0);
   test::expect_eq(fac->cew_range(), 0);
   test::expect_eq(fac->size(), fac_hull_size);
+
+  fac->set_factory_blueprint(ShipType::STYPE_CRUISER, nullptr);
+  test::expect_true(fac->mount());
+  test::expect_true(fac->hyper_drive().has);
+  test::expect_true(fac->laser());
+  Race undisc{};
+  fac->set_factory_blueprint(ShipType::STYPE_CRUISER, &undisc);
+  test::expect_false(fac->mount());
+  test::expect_false(fac->hyper_drive().has);
+  test::expect_false(fac->laser());
+  Race disc{};
+  disc.discoveries.hyperdrive = true;
+  disc.discoveries.crystal = true;
+  disc.discoveries.laser = true;
+  fac->set_factory_blueprint(ShipType::STYPE_CRUISER, &disc);
+  test::expect_true(fac->mount());
+  test::expect_true(fac->hyper_drive().has);
+  test::expect_true(fac->laser());
+
+  // GunBattery count > 0 with NONE caliber normalizes to empty
+  GunBattery raw_none{.count = 2, .caliber = guntype_t::NONE};
+  test::expect_false(raw_none.has_guns());
+  raw_none.set(2, guntype_t::NONE);
+  test::expect_eq(raw_none.count, 0);
 
   // admin_override_fuel/resource/destruct preserve carried hangar craft mass
   auto carrier_tmpl =

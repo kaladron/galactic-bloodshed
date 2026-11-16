@@ -1369,22 +1369,10 @@ std::optional<std::string> try_render_bless_race_trait(const BlessResult& vm) {
       return std::string(msg);
     }
   }
-  constexpr std::array<std::pair<BlessProperty, std::string_view>, 8>
-      sector_pref_props{{
-          {BlessProperty::Water, "water"},
-          {BlessProperty::Land, "land"},
-          {BlessProperty::Mountain, "mountain"},
-          {BlessProperty::Gas, "gas"},
-          {BlessProperty::Ice, "ice"},
-          {BlessProperty::Forest, "forest"},
-          {BlessProperty::Desert, "desert"},
-          {BlessProperty::Plated, "plated"},
-      }};
-  for (const auto& [prop, label] : sector_pref_props) {
-    if (prop == vm.property) {
-      return std::format("Deity set your {} preference to {}%\n", label,
-                         std::get<int>(vm.value));
-    }
+  if (vm.property == BlessProperty::SectorPreference) {
+    const auto& pref = std::get<SectorPrefBlessing>(vm.value);
+    return std::format("Deity set your {} preference to {}%\n", pref.sector,
+                       pref.percent);
   }
   return std::nullopt;
 }

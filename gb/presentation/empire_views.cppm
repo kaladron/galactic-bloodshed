@@ -1049,14 +1049,7 @@ enum class BlessProperty : std::uint8_t {
   Guest,
   God,
   Mortal,
-  Water,
-  Land,
-  Mountain,
-  Gas,
-  Ice,
-  Forest,
-  Desert,
-  Plated,
+  SectorPreference,
   Money,
   Morale,
   Fertility,
@@ -1080,8 +1073,16 @@ enum class BlessProperty : std::uint8_t {
   ActionPoints,
 };
 
+/// Sector compatibility preference payload for
+/// `BlessProperty::SectorPreference`.
+struct SectorPrefBlessing {
+  SectorType sector{SectorType::SEC_SEA};
+  int percent{0};
+};
+
 /// Typed payload for a `bless` operation (`std::monostate` for flag toggles).
-using BlessValue = std::variant<std::monostate, int, double, std::string>;
+using BlessValue =
+    std::variant<std::monostate, int, double, std::string, SectorPrefBlessing>;
 
 /// Result of bestowing a divine blessing upon a player via `bless`.
 struct BlessResult {

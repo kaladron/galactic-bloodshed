@@ -149,6 +149,7 @@ void test_modify_planet_and_gas_restrictions() {
   // Switch to Jovian
   test::expect_true(session.execute_command("modify planet jovian"));
   test::expect_eq(session.spec().home_planet_type, PlanetType::GASGIANT);
+  test::expect_eq(session.spec().preferred_sector, SectorType::SEC_GAS);
   test::expect_eq(session.spec().sector_compatibilities.gas, 1.0,
                   "Jovian home planet must set gas compatibility to 100%");
   test::expect_eq(session.spec().sector_compatibilities.plated, 0.0,
@@ -157,6 +158,8 @@ void test_modify_planet_and_gas_restrictions() {
   // Switch to Water
   test::expect_true(session.execute_command("modify planet water"));
   test::expect_eq(session.spec().home_planet_type, PlanetType::WATER);
+  test::expect_false(session.spec().preferred_sector.has_value(),
+                     "switching away from Jovian must clear gas preferred");
   test::expect_eq(session.spec().sector_compatibilities.gas, 0.0,
                   "non-Jovian home planet must clear gas compatibility");
   test::expect_eq(session.spec().sector_compatibilities.plated, 1.0,
@@ -168,9 +171,15 @@ void test_modify_sector_compatibilities() {
   std::ostringstream out;
   GB::creator::RacegenSession session(in, out);
 
-  // Set Land to 100%
+  // Set Land to 100% and select it as preferred, then verify lowering Land
+  // below 100% automatically clears the stale preferred_sector
   test::expect_true(session.execute_command("modify land 100"));
   test::expect_eq(session.spec().sector_compatibilities.land, 1.0);
+  test::expect_true(session.execute_command("modify preferred land"));
+  test::expect_eq(session.spec().preferred_sector, SectorType::SEC_LAND);
+  test::expect_true(session.execute_command("modify land 80%"));
+  test::expect_false(session.spec().preferred_sector.has_value());
+  test::expect_true(session.execute_command("modify land 100"));
 
   // Set Mountain to 50%
   test::expect_true(session.execute_command("modify mountain 50%"));
@@ -442,7 +451,12 @@ void test_enroll_with_service_success() {
   test::expect_contains(out.str(), "besides plated");
 
   out.str("");
+  // Both ocean (SEC_SEA = 0) and land (SEC_LAND = 1) are 100% compatible;
+  // setting `preferred land` overrides the enum-order scan (which would pick
+  // SEC_SEA).
+  test::expect_true(session.execute_command("modify ocean 100"));
   test::expect_true(session.execute_command("modify land 100"));
+  test::expect_true(session.execute_command("modify preferred land"));
   test::expect_false(
       session.execute_command("enroll"),
       "enroll must return false to request session quit on success");

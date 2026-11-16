@@ -651,6 +651,112 @@ void test_quickstart_archetype_json_roundtrip_and_enroll() {
                "  ✓ Quickstart archetype JSON roundtrip and enrollment passed");
 }
 
+void test_preferred_sector_tiebreak_and_uncommon_preference() {
+  std::println(std::cout,
+               "Test: preferred_sector tie-breaking and uncommon preference");
+
+  Database db(":memory:");
+  initialize_schema(db);
+  JsonStore store(db);
+  UniverseRepository(store).save(Universe{});
+
+  EntityManager em(db);
+  // Star 1 & Star 2: mixed ocean/land Earth worlds (rows 0..1 ocean, 2..4 land)
+  for (starnum_t s : {starnum_t{1}, starnum_t{2}}) {
+    TestStarBuilder(em, db, std::format("Mixed{}", s.value), s).build();
+    TestPlanetBuilder(em, db, s, PlanetType::EARTH, Coordinates{5, 5}, 1)
+        .named("Gaia")
+        .with_all_sectors(SectorType::SEC_LAND)
+        .build();
+    TestPlanetBuilder(em, db, s, PlanetType::MARS, Coordinates{5, 5}, 2)
+        .named("Companion")
+        .build();
+    em.mutate_sectormap(s, 1, [](SectorMap& smap) {
+      for (int y = 0; y < 2; ++y) {
+        for (int x = 0; x < 5; ++x) {
+          smap.get({x, y}).set_condition(SectorType::SEC_SEA);
+        }
+      }
+    });
+  }
+  // Star 3: all-Land Earth world to test uncommon 100% preferred_sector
+  TestStarBuilder(em, db, "Sylvan", 3).build();
+  TestPlanetBuilder(em, db, 3, PlanetType::EARTH, Coordinates{5, 5}, 1)
+      .named("Midgard")
+      .with_all_sectors(SectorType::SEC_LAND)
+      .build();
+  TestPlanetBuilder(em, db, 3, PlanetType::MARS, Coordinates{5, 5}, 2)
+      .named("Companion3")
+      .build();
+
+  GB::creator::EnrollmentService service(em);
+  service.seed_deity("deitypass", "deitygov");
+
+  // 1. Without preferred_sector, enum-order scan selects SEC_SEA (0) over
+  // SEC_LAND (1) when both are 100% compatible on Earth
+  GB::creator::RaceEnrollmentSpec default_tie{
+      .name = "Pelagics",
+      .password = "pelagic1",
+      .address = "sea@gaia.org",
+      .home_planet_type = PlanetType::EARTH,
+      .candidate_stars = {starnum_t{1}},
+      .sector_compatibilities = {.sea = 1.0, .land = 1.0, .plated = 1.0},
+  };
+  auto res1 = service.enroll_player(default_tie);
+  test::expect_true(res1.success, res1.message);
+  test::expect_eq(em.peek_race(res1.player_num)->likesbest,
+                  SectorType::SEC_SEA);
+  em.with_sectormap(res1.star, res1.pnum, [&](const SectorMap& smap) {
+    test::expect_eq(smap.get(res1.capital_coords).get_condition(),
+                    SectorType::SEC_SEA);
+  });
+
+  // 2. Explicit preferred_sector = SEC_LAND overrides SEC_SEA on an identical
+  // mixed ocean/land Earth world
+  GB::creator::RaceEnrollmentSpec explicit_land{
+      .name = "Continentals",
+      .password = "landpass",
+      .address = "land@gaia.org",
+      .home_planet_type = PlanetType::EARTH,
+      .preferred_sector = SectorType::SEC_LAND,
+      .candidate_stars = {starnum_t{2}},
+      .sector_compatibilities = {.sea = 1.0, .land = 1.0, .plated = 1.0},
+  };
+  auto res2 = service.enroll_player(explicit_land);
+  test::expect_true(res2.success, res2.message);
+  test::expect_eq(em.peek_race(res2.player_num)->likesbest,
+                  SectorType::SEC_LAND);
+  em.with_sectormap(res2.star, res2.pnum, [&](const SectorMap& smap) {
+    test::expect_eq(smap.get(res2.capital_coords).get_condition(),
+                    SectorType::SEC_LAND);
+  });
+
+  // 3. Explicit uncommon 100% preferred_sector = SEC_FOREST on Earth (with
+  // 100% SEC_LAND satisfying the homeworld common-sector requirement) sets
+  // likesbest = SEC_FOREST and converts the founding sector to SEC_FOREST
+  GB::creator::RaceEnrollmentSpec forest_pref{
+      .name = "Arboreals",
+      .password = "treepass",
+      .address = "trees@midgard.org",
+      .home_planet_type = PlanetType::EARTH,
+      .preferred_sector = SectorType::SEC_FOREST,
+      .candidate_stars = {starnum_t{3}},
+      .sector_compatibilities = {.land = 1.0, .forest = 1.0, .plated = 1.0},
+  };
+  auto res3 = service.enroll_player(forest_pref);
+  test::expect_true(res3.success, res3.message);
+  test::expect_eq(em.peek_race(res3.player_num)->likesbest,
+                  SectorType::SEC_FOREST);
+  em.with_sectormap(res3.star, res3.pnum, [&](const SectorMap& smap) {
+    test::expect_eq(smap.get(res3.capital_coords).get_condition(),
+                    SectorType::SEC_FOREST);
+  });
+
+  std::println(
+      std::cout,
+      "  ✓ preferred_sector tie-breaking and uncommon preference passed");
+}
+
 }  // namespace
 
 int main() {
@@ -666,6 +772,7 @@ int main() {
   test_archetypes_table();
   test_enroll_validation_and_budget_rejection();
   test_quickstart_archetype_json_roundtrip_and_enroll();
+  test_preferred_sector_tiebreak_and_uncommon_preference();
 
   std::println(std::cout, "\n✅ All EnrollmentService unit tests passed!");
   return 0;

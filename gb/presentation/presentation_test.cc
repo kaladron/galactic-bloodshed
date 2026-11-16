@@ -370,10 +370,21 @@ void test_bless_presentation() {
   test::expect_eq(render_bless_notification(
                       {.target_player = 2, .property = BlessProperty::Pods}),
                   "Deity gave you pod ability.\n");
+  test::expect_eq(render_bless_notification(
+                      {.target_player = 2,
+                       .property = BlessProperty::SectorPreference,
+                       .value =
+                           GB::presentation::SectorPrefBlessing{
+                               .sector = SectorType::SEC_SEA, .percent = 60}}),
+                  "Deity set your ocean preference to 60%\n");
   test::expect_eq(
       render_bless_notification(
-          {.target_player = 2, .property = BlessProperty::Water, .value = 60}),
-      "Deity set your water preference to 60%\n");
+          {.target_player = 2,
+           .property = BlessProperty::SectorPreference,
+           .value =
+               GB::presentation::SectorPrefBlessing{
+                   .sector = SectorType::SEC_MOUNT, .percent = 55}}),
+      "Deity set your mountainous preference to 55%\n");
   test::expect_eq(
       render_bless_notification(
           {.target_player = 2, .property = BlessProperty::Money, .value = 500}),

@@ -23,7 +23,6 @@ RaceArchetype::to_enrollment_spec(std::optional<PlanetType> planet_override,
   spec.name = std::string(name);
   spec.home_planet_type = ptype;
   spec.preferred_sector = pref;
-  spec.likesbest = pref;
   spec.sector_compatibilities = compat;
 
   spec.metamorph = is_metamorphic;

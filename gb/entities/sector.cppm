@@ -43,27 +43,7 @@ constexpr char get_sector_char(T) = delete;
 /// Returns the human-readable terrain name for a SectorType.
 export constexpr std::string_view
 sector_type_name(SectorType condition) noexcept {
-  switch (condition) {
-    case SectorType::SEC_SEA:
-      return "ocean";
-    case SectorType::SEC_LAND:
-      return "land";
-    case SectorType::SEC_MOUNT:
-      return "mountainous";
-    case SectorType::SEC_GAS:
-      return "gaseous";
-    case SectorType::SEC_ICE:
-      return "ice";
-    case SectorType::SEC_FOREST:
-      return "forest";
-    case SectorType::SEC_DESERT:
-      return "desert";
-    case SectorType::SEC_PLATED:
-      return "plated";
-    case SectorType::SEC_WASTED:
-      return "wasted";
-  }
-  std::unreachable();
+  return to_string(condition);
 }
 
 export template <typename T>

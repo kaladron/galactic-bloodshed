@@ -153,6 +153,66 @@ export constexpr std::string_view to_string(PlanetType type) noexcept {
   return "Unknown";
 }
 
+namespace detail {
+
+constexpr std::string_view trim_ascii(std::string_view s) noexcept {
+  constexpr std::string_view ws = " \t\n\r\v\f";
+  const auto first = s.find_first_not_of(ws);
+  if (first == std::string_view::npos) return {};
+  const auto last = s.find_last_not_of(ws);
+  return s.substr(first, last - first + 1);
+}
+
+constexpr char to_lower_ascii(char c) noexcept {
+  return (c >= 'A' && c <= 'Z') ? static_cast<char>(c - 'A' + 'a') : c;
+}
+
+constexpr bool iequals_ascii(std::string_view a, std::string_view b) noexcept {
+  if (a.size() != b.size()) return false;
+  for (std::size_t i = 0; i < a.size(); ++i) {
+    if (to_lower_ascii(a[i]) != to_lower_ascii(b[i])) return false;
+  }
+  return true;
+}
+
+}  // namespace detail
+
+/// Parses a habitable planet type name or single-letter alias
+/// (case-insensitive, ASCII-trimmed).
+export constexpr std::optional<PlanetType>
+parse_planet_type(std::string_view input) noexcept {
+  static constexpr std::array<std::pair<std::string_view, PlanetType>, 19>
+      aliases{{
+          {"earth", PlanetType::EARTH},
+          {"class m", PlanetType::EARTH},
+          {"e", PlanetType::EARTH},
+          {"forest", PlanetType::FOREST},
+          {"f", PlanetType::FOREST},
+          {"desert", PlanetType::DESERT},
+          {"d", PlanetType::DESERT},
+          {"water", PlanetType::WATER},
+          {"waterball", PlanetType::WATER},
+          {"w", PlanetType::WATER},
+          {"mars", PlanetType::MARS},
+          {"airless", PlanetType::MARS},
+          {"a", PlanetType::MARS},
+          {"iceball", PlanetType::ICEBALL},
+          {"ice", PlanetType::ICEBALL},
+          {"i", PlanetType::ICEBALL},
+          {"gasgiant", PlanetType::GASGIANT},
+          {"jovian", PlanetType::GASGIANT},
+          {"gas", PlanetType::GASGIANT},
+      }};
+  const std::string_view key = detail::trim_ascii(input);
+  if (detail::iequals_ascii(key, "j") || detail::iequals_ascii(key, "g")) {
+    return PlanetType::GASGIANT;
+  }
+  for (const auto& [name, val] : aliases) {
+    if (detail::iequals_ascii(name, key)) return val;
+  }
+  return std::nullopt;
+}
+
 export template <>
 struct std::formatter<PlanetType> {
   enum class Mode {
@@ -404,6 +464,33 @@ export constexpr std::string_view to_string(SectorType type) noexcept {
       return "wasted";
   }
   return "unknown";
+}
+
+/// Parses a settleable sector type name or alias (case-insensitive,
+/// ASCII-trimmed).
+export constexpr std::optional<SectorType>
+parse_sector_type(std::string_view input) noexcept {
+  static constexpr std::array<std::pair<std::string_view, SectorType>, 13>
+      aliases{{
+          {"ocean", SectorType::SEC_SEA},
+          {"sea", SectorType::SEC_SEA},
+          {"water", SectorType::SEC_SEA},
+          {"land", SectorType::SEC_LAND},
+          {"mountainous", SectorType::SEC_MOUNT},
+          {"mountain", SectorType::SEC_MOUNT},
+          {"mount", SectorType::SEC_MOUNT},
+          {"gaseous", SectorType::SEC_GAS},
+          {"gas", SectorType::SEC_GAS},
+          {"ice", SectorType::SEC_ICE},
+          {"forest", SectorType::SEC_FOREST},
+          {"desert", SectorType::SEC_DESERT},
+          {"plated", SectorType::SEC_PLATED},
+      }};
+  const std::string_view key = detail::trim_ascii(input);
+  for (const auto& [name, val] : aliases) {
+    if (detail::iequals_ascii(name, key)) return val;
+  }
+  return std::nullopt;
 }
 
 export template <>

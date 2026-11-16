@@ -304,7 +304,6 @@ export struct RaceEnrollmentSpec {
 
   // Sector compatibility preferences (0.0 to 1.0 per SectorType)
   SectorCompatibilities sector_compatibilities{};
-  std::optional<SectorType> likesbest{std::nullopt};
 };
 
 }  // namespace GB::creator
@@ -325,8 +324,7 @@ struct meta<GB::creator::RaceEnrollmentSpec> {
       &T::absorb, "collective_iq", &T::collective_iq, "pods", &T::pods,
       "adventurism", &T::adventurism, "number_sexes", &T::number_sexes,
       "metabolism", &T::metabolism, "fertilize", &T::fertilize,
-      "sector_compatibilities", &T::sector_compatibilities, "likesbest",
-      &T::likesbest);
+      "sector_compatibilities", &T::sector_compatibilities);
 };
 
 }  // namespace glz

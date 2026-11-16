@@ -83,6 +83,7 @@ void test_seed_deity_and_first_mortal_enrollment() {
   GB::creator::RaceEnrollmentSpec spec{
       .name = "MortalRace",
       .password = "pass",
+      .address = "mortal@sol.org",
       .home_planet_type = PlanetType::EARTH,
       .sector_compatibilities = {.land = 1.0, .plated = 1.0},
   };
@@ -123,6 +124,7 @@ void test_unbounded_players_allowed() {
   GB::creator::RaceEnrollmentSpec spec{
       .name = "Empire65",
       .password = "pass",
+      .address = "empire65@sol.org",
       .home_planet_type = PlanetType::EARTH,
       .sector_compatibilities = {.land = 1.0, .plated = 1.0},
   };
@@ -146,6 +148,7 @@ void test_no_free_planet_rejected() {
   GB::creator::RaceEnrollmentSpec spec{
       .name = "ForestDwellers",
       .password = "pass",
+      .address = "forest@sol.org",
       .home_planet_type = PlanetType::FOREST,
       .sector_compatibilities = {.forest = 1.0, .plated = 1.0},
   };
@@ -182,7 +185,6 @@ void test_enroll_first_race_mortal_success() {
                                  .land = 1.0,
                                  .forest = 0.8,
                                  .plated = 1.0},
-      .likesbest = SectorType::SEC_LAND,
   };
 
   auto result = service.enroll_player(spec);
@@ -221,12 +223,16 @@ void test_enroll_first_race_mortal_success() {
   const auto* pwr = em.peek_power(2);
   test::expect_true(pwr != nullptr);
 
-  // Verify Capital Ship entity
+  // Verify Capital Ship entity initialized via shared Ship construction path
   const auto* ship = em.peek_ship(result.gov_ship);
   test::expect_true(ship != nullptr);
   if (ship) {
     test::expect_eq(ship->type(), ShipType::OTYPE_GOV);
     test::expect_eq(ship->owner(), player_t{2});
+    test::expect_eq(ship->governor(), Race::leader_id);
+    test::expect_eq(ship->damage(), 0);
+    test::expect_gt(ship->retaliate(), 0);
+    test::expect_true(ship->protect().retaliate);
     test::expect_true(ship->is_landed());
     test::expect_eq(ship->whatorbits(), ScopeLevel::LEVEL_PLAN);
     test::expect_eq(ship->storbits(), starnum_t{1});
@@ -276,6 +282,7 @@ void test_enroll_second_race_mortal_success() {
   GB::creator::RaceEnrollmentSpec first_spec{
       .name = "Terrans",
       .password = "terranpass",
+      .address = "terrans@sol.org",
       .home_planet_type = PlanetType::EARTH,
       .sector_compatibilities = {.land = 1.0, .plated = 1.0},
   };
@@ -287,6 +294,7 @@ void test_enroll_second_race_mortal_success() {
   GB::creator::RaceEnrollmentSpec mortal_spec{
       .name = "DesertFolk",
       .password = "mortalpass",
+      .address = "desert@vega.org",
       .home_planet_type = PlanetType::DESERT,
       .preferred_sector = SectorType::SEC_DESERT,
       .mass = 0.8,
@@ -296,7 +304,6 @@ void test_enroll_second_race_mortal_success() {
       .number_sexes = 1,
       .metabolism = 1.1,
       .sector_compatibilities = {.desert = 1.0, .plated = 1.0},
-      .likesbest = SectorType::SEC_DESERT,
   };
 
   auto mortal_result = service.enroll_player(mortal_spec);
@@ -327,6 +334,7 @@ void test_enroll_guest_race_success() {
   GB::creator::RaceEnrollmentSpec guest_spec{
       .name = "GuestTraveler",
       .password = "guestpass",
+      .address = "guest@sol.org",
       .home_planet_type = PlanetType::EARTH,
       .is_guest = true,
       .sector_compatibilities = {.land = 1.0, .plated = 1.0},
@@ -357,11 +365,11 @@ void test_enroll_gas_giant_cold_success() {
   GB::creator::RaceEnrollmentSpec spec{
       .name = "Jovians",
       .password = "jovpass",
+      .address = "jovians@sol.org",
       .home_planet_type = PlanetType::GASGIANT,
       .preferred_sector = SectorType::SEC_GAS,
       .number_sexes = 1,
       .sector_compatibilities = {.gas = 1.0, .plated = 0.0},
-      .likesbest = SectorType::SEC_GAS,
   };
 
   auto result = service.enroll_player(spec);
@@ -393,6 +401,7 @@ void test_enroll_explicit_capital_coords() {
   GB::creator::RaceEnrollmentSpec spec{
       .name = "Terrans",
       .password = "pass",
+      .address = "terrans@sol.org",
       .home_planet_type = PlanetType::EARTH,
       .capital_coords = explicit_coords,
       .sector_compatibilities = {.land = 1.0, .plated = 1.0},
@@ -557,6 +566,7 @@ void test_enroll_validation_and_budget_rejection() {
   GB::creator::RaceEnrollmentSpec plated_only{
       .name = "Pavers",
       .password = "validpass",
+      .address = "pavers@sol.org",
       .home_planet_type = PlanetType::EARTH,
       .sector_compatibilities = {.plated = 1.0},
   };
@@ -567,6 +577,7 @@ void test_enroll_validation_and_budget_rejection() {
   GB::creator::RaceEnrollmentSpec space_pass{
       .name = "BadPass",
       .password = "bad pass",
+      .address = "bad@sol.org",
       .home_planet_type = PlanetType::EARTH,
   };
   test::expect_false(service.enroll_player(space_pass).success);
@@ -576,6 +587,7 @@ void test_enroll_validation_and_budget_rejection() {
   GB::creator::RaceEnrollmentSpec sea_terran{
       .name = "Atlanteans",
       .password = "aquapass",
+      .address = "atlantis@sol.org",
       .home_planet_type = PlanetType::EARTH,
       .sector_compatibilities = {.sea = 1.0, .plated = 1.0},
   };

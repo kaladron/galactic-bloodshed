@@ -25,12 +25,11 @@ resolve_preferred_sector(const GB::creator::RaceEnrollmentSpec& spec) {
           ? default_compat
           : spec.sector_compatibilities;
 
-  const auto explicit_pref =
-      spec.likesbest.has_value() ? spec.likesbest : spec.preferred_sector;
-  if (explicit_pref.has_value() && *explicit_pref != SectorType::SEC_PLATED &&
-      *explicit_pref != SectorType::SEC_WASTED &&
-      likes[*explicit_pref] == 1.0) {
-    return *explicit_pref;
+  if (spec.preferred_sector.has_value() &&
+      *spec.preferred_sector != SectorType::SEC_PLATED &&
+      *spec.preferred_sector != SectorType::SEC_WASTED &&
+      likes[*spec.preferred_sector] == 1.0) {
+    return *spec.preferred_sector;
   }
 
   for (SectorType st : settleable_sector_types) {
@@ -201,25 +200,17 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
   player_t playernum{entity_manager_.max_race_player().value + 1};
 
   // 2. Validate racial specification and point budget
-  RaceEnrollmentSpec effective_spec = spec;
-  if (effective_spec.address.empty()) {
-    effective_spec.address = "player@localhost";
-  }
-
   RacegenEngine engine;
-  auto errors = engine.validate(effective_spec, /*is_player=*/false,
+  auto errors = engine.validate(spec, /*is_player=*/!spec.is_guest,
                                 /*rigorous=*/true);
   if (!errors.empty()) {
+    std::string msg = "Cannot enroll: validation errors:";
+    for (const auto& err : errors) {
+      msg += "\n  - " + err;
+    }
     return EnrollmentResult{
         .success = false,
-        .message = errors.front(),
-    };
-  }
-  const auto cost = engine.calculate_cost(spec);
-  if (cost.points_remaining < 0) {
-    return EnrollmentResult{
-        .success = false,
-        .message = "You can't have negative points left!",
+        .message = std::move(msg),
     };
   }
 
@@ -245,7 +236,7 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
   }
 
   // 4. Determine preferred sector and capital coordinates
-  const SectorType pref = resolve_preferred_sector(effective_spec);
+  const SectorType pref = resolve_preferred_sector(spec);
   Coordinates capital_coords{0, 0};
   if (spec.capital_coords.has_value()) {
     capital_coords = *spec.capital_coords;
@@ -284,27 +275,23 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
   });
   entity_manager_.create_race(race);
 
-  // 6. Build and dock capital government ship, then link Race::Gov_ship
+  // 6. Commission and land starting capital Government Center via shared Ship
+  // construction lifecycle, overriding initial damage to 0 and tech to 100.
   shipnum_t shipno{0};
   {
     auto ship_handle =
         entity_manager_.create_ship(ShipType::OTYPE_GOV, playernum);
     Ship& ss = *ship_handle;
+    ss.initialize_constructed_state(race, Race::leader_id, 0.0,
+                                    ss.max_crew_capacity());
+    ss.admin_override_damage(0);
+    ss.tech() = 100.0;
+    ss.shipclass() = "Standard";
     entity_manager_.with_star(star, [&](const Star& s) {
       entity_manager_.with_planet(star, pnum, [&](const Planet& p) {
         ss.set_coordinates(p.absolute_coordinates(s));
       });
     });
-    ss.set_land_coords(capital_coords);
-    ss.tech() = 100.0;
-
-    const auto& gov_tmpl = ship_template(ShipType::OTYPE_GOV);
-    ss.set_secondary_battery(gov_tmpl.max_guns,
-                             shipdata_secondary(ShipType::OTYPE_GOV));
-    ss.shipclass() = "Standard";
-    ss.popn() = gov_tmpl.max_crew;
-    ss.set_mass(ss.base_mass() + gov_tmpl.max_crew * race.mass);
-    ss.protect().retaliate = true;
     ss.land_on_planet(star, pnum, capital_coords);
     ss.on() = 1;
 

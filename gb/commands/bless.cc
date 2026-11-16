@@ -124,38 +124,30 @@ constexpr std::array<RaceFlagProp, 7> race_flag_props{{
          }},
 }};
 
-struct SectorPref {
-  std::string_view name;
-  BlessProperty property;
-  SectorType type;
-};
-
-constexpr std::array<SectorPref, 8> sector_prefs{{
-    {.name = "water",
-     .property = BlessProperty::Water,
-     .type = SectorType::SEC_SEA},
-    {.name = "land",
-     .property = BlessProperty::Land,
-     .type = SectorType::SEC_LAND},
-    {.name = "mountain",
-     .property = BlessProperty::Mountain,
-     .type = SectorType::SEC_MOUNT},
-    {.name = "gas",
-     .property = BlessProperty::Gas,
-     .type = SectorType::SEC_GAS},
-    {.name = "ice",
-     .property = BlessProperty::Ice,
-     .type = SectorType::SEC_ICE},
-    {.name = "forest",
-     .property = BlessProperty::Forest,
-     .type = SectorType::SEC_FOREST},
-    {.name = "desert",
-     .property = BlessProperty::Desert,
-     .type = SectorType::SEC_DESERT},
-    {.name = "plated",
-     .property = BlessProperty::Plated,
-     .type = SectorType::SEC_PLATED},
-}};
+constexpr std::optional<BlessProperty>
+sector_bless_property(SectorType type) noexcept {
+  switch (type) {
+    case SectorType::SEC_SEA:
+      return BlessProperty::Water;
+    case SectorType::SEC_LAND:
+      return BlessProperty::Land;
+    case SectorType::SEC_MOUNT:
+      return BlessProperty::Mountain;
+    case SectorType::SEC_GAS:
+      return BlessProperty::Gas;
+    case SectorType::SEC_ICE:
+      return BlessProperty::Ice;
+    case SectorType::SEC_FOREST:
+      return BlessProperty::Forest;
+    case SectorType::SEC_DESERT:
+      return BlessProperty::Desert;
+    case SectorType::SEC_PLATED:
+      return BlessProperty::Plated;
+    case SectorType::SEC_WASTED:
+      return std::nullopt;
+  }
+  return std::nullopt;
+}
 
 std::optional<bool> bless_race_flags(player_t who, std::string_view prop,
                                      GameObj& g) {
@@ -217,22 +209,22 @@ std::optional<bool> bless_race_ints(player_t who, std::string_view prop,
 
 std::optional<bool> bless_race_prefs(player_t who, std::string_view prop,
                                      std::string_view val_str, GameObj& g) {
-  for (const auto& entry : sector_prefs) {
-    if (entry.name == prop) {
-      auto val = parse_bless_int(val_str);
-      if (!val) {
-        g.out << "Invalid preference percentage.\n";
-        return false;
-      }
-      g.entity_manager.mutate_race(who, [&](Race& race) {
-        race.likes[entry.type] = 0.01 * static_cast<double>(*val);
-      });
-      emit_blessing(
-          g, {.target_player = who, .property = entry.property, .value = *val});
-      return true;
-    }
+  auto sec = parse_sector_type(prop);
+  if (!sec) return std::nullopt;
+  auto property = sector_bless_property(*sec);
+  if (!property) return std::nullopt;
+
+  auto val = parse_bless_int(val_str);
+  if (!val) {
+    g.out << "Invalid preference percentage.\n";
+    return false;
   }
-  return std::nullopt;
+  g.entity_manager.mutate_race(who, [&](Race& race) {
+    race.likes[*sec] = 0.01 * static_cast<double>(*val);
+  });
+  emit_blessing(g,
+                {.target_player = who, .property = *property, .value = *val});
+  return true;
 }
 
 std::optional<bool> bless_race_property(player_t who, std::string_view prop,

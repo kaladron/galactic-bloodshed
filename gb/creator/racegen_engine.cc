@@ -317,7 +317,6 @@ RacegenEngine::create_default_spec(bool metamorph) const noexcept {
   spec.metabolism = 1.0;
 
   spec.sector_compatibilities = {.plated = 1.0};
-  spec.likesbest = std::nullopt;
   spec.preferred_sector = std::nullopt;
 
   return spec;
@@ -468,10 +467,8 @@ std::vector<std::string> RacegenEngine::validate(const RaceEnrollmentSpec& spec,
     }
   }
 
-  const auto explicit_pref =
-      spec.likesbest.has_value() ? spec.likesbest : spec.preferred_sector;
-  if (explicit_pref == SectorType::SEC_PLATED ||
-      explicit_pref == SectorType::SEC_WASTED) {
+  if (spec.preferred_sector == SectorType::SEC_PLATED ||
+      spec.preferred_sector == SectorType::SEC_WASTED) {
     errors.push_back(
         "Preferred sector must be a natural habitable terrain type.");
   }
@@ -506,7 +503,9 @@ std::vector<std::string> RacegenEngine::validate(const RaceEnrollmentSpec& spec,
 
     const auto breakdown = calculate_cost(spec);
     if (breakdown.points_remaining < 0) {
-      errors.push_back("You can't have negative points left!");
+      errors.push_back(std::format("You can't have negative points left! "
+                                   "(exceeds point budget by {} points)",
+                                   -breakdown.points_remaining));
     }
 
     std::size_t count = 0;
@@ -536,9 +535,10 @@ std::vector<std::string> RacegenEngine::validate(const RaceEnrollmentSpec& spec,
           "common on your home planet type.");
     }
 
-    if (explicit_pref.has_value() && explicit_pref != SectorType::SEC_PLATED &&
-        explicit_pref != SectorType::SEC_WASTED &&
-        spec.sector_compatibilities[*explicit_pref] != 1.0) {
+    if (spec.preferred_sector.has_value() &&
+        spec.preferred_sector != SectorType::SEC_PLATED &&
+        spec.preferred_sector != SectorType::SEC_WASTED &&
+        spec.sector_compatibilities[*spec.preferred_sector] != 1.0) {
       errors.push_back("Preferred sector must have 100% compatibility.");
     }
   }

@@ -82,6 +82,7 @@ void test_seed_deity_and_mortal_enrollment() {
   GB::creator::RaceEnrollmentSpec mortal_spec{
       .name = "Terrans",
       .password = "mortalpass",
+      .address = "terrans@sol.org",
       .home_planet_type = PlanetType::EARTH,
       .preferred_sector = SectorType::SEC_LAND,
       .mass = 1.0,
@@ -91,7 +92,6 @@ void test_seed_deity_and_mortal_enrollment() {
       .number_sexes = 1,
       .metabolism = 1.0,
       .sector_compatibilities = {.land = 1.0, .plated = 1.0},
-      .likesbest = SectorType::SEC_LAND,
   };
 
   auto result = service.enroll_player(mortal_spec);
@@ -143,6 +143,7 @@ void test_enroll_unbounded_players() {
   GB::creator::RaceEnrollmentSpec spec{
       .name = "Empire65",
       .password = "secret",
+      .address = "empire65@sol.org",
       .home_planet_type = PlanetType::EARTH,
       .sector_compatibilities = {.land = 1.0, .plated = 1.0},
   };
@@ -176,6 +177,7 @@ void test_enroll_no_free_planet_type() {
   GB::creator::RaceEnrollmentSpec spec{
       .name = "Terrans",
       .password = "secret",
+      .address = "terrans@sol.org",
       .home_planet_type = PlanetType::EARTH,
       .sector_compatibilities = {.land = 1.0, .plated = 1.0},
   };
@@ -330,6 +332,7 @@ void test_enroll_valid_race_success() {
   GB::creator::RaceEnrollmentSpec spec{
       .name = "Jovians",
       .password = "secret",
+      .address = "jovians@sol.org",
       .home_planet_type = PlanetType::GASGIANT,
       .preferred_sector = SectorType::SEC_GAS,
       .mass = 1.0,
@@ -339,7 +342,6 @@ void test_enroll_valid_race_success() {
       .number_sexes = 1,
       .metabolism = 1.0,
       .sector_compatibilities = {.gas = 1.0, .plated = 0.0},
-      .likesbest = SectorType::SEC_GAS,
   };
 
   auto result = service.enroll_player(spec);

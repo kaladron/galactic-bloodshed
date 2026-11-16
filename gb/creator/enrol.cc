@@ -10,6 +10,21 @@ import gb.creator;
 import dallib;
 import scnlib;
 
+namespace {
+
+void print_enrollment_summary(EntityManager& entity_manager,
+                              const GB::creator::EnrollmentResult& result) {
+  std::println(std::cout, "\nYou are player {}.\n", result.player_num);
+  std::println(std::cout, "Your race has been created on sector {},{} on",
+               result.capital_coords.x, result.capital_coords.y);
+  entity_manager.with_star(result.star, [&](const Star& home_star) {
+    std::println(std::cout, "{}/{}.\n", home_star.get_name(),
+                 home_star.get_planet_name(result.pnum));
+  });
+}
+
+}  // namespace
+
 int main(int argc, char* argv[]) {
   using namespace GB::creator;
 
@@ -88,13 +103,7 @@ int main(int argc, char* argv[]) {
       std::println(std::cerr, "Error: Enrollment failed - {}", result.message);
       return 1;
     }
-    std::println(std::cout, "\nYou are player {}.\n", result.player_num);
-    std::println(std::cout, "Your race has been created on sector {},{} on",
-                 result.capital_coords.x, result.capital_coords.y);
-    entity_manager.with_star(result.star, [&](const Star& home_star) {
-      std::println(std::cout, "{}/{}.\n", home_star.get_name(),
-                   home_star.get_planet_name(result.pnum));
-    });
+    print_enrollment_summary(entity_manager, result);
     return 0;
   }
 
@@ -192,42 +201,13 @@ int main(int argc, char* argv[]) {
         archetype.default_planet);
     std::string planet_line;
     std::getline(std::cin, planet_line);
-    char c = (!planet_line.empty())
-                 ? static_cast<char>(
-                       std::tolower(static_cast<unsigned char>(planet_line[0])))
-                 : '\0';
-
-    if (c == '\0') {
+    if (planet_line.empty()) {
       ppref = archetype.default_planet;
+    } else if (auto parsed = parse_planet_type(planet_line)) {
+      ppref = *parsed;
     } else {
-      switch (c) {
-        case 'w':
-          ppref = PlanetType::WATER;
-          break;
-        case 'e':
-          ppref = PlanetType::EARTH;
-          break;
-        case 'a':
-        case 'm':
-          ppref = PlanetType::MARS;
-          break;
-        case 'j':
-        case 'g':
-          ppref = PlanetType::GASGIANT;
-          break;
-        case 'i':
-          ppref = PlanetType::ICEBALL;
-          break;
-        case 'd':
-          ppref = PlanetType::DESERT;
-          break;
-        case 'f':
-          ppref = PlanetType::FOREST;
-          break;
-        default:
-          std::println(std::cout, "Oh well.");
-          return -1;
-      }
+      std::println(std::cout, "Oh well.");
+      return -1;
     }
 
     std::println(std::cout, "Looking for type {} planet...", ppref);
@@ -316,12 +296,6 @@ int main(int argc, char* argv[]) {
     return -1;
   }
 
-  std::println(std::cout, "\nYou are player {}.\n", result.player_num);
-  std::println(std::cout, "Your race has been created on sector {},{} on",
-               result.capital_coords.x, result.capital_coords.y);
-  entity_manager.with_star(star, [&](const Star& home_star) {
-    std::println(std::cout, "{}/{}.\n", home_star.get_name(),
-                 home_star.get_planet_name(pnum));
-  });
+  print_enrollment_summary(entity_manager, result);
   return 0;
 }

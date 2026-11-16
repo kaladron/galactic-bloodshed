@@ -149,12 +149,16 @@ void test_bless_race_characteristics() {
 
   ctx.assert_dispatch_success(g, {"bless", "2", "water", "60"});
   expect_near(ctx.em.peek_race(2)->likes[SectorType::SEC_SEA], 0.60);
+  ctx.assert_dispatch_success(g, {"bless", "2", "ocean", "65"});
+  expect_near(ctx.em.peek_race(2)->likes[SectorType::SEC_SEA], 0.65);
 
   ctx.assert_dispatch_success(g, {"bless", "2", "land", "70"});
   expect_near(ctx.em.peek_race(2)->likes[SectorType::SEC_LAND], 0.70);
 
   ctx.assert_dispatch_success(g, {"bless", "2", "mountain", "55"});
   expect_near(ctx.em.peek_race(2)->likes[SectorType::SEC_MOUNT], 0.55);
+  ctx.assert_dispatch_success(g, {"bless", "2", "mountainous", "58"});
+  expect_near(ctx.em.peek_race(2)->likes[SectorType::SEC_MOUNT], 0.58);
 
   ctx.assert_dispatch_success(g, {"bless", "2", "gas", "10"});
   expect_near(ctx.em.peek_race(2)->likes[SectorType::SEC_GAS], 0.10);

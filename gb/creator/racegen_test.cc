@@ -34,8 +34,16 @@ void test_default_race_costs() {
                   "1 sector type count cost must be 0");
 
   // Default spec leaves preferred natural terrain unset until configured
-  test::expect_false(default_spec.likesbest.has_value());
   test::expect_false(default_spec.preferred_sector.has_value());
+
+  // Shared planet/sector alias parsers in gb.entities
+  static_assert(parse_planet_type("Earth") == PlanetType::EARTH);
+  static_assert(parse_planet_type("a") == PlanetType::MARS);
+  static_assert(parse_planet_type("j") == PlanetType::GASGIANT);
+  static_assert(!parse_planet_type("asteroid").has_value());
+  static_assert(parse_sector_type("ocean") == SectorType::SEC_SEA);
+  static_assert(parse_sector_type("mountainous") == SectorType::SEC_MOUNT);
+  static_assert(!parse_sector_type("wasted").has_value());
 
   // Total cost: 75 (Earth) + 100 (Plated) = 175
   test::expect_eq(breakdown.total_cost, 175,
@@ -212,12 +220,12 @@ void test_validation_rules() {
   spec.governor_password = "0";
 
   // 6b. Preferred sector must be natural and 100% compatible
-  spec.likesbest = SectorType::SEC_PLATED;
+  spec.preferred_sector = SectorType::SEC_PLATED;
   errors = engine.validate(spec, true, false);
   test::expect_true(!errors.empty() &&
                         errors[0].contains("natural habitable terrain"),
                     "should reject plated preferred sector");
-  spec.likesbest = SectorType::SEC_SEA;
+  spec.preferred_sector = SectorType::SEC_SEA;
   errors = engine.validate(spec, true, true);
   test::expect_true(
       std::ranges::any_of(errors,
@@ -225,7 +233,7 @@ void test_validation_rules() {
                             return e.contains("must have 100% compatibility");
                           }),
       "should reject preferred sector without 100% compatibility");
-  spec.likesbest = std::nullopt;
+  spec.preferred_sector = std::nullopt;
 
   // 7. Rigorous: empty address
   spec.address = "";

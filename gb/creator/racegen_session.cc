@@ -64,47 +64,6 @@ lookup_table(const std::array<std::pair<std::string_view, T>, N>& table,
   return std::nullopt;
 }
 
-std::optional<PlanetType> parse_planet_type(std::string_view s) {
-  static constexpr std::array<std::pair<std::string_view, PlanetType>, 14>
-      planet_aliases{{
-          {"earth", PlanetType::EARTH},
-          {"class m", PlanetType::EARTH},
-          {"m", PlanetType::EARTH},
-          {"forest", PlanetType::FOREST},
-          {"desert", PlanetType::DESERT},
-          {"water", PlanetType::WATER},
-          {"waterball", PlanetType::WATER},
-          {"mars", PlanetType::MARS},
-          {"airless", PlanetType::MARS},
-          {"iceball", PlanetType::ICEBALL},
-          {"ice", PlanetType::ICEBALL},
-          {"gasgiant", PlanetType::GASGIANT},
-          {"jovian", PlanetType::GASGIANT},
-          {"gas", PlanetType::GASGIANT},
-      }};
-  return lookup_table(planet_aliases, trim(s));
-}
-
-std::optional<SectorType> parse_sector_type(std::string_view s) {
-  static constexpr std::array<std::pair<std::string_view, SectorType>, 13>
-      sector_aliases{{
-          {"water", SectorType::SEC_SEA},
-          {"sea", SectorType::SEC_SEA},
-          {"ocean", SectorType::SEC_SEA},
-          {"land", SectorType::SEC_LAND},
-          {"mountain", SectorType::SEC_MOUNT},
-          {"mount", SectorType::SEC_MOUNT},
-          {"mountainous", SectorType::SEC_MOUNT},
-          {"gas", SectorType::SEC_GAS},
-          {"gaseous", SectorType::SEC_GAS},
-          {"ice", SectorType::SEC_ICE},
-          {"forest", SectorType::SEC_FOREST},
-          {"desert", SectorType::SEC_DESERT},
-          {"plated", SectorType::SEC_PLATED},
-      }};
-  return lookup_table(sector_aliases, trim(s));
-}
-
 std::optional<bool> parse_bool(std::string_view s) {
   static constexpr std::array<std::pair<std::string_view, bool>, 8>
       bool_aliases{{
@@ -371,25 +330,6 @@ EnrollmentResult RacegenSession::enroll() {
     return {.success = false,
             .message = "No active universe database connected to session."};
   }
-
-  if (cost_.points_remaining < 0) {
-    return {.success = false,
-            .message = std::format(
-                "Cannot enroll: specification exceeds point budget by {} "
-                "points.",
-                -cost_.points_remaining)};
-  }
-
-  auto errors =
-      engine_.validate(spec_, /*is_player=*/!spec_.is_guest, /*rigorous=*/true);
-  if (!errors.empty()) {
-    std::string msg = "Cannot enroll: validation errors:";
-    for (const auto& err : errors) {
-      msg += "\n  - " + err;
-    }
-    return {.success = false, .message = std::move(msg)};
-  }
-
   return enrollment_service_->enroll_player(spec_);
 }
 
@@ -495,9 +435,8 @@ bool RacegenSession::modify_field(std::string_view field_name,
       compat /= 100.0;
     }
     spec_.sector_compatibilities[*sec] = compat;
-    if (compat < 1.0) {
-      if (spec_.likesbest == *sec) spec_.likesbest = std::nullopt;
-      if (spec_.preferred_sector == *sec) spec_.preferred_sector = std::nullopt;
+    if (compat < 1.0 && spec_.preferred_sector == *sec) {
+      spec_.preferred_sector = std::nullopt;
     }
   } else if (field == "name") {
     spec_.name = std::string(val_trimmed);
@@ -529,16 +468,11 @@ bool RacegenSession::modify_field(std::string_view field_name,
     spec_.home_planet_type = *ptype;
     if (*ptype == PlanetType::GASGIANT) {
       spec_.sector_compatibilities = {.gas = 1.0, .plated = 0.0};
-      spec_.likesbest = SectorType::SEC_GAS;
       spec_.preferred_sector = SectorType::SEC_GAS;
     } else {
       if (spec_.sector_compatibilities.gas > 0.0) {
         spec_.sector_compatibilities.gas = 0.0;
         spec_.sector_compatibilities.plated = 1.0;
-      }
-      if (spec_.likesbest.has_value() &&
-          spec_.sector_compatibilities[*spec_.likesbest] < 1.0) {
-        spec_.likesbest = std::nullopt;
       }
       if (spec_.preferred_sector.has_value() &&
           spec_.sector_compatibilities[*spec_.preferred_sector] < 1.0) {
@@ -698,7 +632,6 @@ bool RacegenSession::modify_field(std::string_view field_name,
                    val_trimmed);
       return false;
     }
-    spec_.likesbest = *sec;
     spec_.preferred_sector = *sec;
   } else {
     std::println(out_,

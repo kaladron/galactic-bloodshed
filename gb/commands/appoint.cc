@@ -18,6 +18,10 @@ bool appoint(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
 
   if (argv.size() == 2) {
+    if (!Race::is_valid_password(argv[1])) {
+      g.out << "Password must be non-empty and contain no whitespace.\n";
+      return false;
+    }
     governor_t gov{0};
     g.entity_manager.mutate_race(Playernum, [&](Race& race) {
       gov = race.appoint_governor({.password = argv[1]});
@@ -32,6 +36,10 @@ bool appoint(const command_t& argv, GameObj& g) {
   const auto parsed_gov = parse_int<governor_t::value_type>(argv[1]);
   if (!parsed_gov || *parsed_gov < 1) {
     g.out << "No such governor.\n";
+    return false;
+  }
+  if (argv.size() != 3 || !Race::is_valid_password(argv[2])) {
+    g.out << "Password must be non-empty and contain no whitespace.\n";
     return false;
   }
   const governor_t gov{*parsed_gov};

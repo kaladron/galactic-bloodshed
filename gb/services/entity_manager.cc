@@ -245,18 +245,42 @@ EntityHandle<Race> EntityManager::create_race(const Race& race_data) {
     dirty_entities_.races.insert(player);
   }
 
-  // Auto-seed baseline block if not existing (or update name if uncustomized)
-  if (auto existing_block = storage_->blocks.find_by_id(player);
-      !existing_block) {
-    storage_->blocks.save(Block{{.Playernum = player, .name = new_race.name}});
-  } else if (existing_block->motto().empty()) {
-    existing_block->name() = new_race.name;
-    storage_->blocks.save(*existing_block);
+  // Auto-seed baseline block with self-membership if not existing (or update
+  // name and ensure self-membership if uncustomized)
+  std::optional<Block> block_to_save;
+  if (auto cached_it = block_cache.find(player);
+      cached_it != block_cache.end() && cached_it->second) {
+    if (cached_it->second->motto().empty()) {
+      cached_it->second->name() = new_race.name;
+    }
+    cached_it->second->add_member(player);
+    block_to_save = *cached_it->second;
+  } else if (auto existing_block = storage_->blocks.find_by_id(player);
+             existing_block) {
+    if (existing_block->motto().empty()) {
+      existing_block->name() = new_race.name;
+    }
+    existing_block->add_member(player);
+    block_to_save = *existing_block;
+  } else {
+    Block seeded{{.Playernum = player, .name = new_race.name, .members = 1}};
+    seeded.add_member(player);
+    block_to_save = std::move(seeded);
+  }
+  storage_->blocks.save(*block_to_save);
+  if (!block_refcount.contains(player)) {
+    block_cache.insert_or_assign(player,
+                                 std::make_unique<Block>(*block_to_save));
+  }
+  if (tracking_mutations_) {
+    dirty_entities_.blocks.insert(player);
   }
 
   // Auto-seed baseline power if not existing
-  if (!storage_->powers.find_by_id(player)) {
-    storage_->powers.save(Power{{.id = player}});
+  if (!power_cache.contains(player) && !storage_->powers.find_by_id(player)) {
+    Power seeded_power{{.id = player}};
+    storage_->powers.save(seeded_power);
+    power_cache.insert_or_assign(player, std::make_unique<Power>(seeded_power));
   }
 
   race_cache.insert_or_assign(player, std::make_unique<Race>(new_race));

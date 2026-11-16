@@ -380,7 +380,8 @@ EnrollmentResult RacegenSession::enroll() {
                 -cost_.points_remaining)};
   }
 
-  auto errors = engine_.validate(spec_, /*is_player=*/!spec_.is_guest);
+  auto errors =
+      engine_.validate(spec_, /*is_player=*/!spec_.is_guest, /*rigorous=*/true);
   if (!errors.empty()) {
     std::string msg = "Cannot enroll: validation errors:";
     for (const auto& err : errors) {
@@ -494,11 +495,25 @@ bool RacegenSession::modify_field(std::string_view field_name,
       compat /= 100.0;
     }
     spec_.sector_compatibilities[*sec] = compat;
+    if (compat < 1.0) {
+      if (spec_.likesbest == *sec) spec_.likesbest = std::nullopt;
+      if (spec_.preferred_sector == *sec) spec_.preferred_sector = std::nullopt;
+    }
   } else if (field == "name") {
     spec_.name = std::string(val_trimmed);
   } else if (field.starts_with("pass")) {
+    if (!Race::is_valid_password(val_trimmed)) {
+      std::println(
+          out_, "Error: Password must be non-empty and contain no whitespace.");
+      return false;
+    }
     spec_.password = std::string(val_trimmed);
   } else if (field.starts_with("gov")) {
+    if (!Race::is_valid_password(val_trimmed)) {
+      std::println(
+          out_, "Error: Password must be non-empty and contain no whitespace.");
+      return false;
+    }
     spec_.governor_password = std::string(val_trimmed);
   } else if (field.starts_with("addr")) {
     spec_.address = std::string(val_trimmed);
@@ -516,11 +531,19 @@ bool RacegenSession::modify_field(std::string_view field_name,
       spec_.sector_compatibilities = {.gas = 1.0, .plated = 0.0};
       spec_.likesbest = SectorType::SEC_GAS;
       spec_.preferred_sector = SectorType::SEC_GAS;
-    } else if (spec_.sector_compatibilities.gas > 0.0) {
-      spec_.sector_compatibilities.gas = 0.0;
-      spec_.sector_compatibilities.plated = 1.0;
-      spec_.likesbest = SectorType::SEC_PLATED;
-      spec_.preferred_sector = SectorType::SEC_PLATED;
+    } else {
+      if (spec_.sector_compatibilities.gas > 0.0) {
+        spec_.sector_compatibilities.gas = 0.0;
+        spec_.sector_compatibilities.plated = 1.0;
+      }
+      if (spec_.likesbest.has_value() &&
+          spec_.sector_compatibilities[*spec_.likesbest] < 1.0) {
+        spec_.likesbest = std::nullopt;
+      }
+      if (spec_.preferred_sector.has_value() &&
+          spec_.sector_compatibilities[*spec_.preferred_sector] < 1.0) {
+        spec_.preferred_sector = std::nullopt;
+      }
     }
   } else if (field == "race") {
     std::string rtype = to_lower(val_trimmed);
@@ -578,7 +601,15 @@ bool RacegenSession::modify_field(std::string_view field_name,
     }
   } else if (field.starts_with("col")) {
     if (auto b = parse_bool(val_trimmed)) {
+      const iq_t active_iq = std::max(spec_.iq, spec_.iq_limit);
       spec_.collective_iq = *b;
+      if (*b) {
+        spec_.iq_limit = active_iq;
+        spec_.iq = 0;
+      } else {
+        spec_.iq = active_iq;
+        spec_.iq_limit = 0;
+      }
     } else {
       std::println(out_, "Error: Invalid boolean '{}' (use yes/no).",
                    val_trimmed);
@@ -810,7 +841,7 @@ void RacegenSession::print_help(std::string_view topic) {
     std::println(out_, "    sexes       (1 - 53)");
     std::println(out_, "    fertilize   (0% - 100%)");
     std::println(out_, "    absorb      (yes/no, metamorph only)");
-    std::println(out_, "    collective  (yes/no, metamorph only)");
+    std::println(out_, "    collective  (yes/no)");
     std::println(out_, "    pods        (yes/no, metamorph only)");
     std::println(out_, "  Identity & World:");
     std::println(out_, "    name        (empire/race name)");

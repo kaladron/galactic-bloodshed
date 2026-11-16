@@ -317,8 +317,8 @@ RacegenEngine::create_default_spec(bool metamorph) const noexcept {
   spec.metabolism = 1.0;
 
   spec.sector_compatibilities = {.plated = 1.0};
-  spec.likesbest = SectorType::SEC_PLATED;
-  spec.preferred_sector = SectorType::SEC_PLATED;
+  spec.likesbest = std::nullopt;
+  spec.preferred_sector = std::nullopt;
 
   return spec;
 }
@@ -468,16 +468,36 @@ std::vector<std::string> RacegenEngine::validate(const RaceEnrollmentSpec& spec,
     }
   }
 
+  const auto explicit_pref =
+      spec.likesbest.has_value() ? spec.likesbest : spec.preferred_sector;
+  if (explicit_pref == SectorType::SEC_PLATED ||
+      explicit_pref == SectorType::SEC_WASTED) {
+    errors.push_back(
+        "Preferred sector must be a natural habitable terrain type.");
+  }
+
+  if ((!spec.password.empty() && !Race::is_valid_password(spec.password)) ||
+      (!spec.governor_password.empty() &&
+       !Race::is_valid_password(spec.governor_password))) {
+    errors.push_back("Passwords cannot contain whitespace.");
+  }
+
   // 6. Rigorous checking
   if (rigorous) {
     if (spec.name.empty()) {
       errors.push_back("Use a non-empty name.");
     }
 
-    if (spec.password.length() < MIN_PASSWORD_LENGTH) {
+    if (!Race::is_valid_password(spec.password) ||
+        spec.password.length() < MIN_PASSWORD_LENGTH) {
       errors.push_back(std::format(
           "Passwords are required to be at least {} characters long.",
           MIN_PASSWORD_LENGTH));
+    }
+
+    if (!Race::is_valid_password(spec.governor_password)) {
+      errors.push_back(
+          "Governor password must be non-empty and contain no whitespace.");
     }
 
     if (spec.address.empty()) {
@@ -514,6 +534,12 @@ std::vector<std::string> RacegenEngine::validate(const RaceEnrollmentSpec& spec,
       errors.push_back(
           "You must have 100% compat with at least one sector type that is "
           "common on your home planet type.");
+    }
+
+    if (explicit_pref.has_value() && explicit_pref != SectorType::SEC_PLATED &&
+        explicit_pref != SectorType::SEC_WASTED &&
+        spec.sector_compatibilities[*explicit_pref] != 1.0) {
+      errors.push_back("Preferred sector must have 100% compatibility.");
     }
   }
 

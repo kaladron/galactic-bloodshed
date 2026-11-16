@@ -45,6 +45,22 @@ void test_appoint_validation_and_modes() {
   test::expect_contains(g.out.str(), "already appointed");
 
   g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"appoint", ""});
+  test::expect_contains(g.out.str(), "non-empty and contain no whitespace");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"appoint", "bad pass"});
+  test::expect_contains(g.out.str(), "non-empty and contain no whitespace");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"appoint", "2", ""});
+  test::expect_contains(g.out.str(), "non-empty and contain no whitespace");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"appoint", "2", "foo", "bar"});
+  test::expect_contains(g.out.str(), "non-empty and contain no whitespace");
+
+  g.out.str("");
   ctx.assert_dispatch_success(g, {"appoint", "2", "secret123"});
   test::expect_contains(g.out.str(), "Governor activated.");
   test::expect_true(ctx.em.peek_race(1)->has_governor(2));

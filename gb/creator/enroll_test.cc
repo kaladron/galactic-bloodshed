@@ -144,6 +144,7 @@ void test_enroll_unbounded_players() {
       .name = "Empire65",
       .password = "secret",
       .home_planet_type = PlanetType::EARTH,
+      .sector_compatibilities = {.land = 1.0, .plated = 1.0},
   };
 
   auto result = service.enroll_player(spec);
@@ -176,6 +177,7 @@ void test_enroll_no_free_planet_type() {
       .name = "Terrans",
       .password = "secret",
       .home_planet_type = PlanetType::EARTH,
+      .sector_compatibilities = {.land = 1.0, .plated = 1.0},
   };
 
   auto result = service.enroll_player(spec);

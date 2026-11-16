@@ -15,8 +15,38 @@ module gb.creator;
 
 namespace {
 
-bool is_valid_login_token(std::string_view token) noexcept {
-  return !token.empty() && !token.contains(' ');
+SectorType
+resolve_preferred_sector(const GB::creator::RaceEnrollmentSpec& spec) {
+  const auto [default_pref, default_compat] =
+      GB::creator::default_sector_compatibilities_for_planet(
+          spec.home_planet_type);
+  const SectorCompatibilities& likes =
+      (spec.sector_compatibilities == SectorCompatibilities{})
+          ? default_compat
+          : spec.sector_compatibilities;
+
+  const auto explicit_pref =
+      spec.likesbest.has_value() ? spec.likesbest : spec.preferred_sector;
+  if (explicit_pref.has_value() && *explicit_pref != SectorType::SEC_PLATED &&
+      *explicit_pref != SectorType::SEC_WASTED &&
+      likes[*explicit_pref] == 1.0) {
+    return *explicit_pref;
+  }
+
+  for (SectorType st : settleable_sector_types) {
+    if (st == SectorType::SEC_PLATED) continue;
+    if (Planet::is_common_sector(spec.home_planet_type, st) &&
+        likes[st] == 1.0) {
+      return st;
+    }
+  }
+  for (SectorType st : settleable_sector_types) {
+    if (st == SectorType::SEC_PLATED) continue;
+    if (likes[st] == 1.0) {
+      return st;
+    }
+  }
+  return default_pref;
 }
 
 }  // namespace
@@ -27,11 +57,11 @@ EnrollmentService::EnrollmentService(EntityManager& em) : entity_manager_(em) {}
 
 void EnrollmentService::seed_deity(std::string_view password,
                                    std::string_view gov_password) {
-  if (!is_valid_login_token(password)) {
+  if (!Race::is_valid_password(password)) {
     throw std::invalid_argument("seed_deity: deity race password must be "
                                 "non-empty and contain no spaces");
   }
-  if (!is_valid_login_token(gov_password)) {
+  if (!Race::is_valid_password(gov_password)) {
     throw std::invalid_argument("seed_deity: deity governor password must be "
                                 "non-empty and contain no spaces");
   }
@@ -111,8 +141,7 @@ Race EnrollmentService::build_race(player_t playernum,
                                    planetnum_t home_planet) {
   auto [default_pref, default_compat] =
       default_sector_compatibilities_for_planet(spec.home_planet_type);
-  SectorType pref =
-      spec.likesbest.value_or(spec.preferred_sector.value_or(default_pref));
+  const SectorType pref = resolve_preferred_sector(spec);
 
   Race race{};
   race.Playernum = playernum;
@@ -134,8 +163,14 @@ Race EnrollmentService::build_race(player_t playernum,
   race.mass = spec.mass;
   race.birthrate = spec.birthrate;
   race.fighters = spec.fighters;
-  race.IQ = spec.iq;
-  race.IQ_limit = spec.iq_limit;
+  const iq_t configured_iq = std::max(spec.iq, spec.iq_limit);
+  if (spec.collective_iq) {
+    race.IQ = 0;
+    race.IQ_limit = configured_iq;
+  } else {
+    race.IQ = configured_iq;
+    race.IQ_limit = 0;
+  }
   race.Metamorph = spec.metamorph;
   race.absorb = spec.absorb;
   race.collective_iq = spec.collective_iq;
@@ -166,8 +201,14 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
   player_t playernum{entity_manager_.max_race_player().value + 1};
 
   // 2. Validate racial specification and point budget
+  RaceEnrollmentSpec effective_spec = spec;
+  if (effective_spec.address.empty()) {
+    effective_spec.address = "player@localhost";
+  }
+
   RacegenEngine engine;
-  auto errors = engine.validate(spec, /*is_player=*/false, /*rigorous=*/false);
+  auto errors = engine.validate(effective_spec, /*is_player=*/false,
+                                /*rigorous=*/true);
   if (!errors.empty()) {
     return EnrollmentResult{
         .success = false,
@@ -204,8 +245,7 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
   }
 
   // 4. Determine preferred sector and capital coordinates
-  SectorType pref = spec.likesbest.value_or(
-      spec.preferred_sector.value_or(SectorType::SEC_LAND));
+  const SectorType pref = resolve_preferred_sector(effective_spec);
   Coordinates capital_coords{0, 0};
   if (spec.capital_coords.has_value()) {
     capital_coords = *spec.capital_coords;
@@ -278,6 +318,9 @@ EnrollmentService::enroll_player(const RaceEnrollmentSpec& spec) {
   entity_manager_.mutate_sectormap(star, pnum, [&](SectorMap& smap) {
     entity_manager_.mutate_planet(star, pnum, [&](Planet& planet) {
       auto& sect = smap.get(capital_coords);
+      if (!spec.capital_coords.has_value()) {
+        sect.set_condition(race.likesbest);
+      }
       sect.colonize(playernum, race.number_sexes);
       sect.set_fert(100);
       sect.set_efficiency_bounded(10);

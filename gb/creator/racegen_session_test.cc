@@ -88,8 +88,14 @@ void test_modify_metadata() {
 
   test::expect_true(session.execute_command("modify password securepass"));
   test::expect_eq(session.spec().password, "securepass");
+  test::expect_false(session.modify_field("password", "has space"));
+  test::expect_false(session.modify_field("password", ""));
+  test::expect_eq(session.spec().password, "securepass");
 
   test::expect_true(session.execute_command("modify gov_password govpass123"));
+  test::expect_eq(session.spec().governor_password, "govpass123");
+  test::expect_false(session.modify_field("gov_password", "gov space"));
+  test::expect_false(session.modify_field("gov_password", ""));
   test::expect_eq(session.spec().governor_password, "govpass123");
 
   test::expect_true(
@@ -112,6 +118,17 @@ void test_modify_race_type() {
   test::expect_eq(session.spec().iq, 0, "metamorph active IQ must be 0");
   test::expect_eq(session.spec().iq_limit, 150,
                   "metamorph IQ limit must be 150");
+
+  // Toggling collective_iq swaps iq and iq_limit cleanly
+  test::expect_true(session.execute_command("modify col no"));
+  test::expect_false(session.spec().collective_iq);
+  test::expect_eq(session.spec().iq, 150);
+  test::expect_eq(session.spec().iq_limit, 0);
+
+  test::expect_true(session.execute_command("modify col yes"));
+  test::expect_true(session.spec().collective_iq);
+  test::expect_eq(session.spec().iq, 0);
+  test::expect_eq(session.spec().iq_limit, 150);
 
   // Switch back to normal
   test::expect_true(session.execute_command("modify race normal"));
@@ -165,6 +182,7 @@ void test_modify_sector_compatibilities() {
   test::expect_false(ok, "plated sector modification must be rejected");
   test::expect_true(out.str().contains("Plated sector compatibility is fixed"),
                     "output must explain plated compatibility is fixed");
+  test::expect_false(session.modify_field("preferred", "plated"));
 }
 
 void test_print_output() {
@@ -418,6 +436,13 @@ void test_enroll_with_service_success() {
   test::expect_true(session.execute_command("modify password secret"));
   test::expect_true(session.execute_command("modify address user@example.com"));
 
+  // Enrolling without any natural sector compatibility must fail rigorous check
+  test::expect_true(session.execute_command("enroll"));
+  test::expect_false(session.should_quit());
+  test::expect_contains(out.str(), "besides plated");
+
+  out.str("");
+  test::expect_true(session.execute_command("modify land 100"));
   test::expect_false(
       session.execute_command("enroll"),
       "enroll must return false to request session quit on success");
@@ -427,6 +452,8 @@ void test_enroll_with_service_success() {
                     "output must report enrollment success");
   test::expect_true(out.str().contains("Player ID    : 2"),
                     "output must report player ID 2");
+  test::expect_eq(em.peek_race(2)->likesbest, SectorType::SEC_LAND);
+  test::expect_gt(em.peek_planet(1, 1)->maxpopn(), 0);
 }
 
 void test_standalone_save_and_load_race_spec() {

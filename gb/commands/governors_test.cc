@@ -91,6 +91,22 @@ void test_password_change_validation_and_modes() {
   test::expect_contains(g.out.str(), "You can only change your own password");
 
   g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"governors", "2", "password"});
+  test::expect_contains(g.out.str(), "non-empty and contain no whitespace");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"governors", "2", "password", ""});
+  test::expect_contains(g.out.str(), "non-empty and contain no whitespace");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"governors", "2", "password", "bad pass"});
+  test::expect_contains(g.out.str(), "non-empty and contain no whitespace");
+
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"governors", "2", "password", "foo", "bar"});
+  test::expect_contains(g.out.str(), "non-empty and contain no whitespace");
+
+  g.out.str("");
   ctx.assert_dispatch_success(g, {"governors", "2", "password", "selfpass"});
   test::expect_contains(g.out.str(), "Password changed.");
   test::expect_eq(ctx.em.peek_race(1)->governor(2).password, "selfpass");

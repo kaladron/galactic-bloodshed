@@ -67,10 +67,13 @@ int main() {
   test::expect_contains(g.out.str(), "No such player.");
   std::println(std::cout, "    ✓ Unknown player rejection verified");
 
-  // 5. Successful invite (ASCII mode)
+  // 5. Successful invite (ASCII mode) preserves ServerState::last_update_time
+  ctx.em.mutate_server_state(
+      [](ServerState& state) { state.last_update_time = 1700001234; });
   g.out.str("");
   ctx.assert_dispatch_success(g, {"invite", "Klingons"});
   ctx.em.clear_cache();
+  test::expect_eq(ctx.em.peek_server_state()->last_update_time, 1700001234);
   const auto* b_invited = ctx.em.peek_block(1);
   test::expect_ne(b_invited, nullptr);
   test::expect_true(b_invited->is_invited(2));

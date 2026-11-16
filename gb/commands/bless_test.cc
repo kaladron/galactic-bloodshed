@@ -117,6 +117,8 @@ void test_bless_race_characteristics() {
   test::expect_eq(ctx.em.peek_race(2)->birthrate, 1.25);
 
   // Flags & password
+  ctx.assert_dispatch_rejected(g, {"bless", "2", "password", ""});
+  ctx.assert_dispatch_rejected(g, {"bless", "2", "password", "bad pass"});
   ctx.assert_dispatch_success(g, {"bless", "2", "password", "secret42"});
   test::expect_eq(ctx.em.peek_race(2)->password, "secret42");
 

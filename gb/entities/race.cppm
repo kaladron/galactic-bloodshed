@@ -201,6 +201,20 @@ public:
   /// Canonical governor ID of the race leader.
   static constexpr governor_t leader_id{1};
 
+  /// Returns true if `token` is a valid login or command password token
+  /// (non-empty and containing no ASCII whitespace).
+  [[nodiscard]] static constexpr bool
+  is_valid_password(std::string_view token) noexcept {
+    if (token.empty()) return false;
+    for (char c : token) {
+      if (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\v' ||
+          c == '\f') {
+        return false;
+      }
+    }
+    return true;
+  }
+
   /// Returns true if the given governor ID is the race leader.
   [[nodiscard]] static constexpr bool is_leader(governor_t id) noexcept {
     return id == leader_id;

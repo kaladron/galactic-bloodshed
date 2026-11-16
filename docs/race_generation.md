@@ -162,13 +162,13 @@ Once a species is validated and points remaining $\ge 0$, the imperial onboardin
    - The system must contain at least **two planets**, ensuring immediate local sub-light expansion.
    - The system must host an uncolonized world matching the selected **home world archetype**.
 2. **Capital Colony Seeding**:
-   - Locates a surface sector matching the species' primary compatibility preference.
-   - Lands an ancestral founding population of **$1\,000$ colonists**.
+   - Locates a surface sector matching the species' primary 100%-compatible natural terrain preference (converting the chosen founding sector to that terrain if none naturally spawned on the world).
+   - Lands an ancestral founding population equal to the species' **number of sexes**.
    - Permanently clears fog of war over the capital and star system.
    - Grants **$5$ initial Action Points (AP)** for immediate fleet and economic orders.
-3. **Government Flagship Commissioning**:
-   - Automatically constructs a heavily armored, high-tech **Battleship** docked at the capital sector coordinates.
-   - Designates the vessel as the **Imperial Government Center**, the indispensable command hub of the empire.
+3. **Government Center Commissioning**:
+   - Automatically constructs a crewed **Government Center** landed at the capital sector coordinates.
+   - Designates the installation as the **Imperial Government Center**, the indispensable command hub of the empire.
 
 ---
 

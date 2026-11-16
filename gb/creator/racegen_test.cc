@@ -33,6 +33,10 @@ void test_default_race_costs() {
   test::expect_eq(breakdown.sector_count_cost, 0,
                   "1 sector type count cost must be 0");
 
+  // Default spec leaves preferred natural terrain unset until configured
+  test::expect_false(default_spec.likesbest.has_value());
+  test::expect_false(default_spec.preferred_sector.has_value());
+
   // Total cost: 75 (Earth) + 100 (Plated) = 175
   test::expect_eq(breakdown.total_cost, 175,
                   "default race total cost must be 175");
@@ -187,14 +191,41 @@ void test_validation_rules() {
                     "should reject empty name in rigorous mode");
   spec.name = "Terrans";
 
-  // 6. Rigorous: short/empty password
+  // 6. Rigorous: short/empty/whitespace passwords
   spec.password = "";
   errors = engine.validate(spec, true, true);
   test::expect_true(
       !errors.empty() &&
           errors[0].contains("Passwords are required to be at least"),
       "should reject empty password in rigorous mode");
+  spec.password = "bad pass";
+  errors = engine.validate(spec, true, false);
+  test::expect_true(!errors.empty() &&
+                        errors[0].contains("cannot contain whitespace"),
+                    "should reject whitespace in race password");
   spec.password = "validpass";
+  spec.governor_password = "";
+  errors = engine.validate(spec, true, true);
+  test::expect_true(!errors.empty() &&
+                        errors[0].contains("Governor password must be"),
+                    "should reject empty governor password in rigorous mode");
+  spec.governor_password = "0";
+
+  // 6b. Preferred sector must be natural and 100% compatible
+  spec.likesbest = SectorType::SEC_PLATED;
+  errors = engine.validate(spec, true, false);
+  test::expect_true(!errors.empty() &&
+                        errors[0].contains("natural habitable terrain"),
+                    "should reject plated preferred sector");
+  spec.likesbest = SectorType::SEC_SEA;
+  errors = engine.validate(spec, true, true);
+  test::expect_true(
+      std::ranges::any_of(errors,
+                          [](const std::string& e) {
+                            return e.contains("must have 100% compatibility");
+                          }),
+      "should reject preferred sector without 100% compatibility");
+  spec.likesbest = std::nullopt;
 
   // 7. Rigorous: empty address
   spec.address = "";

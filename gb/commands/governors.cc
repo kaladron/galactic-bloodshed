@@ -18,7 +18,7 @@ bool governors(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
   governor_t Governor = g.governor();
 
-  if (argv.size() >= 4 && argv[2] == "password") {
+  if (argv.size() >= 3 && argv[2] == "password") {
     const auto parsed_gov = parse_int<governor_t::value_type>(argv[1]);
     if (!parsed_gov || *parsed_gov < 1) {
       g.out << "No such governor.\n";
@@ -36,6 +36,10 @@ bool governors(const command_t& argv, GameObj& g) {
     }
     if (!current_race.has_governor(gov)) {
       g.out << "That governor is inactive.\n";
+      return false;
+    }
+    if (argv.size() != 4 || !Race::is_valid_password(argv[3])) {
+      g.out << "Password must be non-empty and contain no whitespace.\n";
       return false;
     }
     g.entity_manager.mutate_race(

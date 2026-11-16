@@ -28,10 +28,6 @@ std::vector<Victory> create_victory_list(EntityManager& entity_manager) {
 
 void compute_power_blocks(EntityManager& entity_manager) {
   /* compute alliance block power */
-  const std::time_t now = std::time(nullptr);
-  entity_manager.mutate_server_state(
-      [now](ServerState& state) { state.last_update_time = now; });
-
   for (const Race& race_i : RaceList::readonly(entity_manager)) {
     const player_t i = race_i.Playernum;
 

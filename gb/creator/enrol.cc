@@ -136,13 +136,35 @@ int main(int argc, char* argv[]) {
     race_name = std::string(archetype.name);
   }
 
-  std::print("Enter the password for this race: ");
   std::string race_password;
-  std::getline(std::cin, race_password);
+  while (true) {
+    std::print("Enter the password for this race: ");
+    if (!std::getline(std::cin, race_password)) {
+      return -1;
+    }
+    if (Race::is_valid_password(race_password) &&
+        race_password.length() >= MIN_PASSWORD_LENGTH) {
+      break;
+    }
+    std::println(
+        std::cout,
+        "Password must be at least {} characters and contain no whitespace.",
+        MIN_PASSWORD_LENGTH);
+  }
 
-  std::print("Enter the password for this leader: ");
   std::string gov_password;
-  std::getline(std::cin, gov_password);
+  while (true) {
+    std::print("Enter the password for this leader: ");
+    if (!std::getline(std::cin, gov_password)) {
+      return -1;
+    }
+    if (Race::is_valid_password(gov_password)) {
+      break;
+    }
+    std::println(
+        std::cout,
+        "Leader password must be non-empty and contain no whitespace.");
+  }
 
   std::print("Enter your email address [player@localhost]: ");
   std::string email_address;

@@ -238,6 +238,10 @@ std::optional<bool> bless_race_prefs(player_t who, std::string_view prop,
 std::optional<bool> bless_race_property(player_t who, std::string_view prop,
                                         std::string_view val_str, GameObj& g) {
   if (prop == "password") {
+    if (!Race::is_valid_password(val_str)) {
+      g.out << "Password must be non-empty and contain no whitespace.\n";
+      return false;
+    }
     g.entity_manager.mutate_race(
         who, [&](Race& race) { race.password = std::string(val_str); });
     emit_blessing(g, {.target_player = who,

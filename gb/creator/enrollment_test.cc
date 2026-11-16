@@ -84,6 +84,7 @@ void test_seed_deity_and_first_mortal_enrollment() {
       .name = "MortalRace",
       .password = "pass",
       .home_planet_type = PlanetType::EARTH,
+      .sector_compatibilities = {.land = 1.0, .plated = 1.0},
   };
 
   auto result = service.enroll_player(spec);
@@ -123,6 +124,7 @@ void test_unbounded_players_allowed() {
       .name = "Empire65",
       .password = "pass",
       .home_planet_type = PlanetType::EARTH,
+      .sector_compatibilities = {.land = 1.0, .plated = 1.0},
   };
 
   auto result = service.enroll_player(spec);
@@ -145,6 +147,7 @@ void test_no_free_planet_rejected() {
       .name = "ForestDwellers",
       .password = "pass",
       .home_planet_type = PlanetType::FOREST,
+      .sector_compatibilities = {.forest = 1.0, .plated = 1.0},
   };
 
   auto result = service.enroll_player(spec);
@@ -208,10 +211,13 @@ void test_enroll_first_race_mortal_success() {
     test::expect_eq(race->translation_for(player_t{2}), 100);
   }
 
-  // Verify Block and Power entities created on race enrollment
+  // Verify Block and Power entities created on race enrollment with
+  // self-membership immediately active
   const auto* blk = em.peek_block(2);
   test::expect_true(blk != nullptr);
   test::expect_eq(blk->name(), std::string("Terrans"));
+  test::expect_true(blk->is_member(player_t{2}));
+  test::expect_eq(blk->members(), 1u);
   const auto* pwr = em.peek_power(2);
   test::expect_true(pwr != nullptr);
 
@@ -271,6 +277,7 @@ void test_enroll_second_race_mortal_success() {
       .name = "Terrans",
       .password = "terranpass",
       .home_planet_type = PlanetType::EARTH,
+      .sector_compatibilities = {.land = 1.0, .plated = 1.0},
   };
   auto first_result = service.enroll_player(first_spec);
   test::expect_true(first_result.success);
@@ -322,6 +329,7 @@ void test_enroll_guest_race_success() {
       .password = "guestpass",
       .home_planet_type = PlanetType::EARTH,
       .is_guest = true,
+      .sector_compatibilities = {.land = 1.0, .plated = 1.0},
   };
   auto res = service.enroll_player(guest_spec);
   test::expect_true(res.success);
@@ -387,6 +395,7 @@ void test_enroll_explicit_capital_coords() {
       .password = "pass",
       .home_planet_type = PlanetType::EARTH,
       .capital_coords = explicit_coords,
+      .sector_compatibilities = {.land = 1.0, .plated = 1.0},
   };
 
   auto result = service.enroll_player(spec);
@@ -543,6 +552,42 @@ void test_enroll_validation_and_budget_rejection() {
   auto res_budget = service.enroll_player(over_budget);
   test::expect_false(res_budget.success);
   test::expect_contains(res_budget.message, "negative points left");
+
+  // 5. Reject plated-only terrestrial spec and whitespace passwords
+  GB::creator::RaceEnrollmentSpec plated_only{
+      .name = "Pavers",
+      .password = "validpass",
+      .home_planet_type = PlanetType::EARTH,
+      .sector_compatibilities = {.plated = 1.0},
+  };
+  auto res_plated_only = service.enroll_player(plated_only);
+  test::expect_false(res_plated_only.success);
+  test::expect_contains(res_plated_only.message, "besides plated");
+
+  GB::creator::RaceEnrollmentSpec space_pass{
+      .name = "BadPass",
+      .password = "bad pass",
+      .home_planet_type = PlanetType::EARTH,
+  };
+  test::expect_false(service.enroll_player(space_pass).success);
+
+  // 6. Capital sector converts to race.likesbest when planet lacks matching
+  // natural terrain (e.g. Ocean-loving Earth race on all-Land Earth)
+  GB::creator::RaceEnrollmentSpec sea_terran{
+      .name = "Atlanteans",
+      .password = "aquapass",
+      .home_planet_type = PlanetType::EARTH,
+      .sector_compatibilities = {.sea = 1.0, .plated = 1.0},
+  };
+  auto res_sea = service.enroll_player(sea_terran);
+  test::expect_true(res_sea.success);
+  test::expect_eq(em.peek_race(res_sea.player_num)->likesbest,
+                  SectorType::SEC_SEA);
+  em.with_sectormap(res_sea.star, res_sea.pnum, [&](const SectorMap& smap) {
+    test::expect_eq(smap.get(res_sea.capital_coords).get_condition(),
+                    SectorType::SEC_SEA);
+  });
+  test::expect_gt(em.peek_planet(res_sea.star, res_sea.pnum)->maxpopn(), 0);
 
   std::println(std::cout,
                "  ✓ EnrollmentService validation and budget rejection passed");

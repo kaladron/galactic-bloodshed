@@ -138,6 +138,7 @@ execute_plowing(Ship& ship, Planet& planet, SectorMap& smap,
                 EntityManager& entity_manager) {
   if (!ship.on()) return std::unexpected(GroundActionError::NotSwitchedOn);
   if (!ship.is_landed()) return std::unexpected(GroundActionError::NotLanded);
+  if (!ship.popn()) return std::unexpected(GroundActionError::NoCrew);
   if (ship.fuel() < FUEL_COST_PLOW) {
     if (!ship.notified()) {
       ship.notified() = 1;
@@ -183,6 +184,10 @@ void process_plow_turn(EntityManager& entity_manager, Ship& ship,
     } else if (plow_res.error() == GroundActionError::NotSwitchedOn) {
       push_telegram(entity_manager, ship.owner(), ship.governor(),
                     std::format("K{} is not switched on.", ship.number()));
+    } else if (plow_res.error() == GroundActionError::NoCrew) {
+      push_telegram(
+          entity_manager, ship.owner(), ship.governor(),
+          std::format("K{} does not have workers aboard.", ship.number()));
     }
   }
 }
@@ -192,6 +197,7 @@ upgrade_sector_dome(EntityManager& entity_manager, Ship& ship,
                     SectorMap& smap) {
   if (!ship.on()) return std::unexpected(GroundActionError::NotSwitchedOn);
   if (!ship.is_landed()) return std::unexpected(GroundActionError::NotLanded);
+  if (!ship.popn()) return std::unexpected(GroundActionError::NoCrew);
   if (ship.resource() < RES_COST_DOME) {
     return std::unexpected(GroundActionError::InsufficientResources);
   }
@@ -223,6 +229,10 @@ void process_dome_turn(EntityManager& entity_manager, Ship& ship,
     } else if (dome_res.error() == GroundActionError::NotSwitchedOn) {
       push_telegram(entity_manager, ship.owner(), ship.governor(),
                     std::format("Y{} is not switched on.", ship.number()));
+    } else if (dome_res.error() == GroundActionError::NoCrew) {
+      push_telegram(
+          entity_manager, ship.owner(), ship.governor(),
+          std::format("Y{} does not have workers aboard.", ship.number()));
     }
   }
 }
@@ -244,7 +254,7 @@ strip_mine_quarry(Ship& ship, Planet& planet, SectorMap& smap,
 
   auto& s = smap.get(ship.land_coords());
   /* nuke the sector */
-  s.set_condition(SectorType::SEC_WASTED);
+  s.devastate();
   const auto& race = *entity_manager.peek_race(ship.owner());
 
   const int prod = round_rand(race.metabolism * ship.crew_ratio());

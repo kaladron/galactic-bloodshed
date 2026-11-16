@@ -151,10 +151,14 @@ void test_unload_syntax_and_errors() {
       g, {"unload", std::format("#{}", ship_id.value), "r", "-999999"});
   test::expect_contains(g.out.str(), "you can only transfer between");
 
-  // 6. Von Neumann machine unload rejection
+  // 6. Von Neumann machine unload rejection (explicit and default amount)
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"unload", std::format("#{}", vn_id.value), "r", "10"});
+  test::expect_contains(g.out.str(), "You can't unload VNs");
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"unload", std::format("#{}", vn_id.value), "r"});
   test::expect_contains(g.out.str(), "You can't unload VNs");
 
   // 7. Boobytrap disarmed message when unloading destruct from robot ship
@@ -325,10 +329,20 @@ void test_unload_onto_alien_sector() {
   g.set_snum(1);
   g.set_pnum(1);
 
+  // 0. Zero Star AP rejects hostile sector disembarkation without combat
+  const ap_t saved_ap = ctx.em.peek_star(1)->AP(1);
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 0; });
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"unload", std::format("#{}", assault_id.value), "m", "50"});
+  test::expect_contains(g.out.str(), "You don't have 1 action points there.");
+  test::expect_eq(ctx.em.peek_race(1)->translation_for(2), 0);
+  ctx.em.mutate_star(1, [saved_ap](Star& s) { s.AP(1) = saved_ap; });
+
   // 1. Victory assault with troops (and metamorph body absorption)
   g.out.str("");
   ctx.assert_dispatch_success(
-      g, {"unload", std::format("#{}", assault_id.value), "m", "50"});
+      g, {"unload", std::format("#{}", assault_id.value), "m", "50"}, 1);
   test::expect_contains(g.out.str(),
                         "That sector is already occupied by another player!");
   test::expect_contains(g.out.str(), "VICTORY! The sector is yours!");
@@ -356,7 +370,7 @@ void test_unload_onto_alien_sector() {
 
   g.out.str("");
   ctx.assert_dispatch_success(
-      g, {"unload", std::format("#{}", assault_id.value), "m", "5"});
+      g, {"unload", std::format("#{}", assault_id.value), "m", "5"}, 1);
   test::expect_contains(g.out.str(), "DEFEAT!  Your assault was repulsed.");
   test::expect_contains(g.out.str(), "Metamorphs have absorbed");
   test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({2, 2}).get_owner(), 2);
@@ -364,7 +378,7 @@ void test_unload_onto_alien_sector() {
 
   g.out.str("");
   ctx.assert_dispatch_success(
-      g, {"unload", std::format("#{}", assault_id.value), "c", "5"});
+      g, {"unload", std::format("#{}", assault_id.value), "c", "5"}, 1);
   test::expect_contains(g.out.str(), "DEFEAT!  Your assault was repulsed.");
   ctx.verify_universe_invariants();
 
@@ -386,7 +400,7 @@ void test_unload_onto_alien_sector() {
   });
   g.out.str("");
   ctx.assert_dispatch_success(
-      g, {"unload", std::format("#{}", assault_id.value), "c", "50"});
+      g, {"unload", std::format("#{}", assault_id.value), "c", "50"}, 1);
   test::expect_contains(g.out.str(), "VICTORY! The sector is yours!");
   test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({2, 2}).get_owner(), 1);
   ctx.verify_universe_invariants();

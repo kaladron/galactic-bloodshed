@@ -2443,6 +2443,46 @@ void test_subclass_special_data_clamping() {
   shuttle.dock_into_carrier(1);
   shuttle.add_resource(5);
   test::expect_eq(shuttle.resource(), 15);
+
+  // Factory hull capacities remain fixed to OTYPE_FACTORY template regardless
+  // of manufactured blueprint capacities
+  auto fac_ship = ShipFactory::create_from_template(ShipType::OTYPE_FACTORY, 1);
+  const auto& fac_tmpl = ship_template(ShipType::OTYPE_FACTORY);
+  fac_ship->set_factory_blueprint(ShipType::STYPE_FIGHTER);
+  test::expect_eq(fac_ship->max_crew(), 1);
+  test::expect_eq(fac_ship->max_crew_capacity(), fac_tmpl.max_crew);
+  fac_ship->add_popn(15, 1.5);
+  test::expect_eq(fac_ship->popn(), 15);
+  fac_ship->set_factory_blueprint(ShipType::STYPE_DREADNT);
+  test::expect_eq(fac_ship->max_crew_capacity(), fac_tmpl.max_crew);
+  test::expect_eq(fac_ship->max_resource_capacity(), fac_tmpl.max_resource);
+  expect_near(fac_ship->max_fuel_capacity(), fac_tmpl.max_fuel);
+  test::expect_eq(fac_ship->max_destruct_capacity(), fac_tmpl.max_destruct);
+
+  // Fractional destination fuel does not destroy transferred fuel
+  auto src_tanker =
+      ShipFactory::create_from_template(ShipType::STYPE_TANKER, 1);
+  auto dst_shuttle =
+      ShipFactory::create_from_template(ShipType::STYPE_SHUTTLE, 1);
+  src_tanker->admin_override_fuel(10.0);
+  dst_shuttle->admin_override_fuel(dst_shuttle->max_fuel_capacity() - 0.4);
+  const double total_fuel_before = src_tanker->fuel() + dst_shuttle->fuel();
+  test::expect_eq(
+      src_tanker->transfer_cargo_to(*dst_shuttle, ShipCargoType::Fuel, 5, 1.0),
+      0);
+  expect_near(src_tanker->fuel() + dst_shuttle->fuel(), total_fuel_before);
+
+  // Radiation casualties conserve ship mass for non-unit race mass
+  seed_rand(42);
+  auto rad_cruiser =
+      ShipFactory::create_from_template(ShipType::STYPE_CRUISER, 1);
+  rad_cruiser->add_popn(40, 2.5);
+  rad_cruiser->add_troops(10, 2.5);
+  rad_cruiser->set_mass(rad_cruiser->local_mass(2.5));
+  rad_cruiser->apply_radiation(50);
+  test::expect_true(rad_cruiser->prepare_for_flight(true, 2.5) ||
+                    !rad_cruiser->active());
+  expect_near(rad_cruiser->mass(), rad_cruiser->local_mass(2.5));
 }
 
 }  // namespace

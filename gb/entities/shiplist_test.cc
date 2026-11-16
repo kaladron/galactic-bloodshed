@@ -239,21 +239,21 @@ int main() {
                  count);
   }
 
-  // Modify ship via handle
+  // Modify ship via handle (ship1 is OTYPE_FACTORY: 20 crew cap, 0 fuel cap)
   {
     auto list = ShipList::in_star(ctx.em, starnum_t{1});
     auto it = list.begin();
     ShipHandle handle = *it;
     Ship& ship = *handle;
 
-    ship.add_fuel(100.0);
+    ship.add_popn(10, 1.0);
     // Handle should auto-save on destruction
   }
 
   // Verify modification persisted
   {
     const auto* ship = ctx.em.peek_ship(1);
-    test::expect_ge(ship->fuel(), 100.0);
+    test::expect_eq(ship->popn(), 10);
     std::println(std::cout,
                  "✓ Test 3 passed: Ship modification persisted via RAII");
   }
@@ -263,6 +263,7 @@ int main() {
     auto list = ShipList::in_star(ctx.em, starnum_t{1});
     for (auto handle : list) {
       Ship& ship = *handle;
+      ship.add_popn(5, 1.0);
       ship.add_fuel(50.0);
       ship.destruct() += 10;
     }
@@ -274,7 +275,8 @@ int main() {
     const auto* ship1 = ctx.em.peek_ship(1);
     const auto* ship2 = ctx.em.peek_ship(2);
     const auto* ship3 = ctx.em.peek_ship(3);
-    test::expect_ge(ship1->fuel(), 150.0);  // 100 from test 3 + 50 from test 3b
+    test::expect_eq(ship1->popn(), 15);  // 10 from test 3 + 5 from test 3b
+    test::expect_eq(ship1->fuel(), 0.0);
     test::expect_ge(ship2->fuel(), 50.0);
     test::expect_ge(ship3->fuel(), 50.0);
     test::expect_ge(ship1->destruct(), 10);
@@ -292,10 +294,10 @@ int main() {
 
     // Read-only access shouldn't mark dirty
     const Ship& ship_read = handle.peek();
-    double initial_fuel = ship_read.fuel();
+    const auto initial_popn = ship_read.popn();
 
     // Verify we can read without modification
-    test::expect_ge(initial_fuel, 150.0);
+    test::expect_eq(initial_popn, 15);
     std::println(std::cout, "✓ Test 3c passed: Read-only peek() access works");
   }
 
@@ -468,16 +470,19 @@ int main() {
     test::expect_eq(ctx.em.peek_ship(4)->fuel(), fuel4_initial);
 
     // Now use mutable iteration and actually modify
+    const auto popn1_initial = ctx.em.peek_ship(1)->popn();
     {
       auto ships_mutable = ShipList::in_star(ctx.em, starnum_t{1});
       for (auto ship_handle : ships_mutable) {
         Ship& ship = *ship_handle;
-        ship.add_fuel(50.0);  // Modify ship
+        ship.add_popn(2, 1.0);
+        ship.add_fuel(50.0);  // Modify ship (Factory #1 has 0 fuel cap)
       }
     }  // Ships auto-save here
 
-    // Ships should now have modified fuel
-    test::expect_eq(ctx.em.peek_ship(1)->fuel(), fuel1_initial + 50.0);
+    // Ships should now have modified crew/fuel
+    test::expect_eq(ctx.em.peek_ship(1)->popn(), popn1_initial + 2);
+    test::expect_eq(ctx.em.peek_ship(1)->fuel(), 0.0);
     test::expect_eq(ctx.em.peek_ship(2)->fuel(), fuel2_initial + 50.0);
     test::expect_eq(ctx.em.peek_ship(3)->fuel(), fuel3_initial + 50.0);
     test::expect_eq(ctx.em.peek_ship(4)->fuel(), fuel4_initial + 50.0);

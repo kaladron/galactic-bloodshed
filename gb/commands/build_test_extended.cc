@@ -721,6 +721,61 @@ void test_non_factory_ship_mcdc_and_hangar_accounting() {
                "✓ Non-factory ship MC/DC and hangar accounting test passed");
 }
 
+void test_multi_build_loop_revalidation() {
+  BuildTestFixture fixture;
+  auto& registry = get_test_session_registry();
+  GameObj g(fixture.em, registry);
+
+  // Enable autoload for Player 1 Governor 1 so multi-build drains crew
+  fixture.em.mutate_race(1,
+                         [](Race& r) { r.governor(1).toggle.autoload = true; });
+  fixture.em.mutate_sectormap(fixture.star_id, fixture.planet_id,
+                              [](SectorMap& smap) {
+                                auto& s = smap.get({3, 3});
+                                s.set_condition(SectorType::SEC_LAND);
+                                s.set_owner(1);
+                                s.set_popn_exact(100);
+                              });
+
+  // 1. Multi-count Quarry build stops at 1 Quarry on the same sector
+  fixture.init_game_obj(g, ScopeLevel::LEVEL_PLAN);
+  g.out.str("");
+  const ap_t ap_before_quarry = fixture.em.peek_star(fixture.star_id)->AP(1);
+  test::expect_true(GB::commands::build({"build", "q", "3,3", "3"}, g));
+  test::expect_contains(g.out.str(), "There already is a quarry here.\n");
+  test::expect_eq(fixture.em.peek_star(fixture.star_id)->AP(1),
+                  ap_before_quarry - 1);
+
+  // 2. Planet multi-build stops when autoload drains sector civilians to 0
+  fixture.em.mutate_sectormap(fixture.star_id, fixture.planet_id,
+                              [](SectorMap& smap) {
+                                auto& s = smap.get({4, 4});
+                                s.set_condition(SectorType::SEC_LAND);
+                                s.set_owner(1);
+                                s.set_popn_exact(5);
+                              });
+  g.out.str("");
+  const ap_t ap_before_fac = fixture.em.peek_star(fixture.star_id)->AP(1);
+  test::expect_true(GB::commands::build({"build", "F", "4,4", "3"}, g));
+  test::expect_contains(g.out.str(), "You have no more civs in the sector!\n");
+  test::expect_eq(fixture.em.peek_star(fixture.star_id)->AP(1),
+                  ap_before_fac - 1);
+
+  // 3. Ship multi-build stops when autoload drains builder crew to 0
+  const shipnum_t hab_id = TestShipBuilder(fixture.em, ShipType::STYPE_HABITAT)
+                               .owned_by(1, 1)
+                               .in_star_orbit(fixture.star_id)
+                               .with_resource(5000)
+                               .with_max_hanger(500)
+                               .with_crew(5, 0)
+                               .build();
+  fixture.init_game_obj(g, ScopeLevel::LEVEL_SHIP, hab_id);
+  g.out.str("");
+  test::expect_true(GB::commands::build({"build", "F", "3"}, g));
+  test::expect_eq(fixture.em.ships_in_hangar(hab_id).size(), 1U);
+  test::expect_eq(fixture.get_ship(hab_id)->popn(), 0);
+}
+
 int main() {
   try {
     std::println(std::cout, "Running extended build command tests...\n");
@@ -740,6 +795,7 @@ int main() {
     test_build_info_and_json_presentation();
     test_planet_and_factory_mcdc_branches();
     test_non_factory_ship_mcdc_and_hangar_accounting();
+    test_multi_build_loop_revalidation();
 
     std::println(std::cout, "\n✅ All extended build tests passed!");
     return 0;

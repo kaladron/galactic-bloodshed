@@ -184,11 +184,9 @@ void Sector::apply_supernova(int stage) noexcept {
   data_.fert -= (data_.fert.value() * NOVA_FERTILITY_LOSS.value()) / 100;
 
   // Stage 14 represents the terminal stellar explosion, completely incinerating
-  // all life.
+  // all life and surface infrastructure.
   if (stage >= TERMINAL_NOVA_STAGE) {
-    clear_popn();
-    clear_troops();
-    clear_owner();
+    clear_colony();
   } else {
     // Active nova radiation: kills approximately 50% of the living population
     // per turn.

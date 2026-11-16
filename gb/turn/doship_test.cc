@@ -258,6 +258,16 @@ void test_do_habitat_nested_weapon_plant() {
   const auto* wplant = ctx.em.peek_ship(wplant_id);
   test::expect_lt(wplant->resource(), 100);
   test::expect_lt(wplant->fuel(), 50.0);
+
+  // Full Habitat destruct magazine does not waste Weapon Plant stock
+  const resource_t rem_res = wplant->resource();
+  const double rem_fuel = wplant->fuel();
+  ctx.em.mutate_ship(hab_id, [&](Ship& habitat) {
+    habitat.admin_override_destruct(habitat.max_destruct_capacity());
+    do_habitat(habitat, ctx.em);
+  });
+  test::expect_eq(ctx.em.peek_ship(wplant_id)->resource(), rem_res);
+  expect_near(ctx.em.peek_ship(wplant_id)->fuel(), rem_fuel);
 }
 
 void test_do_weapon_plant_zero_rate_and_shortages() {
@@ -2100,7 +2110,7 @@ void test_doship_mcdc_branches() {
   ctx.with_standard_universe();
   TurnStats stats{};
 
-  // 1. do_repair partial repair branch and docked-to-non-station branch
+  // 1. do_repair partial repair, zero-yield conservation, and zero-damage guard
   shipnum_t carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
                              .owned_by(1)
                              .in_star_orbit(1)
@@ -2111,14 +2121,55 @@ void test_doship_mcdc_branches() {
                                 .docked_to(carrier_id, 1)
                                 .with_crew(200, 0)
                                 .with_max_crew(200)
-                                .with_resource(1)
+                                .with_resource(10)
                                 .with_damage(50)
                                 .build();
   ctx.em.mutate_ship(battleship_id, [&](Ship& s) {
     do_repair(s, ctx.em);
     test::expect_eq(s.resource(), 0);
-    test::expect_le(s.damage(), 50);
+    test::expect_lt(s.damage(), 50);
+
+    // Zero-yield repair (drep == 0) preserves remaining resources
+    s.admin_override_resource(1);
+    const damage_t dmg_before = s.damage();
+    do_repair(s, ctx.em);
+    test::expect_eq(s.resource(), 1);
+    test::expect_eq(s.damage(), dmg_before);
+
+    // Undamaged ship preserves resources
+    s.admin_override_damage(0);
+    do_repair(s, ctx.em);
+    test::expect_eq(s.resource(), 1);
   });
+
+  // Offline, friendly, and mutually allied PDNs neither block bombardment nor
+  // intercept friendly/allied missiles
+  const shipnum_t pdn_check_id =
+      TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF)
+          .owned_by(2)
+          .landed_on(1, 1, {0, 0})
+          .with_on(false)
+          .build();
+  const shipnum_t friendly_missile =
+      TestShipBuilder(ctx.em, ShipType::STYPE_MISSILE)
+          .owned_by(2)
+          .in_planet_orbit(1, 1)
+          .targeting_planet(1, 1)
+          .build();
+  test::expect_false(has_planet_defense(ctx.em, 1, 1, 1));
+  ctx.em.mutate_ship(pdn_check_id, [](Ship& s) { s.on() = true; });
+  test::expect_true(has_planet_defense(ctx.em, 1, 1, 1));
+  ctx.em.mutate_ship(friendly_missile, [&](Ship& m) {
+    test::expect_false(intercept_missile_by_pdn(m, ctx.em));
+  });
+  ctx.em.mutate_race(1, [](Race& r) { r.declare_alliance_with(2); });
+  ctx.em.mutate_race(2, [](Race& r) { r.declare_alliance_with(1); });
+  test::expect_false(has_planet_defense(ctx.em, 1, 1, 1));
+  ctx.em.mutate_ship(pdn_check_id, [&](Ship& s) { ctx.em.destroy_ship(s); });
+  ctx.em.mutate_ship(friendly_missile,
+                     [&](Ship& s) { ctx.em.destroy_ship(s); });
+  ctx.em.mutate_race(1, [](Race& r) { r.rescind_alliance_with(2); });
+  ctx.em.mutate_race(2, [](Race& r) { r.rescind_alliance_with(1); });
 
   // 2. do_ap out-of-fuel notification, offline/unlanded guards, and non-god
   // do_god guard

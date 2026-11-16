@@ -196,8 +196,16 @@ void test_load_transporter() {
   ctx.em.clear_cache();
   // Sender should have 0 resources (transferred out)
   test::expect_eq(ctx.em.peek_ship(trans1_id)->resource(), 0);
-  // Receiver should have 40 resources
+  // Receiver should have 40 resources; same-owner crew/troops beam cleanly
   test::expect_eq(ctx.em.peek_ship(trans2_id)->resource(), 40);
+  ctx.em.mutate_ship(trans1_id, [](Ship& s) {
+    s.add_popn(3, 1.0);
+    s.add_troops(2, 1.0);
+  });
+  ctx.assert_dispatch_success(
+      g, {"load", std::format("#{}", trans1_id.value), "r", "10"});
+  test::expect_eq(ctx.em.peek_ship(trans2_id)->popn(), 3);
+  test::expect_eq(ctx.em.peek_ship(trans2_id)->troops(), 2);
   std::println(std::cout, "✓ Transporter automatic beam transfer succeeded");
 }
 
@@ -699,8 +707,10 @@ void test_transporter_edge_cases() {
   test::expect_eq(ctx.em.peek_ship(recv_id)->fuel(), 30.0);
   test::expect_eq(ctx.em.peek_ship(recv_id)->destruct(), 15);
   test::expect_eq(ctx.em.peek_ship(recv_id)->crystals(), 5);
-  test::expect_eq(ctx.em.peek_ship(recv_id)->popn(), 4);
-  test::expect_eq(ctx.em.peek_ship(recv_id)->troops(), 2);
+  test::expect_eq(ctx.em.peek_ship(recv_id)->popn(), 0);
+  test::expect_eq(ctx.em.peek_ship(recv_id)->troops(), 0);
+  test::expect_eq(ctx.em.peek_ship(send_id)->popn(), 4);
+  test::expect_eq(ctx.em.peek_ship(send_id)->troops(), 2);
 
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");

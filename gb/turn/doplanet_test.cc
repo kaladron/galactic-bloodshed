@@ -594,6 +594,16 @@ void test_process_plow_turn() {
   auto tele_on = em.get_telegrams(player_t{1}, governor_t{1});
   test::expect_false(tele_on.empty());
   test::expect_true(tele_on.back().message.contains("is not switched on"));
+
+  // 4. Uncrewed plow returns NoCrew without burning fuel or moving
+  ship.on() = 1;
+  ship.popn() = 0;
+  const double fuel_before = ship.fuel();
+  process_plow_turn(em, ship, planet, smap);
+  test::expect_eq(ship.fuel(), fuel_before);
+  test::expect_true(em.get_telegrams(player_t{1}, governor_t{1})
+                        .back()
+                        .message.contains("does not have workers aboard"));
 }
 
 void test_upgrade_sector_dome() {
@@ -741,6 +751,16 @@ void test_process_dome_turn() {
   auto tele_on = em.get_telegrams(player_t{1}, governor_t{1});
   test::expect_false(tele_on.empty());
   test::expect_true(tele_on.back().message.contains("is not switched on"));
+
+  // 5. Uncrewed dome returns NoCrew without burning resources
+  ship.on() = 1;
+  ship.popn() = 0;
+  ship.resource() = 50;
+  process_dome_turn(em, ship, smap);
+  test::expect_eq(ship.resource(), 50);
+  test::expect_true(em.get_telegrams(player_t{1}, governor_t{1})
+                        .back()
+                        .message.contains("does not have workers aboard"));
 }
 
 void test_strip_mine_quarry() {
@@ -778,17 +798,25 @@ void test_strip_mine_quarry() {
                          .build_handle();
   Ship& ship = *ship_handle;
 
-  smap.get(Coordinates{3, 3}).set_condition(SectorType::SEC_LAND);
+  smap.get(Coordinates{3, 3}).set_condition(SectorType::SEC_PLATED);
+  smap.get(Coordinates{3, 3}).set_efficiency_bounded(100);
+  smap.get(Coordinates{3, 3}).set_mobilization(40);
+  smap.get(Coordinates{3, 3}).set_owner(1);
+  smap.get(Coordinates{3, 3}).set_popn_exact(25);
   smap.get(Coordinates{3, 3}).set_fert(50);
 
   TurnStats stats;
 
-  // 1. Successful quarry mining
+  // 1. Successful quarry mining devastates sector (clears eff/mob/owner so
+  // update_efficiency does not re-plate it)
   auto res_success = strip_mine_quarry(ship, planet, smap, em, stats);
   test::expect_true(res_success.has_value());
   test::expect_gt(*res_success, 0);
   test::expect_eq(smap.get(Coordinates{3, 3}).get_condition(),
                   SectorType::SEC_WASTED);
+  test::expect_eq(smap.get(Coordinates{3, 3}).get_eff(), 0);
+  test::expect_eq(smap.get(Coordinates{3, 3}).get_mobilization(), 0);
+  test::expect_false(smap.get(Coordinates{3, 3}).is_owned());
   test::expect_gt(stats.production(player_t{1}).resources, 0);
   test::expect_eq(ship.fuel(), 50.0 - FUEL_COST_QUARRY);
 

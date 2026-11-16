@@ -49,7 +49,7 @@ const CommandDescriptor unload_cmd{
     .name = "unload",
     .roles = {},
     .scopes = AllowedScopes::any(),
-    .ap = APCost::free(),
+    .ap = APCost::dynamic(),
     .min_args = 3,
     .syntax = "unload <ship> <commodity> [<amount>]",
     .description = "Unload commodities from a ship",

@@ -13,6 +13,9 @@ import gb.entities;
 import gb.services;
 import std;
 
+export bool is_hostile_planet_defense(EntityManager& entity_manager,
+                                      const Ship& candidate, player_t attacker);
+
 export bool has_planet_defense(EntityManager&, starnum_t, planetnum_t,
                                player_t);
 

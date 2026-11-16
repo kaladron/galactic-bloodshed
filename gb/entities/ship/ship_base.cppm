@@ -1269,33 +1269,26 @@ public:
 
   /// Maximum total crew capacity including factory template overrides.
   [[nodiscard]] population_t max_crew_capacity() const noexcept {
-    if (data_.max_crew > 0) return data_.max_crew;
     return (data_.type == ShipType::OTYPE_FACTORY) ? get_template().max_crew
                                                    : data_.max_crew;
   }
 
   /// Maximum cargo resource capacity including factory template overrides.
   [[nodiscard]] resource_t max_resource_capacity() const noexcept {
-    if (data_.max_resource > 0) return data_.max_resource;
-    return (data_.type == ShipType::OTYPE_FACTORY)
-               ? ship_template(data_.type).max_resource
-               : data_.max_resource;
+    return (data_.type == ShipType::OTYPE_FACTORY) ? get_template().max_resource
+                                                   : data_.max_resource;
   }
 
   /// Maximum fuel tank capacity including factory template overrides.
   [[nodiscard]] fuel_t max_fuel_capacity() const noexcept {
-    if (data_.max_fuel > 0.0) return data_.max_fuel;
-    return (data_.type == ShipType::OTYPE_FACTORY)
-               ? ship_template(data_.type).max_fuel
-               : data_.max_fuel;
+    return (data_.type == ShipType::OTYPE_FACTORY) ? get_template().max_fuel
+                                                   : data_.max_fuel;
   }
 
   /// Maximum ammo / ordnance capacity including factory template overrides.
   [[nodiscard]] resource_t max_destruct_capacity() const noexcept {
-    if (data_.max_destruct > 0) return data_.max_destruct;
-    return (data_.type == ShipType::OTYPE_FACTORY)
-               ? ship_template(data_.type).max_destruct
-               : data_.max_destruct;
+    return (data_.type == ShipType::OTYPE_FACTORY) ? get_template().max_destruct
+                                                   : data_.max_destruct;
   }
 
   /// Maximum impulse engine speed throttle including factory template
@@ -1826,16 +1819,18 @@ public:
   /// decay.
   /// \param update Whether this is a full turn update pass (true) or segment
   /// (false).
+  /// \param race_mass Mass per crew/troop unit for the ship's owning race.
   /// \return Whether the ship remains active/mobile after radiation checks.
-  bool process_radiation(bool update);
+  bool process_radiation(bool update, double race_mass = 1.0);
 
   /// \brief Prepares a ship for turn flight, validating ownership, alive
   /// status, radiation mobility, and derelict uncrewed drifting.
   /// \param update Whether this is a full turn update pass (true) or segment
   /// (false).
+  /// \param race_mass Mass per crew/troop unit for the ship's owning race.
   /// \return True if ship is alive and ready for turn processing, false if dead
   /// or unowned.
-  bool prepare_for_flight(bool update);
+  bool prepare_for_flight(bool update, double race_mass = 1.0);
 
   /// \brief Synchronizes offline factory technological capability with current
   /// empire technology.

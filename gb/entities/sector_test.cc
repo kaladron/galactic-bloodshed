@@ -69,7 +69,9 @@ void test_sector_apply_supernova() {
   // Test terminal supernova stage 14: resource + 1, fert - 20%, full wipe
   Sector dying_sector(sector_struct{
       .coords = {1, 1},
+      .eff = 90,
       .fert = 80,
+      .mobilization = 70,
       .resource = 10,
       .popn = 500,
       .troops = 50,
@@ -79,6 +81,8 @@ void test_sector_apply_supernova() {
   dying_sector.apply_supernova(14);
   test::expect_eq(dying_sector.get_resource(), 11);
   test::expect_eq(dying_sector.get_fert(), 64);
+  test::expect_eq(dying_sector.get_eff(), 0);
+  test::expect_eq(dying_sector.get_mobilization(), 0);
   test::expect_eq(dying_sector.get_popn(), 0);
   test::expect_eq(dying_sector.get_troops(), 0);
   test::expect_eq(dying_sector.owner(), std::nullopt);

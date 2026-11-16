@@ -147,8 +147,9 @@ compute_cargo_transfer_amount(const Ship& src, const Ship& dst,
       return clamp_cargo_transfer(amount, src.destruct(), dst.destruct(),
                                   dst.max_destruct_capacity());
     case ShipCargoType::Fuel:
-      return clamp_cargo_transfer(amount, src.fuel(), dst.fuel(),
-                                  dst.max_fuel_capacity());
+      return (amount <= 0) ? 0
+                           : std::min({amount, src.fuel_units(),
+                                       dst.available_fuel_capacity()});
     case ShipCargoType::Crystal:
       return clamp_cargo_transfer(amount, src.crystals(), dst.crystals(),
                                   dst.max_crystals_capacity());
@@ -365,7 +366,7 @@ double Ship::refuel_from_gas_giant(const Planet& planet) {
   return added;
 }
 
-bool Ship::process_radiation(bool update) {
+bool Ship::process_radiation(bool update, double race_mass) {
   if (!rad()) {
     return true;
   }
@@ -377,7 +378,7 @@ bool Ship::process_radiation(bool update) {
   if (update) {
     auto new_popn = round_rand(popn(), 0.80);
     auto new_troops = round_rand(troops(), 0.80);
-    apply_casualties(popn() - new_popn, troops() - new_troops);
+    apply_casualties(popn() - new_popn, troops() - new_troops, race_mass);
     auto repair_amt = (rad() >= REPAIR_RATE)
                           ? uniform_rand<radiation_t>(0, REPAIR_RATE)
                           : uniform_rand(0, rad());
@@ -386,7 +387,7 @@ bool Ship::process_radiation(bool update) {
   return is_mobile;
 }
 
-bool Ship::prepare_for_flight(bool update) {
+bool Ship::prepare_for_flight(bool update, double race_mass) {
   /* ship is active */
   active() = true;
 
@@ -399,7 +400,7 @@ bool Ship::prepare_for_flight(bool update) {
   }
 
   /* repair radiation & check mobility */
-  active() = process_radiation(update);
+  active() = process_radiation(update, race_mass);
 
   if (!popn() && max_crew_capacity() && !docked()) {
     clear_destination();

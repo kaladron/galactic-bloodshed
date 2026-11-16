@@ -1431,8 +1431,10 @@ execute_transporter_transfer(EntityManager& em, TransporterShip& s,
     try_beam(ShipCargoType::Resource, s.resource(), 0.0);
     try_beam(ShipCargoType::Fuel, s.fuel_units(), 0.0);
     try_beam(ShipCargoType::Destruct, s.destruct(), 0.0);
-    try_beam(ShipCargoType::Crew, s.popn(), race_mass);
-    try_beam(ShipCargoType::Troops, s.troops(), race_mass);
+    if (s2.owner() == s.owner()) {
+      try_beam(ShipCargoType::Crew, s.popn(), race_mass);
+      try_beam(ShipCargoType::Troops, s.troops(), race_mass);
+    }
     try_beam(ShipCargoType::Crystal, s.crystals(), 0.0);
 
     outcome = std::move(res);

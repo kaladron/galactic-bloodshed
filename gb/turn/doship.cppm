@@ -52,8 +52,11 @@ export void doabm(Ship& ship, EntityManager& entity_manager);
 /// and propellant stockpiles.
 /// \param ship Weapon plant ship.
 /// \param entity_manager Entity manager for owner race lookups.
+/// \param max_output Maximum ordnance capacity available at the destination.
 /// \return Quantity of destructive charges produced.
-export resource_t do_weapon_plant(Ship& ship, EntityManager& entity_manager);
+export resource_t
+do_weapon_plant(Ship& ship, EntityManager& entity_manager,
+                resource_t max_output = std::numeric_limits<resource_t>::max());
 
 /// \brief Executes automated or crewed damage repair and resource consumption.
 /// \param ship Ship undergoing maintenance.

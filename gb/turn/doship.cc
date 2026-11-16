@@ -11,6 +11,9 @@ import std;
 module gb.turn;
 
 void do_repair(Ship& ship, EntityManager& entity_manager) {
+  if (!ship.damage()) {
+    return;
+  }
   const auto& state = *entity_manager.peek_server_state();
 
   double maxrep = REPAIR_RATE / static_cast<double>(state.segments);
@@ -38,12 +41,19 @@ void do_repair(Ship& ship, EntityManager& entity_manager) {
   }();
 
   if (cost <= ship.resource()) {
+    const int drep = static_cast<int>(maxrep);
+    if (drep <= 0) {
+      return;
+    }
     ship.consume_resource(cost);
-    ship.repair_damage(static_cast<int>(maxrep));
+    ship.repair_damage(drep);
   } else {
     /* use up all of the ships resources */
     int drep = static_cast<int>(maxrep * (static_cast<double>(ship.resource()) /
                                           static_cast<double>(cost)));
+    if (drep <= 0) {
+      return;
+    }
     ship.consume_resource(ship.resource());
     ship.repair_damage(drep);
   }
@@ -64,8 +74,12 @@ void do_habitat(Ship& ship, EntityManager& entity_manager) {
 
     for (auto nested_ship :
          ShipList::in_carrier(entity_manager, ship.number())) {
+      const resource_t room = ship.available_destruct_capacity();
+      if (room <= 0) {
+        break;
+      }
       if (nested_ship->type() == ShipType::OTYPE_WPLANT) {
-        ship.add_destruct(do_weapon_plant(*nested_ship, entity_manager));
+        ship.add_destruct(do_weapon_plant(*nested_ship, entity_manager, room));
       }
     }
   }
@@ -490,7 +504,9 @@ void dispatch_ship_subsystems(Ship& ship, bool update,
 
 void doship(Ship& ship, bool update, EntityManager& entity_manager,
             TurnStats& stats) {
-  if (!ship.prepare_for_flight(update)) {
+  const Race* owner_race =
+      (ship.owner() > 0) ? entity_manager.peek_race(ship.owner()) : nullptr;
+  if (!ship.prepare_for_flight(update, owner_race ? owner_race->mass : 1.0)) {
     if (!ship.alive()) {
       kill_ship(entity_manager, ship.owner(), ship);
     }
@@ -501,8 +517,7 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
     return;
   }
 
-  const auto& race = *entity_manager.peek_race(ship.owner());
-  ship.sync_factory_technology(race);
+  ship.sync_factory_technology(*owner_race);
 
   if (ship.active()) {
     moveship(entity_manager, ship, update, true, false);
@@ -531,7 +546,7 @@ bool intercept_missile_by_pdn(Ship& missile, EntityManager& entity_manager) {
       entity_manager, missile.storbits(), missile.pnumorbits());
 
   for (const Ship& s : scoped_ships) {
-    if (s.type() == ShipType::OTYPE_PLANDEF) {
+    if (is_hostile_planet_defense(entity_manager, s, missile.owner())) {
       /* attack the PDN instead */
       missile.set_coordinates(s.coordinates());
       missile.set_ship_destination(s.number());
@@ -700,7 +715,11 @@ void doabm(Ship& ship, EntityManager& entity_manager) {
   }
 }
 
-resource_t do_weapon_plant(Ship& ship, EntityManager& entity_manager) {
+resource_t do_weapon_plant(Ship& ship, EntityManager& entity_manager,
+                           resource_t max_output) {
+  if (max_output <= 0) {
+    return 0;
+  }
   const auto clamp_batches = [](double x) noexcept -> resource_t {
     if (!std::isfinite(x) || x <= 0.0) return 0;
     constexpr auto max_d =
@@ -720,7 +739,7 @@ resource_t do_weapon_plant(Ship& ship, EntityManager& entity_manager) {
                                       ship.fuel() / FUEL_COST_WPLANT);
   auto rate = round_rand<resource_t>(
       available_batches * ship.hull_efficiency() * ship.crew_ratio());
-  rate = std::min({rate, maxrate, ship.resource() / RES_COST_WPLANT,
+  rate = std::min({rate, maxrate, max_output, ship.resource() / RES_COST_WPLANT,
                    clamp_batches(ship.fuel() / FUEL_COST_WPLANT)});
   if (rate <= 0) {
     return 0;

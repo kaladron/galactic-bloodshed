@@ -186,7 +186,7 @@ When entering an enemy sector, troops or armed civilians execute a ground assaul
 - **Assault Repulse**: If defenders survive, surviving attackers retreat to their origin sector with reciprocal morale adjustments.
 
 ### Orbital Disembarkation Assaults (`unload`)
-When a landed starship unloads civilian personnel (`c`) or military troops (`m`) onto a sector controlled by a foreign empire (`unload <ship> c|m <amount>`), the disembarking force launches an immediate amphibious ground assault against the defending sector garrison:
+When a landed starship unloads civilian personnel (`c`) or military troops (`m`) onto a sector controlled by a foreign empire (`unload <ship> c|m <amount>`), the operation consumes $1$ Star AP and launches an immediate amphibious ground assault against the defending sector garrison:
 - **Landing Craft Cover Bonus**: The landing craft's hull armor plating and structural integrity ($1.0 - \text{Damage}/100$) provide protective cover for the disembarking troops, pitted against the defender's terrain defense multiplier and environmental terrain affinity.
 - **Diplomatic & Linguistic Contact**: Both empires gain $+5\%$ mutual translation knowledge (up to $100\%$).
 - **Sector Capture, Mutual Annihilation & Biomass Absorption**: If all defenders are eliminated and at least one attacker (or absorbed Metamorph) survives, the disembarking force captures the sector; if both sides suffer total annihilation, the sector reverts to unowned wilderness. Planetary demographic summaries resynchronize atomically.

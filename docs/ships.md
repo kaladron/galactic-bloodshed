@@ -111,7 +111,7 @@ $$\text{Transferred Amount} = \min\Big(\text{Requested Amount},\; \text{Availabl
 - **Planetary Surface Logistics**:
   - **Colony Stockpiles vs. Surface Sectors**: Minerals, propellant, munitions, and crystals are exchanged with the empire's planetary stockpile, whereas civilian crew and military troops embark from and disembark onto the specific surface sector $[x, y]$ where the ship is landed.
   - **Colonization & Sector Abandonment**: Unloading crew or troops onto an unowned sector claims the sector for the ship's empire. Loading the last remaining civilian and troop off an owned sector automatically abandons the sector back to unowned status.
-  - **Hostile Sector Disembarkation**: Unloading crew or troops onto a sector owned by a foreign empire triggers an immediate amphibious ground assault; see [Orbital Disembarkation Assaults](combat.md) for combat resolution and capture rules.
+  - **Hostile Sector Disembarkation**: Unloading crew or troops onto a sector owned by a foreign empire consumes $1$ Star AP and triggers an immediate amphibious ground assault; see [Orbital Disembarkation Assaults](combat.md) for combat resolution and capture rules.
 - **Atomic Mass Conservation**: Transferring commodities decrements mass from the donor and increments mass on the recipient instantaneously by the exact physical displacement of the transferred commodity:
   - **Refined Minerals**: $\pm 0.10 \text{ mass units per unit}$
   - **Destructive Munitions**: $\pm 0.15 \text{ mass units per unit}$

@@ -1,7 +1,7 @@
 # LOAD
 
 ## Name
-   load [0] -- load/unload commodities to/from a ship
+   load [0-1] -- load/unload commodities to/from a ship
 
 ## Syntax
    load <#shipnum> <commodity> <amount>
@@ -30,3 +30,7 @@ is specify, the maximum available of the commodity will be loaded on board.
 
   If the ship is neither landed at a planet nor docked with another vessel,
 the player can't load/unload its cargo / passengers.
+
+  Normal cargo and personnel transfers cost 0 action points. Unloading crew
+or military onto a sector occupied by another player launches a ground
+assault and costs 1 action point.

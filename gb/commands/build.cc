@@ -132,6 +132,16 @@ bool execute_single_planet_build(GameObj& g, const PlanetBuildPlan& plan,
   bool built = false;
 
   g.entity_manager.mutate_planet(snum, pnum, [&](Planet& planet) {
+    if (!race.God) {
+      const auto& sectormap = *g.entity_manager.peek_sectormap(snum, pnum);
+      if (const auto site_ok = validate_sector_build_site(
+              g.entity_manager, plan.what, race, planet,
+              sectormap.get(plan.coords), plan.coords);
+          !site_ok) {
+        g.out << site_ok.error();
+        return;
+      }
+    }
     const resource_t shipcost = newship->build_cost();
     if (shipcost > planet.info(Playernum).resource) {
       g.out << std::format("You need {}r to construct this ship.\n", shipcost);
@@ -230,7 +240,7 @@ validate_factory_ship_build(const command_t& argv, GameObj& g,
   const auto& sector = sectormap.get(bcoords);
   auto result = validate_sector_build_site(g.entity_manager, what, race, planet,
                                            sector, bcoords);
-  if (!result) {
+  if (!result && !race.God) {
     g.out << result.error();
     return std::nullopt;
   }
@@ -343,6 +353,16 @@ bool execute_single_factory_build(GameObj& g, Ship& builder,
   bool success = false;
 
   g.entity_manager.mutate_planet(snum, pnum, [&](Planet& planet) {
+    if (!race.God) {
+      const auto& sectormap = *g.entity_manager.peek_sectormap(snum, pnum);
+      if (const auto site_ok = validate_sector_build_site(
+              g.entity_manager, plan.what, race, planet,
+              sectormap.get(plan.land_coords), plan.land_coords);
+          !site_ok) {
+        g.out << site_ok.error();
+        return;
+      }
+    }
     const resource_t shipcost = newship->build_cost();
     if (shipcost > planet.info(Playernum).resource) {
       g.out << std::format("You need {}r to construct this ship.\n", shipcost);
@@ -387,6 +407,10 @@ bool execute_single_non_factory_ship_build(GameObj& g, Ship& builder,
   auto newship = getship(plan.what, race);
   const resource_t shipcost = newship->build_cost();
 
+  if (!builder.popn() && builder.max_crew_capacity() > 0 && !race.God) {
+    g.out << GB::presentation::format_ship_build_error(ShipBuildError::NoCrew);
+    return false;
+  }
   if (!plan.outside && !builder.can_fit_in_hangar(newship->size())) {
     g.out << "Not enough hanger space.\n";
     return false;

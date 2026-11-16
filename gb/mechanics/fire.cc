@@ -9,6 +9,24 @@ import std;
 
 module gb.mechanics;
 
+bool is_hostile_planet_defense(EntityManager& entity_manager,
+                               const Ship& candidate, const player_t attacker) {
+  if (candidate.type() != ShipType::OTYPE_PLANDEF || !candidate.alive() ||
+      !candidate.active() || !candidate.on() || candidate.owner() == attacker ||
+      candidate.owner() == 0) {
+    return false;
+  }
+  if (attacker > 0) {
+    const auto& attacker_race = *entity_manager.peek_race(attacker);
+    const auto& owner_race = *entity_manager.peek_race(candidate.owner());
+    if (attacker_race.is_allied_with(candidate.owner()) &&
+        owner_race.is_allied_with(attacker)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 /**
  * @brief Checks to see if there are any planetary defense networks on the
  * planet.
@@ -23,7 +41,7 @@ bool has_planet_defense(EntityManager& entity_manager, const starnum_t star_id,
                         const player_t Playernum) {
   for (const Ship& s :
        ShipList::readonly_on_planet(entity_manager, star_id, planet_order)) {
-    if (s.type() == ShipType::OTYPE_PLANDEF && s.owner() != Playernum) {
+    if (is_hostile_planet_defense(entity_manager, s, Playernum)) {
       return true;
     }
   }

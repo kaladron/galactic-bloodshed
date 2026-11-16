@@ -90,7 +90,8 @@ bool dispatch_cargo_transfer(Ship& s, char commod, std::int64_t amt,
   }
   g.present(*dock_ctx);
 
-  if (amt < 0 && s.type() == ShipType::OTYPE_VN) {
+  if ((amt < 0 || (amt == 0 && default_to_lower_limit)) &&
+      s.type() == ShipType::OTYPE_VN) {
     g.out << "You can't unload VNs.\n";
     return false;
   }
@@ -121,6 +122,17 @@ bool dispatch_cargo_transfer(Ship& s, char commod, std::int64_t amt,
 
   if (amt == 0) {
     amt = default_to_lower_limit ? lim.lolim : lim.uplim;
+  }
+
+  if (!dock_ctx->is_docked_to_ship && amt < 0 &&
+      (cargo == ShipCargoType::Crew || cargo == ShipCargoType::Troops)) {
+    const auto& sect = g.entity_manager.peek_sectormap(g.snum(), g.pnum())
+                           ->get(s.land_coords());
+    if (sect.get_owner() != 0 && sect.get_owner() != Playernum &&
+        !g.deduct_ap(g.snum(), 1)) {
+      g.out << "You don't have 1 action points there.\n";
+      return false;
+    }
   }
 
   const auto& race = *g.race;
@@ -174,7 +186,7 @@ const CommandDescriptor load_cmd{
     .name = "load",
     .roles = {},
     .scopes = AllowedScopes::any(),
-    .ap = APCost::free(),
+    .ap = APCost::dynamic(),
     .min_args = 3,
     .syntax = "load <ship> <commodity> [<amount>]",
     .description = "Load commodities onto a ship",

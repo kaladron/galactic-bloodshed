@@ -184,7 +184,7 @@ int main() {
     ctx.assert_dispatch_rejected(g, {"bid", "abc", "1000"});
     test::expect_contains(g.out.str(), "Illegal lot number.");
     ctx.assert_dispatch_rejected(g, {"bid", "1", "abc"});
-    test::expect_contains(g.out.str(), "Illegal lot number.");
+    test::expect_contains(g.out.str(), "Illegal bid amount.");
     ctx.assert_dispatch_rejected(g, {"bid", "0", "1000"});
     test::expect_contains(g.out.str(), "Illegal lot number.");
     ctx.assert_dispatch_rejected(g, {"bid", "999", "1000"});

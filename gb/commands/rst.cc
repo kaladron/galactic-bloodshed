@@ -271,6 +271,7 @@ bool run_rst(const command_t& argv, GameObj& g, const RstReportFlags& flags) {
   RstViewModel vm{.flags = flags};
 
   if (argv.size() >= 2) {
+    const std::string_view cmd_name = argv[0];
     if (!argv[1].empty() &&
         (argv[1].front() == '#' ||
          std::isdigit(static_cast<unsigned char>(argv[1].front())))) {
@@ -280,7 +281,8 @@ bool run_rst(const command_t& argv, GameObj& g, const RstReportFlags& flags) {
       for (std::size_t l = 1; l < argv.size(); ++l) {
         const auto raw_shipno = parse_ship_arg(argv[l]);
         if (!raw_shipno) {
-          g.out << std::format("rst: invalid ship argument {}\n", argv[l]);
+          g.out << std::format("{}: invalid ship argument {}\n", cmd_name,
+                               argv[l]);
           return false;
         }
         const shipnum_t shipno{*raw_shipno};
@@ -288,7 +290,7 @@ bool run_rst(const command_t& argv, GameObj& g, const RstReportFlags& flags) {
                                ? try_peek_ship(g.entity_manager, shipno)
                                : nullptr;
         if (!ship) {
-          g.out << std::format("rst: no such ship #{} \n", shipno);
+          g.out << std::format("{}: no such ship #{}\n", cmd_name, shipno);
           return false;
         }
 

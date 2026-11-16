@@ -197,6 +197,7 @@ export enum class OrderErrorReason {
   CannotActivateFactoryHere,
   InsufficientPlanetResourcesForFactory,
   CannotDeactivateFactory,
+  UnknownOrder,
 };
 
 export struct OrderError {
@@ -209,6 +210,7 @@ export struct OrderError {
   resource_t required_resources{0};
   shipnum_t habitat_ship{0};
   int hangar_needed{0};
+  std::string unknown_order{};
 };
 
 export enum class OrderUpdateNotice {

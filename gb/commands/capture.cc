@@ -15,22 +15,36 @@ module commands;
 
 namespace {
 
-std::optional<PopulationType>
-parse_capture_population_type(const command_t& argv) {
-  if (argv.size() < 4 || argv[3].starts_with("civ")) {
-    return PopulationType::CIV;
+struct ParsedCaptureArgs {
+  PopulationType what{PopulationType::CIV};
+  std::optional<population_t> boarders{std::nullopt};
+};
+
+std::optional<ParsedCaptureArgs> parse_capture_args(const command_t& argv) {
+  if (argv.size() < 3) {
+    return ParsedCaptureArgs{};
+  }
+  if (argv.size() == 3) {
+    if (argv[2].starts_with("civ")) {
+      return ParsedCaptureArgs{.what = PopulationType::CIV};
+    }
+    if (argv[2].starts_with("mil")) {
+      return ParsedCaptureArgs{.what = PopulationType::MIL};
+    }
+    return ParsedCaptureArgs{
+        .what = PopulationType::CIV,
+        .boarders = parse_int<population_t>(argv[2]).value_or(population_t{0}),
+    };
+  }
+  const population_t cnt =
+      parse_int<population_t>(argv[2]).value_or(population_t{0});
+  if (argv[3].starts_with("civ")) {
+    return ParsedCaptureArgs{.what = PopulationType::CIV, .boarders = cnt};
   }
   if (argv[3].starts_with("mil")) {
-    return PopulationType::MIL;
+    return ParsedCaptureArgs{.what = PopulationType::MIL, .boarders = cnt};
   }
   return std::nullopt;
-}
-
-std::optional<population_t> parse_capture_boarders(const command_t& argv) {
-  if (argv.size() < 3) {
-    return std::nullopt;
-  }
-  return parse_int<population_t>(argv[2]).value_or(population_t{0});
 }
 
 void notify_capture_result(GameObj& g, const LandedBoardingResult& res) {
@@ -57,15 +71,15 @@ bool capture(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  const auto what = parse_capture_population_type(argv);
-  if (!what) {
+  const auto parsed = parse_capture_args(argv);
+  if (!parsed) {
     g.out << "Capture with what?\n";
     return false;
   }
 
   auto res = capture_landed_ship(g.entity_manager, g.snum(), g.pnum(),
-                                 *target_shipno, parse_capture_boarders(argv),
-                                 *what, g.player(), g.governor(), g.god());
+                                 *target_shipno, parsed->boarders, parsed->what,
+                                 g.player(), g.governor(), g.god());
   if (!res) {
     g.out << GB::presentation::format_capture_error(res.error());
     return false;

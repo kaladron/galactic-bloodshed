@@ -137,10 +137,17 @@ void test_assault_validation_and_ap_invariants() {
   test::expect_false(GB::commands::assault({"assault"}, g));
   test::expect_contains(g.out.str(), "Assault what?");
 
-  // 1. Invalid population type ("aliens")
+  // 1. Invalid population type ("aliens") and invalid boarder counts
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"assault", "#1", "#3", "5", "aliens"});
   test::expect_contains(g.out.str(), "Assault with what?");
+  ctx.assert_dispatch_rejected(g, {"assault", "#1", "#3", "0"});
+  test::expect_contains(g.out.str(), "Illegal number of boarders (0).");
+  ctx.assert_dispatch_rejected(g, {"assault", "#1", "#3", "aliens"});
+  test::expect_contains(g.out.str(), "Illegal number of boarders (0).");
+  ctx.assert_dispatch_rejected(g, {"assault", "#1", "#3", "civ"});
+  test::expect_contains(g.out.str(),
+                        "You have no crew on this ship to assault with.");
   test::expect_eq(ctx.em.peek_star(1)->AP(1), 5);
 
   // 2. Pods cannot assault

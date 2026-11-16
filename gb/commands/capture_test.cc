@@ -67,7 +67,7 @@ void test_capture_happy_path() {
   g.set_pnum(1);
 
   // Execute capture command - capture #1 50 military
-  ctx.assert_dispatch_success(g, {"capture", "#1", "50", "military"});
+  ctx.assert_dispatch_success(g, {"capture", "#1", "50", "military"}, 1);
 
   // Verify changes persisted
   const auto* final_smap = ctx.em.peek_sectormap(1, 1);
@@ -285,6 +285,18 @@ void test_capture_civilian_victory() {
 
   const auto* smap = ctx.em.peek_sectormap(1, 1);
   test::expect_eq(smap->get(Coordinates{5, 5}).get_popn(), 30);
+
+  // Capture with military omitting optional <boarders> count
+  shipnum_t mil_target = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                             .owned_by(2, 1)
+                             .landed_on(1, 1, Coordinates(5, 5))
+                             .with_crew(0, 0)
+                             .with_destruct(0)
+                             .build();
+  ctx.assert_dispatch_success(
+      g, {"capture", std::format("#{}", mil_target.value), "military"}, 1);
+  test::expect_eq(ctx.em.peek_ship(mil_target)->owner(), 1);
+  test::expect_gt(ctx.em.peek_ship(mil_target)->troops(), 0);
 
   // Capture a manned landed ship (non-factory) and a manned landed factory
   ctx.em.mutate_race(1, [](Race& r) { r.likes[SectorType::SEC_LAND] = 0.0; });

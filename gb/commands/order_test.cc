@@ -277,6 +277,7 @@ void test_order_specialty_ships() {
       g, {"order", std::format("#{}", missile_id.value), "scatter"});
   ctx.assert_dispatch_success(g, {"order", std::format("#{}", missile_id.value),
                                   "impact", "badcoords"});
+  test::expect_contains(g.out.str(), "Usage: order <ship> impact <x>,<y>");
   ctx.assert_dispatch_success(
       g, {"order", std::format("#{}", missile_id.value), "evade", "on"});
   ctx.em.clear_cache();
@@ -1068,11 +1069,16 @@ void test_special_ship_order_mcdc_and_notices() {
   test::expect_contains(g.out.str(), R"("type":"planet")");
   g.set_ui_mode(UiMode::ASCII);
 
-  // 7. Trailing garbage on numeric ship orders rejects cleanly
+  // 7. Trailing garbage on numeric ship orders and unknown subcommands reject
+  // cleanly
   ctx.assert_dispatch_success(g, {"order", "#1", "speed", "3abc"});
   test::expect_contains(g.out.str(), "Specify a positive speed.");
   ctx.assert_dispatch_success(g, {"order", "#1", "merchant", "1abc"});
   test::expect_contains(g.out.str(), "Bad route number");
+  ctx.assert_dispatch_success(g, {"order", "#1", "online"});
+  test::expect_contains(g.out.str(), "Unknown order 'online'.");
+  ctx.assert_dispatch_success(g, {"order", "#1", "designate", "1,1"});
+  test::expect_contains(g.out.str(), "Unknown order 'designate'.");
 
   std::println(std::cout,
                "    ✓ Special ship order MC/DC and notices verified");

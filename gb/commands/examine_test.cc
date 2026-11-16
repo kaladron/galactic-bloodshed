@@ -69,7 +69,7 @@ void test_examine_dispatch() {
                             .build();
   ctx.assert_dispatch_rejected(
       g, {"examine", std::format("#{}", univ_ship.value)});
-  test::expect_contains(g.out.str(), "That ship it not visible to you.");
+  test::expect_contains(g.out.str(), "That ship is not visible to you.");
 
   ctx.em.mutate_star(2, [](Star& s) { s.clear_inhabited_by(player_t{1}); });
   shipnum_t unvis_ship = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
@@ -78,7 +78,7 @@ void test_examine_dispatch() {
                              .build();
   ctx.assert_dispatch_rejected(
       g, {"examine", std::format("#{}", unvis_ship.value)});
-  test::expect_contains(g.out.str(), "That ship it not visible to you.");
+  test::expect_contains(g.out.str(), "That ship is not visible to you.");
 
   // 4. Switch, irradiated (!active), empty/newline descriptions, and JSON mode
   shipnum_t fac_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)

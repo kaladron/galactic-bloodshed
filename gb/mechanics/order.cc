@@ -1026,9 +1026,16 @@ give_orders(EntityManager& em, const ScopeContext& scope_ctx,
         for (const auto& entry : ship_order_handlers) {
           if (entry.name == argv[2]) {
             result = entry.handler(argv, ship);
+            handled = true;
             break;
           }
         }
+      }
+      if (!handled) {
+        result = std::unexpected(OrderError{
+            .reason = OrderErrorReason::UnknownOrder,
+            .unknown_order = argv[2],
+        });
       }
     }
   }

@@ -293,6 +293,15 @@ void test_rst_filters_scopes_and_json() {
   const std::string json_out = g.out.str();
   test::expect_contains(json_out, R"("type":"ship")");
   test::expect_contains(json_out, R"("name":"Hermes")");
+  g.set_ui_mode(UiMode::ASCII);
+
+  // Command-specific diagnostic prefixes (not hardcoded "rst:")
+  ctx.assert_dispatch_rejected(g, {"report", "#9999"});
+  test::expect_contains(g.out.str(), "report: no such ship #9999");
+  ctx.assert_dispatch_rejected(g, {"stock", "#bad"});
+  test::expect_contains(g.out.str(), "stock: invalid ship argument #bad");
+  ctx.assert_dispatch_rejected(g, {"factories", "#9999"});
+  test::expect_contains(g.out.str(), "factories: no such ship #9999");
 }
 
 }  // namespace

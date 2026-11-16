@@ -118,7 +118,7 @@ std::string format_order_error(const OrderError& err) {
     case OrderErrorReason::OnlyMissilesCanBeDesignated:
       return "Only missiles can be designated for this.\n";
     case OrderErrorReason::InvalidDesignateCoords:
-      return "Usage: order <ship> designate <x>,<y>\n";
+      return "Usage: order <ship> impact <x>,<y>\n";
     case OrderErrorReason::UseOnForFactory:
       return "Use \"on\" to bring factory online.\n";
     case OrderErrorReason::NoSwitchSetting:
@@ -180,6 +180,8 @@ std::string format_order_error(const OrderError& err) {
     case OrderErrorReason::CannotDeactivateFactory:
       return "You can't deactivate a factory once it's online. Consider "
              "using 'scrap'.\n";
+    case OrderErrorReason::UnknownOrder:
+      return std::format("Unknown order '{}'.\n", err.unknown_order);
   }
   std::unreachable();
 }
@@ -613,10 +615,8 @@ render_ship_cargo_transfer_telegram(const ShipCargoTransferResult& res) {
                       res.is_metamorph ? "tons of biomass" : "population");
       break;
   }
-  return std::format(
-      "Audio-vibatory-physio-molecular transport device #{} gave "
-      "your ship {} the following:\n{}",
-      res.ship_display, res.target_ship_display, tele_lines);
+  return std::format("{} gave your ship {} the following:\n{}",
+                     res.ship_display, res.target_ship_display, tele_lines);
 }
 
 std::string format_transporter_error(TransporterError err) {
@@ -706,7 +706,7 @@ render_transporter_telegram(const TransporterTransferResult& res) {
     std::format_to(std::back_inserter(tele_lines), "{} {}\n", item.amount,
                    tele_label);
   }
-  return std::format("Audio-vibatory-physio-molecular transport device #{} "
+  return std::format("Audio-vibatory-physio-molecular transport device {} "
                      "gave your ship {} the following:\n{}",
                      res.sender_ship_display, res.receiver_ship_display,
                      tele_lines);

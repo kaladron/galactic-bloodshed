@@ -30,7 +30,7 @@ bool examine(const command_t& argv, GameObj& g) {
   }
 
   if (ship->whatorbits() == ScopeLevel::LEVEL_UNIV) {
-    g.out << "That ship it not visible to you.\n";
+    g.out << "That ship is not visible to you.\n";
     return false;
   }
   const bool visible =
@@ -38,7 +38,7 @@ bool examine(const command_t& argv, GameObj& g) {
         return star.is_inhabited_by(g.player());
       });
   if (!visible) {
-    g.out << "That ship it not visible to you.\n";
+    g.out << "That ship is not visible to you.\n";
     return false;
   }
 

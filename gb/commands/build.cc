@@ -255,7 +255,7 @@ validate_non_factory_ship_build(const command_t& argv, GameObj& g,
   bool outside = (builder.type() == ShipType::STYPE_SHUTTLE ||
                   builder.type() == ShipType::STYPE_CARGO);
   if (outside && builder.is_landed()) {
-    g.out << "This ships cannot build when landed.\n";
+    g.out << "This ship cannot build when landed.\n";
     return std::nullopt;
   }
   if (argv.size() < 2) {

@@ -97,9 +97,13 @@ bool place_bid(const command_t& argv, GameObj& g) {
   }
 
   auto parsed_lot = parse_int<int>(argv[1]);
-  auto parsed_bid = parse_int<money_t>(argv[2]);
-  if (!parsed_lot || !parsed_bid) {
+  if (!parsed_lot) {
     g.out << "Illegal lot number.\n";
+    return false;
+  }
+  auto parsed_bid = parse_int<money_t>(argv[2]);
+  if (!parsed_bid) {
+    g.out << "Illegal bid amount.\n";
     return false;
   }
   int lot = *parsed_lot;

@@ -65,13 +65,13 @@ void test_disarm_command() {
   // 3. Invalid count argument (non-numeric and non-positive)
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"disarm", "5,5", "abc"});
-  test::expect_contains(g.out.str(),
-                        "You must specify a positive number of civs to arm.");
+  test::expect_contains(
+      g.out.str(), "You must specify a positive number of troops to disarm.");
 
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"disarm", "5,5", "-5"});
-  test::expect_contains(g.out.str(),
-                        "You must specify a positive number of civs to arm.");
+  test::expect_contains(
+      g.out.str(), "You must specify a positive number of troops to disarm.");
 
   // 4. Disarm partial troops in ASCII mode
   g.out.str("");

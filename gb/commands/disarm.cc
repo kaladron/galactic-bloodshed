@@ -26,7 +26,7 @@ bool disarm(const command_t& argv, GameObj& g) {
   if (argv.size() >= 3) {
     auto count_res = parse_int<population_t>(argv[2]);
     if (!count_res || *count_res <= 0) {
-      g.out << "You must specify a positive number of civs to arm.\n";
+      g.out << "You must specify a positive number of troops to disarm.\n";
       return false;
     }
     requested_amount = *count_res;

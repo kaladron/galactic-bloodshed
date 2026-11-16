@@ -55,7 +55,7 @@ advance_ground_vehicle(Ship& ship, const Planet& planet,
     if (is_exhausted && !ship.notified()) {
       ship.notified() = 1;
       const std::string teleg_buf =
-          std::format("%{0} is out of orders at %{1}.", ship,
+          std::format("{0} is out of orders at {1}.", ship,
                       prin_ship_orbits(entity_manager, ship));
       push_telegram(entity_manager, ship.owner(), ship.governor(), teleg_buf);
     }

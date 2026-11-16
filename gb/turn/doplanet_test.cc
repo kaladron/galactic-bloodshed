@@ -2884,6 +2884,17 @@ void test_moveplanet_and_ground_mcdc() {
     test::expect_false(res_stop_cycle.has_value());
     test::expect_eq(res_stop_cycle.error(), GroundMovementError::Stopped);
 
+    // Exhausted orders when not yet notified emits clean telegram without '%'
+    s.on() = 1;
+    s.notified() = false;
+    s.shipclass() = "24";
+    s.as<TerraformerShip>()->set_index(0);
+    test::expect_true(advance_ground_vehicle(s, planet, ctx.em).has_value());
+    const auto teles = ctx.em.get_telegrams(s.owner(), s.governor());
+    test::expect_false(teles.empty());
+    test::expect_contains(teles.back().message, "is out of orders at");
+    test::expect_false(teles.back().message.contains('%'));
+
     // Exhausted orders when already notified
     s.on() = 1;
     s.notified() = true;

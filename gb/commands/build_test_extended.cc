@@ -302,7 +302,7 @@ void test_ship_build_error_paths() {
   fixture.init_game_obj(g, ScopeLevel::LEVEL_SHIP, shuttle_id);
   g.out.str("");
   GB::commands::build({"build", "H", "1"}, g);
-  test::expect_contains(g.out.str(), "This ships cannot build when landed.");
+  test::expect_contains(g.out.str(), "This ship cannot build when landed.");
 
   // 3. Habitat ship build with autoload enabled and low tech error
   shipnum_t hab_id = TestShipBuilder(fixture.em, ShipType::STYPE_HABITAT)
@@ -591,7 +591,7 @@ void test_non_factory_ship_mcdc_and_hangar_accounting() {
   fixture.init_game_obj(g, ScopeLevel::LEVEL_SHIP, cargo_landed);
   g.out.str("");
   test::expect_false(GB::commands::build({"build", "H", "1"}, g));
-  test::expect_contains(g.out.str(), "This ships cannot build when landed.\n");
+  test::expect_contains(g.out.str(), "This ship cannot build when landed.\n");
 
   // 2. Non-factory ship validation errors: missing arg, invalid type, cannot
   // build on ship, zero count (3 args and 4 args)

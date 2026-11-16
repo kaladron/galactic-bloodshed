@@ -284,6 +284,9 @@ void test_unload_ship_to_ship_and_alien_telegrams() {
           GB::presentation::render_ship_cargo_transfer_telegram(sample);
       test::expect_true(tele.has_value());
       test::expect_false(tele->empty());
+      test::expect_false(tele->contains("Audio-vibatory"));
+      test::expect_contains(
+          *tele, "c1Tender [1] gave your ship c2KlingonFreighter [2]");
     }
   }
 

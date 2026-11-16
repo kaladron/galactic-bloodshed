@@ -17,30 +17,42 @@ namespace GB::commands {
 
 namespace {
 
-std::optional<PopulationType>
-parse_assault_population_type(const command_t& argv, GameObj& g) {
+struct ParsedAssaultArgs {
+  PopulationType what{PopulationType::MIL};
+  std::optional<population_t> boarders{std::nullopt};
+};
+
+std::optional<ParsedAssaultArgs> parse_assault_args(const command_t& argv,
+                                                    GameObj& g) {
   if (argv.size() < 3) {
     g.out << "Assault what?\n";
     return std::nullopt;
   }
-  if (argv.size() < 5) {
-    return PopulationType::MIL;
+  if (argv.size() == 3) {
+    return ParsedAssaultArgs{};
   }
+  if (argv.size() == 4) {
+    if (argv[3].starts_with("civ")) {
+      return ParsedAssaultArgs{.what = PopulationType::CIV};
+    }
+    if (argv[3].starts_with("mil")) {
+      return ParsedAssaultArgs{.what = PopulationType::MIL};
+    }
+    return ParsedAssaultArgs{
+        .what = PopulationType::MIL,
+        .boarders = parse_int<population_t>(argv[3]).value_or(population_t{0}),
+    };
+  }
+  const population_t cnt =
+      parse_int<population_t>(argv[3]).value_or(population_t{0});
   if (argv[4].starts_with("civ")) {
-    return PopulationType::CIV;
+    return ParsedAssaultArgs{.what = PopulationType::CIV, .boarders = cnt};
   }
   if (argv[4].starts_with("mil")) {
-    return PopulationType::MIL;
+    return ParsedAssaultArgs{.what = PopulationType::MIL, .boarders = cnt};
   }
   g.out << "Assault with what?\n";
   return std::nullopt;
-}
-
-std::optional<population_t> parse_requested_boarders(const command_t& argv) {
-  if (argv.size() < 4) {
-    return std::nullopt;
-  }
-  return parse_int<population_t>(argv[3]);
 }
 
 void notify_boarding_outcome(GameObj& g, const BoardingOutcomeReport& b) {
@@ -61,12 +73,10 @@ void notify_boarding_outcome(GameObj& g, const BoardingOutcomeReport& b) {
 }  // namespace
 
 bool assault(const command_t& argv, GameObj& g) {
-  const auto what_opt = parse_assault_population_type(argv, g);
-  if (!what_opt) {
+  const auto parsed = parse_assault_args(argv, g);
+  if (!parsed) {
     return false;
   }
-
-  const auto requested_boarders = parse_requested_boarders(argv);
 
   bool any_assaulted = false;
   for (auto ship_handle : ScopedCommandableShips(g, argv[1])) {
@@ -77,7 +87,7 @@ bool assault(const command_t& argv, GameObj& g) {
     }
 
     auto res = assault_single_ship(g.entity_manager, *ship_handle, *target_id,
-                                   *what_opt, requested_boarders, g.player(),
+                                   parsed->what, parsed->boarders, g.player(),
                                    g.governor(), g.god());
     if (!res) {
       g.out << GB::presentation::render_assault_error(res.error());

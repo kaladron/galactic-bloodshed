@@ -562,11 +562,16 @@ void test_upgrade_json_god_mode_and_edge_cases() {
   g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_shipno(ship2_id);
   g.out.str("");
+  test::expect_false(GB::commands::upgrade({"upgrade", "armor", "5"}, g));
+  test::expect_contains(g.out.str(),
+                        std::format("You don't own ship #{}.", ship2_id));
+  g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "5"});
   test::expect_contains(g.out.str(),
                         std::format("You don't own ship #{}.", ship2_id));
 
   // Switch to Ship 1
+  g.set_level(ScopeLevel::LEVEL_SHIP);
   g.set_shipno(ship1_id);
 
   // 1. NoCaliberDefined when upgrading battery strength with NONE caliber

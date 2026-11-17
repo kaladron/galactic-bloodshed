@@ -188,6 +188,23 @@ void test_check_connect_success_and_clamping() {
   test::expect_contains(output, "Morale: 100");
   test::expect_contains(output, "You have:");
 
+  // 0-planet star with deflevel = LEVEL_PLAN steps up to LEVEL_STAR (pnum = 0)
+  ctx.create_star("VoidStar", 4).with_explored(1).build();
+  ctx.em.mutate_race(1, [](Race& race) {
+    race.leader().deflevel = ScopeLevel::LEVEL_PLAN;
+    race.leader().defsystem = 4;
+    race.leader().defplanetnum = 1;
+  });
+  RecordingSessionRegistry empty_reg;
+  asio::ip::tcp::socket socket_void(io);
+  auto session_void =
+      Session::create(std::move(socket_void), ctx.em, empty_reg);
+  check_connect(*session_void, "raceword govword");
+  test::expect_true(session_void->connected());
+  test::expect_eq(session_void->level(), ScopeLevel::LEVEL_STAR);
+  test::expect_eq(session_void->snum(), starnum_t{4});
+  test::expect_eq(session_void->pnum(), planetnum_t{0});
+
   ctx.verify_universe_invariants();
 }
 

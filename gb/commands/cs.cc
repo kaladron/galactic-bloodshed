@@ -39,6 +39,7 @@ bool change_to_default_scope(GameObj& g) {
   }
 
   g.set_shipno(0);
+  g.reconcile_scope();
   g.set_system_center({0.0, 0.0});
   g.set_universe_center(star.coordinates());
   return true;
@@ -183,7 +184,7 @@ bool cs(const command_t& argv, GameObj& g) {
     g.set_snum(where->snum);
     g.set_pnum(where->pnum);
     g.set_shipno(where->shipno);
-    (void)g.reconcile_scope();
+    g.reconcile_scope();
     return true;
   }
 

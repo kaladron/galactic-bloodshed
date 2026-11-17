@@ -466,6 +466,57 @@ int main() {
     test::expect_contains(format_place_error(p_missing_ship_parent.error()),
                           "Ship not found");
 
+    // Ascending from LEVEL_SHIP rejects foreign carriers and unexplored
+    // planets/stars unless ignore_explore or god is active
+    const shipnum_t foreign_carrier =
+        TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
+            .owned_by(2, 1)
+            .in_star_orbit(1, UniverseCoordinates{0.0, 0.0})
+            .build();
+    ctx.em.mutate_ship(fighter_id,
+                       [&](Ship& f) { f.dock_into_carrier(foreign_carrier); });
+    g.set_shipno(fighter_id);
+    auto p_foreign_parent = Place::resolve(ctx.em, g.scope_context(), ".");
+    test::expect_false(p_foreign_parent.has_value());
+    test::expect_true(p_foreign_parent.error().kind ==
+                      PlaceErrorKind::DontOwnShip);
+    test::expect_true(
+        Place::resolve(ctx.em, g.scope_context(), ".", true).has_value());
+
+    ctx.em.mutate_ship(fighter_id, [](Ship& f) { f.enter_planet_orbit(1, 1); });
+    ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(1).explored = 0; });
+    auto p_unexp_plan_up = Place::resolve(ctx.em, g.scope_context(), ".");
+    test::expect_false(p_unexp_plan_up.has_value());
+    test::expect_true(p_unexp_plan_up.error().kind ==
+                      PlaceErrorKind::PlanetUnexplored);
+    ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(1).explored = 1; });
+
+    ctx.em.mutate_ship(fighter_id, [](Ship& f) { f.enter_star_orbit(1); });
+    ctx.em.mutate_star(1, [](Star& s) { s.clear_explored_by(1); });
+    auto p_unexp_star_up = Place::resolve(ctx.em, g.scope_context(), ".");
+    test::expect_false(p_unexp_star_up.has_value());
+    test::expect_true(p_unexp_star_up.error().kind ==
+                      PlaceErrorKind::StarUnexplored);
+
+    {
+      const shipnum_t temp_dead =
+          TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+              .owned_by(1, 1)
+              .in_star_orbit(1)
+              .build();
+      auto defer = ctx.em.create_deferred_write_scope();
+      ctx.em.mutate_ship(temp_dead, [&](Ship& f) { ctx.em.destroy_ship(f); });
+      g.set_shipno(temp_dead);
+      auto p_dead_colon = Place::resolve(ctx.em, g.scope_context(), ":");
+      test::expect_false(p_dead_colon.has_value());
+      test::expect_true(p_dead_colon.error().kind ==
+                        PlaceErrorKind::ShipNotFound);
+      defer.commit();
+    }
+    ctx.em.mutate_ship(fighter_id,
+                       [&](Ship& f) { f.dock_into_carrier(carrier_id); });
+    ctx.em.mutate_star(1, [](Star& s) { s.mark_explored_by(1); });
+
     // 5. Descending into unexplored vs explored stars & planets, and
     // non-null-terminated substr formatting on compound paths
     ctx.em.mutate_star(1, [](Star& s) { s.clear_explored_by(player_t{1}); });

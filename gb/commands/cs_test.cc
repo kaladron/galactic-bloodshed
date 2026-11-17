@@ -75,6 +75,19 @@ void test_cs_happy_paths() {
   ctx.assert_dispatch_success(g, {"cs"}, 0);
   test::expect_eq(g.snum(), 3);
   test::expect_eq(g.pnum(), 1);
+
+  // 7. 0-planet star with deflevel = LEVEL_PLAN steps up cleanly to LEVEL_STAR
+  ctx.create_star("VoidStar", 4).with_explored(1).build();
+  ctx.em.mutate_race(1, [](Race& r) {
+    r.leader().deflevel = ScopeLevel::LEVEL_PLAN;
+    r.leader().defsystem = 4;
+    r.leader().defplanetnum = 1;
+  });
+  ctx.setup_game_obj(g, 1, 1);
+  ctx.assert_dispatch_success(g, {"cs"}, 0);
+  test::expect_eq(g.level(), ScopeLevel::LEVEL_STAR);
+  test::expect_eq(g.snum(), 4);
+  test::expect_eq(g.pnum(), 0);
 }
 
 void test_cs_domain_errors() {

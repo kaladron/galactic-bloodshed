@@ -403,12 +403,15 @@ void test_name_permissions_scope_and_json() {
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "ship", "Hijacked"});
     test::expect_contains(g.out.str(), "You don't own ship #");
+    g.set_level(ScopeLevel::LEVEL_SHIP);
+    g.set_shipno(enemy_fac);
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "class", "HijackedClass"});
     test::expect_contains(g.out.str(), "You don't own ship #");
     test::expect_eq(ctx.em.peek_ship(enemy_fac)->name(), "EnemyHull");
 
     // Unauthorized governor on own race's ship & destroyed/deleted ship ID
+    g.set_level(ScopeLevel::LEVEL_SHIP);
     g.set_shipno(ship_id);
     g.set_governor(2);
     g.out.str("");

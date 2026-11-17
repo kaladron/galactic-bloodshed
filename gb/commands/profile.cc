@@ -20,12 +20,14 @@ bool profile(const command_t& argv, GameObj& g) {
   if (argv.size() == 1) {
     std::string home_star_name = "None";
     std::string home_planet_name = "None";
-    if (g.current_governor().homesystem != 0) {
-      const auto& homestar =
-          *g.entity_manager.peek_star(g.current_governor().homesystem);
+    const starnum_t homesys = g.current_governor().homesystem;
+    if (homesys >= 1 && homesys <= g.entity_manager.num_stars()) {
+      const auto& homestar = *g.entity_manager.peek_star(homesys);
       home_star_name = homestar.get_name();
-      home_planet_name =
-          homestar.get_planet_name(g.current_governor().homeplanetnum);
+      const planetnum_t homeplan = g.current_governor().homeplanetnum;
+      if (homeplan >= 1 && homeplan <= homestar.numplanets()) {
+        home_planet_name = homestar.get_planet_name(homeplan);
+      }
     }
     const GB::presentation::ProfileSelfViewModel vm{
         .race_name = race.name,

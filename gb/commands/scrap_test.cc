@@ -551,13 +551,85 @@ void test_scrap_query_and_scope_reconciliation() {
                            .build();
   ctx.assert_dispatch_success(g, {"cs", std::format("#{}", roam_id)});
   ctx.em.mutate_ship(roam_id, [](Ship& s) { s.enter_star_orbit(2); });
-  test::expect_true(g.reconcile_scope());
+  test::expect_true(g.reconcile_ship_scope() == ShipScopeStatus::Valid);
   ctx.em.mutate_ship(roam_id, [&](Ship& s) { ctx.em.destroy_ship(s); });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"report"});
   test::expect_contains(g.out.str(), "scope reset to /Vega");
   test::expect_eq(g.level(), ScopeLevel::LEVEL_STAR);
   test::expect_eq(g.snum(), starnum_t{2});
+  test::expect_true(g.reconcile_ship_scope() == ShipScopeStatus::Valid);
+
+  // Captured/gifted ship, dead ship (!alive), NoShipScoped, foreign carrier
+  // skip, and unexplored planet/star celestial step-up
+  g.set_level(ScopeLevel::LEVEL_SHIP);
+  g.set_shipno(0);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"report"});
+  test::expect_contains(g.out.str(),
+                        "No ship is currently scoped; scope reset to /Vega");
+
+  const auto captured_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+                               .owned_by(1, 1)
+                               .in_planet_orbit(1, 1)
+                               .with_crew(2, 0)
+                               .build();
+  ctx.assert_dispatch_success(g, {"cs", std::format("#{}", captured_id)});
+  ctx.em.mutate_ship(captured_id, [](Ship& s) { s.owner() = 2; });
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"report"});
+  test::expect_contains(
+      g.out.str(),
+      std::format("You don't own ship #{}. Scope reset to /Sol/Earth",
+                  captured_id));
+  test::expect_eq(g.level(), ScopeLevel::LEVEL_PLAN);
+
+  const auto allied_carrier = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
+                                  .owned_by(2, 1)
+                                  .in_star_orbit(1)
+                                  .with_crew(10, 0)
+                                  .build();
+  const auto guest_fighter = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+                                 .owned_by(1, 1)
+                                 .in_star_orbit(1)
+                                 .with_crew(2, 0)
+                                 .build();
+  test::expect_true(
+      ctx.em.dock_carrier(guest_fighter, allied_carrier).has_value());
+  ctx.assert_dispatch_success(g, {"cs", std::format("#{}", guest_fighter)});
+  {
+    auto defer = ctx.em.create_deferred_write_scope();
+    ctx.em.mutate_ship(guest_fighter, [&](Ship& s) { ctx.em.destroy_ship(s); });
+    g.out.str("");
+    ctx.assert_dispatch_rejected(g, {"report"});
+    test::expect_contains(
+        g.out.str(),
+        std::format("Ship #{} no longer exists; scope reset to /Sol",
+                    guest_fighter));
+    test::expect_eq(g.level(), ScopeLevel::LEVEL_STAR);
+    defer.commit();
+  }
+
+  // Unexplored planet -> explored star; unexplored star -> UNIV; snum == 0 ->
+  // UNIV
+  ctx.em.mutate_planet(2, 1, [](Planet& p) { p.info(1).explored = 0; });
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_snum(2);
+  g.set_pnum(1);
+  g.reconcile_scope();
+  test::expect_eq(g.level(), ScopeLevel::LEVEL_STAR);
+  test::expect_eq(g.snum(), starnum_t{2});
+
+  ctx.em.mutate_star(2, [](Star& s) { s.clear_explored_by(1); });
+  g.reconcile_scope();
+  test::expect_eq(g.level(), ScopeLevel::LEVEL_UNIV);
+
+  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_snum(0);
+  g.reconcile_scope();
+  test::expect_eq(g.level(), ScopeLevel::LEVEL_UNIV);
+  ctx.em.mutate_star(2, [](Star& s) { s.mark_explored_by(1); });
+  ctx.em.mutate_planet(2, 1, [](Planet& p) { p.info(1).explored = 1; });
 
   const auto deep_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
                            .owned_by(1, 1)

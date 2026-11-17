@@ -58,7 +58,9 @@ static void finalize_turn(TurnState& state, bool update);
  * @param update true for full update with production/tech, false for movement
  * only
  */
-void do_turn(EntityManager& entity_manager, SessionRegistry&, bool update) {
+void do_turn(EntityManager& entity_manager, SessionRegistry& session_registry,
+             bool update) {
+  session_registry.reconcile_connected_scopes();
   {
     auto defer_scope = entity_manager.create_deferred_write_scope();
     TurnState state(entity_manager);
@@ -87,6 +89,7 @@ void do_turn(EntityManager& entity_manager, SessionRegistry&, bool update) {
 
   // Clear cache to free memory after turn completes
   entity_manager.clear_cache();
+  session_registry.reconcile_connected_scopes();
 }
 
 static void process_ships(TurnState& state) {

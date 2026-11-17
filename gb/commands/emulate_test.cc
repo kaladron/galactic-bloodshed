@@ -31,8 +31,16 @@ void test_emulate_matrix() {
   GameObj g(ctx.em, registry);
 
   // --- Case 1: Happy Path (God user emulating player 2 governor 2) ---
+  // Deity scoped to a Player-1 ship on unexplored planet steps up to explored
+  // star when dropping god privileges via emulate!
+  const shipnum_t deity_ship = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                                   .owned_by(1, 1)
+                                   .in_planet_orbit(3, 1)
+                                   .build();
+  ctx.em.mutate_planet(3, 1, [](Planet& p) { p.info(2).explored = 0; });
   ctx.setup_game_obj(g, 1, 1);
   g.set_god(true);
+  ctx.assert_dispatch_success(g, {"cs", std::format("#{}", deity_ship)});
   g.out.str("");
 
   test::expect_true(GB::commands::dispatch_command(g, GB::commands::emulate_cmd,
@@ -41,6 +49,9 @@ void test_emulate_matrix() {
   test::expect_eq(g.player(), 2);
   test::expect_eq(g.governor(), 2);
   test::expect_false(g.god());  // Emulated session drops god privileges
+  test::expect_eq(g.level(), ScopeLevel::LEVEL_STAR);
+  test::expect_eq(g.snum(), starnum_t{3});
+  ctx.em.mutate_planet(3, 1, [](Planet& p) { p.info(2).explored = 1; });
 
   // --- Case 2: Role Rejection (Mortal player cannot emulate) ---
   ctx.setup_game_obj(g, 2, 1);

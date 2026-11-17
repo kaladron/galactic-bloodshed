@@ -108,7 +108,7 @@ Galactic Bloodshed uses **C++26 modules** to enforce architectural boundaries. S
 
 - **Tier 3: `gb.services`** (Service Layer) - `gb/services/services.cppm` (`gb_services` target)
   - `EntityManager`: Central entity lifecycle, caching, relational foreign-key cleanup (`destroy_ship`), and monadic transaction coordinator (`entity_manager.cppm`), using `struct EntityManager::Storage` PIMPL so `gb.repositories` is never exported in `gb.services`'s public interface
-  - `GameObj`: Per-command execution context, `UiMode` (`ASCII` or `JSON`), zero-locale `OutputBuffer` (`g.out`, `g.present()`, `g.print()`), session/emulation liveness reconciliation (`reconcile_session`, `emulate`), `check_commandable(const Ship&)`, and AP deduction helpers (`gameobj.cppm`)
+  - `GameObj`: Per-command execution context, `UiMode` (`ASCII` or `JSON`), zero-locale `OutputBuffer` (`g.out`, `g.present()`, `g.print()`), session/emulation and full-hierarchy scope reconciliation (`reconcile_session`, `reconcile_scope`, `reconcile_ship_scope`, `emulate`), `check_commandable(const Ship&)`, and AP deduction helpers (`gameobj.cppm`)
   - `Place`: Hierarchical scope path parser and formatter (`place.cppm`)
   - `RaceList`, `StarList`, `PlanetList`, `ShipList`, `CommodList`, `BlockList`: RAII and readonly collection views (`entitylists.cppm`)
   - `SessionRegistry` (with transactional `SocketOutbox` staging live cross-player messages and governor/empire disconnects until `EntityManager::Transaction::commit()`) & Notification routing (`session_registry.cppm`, `notification.cppm`, `tele.cppm`)

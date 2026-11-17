@@ -189,12 +189,6 @@ void Server::check_turn_events(std::time_t current_time) {
       }
     }
     if (pending_turn_ || (go_time_ > 0 && current_time >= go_time_)) {
-      for (auto& session : sessions_) {
-        if (!session->is_disconnected() && session->connected() &&
-            session->game_obj().level() == ScopeLevel::LEVEL_SHIP) {
-          (void)session->game_obj().reconcile_scope();
-        }
-      }
       phase = turn_phase_name(state);
       do_next_thing(entity_manager_, *this);
       go_time_ = 0;
@@ -305,6 +299,14 @@ void Server::flush_all() {
     }
   }
   reap_disconnected_sessions();
+}
+
+void Server::reconcile_connected_scopes() {
+  for (auto& session : sessions_) {
+    if (!session->is_disconnected() && session->connected()) {
+      session->game_obj().reconcile_scope();
+    }
+  }
 }
 
 bool Server::is_connected(player_t race, governor_t gov) const {

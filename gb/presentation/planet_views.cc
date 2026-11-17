@@ -621,6 +621,9 @@ std::string render_for_mode(UiMode mode, const AnalysisViewModel& vm) {
 }
 
 std::string render_mobilize_status(const MobilizeStatusViewModel& vm) {
+  if (!vm.planet.colony) {
+    return std::format("You have not explored {} yet.\n", vm.planet.name);
+  }
   return std::format("Current mobilization: {}    Quota: {}\n",
                      vm.planet.colony->mobilization,
                      vm.planet.colony->target_mobilization);
@@ -632,6 +635,9 @@ std::string render_for_mode(UiMode mode, const MobilizeStatusViewModel& vm) {
 }
 
 std::string render_tax_status(const TaxStatusViewModel& vm) {
+  if (!vm.planet.colony) {
+    return std::format("You have not explored {} yet.\n", vm.planet.name);
+  }
   return std::format("Current tax rate: {}%    Target: {}%\n",
                      vm.planet.colony->tax, vm.planet.colony->target_tax);
 }
@@ -788,6 +794,9 @@ bool should_display_route(const ColonyRouteView& row,
 }  // namespace
 
 std::string render_route_list(const RouteListViewModel& vm) {
+  if (!vm.planet.colony) {
+    return std::format("You have not explored {} yet.\n", vm.planet.name);
+  }
   std::string out;
   tabulate::Table table;
   table.format().hide_border().column_separator("  ");

@@ -182,6 +182,32 @@ void test_profile_disembodied_race() {
   test::expect_contains(out, "Default Scope: /None/None");
   test::expect_contains(out, "NO DESIGNATED CAPITAL!!");
   std::println(std::cout, "    ✓ Disembodied deity self-profile verified");
+
+  // 0-planet home star reports /VoidStar/None without throwing out-of-range
+  ctx.create_star("VoidStar", 4).build();
+  ctx.em.mutate_race(1, [](Race& r) {
+    r.governor(Race::leader_id).homesystem = 4;
+    r.governor(Race::leader_id).homeplanetnum = 1;
+  });
+  ctx.setup_game_obj(g, 1, 1);
+  ctx.assert_dispatch_success(g, {"profile"});
+  test::expect_contains(g.out.str(), "Default Scope: /VoidStar/None");
+
+  // homeplanetnum = 0 on populated star reports /Sol/None; out-of-bounds
+  // homesystem (> num_stars) falls back to /None/None
+  ctx.em.mutate_race(1, [](Race& r) {
+    r.governor(Race::leader_id).homesystem = 1;
+    r.governor(Race::leader_id).homeplanetnum = 0;
+  });
+  ctx.setup_game_obj(g, 1, 1);
+  ctx.assert_dispatch_success(g, {"profile"});
+  test::expect_contains(g.out.str(), "Default Scope: /Sol/None");
+
+  ctx.em.mutate_race(
+      1, [](Race& r) { r.governor(Race::leader_id).homesystem = 99; });
+  ctx.setup_game_obj(g, 1, 1);
+  ctx.assert_dispatch_success(g, {"profile"});
+  test::expect_contains(g.out.str(), "Default Scope: /None/None");
 }
 
 }  // namespace

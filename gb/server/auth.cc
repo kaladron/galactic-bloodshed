@@ -117,13 +117,14 @@ void check_connect(Session& session, std::string_view message) {
         session.set_snum(1);  // Default to first star if invalid
       }
 
-      // Validate and clamp planet number
+      // Validate and clamp planet number, then reconcile full scope hierarchy
       session.entity_manager().with_star(
           session.snum(), [&](const Star& init_star) {
             if (session.pnum() < 1 || session.pnum() > init_star.numplanets()) {
               session.set_pnum(1);  // Default to first planet if invalid
             }
           });
+      session.game_obj().reconcile_scope();
 
       login_vm = GB::presentation::LoginViewModel{
           .race_id = Playernum,

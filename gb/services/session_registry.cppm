@@ -139,6 +139,12 @@ public:
     // Default implementation does nothing
   }
 
+  /// Reconcile the current scope of every connected session against live
+  /// ship, planet, and star state (invoked across turn boundaries).
+  virtual void reconcile_connected_scopes() {
+    // Default implementation does nothing
+  }
+
   /// Check if a player/governor is currently connected
   [[nodiscard]] virtual bool is_connected(player_t, governor_t) const {
     return false;  // Default: nobody is connected

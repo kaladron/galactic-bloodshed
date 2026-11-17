@@ -28,6 +28,14 @@ export enum class SessionStatus {
   Invalidated,  ///< Empire dissolved or governor revoked; disconnect requested
 };
 
+/// Outcome of validating an active `ScopeLevel::LEVEL_SHIP` scope.
+export enum class ShipScopeStatus {
+  Valid,         ///< Scoped ship is alive and owned by player (or Deity)
+  NoShipScoped,  ///< Scope was LEVEL_SHIP with shipno <= 0; stepped up
+  ShipMissing,   ///< Scoped ship was destroyed or deleted; stepped up
+  NotOwned,      ///< Scoped ship belongs to another empire; stepped up
+};
+
 /// Pure validation of whether a ship can be commanded by (player, governor).
 /// Checks ownership and governor authorization first (unless god is true), then
 /// liveness, and finally activity (radiation).
@@ -286,12 +294,16 @@ public:
   [[nodiscard]] std::optional<player_t>
   resolve_active_player(const std::string& token);
 
-  /// Verifies that a `ScopeLevel::LEVEL_SHIP` scope still points to a live
-  /// ship, refreshing cached carrier/celestial parent coordinates when alive or
-  /// stepping up to the innermost surviving carrier / celestial scope when the
-  /// ship no longer exists. Returns `false` if the scoped ship was missing and
-  /// the scope was stepped up.
-  bool reconcile_scope();
+  /// Validates an active `ScopeLevel::LEVEL_SHIP` scope, refreshing cached
+  /// carrier/celestial parent coordinates when alive and owned (or Deity), or
+  /// stepping up to the innermost valid ancestor scope when lost or captured.
+  [[nodiscard]] ShipScopeStatus reconcile_ship_scope();
+
+  /// Normalizes the session's full scope hierarchy (`LEVEL_SHIP`, `LEVEL_PLAN`,
+  /// `LEVEL_STAR`, `LEVEL_UNIV`), stepping up whenever a scoped ship is lost or
+  /// foreign, a star has zero planets, or a celestial body is unexplored by a
+  /// mortal player.
+  void reconcile_scope();
 
   /// Renders a view model or command result to `out` via the active
   /// polymorphic Presenter.
@@ -305,6 +317,12 @@ private:
     player_t player;
     governor_t governor;
   };
+
+  [[nodiscard]] bool is_valid_ship_scope(const Ship& ship) const noexcept;
+  void sync_celestial_coords_from_ship(const Ship& root) noexcept;
+  void step_up_from_ship_scope();
+  void reconcile_celestial_scope();
+  ShipScopeStatus reconcile_ship_scope_internal();
 
   // All state stored locally
   player_t player_ = 0;

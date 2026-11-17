@@ -824,6 +824,15 @@ void test_canonical_star_planet_sector_projectors() {
   test::expect_true(pv_orbit.environment->aliens_unknown);
   test::expect_true(pv_orbit.environment->aliens.empty());
   test::expect_false(pv_orbit.colony.has_value());
+  test::expect_contains(
+      GB::presentation::render_mobilize_status({.planet = pv_orbit}),
+      "You have not explored Vega Prime yet.");
+  test::expect_contains(
+      GB::presentation::render_tax_status({.planet = pv_orbit}),
+      "You have not explored Vega Prime yet.");
+  test::expect_contains(
+      GB::presentation::render_route_list({.planet = pv_orbit}),
+      "You have not explored Vega Prime yet.");
 
   // Orbiting ship sight on unexplored planet with high tech (reveals aliens)
   ctx.em.mutate_race(1, [](Race& r) { r.tech = 15.0; });  // >= TECH_EXPLORE

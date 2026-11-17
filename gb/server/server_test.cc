@@ -784,6 +784,33 @@ void test_server_fail_fast_boundaries() {
         "Emulated session ended; restored ServerTestRace \"Gov1\" [1,1].");
     test::expect_contains(drain_socket(mortal_leader), "ServerTestRace");
 
+    // Deity @@segment reconciles connected sessions' scopes across turns
+    const shipnum_t m_ship = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                                 .owned_by(2, 1)
+                                 .in_star_orbit(1)
+                                 .with_crew(2, 0)
+                                 .build();
+    ctx.em.mutate_star(1, [](Star& s) { s.mark_explored_by(2); });
+    const std::string scope_ship_cmd = std::format("cs #{}\n", m_ship);
+    mortal_leader.write_some(asio::buffer(scope_ship_cmd));
+    io.poll();
+    server.process_commands();
+    io.poll();
+    (void)drain_socket(mortal_leader);
+    ctx.em.mutate_ship(m_ship, [](Ship& s) { s.owner() = 1; });
+    const std::string seg_cmd = "@@segment\n";
+    deity1.write_some(asio::buffer(seg_cmd));
+    io.poll();
+    server.process_commands();
+    io.poll();
+    (void)drain_socket(deity1);
+    (void)drain_socket(mortal_leader);
+    const auto infos = server.get_connected_sessions();
+    const auto ml_it = std::ranges::find_if(
+        infos, [](const SessionInfo& s) { return s.player == 2; });
+    test::expect_true(ml_it != infos.end());
+    test::expect_eq(ml_it->snum, starnum_t{1});
+
     // Outbox-staged disconnect_race evicts all sessions of race 2 cleanly
     server.begin_outbox();
     server.disconnect_race(2, "Your empire has been dissolved.\n");

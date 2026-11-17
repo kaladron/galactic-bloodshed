@@ -87,6 +87,7 @@ void GameObj::emulate(player_t target_player, governor_t target_governor) {
   governor_ = target_governor;
   god_ = false;
   race = entity_manager.peek_race(target_player);
+  reconcile_scope();
 }
 
 SessionStatus GameObj::reconcile_session() {
@@ -134,71 +135,124 @@ GameObj::resolve_active_player(const std::string& token) {
   return target;
 }
 
-bool GameObj::reconcile_scope() {
-  if (level_ != ScopeLevel::LEVEL_SHIP) {
-    carrier_ancestors_.clear();
-    return true;
-  }
-  if (shipno_ > 0) {
-    try {
-      const auto* ship = entity_manager.peek_ship(shipno_);
-      carrier_ancestors_ = entity_manager.ancestor_carriers(shipno_);
-      const Ship* root =
-          carrier_ancestors_.empty()
-              ? ship
-              : entity_manager.peek_ship(carrier_ancestors_.back());
-      switch (root->whatorbits()) {
-        case ScopeLevel::LEVEL_PLAN:
-          snum_ = root->storbits();
-          pnum_ = root->pnumorbits();
-          break;
-        case ScopeLevel::LEVEL_STAR:
-          snum_ = root->storbits();
-          pnum_ = 0;
-          break;
-        case ScopeLevel::LEVEL_UNIV:
-        case ScopeLevel::LEVEL_SHIP:
-          snum_ = 0;
-          pnum_ = 0;
-          break;
-      }
-      return true;
-    } catch (const EntityNotFoundError&) {
-    }
-  }
+bool GameObj::is_valid_ship_scope(const Ship& ship) const noexcept {
+  if (!ship.alive()) return false;
+  if (god_) return true;
+  return ship.owner() == player_;
+}
 
+void GameObj::sync_celestial_coords_from_ship(const Ship& root) noexcept {
+  switch (root.whatorbits()) {
+    case ScopeLevel::LEVEL_PLAN:
+      snum_ = root.storbits();
+      pnum_ = root.pnumorbits();
+      break;
+    case ScopeLevel::LEVEL_STAR:
+      snum_ = root.storbits();
+      pnum_ = 0;
+      break;
+    case ScopeLevel::LEVEL_UNIV:
+    case ScopeLevel::LEVEL_SHIP:
+      snum_ = 0;
+      pnum_ = 0;
+      break;
+  }
+}
+
+void GameObj::step_up_from_ship_scope() {
   const auto saved_ancestors = std::move(carrier_ancestors_);
   carrier_ancestors_.clear();
   for (const shipnum_t anc_id : saved_ancestors) {
     try {
-      (void)entity_manager.peek_ship(anc_id);
-      shipno_ = anc_id;
-      (void)reconcile_scope();
-      return false;
-    } catch (const EntityNotFoundError&) {
-    }
-  }
-
-  shipno_ = 0;
-  if (snum_ > 0) {
-    try {
-      const auto* star = entity_manager.peek_star(snum_);
-      if (pnum_ > 0 && pnum_ <= star->numplanets()) {
-        try {
-          (void)entity_manager.peek_planet(snum_, pnum_);
-          level_ = ScopeLevel::LEVEL_PLAN;
-          return false;
-        } catch (const EntityNotFoundError&) {
-        }
+      const auto* anc = entity_manager.peek_ship(anc_id);
+      if (is_valid_ship_scope(*anc)) {
+        shipno_ = anc_id;
+        carrier_ancestors_ = entity_manager.ancestor_carriers(anc_id);
+        const Ship* root =
+            carrier_ancestors_.empty()
+                ? anc
+                : entity_manager.peek_ship(carrier_ancestors_.back());
+        sync_celestial_coords_from_ship(*root);
+        return;
       }
-      level_ = ScopeLevel::LEVEL_STAR;
-      pnum_ = 0;
-      return false;
     } catch (const EntityNotFoundError&) {
     }
   }
-  level_ = ScopeLevel::LEVEL_UNIV;
-  snum_ = 0;
-  pnum_ = 0;
-  return false;
+  shipno_ = 0;
+  level_ = ScopeLevel::LEVEL_PLAN;
+}
+
+void GameObj::reconcile_celestial_scope() {
+  if (level_ == ScopeLevel::LEVEL_SHIP || level_ == ScopeLevel::LEVEL_UNIV) {
+    return;
+  }
+  if (snum_ <= 0) {
+    level_ = ScopeLevel::LEVEL_UNIV;
+    snum_ = 0;
+    pnum_ = 0;
+    return;
+  }
+  const auto* star = entity_manager.peek_star(snum_);
+  if (level_ == ScopeLevel::LEVEL_PLAN) {
+    if (pnum_ >= 1 && pnum_ <= star->numplanets()) {
+      const auto* planet = entity_manager.peek_planet(snum_, pnum_);
+      if (god_ || planet->info(player_).explored) {
+        return;
+      }
+    }
+    level_ = ScopeLevel::LEVEL_STAR;
+    pnum_ = 0;
+  }
+  if (!god_ && !star->is_explored_by(player_)) {
+    level_ = ScopeLevel::LEVEL_UNIV;
+    snum_ = 0;
+    pnum_ = 0;
+  }
+}
+
+ShipScopeStatus GameObj::reconcile_ship_scope_internal() {
+  if (shipno_ <= 0) {
+    step_up_from_ship_scope();
+    reconcile_celestial_scope();
+    return ShipScopeStatus::NoShipScoped;
+  }
+  try {
+    const auto* ship = entity_manager.peek_ship(shipno_);
+    auto ancestors = entity_manager.ancestor_carriers(shipno_);
+    const Ship* root =
+        ancestors.empty() ? ship : entity_manager.peek_ship(ancestors.back());
+    sync_celestial_coords_from_ship(*root);
+    carrier_ancestors_ = std::move(ancestors);
+    if (!ship->alive()) {
+      step_up_from_ship_scope();
+      reconcile_celestial_scope();
+      return ShipScopeStatus::ShipMissing;
+    }
+    if (!god_ && ship->owner() != player_) {
+      step_up_from_ship_scope();
+      reconcile_celestial_scope();
+      return ShipScopeStatus::NotOwned;
+    }
+    return ShipScopeStatus::Valid;
+  } catch (const EntityNotFoundError&) {
+    step_up_from_ship_scope();
+    reconcile_celestial_scope();
+    return ShipScopeStatus::ShipMissing;
+  }
+}
+
+ShipScopeStatus GameObj::reconcile_ship_scope() {
+  if (level_ != ScopeLevel::LEVEL_SHIP) {
+    return ShipScopeStatus::Valid;
+  }
+  return reconcile_ship_scope_internal();
+}
+
+void GameObj::reconcile_scope() {
+  if (level_ == ScopeLevel::LEVEL_SHIP) {
+    reconcile_ship_scope_internal();
+    return;
+  }
+  carrier_ancestors_.clear();
+  reconcile_celestial_scope();
 }

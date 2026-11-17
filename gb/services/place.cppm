@@ -91,6 +91,32 @@ private:
                                             bool ignoreexpl);
 };
 
+[[nodiscard]] constexpr bool
+should_check_exploration(const ScopeContext& ctx,
+                         bool ignore_explore) noexcept {
+  if (ctx.god) return false;
+  return !ignore_explore;
+}
+
+[[nodiscard]] std::expected<void, PlaceError>
+validate_ship_place_access(const Ship& ship, const ScopeContext& ctx,
+                           bool ignore_explore) {
+  if (ctx.god) return {};
+  if (!ship.alive()) {
+    return std::unexpected(PlaceError{
+        .kind = PlaceErrorKind::DontOwnShip,
+        .target = std::format("{}", ship.number()),
+    });
+  }
+  if (!ignore_explore && ship.owner() != ctx.player) {
+    return std::unexpected(PlaceError{
+        .kind = PlaceErrorKind::DontOwnShip,
+        .target = std::format("{}", ship.number()),
+    });
+  }
+  return {};
+}
+
 std::expected<void, PlaceError>
 Place::ascend_parent_scope(EntityManager& em, const ScopeContext& ctx,
                            std::string_view string, const bool ignore_explore) {
@@ -105,12 +131,37 @@ Place::ascend_parent_scope(EntityManager& em, const ScopeContext& ctx,
         if (level == ScopeLevel::LEVEL_SHIP) {
           shipno = ship->destshipno().value_or(0);
           const auto* parent = em.peek_ship(shipno);
+          if (const auto ok =
+                  validate_ship_place_access(*parent, ctx, ignore_explore);
+              !ok) {
+            return std::unexpected(ok.error());
+          }
           snum = parent->storbits();
           pnum = parent->pnumorbits();
         } else {
           snum = ship->storbits();
           pnum = ship->pnumorbits();
           shipno = 0;
+          if (should_check_exploration(ctx, ignore_explore)) {
+            if (level == ScopeLevel::LEVEL_PLAN) {
+              const auto& star = *em.peek_star(snum);
+              const auto& planet = *em.peek_planet(snum, pnum);
+              if (!planet.info(ctx.player).explored) {
+                return std::unexpected(PlaceError{
+                    .kind = PlaceErrorKind::PlanetUnexplored,
+                    .target = star.get_planet_name(pnum),
+                });
+              }
+            } else if (level == ScopeLevel::LEVEL_STAR) {
+              const auto& star = *em.peek_star(snum);
+              if (!star.is_explored_by(ctx.player)) {
+                return std::unexpected(PlaceError{
+                    .kind = PlaceErrorKind::StarUnexplored,
+                    .target = star.get_name(),
+                });
+              }
+            }
+          }
         }
       } catch (const EntityNotFoundError&) {
         return std::unexpected(
@@ -132,13 +183,6 @@ Place::ascend_parent_scope(EntityManager& em, const ScopeContext& ctx,
     string.remove_prefix(1);
   }
   return getplace2(em, ctx, string, ignore_explore);
-}
-
-[[nodiscard]] constexpr bool
-should_check_exploration(const ScopeContext& ctx,
-                         bool ignore_explore) noexcept {
-  if (ctx.god) return false;
-  return !ignore_explore;
 }
 
 std::expected<void, PlaceError> Place::descend_from_universe(
@@ -270,19 +314,9 @@ Place::resolve_ship_place(EntityManager& em, const ScopeContext& ctx,
         .target = std::format("{}", *shipnum),
     });
   }
-  if (!ctx.god) {
-    if (!ship->alive()) {
-      return std::unexpected(PlaceError{
-          .kind = PlaceErrorKind::DontOwnShip,
-          .target = std::format("{}", *shipnum),
-      });
-    }
-    if (!ignore_explore && ship->owner() != ctx.player) {
-      return std::unexpected(PlaceError{
-          .kind = PlaceErrorKind::DontOwnShip,
-          .target = std::format("{}", *shipnum),
-      });
-    }
+  if (const auto ok = validate_ship_place_access(*ship, ctx, ignore_explore);
+      !ok) {
+    return std::unexpected(ok.error());
   }
   level = ScopeLevel::LEVEL_SHIP;
   shipno = ship->number();
@@ -308,7 +342,12 @@ std::expected<Place, PlaceError> Place::resolve(EntityManager& em,
     case ':':
       if (place.level == ScopeLevel::LEVEL_SHIP) {
         try {
-          (void)em.peek_ship(place.shipno);
+          if (!em.peek_ship(place.shipno)->alive()) {
+            step = std::unexpected(PlaceError{
+                .kind = PlaceErrorKind::ShipNotFound,
+                .target = {},
+            });
+          }
         } catch (const EntityNotFoundError&) {
           step = std::unexpected(PlaceError{
               .kind = PlaceErrorKind::ShipNotFound,

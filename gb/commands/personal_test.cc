@@ -52,6 +52,7 @@ void test_personal_dispatch() {
 
   // 2. Non-leader governor (governor 2) is rejected by leader_only role
   // requirement
+  ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
   g.set_governor(2);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"personal", "Unauthorized", "update"});

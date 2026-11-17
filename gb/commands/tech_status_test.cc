@@ -59,6 +59,7 @@ void test_status_dispatch() {
   output = g.out.str();
   test::expect_contains(output, "Technology Report");
   test::expect_contains(output, "Sol/Earth*");
+  ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
   g.set_governor(governor_t{2});
   ctx.assert_dispatch_success(g, {"status", "/Sol"});
   test::expect_false(g.out.str().contains("Sol/Earth*"));

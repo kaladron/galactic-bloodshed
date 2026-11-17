@@ -232,6 +232,7 @@ int main() {
     ctx.em.mutate_planet(1, 1, [](Planet& p) { p.slaved_to() = std::nullopt; });
 
     // Unauthorized governor in star system
+    ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
     g.set_governor(2);
     ctx.assert_dispatch_rejected(g, {"bid", "4", "500"});
     test::expect_contains(g.out.str(),

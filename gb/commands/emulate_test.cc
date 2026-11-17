@@ -112,6 +112,46 @@ void test_emulate_matrix() {
   test::expect_not_contains(g.out.str(), R"("type":"session")");
   test::expect_eq(g.player(), 2);
   test::expect_eq(g.governor(), 2);
+
+  // Revoking the emulated governor restores native Deity identity cleanly
+  ctx.em.mutate_race(2, [](Race& r) { (void)r.revoke_governor(2, 1); });
+  g.set_ui_mode(UiMode::ASCII);
+  ctx.assert_dispatch_rejected(g, {"treasury"});
+  test::expect_contains(
+      g.out.str(),
+      "Emulated session ended; restored DeityRace \"Supreme\" [1,1].");
+  test::expect_eq(g.player(), 1);
+  test::expect_eq(g.governor(), 1);
+  test::expect_true(g.god());
+  test::expect_false(g.disconnect_requested());
+
+  // Cannot emulate a dissolved empire
+  ctx.em.mutate_race(2, [](Race& r) { r.dissolved = true; });
+  ctx.assert_dispatch_rejected(g, {"emulate", "2", "1"});
+  test::expect_contains(g.out.str(), "Player 2 has dissolved.");
+  ctx.em.mutate_race(2, [](Race& r) { r.dissolved = false; });
+
+  // If the Deity's own governor or race is also gone when emulation ends,
+  // reconcile_session requests disconnect
+  ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2, {.name = "D2"}); });
+  ctx.setup_game_obj(g, 1, 2);
+  g.set_god(true);
+  ctx.assert_dispatch_success(g, {"emulate", "2", "1"});
+  ctx.em.mutate_race(2, [](Race& r) { r.dissolved = true; });
+  ctx.em.mutate_race(1, [](Race& r) { (void)r.revoke_governor(2, 1); });
+  ctx.assert_dispatch_rejected(g, {"treasury"});
+  test::expect_true(g.disconnect_requested());
+  test::expect_contains(g.out.str(), "Your session is no longer active.");
+
+  g.set_disconnect_requested(false);
+  ctx.setup_game_obj(g, 1, 1);
+  g.set_god(true);
+  ctx.em.mutate_race(2, [](Race& r) { r.dissolved = false; });
+  ctx.assert_dispatch_success(g, {"emulate", "2", "1"});
+  ctx.em.mutate_race(2, [](Race& r) { r.dissolved = true; });
+  ctx.em.mutate_race(1, [](Race& r) { r.dissolved = true; });
+  ctx.assert_dispatch_rejected(g, {"treasury"});
+  test::expect_true(g.disconnect_requested());
 }
 
 }  // namespace

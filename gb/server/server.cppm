@@ -28,6 +28,9 @@ public:
   void notify_race(player_t race, const std::string& message) override;
   bool notify_player(player_t race, governor_t gov,
                      const std::string& message) override;
+  void disconnect_governor(player_t race, governor_t gov,
+                           const std::string& message) override;
+  void disconnect_race(player_t race, const std::string& message) override;
   bool update_in_progress() const override {
     return update_flag_;
   }
@@ -79,6 +82,8 @@ public:
 private:
   void do_accept();
   void schedule_next_event();
+  void evict_matching_sessions(player_t race, std::optional<governor_t> gov,
+                               const std::string& message);
   void reap_disconnected_sessions();
   void fail_fast();
   bool do_command(Session& session, std::string_view comm);

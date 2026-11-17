@@ -44,6 +44,7 @@ void test_colonies_dispatch() {
   // 2. Colonization report for specific star & non-controlling governor
   ctx.assert_dispatch_success(g, {"colonies", "/Sol"});
   test::expect_contains(g.out.str(), "Sol");
+  ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
   g.set_governor(governor_t{2});
   ctx.assert_dispatch_success(g, {"colonies", "/Sol"});
   test::expect_false(g.out.str().contains("Earth"));

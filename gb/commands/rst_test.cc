@@ -255,6 +255,7 @@ void test_rst_filters_scopes_and_json() {
   test::expect_true(!univ_out.contains("EnemyShip"));
 
   // Subordinate governor 2 skips governor 3's ship
+  ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
   g.out.str("");
   g.set_governor(2);
   ctx.assert_dispatch_success(g, {"report", std::format("#{}", other_gov_id)});

@@ -722,6 +722,87 @@ void test_server_fail_fast_boundaries() {
     test::expect_not_contains(log_buf.str(), "raceword");
     test::expect_not_contains(log_buf.str(), "govword");
   }
+
+  // 4. Cross-session revoke evicts mortal/deity subordinate sessions, restores
+  //    emulating Deities, and keeps who/reap_disconnected_sessions crash-free
+  {
+    TestContext ctx;
+    setup_test_universe(ctx);
+    ctx.em.mutate_race(2, [](Race& r) {
+      r.appoint_governor(2, {.name = "SubMortal", .password = "subword"});
+    });
+
+    asio::io_context io;
+    Server server(io, 0, ctx.em);
+    server.start();
+
+    auto connect_login = [&](std::string_view creds) {
+      asio::ip::tcp::socket sock(io);
+      sock.connect(asio::ip::tcp::endpoint(asio::ip::address_v6::loopback(),
+                                           server.port()));
+      io.poll();
+      (void)drain_socket(sock);
+      const std::string line = std::format("{}\n", creds);
+      sock.write_some(asio::buffer(line));
+      io.poll();
+      server.process_commands();
+      io.poll();
+      (void)drain_socket(sock);
+      return sock;
+    };
+
+    auto deity1 = connect_login("raceword govword");
+    auto deity2 = connect_login("raceword govword2");
+    auto mortal_leader = connect_login("mortalpass mortalword");
+    auto mortal_sub = connect_login("mortalpass subword json");
+
+    // Deity 1 emulates Mortal [2,2]; Deity 1's second Deity governor [1,2] is
+    // revoked without crashing reap_disconnected_sessions; then Mortal Leader
+    // revokes [2,2], evicting mortal_sub while restoring deity1 to [1,1]!
+    const std::string d1_cmds = "revoke 2 govword2\nemulate 2 2\n";
+    deity1.write_some(asio::buffer(d1_cmds));
+    io.poll();
+    server.process_commands();
+    io.poll();
+    (void)drain_socket(deity1);
+    test::expect_false(server.is_connected(1, 2));
+    test::expect_contains(drain_socket(deity2),
+                          "Your governorship has been revoked.");
+
+    const std::string m1_cmds = "revoke 2 subword\nwho\n";
+    mortal_leader.write_some(asio::buffer(m1_cmds));
+    io.poll();
+    server.process_commands();
+    io.poll();
+
+    test::expect_false(server.is_connected(2, 2));
+    test::expect_true(server.is_connected(1, 1));
+    test::expect_contains(drain_socket(mortal_sub),
+                          "Your governorship has been revoked.");
+    test::expect_contains(
+        drain_socket(deity1),
+        "Emulated session ended; restored ServerTestRace \"Gov1\" [1,1].");
+    test::expect_contains(drain_socket(mortal_leader), "ServerTestRace");
+
+    // Outbox-staged disconnect_race evicts all sessions of race 2 cleanly
+    server.begin_outbox();
+    server.disconnect_race(2, "Your empire has been dissolved.\n");
+    (void)server.commit_outbox();
+    server.process_commands();
+    io.poll();
+    test::expect_false(server.is_connected(2, 1));
+    test::expect_contains(drain_socket(mortal_leader),
+                          "Your empire has been dissolved.");
+
+    // Dissolved Deity disconnect reaping skips departure broadcast safely
+    ctx.em.mutate_race(1, [](Race& r) { r.dissolved = true; });
+    deity1.close();
+    io.poll();
+    server.process_commands();
+    test::expect_false(server.has_fatal_error());
+
+    server.shutdown();
+  }
 }
 
 }  // namespace

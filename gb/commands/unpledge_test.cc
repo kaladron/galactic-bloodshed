@@ -88,6 +88,7 @@ void test_unpledge_dispatch() {
   std::println(std::cout, "    ✓ Self unpledge rejection verified");
 
   // 5. Role check: Sub-governor cannot unpledge
+  ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
   g.set_governor(2);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"unpledge", "2"});

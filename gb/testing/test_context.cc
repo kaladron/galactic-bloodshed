@@ -62,6 +62,9 @@ void TestContext::setup_game_obj(GameObj& g, player_t player, governor_t gov) {
   if (g.snum() == 0) g.set_snum(1);
   if (g.pnum() == 0) g.set_pnum(1);
   if (player > 0) {
+    if (!em.peek_race(player)->has_governor(gov)) {
+      em.mutate_race(player, [&](Race& r) { r.appoint_governor(gov); });
+    }
     g.race = em.peek_race(player);
   } else {
     g.race = nullptr;

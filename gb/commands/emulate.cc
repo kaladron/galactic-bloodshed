@@ -36,6 +36,10 @@ bool emulate(const command_t& argv, GameObj& g) {
     g.out << std::format("Player {} does not exist.\n", new_player);
     return false;
   }
+  if (race->dissolved) {
+    g.out << std::format("Player {} has dissolved.\n", new_player);
+    return false;
+  }
   if (new_gov < 1) {
     g.out << std::format("Invalid governor {}. Must be >= 1.\n", new_gov);
     return false;
@@ -45,11 +49,8 @@ bool emulate(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  // Switch to new player/governor
-  g.set_player(new_player);
-  g.set_governor(new_gov);
-  g.set_god(false);  // When emulating, act as normal player
-  g.race = race;
+  // Switch to new player/governor while recording native deity identity
+  g.emulate(new_player, new_gov);
 
   g.present(GB::presentation::make_output_message(
       std::format("Emulating {} \"{}\" [{},{}]\n", race->name,

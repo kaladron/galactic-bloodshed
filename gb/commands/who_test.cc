@@ -145,6 +145,23 @@ void test_who_matrix() {
   test::expect_contains(out, "Deity");
   mock_registry.sessions.pop_back();
 
+  // Stale session entries for revoked governors or dissolved races are skipped
+  // cleanly without throwing std::out_of_range
+  mock_registry.sessions.push_back(SessionInfo{.player = 1,
+                                               .governor = 6,
+                                               .snum = 1,
+                                               .connected = true,
+                                               .god = false,
+                                               .last_time = now});
+  ctx.em.mutate_race(player_t{2}, [](Race& r) { r.dissolved = true; });
+  g.out.str("");
+  test::expect_true(
+      GB::commands::dispatch_command(g, GB::commands::who_cmd, {"who"}));
+  test::expect_not_contains(g.out.str(), "[1,6]");
+  test::expect_not_contains(g.out.str(), "Klingons");
+  ctx.em.mutate_race(player_t{2}, [](Race& r) { r.dissolved = false; });
+  mock_registry.sessions.pop_back();
+
   // --- Case 4: JSON mode rendering ---
   g.set_ui_mode(UiMode::JSON);
   test::expect_true(

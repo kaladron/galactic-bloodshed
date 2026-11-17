@@ -17,12 +17,18 @@ namespace GB::commands {
 
 bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
                       const command_t& argv) {
-  const auto sync_race = [&]() {
-    g.race =
-        (g.player() > 0) ? g.entity_manager.peek_race(g.player()) : nullptr;
-  };
-  // Ensure g.race is valid and synchronized with current player
-  sync_race();
+  switch (g.reconcile_session()) {
+    case SessionStatus::Active:
+      break;
+    case SessionStatus::EmulationRestored:
+      g.present(GB::presentation::make_output_message(
+          g.format_emulation_restored_message()));
+      return false;
+    case SessionStatus::Invalidated:
+      g.present(GB::presentation::make_output_message(
+          "Your session is no longer active.\n"));
+      return false;
+  }
 
   // 1. Role & Permission Verification
   if (desc.roles.god_only && !g.god()) {
@@ -160,7 +166,7 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
       g.race = nullptr;
       throw;
     }
-    sync_race();
+    g.race = g.entity_manager.peek_race(g.player());
     g.out.truncate(out_checkpoint);
     g.present(GB::presentation::make_output_message(
         "Guest races cannot modify game state.\n"));
@@ -186,9 +192,17 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
     }
   }
 
-  // Re-bind g.race in case txn->rollback() or handler cache clearing
-  // invalidated race_cache.
-  sync_race();
+  // Reconcile g.race and identity after commit/rollback in case the handler
+  // dissolved or revoked the active or emulated target.
+  switch (g.reconcile_session()) {
+    case SessionStatus::Active:
+    case SessionStatus::Invalidated:
+      break;
+    case SessionStatus::EmulationRestored:
+      g.present(GB::presentation::make_output_message(
+          g.format_emulation_restored_message()));
+      break;
+  }
 
   if (g.level() == ScopeLevel::LEVEL_SHIP && (success || desc.name == "cs")) {
     (void)g.reconcile_scope();

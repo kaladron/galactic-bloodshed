@@ -310,6 +310,63 @@ void test_process_command_fail_fast_logging_and_rollback() {
     server.process_command(g, {"ship", std::format("{}", fac_id)});
     test::expect_false(server.has_fatal_error());
     test::expect_contains(g.out.str(), "no such ship");
+
+    // 5. Revoked or dissolved session skips illegal-command & JSON prompt
+    // crashes, while an emulating Deity restores identity on both illegal
+    // commands and mid-command target dissolution
+    ctx.em.mutate_race(1, [](Race& r) { r.God = true; });
+    ctx.em.mutate_race(2, [](Race& r) { r.appoint_governor(2); });
+    ctx.setup_game_obj(g, 1, 1);
+    g.set_god(true);
+    g.emulate(2, 2);
+    ctx.em.mutate_race(2, [](Race& r) { (void)r.revoke_governor(2, 1); });
+    g.out.clear();
+    server.process_command(g, {"unknown_after_revoke"});
+    test::expect_false(g.disconnect_requested());
+    test::expect_eq(g.player(), 1);
+    test::expect_true(g.god());
+    test::expect_contains(g.out.str(), "Emulated session ended; restored");
+
+    g.set_ui_mode(UiMode::JSON);
+    ctx.em.mutate_race(2, [](Race& r) { r.appoint_governor(2); });
+    ctx.setup_game_obj(g, 2, 2);
+    g.set_god(false);
+    ctx.em.mutate_race(2, [](Race& r) { (void)r.revoke_governor(2, 1); });
+    g.out.clear();
+    server.process_command(g, {"unknown_after_revoke"});
+    test::expect_true(g.disconnect_requested());
+    test::expect_true(g.out.str().empty());
+
+    // Mid-command session invalidation suppresses post-command do_prompt for
+    // mortals and restores native Deity identity when emulating
+    constexpr GB::commands::CommandDescriptor self_dissolve_desc{
+        .name = "time",
+        .scopes = GB::commands::AllowedScopes::any(),
+        .handler = [](const command_t&, GameObj& game) -> bool {
+          game.entity_manager.mutate_race(game.player(),
+                                          [](Race& r) { r.dissolved = true; });
+          return true;
+        },
+    };
+    g.set_disconnect_requested(false);
+    g.set_ui_mode(UiMode::ASCII);
+    ctx.setup_game_obj(g, 1, 1);
+    g.set_god(true);
+    g.emulate(2, 1);
+    g.out.clear();
+    test::expect_true(
+        GB::commands::dispatch_command(g, self_dissolve_desc, {"time"}));
+    test::expect_false(g.disconnect_requested());
+    test::expect_eq(g.player(), 1);
+    test::expect_true(g.god());
+    test::expect_contains(g.out.str(), "Emulated session ended; restored");
+
+    ctx.em.mutate_race(2, [](Race& r) { r.dissolved = false; });
+    ctx.setup_game_obj(g, 2, 1);
+    g.set_god(false);
+    test::expect_true(
+        GB::commands::dispatch_command(g, self_dissolve_desc, {"time"}));
+    test::expect_true(g.disconnect_requested());
   }
 }
 

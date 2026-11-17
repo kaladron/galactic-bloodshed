@@ -78,6 +78,48 @@ bool GameObj::check_commandable(const Ship& ship) {
   return true;
 }
 
+void GameObj::emulate(player_t target_player, governor_t target_governor) {
+  emulated_deity_ = EmulatedIdentity{
+      .player = player_,
+      .governor = governor_,
+  };
+  player_ = target_player;
+  governor_ = target_governor;
+  god_ = false;
+  race = entity_manager.peek_race(target_player);
+}
+
+SessionStatus GameObj::reconcile_session() {
+  if (player_ <= 0) {
+    race = nullptr;
+    return SessionStatus::Active;
+  }
+  const Race* current = entity_manager.peek_race(player_);
+  if (!current->dissolved && current->has_governor(governor_)) {
+    race = current;
+    return SessionStatus::Active;
+  }
+  if (emulated_deity_.has_value()) {
+    const auto origin = *std::exchange(emulated_deity_, std::nullopt);
+    const Race* deity_race = entity_manager.peek_race(origin.player);
+    if (!deity_race->dissolved && deity_race->has_governor(origin.governor)) {
+      player_ = origin.player;
+      governor_ = origin.governor;
+      god_ = deity_race->God;
+      race = deity_race;
+      return SessionStatus::EmulationRestored;
+    }
+  }
+  race = nullptr;
+  disconnect_requested_ = true;
+  return SessionStatus::Invalidated;
+}
+
+std::string GameObj::format_emulation_restored_message() const {
+  return std::format("Emulated session ended; restored {} \"{}\" [{},{}].\n",
+                     race->name, current_governor().name, player_, governor_);
+}
+
 bool GameObj::reconcile_scope() {
   if (level_ != ScopeLevel::LEVEL_SHIP) {
     carrier_ancestors_.clear();

@@ -26,6 +26,7 @@ bool who(const command_t&, GameObj& g, bool show_cowards) {
   // Get all connected sessions as metadata (no Session type exposure)
   for (const auto& info : g.session_registry.get_connected_sessions()) {
     g.entity_manager.with_race(info.player, [&](const Race& r) {
+      if (r.dissolved || !r.has_governor(info.governor)) return;
       const auto& gov = r.governor(info.governor);
       // Check if this player should be visible
       const bool is_visible =

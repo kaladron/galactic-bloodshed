@@ -82,6 +82,7 @@ void test_motto_database_persistence() {
   // TEST 4: Non-governor should be rejected
   std::println(std::cout, "  Testing: Non-governor authorization check");
   {
+    ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
     g.set_governor(2);  // Change to non-leader governor
     ctx.assert_dispatch_rejected(g, {"motto", "Should", "Fail"});
 

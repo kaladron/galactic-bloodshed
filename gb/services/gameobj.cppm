@@ -20,6 +20,14 @@ export enum class CommandableError {
   ShipIrradiated,
 };
 
+/// Outcome of reconciling a session's bound player and governor against live
+/// database state.
+export enum class SessionStatus {
+  Active,  ///< Current player/governor is valid (or headless player 0)
+  EmulationRestored,  ///< Emulated target ended; native Deity identity restored
+  Invalidated,  ///< Empire dissolved or governor revoked; disconnect requested
+};
+
 /// Pure validation of whether a ship can be commanded by (player, governor).
 /// Checks ownership and governor authorization first (unless god is true), then
 /// liveness, and finally activity (radiation).
@@ -178,6 +186,7 @@ public:
   // Setters - update local storage
   void set_player(player_t p) {
     player_ = p;
+    emulated_deity_.reset();
   }
   void set_governor(governor_t g) {
     governor_ = g;
@@ -256,6 +265,21 @@ public:
   /// Emits the diagnostic message for a CommandableError on `ship` to `out`.
   void report_commandable_error(const Ship& ship, CommandableError error);
 
+  /// Switches this session to emulate `(target_player, target_governor)` as a
+  /// mortal while preserving the native Deity identity for restoration if the
+  /// emulated target is later revoked or dissolved.
+  void emulate(player_t target_player, governor_t target_governor);
+
+  /// Verifies that `player()` / `governor()` still refer to a non-dissolved
+  /// race and appointed governor, refreshing `race` when valid. Restores a
+  /// saved Deity emulation origin (`SessionStatus::EmulationRestored`) or marks
+  /// `disconnect_requested()` (`SessionStatus::Invalidated`) when not.
+  [[nodiscard]] SessionStatus reconcile_session();
+
+  /// Formats the diagnostic notice emitted when an emulated session restores
+  /// its native Deity identity.
+  [[nodiscard]] std::string format_emulation_restored_message() const;
+
   /// Verifies that a `ScopeLevel::LEVEL_SHIP` scope still points to a live
   /// ship, refreshing cached carrier/celestial parent coordinates when alive or
   /// stepping up to the innermost surviving carrier / celestial scope when the
@@ -271,6 +295,11 @@ public:
   }
 
 private:
+  struct EmulatedIdentity {
+    player_t player;
+    governor_t governor;
+  };
+
   // All state stored locally
   player_t player_ = 0;
   governor_t governor_ = Race::leader_id;
@@ -286,4 +315,5 @@ private:
   UniverseCoordinates universe_center_{0.0, 0.0};
   SystemCoordinates system_center_{0.0, 0.0};
   std::vector<shipnum_t> carrier_ancestors_{};
+  std::optional<EmulatedIdentity> emulated_deity_{};
 };

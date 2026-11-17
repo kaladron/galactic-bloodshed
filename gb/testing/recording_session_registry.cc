@@ -58,6 +58,33 @@ bool RecordingSessionRegistry::notify_player(player_t race, governor_t gov,
   return true;
 }
 
+void RecordingSessionRegistry::disconnect_governor(player_t race,
+                                                   governor_t gov,
+                                                   const std::string& message) {
+  if (stage_player_disconnect(race, gov, message)) return;
+  notifications.push_back({
+      .player = race,
+      .governor = gov,
+      .message = message,
+      .is_broadcast = false,
+  });
+  std::erase_if(sessions, [&](const auto& s) {
+    return s.player == race && s.governor == gov;
+  });
+}
+
+void RecordingSessionRegistry::disconnect_race(player_t race,
+                                               const std::string& message) {
+  if (stage_race_disconnect(race, message)) return;
+  notifications.push_back({
+      .player = race,
+      .governor = Race::leader_id,
+      .message = message,
+      .is_broadcast = true,
+  });
+  std::erase_if(sessions, [&](const auto& s) { return s.player == race; });
+}
+
 bool RecordingSessionRegistry::update_in_progress() const {
   return update_in_progress_flag;
 }

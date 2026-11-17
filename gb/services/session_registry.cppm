@@ -34,6 +34,7 @@ export struct StagedNotification {
   governor_t governor;
   std::string message;
   bool is_broadcast{false};
+  bool disconnect{false};
 };
 
 /// Abstract interface for session management (cross-cutting concern)
@@ -60,6 +61,19 @@ public:
   virtual bool notify_player(player_t race, governor_t gov,
                              const std::string& message) = 0;
 
+  /// Notify and disconnect any active session for `(race, gov)` (or restore
+  /// native Deity identity if a Deity is currently emulating `(race, gov)`).
+  virtual void disconnect_governor(player_t race, governor_t gov,
+                                   const std::string& message) {
+    (void)stage_player_disconnect(race, gov, message);
+  }
+
+  /// Notify and disconnect all active sessions for `race` (or restore native
+  /// Deity identity for any Deity currently emulating `race`).
+  virtual void disconnect_race(player_t race, const std::string& message) {
+    (void)stage_race_disconnect(race, message);
+  }
+
   // --- Transactional Socket Outbox ---
 
   /// Begin staging live socket notifications in the transactional outbox.
@@ -76,7 +90,13 @@ public:
     auto staged = std::exchange(outbox_, {});
     std::vector<StagedNotification> undelivered;
     for (auto& item : staged) {
-      if (item.is_broadcast) {
+      if (item.disconnect) {
+        if (item.is_broadcast) {
+          disconnect_race(item.player, item.message);
+        } else {
+          disconnect_governor(item.player, item.governor, item.message);
+        }
+      } else if (item.is_broadcast) {
         notify_race(item.player, item.message);
       } else if (!notify_player(item.player, item.governor, item.message)) {
         undelivered.push_back(std::move(item));
@@ -169,6 +189,31 @@ protected:
         .governor = gov,
         .message = message,
         .is_broadcast = false,
+    });
+    return true;
+  }
+
+  bool stage_race_disconnect(player_t race, const std::string& message) {
+    if (!outbox_active_) return false;
+    outbox_.push_back({
+        .player = race,
+        .governor = 0,
+        .message = message,
+        .is_broadcast = true,
+        .disconnect = true,
+    });
+    return true;
+  }
+
+  bool stage_player_disconnect(player_t race, governor_t gov,
+                               const std::string& message) {
+    if (!outbox_active_) return false;
+    outbox_.push_back({
+        .player = race,
+        .governor = gov,
+        .message = message,
+        .is_broadcast = false,
+        .disconnect = true,
     });
     return true;
   }

@@ -27,7 +27,11 @@ void test_revoke_validation_and_transfers() {
     PowerRepository(store).save(Power{{.id = 1}});
   }
 
-  auto& registry = get_test_session_registry();
+  RecordingSessionRegistry registry;
+  registry.sessions = {
+      SessionInfo{.player = 1, .governor = 1, .connected = true},
+      SessionInfo{.player = 1, .governor = 2, .connected = true},
+  };
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
 
@@ -70,6 +74,7 @@ void test_revoke_validation_and_transfers() {
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"revoke", "2", "secret123", "2"});
   test::expect_contains(g.out.str(), "Bad target governor");
+  test::expect_true(registry.is_connected(1, 2));
 
   g.out.str("");
   ctx.setup_game_obj(g, 1, 2);
@@ -126,6 +131,10 @@ void test_revoke_validation_and_transfers() {
   test::expect_contains(g.out.str(), R"("type":"message")");
   test::expect_contains(g.out.str(), "Done.");
   test::expect_contains(g.out.str(), R"("type":"race")");
+  test::expect_false(registry.is_connected(1, 2));
+  test::expect_true(registry.is_connected(1, 1));
+  test::expect_true(
+      registry.has_received(1, "Your governorship has been revoked."));
 
   g.set_ui_mode(UiMode::ASCII);
   g.out.str("");

@@ -267,6 +267,37 @@ bool Server::notify_player(player_t race, governor_t gov,
   return delivered;
 }
 
+void Server::disconnect_governor(player_t race, governor_t gov,
+                                 const std::string& message) {
+  if (stage_player_disconnect(race, gov, message)) return;
+  evict_matching_sessions(race, gov, message);
+}
+
+void Server::disconnect_race(player_t race, const std::string& message) {
+  if (stage_race_disconnect(race, message)) return;
+  evict_matching_sessions(race, std::nullopt, message);
+}
+
+void Server::evict_matching_sessions(player_t race,
+                                     std::optional<governor_t> gov,
+                                     const std::string& message) {
+  for (auto& session : sessions_) {
+    if (session->is_disconnected()) continue;
+    if (session->player() != race) continue;
+    if (gov.has_value() && session->governor() != *gov) continue;
+
+    auto& sg = session->game_obj();
+    if (sg.disconnect_requested()) continue;
+    if (sg.reconcile_session() == SessionStatus::EmulationRestored) {
+      session->send(sg.format_emulation_restored_message());
+      continue;
+    }
+    sg.set_disconnect_requested(true);
+    session->send(message);
+    session->disconnect();
+  }
+}
+
 void Server::flush_all() {
   for (auto& session : sessions_) {
     if (!session->is_disconnected()) {
@@ -321,15 +352,21 @@ void Server::reap_disconnected_sessions() {
   for (const auto& [player, governor] : departing_deities) {
     std::string race_name;
     std::string gov_name;
+    bool active_gov = false;
     entity_manager_.with_race(player, [&](const Race& race) {
-      race_name = race.name;
-      gov_name = race.governor(governor).name;
+      if (!race.dissolved && race.has_governor(governor)) {
+        race_name = race.name;
+        gov_name = race.governor(governor).name;
+        active_gov = true;
+      }
     });
-    d_shout(
-        *this, entity_manager_, player, governor,
-        std::format(
-            "\n*** Deity {} \"{}\" [{},{}] has departed the universe. ***\n",
-            race_name, gov_name, player, governor));
+    if (active_gov) {
+      d_shout(
+          *this, entity_manager_, player, governor,
+          std::format(
+              "\n*** Deity {} \"{}\" [{},{}] has departed the universe. ***\n",
+              race_name, gov_name, player, governor));
+    }
   }
 }
 
@@ -383,18 +420,23 @@ void Server::process_command(GameObj& g, const command_t& argv,
   if (argv.empty()) return;
 
   try {
-    g.race = g.entity_manager.peek_race(g.player());
-
     if (const auto* desc = GB::commands::find_command_descriptor(argv[0])) {
       GB::commands::dispatch_command(g, *desc, argv);
     } else {
-      g.out << std::format("'{}':illegal command error.\n", argv[0]);
+      switch (g.reconcile_session()) {
+        case SessionStatus::Active:
+          g.out << std::format("'{}':illegal command error.\n", argv[0]);
+          break;
+        case SessionStatus::EmulationRestored:
+          g.out << g.format_emulation_restored_message();
+          break;
+        case SessionStatus::Invalidated:
+          break;
+      }
     }
 
     /* compute the prompt and send to the player */
     if (!g.disconnect_requested() && !g.shutdown_requested()) {
-      g.race =
-          (g.player() > 0) ? g.entity_manager.peek_race(g.player()) : nullptr;
       g.reconcile_scope();
       g.out << GB::presentation::do_prompt(g);
     }

@@ -99,6 +99,8 @@ bool revoke(const command_t& argv, GameObj& g) {
     success = true;
   });
   if (success) {
+    g.session_registry.disconnect_governor(
+        Playernum, gov, "Your governorship has been revoked.\n");
     g.present(GB::presentation::make_output_message("Done.\n"));
   }
   return success;

@@ -59,6 +59,7 @@ void test_production_dispatch() {
   test::expect_contains(g.out.str(), "Sol/Eart");
 
   // Non-controlling governor filters out colonies
+  ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
   g.set_governor(governor_t{2});
   g.out.str("");
   ctx.assert_dispatch_success(g, {"production", "/Sol"});

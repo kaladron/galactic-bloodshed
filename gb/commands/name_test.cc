@@ -239,6 +239,7 @@ void test_name_block() {
 
   // TEST: Non-leader governor (governor 2) is rejected
   {
+    ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
     g.set_governor(2);
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "block", "Rebel", "Alliance"});
@@ -364,6 +365,7 @@ void test_name_permissions_scope_and_json() {
 
   // TEST: Non-leader naming race -> rejected
   {
+    ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
     g.set_governor(2);
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "race", "Forbidden"});

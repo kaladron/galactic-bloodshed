@@ -54,6 +54,7 @@ void test_pay_dispatch() {
   std::println(std::cout, "    ✓ Money transfer saved correctly");
 
   // 2. Role check: Governor != 1 cannot pay
+  ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
   g.set_governor(2);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"pay", "2", "500"});

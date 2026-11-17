@@ -464,6 +464,11 @@ public:
   bool notify_player(player_t race, governor_t gov,
                      const std::string& message) override;
 
+  void disconnect_governor(player_t race, governor_t gov,
+                           const std::string& message) override;
+
+  void disconnect_race(player_t race, const std::string& message) override;
+
   [[nodiscard]] bool update_in_progress() const override;
 
   void set_update_in_progress(bool val) override;

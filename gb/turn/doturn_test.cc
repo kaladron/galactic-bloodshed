@@ -1507,6 +1507,7 @@ void test_doturn_mcdc_branches() {
     s.segments = 1;
     s.nsegments_done = 1;
   });
+  do_segment(ctx.em, reg, /*override=*/1, /*segment=*/0);
   do_segment(ctx.em, reg, /*override=*/1, /*segment=*/1);
 
   const std::filesystem::path nogo_path = pkg_state_path("nogo");

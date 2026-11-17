@@ -1182,19 +1182,33 @@ int main() {
       test::expect_false(attempt_planet_landing(em, *vn, planet, smap));
 
       vn->land_on_planet(1, 1, {0, 0});
-      planet_doVN(*vn_ship, planet, smap, em, stats);
+      vn->admin_override_fuel(vn->max_fuel_capacity());
+      planet_doVN(*vn_ship, planet, smap, em, stats);  // !busy && full fuel
+      vn->admin_override_fuel(0.0);
+      planet_doVN(*vn_ship, planet, smap, em, stats);  // !busy && low fuel
 
       auto bers_landed = ShipFactory::create(ship_struct{
           .number = 905,
           .owner = 1,
-          .special = MindData{.busy = true},
+          .max_destruct = 500,
+          .max_fuel = 100,
+          .special = MindData{.busy = false},
           .storbits = 1,
           .pnumorbits = 1,
           .whatorbits = ScopeLevel::LEVEL_PLAN,
           .type = ShipType::OTYPE_BERS,
           .dock_state = DockState::Landed,
       });
-      planet_doVN(*bers_landed, planet, smap, em, stats);
+      planet_doVN(*bers_landed, planet, smap, em, stats);  // !busy
+      bers_landed->as<AutonomousShip>()->set_busy(true);
+      bers_landed->admin_override_fuel(100.0);
+      bers_landed->add_destruct(100);
+      planet_doVN(*bers_landed, planet, smap, em,
+                  stats);  // busy && full fuel && partial destruct
+      bers_landed->add_destruct(400);
+      planet_doVN(*bers_landed, planet, smap, em,
+                  stats);  // busy && full fuel && full destruct -> clears busy
+      test::expect_false(bers_landed->as<AutonomousShip>()->is_busy());
 
       stats.VN_brain.total_mad = 200;
       for (int i = 0; i < 20; ++i) {

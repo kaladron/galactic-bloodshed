@@ -431,6 +431,26 @@ void test_scrap_toxic_waste_warning() {
                         "WARNING: This will release 20 toxin points");
   test::expect_eq(static_cast<int>(ctx.em.peek_planet(1, 1)->toxic()), 45);
 
+  // Canister berthed inside a carrier in stellar orbit releases 0 planetary
+  // toxin
+  const auto star_carrier = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
+                                .owned_by(1, 1)
+                                .in_star_orbit(1)
+                                .with_max_hanger(50)
+                                .with_crew(10, 0)
+                                .build();
+  const auto star_tox = TestShipBuilder(ctx.em, ShipType::OTYPE_TOXWC)
+                            .owned_by(1, 1)
+                            .docked_to(star_carrier, 1)
+                            .with_special(WasteData{.toxic = 20})
+                            .build();
+  g.set_shipno(star_carrier);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"scrap", std::format("#{}", star_tox.value)},
+                              1);
+  test::expect_false(g.out.str().contains("WARNING"));
+  test::expect_eq(static_cast<int>(ctx.em.peek_planet(1, 1)->toxic()), 45);
+
   ctx.verify_universe_invariants();
 }
 

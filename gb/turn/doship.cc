@@ -721,7 +721,7 @@ resource_t do_weapon_plant(Ship& ship, EntityManager& entity_manager,
     return 0;
   }
   const auto clamp_batches = [](double x) noexcept -> resource_t {
-    if (!std::isfinite(x) || x <= 0.0) return 0;
+    if (!(x > 0.0)) return 0;
     constexpr auto max_d =
         static_cast<double>(std::numeric_limits<resource_t>::max());
     return (x >= max_d) ? std::numeric_limits<resource_t>::max()

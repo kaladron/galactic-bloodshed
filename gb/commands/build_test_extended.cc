@@ -774,6 +774,41 @@ void test_multi_build_loop_revalidation() {
   test::expect_true(GB::commands::build({"build", "F", "3"}, g));
   test::expect_eq(fixture.em.ships_in_hangar(hab_id).size(), 1U);
   test::expect_eq(fixture.get_ship(hab_id)->popn(), 0);
+
+  // 4. Factory berthed inside a non-Habitat carrier or validated without EM
+  // rejects with FactoryNotLanded; Deity builds bypass tech/crew/site checks
+  const shipnum_t carrier_id =
+      TestShipBuilder(fixture.em, ShipType::STYPE_CARRIER)
+          .owned_by(1, 1)
+          .in_star_orbit(fixture.star_id)
+          .with_max_hanger(200)
+          .build();
+  const shipnum_t carrier_fac =
+      TestShipBuilder(fixture.em, ShipType::OTYPE_FACTORY)
+          .owned_by(1, 1)
+          .docked_to(carrier_id, fixture.star_id)
+          .with_build_type(ShipType::STYPE_SHUTTLE)
+          .with_damage(0)
+          .with_on(true)
+          .build();
+  test::expect_false(
+      build_at_ship(1, 1, false, *fixture.get_ship(carrier_fac), nullptr)
+          .has_value());
+  test::expect_false(
+      build_at_ship(1, 1, false, *fixture.get_ship(carrier_fac), &fixture.em)
+          .has_value());
+
+  fixture.em.mutate_race(1, [](Race& r) {
+    r.God = true;
+    r.tech = 0.0;
+  });
+  fixture.em.mutate_ship(hab_id, [](Ship& h) { h.add_popn(1, 1.0); });
+  fixture.init_game_obj(g, ScopeLevel::LEVEL_SHIP, hab_id);
+  g.set_god(true);
+  test::expect_true(GB::commands::build({"build", "s", "1"}, g));
+  fixture.init_game_obj(g, ScopeLevel::LEVEL_PLAN);
+  g.set_god(true);
+  test::expect_true(GB::commands::build({"build", "d", "4,4", "1"}, g));
 }
 
 int main() {

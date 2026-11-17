@@ -168,9 +168,9 @@ build_at_ship(const player_t playernum, const governor_t governor,
   if (!builder.popn()) {
     return std::unexpected(ShipBuildError::NoCrew);
   }
-  if (builder.is_docked() &&
-      !(builder.type() == ShipType::OTYPE_FACTORY &&
-        builder.whatorbits() == ScopeLevel::LEVEL_SHIP)) {
+  const bool berthed_factory = builder.type() == ShipType::OTYPE_FACTORY &&
+                               builder.whatorbits() == ScopeLevel::LEVEL_SHIP;
+  if (builder.is_docked() && !berthed_factory) {
     return std::unexpected(ShipBuildError::ShipDocked);
   }
   if (builder.damage()) {
@@ -180,14 +180,13 @@ build_at_ship(const player_t playernum, const governor_t governor,
     if (!builder.on()) {
       return std::unexpected(ShipBuildError::FactoryNotOnline);
     }
-    if (builder.whatorbits() == ScopeLevel::LEVEL_SHIP && em &&
-        builder.destshipno().has_value()) {
-      const auto* carrier = em->peek_ship(*builder.destshipno());
-      if (carrier && carrier->type() == ShipType::STYPE_HABITAT) {
+    if (builder.whatorbits() == ScopeLevel::LEVEL_SHIP && em) {
+      const auto& carrier = *em->peek_ship(*builder.destshipno());
+      if (carrier.type() == ShipType::STYPE_HABITAT) {
         return ShipBuildLocation{
             .level = ScopeLevel::LEVEL_SHIP,
-            .snum = carrier->storbits(),
-            .pnum = carrier->pnumorbits(),
+            .snum = carrier.storbits(),
+            .pnum = carrier.pnumorbits(),
         };
       }
     }
@@ -383,6 +382,23 @@ std::tuple<money_t, double> shipping_cost(EntityManager& em, const starnum_t to,
   return {fcost, dist};
 }
 
+std::optional<std::pair<starnum_t, planetnum_t>>
+resolve_ship_planet_orbit(EntityManager& em, const Ship& ship) {
+  if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN) {
+    return std::pair{ship.storbits(), ship.pnumorbits()};
+  }
+  if (ship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
+    const auto ancestors = em.ancestor_carriers(ship.number());
+    if (!ancestors.empty()) {
+      const auto& root = *em.peek_ship(ancestors.back());
+      if (root.whatorbits() == ScopeLevel::LEVEL_PLAN) {
+        return std::pair{root.storbits(), root.pnumorbits()};
+      }
+    }
+  }
+  return std::nullopt;
+}
+
 std::expected<ScrapShipResult, ScrapError>
 scrap_single_ship(EntityManager& em, Ship& s, const Race& race) {
   if (s.max_crew_capacity() > 0 && s.popn() == 0) {
@@ -426,16 +442,7 @@ scrap_single_ship(EntityManager& em, Ship& s, const Race& race) {
   };
 
   if (const auto* tox = s.as<ToxicWasteShip>()) {
-    bool at_planet = (s.whatorbits() == ScopeLevel::LEVEL_PLAN);
-    if (!at_planet && s.whatorbits() == ScopeLevel::LEVEL_SHIP &&
-        s.number() != 0) {
-      const auto ancestors = em.ancestor_carriers(s.number());
-      if (!ancestors.empty()) {
-        const auto* root = em.peek_ship(ancestors.back());
-        at_planet = (root && root->whatorbits() == ScopeLevel::LEVEL_PLAN);
-      }
-    }
-    if (at_planet) {
+    if (resolve_ship_planet_orbit(em, s).has_value()) {
       result.toxin_released = tox->toxic_level();
     }
   }
@@ -1189,7 +1196,7 @@ void commit_ship_upgrade(EntityManager& entity_manager, Ship& dirship,
 
   if (dirship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
     entity_manager.mutate_ship(*dirship.destshipno(), [&](Ship& carrier) {
-      if (remaining > 0 && carrier.owner() == race.Playernum) {
+      if (remaining > 0) {
         carrier.consume_resource(remaining);
       }
       carrier.unload_docked_craft(old_size, old_mass);
@@ -1255,16 +1262,15 @@ upgrade_single_ship(EntityManager& entity_manager, Ship& dirship,
 
   resource_t available = dirship.resource();
   if (dirship.is_landed()) {
-    const auto* planet =
-        entity_manager.peek_planet(dirship.storbits(), dirship.pnumorbits());
-    if (planet && planet->has_info(race.Playernum)) {
-      available += planet->info(race.Playernum).resource;
+    const auto& planet =
+        *entity_manager.peek_planet(dirship.storbits(), dirship.pnumorbits());
+    if (planet.has_info(race.Playernum)) {
+      available += planet.info(race.Playernum).resource;
     }
-  } else if (dirship.whatorbits() == ScopeLevel::LEVEL_SHIP &&
-             dirship.destshipno().has_value()) {
-    const auto* carrier = entity_manager.peek_ship(*dirship.destshipno());
-    if (carrier && carrier->owner() == race.Playernum) {
-      available += carrier->resource();
+  } else if (dirship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
+    const auto& carrier = *entity_manager.peek_ship(*dirship.destshipno());
+    if (carrier.owner() == race.Playernum) {
+      available += carrier.resource();
     }
   }
 

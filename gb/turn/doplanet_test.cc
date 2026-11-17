@@ -2955,6 +2955,11 @@ void test_moveplanet_and_ground_mcdc() {
       });
       process_planetary_ships(ctx.em, p, smap, stats);
 
+      // landed Berserker with destruct > 0 and bombard == true -> planet_doVN
+      ctx.em.mutate_ship(bers_id,
+                         [](Ship& b) { b.land_on_planet(1, 1, {0, 0}); });
+      process_planetary_ships(ctx.em, p, smap, stats);
+
       // process_planet_economy & send_planet_turn_telegrams when !has_info(2)
       // but mob > 0 or !prod.empty()
       stats.add_mob_points(2, 10);

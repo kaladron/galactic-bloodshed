@@ -702,6 +702,13 @@ void test_upgrade_json_god_mode_and_edge_cases() {
   test::expect_eq(ctx.em.peek_ship(berthed_ftr)->armor(), 5);
   test::expect_lt(ctx.em.peek_ship(carrier)->resource(), 300);
 
+  // Berthed inside a foreign-owned carrier cannot draw from the alien carrier's
+  // stockpile
+  ctx.em.mutate_ship(carrier, [](Ship& c) { c.owner() = 2; });
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "6"});
+  test::expect_contains(g.out.str(), "resources on board");
+
   const shipnum_t gr_id = TestShipBuilder(ctx.em, ShipType::OTYPE_GR)
                               .owned_by(1, 1)
                               .landed_on(1, 1, {0, 0})

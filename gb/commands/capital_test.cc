@@ -139,6 +139,39 @@ void test_capital_matrix() {
                                {"capital", std::format("#{}", deep_gov.value)});
   test::expect_contains(g.out.str(), "Try landing this ship first!");
 
+  // Non-Habitat carrier is rejected; Habitat in planetary orbit succeeds
+  const shipnum_t non_hab = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
+                                .owned_by(1, 1)
+                                .in_planet_orbit(1, 1)
+                                .with_max_hanger(100)
+                                .with_crew(50, 0)
+                                .build();
+  const shipnum_t non_hab_gov = TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
+                                    .owned_by(1, 1)
+                                    .docked_to(non_hab, 1)
+                                    .with_crew(10, 0)
+                                    .build();
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"capital", std::format("#{}", non_hab_gov.value)});
+  test::expect_contains(g.out.str(), "Try landing this ship first!");
+
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(player_t{1}) = 100; });
+  const shipnum_t plan_hab = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
+                                 .owned_by(1, 1)
+                                 .in_planet_orbit(1, 1)
+                                 .with_max_hanger(100)
+                                 .with_crew(50, 0)
+                                 .build();
+  const shipnum_t plan_gov = TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
+                                 .owned_by(1, 1)
+                                 .docked_to(plan_hab, 1)
+                                 .with_crew(10, 0)
+                                 .build();
+  ctx.assert_dispatch_success(
+      g, {"capital", std::format("#{}", plan_gov.value)}, 50);
+  test::expect_eq(ctx.em.peek_race(1)->Gov_ship, plan_gov);
+
   ctx.verify_universe_invariants();
 }
 

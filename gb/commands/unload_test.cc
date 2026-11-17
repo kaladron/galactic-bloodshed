@@ -406,6 +406,17 @@ void test_unload_onto_alien_sector() {
       g, {"unload", std::format("#{}", assault_id.value), "c", "50"}, 1);
   test::expect_contains(g.out.str(), "VICTORY! The sector is yours!");
   test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({2, 2}).get_owner(), 1);
+
+  // 4. Hostile alien-sector unload with 0 Star AP is rejected before assault
+  ctx.em.mutate_planet_and_sectors(1, 1, [](Planet& p, SectorMap& map) {
+    map.get({2, 2}).set_owner(2);
+    p.sync_demographics(map);
+  });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 0; });
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"unload", std::format("#{}", assault_id.value), "m", "5"});
+  test::expect_contains(g.out.str(), "You don't have 1 action points there.");
   ctx.verify_universe_invariants();
   std::println(std::cout, "✓ Amphibious alien sector assaults verified");
 }

@@ -12,8 +12,7 @@ module gb.mechanics;
 bool is_hostile_planet_defense(EntityManager& entity_manager,
                                const Ship& candidate, const player_t attacker) {
   if (candidate.type() != ShipType::OTYPE_PLANDEF || !candidate.alive() ||
-      !candidate.active() || !candidate.on() || candidate.owner() == attacker ||
-      candidate.owner() == 0) {
+      !candidate.active() || !candidate.on() || candidate.owner() == attacker) {
     return false;
   }
   if (attacker > 0) {

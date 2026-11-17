@@ -197,7 +197,7 @@ shoot_ship_to_planet(EntityManager& em, const Ship& ship, Planet& pl,
       const player_t sector_owner = s.get_owner();
       if (sector_owner != 0) {
         const auto clamp_to_popn = [](double x) noexcept -> population_t {
-          if (!std::isfinite(x) || x <= 0.0) return 0;
+          if (!(x > 0.0)) return 0;
           constexpr auto max_pop =
               static_cast<double>(std::numeric_limits<population_t>::max());
           return (x >= max_pop) ? std::numeric_limits<population_t>::max()
@@ -742,7 +742,7 @@ void record_autonomous_ship_kill(EntityManager& em, player_t destroyer,
   if (destroyer != 0) {
     auto_ship->set_who_killed(destroyer);
   }
-  if (const auto killer = auto_ship->who_killed(); killer && *killer != 0) {
+  if (const auto killer = auto_ship->who_killed()) {
     em.mutate_universe([&](Universe& universe) {
       universe.record_vn_kill(*killer, ship.orbited_star(),
                               uniform_rand(0, 1) == 0);
@@ -776,19 +776,7 @@ void apply_toxic_waste_fallout(EntityManager& em, const Ship& ship) {
   const auto* tox = ship.as<ToxicWasteShip>();
   if (!tox) return;
 
-  std::optional<std::pair<starnum_t, planetnum_t>> target_planet;
-  if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN) {
-    target_planet = {ship.storbits(), ship.pnumorbits()};
-  } else if (ship.whatorbits() == ScopeLevel::LEVEL_SHIP &&
-             ship.number() != 0) {
-    const auto ancestors = em.ancestor_carriers(ship.number());
-    if (!ancestors.empty()) {
-      const auto* root = em.peek_ship(ancestors.back());
-      if (root && root->whatorbits() == ScopeLevel::LEVEL_PLAN) {
-        target_planet = {root->storbits(), root->pnumorbits()};
-      }
-    }
-  }
+  const auto target_planet = resolve_ship_planet_orbit(em, ship);
   if (!target_planet) return;
 
   em.mutate_planet(

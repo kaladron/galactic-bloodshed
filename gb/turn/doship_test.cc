@@ -2342,6 +2342,23 @@ void test_doship_mcdc_branches() {
     });
   }
   test::expect_eq(hazard_stats.power_stats(player_t{2}).ships_owned, 0U);
+
+  // Environmental (destroyer == 0) kill_ship on crewed ship and unattributed VN
+  shipnum_t env_ship = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                           .owned_by(1)
+                           .in_star_orbit(1)
+                           .build();
+  shipnum_t env_vn = TestShipBuilder(ctx.em, ShipType::OTYPE_VN)
+                         .owned_by(1)
+                         .in_star_orbit(1)
+                         .build();
+  {
+    auto barrier = ctx.em.create_deletion_barrier();
+    ctx.em.mutate_ship(env_ship,
+                       [&](Ship& s) { kill_ship(ctx.em, player_t{0}, s); });
+    ctx.em.mutate_ship(env_vn,
+                       [&](Ship& s) { kill_ship(ctx.em, player_t{0}, s); });
+  }
 }
 
 }  // namespace

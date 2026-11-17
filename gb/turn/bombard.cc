@@ -122,7 +122,7 @@ void dispatch_bombardment_alerts(EntityManager& entity_manager,
  */
 int berserker_bombard(EntityManager& entity_manager, Ship& ship, Planet& planet,
                       const Race& r) {
-  if (!ship.alive() || (ship.has_switch() && !ship.on()) ||
+  if (!ship.alive() || !ship.on() ||
       ship.whatorbits() != ScopeLevel::LEVEL_PLAN) {
     return 0;
   }

@@ -291,8 +291,7 @@ validate_non_factory_ship_build(const command_t& argv, GameObj& g,
                        .outside = outside};
 }
 
-bool execute_single_habitat_factory_build(GameObj& g, const Ship& builder,
-                                          const ShipBuildPlan& plan) {
+bool execute_single_habitat_factory_build(GameObj& g, const Ship& builder) {
   const player_t Playernum = g.player();
   const governor_t Governor = g.governor();
   const auto& race = *g.race;
@@ -324,8 +323,7 @@ bool execute_single_habitat_factory_build(GameObj& g, const Ship& builder,
   g.present(create_ship_by_ship(g.entity_manager, Playernum, Governor, race,
                                 false, *newship, habitat));
   const auto [load_crew, load_fuel] =
-      (g.current_governor().toggle.autoload &&
-       plan.what != ShipType::OTYPE_TRANSDEV && !race.God)
+      (g.current_governor().toggle.autoload && !race.God)
           ? autoload_at_ship(*newship, habitat, race.mass)
           : std::pair<population_t, fuel_t>{0, 0.0};
 
@@ -343,7 +341,7 @@ bool execute_single_factory_build(GameObj& g, Ship& builder,
                                   ScopeLevel build_level, starnum_t snum,
                                   planetnum_t pnum) {
   if (build_level == ScopeLevel::LEVEL_SHIP) {
-    return execute_single_habitat_factory_build(g, builder, plan);
+    return execute_single_habitat_factory_build(g, builder);
   }
   const player_t Playernum = g.player();
   const governor_t Governor = g.governor();
@@ -407,7 +405,7 @@ bool execute_single_non_factory_ship_build(GameObj& g, Ship& builder,
   auto newship = getship(plan.what, race);
   const resource_t shipcost = newship->build_cost();
 
-  if (!builder.popn() && builder.max_crew_capacity() > 0 && !race.God) {
+  if (!builder.popn()) {
     g.out << GB::presentation::format_ship_build_error(ShipBuildError::NoCrew);
     return false;
   }
@@ -434,8 +432,7 @@ bool execute_single_non_factory_ship_build(GameObj& g, Ship& builder,
   g.present(create_ship_by_ship(g.entity_manager, Playernum, Governor, race,
                                 plan.outside, *newship, builder));
   const auto [load_crew, load_fuel] =
-      (g.current_governor().toggle.autoload &&
-       plan.what != ShipType::OTYPE_TRANSDEV && !race.God)
+      (g.current_governor().toggle.autoload && !race.God)
           ? autoload_at_ship(*newship, builder, race.mass)
           : std::pair<population_t, fuel_t>{0, 0.0};
 

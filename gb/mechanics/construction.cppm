@@ -108,6 +108,9 @@ export CreatedShipSummary create_ship_by_ship(EntityManager& entity_manager,
                                               const Race& race, bool outside,
                                               Ship& newship, Ship& builder);
 
+export std::optional<std::pair<starnum_t, planetnum_t>>
+resolve_ship_planet_orbit(EntityManager& em, const Ship& ship);
+
 export enum class ScrapError {
   NoCrew,
   StarNotFound,

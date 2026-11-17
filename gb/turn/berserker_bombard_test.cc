@@ -148,7 +148,25 @@ int main() {
     test::expect_false(
         check_orbital_pdn_defense(ctx.em, orbit_planet, player_t{1}));
 
-    // 5. Active hostile PDN blocks bombardment
+    // 5. Destroyed, irradiated, unowned, or one-sided-allied PDNs: only live,
+    // active, online, non-mutually-allied hostile PDNs block bombardment
+    auto rad_pdn = TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF)
+                       .owned_by(2)
+                       .with_alive(true)
+                       .in_planet_orbit(1, 3)
+                       .build_handle();
+    rad_pdn->alive() = false;
+    test::expect_false(
+        check_orbital_pdn_defense(ctx.em, orbit_planet, player_t{1}));
+    rad_pdn->alive() = true;
+    rad_pdn->active() = false;
+    test::expect_false(
+        check_orbital_pdn_defense(ctx.em, orbit_planet, player_t{1}));
+
+    // One-sided alliance (Race 1 allies with Race 2, Race 2 does not ally back)
+    // still treats Race 2's online PDN as hostile
+    ctx.em.mutate_race(1,
+                       [](Race& r) { r.declare_alliance_with(player_t{2}); });
     auto h_handle = TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF)
                         .owned_by(2)
                         .with_alive(true)
@@ -157,6 +175,8 @@ int main() {
 
     test::expect_true(
         check_orbital_pdn_defense(ctx.em, orbit_planet, player_t{1}));
+    ctx.em.mutate_race(1,
+                       [](Race& r) { r.rescind_alliance_with(player_t{2}); });
   }
 
   // =========================================================================
@@ -314,6 +334,16 @@ int main() {
                         .in_planet_orbit(1, 4)
                         .build_handle();
     Planet target_planet(ctx.em.peek_planet(1, 4)->get_struct());
+    test::expect_eq(berserker_bombard(ctx.em, *off_bers, target_planet, race1),
+                    0);
+    test::expect_eq(off_bers->destruct(), 500);
+
+    off_bers->on() = true;
+    off_bers->alive() = false;
+    test::expect_eq(berserker_bombard(ctx.em, *off_bers, target_planet, race1),
+                    0);
+    off_bers->alive() = true;
+    off_bers->enter_star_orbit(1);
     test::expect_eq(berserker_bombard(ctx.em, *off_bers, target_planet, race1),
                     0);
     test::expect_eq(off_bers->destruct(), 500);

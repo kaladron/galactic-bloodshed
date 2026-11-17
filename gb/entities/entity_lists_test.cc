@@ -301,6 +301,14 @@ void test_getracenum_and_get_player(EntityManager& em) {
     test::expect_eq(p, player_t{1});
     test::expect_eq(g, governor_t{2});
   }
+  // 4. Dissolved race credentials are rejected by getracenum
+  em.mutate_race(1, [](Race& r) { r.dissolved = true; });
+  {
+    auto [p, g] = getracenum(em, "rpass1", "gpass2");
+    test::expect_eq(p, player_t{0});
+    test::expect_eq(g, governor_t{0});
+  }
+  em.mutate_race(1, [](Race& r) { r.dissolved = false; });
 
   // get_player found and not found
   test::expect_eq(get_player(em, "TestRace2"), player_t{2});

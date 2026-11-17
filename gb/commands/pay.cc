@@ -16,11 +16,9 @@ namespace GB::commands {
 
 bool pay(const command_t& argv, GameObj& g) {
   player_t Playernum = g.player();
-  player_t who = get_player(g.entity_manager, argv[1]);
-  if (who == player_t{0}) {
-    g.out << "No such player.\n";
-    return false;
-  }
+  const auto target = g.resolve_active_player(argv[1]);
+  if (!target) return false;
+  const player_t who = *target;
 
   auto parsed_amount = parse_int<money_t>(argv[2]);
   if (!parsed_amount) {

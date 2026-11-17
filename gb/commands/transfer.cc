@@ -24,11 +24,9 @@ bool transfer(const command_t& argv, GameObj& g) {
     planet_name = star.get_planet_name(g.pnum());
   });
 
-  auto player = get_player(g.entity_manager, argv[1]);
-  if (player == 0) {
-    g.out << "No such player.\n";
-    return false;
-  }
+  const auto target = g.resolve_active_player(argv[1]);
+  if (!target) return false;
+  const player_t player = *target;
 
   if (argv[2].size() != 1) {
     g.out << "Invalid commodity type.\n";

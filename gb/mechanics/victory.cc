@@ -18,7 +18,7 @@ std::vector<Victory> create_victory_list(EntityManager& entity_manager) {
                 .thing = race.Metamorph,
                 .iq = race.IQ,
                 .rawscore = race.victory_score};
-    if (race.God || race.Guest || race.dissolved) vic.no_count = true;
+    vic.no_count = !race.is_active_mortal();
     victories.emplace_back(vic);
   }
   std::ranges::sort(victories, std::less());

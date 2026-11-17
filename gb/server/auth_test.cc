@@ -96,6 +96,18 @@ void test_check_connect_failure() {
   check_connect(*session2, "wrong password");
   test::expect_false(session2->connected());
   test::expect_contains(session2->pending_output(), "Connection refused.");
+
+  // 3. Dissolved empire credentials rejected at login
+  ctx.em.mutate_race(1, [](Race& r) {
+    r.password = "deadpass";
+    r.leader().password = "deadgov";
+    r.dissolved = true;
+  });
+  asio::ip::tcp::socket socket3(io);
+  auto session3 = Session::create(std::move(socket3), ctx.em, registry);
+  check_connect(*session3, "deadpass deadgov");
+  test::expect_false(session3->connected());
+  test::expect_contains(session3->pending_output(), "Connection refused.");
 }
 
 void test_check_connect_duplicate_session_rejection() {

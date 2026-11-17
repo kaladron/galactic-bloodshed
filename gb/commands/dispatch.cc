@@ -180,20 +180,15 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
   if (txn) {
     if (success) {
       txn->commit();
-      for (const auto& item : g.session_registry.commit_outbox()) {
-        if (!guest_read_only) {
-          push_telegram(g.entity_manager, item.player, item.governor,
-                        item.message);
-        }
-      }
     } else {
       g.session_registry.rollback_outbox();
       txn->rollback();
     }
   }
 
-  // Reconcile g.race and identity after commit/rollback in case the handler
-  // dissolved or revoked the active or emulated target.
+  // Reconcile g.race and identity after commit/rollback before flushing the
+  // socket outbox so self-dissolving sessions mark disconnect_requested() (or
+  // restore Deity emulation) prior to disconnect_race() broadcast delivery.
   switch (g.reconcile_session()) {
     case SessionStatus::Active:
     case SessionStatus::Invalidated:
@@ -202,6 +197,15 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
       g.present(GB::presentation::make_output_message(
           g.format_emulation_restored_message()));
       break;
+  }
+
+  if (txn && success) {
+    for (const auto& item : g.session_registry.commit_outbox()) {
+      if (!guest_read_only) {
+        push_telegram(g.entity_manager, item.player, item.governor,
+                      item.message);
+      }
+    }
   }
 
   if (g.level() == ScopeLevel::LEVEL_SHIP && (success || desc.name == "cs")) {

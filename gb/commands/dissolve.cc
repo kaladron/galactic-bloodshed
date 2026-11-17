@@ -39,40 +39,60 @@ std::vector<shipnum_t> destroy_empire_ships(GameObj& g, player_t playernum) {
 void dissolve_empire_colonies(GameObj& g, player_t playernum, bool waste) {
   for (auto star_handle : StarList(g.entity_manager)) {
     Star& star = *star_handle;
-    if (!star.is_explored_by(playernum)) {
-      continue;
-    }
-
     for (const auto& planet :
          PlanetList::readonly(g.entity_manager, star.star_id(), star)) {
-      g.entity_manager.mutate_planet_and_sectors(
-          star.star_id(), planet.planet_order(),
-          [&](Planet& pl, SectorMap& smap) {
-            auto& pinfo = pl.info(playernum);
-            pinfo.fuel = 0;
-            pinfo.destruct = 0;
-            pinfo.resource = 0;
-            pinfo.popn = 0;
-            pinfo.troops = 0;
-            pinfo.tax = 0;
-            pinfo.newtax = 0;
-            pinfo.crystals = 0;
-            pinfo.numsectsowned = 0;
-            pinfo.explored = 0;
-            pinfo.autorep = 0;
-
-            for (auto& s : smap.owned_by(playernum)) {
-              if (waste) {
-                s.devastate();
-              } else {
-                s.clear_colony();
+      if (planet.slaved_to() == playernum) {
+        g.entity_manager.mutate_planet(
+            star.star_id(), planet.planet_order(),
+            [](Planet& pl) { pl.slaved_to() = std::nullopt; });
+      }
+      if (star.is_explored_by(playernum)) {
+        g.entity_manager.mutate_planet_and_sectors(
+            star.star_id(), planet.planet_order(),
+            [&](Planet& pl, SectorMap& smap) {
+              pl.info_map().erase(playernum);
+              for (auto& s : smap.owned_by(playernum)) {
+                if (waste) {
+                  s.devastate();
+                } else {
+                  s.clear_colony();
+                }
               }
-            }
-            pl.sync_demographics(smap);
-          });
+              pl.sync_demographics(smap);
+            });
+      }
     }
     star.clear_inhabited_by(playernum);
   }
+}
+
+void scrub_empire_market_and_blocks(EntityManager& em, player_t playernum) {
+  {
+    auto barrier = em.create_deletion_barrier();
+    for (auto commod_handle : CommodList(em)) {
+      auto& commod = *commod_handle;
+      if (commod.owner() == playernum) {
+        em.delete_commod(commod.id());
+      } else if (commod.bidder() == playernum) {
+        commod.clear_bid();
+      }
+    }
+  }
+  em.mutate_power(playernum, [&](Power& p) { p = Power{{.id = playernum}}; });
+  for (auto block_handle : BlockList(em)) {
+    auto& block = *block_handle;
+    if (block.Playernum() == playernum) {
+      block.invited().clear();
+      block.pledged().clear();
+      block.clear_power_stats();
+      block.systems_owned() = 0;
+      block.VPs() = 0;
+    } else {
+      block.uninvite(playernum);
+      block.unpledge(playernum);
+    }
+  }
+  compute_power_blocks(em);
 }
 
 }  // namespace
@@ -127,6 +147,9 @@ bool dissolve(const command_t& argv, GameObj& g, bool dissolve_enabled) {
          GB::presentation::render_dissolve_declaration_news(result),
          NewsType::DECLARATION);
   });
+  scrub_empire_market_and_blocks(g.entity_manager, playernum);
+  g.session_registry.disconnect_race(playernum,
+                                     "Your empire has been dissolved.\n");
 
   g.present(result);
   return true;

@@ -83,10 +83,12 @@ void test_power_dispatch() {
   test::expect_contains(out, "Klingons");
   std::println(std::cout, "    ✓ power target player succeeded");
 
-  // 3. Error case: invalid player, plus God VN mode and JSON mode
+  // 3. Error case: invalid/dissolved player, plus God VN mode and JSON mode
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"power", "99"});
-  test::expect_contains(g.out.str(), "No such player");
+  test::expect_contains(g.out.str(), "No such player.");
+  ctx.assert_dispatch_rejected(g, {"power", "4"});
+  test::expect_contains(g.out.str(), "That player has dissolved.");
   std::println(std::cout, "    ✓ power rejected non-existent player");
 
   ctx.em.mutate_race(1, [](Race& r) { r.God = true; });

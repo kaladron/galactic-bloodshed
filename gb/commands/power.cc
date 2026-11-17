@@ -69,12 +69,8 @@ bool power(const command_t& argv, GameObj& g) {
   std::optional<player_t> target_player;
 
   if (argv.size() >= 2) {
-    player_t p = get_player(g.entity_manager, argv[1]);
-    if (p == 0) {
-      g.out << "No such player,\n";
-      return false;
-    }
-    target_player = p;
+    target_player = g.resolve_active_player(argv[1]);
+    if (!target_player) return false;
   }
 
   const auto* race = g.race;
@@ -90,20 +86,15 @@ bool power(const command_t& argv, GameObj& g) {
       rank++;
       player_t p = vic.racenum;
       const auto* r = g.entity_manager.peek_race(p);
-      if (!r) continue;
       if (!r->dissolved && race->translation_for(p) >= 10) {
         add_power_row(vm, g.entity_manager, g.scope_context(), *race, *r, p,
                       rank);
       }
     }
   } else {
-    const auto* r = g.entity_manager.peek_race(target_player.value());
-    if (!r) {
-      g.out << "Race not found.\n";
-      return false;
-    }
+    const auto* r = g.entity_manager.peek_race(*target_player);
     add_power_row(vm, g.entity_manager, g.scope_context(), *race, *r,
-                  target_player.value(), 0);
+                  *target_player, 0);
   }
 
   g.present(vm);

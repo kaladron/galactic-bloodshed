@@ -56,8 +56,43 @@ void test_dissolve_happy_path() {
   TestContext ctx;
   const auto [ship1, ship2] = setup_test_world(ctx);
 
-  // Create GameObj for command execution
-  auto& registry = get_test_session_registry();
+  // Seed foreign slaved_to, market lots/bids, coalition blocks, and Power stats
+  ctx.em.mutate_planet(2, 1, [](Planet& p) { p.slaved_to() = 1; });
+  int own_lot_id = 0;
+  int bid_lot_id = 0;
+  {
+    auto own_lot = ctx.em.create_commod({.owner = 1,
+                                         .governor = 1,
+                                         .amount = 10,
+                                         .star_from = 1,
+                                         .planet_from = 1});
+    own_lot_id = own_lot->id();
+    own_lot.save();
+    auto bid_lot = ctx.em.create_commod({.owner = 2,
+                                         .governor = 1,
+                                         .amount = 15,
+                                         .star_from = 2,
+                                         .planet_from = 1});
+    bid_lot->place_bid(1, 1, 200, 1, 1);
+    bid_lot_id = bid_lot->id();
+    bid_lot.save();
+  }
+  ctx.em.mutate_block(1, [](Block& b) {
+    b.add_member(2);
+    b.VPs() = 50;
+  });
+  ctx.em.mutate_block(2, [](Block& b) { b.add_member(1); });
+  ctx.em.mutate_power(1, [](Power& p) {
+    p = Power{{.id = 1, .popn = 1000, .ships_owned = 1}};
+  });
+
+  // Create GameObj for command execution with co-governor online
+  RecordingSessionRegistry registry;
+  registry.sessions = {
+      SessionInfo{.player = 1, .governor = 1, .connected = true},
+      SessionInfo{.player = 1, .governor = 2, .connected = true},
+      SessionInfo{.player = 2, .governor = 1, .connected = true},
+  };
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
   g.set_level(ScopeLevel::LEVEL_UNIV);
@@ -68,6 +103,11 @@ void test_dissolve_happy_path() {
                                 {"dissolve", "testpass", "govpass", "waste"});
     test::expect_contains(
         g.out.str(), std::format("Ship #{}, self-destruct enabled", ship1));
+    test::expect_true(g.disconnect_requested());
+    test::expect_false(registry.is_connected(1, 2));
+    test::expect_true(registry.is_connected(2, 1));
+    test::expect_true(
+        registry.has_received(1, "Your empire has been dissolved."));
 
     // Clear cache to force reload from database
     ctx.em.clear_cache();
@@ -76,6 +116,17 @@ void test_dissolve_happy_path() {
     const auto* saved_race = ctx.em.peek_race(1);
     test::expect_ne(saved_race, nullptr);
     test::expect_true(saved_race->dissolved);
+
+    // Verify foreign enslavement, market lots/bids, Block, and Power scrubbed
+    test::expect_eq(ctx.em.peek_planet(2, 1)->slaved_to(), std::nullopt);
+    test::expect_throws<EntityNotFoundError>(
+        [&]() { ctx.em.peek_commod(own_lot_id); });
+    test::expect_false(ctx.em.peek_commod(bid_lot_id)->has_bid());
+    test::expect_eq(ctx.em.peek_block(1)->members(), 0U);
+    test::expect_true(ctx.em.peek_block(1)->invited().empty());
+    test::expect_false(ctx.em.peek_block(2)->is_invited(1));
+    test::expect_false(ctx.em.peek_block(2)->is_pledged(1));
+    test::expect_eq(ctx.em.peek_power(1)->popn(), 0);
 
     // Verify ship was destroyed (hard-deleted) while player 2's ship remains
     // alive

@@ -120,6 +120,20 @@ std::string GameObj::format_emulation_restored_message() const {
                      race->name, current_governor().name, player_, governor_);
 }
 
+std::optional<player_t>
+GameObj::resolve_active_player(const std::string& token) {
+  const player_t target = get_player(entity_manager, token);
+  if (target == 0) {
+    out << "No such player.\n";
+    return std::nullopt;
+  }
+  if (entity_manager.peek_race(target)->dissolved) {
+    out << "That player has dissolved.\n";
+    return std::nullopt;
+  }
+  return target;
+}
+
 bool GameObj::reconcile_scope() {
   if (level_ != ScopeLevel::LEVEL_SHIP) {
     carrier_ancestors_.clear();

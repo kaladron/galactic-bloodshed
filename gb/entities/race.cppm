@@ -106,6 +106,12 @@ public:
   bool Guest{false};     /* Player is a guest race. */
   bool Metamorph{false}; /* Player is a morph; (for printing). */
 
+  /// Returns whether this race is an active mortal empire (neither a Deity,
+  /// Guest observer, nor dissolved).
+  [[nodiscard]] constexpr bool is_active_mortal() const noexcept {
+    return !God && !Guest && !dissolved;
+  }
+
   std::flat_map<player_t, Percentage>
       translate{}; /* translation mod for each player */
 

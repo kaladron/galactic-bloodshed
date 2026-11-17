@@ -31,12 +31,9 @@ static void transfer_star_data(EntityManager& em, player_t donor_id,
 
 bool dump(const command_t& argv, GameObj& g) {
   const player_t donor_id = g.player();
-
-  const player_t recipient_id = get_player(g.entity_manager, argv[1]);
-  if (recipient_id.value == 0) {
-    g.out << "No such player.\n";
-    return false;
-  }
+  const auto target = g.resolve_active_player(argv[1]);
+  if (!target) return false;
+  const player_t recipient_id = *target;
 
   GB::presentation::DumpViewModel vm{
       .recipient = recipient_id,

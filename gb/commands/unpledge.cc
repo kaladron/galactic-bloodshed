@@ -16,11 +16,9 @@ namespace GB::commands {
 /* declare that you wish to withdraw from the alliance block */
 bool unpledge(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player();
-  player_t n = get_player(g.entity_manager, argv[1]);
-  if (n == player_t{0}) {
-    g.out << "No such player.\n";
-    return false;
-  }
+  const auto target = g.resolve_active_player(argv[1]);
+  if (!target) return false;
+  const player_t n = *target;
   if (n == Playernum) {
     g.out << "Not needed, you are the leader.\n";
     return false;

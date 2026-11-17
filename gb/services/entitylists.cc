@@ -361,13 +361,11 @@ ScopedCommandableShips::ReadonlyIterator ScopedCommandableShips::end() const {
 std::tuple<player_t, governor_t> getracenum(EntityManager& entity_manager,
                                             const std::string& racepass,
                                             const std::string& govpass) {
-  for (auto race_handle : RaceList(entity_manager)) {
-    const auto& race = race_handle.read();
-    if (racepass == race.password) {
-      for (auto [j, gov] : race.active_governors()) {
-        if (!gov.password.empty() && govpass == gov.password) {
-          return {race.Playernum, j};
-        }
+  for (const Race& race : RaceList::readonly(entity_manager)) {
+    if (race.dissolved || racepass != race.password) continue;
+    for (auto [j, gov] : race.active_governors()) {
+      if (!gov.password.empty() && govpass == gov.password) {
+        return {race.Playernum, j};
       }
     }
   }

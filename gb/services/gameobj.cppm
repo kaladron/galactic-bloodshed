@@ -280,6 +280,12 @@ public:
   /// its native Deity identity.
   [[nodiscard]] std::string format_emulation_restored_message() const;
 
+  /// Resolves `token` by player name or number, emitting `"No such player.\n"`
+  /// when not found or `"That player has dissolved.\n"` when the target empire
+  /// has dissolved.
+  [[nodiscard]] std::optional<player_t>
+  resolve_active_player(const std::string& token);
+
   /// Verifies that a `ScopeLevel::LEVEL_SHIP` scope still points to a live
   /// ship, refreshing cached carrier/celestial parent coordinates when alive or
   /// stepping up to the innermost surviving carrier / celestial scope when the

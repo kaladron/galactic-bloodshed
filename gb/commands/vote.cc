@@ -25,7 +25,7 @@ tally_votes(GameObj& g, GB::presentation::VoteViewerRole role) {
       g.entity_manager, g.scope_context(), g.player()));
 
   for (const Race& race : RaceList::readonly(g.entity_manager)) {
-    if (race.God || race.Guest) continue;
+    if (!race.is_active_mortal()) continue;
     vm.total_votes++;
     if (race.votes) {
       vm.yays++;

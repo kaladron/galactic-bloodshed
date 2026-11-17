@@ -93,10 +93,12 @@ void test_unanimous_vote_lifecycle() {
       .add_race("MortalOne", 100.0, false, player_t{1})
       .add_race("MortalTwo", 100.0, false, player_t{2})
       .add_race("GodRace", 100.0, false, player_t{3})
-      .add_race("GuestRace", 100.0, false, player_t{4});
+      .add_race("GuestRace", 100.0, false, player_t{4})
+      .add_race("DissolvedRace", 100.0, false, player_t{5});
 
   ctx.em.mutate_race(3, [](Race& r) { r.God = true; });
   ctx.em.mutate_race(4, [](Race& r) { r.Guest = true; });
+  ctx.em.mutate_race(5, [](Race& r) { r.dissolved = true; });
 
   {
     JsonStore store(ctx.db);

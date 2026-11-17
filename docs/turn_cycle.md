@@ -105,7 +105,7 @@ Open market lots on the Interstellar Exchange are evaluated and cleared during t
 In games where turn acceleration voting is enabled, empires can vote to bypass remaining wait timers when ready:
 
 - **Commands**: `vote update go` (ready to advance) and `vote update wait` (request remaining scheduled time).
-- **Unanimity Rule**: If **all mortal empires** currently active in the galaxy vote `go` (excluding Deities and Guest observers), the simulation immediately triggers the next scheduled movement segment or turn update.
+- **Unanimity Rule**: If **all mortal empires** currently active in the galaxy vote `go` (excluding Deities, Guest observers, and dissolved empires), the simulation immediately triggers the next scheduled movement segment or turn update.
 - **Automatic Reset**: Upon completion of a full turn update, all player votes are automatically reset to `wait`.
 
 ---

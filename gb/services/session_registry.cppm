@@ -145,6 +145,12 @@ public:
     // Default implementation does nothing
   }
 
+  /// Synchronize `god` authority and scope across all non-emulating connected
+  /// sessions belonging to `race` (invoked when `bless` alters role flags).
+  virtual void sync_race_god(player_t, bool) {
+    // Default implementation does nothing
+  }
+
   /// Check if a player/governor is currently connected
   [[nodiscard]] virtual bool is_connected(player_t, governor_t) const {
     return false;  // Default: nobody is connected

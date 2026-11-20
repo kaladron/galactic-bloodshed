@@ -71,6 +71,20 @@ void test_examine_dispatch() {
       g, {"examine", std::format("#{}", univ_ship.value)});
   test::expect_contains(g.out.str(), "That ship is not visible to you.");
 
+  shipnum_t deep_carrier = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
+                               .owned_by(1)
+                               .in_deep_space()
+                               .build();
+  shipnum_t berthed_deep = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+                               .owned_by(1)
+                               .in_deep_space()
+                               .build();
+  test::expect_true(
+      ctx.em.dock_carrier(berthed_deep, deep_carrier).has_value());
+  ctx.assert_dispatch_rejected(
+      g, {"examine", std::format("#{}", berthed_deep.value)});
+  test::expect_contains(g.out.str(), "That ship is not visible to you.");
+
   ctx.em.mutate_star(2, [](Star& s) { s.clear_inhabited_by(player_t{1}); });
   shipnum_t unvis_ship = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                              .owned_by(1)

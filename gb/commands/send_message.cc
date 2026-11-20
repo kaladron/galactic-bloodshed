@@ -29,7 +29,7 @@ bool deduct_message_ap(GameObj& g, ap_t ap_cost) {
   if (ap_cost == 0) {
     return true;
   }
-  if (g.level() == ScopeLevel::LEVEL_UNIV) {
+  if (g.level() == ScopeLevel::LEVEL_UNIV || g.snum() == 0) {
     g.out << "Invalid scope for this command.\n";
     return false;
   }

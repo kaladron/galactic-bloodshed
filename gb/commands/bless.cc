@@ -111,10 +111,18 @@ constexpr std::array<RaceFlagProp, 7> race_flag_props{{
      .apply = [](Race& r) { r.collective_iq = false; }},
     {.name = "guest",
      .property = BlessProperty::Guest,
-     .apply = [](Race& r) { r.Guest = true; }},
+     .apply =
+         [](Race& r) {
+           r.God = false;
+           r.Guest = true;
+         }},
     {.name = "god",
      .property = BlessProperty::God,
-     .apply = [](Race& r) { r.God = true; }},
+     .apply =
+         [](Race& r) {
+           r.God = true;
+           r.Guest = false;
+         }},
     {.name = "mortal",
      .property = BlessProperty::Mortal,
      .apply =
@@ -128,7 +136,15 @@ std::optional<bool> bless_race_flags(player_t who, std::string_view prop,
                                      GameObj& g) {
   for (const auto& entry : race_flag_props) {
     if (entry.name == prop) {
-      g.entity_manager.mutate_race(who, [&](Race& race) { entry.apply(race); });
+      bool new_god = false;
+      g.entity_manager.mutate_race(who, [&](Race& race) {
+        entry.apply(race);
+        new_god = race.God;
+      });
+      if (who == g.player()) {
+        g.sync_god_from_race(new_god);
+      }
+      g.session_registry.sync_race_god(who, new_god);
       emit_blessing(g, {.target_player = who, .property = entry.property});
       return true;
     }

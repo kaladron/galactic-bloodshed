@@ -39,6 +39,7 @@ public:
   }
   void flush_all() override;
   void reconcile_connected_scopes() override;
+  void sync_race_god(player_t race, bool god) override;
   bool is_connected(player_t race, governor_t gov) const override;
   std::vector<SessionInfo> get_connected_sessions() const override;
   void request_next_thing() override {

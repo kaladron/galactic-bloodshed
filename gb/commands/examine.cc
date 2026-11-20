@@ -29,7 +29,7 @@ bool examine(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  if (ship->whatorbits() == ScopeLevel::LEVEL_UNIV) {
+  if (ship->whatorbits() == ScopeLevel::LEVEL_UNIV || ship->storbits() == 0) {
     g.out << "That ship is not visible to you.\n";
     return false;
   }
@@ -52,7 +52,7 @@ bool examine(const command_t& argv, GameObj& g) {
     vm.description = exam.description;
   });
 
-  if (!ship->examined()) {
+  if (!ship->examined() && !g.entity_manager.is_read_only()) {
     g.deduct_ap(ship->storbits(), APcount);
     g.entity_manager.mutate_ship(*shipno, [](Ship& s) { s.examined() = 1; });
   }

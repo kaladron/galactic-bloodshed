@@ -133,9 +133,27 @@ void test_page_universe_scope_deity_messaging() {
   ctx.assert_dispatch_rejected(g, {"page", "block"});
   test::expect_eq(g.out.str(), "Invalid scope for this command.\n");
 
-  // 2. Mortal paging a Deity from LEVEL_UNIV (alien.God == true, ap_cost == 0):
-  // succeeds and formats origin as "universe"
+  // 2. Mortal paging a Deity from LEVEL_UNIV or deep-space LEVEL_SHIP
+  // (alien.God == true, ap_cost == 0): succeeds and formats origin as
+  // "universe"
+  const shipnum_t deep_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
+                                  .owned_by(1, 1)
+                                  .in_deep_space()
+                                  .build();
+  ctx.assert_dispatch_success(g, {"cs", std::format("#{}", deep_ship)});
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"page", "2"});
+  test::expect_eq(g.out.str(), "Invalid scope for this command.\n");
+
   ctx.em.mutate_race(2, [](Race& r) { r.God = true; });
+  registry.clear_notifications();
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"page", "2"}, 0);
+  test::expect_contains(registry.messages_for(player_t{2}).at(0),
+                        "page(s) you from the universe star system.");
+
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_snum(0);
   registry.clear_notifications();
   g.out.str("");
   ctx.assert_dispatch_success(g, {"page", "2"}, 0);

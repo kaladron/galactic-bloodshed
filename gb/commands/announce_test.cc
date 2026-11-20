@@ -46,13 +46,25 @@ void test_announce_dispatch() {
   test::expect_contains(registry.notifications.back().message,
                         ": Hello System\n");
 
-  // 2. Announce at LEVEL_UNIV upgrades to broadcast (separator '>')
+  // 2. Announce at LEVEL_UNIV or deep-space LEVEL_SHIP (snum == 0) upgrades to
+  // broadcast (separator '>')
   g.set_level(ScopeLevel::LEVEL_UNIV);
   registry.clear_notifications();
   ctx.assert_dispatch_success(g, {":", "Galaxy", "Wide"});
   test::expect_false(registry.notifications.empty());
   test::expect_contains(registry.notifications.back().message,
                         "> Galaxy Wide\n");
+
+  const shipnum_t deep_probe = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
+                                   .owned_by(1, 1)
+                                   .in_deep_space()
+                                   .build();
+  ctx.assert_dispatch_success(g, {"cs", std::format("#{}", deep_probe)});
+  registry.clear_notifications();
+  ctx.assert_dispatch_success(g, {"announce", "Deep", "Space"});
+  test::expect_false(registry.notifications.empty());
+  test::expect_contains(registry.notifications.back().message,
+                        "> Deep Space\n");
 
   // 3. Announce in uninhabited star rejected for mortal, allowed for deity
   g.set_level(ScopeLevel::LEVEL_STAR);

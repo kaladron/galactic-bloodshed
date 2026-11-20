@@ -309,6 +309,15 @@ void Server::reconcile_connected_scopes() {
   }
 }
 
+void Server::sync_race_god(player_t race, bool god) {
+  for (auto& session : sessions_) {
+    if (session->is_disconnected()) continue;
+    if (!session->connected()) continue;
+    if (session->player() != race) continue;
+    session->game_obj().sync_god_from_race(god);
+  }
+}
+
 bool Server::is_connected(player_t race, governor_t gov) const {
   for (const auto& session : sessions_) {
     if (!session->is_disconnected() && session->connected() &&

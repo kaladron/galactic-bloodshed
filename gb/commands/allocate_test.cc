@@ -22,8 +22,17 @@ int main() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, player_t{1}, governor_t{1});
 
-  // 1. Scope rejection at universe level
+  // 1. Scope rejection at universe level and deep-space ship scope (snum == 0)
   g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"allocate", "10"});
+  test::expect_contains(g.out.str(), "Invalid scope for this command.");
+
+  const shipnum_t deep_ship = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                                  .owned_by(1, 1)
+                                  .in_deep_space()
+                                  .build();
+  ctx.assert_dispatch_success(g, {"cs", std::format("#{}", deep_ship)});
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"allocate", "10"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");

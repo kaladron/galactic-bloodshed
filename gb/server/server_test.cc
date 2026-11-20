@@ -811,7 +811,27 @@ void test_server_fail_fast_boundaries() {
     test::expect_true(ml_it != infos.end());
     test::expect_eq(ml_it->snum, starnum_t{1});
 
+    // Server::sync_race_god updates live mortal session authority while
+    // preserving emulated mortal identity
+    server.sync_race_god(2, true);
+    const auto infos_god = server.get_connected_sessions();
+    const auto ml_god = std::ranges::find_if(
+        infos_god, [](const SessionInfo& s) { return s.player == 2; });
+    test::expect_true(ml_god != infos_god.end() && ml_god->god);
+    const std::string d1_emul = "emulate 2 1\n";
+    deity1.write_some(asio::buffer(d1_emul));
+    io.poll();
+    server.process_commands();
+    io.poll();
+    (void)drain_socket(deity1);
+    server.sync_race_god(2, true);
+    test::expect_true(std::ranges::any_of(
+        server.get_connected_sessions(),
+        [](const SessionInfo& s) { return s.player == 2 && !s.god; }));
+    server.sync_race_god(2, false);
+
     // Outbox-staged disconnect_race evicts all sessions of race 2 cleanly
+    ctx.em.mutate_race(2, [](Race& r) { r.dissolved = true; });
     server.begin_outbox();
     server.disconnect_race(2, "Your empire has been dissolved.\n");
     (void)server.commit_outbox();

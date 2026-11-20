@@ -70,7 +70,7 @@ constexpr std::string_view think_aliases[] = {";"};
 namespace GB::commands {
 
 bool announce(const command_t& argv, GameObj& g) {
-  if (g.level() == ScopeLevel::LEVEL_UNIV) {
+  if (g.level() == ScopeLevel::LEVEL_UNIV || g.snum() == 0) {
     return emit_communication(GB::presentation::AnnounceMode::Broadcast, argv,
                               g);
   }

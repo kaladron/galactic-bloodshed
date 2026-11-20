@@ -90,6 +90,14 @@ void GameObj::emulate(player_t target_player, governor_t target_governor) {
   reconcile_scope();
 }
 
+void GameObj::sync_god_from_race(bool race_god) {
+  if (emulated_deity_.has_value()) {
+    return;
+  }
+  god_ = race_god;
+  reconcile_scope();
+}
+
 SessionStatus GameObj::reconcile_session() {
   if (player_ <= 0) {
     race = nullptr;

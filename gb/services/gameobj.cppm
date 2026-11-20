@@ -278,6 +278,10 @@ public:
   /// emulated target is later revoked or dissolved.
   void emulate(player_t target_player, governor_t target_governor);
 
+  /// Updates `god()` from the bound race's `God` flag (unless currently
+  /// emulating another empire as a mortal) and reconciles the active scope.
+  void sync_god_from_race(bool race_god);
+
   /// Verifies that `player()` / `governor()` still refer to a non-dissolved
   /// race and appointed governor, refreshing `race` when valid. Restores a
   /// saved Deity emulation origin (`SessionStatus::EmulationRestored`) or marks

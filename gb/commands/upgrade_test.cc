@@ -725,6 +725,22 @@ void test_upgrade_json_god_mode_and_edge_cases() {
   ctx.assert_dispatch_rejected(g, {"upgrade", "cew", "strength", "5"});
   test::expect_contains(g.out.str(), "doesn't exist or can't be modified");
 
+  // Deep-space ship (snum == 0): mortal lacks star AP cleanly; Deity upgrades
+  // for 0 AP without throwing EntityNotFoundError
+  const shipnum_t deep_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+                                  .owned_by(1, 1)
+                                  .in_deep_space()
+                                  .with_resource(200)
+                                  .build();
+  ctx.assert_dispatch_success(g, {"cs", std::format("#{}", deep_ship)});
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "5"});
+  test::expect_contains(g.out.str(), "You don't have 1 action points there.");
+  g.set_god(true);
+  ctx.assert_dispatch_success(g, {"upgrade", "armor", "5"}, 0);
+  test::expect_eq(ctx.em.peek_ship(deep_ship)->armor(), 5);
+  g.set_god(false);
+
   std::println(std::cout,
                "    ✓ JSON output, God mode, battery activation, and edge "
                "cases verified");

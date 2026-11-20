@@ -242,10 +242,22 @@ void test_send_universe_scope_deity_messaging() {
   ctx.assert_dispatch_rejected(g, {"send", "2", "Hello", "Mortal"});
   test::expect_eq(g.out.str(), "Invalid scope for this command.\n");
 
-  // Mortal sending to block at LEVEL_UNIV (costs 1 AP): rejected
+  // Mortal sending to block at LEVEL_UNIV or deep-space LEVEL_SHIP (snum == 0):
+  // rejected
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"send", "block", "1", "Allied", "fleet"});
   test::expect_eq(g.out.str(), "Invalid scope for this command.\n");
+
+  const shipnum_t deep_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
+                                  .owned_by(1, 1)
+                                  .in_deep_space()
+                                  .build();
+  ctx.assert_dispatch_success(g, {"cs", std::format("#{}", deep_ship)});
+  g.out.str("");
+  ctx.assert_dispatch_rejected(g, {"send", "2", "Deep", "Message"});
+  test::expect_eq(g.out.str(), "Invalid scope for this command.\n");
+  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_snum(0);
 
   // 2. Mortal sending to Deity (alien.God == true, ap_cost == 0): succeeds from
   // LEVEL_UNIV

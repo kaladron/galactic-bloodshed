@@ -148,12 +148,26 @@ void test_role_star_control() {
       .handler = &mock_success_handler,
   };
 
-  // Gov 2 does not control system
+  // Gov 2 does not control system (or deep-space snum == 0); Deity bypasses
   g.out.str("");
   test::expect_false(
       GB::commands::dispatch_command(g, desc, {"mock_star_control"}));
   test::expect_contains(g.out.str(),
                         "You are not authorized to do that in this system");
+
+  g.set_snum(0);
+  g.out.str("");
+  test::expect_false(
+      GB::commands::dispatch_command(g, desc, {"mock_star_control"}));
+  test::expect_contains(g.out.str(),
+                        "You are not authorized to do that in this system");
+
+  g.set_god(true);
+  g.out.str("");
+  test::expect_true(
+      GB::commands::dispatch_command(g, desc, {"mock_star_control"}));
+  g.set_god(false);
+  g.set_snum(1);
 
   // Gov 1 controls system
   g.set_governor(1);
@@ -826,8 +840,12 @@ void test_guest_read_only_scope_enforcement() {
   g.set_snum(1);
   g.set_pnum(1);
 
-  // 1. Read-only modes succeed under Guest ReadOnlyScope with zero DB writes
+  // 1. Read-only modes (including examine and silenced Guest broadcasts)
+  // succeed under Guest ReadOnlyScope with zero DB writes and zero live socket
+  // leaks
+  const std::string ship_arg = std::format("#{}", sid);
   const auto before = ctx.db.total_changes();
+  registry.clear_notifications();
   for (command_t cmd : {
            command_t{"order"},
            command_t{"technology"},
@@ -840,6 +858,9 @@ void test_guest_read_only_scope_enforcement() {
            command_t{"stars"},
            command_t{"help"},
            command_t{"cs", "/Sol/Earth"},
+           command_t{"examine", ship_arg},
+           command_t{"announce", "Silent", "Guest"},
+           command_t{"broadcast", "Silent", "Guest"},
        }) {
     g.out.clear();
     test::expect_true(
@@ -847,11 +868,11 @@ void test_guest_read_only_scope_enforcement() {
         std::format("Guest read-only {} failed: {}", cmd[0], g.out.str()));
   }
   test::expect_eq(ctx.db.total_changes(), before);
+  test::expect_true(registry.notifications.empty());
 
   // 2. Mutating modes without .no_guests abort cleanly (ASCII & JSON),
   // truncating partial g.out headers and rolling back outbox & transactions
-  const std::string ship_arg = std::format("#{}", sid);
-  const std::array<command_t, 8> mutating_cmds{{
+  const std::array<command_t, 7> mutating_cmds{{
       {"order", ship_arg, "evade", "on"},
       {"technology", "500"},
       {"mobilize", "50"},
@@ -859,7 +880,6 @@ void test_guest_read_only_scope_enforcement() {
       {"route", "1", "/Sol/Earth"},
       {"motto", "Hacked"},
       {"post", "Hacked"},
-      {"examine", ship_arg},
   }};
   for (UiMode mode : {UiMode::ASCII, UiMode::JSON}) {
     g.set_ui_mode(mode);
@@ -891,11 +911,15 @@ void test_guest_read_only_scope_enforcement() {
   test::expect_false(ctx.em.peek_ship(sid)->protect().evade);
   test::expect_eq(ctx.db.total_changes(), before);
 
-  // 3. Deity override (!g.god()) bypasses Guest read-only enforcement
+  // 3. Deity override (!g.god()) bypasses Guest read-only enforcement AND
+  // FixedStar/FixedUniv AP pre-checks and deductions (including at snum == 0)
   g.set_god(true);
+  g.set_snum(0);
   test::expect_true(
       GB::commands::dispatch_command(g, fixed_ap_cmd, {"guest_fixed_ap"}));
-  test::expect_eq(ctx.em.peek_star(1)->AP(1), 8U);
+  test::expect_false(registry.notifications.empty());
+  test::expect_eq(ctx.em.peek_star(1)->AP(1), 10U);
+  g.set_snum(1);
 
   // 4. Non-Guest internal ReadOnlyError rethrows fail-fast instead of masking
   g.set_god(false);
@@ -911,7 +935,7 @@ void test_guest_read_only_scope_enforcement() {
   };
   test::expect_throws<ReadOnlyError>(
       [&] { GB::commands::dispatch_command(g, buggy_ro_cmd, {"buggy_ro"}); });
-  test::expect_eq(ctx.em.peek_star(1)->AP(1), 8U);
+  test::expect_eq(ctx.em.peek_star(1)->AP(1), 10U);
 }
 
 }  // namespace

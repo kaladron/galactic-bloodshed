@@ -43,7 +43,11 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
     g.out << "Only the leader (Governor 1) may use this command.\n";
     return false;
   }
-  if (desc.roles.star_control) {
+  if (desc.roles.star_control && !g.god()) {
+    if (g.snum() == 0) {
+      g.out << "You are not authorized to do that in this system.\n";
+      return false;
+    }
     try {
       const auto& star = *g.entity_manager.peek_star(g.snum());
       if (!star.control(g.player(), g.governor())) {
@@ -98,25 +102,32 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
   }
 
   // 4. Fixed-Cost AP Pre-check
-  if (desc.ap.model == APModel::FixedStar) {
-    try {
-      const auto& star = *g.entity_manager.peek_star(g.snum());
-      if (star.AP(g.player()) < desc.ap.amount) {
+  if (!g.god()) {
+    if (desc.ap.model == APModel::FixedStar) {
+      if (g.snum() == 0) {
         g.out << std::format("You don't have {} action points there.\n",
                              desc.ap.amount);
         return false;
       }
-    } catch (const EntityNotFoundError&) {
-      g.out << std::format("You don't have {} action points there.\n",
-                           desc.ap.amount);
-      return false;
-    }
-  } else if (desc.ap.model == APModel::FixedUniv) {
-    const auto& univ = *g.entity_manager.peek_universe();
-    if (univ.get_AP(g.player()) < desc.ap.amount) {
-      g.out << std::format("You need {} universe action points.\n",
-                           desc.ap.amount);
-      return false;
+      try {
+        const auto& star = *g.entity_manager.peek_star(g.snum());
+        if (star.AP(g.player()) < desc.ap.amount) {
+          g.out << std::format("You don't have {} action points there.\n",
+                               desc.ap.amount);
+          return false;
+        }
+      } catch (const EntityNotFoundError&) {
+        g.out << std::format("You don't have {} action points there.\n",
+                             desc.ap.amount);
+        return false;
+      }
+    } else if (desc.ap.model == APModel::FixedUniv) {
+      const auto& univ = *g.entity_manager.peek_universe();
+      if (univ.get_AP(g.player()) < desc.ap.amount) {
+        g.out << std::format("You need {} universe action points.\n",
+                             desc.ap.amount);
+        return false;
+      }
     }
   }
 
@@ -162,14 +173,16 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
     success = desc.handler(argv, g);
 
     // 6. Deduct Fixed AP on success
-    if (success && desc.ap.amount > 0) {
-      if (desc.ap.model == APModel::FixedStar) {
-        g.entity_manager.mutate_star(g.snum(), [&](Star& star) {
-          star.AP(g.player()) -= desc.ap.amount;
-        });
-      } else if (desc.ap.model == APModel::FixedUniv) {
-        g.entity_manager.mutate_universe(
-            [&](Universe& u) { u.deduct_AP(g.player(), desc.ap.amount); });
+    if (success && !g.god()) {
+      if (desc.ap.amount > 0) {
+        if (desc.ap.model == APModel::FixedStar) {
+          g.entity_manager.mutate_star(g.snum(), [&](Star& star) {
+            star.AP(g.player()) -= desc.ap.amount;
+          });
+        } else if (desc.ap.model == APModel::FixedUniv) {
+          g.entity_manager.mutate_universe(
+              [&](Universe& u) { u.deduct_AP(g.player(), desc.ap.amount); });
+        }
       }
     }
   } catch (const ReadOnlyError&) {
@@ -212,8 +225,10 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
   }
 
   if (txn && success) {
-    for (const auto& item : g.session_registry.commit_outbox()) {
-      if (!guest_read_only) {
+    if (guest_read_only) {
+      g.session_registry.rollback_outbox();
+    } else {
+      for (const auto& item : g.session_registry.commit_outbox()) {
         push_telegram(g.entity_manager, item.player, item.governor,
                       item.message);
       }

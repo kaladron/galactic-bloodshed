@@ -134,13 +134,31 @@ void test_bless_race_characteristics() {
 
   ctx.assert_dispatch_success(g, {"bless", "2", "guest", "0"});
   test::expect_true(ctx.em.peek_race(2)->Guest);
+  test::expect_false(ctx.em.peek_race(2)->God);
 
   ctx.assert_dispatch_success(g, {"bless", "2", "god", "0"});
   test::expect_true(ctx.em.peek_race(2)->God);
+  test::expect_false(ctx.em.peek_race(2)->Guest);
+
+  ctx.assert_dispatch_success(g, {"bless", "2", "guest", "0"});
+  test::expect_false(ctx.em.peek_race(2)->God);
+  test::expect_true(ctx.em.peek_race(2)->Guest);
 
   ctx.assert_dispatch_success(g, {"bless", "2", "mortal", "0"});
   test::expect_false(ctx.em.peek_race(2)->God);
   test::expect_false(ctx.em.peek_race(2)->Guest);
+
+  // Self-blessing mortal drops g.god() immediately and reconciles unexplored
+  // planet scope
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(1).explored = 0; });
+  ctx.assert_dispatch_success(g, {"bless", "1", "mortal", "0"});
+  test::expect_false(g.god());
+  test::expect_eq(g.level(), ScopeLevel::LEVEL_STAR);
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(1).explored = 1; });
+  ctx.em.mutate_race(1, [](Race& r) { r.God = true; });
+  g.set_god(true);
+  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_pnum(1);
 
   // Sector preferences
   auto expect_near = [](double actual, double expected, double eps = 1e-6) {

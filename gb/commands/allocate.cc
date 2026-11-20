@@ -12,6 +12,10 @@ import std;
 
 namespace GB::commands {
 bool allocate(const command_t& argv, GameObj& g) {
+  if (g.snum() == 0) {
+    g.out << "Invalid scope for this command.\n";
+    return false;
+  }
   player_t Playernum = g.player();
   auto scanned = parse_int<int>(argv[1]);
   if (!scanned || *scanned <= 0) {

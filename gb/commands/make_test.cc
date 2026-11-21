@@ -16,10 +16,10 @@ namespace {
 
 void test_make_command_matrix() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   shipnum_t factory_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
-                             .owned_by(1, 1)
+                             .owned_by(races.empire, 1)
                              .named("Factory")
                              .in_star_orbit(1)
                              .with_fuel(100.0)
@@ -31,7 +31,7 @@ void test_make_command_matrix() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_ship(factory_id);
 
   TestCommandMatrix(ctx, GB::commands::make_cmd)
@@ -46,8 +46,8 @@ void test_make_command_matrix() {
 
 void test_make_designations_and_errors() {
   TestContext ctx;
-  ctx.with_standard_universe();
-  ctx.em.mutate_race(1, [](Race& r) {
+  const auto races = ctx.with_races();
+  ctx.em.mutate_race(races.empire, [](Race& r) {
     r.tech = 100.0;
     r.pods = false;
     r.discoveries.crystal = true;
@@ -58,7 +58,7 @@ void test_make_designations_and_errors() {
   });
 
   shipnum_t factory_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
-                             .owned_by(1, 1)
+                             .owned_by(races.empire, 1)
                              .named("Factory")
                              .in_star_orbit(1)
                              .with_fuel(100.0)
@@ -69,14 +69,14 @@ void test_make_designations_and_errors() {
                              .build();
 
   shipnum_t non_factory_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                                 .owned_by(1, 1)
+                                 .owned_by(races.empire, 1)
                                  .in_star_orbit(1)
                                  .with_crew(10, 0)
                                  .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
 
   // 1. Non-factory ship rejected
   g.set_scope_ship(non_factory_id);
@@ -96,32 +96,40 @@ void test_make_designations_and_errors() {
   ctx.assert_dispatch_rejected(g, {"make", "p"});
   test::expect_contains(g.out.str(), "Illegal ship letter.");
 
-  ctx.em.mutate_race(1, [](Race& r) { r.pods = true; });
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.em.mutate_race(races.empire, [](Race& r) { r.pods = true; });
+  ctx.setup_game_obj(g, races.empire, 1);
+  g.set_scope_ship(factory_id);
   ctx.assert_dispatch_rejected(g, {"make", "p"});
   test::expect_contains(g.out.str(),
                         "This kind of ship does not require a factory");
-  ctx.em.mutate_race(1, [](Race& r) { r.pods = false; });
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.em.mutate_race(races.empire, [](Race& r) { r.pods = false; });
+  ctx.setup_game_obj(g, races.empire, 1);
+  g.set_scope_ship(factory_id);
 
   // 5. Non-factory-built ship (probe ':')
   ctx.assert_dispatch_rejected(g, {"make", ":"});
   test::expect_contains(g.out.str(),
                         "This kind of ship does not require a factory");
 
-  // 6. God-only ship rejection for mortal race ('!') and check for God race
+  // 6. God-only ship rejection for mortal race ('!') and check for Deity race
   ctx.assert_dispatch_rejected(g, {"make", "!"});
   test::expect_contains(g.out.str(), "Nice try!");
 
-  ctx.em.mutate_race(1, [](Race& r) { r.God = true; });
-  ctx.setup_game_obj(g, 1, 1);
-  ctx.assert_dispatch_rejected(g, {"make", "!"});
-  test::expect_contains(g.out.str(),
+  shipnum_t deity_factory_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
+                                   .owned_by(races.deity, 1)
+                                   .named("DeityFactory")
+                                   .in_star_orbit(1)
+                                   .with_crew(50, 0)
+                                   .with_on(false)
+                                   .build();
+  GameObj god_g(ctx.em, registry);
+  ctx.setup_game_obj(god_g, races.deity, 1);
+  god_g.set_scope_ship(deity_factory_id);
+  ctx.assert_dispatch_rejected(god_g, {"make", "!"});
+  test::expect_contains(god_g.out.str(),
                         "This kind of ship does not require a factory");
-  ctx.assert_dispatch_success(g, {"make", "C"});
-  test::expect_eq(ctx.em.peek_ship(factory_id)->build_cost(), 0);
-  ctx.em.mutate_race(1, [](Race& r) { r.God = false; });
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.assert_dispatch_success(god_g, {"make", "C"});
+  test::expect_eq(ctx.em.peek_ship(deity_factory_id)->build_cost(), 0);
 
   // 7. Designate cruiser ('C') and inspect with 0 args
   ctx.assert_dispatch_success(g, {"make", "C"});
@@ -133,8 +141,9 @@ void test_make_designations_and_errors() {
   test::expect_contains(g.out.str(), "Cruiser");
 
   // 8. Low tech warning on display and designate
-  ctx.em.mutate_race(1, [](Race& r) { r.tech = 1.0; });
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.em.mutate_race(races.empire, [](Race& r) { r.tech = 1.0; });
+  ctx.setup_game_obj(g, races.empire, 1);
+  g.set_scope_ship(factory_id);
   ctx.assert_dispatch_success(g, {"make", "C"});
   test::expect_contains(g.out.str(), "You can't produce this design yet!");
   ctx.assert_dispatch_success(g, {"make"});
@@ -142,8 +151,9 @@ void test_make_designations_and_errors() {
                         "Your engineering capability is not advanced enough");
 
   // Restore tech
-  ctx.em.mutate_race(1, [](Race& r) { r.tech = 100.0; });
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.em.mutate_race(races.empire, [](Race& r) { r.tech = 100.0; });
+  ctx.setup_game_obj(g, races.empire, 1);
+  g.set_scope_ship(factory_id);
 
   // 9. Print specs for simple ship (Space Mine '+') without guns/mount/cew
   ctx.assert_dispatch_success(g, {"make", "+"});

@@ -14,12 +14,24 @@ import std;
 
 namespace {
 
+constexpr player_t pilot_player = 2;
+constexpr player_t observer_player = 3;
+
 void setup_test_world(TestContext& ctx) {
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
+  TestWorldBuilder world(ctx);
+  world.add_race("Pilots", 100.0, false, pilot_player);
+  world.add_race("Observers", 100.0, false, observer_player);
+  ctx.em.mutate_star(1, [](Star& s) {
+    s.mark_explored_by(pilot_player);
+    s.mark_inhabited_by(pilot_player);
+    s.AP(pilot_player) = 50;
+  });
+  ctx.em.mutate_universe([](Universe& u) { u.set_AP(pilot_player, 50); });
 
   // Create test shuttle landed on the planet at (5, 5)
   TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-      .owned_by(1, 1)
+      .owned_by(pilot_player, 1)
       .named("TestShuttle")
       .landed_on(1, 1, Coordinates(5, 5))
       .with_fuel(20.0)
@@ -32,7 +44,7 @@ void test_launch_happy_paths() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, pilot_player, 1);
   g.set_scope_planet(1, 1);
 
   // 1. Launch landed ship from planet (costs 1 Star AP)
@@ -67,11 +79,11 @@ void test_launch_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set Star AP to 0
-  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 0; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(pilot_player) = 0; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, pilot_player, 1);
   g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_rejected(g, {"launch", "#1"});
@@ -86,7 +98,7 @@ void test_launch_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, pilot_player, 1);
   g.set_scope_planet(1, 1);
 
   // 1. Min args check (< 2 args)
@@ -108,12 +120,12 @@ void test_launch_canister_ships() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, pilot_player, 1);
   g.set_scope_planet(1, 1);
 
   // Create test canister ship landed on planet with initial count 5
   const auto canist_id = TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST)
-                             .owned_by(1)
+                             .owned_by(pilot_player)
                              .named("DustCanister")
                              .with_alive(true)
                              .with_active(true)
@@ -134,7 +146,7 @@ void test_launch_canister_ships() {
 
   // Also test Greenhouse gas canister launch message
   const auto green_id = TestShipBuilder(ctx.em, ShipType::OTYPE_GREEN)
-                            .owned_by(1)
+                            .owned_by(pilot_player)
                             .named("GreenCanister")
                             .with_alive(true)
                             .with_active(true)
@@ -156,9 +168,9 @@ void test_launch_from_carrier_all_scopes() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, pilot_player, 1);
   const auto carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-                              .owned_by(1, 1)
+                              .owned_by(pilot_player, 1)
                               .named("MotherCarrier")
                               .landed_on(1, 1, {5, 5})
                               .with_max_hanger(100)
@@ -167,7 +179,7 @@ void test_launch_from_carrier_all_scopes() {
 
   // 1. Online factory berthed in carrier cannot be launched
   const auto fac_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
-                          .owned_by(1, 1)
+                          .owned_by(pilot_player, 1)
                           .with_on(true)
                           .build();
   ctx.em.mutate_ship(fac_id, [&](Ship& f) { f.dock_into_carrier(carrier_id); });
@@ -249,7 +261,7 @@ void test_launch_from_carrier_all_scopes() {
 
   // 6. Nested carrier (s2.whatorbits() == LEVEL_SHIP) rejected
   const auto super_id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
-                            .owned_by(1, 1)
+                            .owned_by(pilot_player, 1)
                             .in_star_orbit(1)
                             .build();
   ctx.em.mutate_ship(carrier_id,
@@ -266,24 +278,24 @@ void test_launch_planet_fuel_precheck_preserves_ap_and_coords() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, pilot_player, 1);
   g.set_scope_planet(1, 1);
 
   const auto no_fuel_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                              .owned_by(1, 1)
+                              .owned_by(pilot_player, 1)
                               .landed_on(1, 1, {5, 5})
                               .with_fuel(0.0)
                               .build();
   ctx.em.mutate_ship(no_fuel_id,
                      [](Ship& s) { s.set_coordinates({42.0, 42.0}); });
 
-  const ap_t ap_before = ctx.em.peek_star(1)->AP(1);
+  const ap_t ap_before = ctx.em.peek_star(1)->AP(pilot_player);
   ctx.assert_dispatch_rejected(
       g, {"launch", std::format("#{}", no_fuel_id.value)});
   test::expect_contains(g.out.str(), "does not have enough fuel");
 
   // Verify AP was NOT deducted and landed coordinates were NOT corrupted
-  test::expect_eq(ctx.em.peek_star(1)->AP(1), ap_before);
+  test::expect_eq(ctx.em.peek_star(1)->AP(pilot_player), ap_before);
   test::expect_eq(ctx.em.peek_ship(no_fuel_id)->coordinates(),
                   UniverseCoordinates{42.0, 42.0});
 
@@ -296,7 +308,7 @@ void test_launch_planet_fuel_precheck_preserves_ap_and_coords() {
   test::expect_contains(g.out.str(), "too overloaded to launch");
 
   const auto zero_speed_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                                 .owned_by(1, 1)
+                                 .owned_by(pilot_player, 1)
                                  .landed_on(1, 1, {5, 5})
                                  .with_max_speed(0)
                                  .build();
@@ -311,19 +323,19 @@ void test_launch_mcdc_undock_observers_and_json() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, pilot_player, 1);
 
   // 1. Offline factory berthed inside a carrier (s.type() == OTYPE_FACTORY &&
   // !s.on(), and !s.max_speed_capacity() && !s.is_landed()) launches cleanly
   const auto carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-                              .owned_by(1, 1)
+                              .owned_by(pilot_player, 1)
                               .named("MotherCarrier")
                               .landed_on(1, 1, {5, 5})
                               .with_max_hanger(100)
                               .build();
   g.set_scope_ship(carrier_id);
   const auto off_fac_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
-                              .owned_by(1, 1)
+                              .owned_by(pilot_player, 1)
                               .with_on(false)
                               .with_max_speed(0)
                               .build();
@@ -337,12 +349,12 @@ void test_launch_mcdc_undock_observers_and_json() {
   // sufficient Univ AP) and in LEVEL_PLAN (insufficient Star AP)
   g.set_scope_univ();
   const auto univ_s1 = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)
-                           .owned_by(1, 1)
+                           .owned_by(pilot_player, 1)
                            .named("UnivAlpha")
                            .in_deep_space()
                            .build();
   const auto univ_s2 = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)
-                           .owned_by(1, 1)
+                           .owned_by(pilot_player, 1)
                            .named("UnivBeta")
                            .in_deep_space()
                            .build();
@@ -350,21 +362,23 @@ void test_launch_mcdc_undock_observers_and_json() {
     ctx.em.mutate_ship(univ_s2, [&](Ship& s2) { s1.moor_together(s2); });
   });
 
-  ctx.em.mutate_universe([](Universe& u) { u.set_AP(1, 0); });
+  ctx.em.mutate_universe([](Universe& u) { u.set_AP(pilot_player, 0); });
   ctx.assert_dispatch_rejected(g,
                                {"undock", std::format("#{}", univ_s1.value)});
   test::expect_contains(g.out.str(), "You need 1 universe action point.");
 
   // Deity bypasses Universe AP requirement when undocking in LEVEL_UNIV
-  g.set_god(true);
-  ctx.assert_dispatch_success(g, {"undock", std::format("#{}", univ_s1.value)},
-                              0, 0);
-  g.set_god(false);
+  ctx.em.mutate_universe([](Universe& u) { u.set_AP(1, 0); });
+  GameObj god_g(ctx.em, registry);
+  ctx.setup_game_obj(god_g, 1, 1);
+  god_g.set_scope_univ();
+  ctx.assert_dispatch_success(
+      god_g, {"undock", std::format("#{}", univ_s1.value)}, 0, 0);
   ctx.em.mutate_ship(univ_s1, [&](Ship& s1) {
     ctx.em.mutate_ship(univ_s2, [&](Ship& s2) { s1.moor_together(s2); });
   });
 
-  ctx.em.mutate_universe([](Universe& u) { u.set_AP(1, 5); });
+  ctx.em.mutate_universe([](Universe& u) { u.set_AP(pilot_player, 5); });
   ctx.assert_dispatch_success(g, {"undock", std::format("#{}", univ_s1.value)},
                               0, 1);
   test::expect_contains(g.out.str(), "undocked from");
@@ -373,34 +387,37 @@ void test_launch_mcdc_undock_observers_and_json() {
   // bypass for both undock and planet launch)
   g.set_scope_planet(1, 1);
   const auto plan_s2 = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                           .owned_by(1, 1)
+                           .owned_by(pilot_player, 1)
                            .in_planet_orbit(1, 1)
                            .build();
   ctx.em.mutate_ship(1, [&](Ship& s1) {
     s1.enter_planet_orbit(1, 1);
     ctx.em.mutate_ship(plan_s2, [&](Ship& s2) { s1.moor_together(s2); });
   });
-  ctx.em.mutate_star(1, [](Star& st) { st.AP(1) = 0; });
+  ctx.em.mutate_star(1, [](Star& st) {
+    st.AP(pilot_player) = 0;
+    st.AP(1) = 0;
+  });
   ctx.assert_dispatch_rejected(g, {"undock", "#1"});
   test::expect_contains(g.out.str(), "You don't have 1 action points there.");
 
-  g.set_god(true);
-  ctx.assert_dispatch_success(g, {"undock", "#1"}, 0, 0);
+  god_g.set_scope_planet(1, 1);
+  ctx.assert_dispatch_success(god_g, {"undock", "#1"}, 0, 0);
   ctx.em.mutate_ship(1, [](Ship& s1) {
     s1.land_on_planet(1, 1, {5, 5});
     s1.add_fuel(100.0);
   });
-  ctx.assert_dispatch_success(g, {"launch", "#1"}, 0, 0);
-  g.set_god(false);
+  ctx.assert_dispatch_success(god_g, {"launch", "#1"}, 0, 0);
 
   // 3. Foreign player with sectors on planet receives launch observation
   // telegram, and UiMode::JSON renders canonical message and dirty ship stanzas
-  ctx.em.mutate_star(1, [](Star& st) { st.AP(1) = 10; });
+  ctx.em.mutate_star(1, [](Star& st) { st.AP(pilot_player) = 10; });
   ctx.em.mutate_ship(1, [](Ship& s1) {
     s1.land_on_planet(1, 1, {5, 5});
     s1.add_fuel(100.0);
   });
-  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(2).numsectsowned = 3; });
+  ctx.em.mutate_planet(
+      1, 1, [](Planet& p) { p.info(observer_player).numsectsowned = 3; });
 
   g.set_ui_mode(UiMode::JSON);
   ctx.assert_dispatch_success(g, {"launch", "#1"}, 1);
@@ -409,9 +426,9 @@ void test_launch_mcdc_undock_observers_and_json() {
   test::expect_contains(g.out.str(), "launched from planet");
   g.set_ui_mode(UiMode::ASCII);
 
-  const auto p2_telegrams = ctx.em.get_telegrams(2, 1);
-  test::expect_false(p2_telegrams.empty());
-  test::expect_contains(p2_telegrams.back().message,
+  const auto observer_telegrams = ctx.em.get_telegrams(observer_player, 1);
+  test::expect_false(observer_telegrams.empty());
+  test::expect_contains(observer_telegrams.back().message,
                         "observed launching from planet /Sol/Earth.");
 
   // 5. Exhaustive format_launch_error coverage
@@ -432,16 +449,16 @@ void test_launch_mcdc_undock_observers_and_json() {
   // allowing AFV ground deployment, blocks orbit-to-surface `land` teleport,
   // and rejects irradiated ships on launch/land
   const auto landed_mothership = TestShipBuilder(ctx.em, ShipType::STYPE_LANDER)
-                                     .owned_by(1, 1)
+                                     .owned_by(pilot_player, 1)
                                      .landed_on(1, 1, {5, 5})
                                      .with_max_hanger(200)
                                      .build();
   const auto station_id = TestShipBuilder(ctx.em, ShipType::STYPE_STATION)
-                              .owned_by(1, 1)
+                              .owned_by(pilot_player, 1)
                               .with_size(10)
                               .build();
   const auto afv_id = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
-                          .owned_by(1, 1)
+                          .owned_by(pilot_player, 1)
                           .with_size(5)
                           .build();
   ctx.em.mutate_ship(station_id,
@@ -458,7 +475,7 @@ void test_launch_mcdc_undock_observers_and_json() {
   test::expect_true(ctx.em.peek_ship(afv_id)->is_landed());
 
   const auto orb_ftr = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-                           .owned_by(1, 1)
+                           .owned_by(pilot_player, 1)
                            .in_planet_orbit(1, 1)
                            .with_fuel(50.0)
                            .build();

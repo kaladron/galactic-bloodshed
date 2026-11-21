@@ -12,59 +12,59 @@ import std;
 
 namespace {
 
-void setup_test_world(TestContext& ctx) {
-  ctx.with_standard_universe();
+TestRaces setup_test_world(TestContext& ctx) {
+  return ctx.with_races();
 }
 
 void test_route_persistence() {
   TestContext ctx;
-  setup_test_world(ctx);
+  const auto races = setup_test_world(ctx);
 
   // Test: Set route destination
-  ctx.em.mutate_planet(1, 1, [](Planet& p) {
-    p.info(player_t{1}).route[0].set = true;
-    p.info(player_t{1}).route[0].set_destination(2, 1);
-    p.info(player_t{1}).route[0].dest_coords = {5, 5};
-    p.info(player_t{1}).route[0].load =
+  ctx.em.mutate_planet(1, 1, [&](Planet& p) {
+    p.info(races.empire).route[0].set = true;
+    p.info(races.empire).route[0].set_destination(2, 1);
+    p.info(races.empire).route[0].dest_coords = {5, 5};
+    p.info(races.empire).route[0].load =
         CommodityManifest{.fuel = true, .resources = true};
-    p.info(player_t{1}).route[0].unload = CommodityManifest{.destruct = true};
+    p.info(races.empire).route[0].unload = CommodityManifest{.destruct = true};
   });
 
   // Verify: Route was saved
   {
     const auto* saved = ctx.em.peek_planet(1, 1);
     test::expect_ne(saved, nullptr);
-    test::expect_true(saved->info(player_t{1}).route[0].set);
-    test::expect_eq(saved->info(player_t{1}).route[0].dest_star, starnum_t{2});
-    test::expect_eq(saved->info(player_t{1}).route[0].dest_planet,
+    test::expect_true(saved->info(races.empire).route[0].set);
+    test::expect_eq(saved->info(races.empire).route[0].dest_star, starnum_t{2});
+    test::expect_eq(saved->info(races.empire).route[0].dest_planet,
                     planetnum_t{1});
-    test::expect_eq(saved->info(player_t{1}).route[0].dest_coords,
+    test::expect_eq(saved->info(races.empire).route[0].dest_coords,
                     Coordinates(5, 5));
-    test::expect_true(saved->info(player_t{1}).route[0].load.fuel);
-    test::expect_true(saved->info(player_t{1}).route[0].load.resources);
-    test::expect_false(saved->info(player_t{1}).route[0].load.destruct);
-    test::expect_true(saved->info(player_t{1}).route[0].unload.destruct);
+    test::expect_true(saved->info(races.empire).route[0].load.fuel);
+    test::expect_true(saved->info(races.empire).route[0].load.resources);
+    test::expect_false(saved->info(races.empire).route[0].load.destruct);
+    test::expect_true(saved->info(races.empire).route[0].unload.destruct);
     std::println(std::cout, "✓ Route destination saved correctly");
   }
 
   // Test: Deactivate route
   ctx.em.mutate_planet(
-      1, 1, [](Planet& p) { p.info(player_t{1}).route[0].set = false; });
+      1, 1, [&](Planet& p) { p.info(races.empire).route[0].set = false; });
 
   // Verify: Route deactivated
   {
     const auto* saved = ctx.em.peek_planet(1, 1);
     test::expect_ne(saved, nullptr);
-    test::expect_false(saved->info(player_t{1}).route[0].set);
+    test::expect_false(saved->info(races.empire).route[0].set);
     std::println(std::cout, "✓ Route deactivation saved correctly");
   }
 
   // Test: Multiple routes
-  ctx.em.mutate_planet(1, 1, [](Planet& p) {
+  ctx.em.mutate_planet(1, 1, [&](Planet& p) {
     for (int i = 0; i < MAX_ROUTES; i++) {
-      p.info(player_t{1}).route[i].set = true;
-      p.info(player_t{1}).route[i].set_destination(2, 1);
-      p.info(player_t{1}).route[i].load = CommodityManifest{.fuel = true};
+      p.info(races.empire).route[i].set = true;
+      p.info(races.empire).route[i].set_destination(2, 1);
+      p.info(races.empire).route[i].load = CommodityManifest{.fuel = true};
     }
   });
 
@@ -73,8 +73,8 @@ void test_route_persistence() {
     const auto* saved = ctx.em.peek_planet(1, 1);
     test::expect_ne(saved, nullptr);
     for (int i = 0; i < MAX_ROUTES; i++) {
-      test::expect_true(saved->info(player_t{1}).route[i].set);
-      test::expect_true(saved->info(player_t{1}).route[i].load.fuel);
+      test::expect_true(saved->info(races.empire).route[i].set);
+      test::expect_true(saved->info(races.empire).route[i].load.fuel);
     }
     std::println(std::cout, "✓ Multiple routes saved correctly");
   }
@@ -82,11 +82,11 @@ void test_route_persistence() {
 
 void test_route_command_dispatch() {
   TestContext ctx;
-  setup_test_world(ctx);
+  const auto races = setup_test_world(ctx);
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
 
   // 1. Scope rejection at UNIV scope
   g.set_scope_univ();
@@ -104,7 +104,7 @@ void test_route_command_dispatch() {
   // Activate route 1
   g.out.str("");
   ctx.assert_dispatch_success(g, {"route", "1", "activate"});
-  test::expect_true(ctx.em.peek_planet(1, 1)->info(player_t{1}).route[0].set);
+  test::expect_true(ctx.em.peek_planet(1, 1)->info(races.empire).route[0].set);
 
   // Viewing an active route before a destination is configured displays ???/???
   g.out.str("");
@@ -177,7 +177,7 @@ void test_route_command_dispatch() {
   g.out.str("");
   ctx.assert_dispatch_success(g, {"route", "1", "deactivate"});
   test::expect_contains(g.out.str(), "Set");
-  test::expect_false(ctx.em.peek_planet(1, 1)->info(player_t{1}).route[0].set);
+  test::expect_false(ctx.em.peek_planet(1, 1)->info(races.empire).route[0].set);
 
   // Inactive configured route is not displayed
   g.out.str("");
@@ -214,11 +214,11 @@ void test_route_command_dispatch() {
 
 void test_route_json_mode() {
   TestContext ctx;
-  setup_test_world(ctx);
+  const auto races = setup_test_world(ctx);
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_planet(1, 1);
   g.set_ui_mode(UiMode::JSON);
 
@@ -260,8 +260,8 @@ void test_route_json_mode() {
   // Subordinate governor without star control can view routes, but cannot
   // mutate routes
   g.set_ui_mode(GB::presentation::UiMode::ASCII);
-  ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
-  ctx.setup_game_obj(g, 1, 2);
+  ctx.em.mutate_race(races.empire, [](Race& r) { r.appoint_governor(2); });
+  ctx.setup_game_obj(g, races.empire, 2);
   g.set_scope_planet(1, 1);
   ctx.assert_dispatch_success(g, {"route", "2"});
   ctx.assert_dispatch_rejected(g, {"route", "2", "deactivate"});

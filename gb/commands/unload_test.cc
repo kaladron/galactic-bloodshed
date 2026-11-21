@@ -13,19 +13,36 @@ import std;
 
 namespace {
 
+constexpr player_t trader_player = 2;
+constexpr player_t alien_player = 3;
+
+void setup_unload_world(TestContext& ctx) {
+  ctx.with_galaxy();
+  TestWorldBuilder world(ctx);
+  world.add_race("Traders", 100.0, false, trader_player);
+  world.add_race("Aliens", 100.0, false, alien_player);
+  ctx.em.mutate_star(1, [](Star& s) {
+    s.mark_explored_by(trader_player);
+    s.mark_inhabited_by(trader_player);
+    s.AP(trader_player) = 50;
+  });
+  ctx.em.mutate_planet(1, 1,
+                       [](Planet& p) { p.mark_explored_by(trader_player); });
+}
+
 void test_unload_happy_path() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  setup_unload_world(ctx);
 
   ctx.em.mutate_planet(1, 1, [](Planet& p) {
-    p.info(player_t{1}).fuel = 1000;
-    p.info(player_t{1}).resource = 500;
-    p.info(player_t{1}).destruct = 200;
-    p.info(player_t{1}).crystals = 50;
+    p.info(trader_player).fuel = 1000;
+    p.info(trader_player).resource = 500;
+    p.info(trader_player).destruct = 200;
+    p.info(trader_player).crystals = 50;
   });
 
   const shipnum_t ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                                .owned_by(1, 1)
+                                .owned_by(trader_player, 1)
                                 .named("CargoHauler")
                                 .landed_on(1, 1, {5, 5})
                                 .with_fuel(100.0)
@@ -36,34 +53,34 @@ void test_unload_happy_path() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, trader_player, 1);
   g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_success(
       g, {"unload", std::format("#{}", ship_id.value), "r", "50"});
   test::expect_eq(ctx.em.peek_ship(ship_id)->resource(), 150);
-  test::expect_eq(ctx.em.peek_planet(1, 1)->info(player_t{1}).resource, 550);
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(trader_player).resource, 550);
 
   // Default full unload when amount is omitted (amt == 0 -> lim.lolim)
   ctx.assert_dispatch_success(
       g, {"unload", std::format("#{}", ship_id.value), "r"});
   test::expect_eq(ctx.em.peek_ship(ship_id)->resource(), 0);
-  test::expect_eq(ctx.em.peek_planet(1, 1)->info(player_t{1}).resource, 700);
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(trader_player).resource, 700);
 
   ctx.assert_dispatch_success(
       g, {"unload", std::format("#{}", ship_id.value), "f", "40"});
   test::expect_eq(ctx.em.peek_ship(ship_id)->fuel(), 60.0);
-  test::expect_eq(ctx.em.peek_planet(1, 1)->info(player_t{1}).fuel, 1040);
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(trader_player).fuel, 1040);
 
   ctx.assert_dispatch_success(
       g, {"unload", std::format("#{}", ship_id.value), "d", "20"});
   test::expect_eq(ctx.em.peek_ship(ship_id)->destruct(), 30);
-  test::expect_eq(ctx.em.peek_planet(1, 1)->info(player_t{1}).destruct, 220);
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(trader_player).destruct, 220);
 
   ctx.assert_dispatch_success(
       g, {"unload", std::format("#{}", ship_id.value), "x", "4"});
   test::expect_eq(ctx.em.peek_ship(ship_id)->crystals(), 6);
-  test::expect_eq(ctx.em.peek_planet(1, 1)->info(player_t{1}).crystals, 54);
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(trader_player).crystals, 54);
 
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
@@ -79,10 +96,10 @@ void test_unload_happy_path() {
 
 void test_unload_syntax_and_errors() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  setup_unload_world(ctx);
 
   const shipnum_t ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                                .owned_by(1, 1)
+                                .owned_by(trader_player, 1)
                                 .named("GoodCargo")
                                 .landed_on(1, 1, {1, 1})
                                 .with_resource(50)
@@ -90,14 +107,14 @@ void test_unload_syntax_and_errors() {
                                 .build();
 
   const shipnum_t vn_id = TestShipBuilder(ctx.em, ShipType::OTYPE_VN)
-                              .owned_by(1, 1)
+                              .owned_by(trader_player, 1)
                               .named("VNProbe")
                               .landed_on(1, 1, {1, 1})
                               .with_resource(50)
                               .build();
 
   const shipnum_t robot_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
-                                 .owned_by(1, 1)
+                                 .owned_by(trader_player, 1)
                                  .named("MineShip")
                                  .landed_on(1, 1, {1, 1})
                                  .with_max_crew(0)
@@ -107,7 +124,7 @@ void test_unload_syntax_and_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, trader_player, 1);
   g.set_scope_planet(1, 1);
 
   // 1. Min args check (< 3 args)
@@ -168,10 +185,10 @@ void test_unload_syntax_and_errors() {
 
 void test_unload_ship_to_ship_and_alien_telegrams() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  setup_unload_world(ctx);
 
   const shipnum_t s2_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                              .owned_by(1, 1)
+                              .owned_by(trader_player, 1)
                               .named("Mothership")
                               .in_star_orbit(1)
                               .with_fuel(100.0)
@@ -186,7 +203,7 @@ void test_unload_ship_to_ship_and_alien_telegrams() {
                               .build();
 
   const shipnum_t s1_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                              .owned_by(1, 1)
+                              .owned_by(trader_player, 1)
                               .named("Tender")
                               .docked_to(s2_id, 1)
                               .with_fuel(80.0)
@@ -203,7 +220,7 @@ void test_unload_ship_to_ship_and_alien_telegrams() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, trader_player, 1);
   g.set_scope_star(1);
 
   ctx.assert_dispatch_success(
@@ -239,7 +256,7 @@ void test_unload_ship_to_ship_and_alien_telegrams() {
   // Unload to an alien ship (triggers cross-player telegrams for r, f, d, and
   // verify render_ship_cargo_transfer_telegram for all ShipCargoType variants)
   const shipnum_t alien_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                                 .owned_by(2, 1)
+                                 .owned_by(alien_player, 1)
                                  .named("KlingonFreighter")
                                  .in_star_orbit(1)
                                  .with_fuel(10.0)
@@ -268,9 +285,9 @@ void test_unload_ship_to_ship_and_alien_telegrams() {
       const ShipCargoTransferResult sample{
           .commodity = cargo,
           .amount = -5,
-          .ship_display = "c1Tender [1]",
-          .target_ship_display = "c2KlingonFreighter [2]",
-          .target_owner = 2,
+          .ship_display = "c2Tender [1]",
+          .target_ship_display = "c3KlingonFreighter [2]",
+          .target_owner = alien_player,
           .target_governor = 1,
           .notify_target_owner = true,
           .is_metamorph = metamorph,
@@ -281,7 +298,7 @@ void test_unload_ship_to_ship_and_alien_telegrams() {
       test::expect_false(tele->empty());
       test::expect_false(tele->contains("Audio-vibatory"));
       test::expect_contains(
-          *tele, "c1Tender [1] gave your ship c2KlingonFreighter [2]");
+          *tele, "c2Tender [1] gave your ship c3KlingonFreighter [2]");
     }
   }
 
@@ -291,19 +308,19 @@ void test_unload_ship_to_ship_and_alien_telegrams() {
 
 void test_unload_onto_alien_sector() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  setup_unload_world(ctx);
 
-  ctx.em.mutate_race(1, [](Race& r) {
+  ctx.em.mutate_race(trader_player, [](Race& r) {
     r.fighters = 10;
     r.absorb = true;
   });
-  ctx.em.mutate_race(2, [](Race& r) {
+  ctx.em.mutate_race(alien_player, [](Race& r) {
     r.fighters = 1;
     r.absorb = false;
   });
 
   const shipnum_t assault_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                                   .owned_by(1, 1)
+                                   .owned_by(trader_player, 1)
                                    .named("DropShip")
                                    .landed_on(1, 1, {2, 2})
                                    .with_crew(100, 100)
@@ -313,7 +330,7 @@ void test_unload_onto_alien_sector() {
   ctx.em.mutate_planet_and_sectors(1, 1, [](Planet& p, SectorMap& map) {
     auto& sect = map.get({2, 2});
     sect.set_condition(SectorType::SEC_LAND);
-    sect.set_owner(2);
+    sect.set_owner(alien_player);
     sect.set_popn_exact(2);
     sect.set_troops(1);
     p.sync_demographics(map);
@@ -322,18 +339,20 @@ void test_unload_onto_alien_sector() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, trader_player, 1);
   g.set_scope_planet(1, 1);
 
   // 0. Zero Star AP rejects hostile sector disembarkation without combat
-  const ap_t saved_ap = ctx.em.peek_star(1)->AP(1);
-  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 0; });
+  const ap_t saved_ap = ctx.em.peek_star(1)->AP(trader_player);
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(trader_player) = 0; });
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"unload", std::format("#{}", assault_id.value), "m", "50"});
   test::expect_contains(g.out.str(), "You don't have 1 action points there.");
-  test::expect_eq(ctx.em.peek_race(1)->translation_for(2), 0);
-  ctx.em.mutate_star(1, [saved_ap](Star& s) { s.AP(1) = saved_ap; });
+  test::expect_eq(
+      ctx.em.peek_race(trader_player)->translation_for(alien_player), 0);
+  ctx.em.mutate_star(1,
+                     [saved_ap](Star& s) { s.AP(trader_player) = saved_ap; });
 
   // 1. Victory assault with troops (and metamorph body absorption)
   g.out.str("");
@@ -343,21 +362,22 @@ void test_unload_onto_alien_sector() {
                         "That sector is already occupied by another player!");
   test::expect_contains(g.out.str(), "VICTORY! The sector is yours!");
   test::expect_contains(g.out.str(), "alien bodies absorbed");
-  test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({2, 2}).get_owner(), 1);
+  test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({2, 2}).get_owner(),
+                  trader_player);
   ctx.verify_universe_invariants();
 
   // 2. Defeat assault with military and civilians
-  ctx.em.mutate_race(1, [](Race& r) {
+  ctx.em.mutate_race(trader_player, [](Race& r) {
     r.fighters = 1;
     r.absorb = false;
   });
-  ctx.em.mutate_race(2, [](Race& r) {
+  ctx.em.mutate_race(alien_player, [](Race& r) {
     r.fighters = 15;
     r.absorb = true;
   });
   ctx.em.mutate_planet_and_sectors(1, 1, [](Planet& p, SectorMap& map) {
     auto& sect = map.get({2, 2});
-    sect.set_owner(2);
+    sect.set_owner(alien_player);
     sect.set_popn_exact(100);
     sect.set_troops(500);
     p.sync_demographics(map);
@@ -369,7 +389,8 @@ void test_unload_onto_alien_sector() {
       g, {"unload", std::format("#{}", assault_id.value), "m", "5"}, 1);
   test::expect_contains(g.out.str(), "DEFEAT!  Your assault was repulsed.");
   test::expect_contains(g.out.str(), "Metamorphs have absorbed");
-  test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({2, 2}).get_owner(), 2);
+  test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({2, 2}).get_owner(),
+                  alien_player);
   ctx.verify_universe_invariants();
 
   g.out.str("");
@@ -379,17 +400,17 @@ void test_unload_onto_alien_sector() {
   ctx.verify_universe_invariants();
 
   // 3. Victory assault with civilians
-  ctx.em.mutate_race(1, [](Race& r) {
+  ctx.em.mutate_race(trader_player, [](Race& r) {
     r.fighters = 15;
     r.absorb = true;
   });
-  ctx.em.mutate_race(2, [](Race& r) {
+  ctx.em.mutate_race(alien_player, [](Race& r) {
     r.fighters = 1;
     r.absorb = false;
   });
   ctx.em.mutate_planet_and_sectors(1, 1, [](Planet& p, SectorMap& map) {
     auto& sect = map.get({2, 2});
-    sect.set_owner(2);
+    sect.set_owner(alien_player);
     sect.set_popn_exact(1);
     sect.set_troops(0);
     p.sync_demographics(map);
@@ -398,14 +419,15 @@ void test_unload_onto_alien_sector() {
   ctx.assert_dispatch_success(
       g, {"unload", std::format("#{}", assault_id.value), "c", "50"}, 1);
   test::expect_contains(g.out.str(), "VICTORY! The sector is yours!");
-  test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({2, 2}).get_owner(), 1);
+  test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({2, 2}).get_owner(),
+                  trader_player);
 
   // 4. Hostile alien-sector unload with 0 Star AP is rejected before assault
   ctx.em.mutate_planet_and_sectors(1, 1, [](Planet& p, SectorMap& map) {
-    map.get({2, 2}).set_owner(2);
+    map.get({2, 2}).set_owner(alien_player);
     p.sync_demographics(map);
   });
-  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 0; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(trader_player) = 0; });
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"unload", std::format("#{}", assault_id.value), "m", "5"});

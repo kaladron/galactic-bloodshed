@@ -13,13 +13,13 @@ namespace {
 
 void test_upgrade_command() {
   TestContext ctx;
-  ctx.with_standard_universe();
-  ctx.em.mutate_race(1, [](Race& r) { r.tech = 500.0; });
-  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 10; });
+  const auto races = ctx.with_races();
+  ctx.em.mutate_race(races.empire, [](Race& r) { r.tech = 500.0; });
+  ctx.em.mutate_star(1, [&](Star& s) { s.AP(races.empire) = 10; });
 
   const auto type = ShipType::STYPE_FIGHTER;
   const auto ship_id = TestShipBuilder(ctx.em, type)
-                           .owned_by(1, 1)
+                           .owned_by(races.empire, 1)
                            .named("Upgradeable")
                            .in_star_orbit(1, 100.0, 200.0)
                            .with_fuel(10.0)
@@ -33,7 +33,7 @@ void test_upgrade_command() {
   // Create GameObj for command execution
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, races.empire, 1);
 
   // 1. Scope rejection at UNIV scope
   g.set_scope_univ();
@@ -50,8 +50,8 @@ void test_upgrade_command() {
   std::println(std::cout, "    ✓ Scope rejection at star level verified");
 
   // 3. Guest rejection
-  ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });
-  ctx.setup_game_obj(g);
+  ctx.em.mutate_race(races.empire, [](Race& r) { r.Guest = true; });
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_ship(ship_id);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "2"});
@@ -59,13 +59,13 @@ void test_upgrade_command() {
   std::println(std::cout, "    ✓ Guest rejection verified");
 
   // Restore non-guest race
-  ctx.em.mutate_race(1, [](Race& r) { r.Guest = false; });
-  ctx.setup_game_obj(g);
+  ctx.em.mutate_race(races.empire, [](Race& r) { r.Guest = false; });
+  ctx.setup_game_obj(g, races.empire, 1);
 
   // 4. Upgrade ship armor (at SHIP scope)
   std::println(std::cout, "Upgrade ship armor");
   {
-    ctx.setup_game_obj(g);
+    ctx.setup_game_obj(g, races.empire, 1);
     g.set_scope_ship(ship_id);
 
     const auto* ship_before = ctx.em.peek_ship(ship_id);
@@ -74,9 +74,10 @@ void test_upgrade_command() {
     int target_armor = initial_armor + 2;
     int initial_resource = ship_before->resource();
     const auto* star_before = ctx.em.peek_star(1);
-    test::expect_eq(star_before->AP(1), 10);
+    test::expect_eq(star_before->AP(races.empire), 10);
     std::println(std::cout, "    Before: armor={}, resource={}, star AP={}",
-                 initial_armor, initial_resource, star_before->AP(1));
+                 initial_armor, initial_resource,
+                 star_before->AP(races.empire));
 
     // upgrade armor target_armor
     ctx.assert_dispatch_success(
@@ -88,10 +89,10 @@ void test_upgrade_command() {
     const auto* ship_after = ctx.em.peek_ship(ship_id);
     test::expect_ne(ship_after, nullptr);
     const auto* star_after = ctx.em.peek_star(1);
-    test::expect_eq(star_after->AP(1), 9);  // 1 Star AP deducted
+    test::expect_eq(star_after->AP(races.empire), 9);  // 1 Star AP deducted
     std::println(std::cout, "    After: armor={}, resource={}, star AP={}",
                  ship_after->armor(), ship_after->resource(),
-                 star_after->AP(1));
+                 star_after->AP(races.empire));
 
     // Armor should have increased
     test::expect_eq(ship_after->armor(), target_armor);
@@ -104,7 +105,7 @@ void test_upgrade_command() {
   // 5. Upgrade ship speed
   std::println(std::cout, "Upgrade ship speed");
   {
-    ctx.setup_game_obj(g);
+    ctx.setup_game_obj(g, races.empire, 1);
     g.set_scope_ship(ship_id);
 
     const auto* ship_before = ctx.em.peek_ship(ship_id);
@@ -113,9 +114,10 @@ void test_upgrade_command() {
     int target_speed = initial_speed + 1;
     int initial_resource = ship_before->resource();
     const auto* star_before = ctx.em.peek_star(1);
-    test::expect_eq(star_before->AP(1), 9);
+    test::expect_eq(star_before->AP(races.empire), 9);
     std::println(std::cout, "    Before: max_speed={}, resource={}, star AP={}",
-                 initial_speed, initial_resource, star_before->AP(1));
+                 initial_speed, initial_resource,
+                 star_before->AP(races.empire));
 
     // upgrade speed target_speed
     ctx.assert_dispatch_success(
@@ -126,7 +128,8 @@ void test_upgrade_command() {
     const auto* ship_after = ctx.em.peek_ship(ship_id);
     test::expect_ne(ship_after, nullptr);
     const auto* star_after = ctx.em.peek_star(1);
-    test::expect_eq(star_after->AP(1), 8);  // Another 1 Star AP deducted
+    test::expect_eq(star_after->AP(races.empire),
+                    8);  // Another 1 Star AP deducted
     std::println(std::cout, "    After: max_speed={}, resource={}, star AP={}",
                  ship_after->max_speed(), ship_after->resource(),
                  star_after->AP(1));
@@ -158,14 +161,14 @@ void test_upgrade_command() {
 void test_upgrade_numeric_attributes_and_validations() {
   std::println(std::cout, "\nTest upgrade numeric attributes and validations");
   TestContext ctx;
-  ctx.with_standard_universe();
-  ctx.em.mutate_race(1, [](Race& r) { r.tech = 500.0; });
+  const auto races = ctx.with_races();
+  ctx.em.mutate_race(races.empire, [](Race& r) { r.tech = 500.0; });
 
   // Cruiser supports crew, cargo, hanger, fuel, destruct, primary, secondary,
   // cew, laser, jump, mount.
   const auto type = ShipType::STYPE_CRUISER;
   const auto ship_id = TestShipBuilder(ctx.em, type)
-                           .owned_by(1, 1)
+                           .owned_by(races.empire, 1)
                            .named("CruiserOne")
                            .in_star_orbit(1, 100.0, 200.0)
                            .with_fuel(100.0)
@@ -183,7 +186,7 @@ void test_upgrade_numeric_attributes_and_validations() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_ship(ship_id);
 
   // Negative value rejected
@@ -243,12 +246,12 @@ void test_upgrade_numeric_attributes_and_validations() {
 void test_upgrade_weapons_and_systems() {
   std::println(std::cout, "\nTest upgrade weapons and boolean systems");
   TestContext ctx;
-  ctx.with_standard_universe();
-  ctx.em.mutate_race(1, [](Race& r) { r.tech = 25000.0; });
+  const auto races = ctx.with_races();
+  ctx.em.mutate_race(races.empire, [](Race& r) { r.tech = 25000.0; });
 
   const auto type = ShipType::STYPE_CRUISER;
   const auto ship_id = TestShipBuilder(ctx.em, type)
-                           .owned_by(1, 1)
+                           .owned_by(races.empire, 1)
                            .named("CruiserWeapons")
                            .in_star_orbit(1, 100.0, 200.0)
                            .with_fuel(100.0)
@@ -269,7 +272,7 @@ void test_upgrade_weapons_and_systems() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_ship(ship_id);
 
   // Primary battery validation & upgrades
@@ -337,13 +340,13 @@ void test_upgrade_weapons_and_systems() {
                         "Your race cannot build confined energy weapons.");
 
   // Grant discoveries and verify upgrades succeed
-  ctx.em.mutate_race(1, [](Race& r) {
+  ctx.em.mutate_race(races.empire, [](Race& r) {
     r.discoveries.crystal = true;
     r.discoveries.hyperdrive = true;
     r.discoveries.laser = true;
     r.discoveries.cew = true;
   });
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_ship(ship_id);
 
   ctx.assert_dispatch_success(g, {"upgrade", "mount"}, 1);
@@ -375,12 +378,12 @@ void test_upgrade_preconditions_and_carrier_hangar() {
   std::println(std::cout,
                "\nTest upgrade preconditions and carrier hangar capacity");
   TestContext ctx;
-  ctx.with_standard_universe();
-  ctx.em.mutate_race(1, [](Race& r) { r.tech = 25000.0; });
+  const auto races = ctx.with_races();
+  ctx.em.mutate_race(races.empire, [](Race& r) { r.tech = 25000.0; });
 
   // Ship 1: Carrier in star orbit
   const auto carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-                              .owned_by(1, 1)
+                              .owned_by(races.empire, 1)
                               .named("FleetCarrier")
                               .in_star_orbit(1, 100.0, 200.0)
                               .with_resource(1000)
@@ -389,7 +392,7 @@ void test_upgrade_preconditions_and_carrier_hangar() {
   // Ship 2: Cruiser berthed inside Carrier (Ship 1)
   const auto ctype = ShipType::STYPE_CRUISER;
   const auto cruiser_id = TestShipBuilder(ctx.em, ctype)
-                              .owned_by(1, 1)
+                              .owned_by(races.empire, 1)
                               .named("DockedCruiser")
                               .with_resource(2000)
                               .with_armor(ship_template(ctype).base_armor)
@@ -414,21 +417,21 @@ void test_upgrade_preconditions_and_carrier_hangar() {
 
   // Ship 3: Factory (cannot upgrade)
   const auto factory_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
-                              .owned_by(1, 1)
+                              .owned_by(races.empire, 1)
                               .named("Factory")
                               .in_star_orbit(1, 100.0, 200.0)
                               .build();
 
   // Ship 4: Spore Pod (not modifiable)
   const auto pod_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
-                          .owned_by(1, 1)
+                          .owned_by(races.empire, 1)
                           .named("Pod")
                           .in_star_orbit(1, 100.0, 200.0)
                           .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, races.empire, 1);
 
   // Factory rejection
   g.set_scope_ship(factory_id);
@@ -465,8 +468,8 @@ void test_upgrade_preconditions_and_carrier_hangar() {
   test::expect_eq(ctx.em.peek_ship(carrier_id)->hanger(), new_cruiser_size);
 
   // Insufficient tech rejection
-  ctx.em.mutate_race(1, [](Race& r) { r.tech = 0.1; });
-  ctx.setup_game_obj(g);
+  ctx.em.mutate_race(races.empire, [](Race& r) { r.tech = 0.1; });
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_ship(cruiser_id);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "20"});
@@ -474,10 +477,10 @@ void test_upgrade_preconditions_and_carrier_hangar() {
                         "This upgrade requires an engineering technology of");
 
   // Insufficient onboard and carrier resources rejection
-  ctx.em.mutate_race(1, [](Race& r) { r.tech = 25000.0; });
+  ctx.em.mutate_race(races.empire, [](Race& r) { r.tech = 25000.0; });
   ctx.em.mutate_ship(cruiser_id, [](Ship& s) { s.resource() = 0; });
   ctx.em.mutate_ship(carrier_id, [](Ship& c) { c.resource() = 0; });
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_ship(cruiser_id);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "20"});
@@ -492,16 +495,16 @@ void test_upgrade_json_god_mode_and_edge_cases() {
   std::println(std::cout,
                "\nTest upgrade JSON output, God mode, and edge cases");
   TestContext ctx;
-  ctx.with_standard_universe();
-  ctx.em.mutate_race(1, [](Race& r) {
+  const auto races = ctx.with_races();
+  ctx.em.mutate_race(races.empire, [](Race& r) {
     r.tech = 25000.0;
     r.discoveries.cew = true;
   });
 
-  // Ship 1: Unarmed Cruiser owned by player 1
+  // Ship 1: Unarmed Cruiser owned by Imperium
   const auto ctype = ShipType::STYPE_CRUISER;
   const auto ship1_id = TestShipBuilder(ctx.em, ctype)
-                            .owned_by(1, 1)
+                            .owned_by(races.empire, 1)
                             .named("UnarmedCruiser")
                             .in_star_orbit(1, 100.0, 200.0)
                             .with_resource(5000)
@@ -519,9 +522,9 @@ void test_upgrade_json_god_mode_and_edge_cases() {
     s.set_mass(s.base_mass() + s.resource() * MASS_RESOURCE);
   });
 
-  // Ship 2: Cruiser owned by player 2 (non-commandable by player 1)
+  // Ship 2: Cruiser owned by Nomads (non-commandable by Imperium)
   const auto ship2_id = TestShipBuilder(ctx.em, ctype)
-                            .owned_by(2, 1)
+                            .owned_by(races.nomad, 1)
                             .named("EnemyCruiser")
                             .in_star_orbit(1, 100.0, 200.0)
                             .with_resource(5000)
@@ -529,7 +532,7 @@ void test_upgrade_json_god_mode_and_edge_cases() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, races.empire, 1);
 
   // Direct handler call at non-SHIP scope
   g.set_scope_star(1);
@@ -538,7 +541,7 @@ void test_upgrade_json_god_mode_and_edge_cases() {
   test::expect_contains(
       g.out.str(), "You have to change scope to the ship you wish to upgrade.");
 
-  // Non-commandable ship rejection (owned by player 2)
+  // Non-commandable ship rejection (owned by Nomads)
   g.set_scope_ship(ship2_id);
   g.out.str("");
   test::expect_false(GB::commands::upgrade({"upgrade", "armor", "5"}, g));
@@ -619,55 +622,60 @@ void test_upgrade_json_god_mode_and_edge_cases() {
   test::expect_contains(g.out.str(),
                         "Characteristic modified at a cost of 1 resources.");
 
-  // 6. God mode + UiMode::JSON: deity upgrades for free even with 0 tech
-  ctx.em.mutate_race(1, [](Race& r) {
-    r.God = true;
-    r.tech = 0.0;
-  });
-  ctx.setup_game_obj(g);
-  g.set_scope_ship(ship1_id);
-  g.set_ui_mode(UiMode::JSON);
-  g.out.str("");
-  const auto res_before_god = ctx.em.peek_ship(ship1_id)->resource();
-  ctx.assert_dispatch_success(g, {"upgrade", "armor", "50"}, 1);
-  test::expect_contains(g.out.str(), R"("type":"message")");
-  test::expect_contains(g.out.str(),
+  // 6. God mode + UiMode::JSON: Deity upgrades for free even with 0 tech (and
+  // FixedStar AP bypassed for Deity)
+  ctx.em.mutate_race(races.deity, [](Race& r) { r.tech = 0.0; });
+  const auto deity_ship_id = TestShipBuilder(ctx.em, ctype)
+                                 .owned_by(races.deity, 1)
+                                 .named("DeityCruiser")
+                                 .in_star_orbit(1, 100.0, 200.0)
+                                 .with_resource(500)
+                                 .with_armor(ship_template(ctype).base_armor)
+                                 .build();
+  GameObj god_g(ctx.em, registry);
+  ctx.setup_game_obj(god_g, races.deity, 1);
+  god_g.set_scope_ship(deity_ship_id);
+  god_g.set_ui_mode(UiMode::JSON);
+  const auto res_before_god = ctx.em.peek_ship(deity_ship_id)->resource();
+  ctx.assert_dispatch_success(god_g, {"upgrade", "armor", "50"}, 0);
+  test::expect_contains(god_g.out.str(), R"("type":"message")");
+  test::expect_contains(god_g.out.str(),
                         "Characteristic modified at a cost of 0 resources.");
-  test::expect_contains(g.out.str(), R"("type":"ship")");
-  test::expect_eq(ctx.em.peek_ship(ship1_id)->armor(), 50);
-  test::expect_eq(ctx.em.peek_ship(ship1_id)->resource(), res_before_god);
+  test::expect_contains(god_g.out.str(), R"("type":"ship")");
+  test::expect_eq(ctx.em.peek_ship(deity_ship_id)->armor(), 50);
+  test::expect_eq(ctx.em.peek_ship(deity_ship_id)->resource(), res_before_god);
 
   // 7. Mortal zero-cargo Fighter upgrades using planetary and carrier stores,
   // and Gamma Ray Laser rejects CEW upgrades
-  ctx.em.mutate_race(1, [](Race& r) {
-    r.God = false;
+  ctx.em.mutate_race(races.empire, [](Race& r) {
     r.tech = 500.0;
     r.discoveries.cew = true;
   });
-  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 50; });
-  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(1).resource = 500; });
-  ctx.setup_game_obj(g);
+  ctx.em.mutate_star(1, [&](Star& s) { s.AP(races.empire) = 50; });
+  ctx.em.mutate_planet(1, 1,
+                       [&](Planet& p) { p.info(races.empire).resource = 500; });
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_ui_mode(UiMode::ASCII);
 
   const shipnum_t landed_ftr = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-                                   .owned_by(1, 1)
+                                   .owned_by(races.empire, 1)
                                    .landed_on(1, 1, {0, 0})
                                    .with_resource(0)
                                    .build();
   g.set_scope_ship(landed_ftr);
   ctx.assert_dispatch_success(g, {"upgrade", "armor", "5"}, 1);
   test::expect_eq(ctx.em.peek_ship(landed_ftr)->armor(), 5);
-  test::expect_lt(ctx.em.peek_planet(1, 1)->info(1).resource, 500);
+  test::expect_lt(ctx.em.peek_planet(1, 1)->info(races.empire).resource, 500);
 
   const shipnum_t carrier = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-                                .owned_by(1, 1)
+                                .owned_by(races.empire, 1)
                                 .in_star_orbit(1)
                                 .with_resource(300)
                                 .with_max_hanger(200)
                                 .with_crew(30, 0)
                                 .build();
   const shipnum_t berthed_ftr = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-                                    .owned_by(1, 1)
+                                    .owned_by(races.empire, 1)
                                     .in_star_orbit(1)
                                     .with_resource(0)
                                     .build();
@@ -683,13 +691,13 @@ void test_upgrade_json_god_mode_and_edge_cases() {
 
   // Berthed inside a foreign-owned carrier cannot draw from the alien carrier's
   // stockpile
-  ctx.em.mutate_ship(carrier, [](Ship& c) { c.owner() = 2; });
+  ctx.em.mutate_ship(carrier, [&](Ship& c) { c.owner() = races.nomad; });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "6"});
   test::expect_contains(g.out.str(), "resources on board");
 
   const shipnum_t gr_id = TestShipBuilder(ctx.em, ShipType::OTYPE_GR)
-                              .owned_by(1, 1)
+                              .owned_by(races.empire, 1)
                               .landed_on(1, 1, {0, 0})
                               .with_damage(0)
                               .with_resource(50)
@@ -702,7 +710,7 @@ void test_upgrade_json_god_mode_and_edge_cases() {
   // Deep-space ship (snum == 0): mortal lacks star AP cleanly; Deity upgrades
   // for 0 AP without throwing EntityNotFoundError
   const shipnum_t deep_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                                  .owned_by(1, 1)
+                                  .owned_by(races.empire, 1)
                                   .in_deep_space()
                                   .with_resource(200)
                                   .build();
@@ -710,10 +718,16 @@ void test_upgrade_json_god_mode_and_edge_cases() {
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "5"});
   test::expect_contains(g.out.str(), "You don't have 1 action points there.");
-  g.set_god(true);
-  ctx.assert_dispatch_success(g, {"upgrade", "armor", "5"}, 0);
-  test::expect_eq(ctx.em.peek_ship(deep_ship)->armor(), 5);
-  g.set_god(false);
+  const shipnum_t deity_deep_ship =
+      TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+          .owned_by(races.deity, 1)
+          .in_deep_space()
+          .with_resource(200)
+          .build();
+  god_g.set_ui_mode(UiMode::ASCII);
+  god_g.set_scope_ship(deity_deep_ship);
+  ctx.assert_dispatch_success(god_g, {"upgrade", "armor", "5"}, 0);
+  test::expect_eq(ctx.em.peek_ship(deity_deep_ship)->armor(), 5);
 
   std::println(std::cout,
                "    ✓ JSON output, God mode, battery activation, and edge "

@@ -13,12 +13,36 @@ import std;
 
 namespace {
 
+constexpr player_t scrap_player = 2;
+constexpr player_t rival_player = 3;
+
+void setup_scrap_galaxy(TestContext& ctx) {
+  ctx.with_galaxy();
+  TestWorldBuilder world(ctx);
+  world.add_race("Scrappers", 100.0, false, scrap_player);
+  world.add_race("Rivals", 100.0, false, rival_player);
+  ctx.em.mutate_universe([](Universe& u) { u.set_AP(scrap_player, 50); });
+  ctx.em.mutate_star(1, [](Star& s) {
+    s.mark_explored_by(scrap_player);
+    s.mark_inhabited_by(scrap_player);
+    s.AP(scrap_player) = 50;
+  });
+  ctx.em.mutate_planet(1, 1,
+                       [](Planet& p) { p.mark_explored_by(scrap_player); });
+  ctx.em.mutate_star(2, [](Star& s) {
+    s.mark_explored_by(scrap_player);
+    s.AP(scrap_player) = 50;
+  });
+  ctx.em.mutate_planet(2, 1,
+                       [](Planet& p) { p.mark_explored_by(scrap_player); });
+}
+
 void setup_test_world(TestContext& ctx) {
-  ctx.with_standard_universe().with_populated_planet(1, 1, 1, 1000,
-                                                     Coordinates{5, 5});
+  setup_scrap_galaxy(ctx);
+  ctx.with_populated_planet(1, 1, scrap_player, 1000, Coordinates{5, 5});
 
   auto carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-                        .owned_by(player_t{1}, governor_t{1})
+                        .owned_by(scrap_player, governor_t{1})
                         .named("Carrier")
                         .in_star_orbit(1)
                         .with_crew(10, 0)
@@ -27,7 +51,7 @@ void setup_test_world(TestContext& ctx) {
                         .build();
 
   auto fighter_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-                        .owned_by(player_t{1}, governor_t{1})
+                        .owned_by(scrap_player, governor_t{1})
                         .named("ToScrap")
                         .in_star_orbit(1)
                         .with_crew(5, 0)
@@ -50,7 +74,7 @@ void test_scrap_happy_paths() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, scrap_player, 1);
   g.set_scope_star(1);
 
   // 1. Scrap docked fighter (1 AP deducted via dynamic AP)
@@ -69,7 +93,7 @@ void test_scrap_happy_paths() {
 
 void test_scrap_docked_capacity_clamping() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  setup_scrap_galaxy(ctx);
 
   // Host cruiser with tight remaining capacities:
   // max_resource=140 (has 100 -> room for 40)
@@ -78,7 +102,7 @@ void test_scrap_docked_capacity_clamping() {
   // max_crew=20 (has 5 popn, 5 troops -> 10 berths free total)
   // max_crystals_capacity=127 (has 126 -> room for 1)
   auto host_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                     .owned_by(player_t{1}, governor_t{1})
+                     .owned_by(scrap_player, governor_t{1})
                      .named("Host")
                      .in_star_orbit(1)
                      .with_crew(5, 5)
@@ -101,7 +125,7 @@ void test_scrap_docked_capacity_clamping() {
   // troops=12, popn=8 -> troops clamped to 10, leaving 0 berths for crew!
   // crystals=2, mounted=1 -> 3 total (clamped to 1)
   auto scrap_id = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)
-                      .owned_by(player_t{1}, governor_t{1})
+                      .owned_by(scrap_player, governor_t{1})
                       .named("LoadedScrap")
                       .in_star_orbit(1)
                       .with_crew(8, 12)
@@ -119,7 +143,7 @@ void test_scrap_docked_capacity_clamping() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, scrap_player, 1);
   g.set_scope_star(1);
 
   ctx.assert_dispatch_success(g, {"scrap", std::format("#{}", scrap_id.value)},
@@ -150,13 +174,13 @@ void test_scrap_docked_capacity_clamping() {
   // Also test Shuttle host (can_strap_cargo_to_hull() == true, so resources are
   // NOT clamped) and carrier hangar docking (LEVEL_SHIP)
   auto shuttle_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                        .owned_by(player_t{1}, governor_t{1})
+                        .owned_by(scrap_player, governor_t{1})
                         .in_star_orbit(1)
                         .with_crew(2, 0)
                         .with_resource(50)
                         .build();
   auto pod_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-                    .owned_by(player_t{1}, governor_t{1})
+                    .owned_by(scrap_player, governor_t{1})
                     .in_star_orbit(1)
                     .with_crew(2, 0)
                     .with_resource(100)
@@ -174,13 +198,13 @@ void test_scrap_docked_capacity_clamping() {
 
   // Carrier hangar docking (LEVEL_SHIP) -> reclaims resources into carrier
   auto carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-                        .owned_by(player_t{1}, governor_t{1})
+                        .owned_by(scrap_player, governor_t{1})
                         .in_star_orbit(1)
                         .with_crew(10, 0)
                         .with_resource(100)
                         .build();
   auto hangar_fighter = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-                            .owned_by(player_t{1}, governor_t{1})
+                            .owned_by(scrap_player, governor_t{1})
                             .with_crew(2, 0)
                             .with_resource(20)
                             .build();
@@ -199,18 +223,18 @@ void test_scrap_docked_capacity_clamping() {
 
 void test_scrap_landed_sectors_and_spaceborne() {
   TestContext ctx;
-  ctx.with_standard_universe().with_populated_planet(1, 1, 1, 1000,
-                                                     Coordinates{5, 5});
+  setup_scrap_galaxy(ctx);
+  ctx.with_populated_planet(1, 1, scrap_player, 1000, Coordinates{5, 5});
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, scrap_player, 1);
   g.set_scope_planet(1, 1);
 
   // 1. Landed on owned sector (5, 5) with crew, troops, fuel, destruct,
   // crystals
   auto owned_ship = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                        .owned_by(player_t{1}, governor_t{1})
+                        .owned_by(scrap_player, governor_t{1})
                         .landed_on(1, 1, Coordinates{5, 5})
                         .with_crew(6, 4)
                         .with_fuel(20.0)
@@ -229,7 +253,7 @@ void test_scrap_landed_sectors_and_spaceborne() {
 
   // 2. Landed on unowned sector (2, 2) with crew + troops -> colonizes sector
   auto col_ship = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                      .owned_by(player_t{1}, governor_t{1})
+                      .owned_by(scrap_player, governor_t{1})
                       .landed_on(1, 1, Coordinates{2, 2})
                       .with_crew(5, 3)
                       .with_resource(10)
@@ -243,7 +267,7 @@ void test_scrap_landed_sectors_and_spaceborne() {
   // 3. Crewless ship landed on unowned sector (3, 3) -> reclaims resources
   // without claiming empty 0-pop sector
   auto canister_id = TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST)
-                         .owned_by(player_t{1}, governor_t{1})
+                         .owned_by(scrap_player, governor_t{1})
                          .landed_on(1, 1, Coordinates{3, 3})
                          .with_crew(0, 0)
                          .with_resource(15)
@@ -260,12 +284,12 @@ void test_scrap_landed_sectors_and_spaceborne() {
   // 4. Landed on foreign-owned sector (4, 4) -> crew and crystals blocked
   ctx.em.mutate_sectormap(1, 1, [&](SectorMap& smap) {
     ctx.em.mutate_planet(1, 1, [&](Planet& p) {
-      p.adjust_sector_population(smap.get(Coordinates{4, 4}), player_t{2}, 50,
+      p.adjust_sector_population(smap.get(Coordinates{4, 4}), rival_player, 50,
                                  10);
     });
   });
   auto foreign_sect_ship = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                               .owned_by(player_t{1}, governor_t{1})
+                               .owned_by(scrap_player, governor_t{1})
                                .landed_on(1, 1, Coordinates{4, 4})
                                .with_crew(5, 2)
                                .with_crystals(1)
@@ -284,7 +308,7 @@ void test_scrap_landed_sectors_and_spaceborne() {
   // no resources reclaimed
   g.set_scope_star(1);
   auto space_ship = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-                        .owned_by(player_t{1}, governor_t{1})
+                        .owned_by(scrap_player, governor_t{1})
                         .in_star_orbit(1)
                         .with_crew(2, 0)
                         .build();
@@ -302,11 +326,11 @@ void test_scrap_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set Star AP to 0
-  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 0; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(scrap_player) = 0; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, scrap_player, 1);
   g.set_scope_star(1);
 
   ctx.assert_dispatch_rejected(g, {"scrap", "#2"});
@@ -319,7 +343,7 @@ void test_scrap_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, scrap_player, 1);
   g.set_scope_star(1);
 
   // 1. Min args check (< 2 args)
@@ -334,7 +358,7 @@ void test_scrap_domain_errors() {
 
   // Restore crew, break reciprocal docking on carrier #1 -> OtherShipNotDocked
   // (and verify AP is NOT deducted!)
-  const ap_t ap_before = ctx.em.peek_star(1)->AP(1);
+  const ap_t ap_before = ctx.em.peek_star(1)->AP(scrap_player);
   ctx.em.mutate_ship(2, [](Ship& s) { s.popn() = 5; });
   ctx.em.mutate_ship(1, [](Ship& s) { s.dock_with_ship(shipnum_t{1}); });
   g.out.str("");
@@ -344,22 +368,22 @@ void test_scrap_domain_errors() {
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"scrap", "#2"});
   test::expect_contains(g.out.str(), "Warning, other ship not docked..");
-  test::expect_eq(ctx.em.peek_star(1)->AP(1), ap_before);
+  test::expect_eq(ctx.em.peek_star(1)->AP(scrap_player), ap_before);
 
   // 3. Deep space (LEVEL_UNIV) ship with 0 universe AP vs 1 universe AP
   auto deep_ship = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-                       .owned_by(player_t{1}, governor_t{1})
+                       .owned_by(scrap_player, governor_t{1})
                        .in_deep_space()
                        .with_crew(2, 0)
                        .build();
   g.set_scope_univ();
-  ctx.em.mutate_universe([](Universe& u) { u.set_AP(player_t{1}, 0); });
+  ctx.em.mutate_universe([](Universe& u) { u.set_AP(scrap_player, 0); });
   g.out.str("");
   ctx.assert_dispatch_rejected(g,
                                {"scrap", std::format("#{}", deep_ship.value)});
   test::expect_contains(g.out.str(), "You need 1 universe action point.");
 
-  ctx.em.mutate_universe([](Universe& u) { u.set_AP(player_t{1}, 2); });
+  ctx.em.mutate_universe([](Universe& u) { u.set_AP(scrap_player, 2); });
   g.out.str("");
   g.set_ui_mode(GB::presentation::UiMode::JSON);
   ctx.assert_dispatch_success(g,
@@ -367,7 +391,7 @@ void test_scrap_domain_errors() {
   test::expect_contains(g.out.str(), R"("type":"message")");
   test::expect_contains(g.out.str(), R"("type":"ship")");
   test::expect_contains(g.out.str(), R"("alive":false)");
-  test::expect_eq(ctx.em.peek_universe()->get_AP(player_t{1}), ap_t{1});
+  test::expect_eq(ctx.em.peek_universe()->get_AP(scrap_player), ap_t{1});
 }
 
 void test_scrap_toxic_waste_warning() {
@@ -376,12 +400,12 @@ void test_scrap_toxic_waste_warning() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, scrap_player, 1);
   g.set_scope_planet(1, 1);
 
   // Create Toxic Waste Canister landed on planet
   auto tox_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TOXWC)
-                    .owned_by(player_t{1}, governor_t{1})
+                    .owned_by(scrap_player, governor_t{1})
                     .named("HazMat")
                     .landed_on(1, 1, Coordinates{5, 5})
                     .with_crew(1, 0)
@@ -400,13 +424,13 @@ void test_scrap_toxic_waste_warning() {
   // Berthing a loaded Toxic Waste Canister inside a landed Carrier and
   // scrapping it must still release its stored toxicity onto the planet
   auto landed_carrier = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-                            .owned_by(player_t{1}, governor_t{1})
+                            .owned_by(scrap_player, governor_t{1})
                             .landed_on(1, 1, Coordinates{5, 5})
                             .with_crew(10, 0)
                             .with_max_hanger(200)
                             .build();
   auto berthed_tox = TestShipBuilder(ctx.em, ShipType::OTYPE_TOXWC)
-                         .owned_by(player_t{1}, governor_t{1})
+                         .owned_by(scrap_player, governor_t{1})
                          .landed_on(1, 1, Coordinates{5, 5})
                          .with_crew(1, 0)
                          .with_special(WasteData{.toxic = 20})
@@ -425,13 +449,13 @@ void test_scrap_toxic_waste_warning() {
   // Canister berthed inside a carrier in stellar orbit releases 0 planetary
   // toxin
   const auto star_carrier = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-                                .owned_by(1, 1)
+                                .owned_by(scrap_player, 1)
                                 .in_star_orbit(1)
                                 .with_max_hanger(50)
                                 .with_crew(10, 0)
                                 .build();
   const auto star_tox = TestShipBuilder(ctx.em, ShipType::OTYPE_TOXWC)
-                            .owned_by(1, 1)
+                            .owned_by(scrap_player, 1)
                             .docked_to(star_carrier, 1)
                             .with_special(WasteData{.toxic = 20})
                             .build();
@@ -447,23 +471,23 @@ void test_scrap_toxic_waste_warning() {
 
 void test_scrap_query_and_scope_reconciliation() {
   TestContext ctx;
-  ctx.with_standard_universe().with_populated_planet(1, 1, 1, 1000,
-                                                     Coordinates{5, 5});
-  ctx.em.mutate_race(1, [](Race& r) { r.tech = 200.0; });
+  setup_scrap_galaxy(ctx);
+  ctx.with_populated_planet(1, 1, scrap_player, 1000, Coordinates{5, 5});
+  ctx.em.mutate_race(scrap_player, [](Race& r) { r.tech = 200.0; });
   ctx.em.mutate_planet(1, 1, [](Planet& p) {
-    p.info(1).resource = 5000;
-    p.info(1).fuel = 500;
+    p.info(scrap_player).resource = 5000;
+    p.info(scrap_player).fuel = 500;
   });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, scrap_player, 1);
   g.set_scope_planet(1, 1);
 
   // Starting #1 Shuttle, then build #2 Factory, #3 Terraformer, #4 Waste
   // Canister, and #5 Cruiser
   const auto shuttle_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                              .owned_by(1, 1)
+                              .owned_by(scrap_player, 1)
                               .landed_on(1, 1, {5, 5})
                               .with_crew(10, 0)
                               .with_fuel(50.0)
@@ -473,7 +497,7 @@ void test_scrap_query_and_scope_reconciliation() {
   ctx.assert_dispatch_success(g, {"build", "T", "5,5"});
   ctx.assert_dispatch_success(g, {"build", "w", "5,5"});
   const auto carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-                              .owned_by(1, 1)
+                              .owned_by(scrap_player, 1)
                               .in_star_orbit(1, {50.0, 0.0})
                               .with_crew(50, 0)
                               .with_fuel(100.0)
@@ -519,7 +543,7 @@ void test_scrap_query_and_scope_reconciliation() {
   // Nested carrier -> star-orbit -> deep-space scope reconciliation, plus
   // parent refresh when a scoped ship moves to another star before dying
   const auto child_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-                            .owned_by(1, 1)
+                            .owned_by(scrap_player, 1)
                             .docked_to(carrier_id, 1)
                             .with_crew(2, 0)
                             .build();
@@ -534,7 +558,7 @@ void test_scrap_query_and_scope_reconciliation() {
   test::expect_contains(GB::presentation::do_prompt(g), "/Sol");
 
   const auto roam_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-                           .owned_by(1, 1)
+                           .owned_by(scrap_player, 1)
                            .landed_on(1, 1, {5, 5})
                            .with_crew(2, 0)
                            .build();
@@ -552,12 +576,12 @@ void test_scrap_query_and_scope_reconciliation() {
   // Captured/gifted ship, dead ship (!alive), foreign carrier skip, and
   // unexplored planet/star celestial step-up
   const auto captured_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-                               .owned_by(1, 1)
+                               .owned_by(scrap_player, 1)
                                .in_planet_orbit(1, 1)
                                .with_crew(2, 0)
                                .build();
   ctx.assert_dispatch_success(g, {"cs", std::format("#{}", captured_id)});
-  ctx.em.mutate_ship(captured_id, [](Ship& s) { s.owner() = 2; });
+  ctx.em.mutate_ship(captured_id, [](Ship& s) { s.owner() = rival_player; });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"report"});
   test::expect_contains(
@@ -567,12 +591,12 @@ void test_scrap_query_and_scope_reconciliation() {
   test::expect_eq(g.level(), ScopeLevel::LEVEL_PLAN);
 
   const auto allied_carrier = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-                                  .owned_by(2, 1)
+                                  .owned_by(rival_player, 1)
                                   .in_star_orbit(1)
                                   .with_crew(10, 0)
                                   .build();
   const auto guest_fighter = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-                                 .owned_by(1, 1)
+                                 .owned_by(scrap_player, 1)
                                  .in_star_orbit(1)
                                  .with_crew(2, 0)
                                  .build();
@@ -593,25 +617,27 @@ void test_scrap_query_and_scope_reconciliation() {
   }
 
   // Unexplored planet -> explored star; unexplored star -> UNIV
-  ctx.em.mutate_planet(2, 1, [](Planet& p) { p.info(1).explored = 0; });
+  ctx.em.mutate_planet(2, 1,
+                       [](Planet& p) { p.info(scrap_player).explored = 0; });
   g.set_scope_planet(2, 1);
   g.reconcile_scope();
   test::expect_eq(g.level(), ScopeLevel::LEVEL_STAR);
   test::expect_eq(g.snum(), starnum_t{2});
 
-  ctx.em.mutate_star(2, [](Star& s) { s.clear_explored_by(1); });
+  ctx.em.mutate_star(2, [](Star& s) { s.clear_explored_by(scrap_player); });
   g.reconcile_scope();
   test::expect_eq(g.level(), ScopeLevel::LEVEL_UNIV);
 
-  ctx.em.mutate_star(2, [](Star& s) { s.mark_explored_by(1); });
-  ctx.em.mutate_planet(2, 1, [](Planet& p) { p.info(1).explored = 1; });
+  ctx.em.mutate_star(2, [](Star& s) { s.mark_explored_by(scrap_player); });
+  ctx.em.mutate_planet(2, 1,
+                       [](Planet& p) { p.info(scrap_player).explored = 1; });
 
   const auto deep_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-                           .owned_by(1, 1)
+                           .owned_by(scrap_player, 1)
                            .in_deep_space()
                            .with_crew(2, 0)
                            .build();
-  ctx.em.mutate_universe([](Universe& u) { u.set_AP(1, 5); });
+  ctx.em.mutate_universe([](Universe& u) { u.set_AP(scrap_player, 5); });
   ctx.assert_dispatch_success(g, {"cs", std::format("#{}", deep_id)});
   ctx.assert_dispatch_success(g, {"scrap", std::format("#{}", deep_id)});
   test::expect_eq(g.level(), ScopeLevel::LEVEL_UNIV);
@@ -619,7 +645,7 @@ void test_scrap_query_and_scope_reconciliation() {
   // Stale LEVEL_SHIP pre-dispatch guard & ':' Place::resolve safety
   {
     const auto gone = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
-                          .owned_by(1, 1)
+                          .owned_by(scrap_player, 1)
                           .in_planet_orbit(1, 1)
                           .build();
     g.set_scope_ship(gone);
@@ -634,7 +660,7 @@ void test_scrap_query_and_scope_reconciliation() {
         command_t{"make", "f"}, command_t{"modify", "armor", "5"},
         command_t{"upgrade", "speed", "4"}}) {
     const auto gone = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
-                          .owned_by(1, 1)
+                          .owned_by(scrap_player, 1)
                           .in_planet_orbit(1, 1)
                           .build();
     g.set_scope_ship(gone);
@@ -647,45 +673,44 @@ void test_scrap_query_and_scope_reconciliation() {
                     gone));
     test::expect_eq(g.level(), ScopeLevel::LEVEL_PLAN);
   }
-  g.set_god(true);
+  GameObj god_g(ctx.em, registry);
+  ctx.setup_game_obj(god_g, 1, 1);
   const auto god_gone = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
                             .owned_by(1, 1)
                             .in_planet_orbit(1, 1)
                             .build();
-  g.set_scope_ship(god_gone);
+  god_g.set_scope_ship(god_gone);
   ctx.em.mutate_ship(god_gone, [&](Ship& s) { ctx.em.destroy_ship(s); });
-  g.out.str("");
-  ctx.assert_dispatch_rejected(g, {"fix", "ship", "fuel", "10"});
+  ctx.assert_dispatch_rejected(god_g, {"fix", "ship", "fuel", "10"});
   test::expect_contains(
-      g.out.str(),
+      god_g.out.str(),
       std::format("Ship #{} no longer exists; scope reset to /Sol/Earth",
                   god_gone));
-  g.set_god(false);
 
   // Deep-space carrier (storbits == 0) with berthed shuttle: scrapping the
   // berthed shuttle deducts Universe AP cleanly without calling peek_star(0),
   // and `scrap *` at LEVEL_SHIP only scraps ships in that carrier's scope.
   const auto deep_hab = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
-                            .owned_by(1, 1)
+                            .owned_by(scrap_player, 1)
                             .in_deep_space()
                             .with_crew(50, 0)
                             .with_max_hanger(100)
                             .build();
   const auto deep_shuttle = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                                .owned_by(1, 1)
+                                .owned_by(scrap_player, 1)
                                 .in_deep_space()
                                 .with_crew(2, 0)
                                 .build();
   const auto distant_probe = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-                                 .owned_by(1, 1)
+                                 .owned_by(scrap_player, 1)
                                  .in_star_orbit(1)
                                  .build();
   test::expect_true(ctx.em.dock_carrier(deep_shuttle, deep_hab).has_value());
-  ctx.em.mutate_universe([](Universe& u) { u.set_AP(1, 5); });
+  ctx.em.mutate_universe([](Universe& u) { u.set_AP(scrap_player, 5); });
   g.set_scope_ship(deep_hab);
   ctx.assert_dispatch_success(
       g, {"scrap", std::format("#{}", deep_shuttle.value)}, 0);
-  test::expect_eq(ctx.em.peek_universe()->get_AP(1), 4);
+  test::expect_eq(ctx.em.peek_universe()->get_AP(scrap_player), 4);
   ctx.assert_dispatch_rejected(g, {"scrap", ":"});
   test::expect_true(ctx.em.peek_ship(distant_probe)->alive());
 

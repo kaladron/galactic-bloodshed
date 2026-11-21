@@ -17,26 +17,40 @@ struct BuildTestFixture {
   JsonStore store;
   starnum_t star_id{1};
   planetnum_t planet_id{1};
+  player_t deity_id{1};
+  player_t builder_id{2};
+  player_t rival_id{3};
 
   BuildTestFixture() : store(ctx.db) {
-    ctx.with_standard_universe();
-    ctx.em.mutate_race(1, [](Race& r) { r.tech = 500.0; });
-    ctx.em.mutate_planet(star_id, planet_id, [](Planet& p) {
-      p.info(player_t{1}).resource = 50000;
-      p.info(player_t{1}).fuel = 10000;
+    ctx.with_galaxy();
+    TestWorldBuilder world(ctx);
+    world.add_race("Builders", 500.0, false, builder_id);
+    world.add_race("Rivals", 100.0, false, rival_id);
+    ctx.with_populated_planet(star_id, planet_id, builder_id, 100,
+                              Coordinates{5, 5});
+    ctx.em.mutate_race(builder_id, [](Race& r) { r.tech = 500.0; });
+    ctx.em.mutate_universe([this](Universe& u) { u.set_AP(builder_id, 50); });
+    ctx.em.mutate_star(star_id, [this](Star& s) {
+      s.mark_explored_by(builder_id);
+      s.mark_inhabited_by(builder_id);
+      s.AP(builder_id) = 50;
+      s.AP(deity_id) = 50;
+    });
+    ctx.em.mutate_planet(star_id, planet_id, [this](Planet& p) {
+      p.mark_explored_by(builder_id);
+      p.info(builder_id).resource = 50000;
+      p.info(builder_id).fuel = 10000;
+      p.info(deity_id).resource = 50000;
+      p.info(deity_id).fuel = 10000;
     });
     ctx.em.mutate_sectormap(star_id, planet_id, [](SectorMap& smap) {
-      smap.get(Coordinates{5, 5}).set_owner(1);
-      smap.get(Coordinates{5, 5}).set_popn_exact(100);
       smap.get(Coordinates{5, 5}).set_condition(SectorType::SEC_LAND);
     });
   }
 
   void init_game_obj(GameObj& g, ScopeLevel level = ScopeLevel::LEVEL_PLAN,
-                     shipnum_t shipno = 0) {
-    g.set_player(1);
-    g.set_governor(1);
-    g.race = em.peek_race(1);
+                     shipnum_t shipno = 0, player_t player = 2) {
+    ctx.setup_game_obj(g, player, 1);
     switch (level) {
       case ScopeLevel::LEVEL_UNIV:
         g.set_scope_univ();
@@ -76,7 +90,7 @@ void test_planet_multiple_builds() {
 
   shipnum_t initial_ships = fixture.count_ships();
   resource_t initial_resource =
-      fixture.get_planet()->info(player_t{1}).resource;
+      fixture.get_planet()->info(fixture.builder_id).resource;
 
   // Build 5 probes at sector 5,5
   command_t argv = {"build", ":", "5,5", "5"};
@@ -99,10 +113,10 @@ void test_planet_multiple_builds() {
 
   // Verify resources deducted for all 5 ships
   const auto* planet = fixture.get_planet();
-  const auto* race = fixture.em.peek_race(1);
+  const auto* race = fixture.em.peek_race(fixture.builder_id);
   resource_t cost_per_probe = Shipcost(ShipType::OTYPE_PROBE, *race);
   resource_t expected_resource = initial_resource - (5 * cost_per_probe);
-  test::expect_eq(planet->info(player_t{1}).resource, expected_resource);
+  test::expect_eq(planet->info(fixture.builder_id).resource, expected_resource);
 
   std::println(std::cout, "✓ Planet multiple builds test passed");
 }
@@ -115,7 +129,7 @@ void test_factory_multiple_builds() {
   // Create a factory ship landed at 5,5 configured to build shuttles
   shipnum_t factory_num =
       TestShipBuilder(fixture.em, ShipType::OTYPE_FACTORY)
-          .owned_by(1, 1)
+          .owned_by(fixture.builder_id, 1)
           .landed_on(fixture.star_id, fixture.planet_id, {5, 5})
           .with_resource(10000)
           .with_crew(100, 0)
@@ -244,7 +258,7 @@ void test_invalid_ship_for_planet() {
 
   // 4. Autoloading enabled on planet build
   {
-    fixture.em.mutate_race(1,
+    fixture.em.mutate_race(fixture.builder_id,
                            [](Race& r) { r.leader().toggle.autoload = true; });
     fixture.init_game_obj(g);
     g.out.str("");
@@ -261,7 +275,7 @@ void test_insufficient_hanger_space() {
 
   // Create a small ship with limited hanger space
   shipnum_t builder_num = TestShipBuilder(fixture.em, ShipType::STYPE_HABITAT)
-                              .owned_by(1, 1)
+                              .owned_by(fixture.builder_id, 1)
                               .in_star_orbit(fixture.star_id)
                               .with_resource(10000)
                               .with_max_hanger(1)
@@ -287,7 +301,7 @@ void test_ship_build_error_paths() {
 
   // 1. Unlanded factory cannot build
   shipnum_t factory_id = TestShipBuilder(fixture.em, ShipType::OTYPE_FACTORY)
-                             .owned_by(1, 1)
+                             .owned_by(fixture.builder_id, 1)
                              .in_star_orbit(fixture.star_id)
                              .with_resource(1000)
                              .with_crew(100, 0)
@@ -303,7 +317,7 @@ void test_ship_build_error_paths() {
   // 2. Landed shuttle cannot build
   shipnum_t shuttle_id =
       TestShipBuilder(fixture.em, ShipType::STYPE_SHUTTLE)
-          .owned_by(1, 1)
+          .owned_by(fixture.builder_id, 1)
           .landed_on(fixture.star_id, fixture.planet_id, {5, 5})
           .with_resource(1000)
           .with_crew(50, 0)
@@ -316,7 +330,7 @@ void test_ship_build_error_paths() {
 
   // 3. Habitat ship build with autoload enabled and low tech error
   shipnum_t hab_id = TestShipBuilder(fixture.em, ShipType::STYPE_HABITAT)
-                         .owned_by(1, 1)
+                         .owned_by(fixture.builder_id, 1)
                          .in_star_orbit(fixture.star_id)
                          .with_resource(50000)
                          .with_max_hanger(500)
@@ -325,7 +339,8 @@ void test_ship_build_error_paths() {
                          .with_fuel(500.0)
                          .build();
 
-  fixture.em.mutate_race(1, [](Race& r) { r.leader().toggle.autoload = true; });
+  fixture.em.mutate_race(fixture.builder_id,
+                         [](Race& r) { r.leader().toggle.autoload = true; });
   fixture.init_game_obj(g, ScopeLevel::LEVEL_SHIP, hab_id);
 
   // Autoloaded build of Space Probe (':') inside Habitat
@@ -334,7 +349,7 @@ void test_ship_build_error_paths() {
   test::expect_contains(g.out.str(), "Loaded with");
 
   // Insufficient tech error when race tech is lowered
-  fixture.em.mutate_race(1, [](Race& r) { r.tech = 1.0; });
+  fixture.em.mutate_race(fixture.builder_id, [](Race& r) { r.tech = 1.0; });
   fixture.init_game_obj(g, ScopeLevel::LEVEL_SHIP, hab_id);
   g.out.str("");
   GB::commands::build({"build", ":", "1"}, g);
@@ -350,11 +365,8 @@ void test_build_info_and_json_presentation() {
   fixture.init_game_obj(g);
 
   // 1. "build ?" in ASCII and JSON modes for mortal without pods, mortal with
-  // pods, and God
-  fixture.em.mutate_race(1, [](Race& r) {
-    r.God = false;
-    r.pods = false;
-  });
+  // pods, and Deity (player 1)
+  fixture.em.mutate_race(fixture.builder_id, [](Race& r) { r.pods = false; });
   fixture.init_game_obj(g);
   g.out.str("");
   test::expect_true(GB::commands::build({"build", "?"}, g));
@@ -366,11 +378,8 @@ void test_build_info_and_json_presentation() {
   test::expect_contains(g.out.str(), R"("type":"message")");
   test::expect_contains(g.out.str(), "Default ship parameters");
 
-  fixture.em.mutate_race(1, [](Race& r) {
-    r.God = true;
-    r.pods = true;
-  });
-  fixture.init_game_obj(g);
+  fixture.em.mutate_race(fixture.deity_id, [](Race& r) { r.pods = true; });
+  fixture.init_game_obj(g, ScopeLevel::LEVEL_PLAN, 0, fixture.deity_id);
   g.set_ui_mode(UiMode::ASCII);
   g.out.str("");
   test::expect_true(GB::commands::build({"build", "?"}, g));
@@ -425,10 +434,10 @@ void test_planet_and_factory_mcdc_branches() {
     test::expect_contains(g.out.str(), "Give a positive number of builds.\n");
   }
 
-  // 2. Planet build on wasted sector rejected for mortal, allowed for God
+  // 2. Planet build on wasted sector rejected for mortal, allowed for Deity
   fixture.em.mutate_sectormap(
-      fixture.star_id, fixture.planet_id, [](SectorMap& smap) {
-        smap.get(Coordinates{6, 6}).set_owner(1);
+      fixture.star_id, fixture.planet_id, [&](SectorMap& smap) {
+        smap.get(Coordinates{6, 6}).set_owner(fixture.builder_id);
         smap.get(Coordinates{6, 6}).set_popn_exact(50);
         smap.get(Coordinates{6, 6}).set_condition(SectorType::SEC_WASTED);
       });
@@ -436,14 +445,14 @@ void test_planet_and_factory_mcdc_branches() {
   test::expect_false(GB::commands::build({"build", ":", "6,6", "1"}, g));
   test::expect_contains(g.out.str(), "You can't build on wasted sectors.\n");
 
-  // God bypasses can_build_this, can_build_on_planet, can_build_at_planet, and
-  // can_build_on_sector, and skips autoloading even when autoload toggle is on
-  fixture.em.mutate_race(1, [](Race& r) {
-    r.God = true;
+  // Deity (player 1) bypasses can_build_this, can_build_on_planet,
+  // can_build_at_planet, and can_build_on_sector, and skips autoloading even
+  // when autoload toggle is on
+  fixture.em.mutate_race(fixture.deity_id, [](Race& r) {
     r.pods = false;
     r.governor(1).toggle.autoload = true;
   });
-  fixture.init_game_obj(g);
+  fixture.init_game_obj(g, ScopeLevel::LEVEL_PLAN, 0, fixture.deity_id);
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   test::expect_true(GB::commands::build({"build", "p", "6,6", "1"}, g));
@@ -451,8 +460,7 @@ void test_planet_and_factory_mcdc_branches() {
   g.set_ui_mode(UiMode::ASCII);
 
   // Mortal with AVPM building OTYPE_TRANSDEV ('[') skips autoloading
-  fixture.em.mutate_race(1, [](Race& r) {
-    r.God = false;
+  fixture.em.mutate_race(fixture.builder_id, [](Race& r) {
     r.discoveries.avpm = true;
     r.governor(1).toggle.autoload = true;
   });
@@ -464,7 +472,7 @@ void test_planet_and_factory_mcdc_branches() {
   // 3. Factory validation and execution branches
   shipnum_t undesignated_fac =
       TestShipBuilder(fixture.em, ShipType::OTYPE_FACTORY)
-          .owned_by(1, 1)
+          .owned_by(fixture.builder_id, 1)
           .landed_on(fixture.star_id, fixture.planet_id, {5, 5})
           .with_resource(1000)
           .with_crew(100, 0)
@@ -490,7 +498,7 @@ void test_planet_and_factory_mcdc_branches() {
 
   // Non-factory-buildable blueprint (e.g. Probe) rejected on mortal factory
   shipnum_t bad_fac = TestShipBuilder(fixture.em, ShipType::OTYPE_FACTORY)
-                          .owned_by(1, 1)
+                          .owned_by(fixture.builder_id, 1)
                           .landed_on(fixture.star_id, fixture.planet_id, {5, 5})
                           .with_resource(1000)
                           .with_crew(100, 0)
@@ -506,7 +514,7 @@ void test_planet_and_factory_mcdc_branches() {
   // Designated factory: tech check, planet check, sector check, resource check,
   // AP check, and autoloading
   shipnum_t fac_id = TestShipBuilder(fixture.em, ShipType::OTYPE_FACTORY)
-                         .owned_by(1, 1)
+                         .owned_by(fixture.builder_id, 1)
                          .landed_on(fixture.star_id, fixture.planet_id, {5, 5})
                          .with_resource(1000)
                          .with_crew(100, 0)
@@ -514,28 +522,37 @@ void test_planet_and_factory_mcdc_branches() {
                          .with_build_type(ShipType::STYPE_SHUTTLE)
                          .build();
 
-  fixture.em.mutate_race(1, [](Race& r) { r.tech = 1.0; });
+  fixture.em.mutate_race(fixture.builder_id, [](Race& r) { r.tech = 1.0; });
   fixture.init_game_obj(g, ScopeLevel::LEVEL_SHIP, fac_id);
   g.out.str("");
   test::expect_false(GB::commands::build({"build", "1"}, g));
   test::expect_contains(g.out.str(), "engineering technology needed");
 
-  // God bypasses tech check on factory
-  fixture.em.mutate_race(1, [](Race& r) { r.God = true; });
-  fixture.init_game_obj(g, ScopeLevel::LEVEL_SHIP, fac_id);
+  // Deity (player 1) bypasses tech check on factory
+  shipnum_t god_fac_id =
+      TestShipBuilder(fixture.em, ShipType::OTYPE_FACTORY)
+          .owned_by(fixture.deity_id, 1)
+          .landed_on(fixture.star_id, fixture.planet_id, {5, 5})
+          .with_resource(1000)
+          .with_crew(100, 0)
+          .with_on(true)
+          .with_build_type(ShipType::STYPE_SHUTTLE)
+          .build();
+  fixture.em.mutate_race(fixture.deity_id, [](Race& r) { r.tech = 0.0; });
+  fixture.init_game_obj(g, ScopeLevel::LEVEL_SHIP, god_fac_id,
+                        fixture.deity_id);
   g.out.str("");
   test::expect_true(GB::commands::build({"build", "1"}, g));
 
   // Restore mortal with high tech
-  fixture.em.mutate_race(1, [](Race& r) {
-    r.God = false;
+  fixture.em.mutate_race(fixture.builder_id, [](Race& r) {
     r.tech = 500.0;
     r.governor(1).toggle.autoload = true;
   });
 
   // Enslaved planet blocks factory build
   fixture.em.mutate_planet(fixture.star_id, fixture.planet_id,
-                           [](Planet& p) { p.enslave_to(2); });
+                           [&](Planet& p) { p.enslave_to(fixture.rival_id); });
   fixture.init_game_obj(g, ScopeLevel::LEVEL_SHIP, fac_id);
   g.out.str("");
   test::expect_false(GB::commands::build({"build", "1"}, g));
@@ -558,23 +575,26 @@ void test_planet_and_factory_mcdc_branches() {
       });
 
   // Insufficient planet resources on factory build
-  fixture.em.mutate_planet(fixture.star_id, fixture.planet_id,
-                           [](Planet& p) { p.info(player_t{1}).resource = 0; });
+  fixture.em.mutate_planet(fixture.star_id, fixture.planet_id, [&](Planet& p) {
+    p.info(fixture.builder_id).resource = 0;
+  });
   fixture.init_game_obj(g, ScopeLevel::LEVEL_SHIP, fac_id);
   g.out.str("");
   test::expect_false(GB::commands::build({"build", "1"}, g));
   test::expect_contains(g.out.str(), "You need");
-  fixture.em.mutate_planet(fixture.star_id, fixture.planet_id, [](Planet& p) {
-    p.info(player_t{1}).resource = 50000;
+  fixture.em.mutate_planet(fixture.star_id, fixture.planet_id, [&](Planet& p) {
+    p.info(fixture.builder_id).resource = 50000;
   });
 
   // Insufficient star AP on factory build
-  fixture.em.mutate_star(fixture.star_id, [](Star& s) { s.AP(1) = 0; });
+  fixture.em.mutate_star(fixture.star_id,
+                         [&](Star& s) { s.AP(fixture.builder_id) = 0; });
   fixture.init_game_obj(g, ScopeLevel::LEVEL_SHIP, fac_id);
   g.out.str("");
   test::expect_false(GB::commands::build({"build", "1"}, g));
   test::expect_contains(g.out.str(), "You don't have 1 action points there.\n");
-  fixture.em.mutate_star(fixture.star_id, [](Star& s) { s.AP(1) = 50; });
+  fixture.em.mutate_star(fixture.star_id,
+                         [&](Star& s) { s.AP(fixture.builder_id) = 50; });
 
   // Autoload on factory build
   fixture.init_game_obj(g, ScopeLevel::LEVEL_SHIP, fac_id);
@@ -593,7 +613,7 @@ void test_non_factory_ship_mcdc_and_hangar_accounting() {
   // 1. Cargo ship landed vs in orbit
   shipnum_t cargo_landed =
       TestShipBuilder(fixture.em, ShipType::STYPE_CARGO)
-          .owned_by(1, 1)
+          .owned_by(fixture.builder_id, 1)
           .landed_on(fixture.star_id, fixture.planet_id, {5, 5})
           .with_resource(50000)
           .with_crew(50, 0)
@@ -606,7 +626,7 @@ void test_non_factory_ship_mcdc_and_hangar_accounting() {
   // 2. Non-factory ship validation errors: missing arg, invalid type, cannot
   // build on ship, zero count (3 args and 4 args)
   shipnum_t hab_id = TestShipBuilder(fixture.em, ShipType::STYPE_HABITAT)
-                         .owned_by(1, 1)
+                         .owned_by(fixture.builder_id, 1)
                          .in_star_orbit(fixture.star_id)
                          .with_resource(50000)
                          .with_max_hanger(500)
@@ -643,22 +663,25 @@ void test_non_factory_ship_mcdc_and_hangar_accounting() {
   test::expect_contains(g.out.str(), "to construct the ship.\n");
   fixture.em.mutate_ship(hab_id, [](Ship& s) { s.resource() = 50000; });
 
-  fixture.em.mutate_star(fixture.star_id, [](Star& s) { s.AP(1) = 0; });
+  fixture.em.mutate_star(fixture.star_id,
+                         [&](Star& s) { s.AP(fixture.builder_id) = 0; });
   fixture.init_game_obj(g, ScopeLevel::LEVEL_SHIP, hab_id);
   g.out.str("");
   test::expect_false(GB::commands::build({"build", ":", "1"}, g));
   test::expect_contains(g.out.str(), "You don't have 1 action points there.\n");
-  fixture.em.mutate_star(fixture.star_id, [](Star& s) { s.AP(1) = 50; });
+  fixture.em.mutate_star(fixture.star_id,
+                         [&](Star& s) { s.AP(fixture.builder_id) = 50; });
 
   shipnum_t univ_hab = TestShipBuilder(fixture.em, ShipType::STYPE_HABITAT)
-                           .owned_by(1, 1)
+                           .owned_by(fixture.builder_id, 1)
                            .in_deep_space()
                            .with_resource(50000)
                            .with_max_hanger(500)
                            .with_hanger(0)
                            .with_crew(100, 0)
                            .build();
-  fixture.em.mutate_universe([](Universe& u) { u.set_AP(1, 0); });
+  fixture.em.mutate_universe(
+      [&](Universe& u) { u.set_AP(fixture.builder_id, 0); });
   fixture.init_game_obj(g, ScopeLevel::LEVEL_SHIP, univ_hab);
   g.out.str("");
   test::expect_false(GB::commands::build({"build", ":", "1"}, g));
@@ -666,9 +689,10 @@ void test_non_factory_ship_mcdc_and_hangar_accounting() {
 
   // 4. Hangar space accounting across multi-ship build loop
   const auto probe_size =
-      getship(ShipType::OTYPE_PROBE, *fixture.em.peek_race(1))->size();
+      getship(ShipType::OTYPE_PROBE, *fixture.em.peek_race(fixture.builder_id))
+          ->size();
   shipnum_t tight_hab = TestShipBuilder(fixture.em, ShipType::STYPE_HABITAT)
-                            .owned_by(1, 1)
+                            .owned_by(fixture.builder_id, 1)
                             .in_star_orbit(fixture.star_id)
                             .with_resource(50000)
                             .with_max_hanger(probe_size)
@@ -686,7 +710,7 @@ void test_non_factory_ship_mcdc_and_hangar_accounting() {
 
   // 5. Online Factory berthed inside a Habitat builds into the Habitat hangar
   shipnum_t fac_hab = TestShipBuilder(fixture.em, ShipType::STYPE_HABITAT)
-                          .owned_by(1, 1)
+                          .owned_by(fixture.builder_id, 1)
                           .in_star_orbit(fixture.star_id)
                           .with_resource(500)
                           .with_fuel(200.0)
@@ -695,14 +719,14 @@ void test_non_factory_ship_mcdc_and_hangar_accounting() {
                           .with_crew(100, 0)
                           .build();
   auto hab_fac = TestShipBuilder(fixture.em, ShipType::OTYPE_FACTORY)
-                     .owned_by(1, 1)
+                     .owned_by(fixture.builder_id, 1)
                      .docked_to(fac_hab, fixture.star_id)
                      .with_crew(20, 0)
                      .with_damage(0)
                      .with_on(true)
                      .build_handle();
   hab_fac->set_factory_blueprint(ShipType::STYPE_SHUTTLE,
-                                 fixture.em.peek_race(1));
+                                 fixture.em.peek_race(fixture.builder_id));
   const shipnum_t hab_fac_id = hab_fac->number();
   hab_fac.save();
 
@@ -715,7 +739,7 @@ void test_non_factory_ship_mcdc_and_hangar_accounting() {
 
   // Online Factory berthed inside a non-Habitat carrier is rejected
   shipnum_t carrier_id = TestShipBuilder(fixture.em, ShipType::STYPE_CARRIER)
-                             .owned_by(1, 1)
+                             .owned_by(fixture.builder_id, 1)
                              .in_star_orbit(fixture.star_id)
                              .with_max_hanger(200)
                              .with_crew(30, 0)
@@ -736,44 +760,46 @@ void test_multi_build_loop_revalidation() {
   auto& registry = get_test_session_registry();
   GameObj g(fixture.em, registry);
 
-  // Enable autoload for Player 1 Governor 1 so multi-build drains crew
-  fixture.em.mutate_race(1,
+  // Enable autoload for builder_id Governor 1 so multi-build drains crew
+  fixture.em.mutate_race(fixture.builder_id,
                          [](Race& r) { r.governor(1).toggle.autoload = true; });
   fixture.em.mutate_sectormap(fixture.star_id, fixture.planet_id,
-                              [](SectorMap& smap) {
+                              [&](SectorMap& smap) {
                                 auto& s = smap.get({3, 3});
                                 s.set_condition(SectorType::SEC_LAND);
-                                s.set_owner(1);
+                                s.set_owner(fixture.builder_id);
                                 s.set_popn_exact(100);
                               });
 
   // 1. Multi-count Quarry build stops at 1 Quarry on the same sector
   fixture.init_game_obj(g, ScopeLevel::LEVEL_PLAN);
   g.out.str("");
-  const ap_t ap_before_quarry = fixture.em.peek_star(fixture.star_id)->AP(1);
+  const ap_t ap_before_quarry =
+      fixture.em.peek_star(fixture.star_id)->AP(fixture.builder_id);
   test::expect_true(GB::commands::build({"build", "q", "3,3", "3"}, g));
   test::expect_contains(g.out.str(), "There already is a quarry here.\n");
-  test::expect_eq(fixture.em.peek_star(fixture.star_id)->AP(1),
+  test::expect_eq(fixture.em.peek_star(fixture.star_id)->AP(fixture.builder_id),
                   ap_before_quarry - 1);
 
   // 2. Planet multi-build stops when autoload drains sector civilians to 0
   fixture.em.mutate_sectormap(fixture.star_id, fixture.planet_id,
-                              [](SectorMap& smap) {
+                              [&](SectorMap& smap) {
                                 auto& s = smap.get({4, 4});
                                 s.set_condition(SectorType::SEC_LAND);
-                                s.set_owner(1);
+                                s.set_owner(fixture.builder_id);
                                 s.set_popn_exact(5);
                               });
   g.out.str("");
-  const ap_t ap_before_fac = fixture.em.peek_star(fixture.star_id)->AP(1);
+  const ap_t ap_before_fac =
+      fixture.em.peek_star(fixture.star_id)->AP(fixture.builder_id);
   test::expect_true(GB::commands::build({"build", "F", "4,4", "3"}, g));
   test::expect_contains(g.out.str(), "You have no more civs in the sector!\n");
-  test::expect_eq(fixture.em.peek_star(fixture.star_id)->AP(1),
+  test::expect_eq(fixture.em.peek_star(fixture.star_id)->AP(fixture.builder_id),
                   ap_before_fac - 1);
 
   // 3. Ship multi-build stops when autoload drains builder crew to 0
   const shipnum_t hab_id = TestShipBuilder(fixture.em, ShipType::STYPE_HABITAT)
-                               .owned_by(1, 1)
+                               .owned_by(fixture.builder_id, 1)
                                .in_star_orbit(fixture.star_id)
                                .with_resource(5000)
                                .with_max_hanger(500)
@@ -789,35 +815,38 @@ void test_multi_build_loop_revalidation() {
   // rejects with FactoryNotLanded; Deity builds bypass tech/crew/site checks
   const shipnum_t carrier_id =
       TestShipBuilder(fixture.em, ShipType::STYPE_CARRIER)
-          .owned_by(1, 1)
+          .owned_by(fixture.builder_id, 1)
           .in_star_orbit(fixture.star_id)
           .with_max_hanger(200)
           .build();
   const shipnum_t carrier_fac =
       TestShipBuilder(fixture.em, ShipType::OTYPE_FACTORY)
-          .owned_by(1, 1)
+          .owned_by(fixture.builder_id, 1)
           .docked_to(carrier_id, fixture.star_id)
           .with_build_type(ShipType::STYPE_SHUTTLE)
           .with_damage(0)
           .with_on(true)
           .build();
-  test::expect_false(
-      build_at_ship(1, 1, false, *fixture.get_ship(carrier_fac), nullptr)
-          .has_value());
-  test::expect_false(
-      build_at_ship(1, 1, false, *fixture.get_ship(carrier_fac), &fixture.em)
-          .has_value());
+  test::expect_false(build_at_ship(fixture.builder_id, 1, false,
+                                   *fixture.get_ship(carrier_fac), nullptr)
+                         .has_value());
+  test::expect_false(build_at_ship(fixture.builder_id, 1, false,
+                                   *fixture.get_ship(carrier_fac), &fixture.em)
+                         .has_value());
 
-  fixture.em.mutate_race(1, [](Race& r) {
-    r.God = true;
-    r.tech = 0.0;
-  });
-  fixture.em.mutate_ship(hab_id, [](Ship& h) { h.add_popn(1, 1.0); });
-  fixture.init_game_obj(g, ScopeLevel::LEVEL_SHIP, hab_id);
-  g.set_god(true);
+  fixture.em.mutate_race(fixture.deity_id, [](Race& r) { r.tech = 0.0; });
+  const shipnum_t god_hab_id =
+      TestShipBuilder(fixture.em, ShipType::STYPE_HABITAT)
+          .owned_by(fixture.deity_id, 1)
+          .in_star_orbit(fixture.star_id)
+          .with_resource(5000)
+          .with_max_hanger(500)
+          .with_crew(1, 0)
+          .build();
+  fixture.init_game_obj(g, ScopeLevel::LEVEL_SHIP, god_hab_id,
+                        fixture.deity_id);
   test::expect_true(GB::commands::build({"build", "s", "1"}, g));
-  fixture.init_game_obj(g, ScopeLevel::LEVEL_PLAN);
-  g.set_god(true);
+  fixture.init_game_obj(g, ScopeLevel::LEVEL_PLAN, 0, fixture.deity_id);
   test::expect_true(GB::commands::build({"build", "d", "4,4", "1"}, g));
 }
 

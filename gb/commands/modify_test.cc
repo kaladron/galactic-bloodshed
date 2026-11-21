@@ -16,10 +16,10 @@ namespace {
 
 void test_modify_command_matrix() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   shipnum_t factory_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
-                             .owned_by(1, 1)
+                             .owned_by(races.empire, 1)
                              .named("Factory")
                              .in_star_orbit(1)
                              .with_fuel(100.0)
@@ -34,7 +34,7 @@ void test_modify_command_matrix() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_ship(factory_id);
 
   TestCommandMatrix(ctx, GB::commands::modify_cmd)
@@ -49,8 +49,8 @@ void test_modify_command_matrix() {
 
 void test_modify_attributes_and_batteries() {
   TestContext ctx;
-  ctx.with_standard_universe();
-  ctx.em.mutate_race(1, [](Race& r) {
+  const auto races = ctx.with_races();
+  ctx.em.mutate_race(races.empire, [](Race& r) {
     r.tech = 200.0;
     r.discoveries.crystal = true;
     r.discoveries.hyperdrive = true;
@@ -59,7 +59,7 @@ void test_modify_attributes_and_batteries() {
   });
 
   shipnum_t factory_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
-                             .owned_by(1, 1)
+                             .owned_by(races.empire, 1)
                              .named("Factory")
                              .in_star_orbit(1)
                              .with_fuel(100.0)
@@ -70,14 +70,14 @@ void test_modify_attributes_and_batteries() {
                              .build();
 
   shipnum_t non_factory_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                                 .owned_by(1, 1)
+                                 .owned_by(races.empire, 1)
                                  .in_star_orbit(1)
                                  .with_crew(10, 0)
                                  .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
 
   // 0. Non-factory ship rejected
   g.set_scope_ship(non_factory_id);
@@ -132,26 +132,34 @@ void test_modify_attributes_and_batteries() {
   ctx.assert_dispatch_success(g, {"modify", "mount"});
   test::expect_eq(ctx.em.peek_ship(factory_id)->mount(), !initial_mount);
 
-  ctx.em.mutate_race(1, [](Race& r) { r.discoveries.crystal = false; });
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.em.mutate_race(races.empire,
+                     [](Race& r) { r.discoveries.crystal = false; });
+  ctx.setup_game_obj(g, races.empire, 1);
+  g.set_scope_ship(factory_id);
   ctx.assert_dispatch_rejected(g, {"modify", "mount"});
   test::expect_contains(g.out.str(),
                         "That characteristic either doesn't exist or can't be");
-  ctx.em.mutate_race(1, [](Race& r) { r.discoveries.crystal = true; });
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.em.mutate_race(races.empire,
+                     [](Race& r) { r.discoveries.crystal = true; });
+  ctx.setup_game_obj(g, races.empire, 1);
+  g.set_scope_ship(factory_id);
 
   bool initial_hyper = ctx.em.peek_ship(factory_id)->hyper_drive().has;
   ctx.assert_dispatch_success(g, {"modify", "hyperdrive"});
   test::expect_eq(ctx.em.peek_ship(factory_id)->hyper_drive().has,
                   !initial_hyper);
 
-  ctx.em.mutate_race(1, [](Race& r) { r.discoveries.hyperdrive = false; });
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.em.mutate_race(races.empire,
+                     [](Race& r) { r.discoveries.hyperdrive = false; });
+  ctx.setup_game_obj(g, races.empire, 1);
+  g.set_scope_ship(factory_id);
   ctx.assert_dispatch_rejected(g, {"modify", "hyperdrive"});
   test::expect_contains(g.out.str(),
                         "That characteristic either doesn't exist or can't be");
-  ctx.em.mutate_race(1, [](Race& r) { r.discoveries.hyperdrive = true; });
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.em.mutate_race(races.empire,
+                     [](Race& r) { r.discoveries.hyperdrive = true; });
+  ctx.setup_game_obj(g, races.empire, 1);
+  g.set_scope_ship(factory_id);
 
   // Laser without discovery
   ctx.assert_dispatch_rejected(g, {"modify", "laser"});
@@ -159,8 +167,9 @@ void test_modify_attributes_and_batteries() {
                         "Your race does not understand lasers yet.");
 
   // Enable laser discovery and toggle
-  ctx.em.mutate_race(1, [](Race& r) { r.discoveries.laser = true; });
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.em.mutate_race(races.empire, [](Race& r) { r.discoveries.laser = true; });
+  ctx.setup_game_obj(g, races.empire, 1);
+  g.set_scope_ship(factory_id);
   ctx.assert_dispatch_success(g, {"modify", "laser"});
   test::expect_true(ctx.em.peek_ship(factory_id)->laser());
 
@@ -196,8 +205,9 @@ void test_modify_attributes_and_batteries() {
   test::expect_contains(
       g.out.str(), "Your race does not understand confined energy weapons.");
 
-  ctx.em.mutate_race(1, [](Race& r) { r.discoveries.cew = true; });
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.em.mutate_race(races.empire, [](Race& r) { r.discoveries.cew = true; });
+  ctx.setup_game_obj(g, races.empire, 1);
+  g.set_scope_ship(factory_id);
 
   ctx.assert_dispatch_rejected(g, {"modify", "cew"});
   test::expect_contains(g.out.str(), "No such option for CEWs.");
@@ -245,8 +255,10 @@ void test_modify_attributes_and_batteries() {
       "You may only modify hyperdrive installation on this kind of ship.");
   ctx.assert_dispatch_success(g, {"modify", "hyperdrive"});
 
-  ctx.em.mutate_race(1, [](Race& r) { r.discoveries.hyperdrive = false; });
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.em.mutate_race(races.empire,
+                     [](Race& r) { r.discoveries.hyperdrive = false; });
+  ctx.setup_game_obj(g, races.empire, 1);
+  g.set_scope_ship(factory_id);
   ctx.assert_dispatch_rejected(g, {"modify", "armor", "10"});
   test::expect_contains(g.out.str(),
                         "Sorry, but you can't modify this ship right now.");
@@ -256,8 +268,8 @@ void test_modify_attributes_and_batteries() {
 
 void test_modify_template_capability_restrictions() {
   TestContext ctx;
-  ctx.with_standard_universe();
-  ctx.em.mutate_race(1, [](Race& r) {
+  const auto races = ctx.with_races();
+  ctx.em.mutate_race(races.empire, [](Race& r) {
     r.tech = 200.0;
     r.discoveries.crystal = true;
     r.discoveries.hyperdrive = true;
@@ -266,7 +278,7 @@ void test_modify_template_capability_restrictions() {
   });
 
   shipnum_t factory_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
-                             .owned_by(1, 1)
+                             .owned_by(races.empire, 1)
                              .named("Factory")
                              .in_star_orbit(1)
                              .with_fuel(100.0)
@@ -278,7 +290,7 @@ void test_modify_template_capability_restrictions() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_ship(factory_id);
 
   // 1. Space Mine ('+'): modifiable, but lacks primary, secondary, cew, mount,

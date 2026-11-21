@@ -64,8 +64,10 @@ void TestContext::setup_game_obj(GameObj& g, player_t player, governor_t gov) {
       em.mutate_race(player, [&](Race& r) { r.appoint_governor(gov); });
     }
     g.race = em.peek_race(player);
+    g.sync_god_from_race(g.race->God);
   } else {
     g.race = nullptr;
+    g.set_god(false);
   }
 }
 

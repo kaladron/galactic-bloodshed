@@ -14,13 +14,32 @@ import std;
 
 namespace {
 
-void setup_test_world(TestContext& ctx) {
-  ctx.with_standard_universe();
+constexpr player_t fleet_player = 2;
+constexpr player_t rival_player = 3;
 
-  // Ship 1: Player 1 Battleship (can bombard, has hyperdrive, lasers, primary &
-  // secondary guns)
+void setup_test_world(TestContext& ctx) {
+  ctx.with_galaxy();
+  TestWorldBuilder world(ctx);
+  world.add_race("Commanders", 100.0, false, fleet_player);
+  world.add_race("Rivals", 100.0, false, rival_player);
+  ctx.with_populated_planet(1, 1, fleet_player, 1000, Coordinates{0, 0});
+  ctx.em.mutate_star(1, [](Star& s) {
+    s.mark_explored_by(fleet_player);
+    s.mark_inhabited_by(fleet_player);
+    s.AP(fleet_player) = 50;
+  });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) {
+    p.mark_explored_by(fleet_player);
+    p.info(fleet_player).resource = 5000;
+  });
+  ctx.em.mutate_star(2, [](Star& s) { s.mark_explored_by(fleet_player); });
+  ctx.em.mutate_planet(2, 1,
+                       [](Planet& p) { p.mark_explored_by(fleet_player); });
+
+  // Ship 1: Fleet player Battleship (can bombard, has hyperdrive, lasers,
+  // primary & secondary guns)
   auto s1 = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
-                .owned_by(1)
+                .owned_by(fleet_player)
                 .named("TestShip")
                 .in_planet_orbit(1, 1)
                 .with_guns(guntype_t::HEAVY, 4)
@@ -44,7 +63,7 @@ void test_order_happy_path() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, fleet_player, 1);
   g.set_scope_planet(1, 1);
 
   std::println(std::cout, "Set ship defense order");
@@ -134,7 +153,7 @@ void test_order_combat_and_movement_options() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, fleet_player, 1);
   g.set_scope_planet(1, 1);
 
   // Speed, primary, secondary, salvo, laser, focus, merchant
@@ -173,7 +192,7 @@ void test_order_combat_and_movement_options() {
 
   // Protect another ship vs self-protect rejection
   const auto s2_id = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)
-                         .owned_by(1)
+                         .owned_by(fleet_player)
                          .named("EscortTarget")
                          .in_planet_orbit(1, 1)
                          .with_crew(20, 0)
@@ -251,12 +270,12 @@ void test_order_specialty_ships() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, fleet_player, 1);
   g.set_scope_planet(1, 1);
 
   // 1. Missile orders (impact and scatter)
   const auto missile_id = TestShipBuilder(ctx.em, ShipType::STYPE_MISSILE)
-                              .owned_by(1)
+                              .owned_by(fleet_player)
                               .named("Tomahawk")
                               .in_planet_orbit(1, 1)
                               .targeting_planet(1, 1)
@@ -284,7 +303,7 @@ void test_order_specialty_ships() {
 
   // 2. Mine orders (trigger radius, explosive, radiative, switch)
   const auto mine_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
-                           .owned_by(1)
+                           .owned_by(fleet_player)
                            .named("ProximityMine")
                            .in_planet_orbit(1, 1)
                            .with_on(false)
@@ -314,7 +333,7 @@ void test_order_specialty_ships() {
 
   // 3. Transporter orders (target ship, self-target rejection, switch)
   const auto trans_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV)
-                            .owned_by(1)
+                            .owned_by(fleet_player)
                             .named("Transporter")
                             .landed_on(1, 1, {1, 1})
                             .build();
@@ -350,9 +369,15 @@ void test_order_specialty_ships() {
   // Dead ship target inside DeferredWriteScope rejected for protect, transport,
   // and Deity destination/aim
   const auto dead_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                           .owned_by(1)
+                           .owned_by(fleet_player)
                            .in_planet_orbit(1, 1)
                            .build();
+  const auto deity_cmd_ship = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
+                                  .owned_by(1, 1)
+                                  .in_planet_orbit(1, 1)
+                                  .with_crew(100, 0)
+                                  .with_speed(5)
+                                  .build();
   {
     auto scope = ctx.em.create_deferred_write_scope();
     ctx.em.mutate_ship(dead_id, [](Ship& s) { s.alive() = 0; });
@@ -360,18 +385,19 @@ void test_order_specialty_ships() {
     ctx.assert_dispatch_success(
         g, {"order", "#1", "protect", std::format("#{}", dead_id.value)});
     test::expect_contains(g.out.str(), "No such ship.");
-    g.set_god(true);
-    g.out.str("");
+    GameObj god_g(ctx.em, registry);
+    ctx.setup_game_obj(god_g, 1, 1);
+    god_g.set_scope_planet(1, 1);
     ctx.assert_dispatch_success(
-        g, {"order", "#1", "destination", std::format("#{}", dead_id.value)});
-    test::expect_contains(g.out.str(), "You don't own ship");
-    g.set_god(false);
+        god_g, {"order", std::format("#{}", deity_cmd_ship.value),
+                "destination", std::format("#{}", dead_id.value)});
+    test::expect_contains(god_g.out.str(), "You don't own ship");
     scope.rollback();
   }
 
   // 4. Space Mirror aim & intensity, plus Telescope survey
   const auto mirror_id = TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR)
-                             .owned_by(1)
+                             .owned_by(fleet_player)
                              .named("Helios")
                              .in_planet_orbit(1, 1)
                              .with_crew(10, 0)
@@ -401,7 +427,7 @@ void test_order_specialty_ships() {
   test::expect_eq(mirror_ship_aim->aimed_planet(), std::nullopt);
 
   const auto tele_id = TestShipBuilder(ctx.em, ShipType::OTYPE_STELE)
-                           .owned_by(1)
+                           .owned_by(fleet_player)
                            .named("Hubble")
                            .in_planet_orbit(1, 1)
                            .with_crew(2, 0)
@@ -426,7 +452,7 @@ void test_order_specialty_ships() {
 
   // 5. Terraformer move sequence (valid, cycling, truncation, invalid)
   const auto terra_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TERRA)
-                            .owned_by(1)
+                            .owned_by(fleet_player)
                             .named("TerraDev")
                             .in_planet_orbit(1, 1)
                             .with_crew(10, 0)
@@ -475,14 +501,14 @@ void test_order_factory_activation_and_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, fleet_player, 1);
   g.set_scope_planet(1, 1);
 
   // 1. Landed Factory on Earth (starts damaged at 75% like newly built
   // factories; can be turned off while offline and activated while damaged,
   // provided a blueprint has been designated via make)
   auto f1 = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
-                .owned_by(1)
+                .owned_by(fleet_player)
                 .named("PlanetFact")
                 .landed_on(1, 1, {0, 0})
                 .with_crew(5, 0)
@@ -506,10 +532,12 @@ void test_order_factory_activation_and_errors() {
 
   ctx.assert_dispatch_success(g, {"order", f1_arg, "off"});
 
-  const auto initial_res = ctx.em.peek_planet(1, 1)->info(1).resource;
+  const auto initial_res =
+      ctx.em.peek_planet(1, 1)->info(fleet_player).resource;
   const resource_t expected_plan_cost = PLAN_FACT_ON_COST * 50;
-  ctx.em.mutate_planet(
-      1, 1, [&](Planet& p) { p.info(1).resource = expected_plan_cost - 1; });
+  ctx.em.mutate_planet(1, 1, [&](Planet& p) {
+    p.info(fleet_player).resource = expected_plan_cost - 1;
+  });
   g.out.str("");
   ctx.assert_dispatch_success(g, {"order", f1_arg, "on"});
   test::expect_contains(g.out.str(),
@@ -517,8 +545,8 @@ void test_order_factory_activation_and_errors() {
                                     expected_plan_cost));
   test::expect_eq(ctx.em.peek_ship(f1_id)->on(), 0);
 
-  ctx.em.mutate_planet(1, 1,
-                       [&](Planet& p) { p.info(1).resource = initial_res; });
+  ctx.em.mutate_planet(
+      1, 1, [&](Planet& p) { p.info(fleet_player).resource = initial_res; });
   g.out.str("");
   ctx.assert_dispatch_success(g, {"order", f1_arg, "on"});
   test::expect_contains(
@@ -526,7 +554,7 @@ void test_order_factory_activation_and_errors() {
                                expected_plan_cost));
   ctx.em.clear_cache();
   test::expect_eq(ctx.em.peek_ship(f1_id)->on(), 1);
-  test::expect_eq(ctx.em.peek_planet(1, 1)->info(1).resource,
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(fleet_player).resource,
                   initial_res - expected_plan_cost);
 
   // Cannot turn off an online factory
@@ -537,7 +565,7 @@ void test_order_factory_activation_and_errors() {
 
   // 2. Factory inside a Habitat activated via order on
   auto hab = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
-                 .owned_by(1)
+                 .owned_by(fleet_player)
                  .named("AlphaHab")
                  .in_planet_orbit(1, 1)
                  .with_crew(50, 0)
@@ -547,7 +575,7 @@ void test_order_factory_activation_and_errors() {
                  .build();
 
   auto f2 = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
-                .owned_by(1)
+                .owned_by(fleet_player)
                 .named("HabFact")
                 .docked_to(hab, 1)
                 .with_build_type(ShipType::STYPE_SHUTTLE)
@@ -569,7 +597,7 @@ void test_order_factory_activation_and_errors() {
 
   // 3. Irradiated ship cannot be given orders
   const auto rad_id = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)
-                          .owned_by(1)
+                          .owned_by(fleet_player)
                           .named("RadShip")
                           .in_planet_orbit(1, 1)
                           .with_active(false)
@@ -586,7 +614,7 @@ void test_order_factory_activation_and_errors() {
 
   // 4. Crewless ship (non-robotic) cannot be given orders
   const auto ghost_id = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)
-                            .owned_by(1)
+                            .owned_by(fleet_player)
                             .named("GhostShip")
                             .in_planet_orbit(1, 1)
                             .with_crew(0, 0)
@@ -628,7 +656,7 @@ void test_order_factory_activation_and_errors() {
 
   // Telescope aimed at ship (#1) and out-of-range star (/Vega)
   const auto tele_id = TestShipBuilder(ctx.em, ShipType::OTYPE_STELE)
-                           .owned_by(1)
+                           .owned_by(fleet_player)
                            .in_planet_orbit(1, 1)
                            .with_crew(2, 0)
                            .with_fuel(50.0)
@@ -656,7 +684,7 @@ void test_navigation_and_combat_order_mcdc_and_json() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, fleet_player, 1);
   g.set_scope_planet(1, 1);
 
   // 1. Navigate with turns == 0 or invalid args disables navigation;
@@ -690,7 +718,7 @@ void test_navigation_and_combat_order_mcdc_and_json() {
   test::expect_contains(g.out.str(), "No such star");
 
   const auto far_enemy_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                                .owned_by(2, 1)
+                                .owned_by(rival_player, 1)
                                 .in_star_orbit(2)
                                 .with_crew(50, 0)
                                 .build();
@@ -707,7 +735,7 @@ void test_navigation_and_combat_order_mcdc_and_json() {
   // charging display, long-range mounted crystal jump (dist > distfac), and
   // insufficient max_fuel_capacity warning
   const auto no_hd_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                            .owned_by(1, 1)
+                            .owned_by(fleet_player, 1)
                             .in_planet_orbit(1, 1)
                             .with_crew(5, 0)
                             .with_speed(3)
@@ -791,7 +819,7 @@ void test_navigation_and_combat_order_mcdc_and_json() {
   test::expect_eq(ctx.em.peek_ship(1)->fire_laser(), 0);
 
   const auto omcl_id = TestShipBuilder(ctx.em, ShipType::OTYPE_OMCL)
-                           .owned_by(1, 1)
+                           .owned_by(fleet_player, 1)
                            .in_planet_orbit(1, 1)
                            .with_crew(10, 0)
                            .build();
@@ -822,14 +850,14 @@ void test_special_ship_order_mcdc_and_notices() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, fleet_player, 1);
   g.set_scope_planet(1, 1);
 
   // 1. SpaceMirrorShip preserves configured intensity across aim updates, and
   // tests fuel shortage, docked mirror rejection, missing/invalid aim arg,
   // OTYPE_GTELE / OTYPE_TRACT zero-fuel aiming, and intensity edge cases
   const auto mirror_id = TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR)
-                             .owned_by(1, 1)
+                             .owned_by(fleet_player, 1)
                              .named("MirrorTest")
                              .in_planet_orbit(1, 1)
                              .with_crew(10, 0)
@@ -882,7 +910,7 @@ void test_special_ship_order_mcdc_and_notices() {
 
   // Ground telescope (OTYPE_GTELE) and Tractor (OTYPE_TRACT) aim without fuel
   const auto gtele_id = TestShipBuilder(ctx.em, ShipType::OTYPE_GTELE)
-                            .owned_by(1, 1)
+                            .owned_by(fleet_player, 1)
                             .landed_on(1, 1, {0, 0})
                             .with_crew(2, 0)
                             .with_fuel(0.0)
@@ -892,7 +920,7 @@ void test_special_ship_order_mcdc_and_notices() {
       g, {"order", std::format("#{}", gtele_id), "aim", "/Sol/Earth"});
 
   const auto tract_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TRACT)
-                            .owned_by(1, 1)
+                            .owned_by(fleet_player, 1)
                             .in_planet_orbit(1, 1)
                             .with_crew(5, 0)
                             .with_fuel(0.0)
@@ -911,7 +939,7 @@ void test_special_ship_order_mcdc_and_notices() {
 
   // 3. OTYPE_GR (Gamma Ray Laser) explosive/radiative mode and display
   const auto gr_id = TestShipBuilder(ctx.em, ShipType::OTYPE_GR)
-                         .owned_by(1, 1)
+                         .owned_by(fleet_player, 1)
                          .landed_on(1, 1, {1, 1})
                          .with_crew(5, 0)
                          .build();
@@ -927,7 +955,7 @@ void test_special_ship_order_mcdc_and_notices() {
   // 4. Terraformer move sequence length truncation, default move, and cycling
   // display when index > 0
   const auto terra_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TERRA)
-                            .owned_by(1, 1)
+                            .owned_by(fleet_player, 1)
                             .in_planet_orbit(1, 1)
                             .with_crew(10, 0)
                             .build();
@@ -963,7 +991,7 @@ void test_special_ship_order_mcdc_and_notices() {
                         "This ship does not have an on/off setting.");
 
   const auto trans_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV)
-                            .owned_by(1, 1)
+                            .owned_by(fleet_player, 1)
                             .landed_on(1, 1, {2, 2})
                             .with_on(true)
                             .build();
@@ -977,7 +1005,7 @@ void test_special_ship_order_mcdc_and_notices() {
       g, {"order", std::format("#{}", trans_id), "evade", "on"});
 
   const auto mine_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
-                           .owned_by(1, 1)
+                           .owned_by(fleet_player, 1)
                            .in_planet_orbit(1, 1)
                            .with_damage(20)
                            .with_on(false)
@@ -1023,7 +1051,7 @@ void test_special_ship_order_mcdc_and_notices() {
   // resources, Habitat lacking hangar space, orbiting factory, planet lacking
   // resources
   auto f_err = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
-                   .owned_by(1, 1)
+                   .owned_by(fleet_player, 1)
                    .docked_to(1, 1)
                    .with_build_type(ShipType::STYPE_SHUTTLE)
                    .with_crew(5, 0)
@@ -1041,7 +1069,7 @@ void test_special_ship_order_mcdc_and_notices() {
                         "The factory is currently being transported.");
 
   const auto hab_id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
-                          .owned_by(1, 1)
+                          .owned_by(fleet_player, 1)
                           .in_planet_orbit(1, 1)
                           .with_crew(50, 0)
                           .with_resource(10)
@@ -1067,15 +1095,15 @@ void test_special_ship_order_mcdc_and_notices() {
 
   ctx.em.mutate_ship(f_err_id, [](Ship& s) { s.land_on_planet(1, 1, {0, 0}); });
   ctx.em.mutate_planet(1, 1, [](Planet& p) {
-    p.info(1).resource = 500;
-    p.enslave_to(player_t{2});
+    p.info(fleet_player).resource = 500;
+    p.enslave_to(rival_player);
   });
   g.out.str("");
   ctx.assert_dispatch_success(g, {"order", f_err_arg, "on"});
-  test::expect_contains(g.out.str(), "This planet is enslaved to player 2.");
+  test::expect_contains(g.out.str(), "This planet is enslaved to player 3.");
   ctx.em.mutate_planet(1, 1, [](Planet& p) {
     p.free_slaves();
-    p.info(1).resource = 0;
+    p.info(fleet_player).resource = 0;
   });
   g.out.str("");
   ctx.assert_dispatch_success(g, {"order", f_err_arg, "on"});
@@ -1083,7 +1111,8 @@ void test_special_ship_order_mcdc_and_notices() {
                         "resources on the planet to activate this factory");
 
   // 6. UiMode::JSON rendering of OrderUpdate notice
-  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(1).resource = 500; });
+  ctx.em.mutate_planet(1, 1,
+                       [](Planet& p) { p.info(fleet_player).resource = 500; });
   g.out.str("");
   g.set_ui_mode(UiMode::JSON);
   ctx.assert_dispatch_success(g, {"order", f_err_arg, "on"});

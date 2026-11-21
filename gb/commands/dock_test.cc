@@ -14,29 +14,40 @@ import std;
 
 namespace {
 
-void setup_test_world(TestContext& ctx) {
-  ctx.with_standard_universe();
+constexpr player_t fleet_owner = 2;
+constexpr player_t enemy_owner = 3;
 
-  // Ship 1: Player 1 Fighter
+void setup_test_world(TestContext& ctx) {
+  ctx.with_galaxy();
+  TestWorldBuilder world(ctx);
+  world.add_race("Pilots", 100.0, false, fleet_owner);
+  world.add_race("Enemies", 100.0, false, enemy_owner);
+  ctx.em.mutate_race(fleet_owner, [](Race& r) { r.appoint_governor(2); });
+  ctx.em.mutate_star(1, [](Star& s) {
+    s.mark_explored_by(fleet_owner);
+    s.AP(fleet_owner) = 50;
+  });
+
+  // Ship 1: Fleet owner Fighter
   TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-      .owned_by(1, 1)
+      .owned_by(fleet_owner, 1)
       .named("Docker")
       .in_star_orbit(1, 100.0, 200.0)
       .with_crew(0, 10)
       .with_fuel(100.0)
       .build();
 
-  // Ship 2: Player 1 Carrier (close to ship 1)
+  // Ship 2: Fleet owner Carrier (close to ship 1)
   TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-      .owned_by(1, 1)
+      .owned_by(fleet_owner, 1)
       .named("Carrier")
       .in_star_orbit(1, 100.0, 200.0)
       .with_fuel(100.0)
       .build();
 
-  // Ship 3: Player 2 Cargo Ship
+  // Ship 3: Enemy Cargo Ship
   TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-      .owned_by(2, 1)
+      .owned_by(enemy_owner, 1)
       .named("Target")
       .in_star_orbit(1, 100.0, 200.0)
       .with_destruct(0)
@@ -45,7 +56,7 @@ void setup_test_world(TestContext& ctx) {
 
   // Ship 4: Far away ship
   TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-      .owned_by(1, 1)
+      .owned_by(fleet_owner, 1)
       .named("FarTarget")
       .in_star_orbit(1, 500.0, 500.0)
       .with_fuel(100.0)
@@ -58,7 +69,7 @@ void test_dock_happy_paths_and_json_presentation() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, fleet_owner, 1);
   g.set_scope_star(1);
 
   // 1. Successful dock (0 AP)
@@ -99,7 +110,7 @@ void test_dock_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, fleet_owner, 1);
   g.set_scope_star(1);
 
   // 1. Min args violation (< 3 args) and direct handler invocation
@@ -182,7 +193,7 @@ void test_dock_domain_errors() {
 
   // 13. Another undocked ship attempting to dock with already-docked target #2
   shipnum_t pod_docker = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
-                             .owned_by(1, 1)
+                             .owned_by(fleet_owner, 1)
                              .named("PodDocker")
                              .in_star_orbit(1, 100.0, 200.0)
                              .with_fuel(100.0)
@@ -192,14 +203,14 @@ void test_dock_domain_errors() {
       g, {"dock", std::format("#{}", pod_docker.value), "#2"});
   test::expect_contains(g.out.str(), "is already docked.");
 
-  // 14. God mode allows docking foreign ships together
+  // 14. God mode (Deity player 1) allows docking foreign ships together
   ctx.em.mutate_ship(1, [](Ship& s) { s.undock_from_ship(); });
   ctx.em.mutate_ship(2, [](Ship& s) { s.undock_from_ship(); });
-  ctx.em.mutate_race(1, [](Race& r) { r.God = true; });
-  g.set_god(true);
-  g.out.str("");
-  ctx.assert_dispatch_success(g, {"dock", "#3", "#2"}, 0);
-  test::expect_contains(g.out.str(), "docked with");
+  GameObj god_g(ctx.em, registry);
+  ctx.setup_game_obj(god_g, 1, 1);
+  god_g.set_scope_star(1);
+  ctx.assert_dispatch_success(god_g, {"dock", "#3", "#2"}, 0);
+  test::expect_contains(god_g.out.str(), "docked with");
 
   // 15. Multi-ship filter ('f'): first fighter (#1) is too far away (continues
   // loop), second fighter docks with #2, and third fighter aborts on
@@ -211,19 +222,17 @@ void test_dock_domain_errors() {
     s.set_coordinates({500.0, 500.0});
   });
   TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-      .owned_by(1, 1)
+      .owned_by(fleet_owner, 1)
       .named("NearFighter")
       .in_star_orbit(1, 100.0, 200.0)
       .with_fuel(100.0)
       .build();
   TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-      .owned_by(1, 1)
+      .owned_by(fleet_owner, 1)
       .named("ThirdFighter")
       .in_star_orbit(1, 100.0, 200.0)
       .with_fuel(100.0)
       .build();
-  g.set_god(false);
-  ctx.em.mutate_race(1, [](Race& r) { r.God = false; });
   g.out.str("");
   ctx.assert_dispatch_success(g, {"dock", "f", "#2"}, 0);
   test::expect_contains(g.out.str(), "10.00 or closer");

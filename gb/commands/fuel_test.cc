@@ -14,12 +14,34 @@ import std;
 
 namespace {
 
+constexpr player_t deity_player = 1;
+constexpr player_t pilot_player = 2;
+constexpr player_t enemy_player = 3;
+
+void setup_fuel_world(TestContext& ctx) {
+  ctx.with_galaxy();
+  TestWorldBuilder world(ctx);
+  world.add_race("Pilots", 100.0, false, pilot_player);
+  world.add_race("Enemies", 100.0, false, enemy_player);
+  ctx.with_populated_planet(1, 1, pilot_player, 100, Coordinates{1, 1});
+  ctx.em.mutate_star(1, [](Star& s) {
+    s.mark_explored_by(pilot_player);
+    s.mark_inhabited_by(pilot_player);
+    s.AP(pilot_player) = 50;
+  });
+  ctx.em.mutate_planet(1, 1,
+                       [](Planet& p) { p.mark_explored_by(pilot_player); });
+  ctx.em.mutate_star(2, [](Star& s) { s.mark_explored_by(pilot_player); });
+  ctx.em.mutate_planet(2, 1,
+                       [](Planet& p) { p.mark_explored_by(pilot_player); });
+}
+
 void test_fuel_matrix() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  setup_fuel_world(ctx);
 
   shipnum_t ship_num = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                           .owned_by(1, 1)
+                           .owned_by(pilot_player, 1)
                            .named("Explorer")
                            .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
                            .with_speed(2)
@@ -28,7 +50,7 @@ void test_fuel_matrix() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, pilot_player, 1);
   g.set_scope_star(1);
 
   // 1. 4-Way Command Matrix runner on fuel projection
@@ -62,7 +84,7 @@ void test_fuel_matrix() {
 
   // 5. Unowned ship, landed ship without destination, stationary ship, factory
   shipnum_t enemy_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                             .owned_by(2, 1)
+                             .owned_by(enemy_player, 1)
                              .in_star_orbit(1, SystemCoordinates{50.0, 0.0})
                              .with_speed(2)
                              .build();
@@ -72,7 +94,7 @@ void test_fuel_matrix() {
   test::expect_contains(g.out.str(), "You do not own this ship.");
 
   shipnum_t landed_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                              .owned_by(1, 1)
+                              .owned_by(pilot_player, 1)
                               .landed_on(1, 1, Coordinates(1, 1))
                               .with_speed(2)
                               .with_fuel(200.0)
@@ -85,7 +107,7 @@ void test_fuel_matrix() {
       "You must specify a destination for landed or docked ships...");
 
   // Landed ship WITH destination (planet scope destination in explored system)
-  ctx.em.mutate_star(2, [](Star& s) { s.mark_explored_by(1); });
+  ctx.em.mutate_star(2, [](Star& s) { s.mark_explored_by(pilot_player); });
   g.out.str("");
   ctx.assert_dispatch_success(
       g, {"fuel", std::format("#{}", landed_ship.value), "/Vega/Vega Prime"});
@@ -94,7 +116,7 @@ void test_fuel_matrix() {
   // Docked ship (is_landed() == true, whatorbits() == LEVEL_SHIP) & same-star
   // planet destination (/Sol/Earth)
   shipnum_t docked_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                              .owned_by(1, 1)
+                              .owned_by(pilot_player, 1)
                               .docked_to(ship_num, 1)
                               .with_speed(2)
                               .with_fuel(100.0)
@@ -104,7 +126,7 @@ void test_fuel_matrix() {
   test::expect_contains(g.out.str(), "FUEL ESTIMATES");
 
   shipnum_t stopped_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                               .owned_by(1, 1)
+                               .owned_by(pilot_player, 1)
                                .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
                                .with_speed(0)
                                .build();
@@ -114,7 +136,7 @@ void test_fuel_matrix() {
   test::expect_contains(g.out.str(), "That ship is not moving!");
 
   shipnum_t factory_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
-                               .owned_by(1, 1)
+                               .owned_by(pilot_player, 1)
                                .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
                                .with_speed(1)
                                .build();
@@ -157,7 +179,7 @@ void test_fuel_matrix() {
   // 7. LEVEL_SHIP destinations (in-range owned, out-of-range, foreign, missing)
   //    plus insufficient fuel / max_fuel and JSON mode
   shipnum_t near_target = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                              .owned_by(1, 1)
+                              .owned_by(pilot_player, 1)
                               .in_star_orbit(1, SystemCoordinates{50.0, 0.0})
                               .build();
   ctx.assert_dispatch_success(g, {"fuel", std::format("#{}", ship_num.value),
@@ -174,31 +196,34 @@ void test_fuel_matrix() {
   // Out-of-range foreign ship also returns "Nice try." (no range oracle)
   shipnum_t far_enemy =
       TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-          .owned_by(2, 1)
+          .owned_by(enemy_player, 1)
           .in_deep_space(UniverseCoordinates{99999.0, 99999.0})
           .build();
   ctx.assert_dispatch_rejected(g, {"fuel", std::format("#{}", ship_num.value),
                                    std::format("#{}", far_enemy.value)});
   test::expect_contains(g.out.str(), "Nice try.");
-  // Unexplored planet in an explored star is rejected for mortals, allowed for
-  // Deity
-  ctx.create_planet(1, PlanetType::MARS, {5, 5}, 2)
-      .named("HiddenMars")
-      .with_position(SystemCoordinates{200.0, 0.0})
-      .with_explored(player_t{1}, false)
-      .build();
+  // Unexplored planet (/Sol/Mars) in an explored star is rejected for mortals,
+  // allowed for Deity
   ctx.assert_dispatch_rejected(
-      g, {"fuel", std::format("#{}", ship_num.value), "/Sol/HiddenMars"});
-  test::expect_contains(g.out.str(), "You have not explored HiddenMars yet.");
-  g.set_god(true);
+      g, {"fuel", std::format("#{}", ship_num.value), "/Sol/Mars"});
+  test::expect_contains(g.out.str(), "You have not explored Mars yet.");
+  const shipnum_t deity_ship =
+      TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+          .owned_by(deity_player, 1)
+          .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
+          .with_speed(2)
+          .with_fuel(100.0)
+          .build();
+  GameObj god_g(ctx.em, registry);
+  ctx.setup_game_obj(god_g, deity_player, 1);
+  god_g.set_scope_star(1);
   ctx.assert_dispatch_success(
-      g, {"fuel", std::format("#{}", ship_num.value), "/Sol/HiddenMars"});
-  g.set_god(false);
+      god_g, {"fuel", std::format("#{}", deity_ship.value), "/Sol/Mars"});
   ctx.em.mutate_ship(ship_num,
                      [&](Ship& s) { s.set_ship_destination(near_target); });
 
   shipnum_t no_fuel_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                               .owned_by(1, 1)
+                               .owned_by(pilot_player, 1)
                                .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
                                .with_speed(2)
                                .with_fuel(0.0)
@@ -220,7 +245,7 @@ void test_fuel_matrix() {
   // 8. Sparse ship IDs: destroy stopped_ship so highest ship ID exceeds
   // num_ships(), verifying high-ID ship succeeds and deleted ID rejects cleanly
   shipnum_t sparse_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                              .owned_by(1, 1)
+                              .owned_by(pilot_player, 1)
                               .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
                               .with_speed(2)
                               .with_fuel(100.0)
@@ -237,7 +262,7 @@ void test_fuel_matrix() {
   // speed overrides, even when earlier ships were scrapped (id > num_ships()).
   shipnum_t probe_id = 0;
   {
-    auto probe = ctx.em.create_ship(ShipType::OTYPE_PROBE, 1);
+    auto probe = ctx.em.create_ship(ShipType::OTYPE_PROBE, pilot_player);
     probe->governor() = 1;
     probe->enter_star_orbit(1);
     const auto star_coords = ctx.em.peek_star(1)->coordinates();
@@ -247,11 +272,11 @@ void test_fuel_matrix() {
   }
   std::optional<shipnum_t> toxwc_id;
   ctx.em.with_star(1, [&](const Star& star) {
-    ctx.em.with_race(1, [&](const Race& race) {
+    ctx.em.with_race(pilot_player, [&](const Race& race) {
       ctx.em.mutate_planet_and_sectors(1, 1, [&](Planet& pl, SectorMap& smap) {
         pl.toxic() = 40;
-        pl.info(1).tox_thresh = 20;
-        pl.info(1).resource = 100;
+        pl.info(pilot_player).tox_thresh = 20;
+        pl.info(pilot_player).resource = 100;
         toxwc_id = build_automated_waste_can(ctx.em, star, pl, smap, race);
       });
     });
@@ -261,7 +286,7 @@ void test_fuel_matrix() {
   // Fuel the landed auto-spawned canister and verify projection from planet
   // surface to /Vega, then launch into /Sol orbit alongside the probe and
   // verify `fuel #<id> /Sol` succeeds for both.
-  ctx.em.mutate_star(2, [](Star& s) { s.mark_explored_by(1); });
+  ctx.em.mutate_star(2, [](Star& s) { s.mark_explored_by(pilot_player); });
   ctx.em.mutate_ship(*toxwc_id, [](Ship& s) { s.add_fuel(19.54); });
   ctx.assert_dispatch_success(g,
                               {"fuel", std::format("#{}", *toxwc_id), "/Vega"});
@@ -287,7 +312,7 @@ void test_fuel_matrix() {
 
 void test_fuel_output_and_do_trip_branches() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  setup_fuel_world(ctx);
 
   // 1. compute_trip_estimate with grav == 0 and segments == 1
   ctx.em.mutate_server_state([](ServerState& st) {
@@ -360,11 +385,11 @@ void test_fuel_output_and_do_trip_branches() {
     st.nsegments_done = 1;
   });
   const auto target_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                             .owned_by(1, 1)
+                             .owned_by(pilot_player, 1)
                              .in_star_orbit(1, SystemCoordinates{25.0, 0.0})
                              .build();
   const auto runner_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                             .owned_by(1, 1)
+                             .owned_by(pilot_player, 1)
                              .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
                              .with_speed(9)
                              .build();
@@ -390,12 +415,12 @@ void test_fuel_output_and_do_trip_branches() {
     // Landed ship deducts launch gravity fuel before flying to destination,
     // and fails immediately if fuel < launch_gravity_fuel
     const auto orbit_ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                                   .owned_by(1, 1)
+                                   .owned_by(pilot_player, 1)
                                    .in_planet_orbit(1, 1)
                                    .with_speed(9)
                                    .build();
     const auto landed_ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                                    .owned_by(1, 1)
+                                    .owned_by(pilot_player, 1)
                                     .landed_on(1, 1, {0, 0})
                                     .with_speed(9)
                                     .build();
@@ -447,21 +472,21 @@ void test_fuel_output_and_do_trip_branches() {
     // SimulatedShip / domass (and works cleanly in Guest read-only sessions)
     const auto empty_carrier_id =
         TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-            .owned_by(1, 1)
+            .owned_by(pilot_player, 1)
             .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
             .with_fuel(500.0)
             .with_speed(4)
             .build();
     const auto loaded_carrier_id =
         TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-            .owned_by(1, 1)
+            .owned_by(pilot_player, 1)
             .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
             .with_fuel(500.0)
             .with_speed(4)
             .with_max_hanger(200)
             .build();
     const auto heavy_cargo_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                                    .owned_by(1, 1)
+                                    .owned_by(pilot_player, 1)
                                     .docked_to(loaded_carrier_id, 1)
                                     .with_resource(1000)
                                     .build();
@@ -480,15 +505,15 @@ void test_fuel_output_and_do_trip_branches() {
     // Guest read-only session running 'fuel' on a loaded carrier succeeds
     auto& registry = get_test_session_registry();
     GameObj guest_g(ctx.em, registry);
-    ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });
-    ctx.setup_game_obj(guest_g, 1, 1);
+    ctx.em.mutate_race(pilot_player, [](Race& r) { r.Guest = true; });
+    ctx.setup_game_obj(guest_g, pilot_player, 1);
     guest_g.set_scope_ship(loaded_carrier_id);
     ctx.assert_dispatch_success(guest_g,
                                 {"fuel",
                                  std::format("#{}", loaded_carrier_id.value),
                                  std::format("#{}", target_id.value)},
                                 0);
-    ctx.em.mutate_race(1, [](Race& r) { r.Guest = false; });
+    ctx.em.mutate_race(pilot_player, [](Race& r) { r.Guest = false; });
   }
 }
 

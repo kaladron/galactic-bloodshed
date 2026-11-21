@@ -12,16 +12,28 @@ import std;
 
 namespace {
 
+constexpr player_t builder_player = 2;
+constexpr player_t rival_player = 3;
+
 void setup_test_world(TestContext& ctx) {
-  ctx.with_standard_universe();
-  ctx.em.mutate_race(1, [](Race& r) { r.tech = 500.0; });
+  ctx.with_galaxy();
+  TestWorldBuilder world(ctx);
+  world.add_race("Builders", 500.0, false, builder_player);
+  world.add_race("Rivals", 100.0, false, rival_player);
+  ctx.with_populated_planet(1, 1, builder_player, 100, Coordinates{5, 5});
+  ctx.em.mutate_race(builder_player, [](Race& r) { r.tech = 500.0; });
+  ctx.em.mutate_universe([](Universe& u) { u.set_AP(builder_player, 50); });
+  ctx.em.mutate_star(1, [](Star& s) {
+    s.mark_explored_by(builder_player);
+    s.mark_inhabited_by(builder_player);
+    s.AP(builder_player) = 50;
+  });
   ctx.em.mutate_planet(1, 1, [](Planet& p) {
-    p.info(player_t{1}).resource = 10000;
-    p.info(player_t{1}).fuel = 1000;
+    p.mark_explored_by(builder_player);
+    p.info(builder_player).resource = 10000;
+    p.info(builder_player).fuel = 1000;
   });
   ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
-    smap.get(Coordinates{5, 5}).set_owner(1);
-    smap.get(Coordinates{5, 5}).set_popn_exact(100);
     smap.get(Coordinates{5, 5}).set_condition(SectorType::SEC_LAND);
   });
 }
@@ -33,7 +45,7 @@ void test_build_happy_paths() {
   // Create GameObj for testing
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, builder_player, 1);
   g.set_scope_planet(1, 1);
 
   // 1. Build info queries (0 AP, zero DB writes including peek_ship_exam)
@@ -51,20 +63,20 @@ void test_build_happy_paths() {
   ctx.assert_dispatch_success(g, {"build", ":", "5,5", "1"}, 1);
   test::expect_contains(g.out.str(), "built at a cost of");
   test::expect_contains(g.out.str(), "is on sector 5,5.");
-  test::expect_true(ctx.em.get_telegrams(1, 1).empty());
+  test::expect_true(ctx.em.get_telegrams(builder_player, 1).empty());
 
   // Verify planet resources were deducted
   ctx.em.clear_cache();
   const auto* planet_verify = ctx.em.peek_planet(1, 1);
   test::expect_ne(planet_verify, nullptr);
-  test::expect_lt(planet_verify->info(player_t{1}).resource,
+  test::expect_lt(planet_verify->info(builder_player).resource,
                   10000);  // Resources should be deducted
 
   // Verify ship was created (assigned lowest available ship ID #1)
   const auto* ship = ctx.em.peek_ship(1);
   test::expect_ne(ship, nullptr);
   test::expect_eq(ship->type(), ShipType::OTYPE_PROBE);
-  test::expect_eq(ship->owner(), player_t{1});
+  test::expect_eq(ship->owner(), builder_player);
   test::expect_eq(ship->whatorbits(), ScopeLevel::LEVEL_PLAN);
   test::expect_eq(ship->storbits(), 1);
   test::expect_eq(ship->pnumorbits(), 1);
@@ -76,11 +88,11 @@ void test_build_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set Star AP to 0
-  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 0; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(builder_player) = 0; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, builder_player, 1);
   g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_rejected(g, {"build", ":", "5,5", "1"});
@@ -93,7 +105,7 @@ void test_build_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, builder_player, 1);
   g.set_scope_planet(1, 1);
 
   // 1. Missing type argument at planet scope
@@ -106,17 +118,17 @@ void test_build_domain_errors() {
   test::expect_contains(g.out.str(), "Build where?");
 
   // 3. Test: Build on enslaved planet rejected with diagnostic in g.out
-  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.enslave_to(2); });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.enslave_to(rival_player); });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"build", ":", "5,5", "1"});
-  test::expect_contains(g.out.str(), "This planet is enslaved by player 2.");
-  test::expect_true(ctx.em.get_telegrams(1, 1).empty());
+  test::expect_contains(g.out.str(), "This planet is enslaved by player 3.");
+  test::expect_true(ctx.em.get_telegrams(builder_player, 1).empty());
   ctx.em.mutate_planet(1, 1, [](Planet& p) { p.free_slaves(); });
 
   // 4. Test: Build with insufficient resources
   // Drain resources completely
   ctx.em.mutate_planet(1, 1,
-                       [](Planet& p) { p.info(player_t{1}).resource = 0; });
+                       [](Planet& p) { p.info(builder_player).resource = 0; });
   g.out.str("");
   // Try to build probe with no resources
   ctx.assert_dispatch_rejected(g, {"build", ":", "5,5", "1"});
@@ -129,7 +141,7 @@ void test_build_info_queries() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, builder_player, 1);
 
   // Specific ship type query (":" = Space Probe)
   g.out.str("");
@@ -149,13 +161,13 @@ void test_build_from_ships() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, builder_player, 1);
 
   shipnum_t initial_ships = ctx.em.num_ships();
 
   // 1. Factory building with 0 args ("build") and 2 args ("build 2")
   shipnum_t factory_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
-                             .owned_by(1, 1)
+                             .owned_by(builder_player, 1)
                              .landed_on(1, 1, {5, 5})
                              .with_resource(5000)
                              .with_crew(100, 0)
@@ -177,7 +189,7 @@ void test_build_from_ships() {
 
   // 2. Shuttle building outside in star orbit ("build H 1")
   shipnum_t shuttle_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                             .owned_by(1, 1)
+                             .owned_by(builder_player, 1)
                              .in_star_orbit(1)
                              .with_resource(50000)
                              .with_crew(50, 0)
@@ -190,7 +202,7 @@ void test_build_from_ships() {
 
   // 3. Habitat building inside hangar in universe orbit
   shipnum_t hab_id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
-                         .owned_by(1, 1)
+                         .owned_by(builder_player, 1)
                          .in_deep_space()
                          .with_resource(5000)
                          .with_max_hanger(500)
@@ -207,15 +219,15 @@ void test_build_from_ships() {
 void test_factory_all_classes_and_toxic_waste() {
   TestContext ctx;
   setup_test_world(ctx);
-  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 200; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(builder_player) = 200; });
   ctx.em.mutate_planet(1, 1, [](Planet& p) {
-    p.info(player_t{1}).resource = 500000;
+    p.info(builder_player).resource = 500000;
     p.toxic() = 50;
   });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, builder_player, 1);
 
   // 1. Planetary `build w` preserves extracted 20% toxic payload on new ship
   g.set_scope_planet(1, 1);
@@ -228,8 +240,9 @@ void test_factory_all_classes_and_toxic_waste() {
   // 2. Mortal Factory `make` -> `order on` -> `build` succeeds for all
   //    factory-buildable ship classes (build_time == 8), preserving shipclass,
   //    cloak, secondary batteries, and secondary-only active_battery/retaliate.
-  ctx.em.mutate_race(1, [](Race& r) { r.discoveries.cloak = true; });
-  g.race = ctx.em.peek_race(1);
+  ctx.em.mutate_race(builder_player,
+                     [](Race& r) { r.discoveries.cloak = true; });
+  g.race = ctx.em.peek_race(builder_player);
 
   const auto& fac_tmpl = ship_template(ShipType::OTYPE_FACTORY);
   for (const auto& tmpl : ship_templates) {
@@ -238,7 +251,7 @@ void test_factory_all_classes_and_toxic_waste() {
       continue;
     }
     const shipnum_t fac_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
-                                 .owned_by(1, 1)
+                                 .owned_by(builder_player, 1)
                                  .landed_on(1, 1, {5, 5})
                                  .with_damage(0)
                                  .with_on(false)

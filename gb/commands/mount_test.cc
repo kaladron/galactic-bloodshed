@@ -13,10 +13,10 @@ namespace {
 
 void test_mount_persistence() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   const auto ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
-                           .owned_by(1, 1)
+                           .owned_by(races.empire, 1)
                            .in_star_orbit(1)
                            .with_mount(1)
                            .with_crystals(2)
@@ -24,7 +24,7 @@ void test_mount_persistence() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_ship(ship_id);
 
   ctx.assert_dispatch_success(g, {"mount", std::format("#{}", ship_id)});
@@ -40,11 +40,11 @@ void test_mount_persistence() {
 
 void test_mount_errors() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   // Ship 1: has mount, 0 crystals
   const auto ship1_id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
-                            .owned_by(1, 1)
+                            .owned_by(races.empire, 1)
                             .in_star_orbit(1)
                             .with_mount(1)
                             .with_crystals(0)
@@ -52,15 +52,15 @@ void test_mount_errors() {
 
   // Ship 2: no crystal mount
   const auto ship2_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
-                            .owned_by(1, 1)
+                            .owned_by(races.empire, 1)
                             .in_star_orbit(1)
                             .with_mount(0)
                             .with_crystals(2)
                             .build();
 
-  // Ship 3: owned by player 2
+  // Ship 3: owned by Nomads
   const auto ship3_id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
-                            .owned_by(2, 1)
+                            .owned_by(races.nomad, 1)
                             .in_star_orbit(1)
                             .with_mount(1)
                             .with_crystals(2)
@@ -68,7 +68,7 @@ void test_mount_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_star(1);
 
   // 1. Min args check (< 2 args)
@@ -102,10 +102,10 @@ void test_mount_errors() {
 
 void test_mount_json_mode() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   const auto ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
-                           .owned_by(1, 1)
+                           .owned_by(races.empire, 1)
                            .in_star_orbit(1)
                            .with_mount(1)
                            .with_crystals(2)
@@ -113,7 +113,7 @@ void test_mount_json_mode() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_ship(ship_id);
   g.set_ui_mode(GB::presentation::UiMode::JSON);
 

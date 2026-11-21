@@ -748,47 +748,89 @@ player_t EntityManager::max_power_id() {
   return ids.empty() ? player_t{0} : player_t{ids.back()};
 }
 
+template <typename Pred>
 std::vector<shipnum_t>
-EntityManager::filter_alive_ships(std::vector<shipnum_t> ids) const {
-  std::erase_if(ids, [this](shipnum_t id) {
+EntityManager::reconcile_ship_query(std::vector<shipnum_t> ids,
+                                    Pred&& matches) const {
+  std::erase_if(ids, [this, &matches](shipnum_t id) {
     if (std::ranges::contains(pending_ship_deletions_, id)) {
       return true;
     }
-    if (auto it = ship_cache.find(id); it != ship_cache.end()) {
-      return !it->second->alive();
+    auto it = ship_cache.find(id);
+    if (it == ship_cache.end()) {
+      return false;
     }
-    return false;
+    if (!it->second->alive()) {
+      return true;
+    }
+    return !matches(*it->second);
   });
+
+  bool added = false;
+  for (const auto& [id, ship] : ship_cache) {
+    if (!ship->alive()) continue;
+    if (std::ranges::contains(pending_ship_deletions_, id)) continue;
+    if (!matches(*ship)) continue;
+    ids.push_back(id);
+    added = true;
+  }
+  if (added) {
+    std::ranges::sort(ids);
+    const auto dup = std::ranges::unique(ids);
+    ids.erase(dup.begin(), dup.end());
+  }
   return ids;
 }
 
 std::vector<shipnum_t> EntityManager::ships_in_star_system(starnum_t star_id) {
-  return filter_alive_ships(storage_->ships.find_in_star_system(star_id));
+  return reconcile_ship_query(storage_->ships.find_in_star_system(star_id),
+                              [star_id](const Ship& s) {
+                                return s.storbits() == star_id &&
+                                       s.whatorbits() != ScopeLevel::LEVEL_UNIV;
+                              });
 }
 
 std::vector<shipnum_t> EntityManager::ships_in_star(starnum_t star_id) {
-  return filter_alive_ships(storage_->ships.find_in_star(star_id));
+  return reconcile_ship_query(storage_->ships.find_in_star(star_id),
+                              [star_id](const Ship& s) {
+                                return s.storbits() == star_id &&
+                                       s.whatorbits() == ScopeLevel::LEVEL_STAR;
+                              });
 }
 
 std::vector<shipnum_t> EntityManager::ships_on_planet(starnum_t star_id,
                                                       planetnum_t planet_id) {
-  return filter_alive_ships(storage_->ships.find_on_planet(star_id, planet_id));
+  return reconcile_ship_query(
+      storage_->ships.find_on_planet(star_id, planet_id),
+      [star_id, planet_id](const Ship& s) {
+        return s.storbits() == star_id && s.pnumorbits() == planet_id &&
+               s.whatorbits() == ScopeLevel::LEVEL_PLAN;
+      });
 }
 
 std::vector<shipnum_t> EntityManager::ships_in_hangar(shipnum_t carrier_id) {
-  return filter_alive_ships(storage_->ships.find_in_hangar(carrier_id));
+  return reconcile_ship_query(storage_->ships.find_in_hangar(carrier_id),
+                              [carrier_id](const Ship& s) {
+                                return s.destshipno() == carrier_id &&
+                                       s.whatorbits() == ScopeLevel::LEVEL_SHIP;
+                              });
 }
 
 std::vector<shipnum_t> EntityManager::ships_by_owner(player_t owner_id) {
-  return filter_alive_ships(storage_->ships.find_by_owner(owner_id));
+  return reconcile_ship_query(
+      storage_->ships.find_by_owner(owner_id),
+      [owner_id](const Ship& s) { return s.owner() == owner_id; });
 }
 
 std::vector<shipnum_t> EntityManager::ships_at_scope(ScopeLevel scope) {
-  return filter_alive_ships(storage_->ships.find_at_scope(scope));
+  return reconcile_ship_query(
+      storage_->ships.find_at_scope(scope),
+      [scope](const Ship& s) { return s.whatorbits() == scope; });
 }
 
 std::vector<shipnum_t> EntityManager::ships_alive() {
-  return filter_alive_ships(storage_->ships.find_alive());
+  return reconcile_ship_query(storage_->ships.find_alive(),
+                              [](const Ship&) { return true; });
 }
 
 std::vector<shipnum_t> EntityManager::ships_all() {
@@ -932,6 +974,23 @@ void scrub_ship_foreign_keys(EntityManager& em, shipnum_t target_id) {
   }
 }
 }  // namespace
+
+void EntityManager::transfer_ship_ownership(Ship& ship, player_t new_owner,
+                                            governor_t new_gov) {
+  if (is_read_only()) {
+    throw ReadOnlyError(
+        "ReadOnlyScope blocked EntityManager::transfer_ship_ownership");
+  }
+  const player_t old_owner = ship.owner();
+  ship.owner() = new_owner;
+  ship.governor() = new_gov;
+  if (old_owner == new_owner || old_owner == 0 || ship.number() == 0) {
+    return;
+  }
+  if (peek_race(old_owner)->Gov_ship == ship.number()) {
+    mutate_race(old_owner, [](Race& r) { r.Gov_ship = std::nullopt; });
+  }
+}
 
 void EntityManager::destroy_ship(Ship& ship) {
   if (is_read_only()) {

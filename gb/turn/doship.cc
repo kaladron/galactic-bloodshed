@@ -382,8 +382,7 @@ void synchronize_docked_carrier_ownership(Ship& ship, EntityManager& em) {
   if (auto carrier_num = ship.carrier_id()) {
     const auto& carrier = *em.peek_ship(*carrier_num);
     if (ship.owner() != carrier.owner()) {
-      ship.owner() = carrier.owner();
-      ship.governor() = carrier.governor();
+      em.transfer_ship_ownership(ship, carrier.owner(), carrier.governor());
     }
   }
 }

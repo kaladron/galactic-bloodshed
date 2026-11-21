@@ -221,7 +221,21 @@ void test_give_dispatch() {
   ctx.em.mutate_race(2, [](Race& r) { r.Guest = false; });
   g.set_ui_mode(UiMode::ASCII);
 
-  // 16. Command matrix validation (roles, guests, governor, scopes)
+  // 16. Giving away a race's Gov_ship scrubs donor Gov_ship so destroying it
+  // later never trips tbl_race(gov_ship) FK
+  const shipnum_t gov_id = TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
+                               .owned_by(1, 1)
+                               .in_star_orbit(1)
+                               .build();
+  ctx.em.mutate_race(1, [&](Race& r) { r.Gov_ship = gov_id; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 10; });
+  ctx.assert_dispatch_success(
+      g, {"give", "Klingons", std::format("#{}", gov_id.value)});
+  test::expect_eq(ctx.em.peek_race(1)->Gov_ship, std::nullopt);
+  ctx.em.mutate_ship(gov_id, [&](Ship& s) { ctx.em.destroy_ship(s); });
+  ctx.verify_universe_invariants();
+
+  // 17. Command matrix validation (roles, guests, governor, scopes)
   TestCommandMatrix(ctx, "give")
       .with_valid_argv(
           {"give", "Klingons", std::format("#{}", ship_no_ap.value)})

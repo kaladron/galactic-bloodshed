@@ -80,8 +80,8 @@ bool give(const command_t& argv, GameObj& g) {
             return;
           }
 
-          ship.owner() = who;
-          ship.governor() = Race::leader_id; /* give to the leader */
+          /* give to the leader */
+          g.entity_manager.transfer_ship_ownership(ship, who, Race::leader_id);
           g.present(capture_stuff(g.entity_manager, ship));
 
           /* set inhabited/explored bits */

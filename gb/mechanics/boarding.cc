@@ -117,8 +117,7 @@ void finalize_boarding_ownership_and_morale(EntityManager& em, Ship& s,
 
   if (defender_wiped_out && both_ships_alive) {
     s.moor_together(s2);
-    s2.owner() = s.owner();
-    s2.governor() = s.governor();
+    em.transfer_ship_ownership(s2, s.owner(), s.governor());
     add_ship_boarders(s2, what, report.surviving_boarders, race.mass);
     if (report.defender_civ_casualties + report.defender_mil_casualties > 0) {
       race.adjust_morale(alien, static_cast<int>(s2.build_cost()));
@@ -553,8 +552,7 @@ void finalize_landed_ship_capture(EntityManager& em, Ship& ship, Planet& planet,
 
   if (defenders_cleared && ship.alive() && res.surviving_boarders > 0) {
     res.captured = true;
-    ship.owner() = attacker_player;
-    ship.governor() = attacker_governor;
+    em.transfer_ship_ownership(ship, attacker_player, attacker_governor);
     if (what == PopulationType::CIV) {
       res.boarders_moved_in =
           std::min(res.surviving_boarders, ship.max_crew_capacity());

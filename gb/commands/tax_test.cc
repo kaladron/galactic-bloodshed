@@ -62,10 +62,15 @@ void test_tax_role_and_scope_rejections() {
                           .build();
   ctx.em.mutate_race(1, [gov_id](Race& r) { r.Gov_ship = gov_id; });
 
-  // Make player 2 a guest race
-  ctx.em.mutate_race(2, [gov_id](Race& r) {
+  // Make player 2 a guest race with its own government ship
+  const auto p2_gov_id = TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
+                             .owned_by(2, 1)
+                             .landed_on(2, 1, Coordinates{0, 0})
+                             .with_crew(100, 0)
+                             .build();
+  ctx.em.mutate_race(2, [p2_gov_id](Race& r) {
     r.Guest = true;
-    r.Gov_ship = gov_id;
+    r.Gov_ship = p2_gov_id;
   });
 
   auto& registry = get_test_session_registry();

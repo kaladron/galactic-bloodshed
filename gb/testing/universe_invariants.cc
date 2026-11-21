@@ -58,6 +58,12 @@ void verify_universe_invariants(EntityManager& em, std::source_location loc) {
                     std::format("Race '{}' references dead Gov_ship #{}",
                                 race.name, *race.Gov_ship),
                     loc);
+        expect_eq(gov_ship->owner(), race.Playernum,
+                  std::format("Race '{}' references foreign Gov_ship #{} "
+                              "(owned by player {})",
+                              race.name, *race.Gov_ship,
+                              gov_ship->owner().value),
+                  loc);
       }
     }
   }

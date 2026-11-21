@@ -135,13 +135,13 @@ should_check_exploration(const ScopeContext& ctx,
 [[nodiscard]] std::expected<void, PlaceError>
 validate_ship_place_access(const Ship& ship, const ScopeContext& ctx,
                            bool ignore_explore) {
-  if (ctx.god) return {};
   if (!ship.alive()) {
     return std::unexpected(PlaceError{
         .kind = PlaceErrorKind::DontOwnShip,
         .target = std::format("{}", ship.number()),
     });
   }
+  if (ctx.god) return {};
   if (!ignore_explore && ship.owner() != ctx.player) {
     return std::unexpected(PlaceError{
         .kind = PlaceErrorKind::DontOwnShip,

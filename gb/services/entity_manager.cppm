@@ -483,6 +483,8 @@ public:
 
   // Business logic operations (service layer)
   std::optional<player_t> find_player_by_name(const std::string& name);
+  void transfer_ship_ownership(Ship& ship, player_t new_owner,
+                               governor_t new_gov);
   void destroy_ship(Ship& ship);
   [[nodiscard]] std::optional<UniverseCoordinates>
   resolve_mirror_target_coordinates(const SpaceMirrorShip& mirror);
@@ -643,8 +645,9 @@ private:
   void release_sectormap(starnum_t star, planetnum_t pnum);
   void release_ship_exam(ShipType ship_type);
 
+  template <typename Pred>
   [[nodiscard]] std::vector<shipnum_t>
-  filter_alive_ships(std::vector<shipnum_t> ids) const;
+  reconcile_ship_query(std::vector<shipnum_t> ids, Pred&& matches) const;
   void drain_pending_deletions();
   void propagate_ancestor_mass_delta(shipnum_t direct_carrier_id,
                                      double delta_mass);

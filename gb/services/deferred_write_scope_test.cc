@@ -307,6 +307,89 @@ void test_deferred_write_deletion_rollback_and_commit(TestContext& ctx) {
                "✓ test_deferred_write_deletion_rollback_and_commit passed");
 }
 
+void test_deferred_write_spatial_and_ownership_cache_overlay() {
+  TestContext ctx;
+  const auto races = ctx.with_races();
+
+  // Same-owner governor transfer preserves Gov_ship; ReadOnlyScope & unnumbered
+  // local ships are guarded cleanly.
+  ctx.em.mutate_ship(races.newcomer_gov_ship, [&](Ship& s) {
+    ctx.em.transfer_ship_ownership(s, races.newcomer, Race::leader_id);
+  });
+  test::expect_eq(ctx.em.peek_race(races.newcomer)->Gov_ship,
+                  races.newcomer_gov_ship);
+  Ship local_unnumbered{};
+  local_unnumbered.owner() = 0;
+  ctx.em.transfer_ship_ownership(local_unnumbered, races.nomad,
+                                 Race::leader_id);
+  {
+    auto ro = ctx.em.create_read_only_scope();
+    test::expect_throws<ReadOnlyError>([&]() {
+      ctx.em.transfer_ship_ownership(local_unnumbered, races.empire,
+                                     Race::leader_id);
+    });
+  }
+
+  {
+    auto scope = ctx.em.create_deferred_write_scope();
+
+    // 1. Mid-turn spatial move: nomad cruiser moves from /Sol star orbit to
+    // /Vega/Vega Prime planet orbit without flushing SQLite.
+    ctx.em.mutate_ship(races.nomad_cruiser,
+                       [](Ship& s) { s.enter_planet_orbit(2, 1); });
+    test::expect_false(
+        std::ranges::contains(ctx.em.ships_in_star(1), races.nomad_cruiser));
+    test::expect_true(std::ranges::contains(ctx.em.ships_on_planet(2, 1),
+                                            races.nomad_cruiser));
+    test::expect_true(std::ranges::contains(ctx.em.ships_in_star_system(2),
+                                            races.nomad_cruiser));
+    test::expect_true(std::ranges::is_sorted(ctx.em.ships_on_planet(2, 1)));
+
+    // 2. Mid-turn carrier berth: nomad shuttle docks into empire cruiser.
+    test::expect_true(
+        ctx.em.dock_carrier(races.nomad_shuttle, races.empire_cruiser)
+            .has_value());
+    test::expect_false(std::ranges::contains(
+        ctx.em.ships_at_scope(ScopeLevel::LEVEL_UNIV), races.nomad_shuttle));
+    test::expect_eq(ctx.em.ships_in_hangar(races.empire_cruiser),
+                    std::vector<shipnum_t>{races.nomad_shuttle});
+
+    // 3. Ownership transfer of empire's Gov_ship scrubs empire.Gov_ship and
+    // updates ships_by_owner immediately so destroying it later succeeds.
+    ctx.em.mutate_ship(races.empire_gov_ship, [&](Ship& s) {
+      ctx.em.transfer_ship_ownership(s, races.nomad, Race::leader_id);
+    });
+    test::expect_eq(ctx.em.peek_race(races.empire)->Gov_ship, std::nullopt);
+    test::expect_false(std::ranges::contains(
+        ctx.em.ships_by_owner(races.empire), races.empire_gov_ship));
+    test::expect_true(std::ranges::contains(ctx.em.ships_by_owner(races.nomad),
+                                            races.empire_gov_ship));
+
+    // 4. Both destroy_ship and DeletionBarrier-queued delete_ship hide ships
+    // from ships_alive() before SQLite commit.
+    ctx.em.mutate_ship(races.empire_gov_ship,
+                       [&](Ship& s) { ctx.em.destroy_ship(s); });
+    test::expect_false(
+        std::ranges::contains(ctx.em.ships_alive(), races.empire_gov_ship));
+    {
+      auto barrier = ctx.em.create_deletion_barrier();
+      ctx.em.mutate_ship(races.empire_cruiser, [&](Ship& c) {
+        const Ship& shuttle = *ctx.em.peek_ship(races.nomad_shuttle);
+        c.unload_docked_craft(shuttle);
+      });
+      ctx.em.delete_ship(races.nomad_shuttle);
+      test::expect_false(
+          std::ranges::contains(ctx.em.ships_alive(), races.nomad_shuttle));
+    }
+  }
+
+  ctx.em.clear_cache();
+  ctx.verify_universe_invariants();
+  std::println(
+      std::cout,
+      "✓ test_deferred_write_spatial_and_ownership_cache_overlay passed");
+}
+
 }  // namespace
 
 int main() {
@@ -319,6 +402,7 @@ int main() {
   test_deferred_write_multi_entity_simulation(ctx);
   test_deferred_write_rejects_nested_transaction(ctx);
   test_deferred_write_deletion_rollback_and_commit(ctx);
+  test_deferred_write_spatial_and_ownership_cache_overlay();
 
   std::println(std::cout, "\nAll DeferredWriteScope tests passed!");
   return 0;

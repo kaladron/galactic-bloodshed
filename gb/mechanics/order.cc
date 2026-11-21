@@ -164,8 +164,16 @@ std::expected<OrderUpdate, OrderError> order_jump(const command_t& argv,
   return OrderUpdate{};
 }
 
-std::expected<OrderUpdate, OrderError> order_protect(const command_t& argv,
-                                                     Ship& ship) {
+bool is_live_ship(EntityManager& em, shipnum_t id) {
+  try {
+    return em.peek_ship(id)->alive();
+  } catch (const EntityNotFoundError&) {
+    return false;
+  }
+}
+
+std::expected<OrderUpdate, OrderError>
+order_protect(EntityManager& em, const command_t& argv, Ship& ship) {
   std::optional<shipnum_t> target_ship{std::nullopt};
   if (argv.size() > 3) {
     target_ship = string_to_shipnum(argv[3]);
@@ -183,10 +191,15 @@ std::expected<OrderUpdate, OrderError> order_protect(const command_t& argv,
   if (!target_ship) {
     ship.protect().on = false;
     ship.protect().ship = std::nullopt;
-  } else {
-    ship.protect().on = true;
-    ship.protect().ship = target_ship;
+    return OrderUpdate{};
   }
+  if (!is_live_ship(em, *target_ship)) {
+    return std::unexpected(OrderError{
+        .reason = OrderErrorReason::TargetShipNotFound,
+    });
+  }
+  ship.protect().on = true;
+  ship.protect().ship = target_ship;
   return OrderUpdate{};
 }
 
@@ -585,8 +598,8 @@ std::expected<OrderUpdate, OrderError> order_trigger(const command_t& argv,
   return OrderUpdate{};
 }
 
-std::expected<OrderUpdate, OrderError> order_transport(const command_t& argv,
-                                                       Ship& ship) {
+std::expected<OrderUpdate, OrderError>
+order_transport(EntityManager& em, const command_t& argv, Ship& ship) {
   auto* transporter = ship.as<TransporterShip>();
   if (!transporter) {
     return std::unexpected(OrderError{
@@ -601,6 +614,11 @@ std::expected<OrderUpdate, OrderError> order_transport(const command_t& argv,
     transporter->set_target_ship(std::nullopt);
     return std::unexpected(OrderError{
         .reason = OrderErrorReason::CannotTransportToSelf,
+    });
+  }
+  if (target && !is_live_ship(em, *target)) {
+    return std::unexpected(OrderError{
+        .reason = OrderErrorReason::TargetShipNotFound,
     });
   }
   transporter->set_target_ship(target);
@@ -830,16 +848,23 @@ struct ShipOrderDispatchEntry {
   std::expected<OrderUpdate, OrderError> (*handler)(const command_t&, Ship&);
 };
 
-constexpr std::array<ShipOrderDispatchEntry, 19> ship_order_handlers = {{
-    {"defense", &order_defense},     {"impact", &order_impact},
-    {"jump", &order_jump},           {"protect", &order_protect},
-    {"navigate", &order_navigate},   {"evade", &order_evade},
-    {"bombard", &order_bombard},     {"retaliate", &order_retaliate},
-    {"focus", &order_focus},         {"laser", &order_laser},
-    {"merchant", &order_merchant},   {"speed", &order_speed},
-    {"salvo", &order_salvo},         {"primary", &order_primary},
-    {"secondary", &order_secondary}, {"move", &order_move},
-    {"trigger", &order_trigger},     {"transport", &order_transport},
+constexpr std::array<ShipOrderDispatchEntry, 17> ship_order_handlers = {{
+    {"defense", &order_defense},
+    {"impact", &order_impact},
+    {"jump", &order_jump},
+    {"navigate", &order_navigate},
+    {"evade", &order_evade},
+    {"bombard", &order_bombard},
+    {"retaliate", &order_retaliate},
+    {"focus", &order_focus},
+    {"laser", &order_laser},
+    {"merchant", &order_merchant},
+    {"speed", &order_speed},
+    {"salvo", &order_salvo},
+    {"primary", &order_primary},
+    {"secondary", &order_secondary},
+    {"move", &order_move},
+    {"trigger", &order_trigger},
     {"intensity", &order_intensity},
 }};
 
@@ -1013,6 +1038,10 @@ give_orders(EntityManager& em, const ScopeContext& scope_ctx,
       result = order_aim(em, scope_ctx, argv, ship);
     } else if (argv[2] == "on") {
       result = order_on(em, scope_ctx.player, ship);
+    } else if (argv[2] == "protect") {
+      result = order_protect(em, argv, ship);
+    } else if (argv[2] == "transport") {
+      result = order_transport(em, argv, ship);
     } else {
       bool handled = false;
       for (const auto& entry : ship_noarg_order_handlers) {

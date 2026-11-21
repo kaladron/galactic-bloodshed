@@ -27,9 +27,8 @@ void collect_captured_ships(EntityManager& em, const Ship& ship,
                             std::vector<CapturedShipEvent>& out) {
   for (auto ship_handle : ShipList::in_carrier(em, ship.number())) {
     Ship& s = *ship_handle;
-    s.owner() =
-        ship.owner(); /* make sure he gets all of the ships landed on it */
-    s.governor() = ship.governor();
+    /* make sure he gets all of the ships landed on it */
+    em.transfer_ship_ownership(s, ship.owner(), ship.governor());
     collect_captured_ships(em, s, out); /* recursive call */
     out.push_back(CapturedShipEvent{
         .ship_number = s.number(),
@@ -109,8 +108,8 @@ void domass(Ship& ship, EntityManager& entity_manager) {
 
 void doown(Ship& ship, EntityManager& entity_manager) {
   for (auto nested_ship : ShipList::in_carrier(entity_manager, ship.number())) {
-    nested_ship->owner() = ship.owner();
-    nested_ship->governor() = ship.governor();
+    entity_manager.transfer_ship_ownership(*nested_ship, ship.owner(),
+                                           ship.governor());
     doown(*nested_ship, entity_manager); /* recursive call */
   }
 }

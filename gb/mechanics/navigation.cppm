@@ -153,6 +153,7 @@ export enum class OrderErrorReason {
   DestinationMustBeStarOrPlanet,
   CannotProtectSelf,
   CannotProtect,
+  TargetShipNotFound,
   CannotBeLaunched,
   ShipDockedUndockOrLaunchFirst,
   InvalidPlace,

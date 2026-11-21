@@ -228,10 +228,13 @@ void test_order_combat_and_movement_options() {
   test::expect_eq(ctx.em.peek_ship(1)->whatdest(), ScopeLevel::LEVEL_UNIV);
   test::expect_false(ctx.em.peek_ship(1)->hyper_drive().on);
 
-  // Self-protect rejection
+  // Self-protect and nonexistent/dead target rejection
   g.out.str("");
   ctx.assert_dispatch_success(g, {"order", "#1", "protect", "#1"});
   test::expect_contains(g.out.str(), "You can't do that");
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"order", "#1", "protect", "#9999"});
+  test::expect_contains(g.out.str(), "No such ship.");
 
   // Clear protect
   ctx.assert_dispatch_success(g, {"order", "#1", "protect"});
@@ -335,6 +338,36 @@ void test_order_specialty_ships() {
   test::expect_eq(
       ctx.em.peek_ship(trans_id)->as<TransporterShip>()->target_ship(),
       std::nullopt);
+
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"order", std::format("#{}", trans_id.value), "transport", "#9999"});
+  test::expect_contains(g.out.str(), "No such ship.");
+  test::expect_eq(
+      ctx.em.peek_ship(trans_id)->as<TransporterShip>()->target_ship(),
+      std::nullopt);
+
+  // Dead ship target inside DeferredWriteScope rejected for protect, transport,
+  // and Deity destination/aim
+  const auto dead_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                           .owned_by(1)
+                           .in_planet_orbit(1, 1)
+                           .build();
+  {
+    auto scope = ctx.em.create_deferred_write_scope();
+    ctx.em.mutate_ship(dead_id, [](Ship& s) { s.alive() = 0; });
+    g.out.str("");
+    ctx.assert_dispatch_success(
+        g, {"order", "#1", "protect", std::format("#{}", dead_id.value)});
+    test::expect_contains(g.out.str(), "No such ship.");
+    g.set_god(true);
+    g.out.str("");
+    ctx.assert_dispatch_success(
+        g, {"order", "#1", "destination", std::format("#{}", dead_id.value)});
+    test::expect_contains(g.out.str(), "You don't own ship");
+    g.set_god(false);
+    scope.rollback();
+  }
 
   // 4. Space Mirror aim & intensity, plus Telescope survey
   const auto mirror_id = TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR)

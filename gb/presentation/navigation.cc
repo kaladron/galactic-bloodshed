@@ -78,6 +78,8 @@ std::string format_order_error(const OrderError& err) {
       return "You can't do that.\n";
     case OrderErrorReason::CannotProtect:
       return "That ship cannot protect.\n";
+    case OrderErrorReason::TargetShipNotFound:
+      return "No such ship.\n";
     case OrderErrorReason::CannotBeLaunched:
       return "That ship cannot be launched.\n";
     case OrderErrorReason::ShipDockedUndockOrLaunchFirst:

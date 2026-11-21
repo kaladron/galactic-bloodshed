@@ -180,11 +180,10 @@ RstGeneralRow build_general_row(EntityManager& em, const Ship& s) {
   };
 }
 
-bool should_report_ship(const Ship& s, player_t player_num, governor_t governor,
+bool should_report_ship(const Ship& s, const ScopeContext& viewer,
                         const ReportSet& rep_on) {
   if (!s.alive()) return false;
-  if (s.owner() != player_num) return false;
-  if (!s.is_authorized_for(governor)) return false;
+  if (!viewer.can_command_ship(s)) return false;
   if (!rep_on.contains(s.type_letter())) return false;
   if (s.type() == ShipType::OTYPE_CANIST && !s.docked()) return false;
   if (s.type() == ShipType::OTYPE_GREEN && !s.docked()) return false;
@@ -193,11 +192,14 @@ bool should_report_ship(const Ship& s, player_t player_num, governor_t governor,
 
 void collect_ship_report(GameObj& g, RstViewModel& vm, const Ship& s,
                          const ReportSet& rep_on) {
-  if (!should_report_ship(s, g.player(), g.governor(), rep_on)) {
+  const auto viewer = g.scope_context();
+  if (!should_report_ship(s, viewer, rep_on)) {
     return;
   }
-  vm.ship_views.push_back(*GB::presentation::project_ship_view(
-      g.entity_manager, g.scope_context(), s));
+  if (auto sv =
+          GB::presentation::project_ship_view(g.entity_manager, viewer, s)) {
+    vm.ship_views.push_back(std::move(*sv));
+  }
 
   RstShipEntry entry{};
   if (vm.flags.stock) {
@@ -218,17 +220,15 @@ void collect_ship_report(GameObj& g, RstViewModel& vm, const Ship& s,
   vm.ships.push_back(std::move(entry));
 }
 
-void collect_planet_ships(GameObj& g, RstViewModel& vm, player_t player_num,
+void collect_planet_ships(GameObj& g, RstViewModel& vm, player_t,
                           starnum_t snum, planetnum_t pnum,
                           const ReportSet& rep_on) {
   const auto* planet = g.entity_manager.peek_planet(snum, pnum);
   if (!planet) return;
 
-  if (planet->info(player_num).explored) {
-    for (const Ship& ship :
-         ShipList::readonly_on_planet(g.entity_manager, snum, pnum)) {
-      collect_ship_report(g, vm, ship, rep_on);
-    }
+  for (const Ship& ship :
+       ShipList::readonly_on_planet(g.entity_manager, snum, pnum)) {
+    collect_ship_report(g, vm, ship, rep_on);
   }
 }
 
@@ -237,17 +237,14 @@ void collect_star_ships(GameObj& g, RstViewModel& vm, player_t player_num,
   const auto* star = g.entity_manager.peek_star(snum);
   if (!star) return;
 
-  if (star->is_explored_by(player_num)) {
-    for (const Ship& ship :
-         ShipList::readonly_in_star(g.entity_manager, snum)) {
-      collect_ship_report(g, vm, ship, rep_on);
-    }
+  for (const Ship& ship : ShipList::readonly_in_star(g.entity_manager, snum)) {
+    collect_ship_report(g, vm, ship, rep_on);
+  }
 
-    for (const auto& planet :
-         PlanetList::readonly(g.entity_manager, snum, *star)) {
-      collect_planet_ships(g, vm, player_num, snum, planet.planet_order(),
-                           rep_on);
-    }
+  for (const auto& planet :
+       PlanetList::readonly(g.entity_manager, snum, *star)) {
+    collect_planet_ships(g, vm, player_num, snum, planet.planet_order(),
+                         rep_on);
   }
 }
 
@@ -289,7 +286,7 @@ bool run_rst(const command_t& argv, GameObj& g, const RstReportFlags& flags) {
         const auto* ship = (*raw_shipno >= 1)
                                ? try_peek_ship(g.entity_manager, shipno)
                                : nullptr;
-        if (!ship) {
+        if (!ship || !ship->alive() || !g.scope_context().owns_ship(*ship)) {
           g.out << std::format("{}: no such ship #{}\n", cmd_name, shipno);
           return false;
         }

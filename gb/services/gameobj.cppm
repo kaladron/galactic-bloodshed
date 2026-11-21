@@ -71,6 +71,37 @@ export struct ScopeContext {
     return mortal_visible;
   }
 
+  /// Returns true if the viewer has explored the star system (or is a Deity).
+  [[nodiscard]] bool can_see_star(const Star& star) const noexcept {
+    return can_see(star.is_explored_by(player));
+  }
+
+  /// Returns true if the viewer has explored or colonized the planet (or is a
+  /// Deity).
+  [[nodiscard]] bool can_see_planet(const Planet& planet) const noexcept {
+    const auto& pinfo = planet.info(player);
+    return can_see(pinfo.explored != 0 || pinfo.numsectsowned > 0);
+  }
+
+  /// Returns true if private sector telemetry (such as mobilization) is visible
+  /// to the viewer (unowned sector, owned by viewer, or Deity).
+  [[nodiscard]] bool
+  can_see_sector_details(const Sector& sector) const noexcept {
+    return can_see(sector.get_owner() == 0 || sector.get_owner() == player);
+  }
+
+  /// Returns true if the ship belongs to the viewer's empire (or viewer is a
+  /// Deity).
+  [[nodiscard]] bool owns_ship(const Ship& ship) const noexcept {
+    return can_see(ship.owner() == player);
+  }
+
+  /// Returns true if the ship belongs to the viewer's empire and governor is
+  /// authorized (or viewer is a Deity).
+  [[nodiscard]] bool can_command_ship(const Ship& ship) const noexcept {
+    return can_see(ship.owner() == player && ship.is_authorized_for(governor));
+  }
+
   /// Returns the enclosing star system ID when this scope is inside a star
   /// system (`LEVEL_STAR`, `LEVEL_PLAN`, or an in-system `LEVEL_SHIP`), or
   /// `std::nullopt` at `LEVEL_UNIV` / deep space.

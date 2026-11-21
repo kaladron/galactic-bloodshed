@@ -171,6 +171,29 @@ void test_fuel_matrix() {
                      [&](Ship& s) { s.set_ship_destination(enemy_ship); });
   ctx.assert_dispatch_rejected(g, {"fuel", std::format("#{}", ship_num.value)});
   test::expect_contains(g.out.str(), "Nice try.");
+  // Out-of-range foreign ship also returns "Nice try." (no range oracle)
+  shipnum_t far_enemy =
+      TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+          .owned_by(2, 1)
+          .in_deep_space(UniverseCoordinates{99999.0, 99999.0})
+          .build();
+  ctx.assert_dispatch_rejected(g, {"fuel", std::format("#{}", ship_num.value),
+                                   std::format("#{}", far_enemy.value)});
+  test::expect_contains(g.out.str(), "Nice try.");
+  // Unexplored planet in an explored star is rejected for mortals, allowed for
+  // Deity
+  ctx.create_planet(1, PlanetType::MARS, {5, 5}, 2)
+      .named("HiddenMars")
+      .with_position(SystemCoordinates{200.0, 0.0})
+      .with_explored(player_t{1}, false)
+      .build();
+  ctx.assert_dispatch_rejected(
+      g, {"fuel", std::format("#{}", ship_num.value), "/Sol/HiddenMars"});
+  test::expect_contains(g.out.str(), "You have not explored HiddenMars yet.");
+  g.set_god(true);
+  ctx.assert_dispatch_success(
+      g, {"fuel", std::format("#{}", ship_num.value), "/Sol/HiddenMars"});
+  g.set_god(false);
   ctx.em.mutate_ship(ship_num,
                      [&](Ship& s) { s.set_ship_destination(near_target); });
 

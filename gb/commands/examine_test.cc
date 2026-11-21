@@ -93,6 +93,22 @@ void test_examine_dispatch() {
       g, {"examine", std::format("#{}", unvis_ship.value)});
   test::expect_contains(g.out.str(), "That ship is not visible to you.");
 
+  // Foreign stealthed orbital mine in an inhabited star is hidden from mortals,
+  // while Deity can examine both the mine and deep-space ships.
+  shipnum_t enemy_mine = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
+                             .owned_by(2)
+                             .in_star_orbit(starnum_t{1})
+                             .build();
+  ctx.assert_dispatch_rejected(
+      g, {"examine", std::format("#{}", enemy_mine.value)});
+  test::expect_contains(g.out.str(), "That ship is not visible to you.");
+  g.set_god(true);
+  ctx.assert_dispatch_success(
+      g, {"examine", std::format("#{}", enemy_mine.value)});
+  ctx.assert_dispatch_success(g,
+                              {"examine", std::format("#{}", univ_ship.value)});
+  g.set_god(false);
+
   // 4. Switch, irradiated (!active), empty/newline descriptions, and JSON mode
   shipnum_t fac_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
                            .owned_by(1)

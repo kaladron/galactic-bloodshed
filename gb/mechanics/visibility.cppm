@@ -67,7 +67,7 @@ export PlanetMapViewModel build_planet_map(EntityManager& em, starnum_t snum,
                                            planetnum_t pnum, const Planet& p,
                                            player_t playernum,
                                            governor_t governor,
-                                           const Race& race);
+                                           const Race& race, bool god = false);
 
 /// Returns true if `player` (or `god`) has an active ship with visual sight
 /// in star system `snum`.
@@ -85,3 +85,11 @@ export [[nodiscard]] bool has_planet_sight(EntityManager& em, starnum_t snum,
 export [[nodiscard]] bool
 is_ship_visible_to(const Ship& ship, player_t viewer, bool god,
                    bool has_sight_at_location) noexcept;
+
+/// Overload routing ship visibility directly through a `ScopeContext` viewer.
+export [[nodiscard]] inline bool
+is_ship_visible_to(const Ship& ship, const ScopeContext& viewer,
+                   bool has_sight_at_location) noexcept {
+  return is_ship_visible_to(ship, viewer.player, viewer.god,
+                            has_sight_at_location);
+}

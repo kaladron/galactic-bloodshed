@@ -515,11 +515,32 @@ void test_tactical_orbits_and_argument_edge_cases() {
   }
   ctx.assert_dispatch_rejected(g, {"tactical", "#0"});
 
-  // Unexplored star at LEVEL_STAR
+  // Unexplored star at LEVEL_STAR: empty for mortal, populated for Deity;
+  // stealthed orbital enemy mines and hangar craft are hidden from mortals,
+  // and explicit #<foreign_ship> rejects without leaking existence.
+  (void)TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
+      .owned_by(player_t{2}, governor_t{1})
+      .named("StealthMine")
+      .in_planet_orbit(1, 1)
+      .build();
+  g.set_scope_planet(1, 1);
+  ctx.assert_dispatch_success(g, {"tactical"});
+  test::expect_false(g.out.str().contains("StealthMine"));
+  ctx.assert_dispatch_rejected(
+      g, {"tactical", std::format("#{}", ships.enemy_cruiser)});
+  test::expect_contains(g.out.str(), "no such ship");
+
   ctx.em.mutate_star(2, [](Star& s) { s.clear_explored_by(player_t{1}); });
   g.set_scope_star(2);
   ctx.assert_dispatch_success(g, {"tactical"});
   test::expect_true(g.out.str().empty());
+  g.set_god(true);
+  ctx.assert_dispatch_success(g, {"tactical"});
+  test::expect_contains(g.out.str(), "Vega Prime");
+  g.set_scope_planet(1, 1);
+  ctx.assert_dispatch_success(g, {"tactical"});
+  test::expect_contains(g.out.str(), "StealthMine");
+  g.set_god(false);
 
   std::println(std::cout,
                "  ✓ Orbital scopes and argument edge cases verified");

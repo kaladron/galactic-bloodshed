@@ -133,20 +133,26 @@ struct SectorStats {
 
 SectorStats accumulate_statistics(GameObj& g, const SectorMap& smap) {
   SectorStats stats;
+  const auto viewer = g.scope_context();
+  const bool can_see_crystals = viewer.can_see(g.race->discoveries.crystal ||
+                                               g.race->tech >= TECH_CRYSTAL);
 
   for (const auto& sect : smap) {
     player_t p = sect.get_owner();
     PlayerSectorStats& ps = (p == 0) ? stats.unowned : stats.players[p];
+    const int visible_mob = viewer.can_see_sector_details(sect)
+                                ? sect.get_mobilization().value()
+                                : 0;
 
     ps.eff += sect.get_eff();
-    ps.mob += sect.get_mobilization();
+    ps.mob += visible_mob;
     ps.res += sect.get_resource();
     ps.popn += sect.get_popn();
     ps.troops += sect.get_troops();
     ps.sect[sect.get_condition()]++;
     ps.t_sect++;
     stats.total_eff += sect.get_eff();
-    stats.total_mob += sect.get_mobilization();
+    stats.total_mob += visible_mob;
     stats.total_res += sect.get_resource();
     stats.total_popn += sect.get_popn();
     stats.total_troops += sect.get_troops();
@@ -155,7 +161,7 @@ SectorStats accumulate_statistics(GameObj& g, const SectorMap& smap) {
     if (sect.is_wasted()) {
       ps.wasted_sect++;
     }
-    if (sect.get_crystals() && g.race->tech >= TECH_CRYSTAL) {
+    if (sect.get_crystals() > 0 && can_see_crystals) {
       ps.crys++;
       stats.total_crys++;
     }
@@ -179,6 +185,7 @@ TopSectorLists find_top_sectors(GameObj& g, const SectorMap& smap,
                                 const PlayerFilter& filter,
                                 std::optional<SectorType> sector_type) {
   TopSectorLists tops;
+  const auto viewer = g.scope_context();
 
   for (const auto& sect : smap) {
     if (!sector_type || *sector_type == sect.get_condition()) {
@@ -189,9 +196,12 @@ TopSectorLists find_top_sectors(GameObj& g, const SectorMap& smap,
                {.coords = coords, .des = cond, .value = sect.get_resource()});
         insert(mode, tops.eff,
                {.coords = coords, .des = cond, .value = sect.get_eff()});
-        insert(
-            mode, tops.mob,
-            {.coords = coords, .des = cond, .value = sect.get_mobilization()});
+        if (viewer.can_see_sector_details(sect)) {
+          insert(mode, tops.mob,
+                 {.coords = coords,
+                  .des = cond,
+                  .value = sect.get_mobilization()});
+        }
         insert(mode, tops.frt,
                {.coords = coords, .des = cond, .value = sect.get_fert()});
         insert(mode, tops.popn,
@@ -243,7 +253,7 @@ void do_analysis(AnalysisViewModel& vm, GameObj& g, const PlayerFilter& filter,
                  Mode mode, std::optional<SectorType> sector_type,
                  starnum_t Starnum, planetnum_t Planetnum) {
   g.entity_manager.with_planet(Starnum, Planetnum, [&](const Planet& planet) {
-    if (!planet.info(g.player()).explored) {
+    if (!g.scope_context().can_see_planet(planet)) {
       return;
     }
 

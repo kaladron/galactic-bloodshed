@@ -100,7 +100,7 @@ build_star_entry(const GameObj& g, ScopeLevel level, const Star& star,
 
   return GB::presentation::OrbitStarEntry{
       .coords = coords,
-      .symbol_standout = star.is_explored_by(g.player()),
+      .symbol_standout = g.scope_context().can_see_star(star),
       .label_standout = star.is_inhabited_by(g.player()),
       .label = opts.show_star_names ? star.get_name() : std::string{},
   };
@@ -116,7 +116,7 @@ build_planet_entry(const GameObj& g, ScopeLevel level, const Planet& p,
                                  SYSTEMSIZE, vp.zoom)
           : project_orbit_coords(-vp.system_center, PLORBITSIZE, vp.zoom);
 
-  const bool explored = p.info(g.player()).explored;
+  const bool explored = g.scope_context().can_see_planet(p);
   std::optional<Percentage> compat = std::nullopt;
   if (opts.show_planet_names && r.governor(g.governor()).toggle.compat &&
       explored) {
@@ -148,10 +148,6 @@ build_ship_entry(const GameObj& g, EntityManager& em, const Place& where,
     case ShipType::OTYPE_GREEN:
       return std::nullopt;
     default:
-      if (ship.whatorbits() == ScopeLevel::LEVEL_UNIV &&
-          ship.owner() != g.player() && !g.god()) {
-        return std::nullopt;
-      }
       break;
   }
 
@@ -220,14 +216,18 @@ bool orbit(const command_t& argv, GameObj& g) {
         }
       }
       if (opts->show_ships) {
+        const auto viewer = g.scope_context();
         for (const Ship& s :
              ShipList::readonly(g.entity_manager, ScopeLevel::LEVEL_UNIV)) {
-          if (opts->suppress_id != s.number()) {
+          if (opts->suppress_id != s.number() &&
+              is_ship_visible_to(s, viewer, false)) {
             if (auto entry =
                     build_ship_entry(g, g.entity_manager, where, s, race, vp)) {
               vm.ships.push_back(*entry);
-              vm.ship_views.push_back(*GB::presentation::project_ship_view(
-                  g.entity_manager, g.scope_context(), s, &sight_ctx));
+              if (auto sv = GB::presentation::project_ship_view(
+                      g.entity_manager, viewer, s, &sight_ctx)) {
+                vm.ship_views.push_back(std::move(*sv));
+              }
             }
           }
         }
@@ -235,11 +235,12 @@ bool orbit(const command_t& argv, GameObj& g) {
       break;
     }
     case ScopeLevel::LEVEL_STAR: {
+      const auto viewer = g.scope_context();
       const auto& star = *g.entity_manager.peek_star(where.snum);
       vm.stars.push_back(
           build_star_entry(g, ScopeLevel::LEVEL_STAR, star, vp, *opts));
       vm.star_views.push_back(GB::presentation::project_star_view(
-          g.entity_manager, g.scope_context(), where.snum));
+          g.entity_manager, viewer, where.snum));
 
       for (const auto& p :
            PlanetList::readonly(g.entity_manager, where.snum, star)) {
@@ -248,23 +249,22 @@ bool orbit(const command_t& argv, GameObj& g) {
               g, ScopeLevel::LEVEL_STAR, p,
               star.get_planet_name(p.planet_order()), race, vp, *opts));
           vm.planet_views.push_back(GB::presentation::project_planet_view(
-              g.entity_manager, g.scope_context(), where.snum,
-              p.planet_order()));
+              g.entity_manager, viewer, where.snum, p.planet_order()));
         }
       }
       const bool iq =
           has_system_sight(g.entity_manager, where.snum, g.player(), g.god());
       if (opts->show_ships) {
         for (const Ship& s : ShipList::readonly(g.entity_manager, where.snum)) {
-          const bool is_enemy_mine =
-              s.owner() != g.player() && s.type() == ShipType::STYPE_MINE;
-          if (opts->suppress_id != s.number() && !is_enemy_mine &&
-              (s.owner() == g.player() || iq)) {
+          if (opts->suppress_id != s.number() &&
+              is_ship_visible_to(s, viewer, iq)) {
             if (auto entry =
                     build_ship_entry(g, g.entity_manager, where, s, race, vp)) {
               vm.ships.push_back(*entry);
-              vm.ship_views.push_back(*GB::presentation::project_ship_view(
-                  g.entity_manager, g.scope_context(), s, &sight_ctx));
+              if (auto sv = GB::presentation::project_ship_view(
+                      g.entity_manager, viewer, s, &sight_ctx)) {
+                vm.ship_views.push_back(std::move(*sv));
+              }
             }
           }
         }
@@ -272,26 +272,29 @@ bool orbit(const command_t& argv, GameObj& g) {
       break;
     }
     case ScopeLevel::LEVEL_PLAN: {
+      const auto viewer = g.scope_context();
       const auto& plan_star = *g.entity_manager.peek_star(where.snum);
       const auto& p = *g.entity_manager.peek_planet(where.snum, where.pnum);
       vm.planets.push_back(build_planet_entry(
           g, ScopeLevel::LEVEL_PLAN, p, plan_star.get_planet_name(where.pnum),
           race, vp, *opts));
       vm.planet_views.push_back(GB::presentation::project_planet_view(
-          g.entity_manager, g.scope_context(), where.snum, where.pnum));
+          g.entity_manager, viewer, where.snum, where.pnum));
 
       const bool iq = has_planet_sight(g.entity_manager, where.snum, where.pnum,
-                                       g.player());
+                                       g.player(), g.god());
       if (opts->show_ships) {
         for (const Ship& s :
              ShipList::readonly(g.entity_manager, where.snum, where.pnum)) {
           if (opts->suppress_id != s.number() && !s.is_landed() &&
-              (s.owner() == g.player() || iq)) {
+              is_ship_visible_to(s, viewer, iq)) {
             if (auto entry = build_ship_entry(g, g.entity_manager, where, s,
                                               race, vp, &p)) {
               vm.ships.push_back(*entry);
-              vm.ship_views.push_back(*GB::presentation::project_ship_view(
-                  g.entity_manager, g.scope_context(), s, &sight_ctx));
+              if (auto sv = GB::presentation::project_ship_view(
+                      g.entity_manager, viewer, s, &sight_ctx)) {
+                vm.ship_views.push_back(std::move(*sv));
+              }
             }
           }
         }

@@ -6,6 +6,7 @@
 module;
 
 import gb.entities;
+import gb.mechanics;
 import gb.presentation.planet_views;
 import gb.services;
 import std;
@@ -60,11 +61,19 @@ std::optional<SurveyRequest> parse_survey_location(const command_t& argv,
 }
 
 // Helper: Survey planet sectors (detailed sector-by-sector view)
-void survey_planet_sectors(GameObj& g, const Place& where,
+bool survey_planet_sectors(GameObj& g, const Place& where,
                            const std::string& range_arg, bool all) {
   const auto& race = *g.race;
+  const auto viewer = g.scope_context();
   const auto& star = *g.entity_manager.peek_star(where.snum);
   const auto& p = *g.entity_manager.peek_planet(where.snum, where.pnum);
+  if (g.ui_mode() == UiMode::ASCII && !viewer.can_see_planet(p) &&
+      !has_planet_sight(g.entity_manager, where.snum, where.pnum, g.player(),
+                        g.god())) {
+    g.out << std::format("You have not explored {} yet.\n",
+                         star.get_planet_name(where.pnum));
+    return false;
+  }
   const auto* smap = g.entity_manager.peek_sectormap(where.snum, where.pnum);
 
   // Determine sector range
@@ -75,7 +84,7 @@ void survey_planet_sectors(GameObj& g, const Place& where,
     auto coords = get4args(range_arg);
     if (!coords) {
       g.out << "Invalid coordinate format. Use: x,y or xl:xh,yl:yh\n";
-      return;
+      return true;
     }
     bounds = *coords;
   }
@@ -113,9 +122,11 @@ void survey_planet_sectors(GameObj& g, const Place& where,
         .owner = s.get_owner(),
         .eff = s.get_eff(),
         .fert = s.get_fert(),
-        .mobilization = s.get_mobilization(),
+        .mobilization = viewer.can_see_sector_details(s)
+                            ? std::optional<Percentage>{s.get_mobilization()}
+                            : std::nullopt,
         .crystals =
-            s.get_crystals() > 0 && (race.discoveries.crystal || race.God),
+            s.get_crystals() > 0 && viewer.can_see(race.discoveries.crystal),
         .resource = s.get_resource(),
         .popn = s.get_popn(),
         .troops = s.get_troops(),
@@ -123,20 +134,29 @@ void survey_planet_sectors(GameObj& g, const Place& where,
     });
   }
 
-  vm.planet = GB::presentation::project_planet_view(
-      g.entity_manager, g.scope_context(), where.snum, where.pnum);
-  vm.grid = GB::presentation::project_sector_grid_view(
-      g.entity_manager, g.scope_context(), where.snum, where.pnum,
-      all ? nullptr : &filter);
+  vm.planet = GB::presentation::project_planet_view(g.entity_manager, viewer,
+                                                    where.snum, where.pnum);
+  vm.grid = GB::presentation::project_sector_grid_view(g.entity_manager, viewer,
+                                                       where.snum, where.pnum,
+                                                       all ? nullptr : &filter);
 
   g.present(vm);
+  return true;
 }
 
 // Helper: Survey planet overview (conditions, stats, etc.)
-void survey_planet_overview(GameObj& g, const Place& where) {
+bool survey_planet_overview(GameObj& g, const Place& where) {
   const auto& race = *g.race;
+  const auto viewer = g.scope_context();
   const auto& star = *g.entity_manager.peek_star(where.snum);
   const auto& p = *g.entity_manager.peek_planet(where.snum, where.pnum);
+  if (g.ui_mode() == UiMode::ASCII && !viewer.can_see_planet(p) &&
+      !has_planet_sight(g.entity_manager, where.snum, where.pnum, g.player(),
+                        g.god())) {
+    g.out << std::format("You have not explored {} yet.\n",
+                         star.get_planet_name(where.pnum));
+    return false;
+  }
   const auto* smap = g.entity_manager.peek_sectormap(where.snum, where.pnum);
 
   sector_count_t crystal_count = 0;
@@ -145,7 +165,7 @@ void survey_planet_overview(GameObj& g, const Place& where) {
   for (const auto& s : *smap) {
     total_fert += s.get_fert();
     total_resource += s.get_resource();
-    if ((race.discoveries.crystal || race.God) && s.get_crystals() > 0) {
+    if (viewer.can_see(race.discoveries.crystal) && s.get_crystals() > 0) {
       ++crystal_count;
     }
   }
@@ -176,34 +196,41 @@ void survey_planet_overview(GameObj& g, const Place& where) {
       .popn = p.popn(),
       .maxpopn = p.maxpopn(),
       .slaved_to = p.slaved_to(),
-      .planet = GB::presentation::project_planet_view(
-          g.entity_manager, g.scope_context(), where.snum, where.pnum),
+      .planet = GB::presentation::project_planet_view(g.entity_manager, viewer,
+                                                      where.snum, where.pnum),
   };
   g.present(vm);
+  return true;
 }
 
 // Helper: Survey star system
-void survey_star(GameObj& g, const Place& where) {
+bool survey_star(GameObj& g, const Place& where) {
   const auto& race = *g.race;
+  const auto viewer = g.scope_context();
   const auto& star = *g.entity_manager.peek_star(where.snum);
+  if (g.ui_mode() == UiMode::ASCII && !viewer.can_see_star(star)) {
+    g.out << std::format("You have not explored {} yet.\n", star.get_name());
+    return false;
+  }
 
   std::optional<int> stability = std::nullopt;
-  if (race.tech >= TECH_SEE_STABILITY || race.God) {
+  if (viewer.can_see(race.tech >= TECH_SEE_STABILITY)) {
     stability = star.stability();
   }
 
   const GB::presentation::SurveyStarViewModel vm{
       .star_name = star.get_name(),
       .coordinates = star.coordinates(),
-      .is_god = race.God,
+      .is_god = viewer.god,
       .gravity = star.gravity(),
       .stability = stability,
       .temperature_class = star.temperature(),
       .planet_names = star.planet_names(),
-      .star = GB::presentation::project_star_view(
-          g.entity_manager, g.scope_context(), where.snum),
+      .star = GB::presentation::project_star_view(g.entity_manager, viewer,
+                                                  where.snum),
   };
   g.present(vm);
+  return true;
 }
 
 }  // namespace
@@ -218,15 +245,13 @@ bool survey(const command_t& argv, GameObj& g) {
   switch (req->where.level) {
     case ScopeLevel::LEVEL_PLAN:
       if (!req->range_arg.empty() || req->all_sectors) {
-        survey_planet_sectors(g, req->where, req->range_arg, req->all_sectors);
-      } else {
-        survey_planet_overview(g, req->where);
+        return survey_planet_sectors(g, req->where, req->range_arg,
+                                     req->all_sectors);
       }
-      return true;
+      return survey_planet_overview(g, req->where);
 
     case ScopeLevel::LEVEL_STAR:
-      survey_star(g, req->where);
-      return true;
+      return survey_star(g, req->where);
 
     case ScopeLevel::LEVEL_UNIV:
       g.present(GB::presentation::SurveyUniverseViewModel{});

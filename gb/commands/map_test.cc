@@ -172,12 +172,25 @@ void test_map_dispatch() {
   g.set_ui_mode(UiMode::ASCII);
   std::println(std::cout, "    ✓ Map in JSON mode succeeded");
 
-  // 2. Happy path: Map at planet scope (unstable star warning)
+  // 2. Happy path: Map at planet scope (unstable star warning requires
+  // TECH_SEE_STABILITY or Deity)
   g.set_scope_planet(2, 1);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"map"});
   test::expect_contains(g.out.str(),
                         "WARNING! This planet's primary is unstable.");
+  ctx.em.mutate_race(1, [](Race& r) { r.tech = 0.0; });
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"map"});
+  test::expect_false(
+      g.out.str().contains("WARNING! This planet's primary is unstable."));
+  g.set_god(true);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"map"});
+  test::expect_contains(g.out.str(),
+                        "WARNING! This planet's primary is unstable.");
+  g.set_god(false);
+  ctx.em.mutate_race(1, [](Race& r) { r.tech = 50.0; });
   std::println(std::cout, "    ✓ Map displayed unstable star warning");
 
   // 3. Happy path: Map at universe level falls back to orbit

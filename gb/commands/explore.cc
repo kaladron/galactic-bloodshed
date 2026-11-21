@@ -37,17 +37,18 @@ bool explore(const command_t& argv, GameObj& g) {
       .global_ap = sdata.get_AP(Playernum),
   };
 
+  const auto viewer = g.scope_context();
   for (const Star& star_ref : StarList::readonly(g.entity_manager)) {
     if (target_star && (*target_star != star_ref.star_id())) {
       continue;
     }
-    if (!star_ref.is_explored_by(Playernum)) {
+    if (!viewer.can_see_star(star_ref)) {
       continue;
     }
 
     GB::presentation::ExploreStarEntry star_entry{
         .star_name = star_ref.get_name(),
-        .stability = (g.race->tech >= TECH_SEE_STABILITY)
+        .stability = viewer.can_see(g.race->tech >= TECH_SEE_STABILITY)
                          ? std::optional<int>{star_ref.stability()}
                          : std::nullopt,
         .ap = star_ref.AP(Playernum),
@@ -60,7 +61,7 @@ bool explore(const command_t& argv, GameObj& g) {
       GB::presentation::ExplorePlanetRow row{
           .planet_order = pnum,
           .planet_name = star_ref.get_planet_name(pnum),
-          .explored = pinfo.explored,
+          .explored = viewer.can_see_planet(pl),
       };
       if (row.explored) {
         row.autorep = (pinfo.autorep != 0);
@@ -77,12 +78,12 @@ bool explore(const command_t& argv, GameObj& g) {
       }
       star_entry.planets.push_back(std::move(row));
       vm.planet_views.push_back(GB::presentation::project_planet_view(
-          g.entity_manager, g.scope_context(), star_ref.star_id(), pnum));
+          g.entity_manager, viewer, star_ref.star_id(), pnum));
     }
 
     vm.stars.push_back(std::move(star_entry));
     vm.star_views.push_back(GB::presentation::project_star_view(
-        g.entity_manager, g.scope_context(), star_ref.star_id()));
+        g.entity_manager, viewer, star_ref.star_id()));
   }
 
   g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);

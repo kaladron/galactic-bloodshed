@@ -14,16 +14,16 @@ module commands;
 
 namespace GB::commands {
 
-static void transfer_star_data(EntityManager& em, player_t donor_id,
+static void transfer_star_data(EntityManager& em, const ScopeContext& donor,
                                player_t recipient_id, Star& star) {
-  if (!star.is_explored_by(donor_id)) {
+  if (!donor.can_see_star(star)) {
     return;
   }
   star.mark_explored_by(recipient_id);
   const starnum_t star_id = star.get_struct().star_id;
   for (auto planet_handle : PlanetList(em, star_id, star)) {
     auto& planet = *planet_handle;
-    if (planet.info(donor_id).explored) {
+    if (donor.can_see_planet(planet)) {
       planet.info(recipient_id).explored = 1;
     }
   }
@@ -31,6 +31,7 @@ static void transfer_star_data(EntityManager& em, player_t donor_id,
 
 bool dump(const command_t& argv, GameObj& g) {
   const player_t donor_id = g.player();
+  const auto donor = g.scope_context();
   const auto target = g.resolve_active_player(argv[1]);
   if (!target) return false;
   const player_t recipient_id = *target;
@@ -42,19 +43,18 @@ bool dump(const command_t& argv, GameObj& g) {
   // Transfer all planet and star knowledge to the recipient
   if (argv.size() < 3) {
     for (auto current_star_handle : StarList(g.entity_manager)) {
-      transfer_star_data(g.entity_manager, donor_id, recipient_id,
+      transfer_star_data(g.entity_manager, donor, recipient_id,
                          *current_star_handle);
     }
   } else { /* list of places given */
     for (const auto& place_arg : argv | std::views::drop(2)) {
-      auto where =
-          Place::resolve(g.entity_manager, g.scope_context(), place_arg, true);
+      auto where = Place::resolve(g.entity_manager, donor, place_arg);
       if (!where) {
         vm.errors.push_back(format_place_error(where.error()));
       } else if (where->level != ScopeLevel::LEVEL_UNIV &&
                  where->level != ScopeLevel::LEVEL_SHIP) {
         g.entity_manager.mutate_star(where->snum, [&](Star& current_star) {
-          transfer_star_data(g.entity_manager, donor_id, recipient_id,
+          transfer_star_data(g.entity_manager, donor, recipient_id,
                              current_star);
         });
       }

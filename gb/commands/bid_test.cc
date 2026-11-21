@@ -149,10 +149,18 @@ int main() {
     test::expect_eq(c_after->star_to(), starnum_t{1});
     test::expect_eq(c_after->planet_to(), planetnum_t{1});
 
-    // Listing at PLAN scope now includes player 1's destination (Sol/Earth ->
-    // "Sol /Eart")
+    // Listing at PLAN scope hides player 2's destination on lot 3 from mortals,
+    // reveals player 1's destination on lot 1, and reveals all to Deity
+    ctx.em.mutate_commod(3, [](Commod& c) {
+      c.place_bid(2, 1, 200, 1, 2);  // Sol/Mars -> "Sol /Mars"
+    });
     ctx.assert_dispatch_success(g, {"bid"});
     test::expect_contains(g.out.str(), "Sol /Eart");
+    test::expect_false(g.out.str().contains("Sol /Mars"));
+    g.set_god(true);
+    ctx.assert_dispatch_success(g, {"bid"});
+    test::expect_contains(g.out.str(), "Sol /Mars");
+    g.set_god(false);
 
     g.set_ui_mode(UiMode::JSON);
     ctx.assert_dispatch_success(g, {"bid", "r"});

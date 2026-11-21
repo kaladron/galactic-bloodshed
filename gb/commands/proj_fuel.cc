@@ -55,7 +55,11 @@ const Ship* validate_fuel_ship(const command_t& argv, GameObj& g) {
     g.out << "Ship not found.\n";
     return nullptr;
   }
-  if (ship->owner() != g.player()) {
+  if (!ship->alive()) {
+    g.out << "Ship not found.\n";
+    return nullptr;
+  }
+  if (!g.scope_context().owns_ship(*ship)) {
     g.out << "You do not own this ship.\n";
     return nullptr;
   }
@@ -111,26 +115,42 @@ resolve_fuel_trip_target(const command_t& argv, GameObj& g, const Ship& ship) {
   }
 
   UniverseCoordinates dest_coords{};
+  const auto viewer = g.scope_context();
   if (tmpdest.level == ScopeLevel::LEVEL_SHIP) {
-    const auto* tmpship = g.entity_manager.peek_ship(tmpdest.shipno);
-    Ship mutable_target(tmpship->get_struct());
-    if (!followable(g.entity_manager, ship, mutable_target)) {
-      g.out << "The ship's destination is out of range.\n";
+    const Ship* tmpship = nullptr;
+    try {
+      tmpship = g.entity_manager.peek_ship(tmpdest.shipno);
+    } catch (const EntityNotFoundError&) {
+      g.out << "Ship not found.\n";
       return std::nullopt;
     }
-    if (tmpship->owner() != g.player()) {
+    if (!tmpship->alive()) {
+      g.out << "Ship not found.\n";
+      return std::nullopt;
+    }
+    if (!viewer.owns_ship(*tmpship)) {
       g.out << "Nice try.\n";
+      return std::nullopt;
+    }
+    Ship mutable_target(tmpship->get_struct());
+    if (!viewer.god && !followable(g.entity_manager, ship, mutable_target)) {
+      g.out << "The ship's destination is out of range.\n";
       return std::nullopt;
     }
     dest_coords = tmpship->coordinates();
   } else if (tmpdest.level == ScopeLevel::LEVEL_PLAN) {
     const auto& dest_star = *g.entity_manager.peek_star(tmpdest.snum);
     if (ship.storbits() != tmpdest.snum &&
-        !dest_star.is_explored_by(ship.owner())) {
+        !viewer.can_see(dest_star.is_explored_by(ship.owner()))) {
       g.out << "You haven't explored the destination system.\n";
       return std::nullopt;
     }
     const auto& p = *g.entity_manager.peek_planet(tmpdest.snum, tmpdest.pnum);
+    if (!viewer.can_see_planet(p)) {
+      g.out << std::format("You have not explored {} yet.\n",
+                           dest_star.get_planet_name(tmpdest.pnum));
+      return std::nullopt;
+    }
     dest_coords = p.absolute_coordinates(dest_star);
   } else if (tmpdest.level == ScopeLevel::LEVEL_STAR) {
     const auto& dest_star = *g.entity_manager.peek_star(tmpdest.snum);

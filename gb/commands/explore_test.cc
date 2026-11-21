@@ -87,7 +87,8 @@ void test_explore_dispatch() {
   test::expect_false(output.contains("Centauri"));
   std::println(std::cout, "    ✓ explore global census succeeded");
 
-  // 2. Low tech: stability hidden as (/?/?)
+  // 2. Low tech: stability hidden as (/?/?) for mortals, visible with
+  // unexplored stars for Deity
   ctx.em.mutate_race(player_t{1}, [](Race& race) { race.tech = 10.0; });
   ctx.setup_game_obj(g, 1, 1);
   g.set_scope_univ();
@@ -95,6 +96,10 @@ void test_explore_dispatch() {
   output = g.out.str();
   test::expect_contains(output, "Sol (/?/?)[20]");
   test::expect_contains(output, "Earth");
+  g.set_god(true);
+  ctx.assert_dispatch_success(g, {"explore"});
+  test::expect_contains(g.out.str(), "Centauri (20)");
+  g.set_god(false);
   std::println(std::cout, "    ✓ explore /Sol low-tech stability succeeded");
 
   // 3. JSON mode rendering

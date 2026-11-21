@@ -1144,6 +1144,44 @@ void test_canonical_ship_view_projectors() {
       ctx.em, viewer1, *ctx.em.peek_ship(foreign_invis_id), &sight);
   test::expect_false(foreign_invis_proj.has_value());
 
+  // Foreign hangar-berthed craft (whatorbits == LEVEL_SHIP) -> hidden from
+  // mortals even with system sight, visible to Deity
+  const auto foreign_carrier_id =
+      TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
+          .owned_by(2)
+          .in_star_orbit(1)
+          .with_max_hanger(100)
+          .build();
+  const auto foreign_hangar_id =
+      TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+          .owned_by(2)
+          .in_star_orbit(1)
+          .build();
+  test::expect_true(
+      ctx.em.dock_carrier(foreign_hangar_id, foreign_carrier_id).has_value());
+  test::expect_false(
+      GB::presentation::project_ship_view(
+          ctx.em, viewer1, *ctx.em.peek_ship(foreign_hangar_id), &sight)
+          .has_value());
+  const ScopeContext god_viewer{.player = 1, .governor = 1, .god = true};
+  const auto god_hangar_proj = GB::presentation::project_ship_view(
+      ctx.em, god_viewer, *ctx.em.peek_ship(foreign_hangar_id), &sight);
+  test::expect_true(god_hangar_proj.has_value());
+  test::expect_eq(god_hangar_proj->location->dest_shipno, foreign_carrier_id);
+
+  // Foreign spaceborne ship with private intercept order (whatdest ==
+  // LEVEL_SHIP, !docked) hides dest_shipno from mortals while exposing it to
+  // Deity
+  ctx.em.mutate_ship(foreign_star_ship_id,
+                     [&](Ship& s) { s.set_ship_destination(s1_id); });
+  const auto intercept_mortal_proj = GB::presentation::project_ship_view(
+      ctx.em, viewer1, *ctx.em.peek_ship(foreign_star_ship_id), &sight);
+  test::expect_true(intercept_mortal_proj.has_value());
+  test::expect_false(intercept_mortal_proj->location->dest_shipno.has_value());
+  const auto intercept_god_proj = GB::presentation::project_ship_view(
+      ctx.em, god_viewer, *ctx.em.peek_ship(foreign_star_ship_id), &sight);
+  test::expect_eq(intercept_god_proj->location->dest_shipno, s1_id);
+
   // 5. SpaceMirrorShip targeting and orientation
   const auto mirror_id = TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR)
                              .owned_by(1)

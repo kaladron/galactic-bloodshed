@@ -11,6 +11,7 @@
 module;
 
 import gb.entities;
+import gb.mechanics;
 import gb.presentation;
 import gb.services;
 import std;
@@ -80,8 +81,7 @@ public:
 
   virtual TacticalParams get_tactical_params(const Race&) const = 0;
 
-  virtual bool should_report_tactical(player_t player_num,
-                                      governor_t governor) const = 0;
+  virtual bool should_report_tactical(const ScopeContext& viewer) const = 0;
 
   TacticalReportEntry build_report_entry(
       GameObj& g, TacticalContext& ctx, const Race& race,
@@ -111,8 +111,7 @@ public:
 
   TacticalParams get_tactical_params(const Race& race) const override;
 
-  bool should_report_tactical(player_t player_num,
-                              governor_t governor) const override;
+  bool should_report_tactical(const ScopeContext& viewer) const override;
 };
 
 class PlanetTacticalItem : public TacticalItem {
@@ -136,8 +135,7 @@ public:
 
   TacticalParams get_tactical_params(const Race& race) const override;
 
-  bool should_report_tactical(player_t player_num,
-                              governor_t governor) const override;
+  bool should_report_tactical(const ScopeContext& viewer) const override;
 };
 
 /* Add a ship to the tactical item list if not already present */
@@ -153,8 +151,7 @@ void add_tactical_ship(std::vector<std::unique_ptr<TacticalItem>>& items,
 
 void plan_get_tactical_items(GameObj& g,
                              std::vector<std::unique_ptr<TacticalItem>>& items,
-                             player_t player_num, starnum_t snum,
-                             planetnum_t pnum) {
+                             player_t, starnum_t snum, planetnum_t pnum) {
   const auto* star = g.entity_manager.peek_star(snum);
   if (!star) return;
 
@@ -165,7 +162,7 @@ void plan_get_tactical_items(GameObj& g,
   items.push_back(std::make_unique<PlanetTacticalItem>(
       planet, planet->absolute_coordinates(*star)));
 
-  if (planet->info(player_num).explored) {
+  if (g.scope_context().can_see_planet(*planet)) {
     for (const Ship& ship :
          ShipList::readonly_on_planet(g.entity_manager, snum, pnum)) {
       add_tactical_ship(items, &ship);
@@ -179,7 +176,7 @@ void star_get_tactical_items(GameObj& g,
   const auto* star = g.entity_manager.peek_star(snum);
   if (!star) return;
 
-  if (star->is_explored_by(player_num)) {
+  if (g.scope_context().can_see_star(*star)) {
     for (const Ship& ship :
          ShipList::readonly_in_star(g.entity_manager, snum)) {
       add_tactical_ship(items, &ship);
@@ -265,11 +262,12 @@ bool is_valid_ship_target(const Ship& s, const GameObj& g,
   if (!ctx.shiplist.empty() && !listed(s.type(), ctx.shiplist)) {
     return false;
   }
-  if (s.owner() == g.player() && s.is_authorized_for(g.governor())) {
+  if (!g.god() && s.owner() == g.player() &&
+      s.is_authorized_for(g.governor())) {
     return false;
   }
-  if (!s.alive() || s.type() == ShipType::OTYPE_CANIST ||
-      s.type() == ShipType::OTYPE_GREEN) {
+  if (!is_ship_visible_to(s, g.scope_context(), true) ||
+      s.type() == ShipType::OTYPE_CANIST || s.type() == ShipType::OTYPE_GREEN) {
     return false;
   }
   if (ctx.enemies_only && race.is_allied_with(s.owner())) {
@@ -356,11 +354,11 @@ TacticalParams ShipTacticalItem::get_tactical_params(const Race&) const {
   return params;
 }
 
-bool ShipTacticalItem::should_report_tactical(player_t player_num,
-                                              governor_t governor) const {
+bool ShipTacticalItem::should_report_tactical(
+    const ScopeContext& viewer) const {
   const auto& s = *ship_;
-  return s.alive() && s.owner() == player_num &&
-         s.is_authorized_for(governor) && s.has_sight();
+  return s.alive() && viewer.can_command_ship(s) &&
+         viewer.can_see(s.has_sight());
 }
 
 void PlanetTacticalItem::populate_header(TacticalReportEntry& entry, GameObj& g,
@@ -402,9 +400,9 @@ TacticalParams PlanetTacticalItem::get_tactical_params(const Race& race) const {
   };
 }
 
-bool PlanetTacticalItem::should_report_tactical(player_t player_num,
-                                                governor_t) const {
-  return planet_->info(player_num).numsectsowned != 0;
+bool PlanetTacticalItem::should_report_tactical(
+    const ScopeContext& viewer) const {
+  return viewer.can_see(planet_->info(viewer.player).numsectsowned != 0);
 }
 
 void generate_tactical_reports(
@@ -420,8 +418,9 @@ void generate_tactical_reports(
   std::flat_set<shipnum_t> ship_ids;
   std::flat_set<std::pair<starnum_t, planetnum_t>> planet_ids;
 
+  const auto viewer = g.scope_context();
   for (const auto& item : items) {
-    if (!item->should_report_tactical(g.player(), g.governor())) {
+    if (!item->should_report_tactical(viewer)) {
       continue;
     }
     TacticalParams params = item->get_tactical_params(*race);
@@ -514,7 +513,7 @@ bool collect_explicit_ships_tactical(
     const shipnum_t shipno{*raw_shipno};
     const auto* ship =
         (*raw_shipno >= 1) ? try_peek_ship(g.entity_manager, shipno) : nullptr;
-    if (!ship) {
+    if (!ship || !ship->alive() || !g.scope_context().owns_ship(*ship)) {
       g.out << std::format("tactical: no such ship #{} \n", shipno);
       return false;
     }

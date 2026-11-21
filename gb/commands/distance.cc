@@ -14,9 +14,38 @@ module commands;
 
 namespace GB::commands {
 
+static std::optional<Place> resolve_distance_place(GameObj& g,
+                                                   std::string_view arg) {
+  const auto viewer = g.scope_context();
+  auto res = Place::resolve(g.entity_manager, viewer, arg, false);
+  if (res) {
+    return *res;
+  }
+  if (res.error().kind == PlaceErrorKind::DontOwnShip) {
+    if (const auto shipno = string_to_shipnum(arg)) {
+      try {
+        if (const auto* s = g.entity_manager.peek_ship(*shipno);
+            s != nullptr && s->alive()) {
+          g.out << "Nice try.\n";
+          return std::nullopt;
+        }
+      } catch (const EntityNotFoundError&) {
+      }
+    }
+  } else if (res.error().kind == PlaceErrorKind::StarUnexplored) {
+    if (auto star_only = Place::resolve(g.entity_manager, viewer, arg, true);
+        star_only && star_only->level == ScopeLevel::LEVEL_STAR) {
+      return *star_only;
+    }
+  }
+  g.out << format_place_error(res.error());
+  g.out << std::format("Bad scope '{}'\n", arg);
+  return std::nullopt;
+}
+
 static std::optional<UniverseCoordinates>
-resolve_scope_coords(const Place& place, player_t player, EntityManager& em,
-                     GameObj& g) {
+resolve_scope_coords(const Place& place, EntityManager& em, GameObj& g) {
+  const auto viewer = g.scope_context();
   switch (place.level) {
     case ScopeLevel::LEVEL_SHIP: {
       const Ship* ship = nullptr;
@@ -26,7 +55,7 @@ resolve_scope_coords(const Place& place, player_t player, EntityManager& em,
         g.out << "Ship not found.\n";
         return std::nullopt;
       }
-      if (ship->owner() != player) {
+      if (!viewer.owns_ship(*ship)) {
         g.out << "Nice try.\n";
         return std::nullopt;
       }
@@ -35,6 +64,13 @@ resolve_scope_coords(const Place& place, player_t player, EntityManager& em,
     case ScopeLevel::LEVEL_PLAN: {
       const auto& p = *em.peek_planet(place.snum, place.pnum);
       const auto& star = *em.peek_star(place.snum);
+      if (!viewer.can_see_star(star) || !viewer.can_see_planet(p)) {
+        g.out << std::format("You have not explored {} yet.\n",
+                             !viewer.can_see_star(star)
+                                 ? star.get_name()
+                                 : star.get_planet_name(place.pnum));
+        return std::nullopt;
+      }
       return p.absolute_coordinates(star);
     }
     case ScopeLevel::LEVEL_STAR: {
@@ -53,29 +89,15 @@ bool distance(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  auto from_res =
-      Place::resolve(g.entity_manager, g.scope_context(), argv[1], true);
-  if (!from_res) {
-    g.out << format_place_error(from_res.error());
-    g.out << std::format("Bad scope '{}'\n", argv[1]);
-    return false;
-  }
-  auto to_res =
-      Place::resolve(g.entity_manager, g.scope_context(), argv[2], true);
-  if (!to_res) {
-    g.out << format_place_error(to_res.error());
-    g.out << std::format("Bad scope '{}'\n", argv[2]);
-    return false;
-  }
-  const Place& from = *from_res;
-  const Place& to = *to_res;
+  const auto from_res = resolve_distance_place(g, argv[1]);
+  if (!from_res) return false;
+  const auto to_res = resolve_distance_place(g, argv[2]);
+  if (!to_res) return false;
 
-  const auto from_coords =
-      resolve_scope_coords(from, g.player(), g.entity_manager, g);
+  const auto from_coords = resolve_scope_coords(*from_res, g.entity_manager, g);
   if (!from_coords) return false;
 
-  const auto to_coords =
-      resolve_scope_coords(to, g.player(), g.entity_manager, g);
+  const auto to_coords = resolve_scope_coords(*to_res, g.entity_manager, g);
   if (!to_coords) return false;
 
   g.present(GB::presentation::make_output_message(

@@ -28,16 +28,25 @@ bool map(const command_t& argv, GameObj& g) {
       return false;
     case ScopeLevel::LEVEL_PLAN: {
       const auto& p = *g.entity_manager.peek_planet(where->snum, where->pnum);
+      const auto viewer = g.scope_context();
+      if (g.ui_mode() == UiMode::ASCII && !viewer.can_see_planet(p) &&
+          !has_planet_sight(g.entity_manager, where->snum, where->pnum,
+                            g.player(), g.god())) {
+        const auto& star = *g.entity_manager.peek_star(where->snum);
+        g.out << std::format("You have not explored {} yet.\n",
+                             star.get_planet_name(where->pnum));
+        return false;
+      }
       auto ascii_map =
           build_planet_map(g.entity_manager, where->snum, where->pnum, p,
-                           g.player(), g.governor(), *g.race);
+                           g.player(), g.governor(), *g.race, g.god());
       ascii_map.use_color = g.color();
       g.present(GB::presentation::PlanetMapOutputViewModel{
           .ascii_map = std::move(ascii_map),
           .planet = GB::presentation::project_planet_view(
-              g.entity_manager, g.scope_context(), where->snum, where->pnum),
+              g.entity_manager, viewer, where->snum, where->pnum),
           .sectors = GB::presentation::project_sector_grid_view(
-              g.entity_manager, g.scope_context(), where->snum, where->pnum),
+              g.entity_manager, viewer, where->snum, where->pnum),
       });
       return true;
     }

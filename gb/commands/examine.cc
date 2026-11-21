@@ -7,6 +7,7 @@ module;
 
 import std;
 import gb.entities;
+import gb.mechanics;
 import gb.presentation;
 import gb.services;
 
@@ -29,17 +30,28 @@ bool examine(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  if (ship->whatorbits() == ScopeLevel::LEVEL_UNIV || ship->storbits() == 0) {
-    g.out << "That ship is not visible to you.\n";
+  if (!ship->alive()) {
+    g.out << "Ship not found.\n";
     return false;
   }
-  const bool visible =
-      g.entity_manager.with_star(ship->storbits(), [&](const Star& star) {
-        return star.is_inhabited_by(g.player());
-      });
-  if (!visible) {
-    g.out << "That ship is not visible to you.\n";
-    return false;
+
+  const auto viewer = g.scope_context();
+  if (!viewer.god) {
+    if (ship->whatorbits() == ScopeLevel::LEVEL_UNIV || ship->storbits() == 0) {
+      g.out << "That ship is not visible to you.\n";
+      return false;
+    }
+    const bool inhabited =
+        g.entity_manager.with_star(ship->storbits(), [&](const Star& star) {
+          return star.is_inhabited_by(g.player());
+        });
+    const bool has_sight =
+        inhabited &&
+        has_system_sight(g.entity_manager, ship->storbits(), g.player(), false);
+    if (!inhabited || !is_ship_visible_to(*ship, viewer, has_sight)) {
+      g.out << "That ship is not visible to you.\n";
+      return false;
+    }
   }
 
   GB::presentation::ExamineViewModel vm{
@@ -53,7 +65,11 @@ bool examine(const command_t& argv, GameObj& g) {
   });
 
   if (!ship->examined() && !g.entity_manager.is_read_only()) {
-    g.deduct_ap(ship->storbits(), APcount);
+    if (ship->storbits() != 0) {
+      g.deduct_ap(ship->storbits(), APcount);
+    } else {
+      g.deduct_univ_ap(APcount);
+    }
     g.entity_manager.mutate_ship(*shipno, [](Ship& s) { s.examined() = 1; });
   }
 

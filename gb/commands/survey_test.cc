@@ -358,6 +358,7 @@ void test_survey_sector_presence_crystals_and_cloaking() {
     r.discoveries.crystal = false;
     r.God = true;
   });
+  g.set_god(true);
   g.out.str("");
   g.out.clear();
   ctx.assert_dispatch_success(g, {"survey"});
@@ -374,6 +375,22 @@ void test_survey_sector_presence_crystals_and_cloaking() {
   g.out.clear();
   ctx.assert_dispatch_success(g, {"survey", "0:0,0:0"});
   test::expect_contains(g.out.str(), std::format(R"("id":{})", last_probe_id));
+
+  // Foreign sector mobilization is redacted for mortals and visible to Deity
+  ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
+    smap.get({1, 0}).set_owner(2);
+    smap.get({1, 0}).set_mobilization(77);
+  });
+  g.set_god(false);
+  g.set_scope_planet(1, 1);
+  g.set_ui_mode(GB::presentation::UiMode::ASCII);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"survey", "1:1,0:0"});
+  test::expect_false(g.out.str().contains("77"));
+  g.set_god(true);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"survey", "1:1,0:0"});
+  test::expect_contains(g.out.str(), "77");
 
   // Cloaked sector rendering branch in render_survey_sectors
   GB::presentation::SurveySectorViewModel cloaked_vm{
@@ -406,6 +423,7 @@ void test_survey_star_stability_and_god_branches() {
 
   // Low tech with God sees stability and quoted planet names
   ctx.em.mutate_race(1, [](Race& r) { r.God = true; });
+  g.set_god(true);
   constexpr std::array<std::pair<int, std::string_view>, 5> kStages = {{
       {10, "stable"},
       {30, "unstable"},

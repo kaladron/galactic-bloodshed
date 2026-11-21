@@ -669,7 +669,9 @@ std::optional<ShipView> project_ship_view(EntityManager& em,
       .pnum = pnum,
       .docked = ship.is_docked(),
       .landed = ship.is_landed(),
-      .dest_shipno = ship.destshipno(),
+      .dest_shipno = (viewer.owns_ship(ship) || ship.is_docked())
+                         ? ship.destshipno()
+                         : std::nullopt,
       .land_coords = ship.land_coords(),
       .coordinates = ship.coordinates(),
       .orbits_path = dispshiploc_brief(em, ship),

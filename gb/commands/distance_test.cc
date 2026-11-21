@@ -145,10 +145,20 @@ void test_distance_dispatch() {
   std::println(std::cout, "    ✓ distance rejected invalid destination scope");
 
   // 13. Happy path: Cross-quadrant negative coordinates (300,400) to
-  // (-300,-400) -> 1000
+  // (-300,-400) -> 1000 (even when Antares is unexplored, while unexplored
+  // planets do not leak coordinates or planet names to mortals)
+  ctx.em.mutate_star(3, [](Star& s) { s.clear_explored_by(player_t{1}); });
+  ctx.em.mutate_planet(3, 1,
+                       [](Planet& p) { p.info(player_t{1}).explored = 0; });
   g.out.str("");
   ctx.assert_dispatch_success(g, {"distance", "/Vega", "/Antares"});
   test::expect_contains(g.out.str(), "Distance = 1000");
+  ctx.assert_dispatch_rejected(
+      g, {"distance", "/Vega", "/Antares/GuessPlanetName"});
+  test::expect_contains(g.out.str(), "You have not explored Antares yet.");
+  g.set_god(true);
+  ctx.assert_dispatch_success(g, {"distance", s1_arg, s3_arg});
+  g.set_god(false);
   std::println(
       std::cout,
       "    ✓ cross-quadrant negative coordinates calculated accurately");

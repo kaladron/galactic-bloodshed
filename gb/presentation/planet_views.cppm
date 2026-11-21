@@ -187,7 +187,7 @@ struct SurveySectorRow {
   player_t owner{0};
   Percentage eff{0};
   Percentage fert{0};
-  Percentage mobilization{0};
+  std::optional<Percentage> mobilization{std::nullopt};
   bool crystals{false};
   resource_t resource{0};
   population_t popn{0};

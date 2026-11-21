@@ -268,6 +268,11 @@ void test_orbit_visibility_and_filtering() {
           .owned_by(2, 1)
           .in_planet_orbit(1, 1, UniverseCoordinates{105.0, 205.0})
           .build();
+  const auto plan_mine_id =
+      TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
+          .owned_by(2, 1)
+          .in_planet_orbit(1, 1, UniverseCoordinates{105.0, 205.0})
+          .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -300,21 +305,40 @@ void test_orbit_visibility_and_filtering() {
   ctx.assert_dispatch_success(g, {"orbit"});
   test::expect_false(g.out.str().contains(std::format("f #{}", fighter_id)));
 
-  // God mode restores sight in star system without crewed ships
+  // God mode restores sight in star system without crewed ships and reveals
+  // enemy space mines + unexplored planet types
   g.set_god(true);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"orbit"});
   test::expect_contains(g.out.str(), std::format("f #{}", fighter_id));
+  test::expect_contains(g.out.str(), std::format("+ #{}", mine2_id));
+  test::expect_false(g.out.str().contains("? HiddenWorld"));
   g.set_god(false);
 
-  // 3. Planet scope: landed ship is hidden; enemy ship is visible
-  // when #3 has sight, hidden when #3 has no crew, and -s / -3 flags work.
+  // 3. Planet scope: landed ship and enemy orbital mine are hidden (and do not
+  // crash in ASCII or JSON mode); enemy fighter is visible when #3 has sight,
+  // hidden when #3 has no crew, and -s / -3 flags work.
   g.set_scope_planet(1, 1);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"orbit"});
   test::expect_contains(g.out.str(), "s #3");
   test::expect_contains(g.out.str(), std::format("f #{}", plan_id));
+  test::expect_false(g.out.str().contains(std::format("#{}", plan_mine_id)));
   test::expect_false(g.out.str().contains(std::format("#{}", land_id)));
+
+  g.set_ui_mode(UiMode::JSON);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"orbit"});
+  test::expect_false(
+      g.out.str().contains(std::format(R"("id":{})", plan_mine_id)));
+  g.set_ui_mode(UiMode::ASCII);
+
+  // Deity at planet scope sees the enemy orbital mine without needing #3 crew
+  g.set_god(true);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"orbit"});
+  test::expect_contains(g.out.str(), std::format("+ #{}", plan_mine_id));
+  g.set_god(false);
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"orbit", "-3"});

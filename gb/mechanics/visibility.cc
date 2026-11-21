@@ -49,20 +49,19 @@ struct LandedShipGrid {
 LandedShipGrid scan_planet_ships_for_map(EntityManager& em, starnum_t snum,
                                          planetnum_t pnum, const Planet& p,
                                          const SectorMap& smap,
-                                         player_t playernum,
-                                         governor_t governor,
+                                         const ScopeContext& viewer,
                                          const Race& race) {
   LandedShipGrid grid{};
-  if (race.governor(governor).toggle.geography) {
+  if (race.governor(viewer.governor).toggle.geography) {
     return grid;
   }
-  grid.has_visual_iq = p.info(playernum).numsectsowned > 0;
+  grid.has_visual_iq = viewer.can_see(p.info(viewer.player).numsectsowned > 0);
   for (const Ship& s : ShipList::readonly_on_planet(em, snum, pnum)) {
-    if (s.owner() == playernum && s.is_authorized_for(governor) &&
-        s.has_sight()) {
+    if (viewer.can_command_ship(s) && s.has_sight()) {
       grid.has_visual_iq = true;
     }
-    if (s.is_landed() && smap.in_bounds(s.land_coords())) {
+    if (s.is_landed() && smap.in_bounds(s.land_coords()) &&
+        is_ship_visible_to(s, viewer, true)) {
       grid.shiplocs[s.land_coords()] = s.type_letter();
     }
   }
@@ -88,13 +87,14 @@ PlanetMapCell build_map_sector_cell(player_t playernum, governor_t governor,
 }
 
 std::vector<PlanetAlienPresence>
-collect_planet_aliens(const Planet& p, player_t playernum, const Race& race) {
+collect_planet_aliens(const Planet& p, const ScopeContext& viewer,
+                      const Race& race) {
   std::vector<PlanetAlienPresence> aliens;
-  if (!p.explored() && race.tech < TECH_EXPLORE) {
+  if (!viewer.can_see(p.explored() || race.tech >= TECH_EXPLORE)) {
     return aliens;
   }
   for (const auto& [i, info] : p.info_map()) {
-    if (info.numsectsowned != 0 && i != playernum) {
+    if (info.numsectsowned != 0 && i != viewer.player) {
       aliens.push_back(PlanetAlienPresence{
           .player = i,
           .at_war = race.is_at_war_with(i),
@@ -109,11 +109,16 @@ collect_planet_aliens(const Planet& p, player_t playernum, const Race& race) {
 PlanetMapViewModel build_planet_map(EntityManager& em, const starnum_t snum,
                                     const planetnum_t pnum, const Planet& p,
                                     const player_t playernum,
-                                    const governor_t governor,
-                                    const Race& race) {
+                                    const governor_t governor, const Race& race,
+                                    const bool god) {
+  const ScopeContext viewer{
+      .player = playernum,
+      .governor = governor,
+      .god = god || race.God,
+  };
   const auto& smap = *em.peek_sectormap(snum, pnum);
-  const LandedShipGrid grid = scan_planet_ships_for_map(
-      em, snum, pnum, p, smap, playernum, governor, race);
+  const LandedShipGrid grid =
+      scan_planet_ships_for_map(em, snum, pnum, p, smap, viewer, race);
 
   std::vector<PlanetMapCell> sectors;
   sectors.reserve(static_cast<std::size_t>(smap.num_sectors()));
@@ -125,7 +130,8 @@ PlanetMapViewModel build_planet_map(EntityManager& em, const starnum_t snum,
 
   const auto& star = *em.peek_star(snum);
   const auto& pinfo = p.info(playernum);
-  const bool aliens_unknown = (!p.explored() && race.tech < TECH_EXPLORE);
+  const bool aliens_unknown =
+      !viewer.can_see(p.explored() || race.tech >= TECH_EXPLORE);
   const population_t effective_maxpopn = static_cast<population_t>(
       std::lround(0.01 * (100.0 - p.toxic()) * p.maxpopn()));
 
@@ -137,7 +143,7 @@ PlanetMapViewModel build_planet_map(EntityManager& em, const starnum_t snum,
       .is_metamorph = race.Metamorph,
       .sectors_owned = pinfo.numsectsowned,
       .aliens_unknown = aliens_unknown,
-      .aliens = collect_planet_aliens(p, playernum, race),
+      .aliens = collect_planet_aliens(p, viewer, race),
       .guns = pinfo.guns,
       .mob_points = pinfo.mob_points,
       .comread = pinfo.comread,
@@ -158,7 +164,8 @@ PlanetMapViewModel build_planet_map(EntityManager& em, const starnum_t snum,
       .newtax = pinfo.newtax,
       .est_production = pinfo.est_production,
       .slaved_to = p.slaved_to(),
-      .primary_unstable = star.stability() > 50,
+      .primary_unstable = viewer.can_see(race.tech >= TECH_SEE_STABILITY) &&
+                          star.stability() > 50,
   };
 }
 
@@ -207,7 +214,8 @@ bool is_ship_visible_to(const Ship& ship, const player_t viewer, const bool god,
   if (ship.type() == ShipType::STYPE_MINE && !ship.is_landed()) {
     return false;
   }
-  if (ship.whatorbits() == ScopeLevel::LEVEL_UNIV) {
+  if (ship.whatorbits() == ScopeLevel::LEVEL_UNIV ||
+      ship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
     return false;
   }
   return has_sight_at_location;

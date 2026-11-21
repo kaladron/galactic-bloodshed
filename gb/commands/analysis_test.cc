@@ -502,13 +502,20 @@ int main() {
 
     g.out.str("");
 
-    // Try player 2
+    // Try player 2: foreign sector mobilization (30, 25) is hidden from mortal
+    // viewer 1 and visible to Deity
     command_t argv2 = {"analysis", "2"};
     ctx.assert_dispatch_success(g, argv2);
 
     output = g.out.str();
     test::expect_contains(output, "owned by 2",
                           "Should show player 2 in description");
+    test::expect_false(output.contains("30.("));
+    g.set_god(true);
+    g.out.str("");
+    ctx.assert_dispatch_success(g, argv2);
+    test::expect_contains(g.out.str(), "30.(");
+    g.set_god(false);
 
     g.out.str("");
     std::println(std::cout,

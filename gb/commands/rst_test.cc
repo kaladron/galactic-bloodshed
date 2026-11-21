@@ -301,6 +301,35 @@ void test_rst_filters_scopes_and_json() {
   test::expect_contains(g.out.str(), "stock: invalid ship argument #bad");
   ctx.assert_dispatch_rejected(g, {"factories", "#9999"});
   test::expect_contains(g.out.str(), "factories: no such ship #9999");
+
+  // Foreign ship explicit ID is rejected identically to non-existent ship for
+  // mortals (no existence oracle), while visible to Deity; and mortal's own
+  // ship at an unexplored star/planet is still reported.
+  const auto enemy_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+                            .owned_by(2)
+                            .named("SecretRival")
+                            .in_star_orbit(1)
+                            .build();
+  g.set_scope_univ();
+  ctx.assert_dispatch_rejected(g, {"report", std::format("#{}", enemy_id)});
+  test::expect_contains(g.out.str(),
+                        std::format("report: no such ship #{}", enemy_id));
+  g.set_god(true);
+  ctx.assert_dispatch_success(g, {"report", std::format("#{}", enemy_id)});
+  test::expect_contains(g.out.str(), "SecretRival");
+  g.set_god(false);
+
+  ctx.create_star("Unexplored", 2).with_planet_name(1, "Mystery").build();
+  ctx.create_planet(2, PlanetType::MARS, {5, 5}, 1).build();
+  TestShipBuilder(ctx.em, ShipType::STYPE_POD)
+      .owned_by(1, 1)
+      .named("UnexploredPod")
+      .with_crew(0, 0)
+      .landed_on(2, 1, {1, 1})
+      .build();
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"report"});
+  test::expect_contains(g.out.str(), "UnexploredPod");
 }
 
 }  // namespace

@@ -191,10 +191,11 @@ std::string render_survey_sectors(const SurveySectorViewModel& vm) {
       std::string cond_type =
           std::format(" {}   {}", row.sect_char, row.type_char);
       std::string crystals = row.crystals ? "yes" : "";
+      std::string mob =
+          row.mobilization ? std::format("{}", *row.mobilization) : "";
       table.add_row({std::format("{}", row.coords), cond_type,
                      std::format("{}", row.owner), std::format("{}", row.eff),
-                     std::format("{}", row.mobilization),
-                     std::format("{}", row.fert),
+                     mob, std::format("{}", row.fert),
                      std::format("{}", row.resource),
                      std::format("{}", row.troops), std::format("{}", row.popn),
                      std::format("{}", row.maxpopn), crystals});
@@ -1267,7 +1268,7 @@ project_sector_grid_view(EntityManager& em, const ScopeContext& viewer,
   std::flat_map<Coordinates, std::vector<SectorLandedShipView>> landed_ships;
   for (const Ship& s : ShipList::readonly_on_planet(em, snum, pnum)) {
     if (!s.is_landed()) continue;
-    if (!viewer.can_see(is_ship_visible_to(s, viewer.player, false, true))) {
+    if (!is_ship_visible_to(s, viewer, true)) {
       continue;
     }
     landed_ships[s.land_coords()].push_back(SectorLandedShipView{

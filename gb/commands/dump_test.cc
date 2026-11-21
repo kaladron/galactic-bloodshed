@@ -46,6 +46,16 @@ void test_dump_happy_paths() {
   test::expect_ne(s_after, nullptr);
   test::expect_true(s_after->is_explored_by(player_t{2}));
 
+  // Deity dump transfers even stars/planets not marked explored on donor_id
+  ctx.em.mutate_star(3, [](Star& s) {
+    s.clear_explored_by(player_t{1});
+    s.clear_explored_by(player_t{2});
+  });
+  g.set_god(true);
+  ctx.assert_dispatch_success(g, {"dump", "Klingons"}, 0);
+  test::expect_true(ctx.em.peek_star(3)->is_explored_by(player_t{2}));
+  g.set_god(false);
+
   // Verify persistence after clearing cache
   ctx.em.clear_cache();
   const auto* p_persisted = ctx.em.peek_planet(1, 1);

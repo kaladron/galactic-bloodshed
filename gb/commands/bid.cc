@@ -28,7 +28,7 @@ void present_commodities(GameObj& g, std::optional<CommodType> filter) {
         g.entity_manager, g.scope_context(), c, shipping_dest_star));
 
     std::string destination;
-    if (c.has_bid() && c.bidder() == g.player()) {
+    if (c.has_bid() && g.scope_context().can_see(c.bidder() == g.player())) {
       const auto* star_to = g.entity_manager.peek_star(*c.star_to());
       destination = std::format("{:4.4s}/{:<4.4s}", star_to->get_name(),
                                 star_to->get_planet_name(*c.planet_to()));
@@ -65,7 +65,7 @@ bool place_bid(const command_t& argv, GameObj& g) {
   auto snum = g.snum();
   auto pnum = g.pnum();
   const auto* star = g.entity_manager.peek_star(snum);
-  if (!star->control(g.player(), g.governor())) {
+  if (!g.scope_context().can_see(star->control(g.player(), g.governor()))) {
     g.out << "You are not authorized in this system.\n";
     return false;
   }

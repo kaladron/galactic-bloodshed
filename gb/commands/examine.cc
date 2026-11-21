@@ -73,7 +73,7 @@ bool examine(const command_t& argv, GameObj& g) {
     g.entity_manager.mutate_ship(*shipno, [](Ship& s) { s.examined() = 1; });
   }
 
-  g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
+  g.present(vm);
   return true;
 }
 

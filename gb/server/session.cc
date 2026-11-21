@@ -49,18 +49,32 @@ void Session::send(std::string_view message) {
       line.remove_suffix(1);
     }
 
-    if (line.starts_with("{\"type\":") && line.ends_with('}')) {
-      out_buffer_.append(line);
-      out_buffer_.push_back('\n');
-    } else {
-      out_buffer_.append(GB::presentation::render_json_message(
-          GB::presentation::make_output_message(std::string(line))));
-    }
+    out_buffer_.append(GB::presentation::render_json_message(
+        GB::presentation::make_output_message(std::string(line))));
 
     if (nl_pos == std::string_view::npos) {
       break;
     }
     message.remove_prefix(nl_pos + 1);
+  }
+}
+
+void Session::send_json(std::string_view ndjson) {
+  out_buffer_.append(ndjson);
+}
+
+void Session::send(const OutputBuffer& buffer) {
+  if (ui_mode() != UiMode::JSON) {
+    out_buffer_.append(buffer.view());
+    return;
+  }
+  for (const auto& span : buffer.spans()) {
+    const std::string_view text = buffer.span_view(span);
+    if (span.is_json) {
+      send_json(text);
+    } else {
+      send(text);
+    }
   }
 }
 

@@ -83,13 +83,18 @@ void test_profile_dispatch() {
   ctx.em.mutate_race(2, [](Race& r) {
     r.info = "Warrior empire";
     r.likesbest = SectorType::SEC_MOUNT;
+    r.birthrate = 0.55;
+    r.mass = 0.75;
   });
 
   ctx.assert_dispatch_success(g, {"profile", "Klingons"});
   out = g.out.str();
   test::expect_contains(out, "Race report on Klingons");
   test::expect_contains(out, "Personal: Warrior empire");
+  test::expect_contains(out, "%Know:   90%");
   test::expect_contains(out, "Normal Race");
+  test::expect_contains(out, "Rate:    55%");
+  test::expect_false(out.contains("%%"));
   test::expect_contains(out, sector_type_name(SectorType::SEC_MOUNT));
   std::println(std::cout,
                "    ✓ Other player profile (translate > 80) verified");

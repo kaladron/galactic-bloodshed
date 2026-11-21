@@ -306,7 +306,7 @@ bool orbit(const command_t& argv, GameObj& g) {
       return false;
   }
 
-  g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
+  g.present(vm);
   return true;
 }
 

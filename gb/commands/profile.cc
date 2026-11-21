@@ -84,7 +84,7 @@ bool profile(const command_t& argv, GameObj& g) {
           .temp = race.estimate(r.temp, p),
           .birthrate =
               (know > 50)
-                  ? std::format("{}%%", race.estimate(r.birthrate * 100.0, p))
+                  ? std::format("{}%", race.estimate(r.birthrate * 100.0, p))
                   : race.estimate(r.birthrate, p),
           .methane = race.estimate(r.conditions[METHANE], p),
           .mass = race.estimate(r.mass, p),

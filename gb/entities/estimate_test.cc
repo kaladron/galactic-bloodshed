@@ -169,6 +169,16 @@ int main() {
   // At 5% translation (player 3, <= 10), estimate_value returns std::nullopt
   test::expect_false(saved->estimate_value(149, 3).has_value());
 
+  // Floating-point estimate_value preserves fractional traits (mass,
+  // metabolism, birthrate) without truncating to 0
+  test::expect_eq(saved->estimate_value(0.75, 1), std::optional<double>{0.75});
+  test::expect_eq(saved->estimate_value(149.75, *saved),
+                  std::optional<double>{149.75});
+  test::expect_eq(saved->estimate_value(0.75, 2), std::optional<double>{0.51});
+  test::expect_eq(saved->estimate_value(149.5, 2),
+                  std::optional<double>{102.0});
+  test::expect_false(saved->estimate_value(0.75, 3).has_value());
+
   test_ship_visibility_helpers();
 
   std::println(std::cout, "All estimate tests passed!");

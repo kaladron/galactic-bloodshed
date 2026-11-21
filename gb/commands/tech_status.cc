@@ -85,7 +85,7 @@ bool tech_status(const command_t& argv, GameObj& g) {
 
   vm.total_popn = g.entity_manager.peek_power(Playernum)->popn();
 
-  g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
+  g.present(vm);
   return true;
 }
 

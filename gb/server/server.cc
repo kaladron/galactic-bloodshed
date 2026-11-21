@@ -408,7 +408,7 @@ bool Server::do_command(Session& session, std::string_view comm) {
       throw;
     }
     process_command(g, {"cs"}, "cs");
-    session.send(g.out.view());
+    session.send(g.out);
     g.out.clear();
     return true;
   }
@@ -420,7 +420,7 @@ bool Server::do_command(Session& session, std::string_view comm) {
     shutdown_flag_ = true;
   }
 
-  session.send(g.out.view());
+  session.send(g.out);
   g.out.clear();
 
   return !g.disconnect_requested();
@@ -449,7 +449,11 @@ void Server::process_command(GameObj& g, const command_t& argv,
     /* compute the prompt and send to the player */
     if (!g.disconnect_requested() && !g.shutdown_requested()) {
       g.reconcile_scope();
-      g.out << GB::presentation::do_prompt(g);
+      if (g.ui_mode() == UiMode::JSON) {
+        g.out.append_json(GB::presentation::do_prompt(g));
+      } else {
+        g.out.append(GB::presentation::do_prompt(g));
+      }
     }
     g.race = nullptr;
   } catch (const std::exception& e) {

@@ -118,7 +118,11 @@ concept HasModeRenderOverload = requires(UiMode mode, const T& vm) {
 /// resides in `namespace GB::presentation`.
 template <HasModeRenderOverload ViewModel>
 void present_to(OutputBuffer& out, UiMode mode, const ViewModel& vm) {
-  out.append(render_for_mode(mode, vm));
+  if (mode == UiMode::JSON) {
+    out.append_json(render_for_mode(mode, vm));
+  } else {
+    out.append(render_for_mode(mode, vm));
+  }
 }
 
 /// Terminal display capabilities derived from a Telnet `TTYPE` (`$TERM`)

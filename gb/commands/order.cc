@@ -26,7 +26,7 @@ bool order(const command_t& argv, GameObj& g) {
       if (g.ui_mode() == UiMode::JSON) {
         if (auto sv = GB::presentation::project_ship_view(
                 g.entity_manager, g.scope_context(), ship, &sight)) {
-          g.out << GB::presentation::render_json_ship_view(*sv);
+          g.out.append_json(GB::presentation::render_json_ship_view(*sv));
         }
       }
     }

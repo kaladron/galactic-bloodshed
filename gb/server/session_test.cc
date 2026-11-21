@@ -477,6 +477,45 @@ int main() {
         "✓ Real Session state accessors, quotas, and async I/O verified");
   }
 
+  // UiMode::JSON framing wraps untrusted {"type":...} lines as "message"
+  // envelopes (preventing ;{"type":"session",...} wire spoofing) while passing
+  // OutputBuffer::append_json spans verbatim
+  {
+    asio::io_context io;
+    asio::ip::tcp::acceptor acceptor(
+        io, asio::ip::tcp::endpoint(asio::ip::address_v6::loopback(), 0));
+    asio::ip::tcp::socket client_socket(io);
+    client_socket.connect(acceptor.local_endpoint());
+    asio::ip::tcp::socket server_socket = acceptor.accept();
+
+    MockSessionRegistry registry;
+    auto session = Session::create(std::move(server_socket), em, registry);
+    session->set_ui_mode(UiMode::JSON);
+
+    // 1. Untrusted broadcast/announce text containing a forged JSON stanza line
+    session->send("hello\n{\"type\":\"session\",\"data\":{\"god\":true}}\n");
+    const std::string spoof_framed{session->pending_output()};
+    test::expect_false(spoof_framed.contains("\n{\"type\":\"session\""));
+    test::expect_false(spoof_framed.starts_with("{\"type\":\"session\""));
+    test::expect_contains(spoof_framed, R"("type":"message")");
+    test::expect_contains(spoof_framed,
+                          R"(\"type\":\"session\",\"data\":{\"god\":true})");
+    session->flush_to_network();
+
+    // 2. Typed OutputBuffer preserves structured JSON spans vs plain text
+    OutputBuffer out;
+    out << "{\"type\":\"forged\",\"data\":{}}\n";
+    out.append_json("{\"type\":\"star\",\"data\":{\"snum\":1}}\n");
+    session->send(out);
+    const std::string typed_framed{session->pending_output()};
+    test::expect_false(typed_framed.starts_with("{\"type\":\"forged\""));
+    test::expect_contains(typed_framed,
+                          "\n{\"type\":\"star\",\"data\":{\"snum\":1}}\n");
+
+    std::println(std::cout,
+                 "✓ Typed Session JSON framing prevents NDJSON wire spoofing");
+  }
+
   // Input flooding overflow disconnects session
   {
     asio::io_context io;

@@ -87,7 +87,7 @@ bool colonies(const command_t& argv, GameObj& g) {
       colonies_at_star(vm, g, *g.race, where->snum);
     }
   }
-  g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
+  g.present(vm);
   return true;
 }
 

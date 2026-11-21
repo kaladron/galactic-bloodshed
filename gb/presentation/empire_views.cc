@@ -243,7 +243,7 @@ std::string render_profile_other(const ProfileOtherViewModel& vm) {
   }
   std::format_to(std::back_inserter(out),
                  "Personal: {}\n"
-                 "%%Know:  {}%\n",
+                 "%Know:  {:3d}%\n",
                  vm.personal_info, vm.know);
   if (vm.is_metamorph) {
     std::format_to(std::back_inserter(out), "{}\t  Planet Conditions\n",
@@ -253,14 +253,14 @@ std::string render_profile_other(const ProfileOtherViewModel& vm) {
   }
   std::format_to(std::back_inserter(out),
                  "Fert:    {}\t\t  Temp:\t{}\n"
-                 "Rate:    {}\t\t  methane  {}%\t\tRanges:\n"
-                 "Mass:    {}\t\t  oxygen   {}%\t\t  guns:   {}\n"
-                 "Fight:   {}\t\t  helium   {}%\t\t  space:  {}\n"
-                 "Metab:   {}\t\t  nitrogen {}%\t\t  ground: {}\n"
-                 "Sexes:   {}\t\t  CO2      {}%\n"
-                 "Explore: {}%\t\t  hydrogen {}%\n"
-                 "Avg Int: {}\t\t  sulfer   {}%\n"
-                 "Tech:    {}\t\t  other    {}%\t\tMorale:   {}\n"
+                 "Rate:    {}\t\t  methane  {:>4}%\t\tRanges:\n"
+                 "Mass:    {}\t\t  oxygen   {:>4}%\t\t  guns:   {:>6}\n"
+                 "Fight:   {}\t\t  helium   {:>4}%\t\t  space:  {:>6}\n"
+                 "Metab:   {}\t\t  nitrogen {:>4}%\t\t  ground: {:>6}\n"
+                 "Sexes:   {}\t\t  CO2      {:>4}%\n"
+                 "Explore: {}%\t\t  hydrogen {:>4}%\n"
+                 "Avg Int: {}\t\t  sulfer   {:>4}%\n"
+                 "Tech:    {}\t\t  other    {:>4}%\t\tMorale:   {:>6}\n"
                  "Sector type preference : {}\n",
                  vm.fertilize, vm.temp, vm.birthrate, vm.methane, vm.mass,
                  vm.oxygen, vm.gun_range, vm.fighters, vm.helium,
@@ -393,6 +393,13 @@ std::string render_colonies(const ColoniesViewModel& vm) {
 std::string render_for_mode(UiMode mode, const ColoniesViewModel& vm) {
   if (mode == UiMode::JSON) {
     std::string out;
+    for (const auto& err : vm.errors) {
+      out += render_json_error(ErrorView{
+          .code = "bad_location",
+          .command = "colonies",
+          .message = err,
+      });
+    }
     for (const auto& p : vm.planets) {
       out += render_json_planet_view(p);
     }
@@ -488,6 +495,13 @@ std::string render_tech_status(const TechStatusViewModel& vm) {
 std::string render_for_mode(UiMode mode, const TechStatusViewModel& vm) {
   if (mode == UiMode::JSON) {
     std::string out;
+    for (const auto& err : vm.errors) {
+      out += render_json_error(ErrorView{
+          .code = "bad_location",
+          .command = "status",
+          .message = err,
+      });
+    }
     for (const auto& p : vm.planets) {
       out += render_json_planet_view(p);
     }
@@ -1654,28 +1668,26 @@ RaceView project_race_view(EntityManager& em, const ScopeContext& viewer,
     stats_view.iq = viewer_race.estimate_value(target_race.IQ, target_player);
     stats_view.morale =
         viewer_race.estimate_value(target_race.morale, target_player);
-    stats_view.gun_range =
-        viewer_race.estimate_value(target_race.gun_range(), target_player);
+    stats_view.gun_range = viewer_race.estimate_value(
+        static_cast<std::int64_t>(target_race.gun_range()), target_player);
     stats_view.space_tele_range = viewer_race.estimate_value(
-        tele_range(ShipType::OTYPE_STELE, target_race.tech), target_player);
+        static_cast<std::int64_t>(
+            tele_range(ShipType::OTYPE_STELE, target_race.tech)),
+        target_player);
     stats_view.ground_tele_range = viewer_race.estimate_value(
-        tele_range(ShipType::OTYPE_GTELE, target_race.tech), target_player);
+        static_cast<std::int64_t>(
+            tele_range(ShipType::OTYPE_GTELE, target_race.tech)),
+        target_player);
     stats_view.birthrate =
-        viewer_race.estimate_value(target_race.birthrate * 100.0, target_player)
-            .transform([](std::int64_t v) { return static_cast<double>(v); });
+        viewer_race.estimate_value(target_race.birthrate, target_player);
     stats_view.adventurism =
-        viewer_race
-            .estimate_value(target_race.adventurism * 100.0, target_player)
-            .transform([](std::int64_t v) { return static_cast<double>(v); });
+        viewer_race.estimate_value(target_race.adventurism, target_player);
     stats_view.mass =
-        viewer_race.estimate_value(target_race.mass, target_player)
-            .transform([](std::int64_t v) { return static_cast<double>(v); });
+        viewer_race.estimate_value(target_race.mass, target_player);
     stats_view.metabolism =
-        viewer_race.estimate_value(target_race.metabolism, target_player)
-            .transform([](std::int64_t v) { return static_cast<double>(v); });
+        viewer_race.estimate_value(target_race.metabolism, target_player);
     stats_view.tech =
-        viewer_race.estimate_value(target_race.tech, target_player)
-            .transform([](std::int64_t v) { return static_cast<double>(v); });
+        viewer_race.estimate_value(target_race.tech, target_player);
     if (viewer.can_see(know > 10)) {
       ConditionValues cond_values{};
       for (AtmosphereConditions cond : all_atmosphere_conditions) {

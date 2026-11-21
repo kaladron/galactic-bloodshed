@@ -86,7 +86,7 @@ bool explore(const command_t& argv, GameObj& g) {
         g.entity_manager, viewer, star_ref.star_id()));
   }
 
-  g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
+  g.present(vm);
   return true;
 }
 

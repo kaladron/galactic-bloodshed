@@ -422,7 +422,7 @@ bool analysis(const command_t& argv, GameObj& g) {
       break;
     }
   }
-  g.out << GB::presentation::render_for_mode(g.ui_mode(), vm);
+  g.present(vm);
   return true;
 }
 

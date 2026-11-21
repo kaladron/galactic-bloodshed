@@ -253,8 +253,8 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
     g.entity_manager.stop_mutation_tracking();
     if (success) {
       const auto dirty = g.entity_manager.take_dirty_entities();
-      g.out << GB::presentation::render_dirty_entities_json(
-          g.entity_manager, g.scope_context(), dirty);
+      g.out.append_json(GB::presentation::render_dirty_entities_json(
+          g.entity_manager, g.scope_context(), dirty));
     } else {
       g.entity_manager.clear_dirty_entities();
     }

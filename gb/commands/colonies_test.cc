@@ -59,9 +59,11 @@ void test_colonies_dispatch() {
   test::expect_contains(g.out.str(), "Bad location `/'.");
   test::expect_contains(g.out.str(), "Bad location `#1'.");
 
-  // 4. JSON mode
+  // 4. JSON mode (including multi-target error stanzas)
   g.set_ui_mode(UiMode::JSON);
-  ctx.assert_dispatch_success(g, {"colonies", "/Sol"});
+  ctx.assert_dispatch_success(g, {"colonies", "/Sol", "/NoSuchStar"});
+  test::expect_contains(g.out.str(), R"("type":"error")");
+  test::expect_contains(g.out.str(), R"("code":"bad_location")");
   test::expect_contains(g.out.str(), R"("type":"planet")");
   test::expect_contains(g.out.str(), R"("name":"Earth")");
 

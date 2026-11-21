@@ -133,19 +133,36 @@ void test_output_buffer() {
   OutputBuffer buf;
   test::expect_true(buf.empty());
   test::expect_eq(buf.view(), "");
+  test::expect_true(buf.spans().empty());
 
   buf << "Hello ";
-  buf.append("world");
+  buf.append("world\n");
+  buf.append_json("{\"type\":\"star\",\"data\":{}}\n");
+  buf.append_json("{\"type\":\"planet\",\"data\":{}}\n");
+  buf << "Tail\n";
   test::expect_false(buf.empty());
-  test::expect_eq(buf.str(), "Hello world");
-  test::expect_eq(buf.view(), "Hello world");
+  test::expect_eq(buf.spans().size(), 3UZ);
+  test::expect_false(buf.spans()[0].is_json);
+  test::expect_true(buf.spans()[1].is_json);
+  test::expect_false(buf.spans()[2].is_json);
+
+  // Truncate across span boundaries trims trailing spans cleanly
+  const std::size_t mid =
+      std::string_view{"Hello world\n{\"type\":\"star\""}.size();
+  buf.truncate(mid);
+  test::expect_eq(buf.spans().size(), 2UZ);
+  test::expect_true(buf.spans()[1].is_json);
+  test::expect_eq(buf.span_view(buf.spans()[1]), "{\"type\":\"star\"");
 
   buf.str("Replaced");
   test::expect_eq(buf.view(), "Replaced");
+  test::expect_eq(buf.spans().size(), 1UZ);
+  test::expect_false(buf.spans()[0].is_json);
 
   buf.clear();
   test::expect_true(buf.empty());
   test::expect_eq(buf.str(), "");
+  test::expect_true(buf.spans().empty());
 }
 
 void test_process_command_fail_fast_logging_and_rollback() {

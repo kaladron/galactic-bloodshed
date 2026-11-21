@@ -76,7 +76,9 @@ void test_status_dispatch() {
   test::expect_contains(g.out.str(), "Bad location `#1`.");
 
   g.set_ui_mode(UiMode::JSON);
-  ctx.assert_dispatch_success(g, {"status", "/Sol"});
+  ctx.assert_dispatch_success(g, {"status", "/Sol", "/NoSuchStar"});
+  test::expect_contains(g.out.str(), R"("type":"error")");
+  test::expect_contains(g.out.str(), R"("code":"bad_location")");
   test::expect_contains(g.out.str(), R"("type":"planet")");
   test::expect_contains(g.out.str(), R"("name":"Earth")");
 

@@ -116,15 +116,25 @@ export struct ScopeContext {
 /// accidental `std::ostream` insertion of raw numbers or domain entities.
 export class OutputBuffer {
 public:
+  struct Span {
+    std::size_t offset{0};
+    std::size_t length{0};
+    bool is_json{false};
+  };
+
   OutputBuffer() = default;
 
   OutputBuffer& operator<<(std::string_view text) {
-    buffer_.append(text);
+    append(text);
     return *this;
   }
 
   void append(std::string_view text) {
-    buffer_.append(text);
+    append_span(text, false);
+  }
+
+  void append_json(std::string_view ndjson) {
+    append_span(ndjson, true);
   }
 
   [[nodiscard]] const std::string& str() const noexcept {
@@ -133,19 +143,40 @@ public:
 
   void str(std::string_view text) {
     buffer_.assign(text);
+    spans_.clear();
+    if (!text.empty()) {
+      spans_.push_back(
+          Span{.offset = 0, .length = text.size(), .is_json = false});
+    }
   }
 
   [[nodiscard]] std::string_view view() const noexcept {
     return buffer_;
   }
 
+  [[nodiscard]] std::span<const Span> spans() const noexcept {
+    return spans_;
+  }
+
+  [[nodiscard]] std::string_view span_view(const Span& span) const noexcept {
+    return std::string_view{buffer_}.substr(span.offset, span.length);
+  }
+
   void clear() noexcept {
     buffer_.clear();
+    spans_.clear();
   }
 
   void truncate(std::size_t size) noexcept {
-    if (size < buffer_.size()) {
-      buffer_.resize(size);
+    if (size >= buffer_.size()) {
+      return;
+    }
+    buffer_.resize(size);
+    while (!spans_.empty() && spans_.back().offset >= size) {
+      spans_.pop_back();
+    }
+    if (!spans_.empty()) {
+      spans_.back().length = size - spans_.back().offset;
     }
   }
 
@@ -154,7 +185,22 @@ public:
   }
 
 private:
+  void append_span(std::string_view text, bool is_json) {
+    if (text.empty()) {
+      return;
+    }
+    const std::size_t offset = buffer_.size();
+    buffer_.append(text);
+    if (!spans_.empty() && spans_.back().is_json == is_json) {
+      spans_.back().length += text.size();
+    } else {
+      spans_.push_back(
+          Span{.offset = offset, .length = text.size(), .is_json = is_json});
+    }
+  }
+
   std::string buffer_;
+  std::vector<Span> spans_;
 };
 
 export class GameObj {

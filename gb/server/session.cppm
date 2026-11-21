@@ -42,10 +42,15 @@ public:
   /// Start async read loop
   void start();
 
-  /// The ONLY output interface - buffered string output
-  /// Commands write here; cross-player notifications write here.
-  /// Buffer is flushed to network after each command batch.
+  /// Send plain-text output (wrapped as `"message"` stanzas in `UiMode::JSON`).
   void send(std::string_view message);
+
+  /// Send trusted server-serialized NDJSON stanzas directly without wrapping.
+  void send_json(std::string_view ndjson);
+
+  /// Send a typed `OutputBuffer`, preserving structured NDJSON spans vs plain
+  /// text spans.
+  void send(const OutputBuffer& buffer);
 
   /// Read-only view of buffered output awaiting flush to network
   [[nodiscard]] std::string_view pending_output() const noexcept {

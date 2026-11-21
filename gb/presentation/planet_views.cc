@@ -1017,6 +1017,13 @@ std::string render_production_report(const ProductionReportViewModel& vm) {
 std::string render_for_mode(UiMode mode, const ProductionReportViewModel& vm) {
   if (mode == UiMode::JSON) {
     std::string out;
+    for (const auto& loc : vm.bad_locations) {
+      out += render_json_error(ErrorView{
+          .code = "bad_location",
+          .command = "production",
+          .message = std::format("Bad location `{}`.\n", loc),
+      });
+    }
     for (const auto& p : vm.planets) {
       out += render_json_planet_view(p);
     }

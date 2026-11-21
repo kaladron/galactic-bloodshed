@@ -83,10 +83,12 @@ void test_production_dispatch() {
   ctx.assert_dispatch_success(g, {"production", "/Antares/Antares Prime"});
   g.set_god(false);
 
-  // 5. UiMode::JSON output
+  // 5. UiMode::JSON output (including bad_locations error stanzas)
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"production", "/Sol/Earth"});
+  ctx.assert_dispatch_success(g, {"production", "/Sol/Earth", "/InvalidStar"});
+  test::expect_contains(g.out.str(), R"("type":"error")");
+  test::expect_contains(g.out.str(), R"("code":"bad_location")");
   test::expect_contains(g.out.str(), R"("type":"planet")");
   test::expect_contains(g.out.str(), R"("name":"Earth")");
   test::expect_contains(g.out.str(), R"("resources":100)");

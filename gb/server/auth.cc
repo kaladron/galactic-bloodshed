@@ -136,13 +136,13 @@ void check_connect(Session& session, std::string_view message) {
     session.send(GB::presentation::render_login_banner(login_vm));
     g.out.clear();
     GB::commands::dispatch_command(g, {"time"});
-    session.send(g.out.view());
+    session.send(g.out);
     g.out.clear();
     session.send(GB::presentation::render_login_status(login_vm));
   }
 
   GB::commands::dispatch_command(g, {"treasury"});
-  session.send(g.out.view());
+  session.send(g.out);
   g.out.clear();
   g.race = nullptr;
 

@@ -800,6 +800,91 @@ void test_procedural_universe_fixture() {
   std::println(std::cout, "  ✓ with_universe verified successfully");
 }
 
+void test_galaxy_and_archetype_races_fixture() {
+  std::println(std::cout,
+               "Test: TestContext::with_galaxy and with_races archetypes");
+
+  // 1. with_galaxy() alone: 3 stars (2 planets each) + Player 1 Deity at /
+  {
+    TestContext ctx;
+    ctx.with_galaxy();
+
+    test::expect_eq(ctx.em.num_stars(), 3);
+    test::expect_eq(ctx.em.num_ships(), 0U);
+    test::expect_eq(ctx.em.peek_star(1)->numplanets(), 2);
+    test::expect_eq(ctx.em.peek_star(2)->numplanets(), 2);
+    test::expect_eq(ctx.em.peek_star(3)->numplanets(), 2);
+
+    const auto* deity = ctx.em.peek_race(1);
+    test::expect_true(deity->God);
+    test::expect_eq(deity->leader().deflevel, ScopeLevel::LEVEL_UNIV);
+    test::expect_eq(deity->leader().defsystem, starnum_t{0});
+    test::expect_eq(deity->leader().defplanetnum, planetnum_t{0});
+    ctx.verify_universe_invariants();
+  }
+
+  // 2. with_races(): auto-initializes galaxy and populates 3 mortal archetypes
+  {
+    TestContext ctx;
+    const TestRaces races = ctx.with_races();
+
+    test::expect_eq(races.deity, player_t{1});
+    test::expect_eq(races.newcomer, player_t{2});
+    test::expect_eq(races.nomad, player_t{3});
+    test::expect_eq(races.empire, player_t{4});
+
+    // Newcomer (Player 2): freshly enrolled on /Antares/Antares Prime, tech 0,
+    // 1 sector, landed Gov_ship, fog-of-war intact (Sol/Vega unexplored)
+    const auto* newcomer = ctx.em.peek_race(races.newcomer);
+    test::expect_true(newcomer->is_active_mortal());
+    test::expect_eq(newcomer->tech, 0.0);
+    test::expect_eq(newcomer->Gov_ship,
+                    std::optional<shipnum_t>{races.newcomer_gov_ship});
+    test::expect_false(ctx.em.peek_star(1)->is_explored_by(races.newcomer));
+    test::expect_false(ctx.em.peek_star(2)->is_explored_by(races.newcomer));
+    test::expect_true(ctx.em.peek_star(3)->is_explored_by(races.newcomer));
+    test::expect_eq(
+        ctx.em.peek_planet(3, 1)->info(races.newcomer).numsectsowned, 1);
+
+    // Nomad (Player 3): 0 planetary colonies, cruiser in Sol orbit + shuttle in
+    // deep space
+    const auto* nomad = ctx.em.peek_race(races.nomad);
+    test::expect_false(nomad->Gov_ship.has_value());
+    test::expect_eq(nomad->leader().deflevel, ScopeLevel::LEVEL_STAR);
+    test::expect_eq(nomad->leader().defsystem, starnum_t{1});
+    test::expect_eq(ctx.em.peek_ship(races.nomad_cruiser)->whatorbits(),
+                    ScopeLevel::LEVEL_STAR);
+    test::expect_eq(ctx.em.peek_ship(races.nomad_shuttle)->whatorbits(),
+                    ScopeLevel::LEVEL_UNIV);
+    for (starnum_t s = 1; s <= 3; ++s) {
+      for (planetnum_t p = 1; p <= 2; ++p) {
+        test::expect_eq(
+            ctx.em.peek_planet(s, p)->info(races.nomad).numsectsowned, 0);
+      }
+    }
+
+    // Empire (Player 4): colonies + stockpiles in Sol/Earth and Vega/Prime,
+    // Antares unexplored, capital + orbital cruiser
+    const auto* empire = ctx.em.peek_race(races.empire);
+    test::expect_eq(empire->tech, 100.0);
+    test::expect_eq(empire->Gov_ship,
+                    std::optional<shipnum_t>{races.empire_gov_ship});
+    test::expect_true(ctx.em.peek_star(1)->is_explored_by(races.empire));
+    test::expect_true(ctx.em.peek_star(2)->is_explored_by(races.empire));
+    test::expect_false(ctx.em.peek_star(3)->is_explored_by(races.empire));
+    test::expect_eq(ctx.em.peek_planet(1, 1)->info(races.empire).resource,
+                    1000);
+    test::expect_eq(ctx.em.peek_planet(2, 1)->info(races.empire).resource,
+                    1000);
+    test::expect_eq(ctx.em.peek_ship(races.empire_cruiser)->whatorbits(),
+                    ScopeLevel::LEVEL_PLAN);
+
+    ctx.verify_universe_invariants();
+  }
+
+  std::println(std::cout, "  ✓ with_galaxy and with_races archetypes verified");
+}
+
 }  // namespace
 
 int main() {
@@ -813,6 +898,7 @@ int main() {
   test_universe_invariants();
   test_standard_universe_fixture();
   test_procedural_universe_fixture();
+  test_galaxy_and_archetype_races_fixture();
   std::println(std::cout, "✓ test_context_test passed!");
   return 0;
 }

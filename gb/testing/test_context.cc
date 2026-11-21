@@ -201,6 +201,189 @@ void TestContext::verify_universe_invariants(std::source_location loc) {
   test::verify_universe_invariants(em, loc);
 }
 
+TestContext& TestContext::with_galaxy() {
+  GB::creator::EnrollmentService enrollment(em);
+  enrollment.seed_deity("godpass", "govpass");
+
+  // Star 1 (Sol) at (0, 0) with Earth and Mars
+  create_star("Sol", 1)
+      .with_position({0.0, 0.0})
+      .with_stability(15)
+      .with_gravity(1.0)
+      .with_temperature(50)
+      .build();
+  create_planet(1, PlanetType::EARTH, Coordinates{10, 10}, 1)
+      .named("Earth")
+      .with_position(SystemCoordinates{100.0, 0.0})
+      .with_all_sectors(SectorType::SEC_LAND)
+      .build();
+  create_planet(1, PlanetType::MARS, Coordinates{10, 10}, 2)
+      .named("Mars")
+      .with_position(SystemCoordinates{200.0, 0.0})
+      .with_all_sectors(SectorType::SEC_LAND)
+      .build();
+
+  // Star 2 (Vega) at (300, 400) -> distance 500 from Sol
+  create_star("Vega", 2)
+      .with_position({300.0, 400.0})
+      .with_stability(45)
+      .with_gravity(1.0)
+      .with_temperature(40)
+      .build();
+  create_planet(2, PlanetType::EARTH, Coordinates{10, 10}, 1)
+      .named("Vega Prime")
+      .with_position(SystemCoordinates{100.0, 0.0})
+      .with_all_sectors(SectorType::SEC_LAND)
+      .build();
+  create_planet(2, PlanetType::DESERT, Coordinates{10, 10}, 2)
+      .named("Vega II")
+      .with_position(SystemCoordinates{200.0, 0.0})
+      .with_all_sectors(SectorType::SEC_DESERT)
+      .build();
+
+  // Star 3 (Antares) at (-300, -400) -> distance 500 from Sol, 1000 from Vega
+  create_star("Antares", 3)
+      .with_position({-300.0, -400.0})
+      .with_stability(25)
+      .with_gravity(1.2)
+      .with_temperature(60)
+      .build();
+  create_planet(3, PlanetType::EARTH, Coordinates{10, 10}, 1)
+      .named("Antares Prime")
+      .with_position(SystemCoordinates{100.0, 0.0})
+      .with_all_sectors(SectorType::SEC_LAND)
+      .build();
+  create_planet(3, PlanetType::ICEBALL, Coordinates{10, 10}, 2)
+      .named("Antares II")
+      .with_position(SystemCoordinates{200.0, 0.0})
+      .with_all_sectors(SectorType::SEC_ICE)
+      .build();
+
+  em.clear_cache();
+  return *this;
+}
+
+TestRaces TestContext::with_races() {
+  if (em.num_stars() == 0) {
+    with_galaxy();
+  }
+
+  GB::creator::EnrollmentService enrollment(em);
+  TestRaces out{};
+
+  // 1. Player 2: Newly enrolled mortal empire on /Antares/Antares Prime
+  const auto enroll_res =
+      enrollment.enroll_player(GB::creator::RaceEnrollmentSpec{
+          .name = "Newcomers",
+          .password = "newpass",
+          .governor_password = "govpass",
+          .address = "newcomers@antares.org",
+          .home_planet_type = PlanetType::EARTH,
+          .capital_coords = Coordinates{0, 0},
+          .target_planet = std::pair{starnum_t{3}, planetnum_t{1}},
+          .sector_compatibilities = {.land = 1.0, .plated = 1.0},
+      });
+  test::expect_true(enroll_res.success, enroll_res.message);
+  out.newcomer = enroll_res.player_num;
+  out.newcomer_gov_ship = enroll_res.gov_ship;
+
+  // 2. Player 3: Fleet-only nomad race (0 colonies, ships in Sol & deep space)
+  GB::creator::RaceEnrollmentSpec nomad_spec{
+      .name = "Nomads",
+      .password = "nomadpass",
+      .governor_password = "govpass",
+      .home_planet_type = PlanetType::EARTH,
+      .sector_compatibilities = {.land = 1.0, .plated = 1.0},
+  };
+  Race nomad = enrollment.build_race(3, nomad_spec, 1, 1);
+  nomad.tech = 50.0;
+  nomad.leader().money = 2'000;
+  nomad.leader().homesystem = 0;
+  nomad.leader().homeplanetnum = 0;
+  nomad.leader().set_default_scope_star(1);
+  em.create_race(nomad);
+  out.nomad = 3;
+
+  out.nomad_cruiser = TestShipBuilder(em, ShipType::STYPE_CRUISER)
+                          .owned_by(out.nomad, 1)
+                          .named("Drifter")
+                          .in_star_orbit(1)
+                          .with_crew(50, 10)
+                          .with_fuel(200.0)
+                          .with_destruct(50)
+                          .build();
+  out.nomad_shuttle = TestShipBuilder(em, ShipType::STYPE_SHUTTLE)
+                          .owned_by(out.nomad, 1)
+                          .named("Scout")
+                          .in_deep_space({150.0, 200.0})
+                          .with_crew(6, 0)
+                          .with_fuel(20.0)
+                          .build();
+  em.mutate_star(1, [&](Star& sol) {
+    sol.mark_explored_by(out.nomad);
+    sol.mark_inhabited_by(out.nomad);
+    sol.AP(out.nomad) = 50;
+  });
+
+  // 3. Player 4: Established two-system empire across Sol/Earth & Vega/Prime
+  GB::creator::RaceEnrollmentSpec empire_spec{
+      .name = "Imperium",
+      .password = "emppass",
+      .governor_password = "govpass",
+      .home_planet_type = PlanetType::EARTH,
+      .sector_compatibilities = {.land = 1.0, .plated = 1.0},
+  };
+  Race empire = enrollment.build_race(4, empire_spec, 1, 1);
+  empire.tech = 100.0;
+  empire.leader().money = 10'000;
+  em.create_race(empire);
+  out.empire = 4;
+
+  out.empire_gov_ship = TestShipBuilder(em, ShipType::OTYPE_GOV)
+                            .owned_by(out.empire, 1)
+                            .named("Palace")
+                            .landed_on(1, 1, {0, 0})
+                            .with_crew(10, 0)
+                            .with_on(true)
+                            .build();
+  em.mutate_race(out.empire,
+                 [&](Race& r) { r.Gov_ship = out.empire_gov_ship; });
+  out.empire_cruiser = TestShipBuilder(em, ShipType::STYPE_CRUISER)
+                           .owned_by(out.empire, 1)
+                           .named("Vanguard")
+                           .in_planet_orbit(1, 1)
+                           .with_crew(50, 20)
+                           .with_fuel(200.0)
+                           .with_destruct(50)
+                           .build();
+
+  for (const auto [snum, pnum] : {std::pair{starnum_t{1}, planetnum_t{1}},
+                                  std::pair{starnum_t{2}, planetnum_t{1}}}) {
+    with_populated_planet(snum, pnum, out.empire, 1'000, {0, 0});
+    em.mutate_planet(snum, pnum, [&](Planet& p) {
+      p.info(out.empire).explored = 1;
+      p.info(out.empire).resource = 1'000;
+      p.info(out.empire).fuel = 1'000;
+      p.info(out.empire).destruct = 1'000;
+      p.info(out.empire).tax = 10;
+    });
+    em.mutate_star(snum, [&](Star& s) {
+      s.mark_explored_by(out.empire);
+      s.mark_inhabited_by(out.empire);
+      s.AP(out.empire) = 100;
+    });
+  }
+
+  em.mutate_universe([&](Universe& u) {
+    u.set_AP(out.deity, 100);
+    u.set_AP(out.nomad, 50);
+    u.set_AP(out.empire, 100);
+  });
+
+  em.clear_cache();
+  return out;
+}
+
 TestContext& TestContext::with_standard_universe() {
   JsonStore store(db);
 

@@ -489,6 +489,19 @@ public:
 export class TestStarBuilder;
 export class TestPlanetBuilder;
 
+/// Named player and ship handles created by `TestContext::with_races()`.
+export struct TestRaces {
+  player_t deity{1};     ///< Player 1: Disembodied Deity at /
+  player_t newcomer{2};  ///< Player 2: Newly enrolled on Antares Prime
+  shipnum_t newcomer_gov_ship{0};  ///< Landed OTYPE_GOV capital of newcomer
+  player_t nomad{3};               ///< Player 3: Fleet-only race (0 colonies)
+  shipnum_t nomad_cruiser{0};      ///< Nomad cruiser in Sol star orbit
+  shipnum_t nomad_shuttle{0};      ///< Nomad shuttle in deep space
+  player_t empire{4};              ///< Player 4: Established 2-system empire
+  shipnum_t empire_gov_ship{0};    ///< Landed OTYPE_GOV capital on Sol/Earth
+  shipnum_t empire_cruiser{0};     ///< Empire cruiser in Sol/Earth planet orbit
+};
+
 /// Test context providing database, entity manager, GameObj setup, and
 /// dispatch assertion helpers
 ///
@@ -543,6 +556,22 @@ public:
   /// Helper to verify universe domain invariants across all entities.
   void verify_universe_invariants(
       std::source_location loc = std::source_location::current());
+
+  /// Initializes a 3-star galaxy (`Sol`, `Vega`, `Antares`, 2 planets each)
+  /// with Player 1 seeded as the disembodied `Deity` (`God = true`, default
+  /// scope `/`) and zero mortal colonies or omniscient exploration flags.
+  TestContext& with_galaxy();
+
+  /// Populates `with_galaxy()` (if not yet initialized) with three distinct
+  /// mortal race archetypes alongside Player 1 (`Deity`):
+  /// - `newcomer` (Player 2): freshly enrolled on `/Antares/Antares Prime`
+  ///   (`tech = 0`, 1 sector, landed `OTYPE_GOV`, 5 Star AP, fog-of-war intact)
+  /// - `nomad` (Player 3): fleet-only race with 0 colonies, a cruiser in `/Sol`
+  ///   orbit, and a shuttle in deep space
+  /// - `empire` (Player 4): established 2-system empire across `/Sol/Earth` and
+  ///   `/Vega/Vega Prime` (`tech = 100`, 100 AP, 1000 stockpiles, capital +
+  ///   orbital cruiser)
+  TestRaces with_races();
 
   /// Initializes a standard 4-player solar system with Sol (Star 1), Vega
   /// (Star 2), and Antares (Star 3), populated by Federation (Player 1),

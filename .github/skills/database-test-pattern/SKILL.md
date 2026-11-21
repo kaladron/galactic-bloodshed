@@ -160,6 +160,16 @@ test::expect_eq(planet->popn(), expected);
 
 Forgetting to set `g.race` is a common bug when setting up `GameObj` manually — `ctx.setup_game_obj(g)` guarantees `g.race` is pre-populated.
 
+## Standard Galaxy & Race Archetype Fixtures (`with_galaxy()` / `with_races()`)
+
+Prefer `ctx.with_galaxy()` (3 two-planet stars `Sol`, `Vega`, `Antares` + Player 1 `Deity` at `/`, zero mortal colonies or omniscient exploration cheats) paired with `const TestRaces races = ctx.with_races()` when testing fog-of-war, role checks, or realistic multi-empire states:
+- `races.deity` (`1`): Disembodied `Deity` (`God = true`, default scope `/`)
+- `races.newcomer` (`2`): Newly enrolled via `EnrollmentService::enroll_player` on `/Antares/Antares Prime` (`tech = 0`, 1 sector, landed `newcomer_gov_ship`, 5 Star AP, `Sol`/`Vega` unexplored)
+- `races.nomad` (`3`): Fleet-only race (`0` colonies, `nomad_cruiser` in `/Sol` orbit, `nomad_shuttle` in deep space)
+- `races.empire` (`4`): Established two-system empire across `/Sol/Earth` and `/Vega/Vega Prime` (`tech = 100`, 100 AP, 1000 stockpiles, `empire_gov_ship` + `empire_cruiser`)
+
+Legacy `ctx.with_standard_universe()` remains available for existing tests that expect 4 symmetric mortal races (`1..4`).
+
 ## Multi-Test Files
 
 Group related cases as separate functions called from `main()`:

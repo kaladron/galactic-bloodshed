@@ -1189,14 +1189,20 @@ void test_ship_moor_together_and_commandability() {
       std::cout,
       "Testing Ship::moor_together() and commandability predicates...");
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
+  const player_t owner = races.empire;
+  const player_t foreign = races.newcomer;
+  ctx.em.mutate_race(owner, [](Race& r) {
+    r.appoint_governor(2);
+    r.appoint_governor(3);
+  });
 
   shipnum_t s1_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                        .owned_by(1, 2)
+                        .owned_by(owner, 2)
                         .in_star_orbit(1)
                         .build();
   shipnum_t s2_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                        .owned_by(1, 1)
+                        .owned_by(owner, 1)
                         .in_star_orbit(1)
                         .build();
 
@@ -1218,42 +1224,37 @@ void test_ship_moor_together_and_commandability() {
   test::expect_false(s1_peek->is_authorized_for(3));
 
   // Commandability checks
-  test::expect_true(s1_peek->is_commandable_by(1, 1));
-  test::expect_true(s1_peek->is_commandable_by(1, 2));
-  test::expect_false(s1_peek->is_commandable_by(2, 1));
-  test::expect_false(s1_peek->is_commandable_by(1, 3));
-
-  ctx.em.mutate_race(1, [](Race& r) {
-    r.appoint_governor(2);
-    r.appoint_governor(3);
-  });
+  test::expect_true(s1_peek->is_commandable_by(owner, 1));
+  test::expect_true(s1_peek->is_commandable_by(owner, 2));
+  test::expect_false(s1_peek->is_commandable_by(foreign, 1));
+  test::expect_false(s1_peek->is_commandable_by(owner, 3));
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 2);
+  ctx.setup_game_obj(g, owner, 2);
   test::expect_true(g.check_commandable(*s1_peek));
 
   // Unauthorized governor (3) fails check_commandable and receives diagnostic
   // in g.out (not a rolled-back telegram)
-  ctx.setup_game_obj(g, 1, 3);
+  ctx.setup_game_obj(g, owner, 3);
   g.out.str("");
   test::expect_false(g.check_commandable(*s1_peek));
   test::expect_contains(g.out.str(), "You don't own ship #");
-  test::expect_true(ctx.em.get_telegrams(1, 3).empty());
+  test::expect_true(ctx.em.get_telegrams(owner, 3).empty());
 
   // Wrong player fails check_commandable and receives diagnostic in g.out
-  ctx.setup_game_obj(g, 2, 1);
+  ctx.setup_game_obj(g, foreign, 1);
   g.out.str("");
   test::expect_false(g.check_commandable(*s1_peek));
   test::expect_contains(g.out.str(), "You don't own ship #");
-  test::expect_true(ctx.em.get_telegrams(2, 1).empty());
+  test::expect_true(ctx.em.get_telegrams(foreign, 1).empty());
 
   // Irradiated inactive ship fails check_commandable
   ctx.em.mutate_ship(s1_id, [](Ship& s1) {
     s1.active() = false;
     s1.apply_radiation(100);
   });
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, owner, 1);
   g.out.str("");
   test::expect_false(g.check_commandable(*ctx.em.peek_ship(s1_id)));
   test::expect_true(g.out.str().find("irradiated") != std::string::npos);
@@ -1270,7 +1271,7 @@ void test_mirror_aim_and_formatting_helpers() {
   std::println(std::cout,
                "Testing SpaceMirrorShip aim_direction and location helpers...");
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
 
   const auto mirror_id = TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR)
                              .owned_by(1)
@@ -1403,11 +1404,14 @@ void test_blueprint_complexity_defense_and_capture() {
   std::println(std::cout, "Testing set_factory_blueprint, complexity, "
                           "getdefense, capture_stuff...");
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
+  const player_t mortal = races.empire;
+  const player_t foreign = races.newcomer;
+  ctx.em.mutate_race(foreign, [](Race& r) { r.appoint_governor(2); });
 
   // Blueprint and constructed state initialization for VN, Berserker, Mine,
   // Transdev, and specialty ships
-  const auto* race1 = ctx.em.peek_race(1);
+  const auto* race1 = ctx.em.peek_race(mortal);
   Ship factory_ship;
   factory_ship.set_factory_blueprint(ShipType::STYPE_CRUISER, race1);
   test::expect_eq(factory_ship.build_type(), ShipType::STYPE_CRUISER);
@@ -1435,7 +1439,7 @@ void test_blueprint_complexity_defense_and_capture() {
     if (stype == ShipType::OTYPE_VN || stype == ShipType::OTYPE_BERS) {
       const auto* auto_ship = const_special.as<AutonomousShip>();
       test::expect_true(auto_ship != nullptr);
-      test::expect_eq(auto_ship->progenitor(), player_t{1});
+      test::expect_eq(auto_ship->progenitor(), mortal);
       test::expect_eq(auto_ship->generation(), 1u);
       test::expect_true(auto_ship->is_busy());
       test::expect_true(
@@ -1543,7 +1547,7 @@ void test_blueprint_complexity_defense_and_capture() {
 
   // getdefense() spaceborne vs landed
   const auto carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-                              .owned_by(1, 1)
+                              .owned_by(mortal, 1)
                               .in_planet_orbit(1, 1)
                               .build();
   test::expect_eq(getdefense(ctx.em, *ctx.em.peek_ship(carrier_id)), 0);
@@ -1554,10 +1558,12 @@ void test_blueprint_complexity_defense_and_capture() {
   test::expect_true(getdefense(ctx.em, *ctx.em.peek_ship(carrier_id)) >= 0);
 
   // capture_stuff() and doown() recursive capture of 2-level nested craft
-  const auto shuttle_id =
-      TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE).owned_by(2, 2).build();
-  const auto f1_id =
-      TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER).owned_by(2, 2).build();
+  const auto shuttle_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                              .owned_by(foreign, 2)
+                              .build();
+  const auto f1_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+                         .owned_by(foreign, 2)
+                         .build();
   ctx.em.mutate_ship(shuttle_id,
                      [&](Ship& s) { s.dock_into_carrier(carrier_id); });
   ctx.em.mutate_ship(f1_id, [&](Ship& f) { f.dock_into_carrier(shuttle_id); });
@@ -1565,9 +1571,9 @@ void test_blueprint_complexity_defense_and_capture() {
   const auto captured_rep =
       capture_stuff(ctx.em, *ctx.em.peek_ship(carrier_id));
   test::expect_eq(captured_rep.captured_ships.size(), 2u);
-  test::expect_eq(ctx.em.peek_ship(shuttle_id)->owner(), player_t{1});
+  test::expect_eq(ctx.em.peek_ship(shuttle_id)->owner(), mortal);
   test::expect_eq(ctx.em.peek_ship(shuttle_id)->governor(), governor_t{1});
-  test::expect_eq(ctx.em.peek_ship(f1_id)->owner(), player_t{1});
+  test::expect_eq(ctx.em.peek_ship(f1_id)->owner(), mortal);
   test::expect_eq(ctx.em.peek_ship(f1_id)->governor(), governor_t{1});
   test::expect_contains(
       GB::presentation::render_captured_ships_report(captured_rep),
@@ -1580,26 +1586,27 @@ void test_blueprint_complexity_defense_and_capture() {
                         "CAPTURED!");
 
   // Also verify 2-level nested doown()
-  ctx.em.mutate_ship(shuttle_id, [](Ship& s) {
-    s.owner() = 2;
+  ctx.em.mutate_ship(shuttle_id, [&](Ship& s) {
+    s.owner() = foreign;
     s.governor() = 2;
   });
-  ctx.em.mutate_ship(f1_id, [](Ship& f) {
-    f.owner() = 2;
+  ctx.em.mutate_ship(f1_id, [&](Ship& f) {
+    f.owner() = foreign;
     f.governor() = 2;
   });
   ctx.em.mutate_ship(carrier_id, [&](Ship& c) { doown(c, ctx.em); });
-  test::expect_eq(ctx.em.peek_ship(shuttle_id)->owner(), player_t{1});
-  test::expect_eq(ctx.em.peek_ship(f1_id)->owner(), player_t{1});
+  test::expect_eq(ctx.em.peek_ship(shuttle_id)->owner(), mortal);
+  test::expect_eq(ctx.em.peek_ship(f1_id)->owner(), mortal);
 }
 
 void test_moveship_and_followable() {
   std::println(std::cout,
                "Testing moveship pipeline, followable, and do_merchant...");
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
+  const player_t mortal = races.empire;
+  const player_t foreign = races.newcomer;
 
-  ctx.em.mutate_race(1, [](Race& r) { r.tech = 100.0; });
   const auto star0_coords = ctx.em.peek_star(1)->coordinates();
   const auto p0_coords =
       ctx.em.peek_planet(1, 1)->absolute_coordinates(*ctx.em.peek_star(1));
@@ -1607,7 +1614,7 @@ void test_moveship_and_followable() {
   // 1. followable() checks: alive, active, carrier-docked, same owner, allied,
   // range
   const auto s1_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                         .owned_by(1, 1)
+                         .owned_by(mortal, 1)
                          .in_star_orbit(1)
                          .with_crew(50, 0)
                          .with_fuel(500.0)
@@ -1615,7 +1622,7 @@ void test_moveship_and_followable() {
                          .with_tech(100.0)
                          .build();
   const auto s2_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                         .owned_by(2, 1)
+                         .owned_by(foreign, 1)
                          .in_star_orbit(1)
                          .with_crew(50, 0)
                          .with_fuel(500.0)
@@ -1632,15 +1639,15 @@ void test_moveship_and_followable() {
   test::expect_false(
       followable(ctx.em, *ctx.em.peek_ship(s1_id), *ctx.em.peek_ship(s2_id)));
 
-  ctx.em.mutate_race(2,
-                     [](Race& r2) { r2.declare_alliance_with(player_t{1}); });
+  ctx.em.mutate_race(foreign,
+                     [&](Race& r2) { r2.declare_alliance_with(mortal); });
   test::expect_true(
       followable(ctx.em, *ctx.em.peek_ship(s1_id), *ctx.em.peek_ship(s2_id)));
-  ctx.em.mutate_race(2,
-                     [](Race& r2) { r2.rescind_alliance_with(player_t{1}); });
+  ctx.em.mutate_race(foreign,
+                     [&](Race& r2) { r2.rescind_alliance_with(mortal); });
 
   Ship same_owner_s2{ctx.em.peek_ship(s2_id)->to_struct()};
-  same_owner_s2.owner() = 1;
+  same_owner_s2.owner() = mortal;
   test::expect_true(
       followable(ctx.em, *ctx.em.peek_ship(s1_id), same_owner_s2));
 
@@ -1793,8 +1800,8 @@ void test_moveship_and_followable() {
   });
 
   // 4. Sublight arrival at planet (1,1) + automated merchant route execution
-  ctx.em.mutate_planet(1, 1, [](Planet& p) {
-    auto& route = p.info(1).route_at(1);
+  ctx.em.mutate_planet(1, 1, [&](Planet& p) {
+    auto& route = p.info(mortal).route_at(1);
     route.set = 1;
     route.dest_star = 2;
     route.dest_planet = 1;
@@ -1803,10 +1810,10 @@ void test_moveship_and_followable() {
         .fuel = true, .destruct = true, .resources = true, .crystals = true};
     route.unload = {
         .fuel = false, .destruct = true, .resources = true, .crystals = true};
-    p.info(1).fuel = 1000;
-    p.info(1).resource = 1000;
-    p.info(1).destruct = 1000;
-    p.info(1).crystals = 500;  // Exceeds max_crystals_capacity (127)
+    p.info(mortal).fuel = 1000;
+    p.info(mortal).resource = 1000;
+    p.info(mortal).destruct = 1000;
+    p.info(mortal).crystals = 500;  // Exceeds max_crystals_capacity (127)
   });
 
   ctx.em.mutate_ship(s1_id, [&](Ship& s1) {
@@ -1863,7 +1870,7 @@ void test_moveship_and_followable() {
     s1.hyper_drive().has = true;
 
     ctx.em.mutate_sectormap(
-        1, 1, [](SectorMap& smap) { smap.get({0, 0}).set_owner(2); });
+        1, 1, [&](SectorMap& smap) { smap.get({0, 0}).set_owner(foreign); });
     s1.enter_star_orbit(1);
     s1.set_coordinates(p0_coords + SystemCoordinates{DIST_TO_LAND * 0.5, 0.0});
     s1.set_planet_destination(1, 1);
@@ -1871,9 +1878,9 @@ void test_moveship_and_followable() {
     test::expect_false(s1.is_landed());
 
     ctx.em.mutate_sectormap(
-        1, 1, [](SectorMap& smap) { smap.get({0, 0}).set_owner(1); });
-    ctx.em.mutate_planet(1, 1, [](Planet& p) {
-      auto& route = p.info(1).route_at(1);
+        1, 1, [&](SectorMap& smap) { smap.get({0, 0}).set_owner(mortal); });
+    ctx.em.mutate_planet(1, 1, [&](Planet& p) {
+      auto& route = p.info(mortal).route_at(1);
       route.dest_star = 1;
       route.dest_planet = 1;
       route.load = {};
@@ -1888,8 +1895,8 @@ void test_moveship_and_followable() {
 
     // Already landed merchant refueled on same-system route launches without
     // hyperdrive
-    ctx.em.mutate_planet(1, 1, [](Planet& p) {
-      auto& route = p.info(1).route_at(1);
+    ctx.em.mutate_planet(1, 1, [&](Planet& p) {
+      auto& route = p.info(mortal).route_at(1);
       route.unload = {};
     });
     s1.admin_override_fuel(500.0);
@@ -1924,7 +1931,7 @@ void test_moveship_and_followable() {
   // Follow ship in planet orbit from star orbit (resolves to LEVEL_PLAN arrival
   // while whatdest() == LEVEL_SHIP), then follow within same planet orbit
   ctx.em.mutate_ship(s2_id, [&](Ship& s2) {
-    s2.owner() = 1;
+    s2.owner() = mortal;
     s2.enter_planet_orbit(1, 1);
     s2.set_coordinates(p0_coords);
   });
@@ -1944,7 +1951,7 @@ void test_moveship_and_followable() {
   // Cross-system pursuit where target is in LEVEL_STAR or LEVEL_PLAN of star 2
   const auto star2_coords = ctx.em.peek_star(2)->coordinates();
   ctx.em.mutate_ship(s2_id, [&](Ship& s2) {
-    s2.owner() = 1;
+    s2.owner() = mortal;
     s2.enter_star_orbit(2);
     s2.set_coordinates(star2_coords + SystemCoordinates{0.0, 200.0});
   });
@@ -1969,7 +1976,7 @@ void test_moveship_and_followable() {
     test::expect_eq(s1.whatorbits(), ScopeLevel::LEVEL_STAR);
     test::expect_eq(s1.storbits(), starnum_t{2});
   });
-  ctx.em.mutate_ship(s2_id, [](Ship& s2) { s2.owner() = 2; });
+  ctx.em.mutate_ship(s2_id, [&](Ship& s2) { s2.owner() = foreign; });
 
   // Move target ship out of range so follower loses sight
   ctx.em.mutate_ship(
@@ -1997,7 +2004,7 @@ void test_moveship_and_followable() {
   });
 
   const auto probe_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-                            .owned_by(1, 1)
+                            .owned_by(mortal, 1)
                             .with_fuel(100.0)
                             .with_speed(9)
                             .build();
@@ -2020,7 +2027,7 @@ void test_moveship_and_followable() {
   });
 
   const auto vn_id = TestShipBuilder(ctx.em, ShipType::OTYPE_VN)
-                         .owned_by(1, 1)
+                         .owned_by(mortal, 1)
                          .with_fuel(500.0)
                          .with_speed(9)
                          .build();

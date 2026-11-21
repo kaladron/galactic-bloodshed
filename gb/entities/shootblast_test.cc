@@ -47,12 +47,12 @@ void test_shoot_planet_to_ship_valid_attack() {
   std::println(std::cout, "Test: shoot_planet_to_ship valid attack");
 
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   // Create a target ship in planet scope
   Ship ship{};
   ship.number() = 1;
-  ship.owner() = player_t{2};
+  ship.owner() = races.newcomer;
   ship.type() = ShipType::OTYPE_CANIST;
   ship.enter_planet_orbit(1, 1);
   ship.alive() = true;
@@ -63,13 +63,13 @@ void test_shoot_planet_to_ship_valid_attack() {
   ship.set_mass(10.0);
   ship.armor() = 5;
 
-  const auto* race1 = ctx.em.peek_race(player_t{1});
+  const auto* race1 = ctx.em.peek_race(races.empire);
   auto res = shoot_planet_to_ship(ctx.em, *race1, ship, 20);
   test::expect_true(res.has_value());
   test::expect_ge(res->damage, 0);
   test::expect_eq(res->attacker_kind, ShipShotAttackerKind::Planet);
   test::expect_eq(res->weapon, ShipShotWeaponKind::MediumGuns);
-  test::expect_eq(res->attacker_player, player_t{1});
+  test::expect_eq(res->attacker_player, races.empire);
   test::expect_false(res->target_location_display.empty());
   test::expect_false(res->target_display.empty());
 
@@ -82,7 +82,7 @@ void test_shoot_ship_to_planet_invalid_cases() {
   std::println(std::cout, "Test: shoot_ship_to_planet invalid cases");
 
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
 
   Planet planet{1, 1, PlanetType::EARTH, Coordinates{5, 5}};
 
@@ -137,14 +137,14 @@ void test_shoot_ship_to_planet_valid_attack() {
   std::println(std::cout, "Test: shoot_ship_to_planet valid attack");
 
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
   TestWorldBuilder(ctx).add_race("Vulcans", 100.0, false, player_t{5});
 
   Planet planet(ctx.em.peek_planet(1, 1)->get_struct());
 
   SectorMap smap(planet);
   auto& s = smap.get(Coordinates{1, 1});
-  s.set_owner(player_t{2});
+  s.set_owner(races.newcomer);
   s.set_popn_exact(100);
   s.set_condition(SectorType::SEC_LAND);
   s.set_type(SectorType::SEC_LAND);
@@ -158,7 +158,7 @@ void test_shoot_ship_to_planet_valid_attack() {
 
   Ship ship{};
   ship.number() = 1;
-  ship.owner() = player_t{1};
+  ship.owner() = races.empire;
   ship.type() = ShipType::OTYPE_CANIST;
   ship.enter_planet_orbit(1, 1);
   ship.alive() = true;
@@ -186,7 +186,7 @@ void test_shoot_ship_to_planet_cylindrical_seam_symmetry() {
                "Test: shoot_ship_to_planet cylindrical seam symmetry");
 
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   Planet planet(ctx.em.peek_planet(1, 1)->get_struct());
   planet.dimensions() = Coordinates{10, 10};
@@ -194,7 +194,7 @@ void test_shoot_ship_to_planet_cylindrical_seam_symmetry() {
   // Case A: Target at x = 0, sector at seam boundary x = 9 (dx = 1, dy = 0)
   SectorMap smap_a(planet);
   auto& s_a = smap_a.get(Coordinates{9, 5});
-  s_a.set_owner(2);
+  s_a.set_owner(races.newcomer);
   s_a.set_popn_exact(100);
   s_a.set_condition(SectorType::SEC_LAND);
   s_a.set_type(SectorType::SEC_LAND);
@@ -202,14 +202,14 @@ void test_shoot_ship_to_planet_cylindrical_seam_symmetry() {
   // Case B: Target at x = 9, sector at seam boundary x = 0 (dx = 1, dy = 0)
   SectorMap smap_b(planet);
   auto& s_b = smap_b.get(Coordinates{0, 5});
-  s_b.set_owner(2);
+  s_b.set_owner(races.newcomer);
   s_b.set_popn_exact(100);
   s_b.set_condition(SectorType::SEC_LAND);
   s_b.set_type(SectorType::SEC_LAND);
 
   Ship ship{};
   ship.number() = 1;
-  ship.owner() = 1;
+  ship.owner() = races.empire;
   ship.type() = ShipType::OTYPE_CANIST;
   ship.enter_planet_orbit(1, 1);
   ship.alive() = true;
@@ -243,14 +243,14 @@ void test_shoot_ship_to_planet_sub10_and_plated_casualties() {
       "Test: shoot_ship_to_planet sub-10 fac and high-fac plated casualties");
 
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   Planet planet(ctx.em.peek_planet(1, 1)->get_struct());
   planet.dimensions() = Coordinates{5, 5};
 
   Ship ship{};
   ship.number() = 1;
-  ship.owner() = 1;
+  ship.owner() = races.empire;
   ship.type() = ShipType::OTYPE_CANIST;
   ship.enter_planet_orbit(1, 1);
   ship.alive() = true;
@@ -390,13 +390,13 @@ void test_zero_body_ship_combat() {
   std::println(std::cout, "Test: zero-body ship combat safety");
 
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   // Target ship with 0 size and 0 armor (shipbody() == 0, effective_armor()
   // == 0)
   Ship ship{};
   ship.number() = 1;
-  ship.owner() = player_t{2};
+  ship.owner() = races.newcomer;
   ship.type() = ShipType::OTYPE_CANIST;
   ship.enter_planet_orbit(1, 1);
   ship.alive() = true;
@@ -411,7 +411,7 @@ void test_zero_body_ship_combat() {
   test::expect_eq(ship.effective_armor(), 0u);
 
   // Attack zero-body ship - must not divide by zero or crash
-  const auto* race = ctx.em.peek_race(player_t{1});
+  const auto* race = ctx.em.peek_race(races.empire);
   auto res = shoot_planet_to_ship(ctx.em, *race, ship, 25);
   test::expect_true(res.has_value());
   test::expect_ge(res->damage, 0);
@@ -517,10 +517,10 @@ void test_shoot_ship_to_ship_and_cew_caliber() {
                "Test: shoot_ship_to_ship guard clauses and CEW caliber");
 
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   auto attacker_h = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)
-                        .owned_by(1, 1)
+                        .owned_by(races.empire, 1)
                         .named("Attacker")
                         .in_star_orbit(1, SystemCoordinates{10.0, 10.0})
                         .with_size(100)
@@ -635,10 +635,10 @@ void test_critical_hit_systems_and_mine_guards() {
                "Test: critical hit subsystem destruction and mine guards");
 
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   auto attacker_h = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)
-                        .owned_by(1, 1)
+                        .owned_by(races.empire, 1)
                         .in_star_orbit(1, SystemCoordinates{10.0, 10.0})
                         .with_size(100)
                         .with_tech(500.0)
@@ -648,7 +648,7 @@ void test_critical_hit_systems_and_mine_guards() {
   Ship& attacker = *attacker_h;
 
   auto target_h = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                      .owned_by(2, 1)
+                      .owned_by(races.newcomer, 1)
                       .in_star_orbit(1, SystemCoordinates{10.0, 10.0})
                       .with_size(1)
                       .with_tech(1.0)
@@ -660,7 +660,7 @@ void test_critical_hit_systems_and_mine_guards() {
 
   auto crippled_attacker_h =
       TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)
-          .owned_by(1, 1)
+          .owned_by(races.empire, 1)
           .in_star_orbit(1, SystemCoordinates{10.0, 10.0})
           .with_size(100)
           .with_tech(500.0)
@@ -698,7 +698,7 @@ void test_critical_hit_systems_and_mine_guards() {
   test::expect_false(check_mine_proximity_trigger(attacker, ctx.em));
 
   auto mine_h = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
-                    .owned_by(1, 1)
+                    .owned_by(races.empire, 1)
                     .in_star_orbit(1, SystemCoordinates{0.0, 0.0})
                     .with_destruct(10)
                     .with_trigger_radius(10)

@@ -970,49 +970,47 @@ int main() {
   // Test 27: Planet::revolt() demographic synchronization and troop suppression
   {
     TestContext ctx;
-    ctx.with_standard_universe();
+    const auto races = ctx.with_races();
 
-    // Populate Earth sector (0,0) with player 1 civilians, 100% tax, 0 troops
-    ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
-      for (Sector& s : smap) {
-        s.set_owner(0);
-        s.set_popn_exact(0);
-        s.set_troops(0);
-      }
+    // Populate Mars (1, 2) sector (0,0) with empire civilians, 100% tax, 0
+    // troops
+    ctx.em.mutate_sectormap(1, 2, [&](SectorMap& smap) {
       auto& s0 = smap.get({0, 0});
-      s0.set_owner(1);
+      s0.set_owner(races.empire);
       s0.set_popn_exact(500);
       s0.set_troops(0);
       s0.set_mobilization(20);
     });
-    ctx.em.mutate_planet(1, 1, [&](Planet& p) {
-      p.sync_demographics(*ctx.em.peek_sectormap(1, 1));
-      p.info(1).tax = 100;
+    ctx.em.mutate_planet(1, 2, [&](Planet& p) {
+      p.sync_demographics(*ctx.em.peek_sectormap(1, 2));
+      p.info(races.empire).tax = 100;
     });
 
     // High troop garrison suppresses revolt
-    ctx.em.mutate_race(1, [](Race& r) { r.fighters = 10; });
+    ctx.em.mutate_race(races.empire, [](Race& r) { r.fighters = 10; });
     ctx.em.mutate_sectormap(
-        1, 1, [](SectorMap& smap) { smap.get({0, 0}).set_troops_exact(500); });
-    ctx.em.mutate_planet_and_sectors(1, 1, [&](Planet& p, SectorMap& smap) {
+        1, 2, [](SectorMap& smap) { smap.get({0, 0}).set_troops_exact(500); });
+    ctx.em.mutate_planet_and_sectors(1, 2, [&](Planet& p, SectorMap& smap) {
       p.sync_demographics(smap);
-      const int suppressed = p.revolt(smap, *ctx.em.peek_race(1), player_t{2});
+      const int suppressed =
+          p.revolt(smap, *ctx.em.peek_race(races.empire), races.newcomer);
       test::expect_eq(suppressed, 0);
     });
 
-    // Zero troops with 100% tax triggers revolt to player 2 and syncs
+    // Zero troops with 100% tax triggers revolt to newcomer and syncs
     // demographics
     ctx.em.mutate_sectormap(
-        1, 1, [](SectorMap& smap) { smap.get({0, 0}).set_troops_exact(0); });
-    ctx.em.mutate_planet_and_sectors(1, 1, [&](Planet& p, SectorMap& smap) {
+        1, 2, [](SectorMap& smap) { smap.get({0, 0}).set_troops_exact(0); });
+    ctx.em.mutate_planet_and_sectors(1, 2, [&](Planet& p, SectorMap& smap) {
       p.sync_demographics(smap);
-      p.info(1).tax = 100;
-      const int revolted = p.revolt(smap, *ctx.em.peek_race(1), player_t{2});
+      p.info(races.empire).tax = 100;
+      const int revolted =
+          p.revolt(smap, *ctx.em.peek_race(races.empire), races.newcomer);
       test::expect_eq(revolted, 1);
-      test::expect_eq(p.info(1).numsectsowned, 0U);
-      test::expect_eq(p.info(2).numsectsowned, 1U);
-      test::expect_eq(p.info(1).popn, 0);
-      test::expect_eq(p.info(2).popn, p.popn());
+      test::expect_eq(p.info(races.empire).numsectsowned, 0U);
+      test::expect_eq(p.info(races.newcomer).numsectsowned, 1U);
+      test::expect_eq(p.info(races.empire).popn, 0);
+      test::expect_eq(p.info(races.newcomer).popn, p.popn());
     });
     ctx.verify_universe_invariants();
   }
@@ -1021,7 +1019,7 @@ int main() {
   // translation
   {
     TestContext ctx;
-    ctx.with_standard_universe();
+    ctx.with_galaxy();
 
     const auto ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
                              .owned_by(1, 1)

@@ -239,14 +239,16 @@ int main() {
   // Test mech_defend, mech_attack_people, people_attack_mech, and ground_attack
   {
     TestContext ctx;
-    ctx.with_standard_universe();
-    ctx.em.mutate_race(1, [](Race& r) {
+    const auto races = ctx.with_races();
+    const player_t attacker_id = races.empire;
+    const player_t defender_id = races.newcomer;
+    ctx.em.mutate_race(attacker_id, [](Race& r) {
       r.tech = 50.0;
       r.fighters = 5;
       r.morale = 1000;
       r.likes[SectorType::SEC_LAND] = 1.0;
     });
-    ctx.em.mutate_race(2, [](Race& r) {
+    ctx.em.mutate_race(defender_id, [](Race& r) {
       r.tech = 20.0;
       r.fighters = 2;
       r.morale = 500;
@@ -255,12 +257,12 @@ int main() {
 
     auto& registry = get_test_session_registry();
     GameObj g(ctx.em, registry);
-    ctx.setup_game_obj(g, 1, 1);
+    ctx.setup_game_obj(g, attacker_id, 1);
     g.set_scope_planet(1, 1);
 
-    // Create a hostile Player 2 AFV landed at (3, 3) with 1 destruct
+    // Create a hostile defender AFV landed at (3, 3) with 1 destruct
     const shipnum_t afv_id = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
-                                 .owned_by(2, 1)
+                                 .owned_by(defender_id, 1)
                                  .landed_on(1, 1, Coordinates{3, 3})
                                  .with_crew(1, 0)
                                  .with_guns(guntype_t::MEDIUM, 2)
@@ -274,11 +276,11 @@ int main() {
     const Sector& target_sect = smap->get(Coordinates{3, 3});
 
     // 1. Allied AFVs do not fire on allied troops
-    ctx.em.mutate_race(1,
-                       [](Race& r) { r.declare_alliance_with(player_t{2}); });
-    ctx.em.mutate_race(2,
-                       [](Race& r) { r.declare_alliance_with(player_t{1}); });
-    ctx.setup_game_obj(g, 1, 1);
+    ctx.em.mutate_race(attacker_id,
+                       [&](Race& r) { r.declare_alliance_with(defender_id); });
+    ctx.em.mutate_race(defender_id,
+                       [&](Race& r) { r.declare_alliance_with(attacker_id); });
+    ctx.setup_game_obj(g, attacker_id, 1);
     population_t entering_troops = 1000;
     const auto allied_defend =
         mech_defend(ctx.em, *g.race, &entering_troops, PopulationType::MIL,
@@ -288,11 +290,11 @@ int main() {
 
     // 2. Hostile AFV engages entering troops and takes counter-attack damage
     // even when its destruct drops to 0 after firing its last shell
-    ctx.em.mutate_race(1,
-                       [](Race& r) { r.rescind_alliance_with(player_t{2}); });
-    ctx.em.mutate_race(2,
-                       [](Race& r) { r.rescind_alliance_with(player_t{1}); });
-    ctx.setup_game_obj(g, 1, 1);
+    ctx.em.mutate_race(attacker_id,
+                       [&](Race& r) { r.rescind_alliance_with(defender_id); });
+    ctx.em.mutate_race(defender_id,
+                       [&](Race& r) { r.rescind_alliance_with(attacker_id); });
+    ctx.setup_game_obj(g, attacker_id, 1);
     seed_rand(42);
     const auto hostile_defend =
         mech_defend(ctx.em, *g.race, &entering_troops, PopulationType::MIL,
@@ -314,9 +316,9 @@ int main() {
     population_t civ = 20;
     population_t mil = 10;
     ctx.em.mutate_ship(afv_id, [&](Ship& s) {
-      const auto res =
-          mech_attack_people(ctx.em, s, &civ, &mil, *ctx.em.peek_race(2),
-                             *ctx.em.peek_race(1), target_sect, false);
+      const auto res = mech_attack_people(
+          ctx.em, s, &civ, &mil, *ctx.em.peek_race(defender_id),
+          *ctx.em.peek_race(attacker_id), target_sect, false);
       const auto long_msg =
           GB::presentation::render_mech_attack_people_long(res);
       test::expect_contains(long_msg, "Battle at 3,3");
@@ -325,8 +327,8 @@ int main() {
 
     // 4. ground_attack with CIV and MIL attackers
     const auto outcome = ground_attack({
-        .attacker = *ctx.em.peek_race(1),
-        .defender = *ctx.em.peek_race(2),
+        .attacker = *ctx.em.peek_race(attacker_id),
+        .defender = *ctx.em.peek_race(defender_id),
         .attacker_force = 100,
         .attacker_type = PopulationType::CIV,
         .defender_civ = 20,

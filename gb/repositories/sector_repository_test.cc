@@ -12,7 +12,7 @@ import std;
 
 int main() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_races();
   ctx.create_star("Star5", 5).build();
   ctx.create_star("Star9", 9).build();
   ctx.create_star("Star10", 10).build();

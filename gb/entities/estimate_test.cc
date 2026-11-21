@@ -16,82 +16,84 @@ namespace {
 
 void test_ship_visibility_helpers() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
+  const player_t viewer = races.empire;
+  const player_t foreign = races.newcomer;
 
-  // Initially neither player 1 nor player 2 has a ship in Sol (1)
-  test::expect_false(has_system_sight(ctx.em, 1, 1, false));
-  test::expect_true(has_system_sight(ctx.em, 1, 1, true));
-  test::expect_false(has_planet_sight(ctx.em, 1, 1, 1, false));
-  test::expect_true(has_planet_sight(ctx.em, 1, 1, 1, true));
+  // Initially neither mortal race has a ship in Vega (Star 2)
+  test::expect_false(has_system_sight(ctx.em, 2, viewer, false));
+  test::expect_true(has_system_sight(ctx.em, 2, viewer, true));
+  test::expect_false(has_planet_sight(ctx.em, 2, 1, viewer, false));
+  test::expect_true(has_planet_sight(ctx.em, 2, 1, viewer, true));
 
-  // Add a player 1 cruiser with crew (has_sight() == true) in star orbit
+  // Add a viewer cruiser with crew (has_sight() == true) in Vega star orbit
   const shipnum_t p1_cruiser = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                                   .owned_by(1, 0)
-                                   .in_star_orbit(1)
+                                   .owned_by(viewer, 1)
+                                   .in_star_orbit(2)
                                    .with_crew(50, 10)
                                    .build();
-  test::expect_true(has_system_sight(ctx.em, 1, 1, false));
-  test::expect_false(has_system_sight(ctx.em, 1, 2, false));
+  test::expect_true(has_system_sight(ctx.em, 2, viewer, false));
+  test::expect_false(has_system_sight(ctx.em, 2, foreign, false));
 
-  // Add a player 2 cruiser in planet orbit around Sol/Earth (1, 1)
+  // Add a foreign cruiser in planet orbit around Vega/Vega Prime (2, 1)
   const shipnum_t p2_cruiser = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                                   .owned_by(2, 0)
-                                   .in_planet_orbit(1, 1)
+                                   .owned_by(foreign, 1)
+                                   .in_planet_orbit(2, 1)
                                    .with_crew(50, 10)
                                    .build();
-  test::expect_true(has_planet_sight(ctx.em, 1, 1, 2, false));
-  test::expect_false(has_planet_sight(ctx.em, 1, 1, 1, false));
+  test::expect_true(has_planet_sight(ctx.em, 2, 1, foreign, false));
+  test::expect_false(has_planet_sight(ctx.em, 2, 1, viewer, false));
 
   // Verify is_ship_visible_to rules
   const Ship& s1 = *ctx.em.peek_ship(p1_cruiser);
   const Ship& s2 = *ctx.em.peek_ship(p2_cruiser);
-  test::expect_true(is_ship_visible_to(s1, 1, false, false));
-  test::expect_false(is_ship_visible_to(s2, 1, false, false));
-  test::expect_true(is_ship_visible_to(s2, 1, false, true));
-  test::expect_true(is_ship_visible_to(s2, 1, true, false));
+  test::expect_true(is_ship_visible_to(s1, viewer, false, false));
+  test::expect_false(is_ship_visible_to(s2, viewer, false, false));
+  test::expect_true(is_ship_visible_to(s2, viewer, false, true));
+  test::expect_true(is_ship_visible_to(s2, viewer, true, false));
 
   // Foreign space mines, canisters, greenhouse gases, and deep-space ships are
   // hidden from mortals even if has_sight_at_location is true, while landed
   // mines are visible when has_sight_at_location is true, and destroyed ships
   // (!alive()) are never visible.
   const shipnum_t p2_mine = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
-                                .owned_by(2, 0)
-                                .in_star_orbit(1)
+                                .owned_by(foreign, 1)
+                                .in_star_orbit(2)
                                 .build();
   const shipnum_t p2_landed_mine = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
-                                       .owned_by(2, 0)
-                                       .landed_on(1, 1, {0, 0})
+                                       .owned_by(foreign, 1)
+                                       .landed_on(2, 1, {0, 0})
                                        .build();
   const shipnum_t p2_canist = TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST)
-                                  .owned_by(2, 0)
-                                  .in_planet_orbit(1, 1)
+                                  .owned_by(foreign, 1)
+                                  .in_planet_orbit(2, 1)
                                   .build();
   const shipnum_t p2_green = TestShipBuilder(ctx.em, ShipType::OTYPE_GREEN)
-                                 .owned_by(2, 0)
-                                 .in_planet_orbit(1, 1)
+                                 .owned_by(foreign, 1)
+                                 .in_planet_orbit(2, 1)
                                  .build();
   const shipnum_t p2_deep = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                                .owned_by(2, 0)
+                                .owned_by(foreign, 1)
                                 .in_deep_space()
                                 .build();
   Ship dead_ship{};
   dead_ship.alive() = false;
 
   test::expect_false(
-      is_ship_visible_to(*ctx.em.peek_ship(p2_mine), 1, false, true));
+      is_ship_visible_to(*ctx.em.peek_ship(p2_mine), viewer, false, true));
   test::expect_true(
-      is_ship_visible_to(*ctx.em.peek_ship(p2_mine), 2, false, false));
+      is_ship_visible_to(*ctx.em.peek_ship(p2_mine), foreign, false, false));
+  test::expect_true(is_ship_visible_to(*ctx.em.peek_ship(p2_landed_mine),
+                                       viewer, false, true));
+  test::expect_false(
+      is_ship_visible_to(*ctx.em.peek_ship(p2_canist), viewer, false, true));
+  test::expect_false(
+      is_ship_visible_to(*ctx.em.peek_ship(p2_green), viewer, false, true));
+  test::expect_false(
+      is_ship_visible_to(*ctx.em.peek_ship(p2_deep), viewer, false, true));
   test::expect_true(
-      is_ship_visible_to(*ctx.em.peek_ship(p2_landed_mine), 1, false, true));
-  test::expect_false(
-      is_ship_visible_to(*ctx.em.peek_ship(p2_canist), 1, false, true));
-  test::expect_false(
-      is_ship_visible_to(*ctx.em.peek_ship(p2_green), 1, false, true));
-  test::expect_false(
-      is_ship_visible_to(*ctx.em.peek_ship(p2_deep), 1, false, true));
-  test::expect_true(
-      is_ship_visible_to(*ctx.em.peek_ship(p2_deep), 1, true, false));
-  test::expect_false(is_ship_visible_to(dead_ship, 1, true, true));
+      is_ship_visible_to(*ctx.em.peek_ship(p2_deep), viewer, true, false));
+  test::expect_false(is_ship_visible_to(dead_ship, viewer, true, true));
 }
 
 }  // namespace

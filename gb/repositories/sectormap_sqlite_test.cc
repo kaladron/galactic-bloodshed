@@ -389,7 +389,7 @@ void test_sectormap_dirty_tracking_views_persistence(EntityManager& em,
 
 int main() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_races();
   ctx.create_star("Star5", 5).build();
   ctx.create_star("Star7", 7).build();
   ctx.create_star("Star9", 9).build();

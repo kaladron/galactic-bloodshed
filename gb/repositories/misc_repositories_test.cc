@@ -17,7 +17,7 @@ import std;
 void test_commod_repository() {
   // Setup
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_races();
   JsonStore store(ctx.db);
   CommodRepository repo(store);
 

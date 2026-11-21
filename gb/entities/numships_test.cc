@@ -12,7 +12,8 @@ import std;
 
 int main() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
+  TestWorldBuilder(ctx).add_race("Explorers", 10.0, false, 2);
   Database& db = ctx.db;
   EntityManager& entity_manager = ctx.em;
 

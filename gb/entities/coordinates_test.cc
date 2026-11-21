@@ -377,10 +377,12 @@ int main() {
   std::println(std::cout, "--- Testing Place Resolution & Formatting ---");
   {
     TestContext ctx;
-    ctx.with_standard_universe();
+    const auto races = ctx.with_races();
+    const player_t mortal = races.empire;
+    const player_t foreign = races.newcomer;
     auto& registry = get_test_session_registry();
     GameObj g(ctx.em, registry);
-    ctx.setup_game_obj(g, 1, 1);
+    ctx.setup_game_obj(g, mortal, 1);
 
     // 1. Direct constructors, Place factories, enclosing_star(), and
     // to_string(EntityManager&)
@@ -444,12 +446,12 @@ int main() {
     // 4. Ascending from LEVEL_SHIP (docked inside carrier & orbiting planet)
     const shipnum_t carrier_id =
         TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-            .owned_by(1, 1)
+            .owned_by(mortal, 1)
             .in_planet_orbit(1, 1, UniverseCoordinates{0.0, 0.0})
             .build();
     const shipnum_t fighter_id =
         TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-            .owned_by(1, 1)
+            .owned_by(mortal, 1)
             .in_planet_orbit(1, 1, UniverseCoordinates{0.0, 0.0})
             .build();
     ctx.em.mutate_ship(fighter_id,
@@ -474,7 +476,7 @@ int main() {
     test::expect_eq(p_from_carrier->shipno, 0);
 
     const shipnum_t missing_ship = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
-                                       .owned_by(1, 1)
+                                       .owned_by(mortal, 1)
                                        .in_star_orbit(1)
                                        .build();
     g.set_scope_ship(missing_ship);
@@ -488,7 +490,7 @@ int main() {
     // planets/stars unless ignore_explore or god is active
     const shipnum_t foreign_carrier =
         TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-            .owned_by(2, 1)
+            .owned_by(foreign, 1)
             .in_star_orbit(1, UniverseCoordinates{0.0, 0.0})
             .build();
     ctx.em.mutate_ship(fighter_id,
@@ -502,15 +504,15 @@ int main() {
         Place::resolve(ctx.em, g.scope_context(), ".", true).has_value());
 
     ctx.em.mutate_ship(fighter_id, [](Ship& f) { f.enter_planet_orbit(1, 1); });
-    ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(1).explored = 0; });
+    ctx.em.mutate_planet(1, 1, [&](Planet& p) { p.info(mortal).explored = 0; });
     auto p_unexp_plan_up = Place::resolve(ctx.em, g.scope_context(), ".");
     test::expect_false(p_unexp_plan_up.has_value());
     test::expect_true(p_unexp_plan_up.error().kind ==
                       PlaceErrorKind::PlanetUnexplored);
-    ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(1).explored = 1; });
+    ctx.em.mutate_planet(1, 1, [&](Planet& p) { p.info(mortal).explored = 1; });
 
     ctx.em.mutate_ship(fighter_id, [](Ship& f) { f.enter_star_orbit(1); });
-    ctx.em.mutate_star(1, [](Star& s) { s.clear_explored_by(1); });
+    ctx.em.mutate_star(1, [&](Star& s) { s.clear_explored_by(mortal); });
     auto p_unexp_star_up = Place::resolve(ctx.em, g.scope_context(), ".");
     test::expect_false(p_unexp_star_up.has_value());
     test::expect_true(p_unexp_star_up.error().kind ==
@@ -519,7 +521,7 @@ int main() {
     {
       const shipnum_t temp_dead =
           TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-              .owned_by(1, 1)
+              .owned_by(mortal, 1)
               .in_star_orbit(1)
               .build();
       auto defer = ctx.em.create_deferred_write_scope();
@@ -533,11 +535,11 @@ int main() {
     }
     ctx.em.mutate_ship(fighter_id,
                        [&](Ship& f) { f.dock_into_carrier(carrier_id); });
-    ctx.em.mutate_star(1, [](Star& s) { s.mark_explored_by(1); });
+    ctx.em.mutate_star(1, [&](Star& s) { s.mark_explored_by(mortal); });
 
     // 5. Descending into unexplored vs explored stars & planets, and
     // non-null-terminated substr formatting on compound paths
-    ctx.em.mutate_star(1, [](Star& s) { s.clear_explored_by(player_t{1}); });
+    ctx.em.mutate_star(1, [&](Star& s) { s.clear_explored_by(mortal); });
     g.set_scope_univ();
     auto p_unexplored_star = Place::resolve(ctx.em, g.scope_context(), "/Sol");
     test::expect_false(p_unexplored_star.has_value());
@@ -549,7 +551,7 @@ int main() {
     test::expect_true(p_ignore_explore_star.has_value());
     test::expect_eq(p_ignore_explore_star->level, ScopeLevel::LEVEL_STAR);
     test::expect_eq(p_ignore_explore_star->snum, 1);
-    ctx.em.mutate_star(1, [](Star& s) { s.mark_explored_by(player_t{1}); });
+    ctx.em.mutate_star(1, [&](Star& s) { s.mark_explored_by(mortal); });
 
     auto p_bad_compound_star =
         Place::resolve(ctx.em, g.scope_context(), "/BadStar/SomePlanet");
@@ -557,13 +559,13 @@ int main() {
     test::expect_contains(format_place_error(p_bad_compound_star.error()),
                           "No such star BadStar.");
 
-    ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(1).explored = 0; });
+    ctx.em.mutate_planet(1, 1, [&](Planet& p) { p.info(mortal).explored = 0; });
     auto p_unexplored_planet =
         Place::resolve(ctx.em, g.scope_context(), "/Sol/Earth");
     test::expect_false(p_unexplored_planet.has_value());
     test::expect_contains(format_place_error(p_unexplored_planet.error()),
                           "You have not explored Earth yet.");
-    ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(1).explored = 1; });
+    ctx.em.mutate_planet(1, 1, [&](Planet& p) { p.info(mortal).explored = 1; });
 
     auto p_bad_planet = Place::resolve(ctx.em, g.scope_context(), "/Sol/Pluto");
     test::expect_false(p_bad_planet.has_value());
@@ -594,7 +596,7 @@ int main() {
 
     const shipnum_t alien_ship_id =
         TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-            .owned_by(2, 1)
+            .owned_by(foreign, 1)
             .in_star_orbit(1, UniverseCoordinates{0.0, 0.0})
             .build();
     auto p_alien_ship = Place::resolve(ctx.em, g.scope_context(),
@@ -608,14 +610,14 @@ int main() {
 
     // 7. Pure Place::resolve() covering all PlaceErrorKind & MC/DC conditions
     auto dead_handle = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                           .owned_by(1, 1)
+                           .owned_by(mortal, 1)
                            .in_star_orbit(1, UniverseCoordinates{0.0, 0.0})
                            .build_handle();
     const shipnum_t dead_ship_id = dead_handle->number();
     ctx.em.destroy_ship(*dead_handle);
 
     ScopeContext scope_ctx{
-        .player = 1,
+        .player = mortal,
         .governor = 1,
         .god = false,
         .level = ScopeLevel::LEVEL_PLAN,
@@ -645,20 +647,20 @@ int main() {
 
     // Unexplored star/planet succeeds when god == true even with ignore_explore
     // == false
-    ctx.em.mutate_star(1, [](Star& s) { s.clear_explored_by(player_t{1}); });
-    ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(1).explored = 0; });
+    ctx.em.mutate_star(1, [&](Star& s) { s.clear_explored_by(mortal); });
+    ctx.em.mutate_planet(1, 1, [&](Planet& p) { p.info(mortal).explored = 0; });
     auto god_unexp = Place::resolve(ctx.em, god_ctx, "/Sol/Earth", false);
     test::expect_true(god_unexp.has_value());
     test::expect_eq(god_unexp->level, ScopeLevel::LEVEL_PLAN);
-    ctx.em.mutate_star(1, [](Star& s) { s.mark_explored_by(player_t{1}); });
-    ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(1).explored = 1; });
+    ctx.em.mutate_star(1, [&](Star& s) { s.mark_explored_by(mortal); });
+    ctx.em.mutate_planet(1, 1, [&](Planet& p) { p.info(mortal).explored = 1; });
 
     // Missing parent carrier when ascending "." from docked ship returns
     // ShipNotFound instead of throwing EntityNotFoundError
     ctx.em.mutate_ship(fighter_id, [&](Ship& f) {
       f.dock_into_carrier(shipnum_t{7777});
       ScopeContext orphaned_fighter_ctx{
-          .player = 1,
+          .player = mortal,
           .governor = 1,
           .god = false,
           .level = ScopeLevel::LEVEL_SHIP,

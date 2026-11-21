@@ -91,30 +91,32 @@ void test_people_attack_mech() {
   std::println(std::cout, "Test: people_attack_mech");
 
   TestContext ctx;
-  ctx.with_standard_universe();
-  ctx.em.mutate_race(1, [](Race& race) {
+  const auto races = ctx.with_races();
+  const player_t attacker_id = races.newcomer;
+  const player_t defender_id = races.nomad;
+  ctx.em.mutate_race(attacker_id, [](Race& race) {
     race.name = "AttackerPeople";
     race.tech = 10.0;
     race.fighters = 5;
     race.morale = 10;
     race.likes[SectorType::SEC_LAND] = 1.0;
   });
-  ctx.em.mutate_race(2, [](Race& alien) {
+  ctx.em.mutate_race(defender_id, [](Race& alien) {
     alien.name = "MechOwner";
     alien.tech = 10.0;
     alien.morale = 10;
     alien.likes[SectorType::SEC_LAND] = 1.0;
   });
 
-  const auto& race = *ctx.em.peek_race(1);
-  const auto& alien = *ctx.em.peek_race(2);
+  const auto& race = *ctx.em.peek_race(attacker_id);
+  const auto& alien = *ctx.em.peek_race(defender_id);
 
   Sector sect{};
   sect.set_condition(SectorType::SEC_LAND);
 
   Ship ship{};
   ship.number() = 0;
-  ship.owner() = player_t{2};
+  ship.owner() = defender_id;
   ship.type() = ShipType::OTYPE_AFV;
   ship.tech() = 10.0;
   ship.armor() = 5;
@@ -158,14 +160,16 @@ void test_mech_defend_mcdc() {
   std::println(std::cout, "Test: mech_defend_mcdc");
 
   TestContext ctx;
-  ctx.with_standard_universe();
-  ctx.em.mutate_race(1, [](Race& r) {
+  const auto races = ctx.with_races();
+  const player_t attacker_id = races.newcomer;
+  const player_t defender_id = races.nomad;
+  ctx.em.mutate_race(attacker_id, [](Race& r) {
     r.tech = 10.0;
     r.fighters = 1;
     r.morale = 100;
     r.likes[SectorType::SEC_LAND] = 1.0;
   });
-  ctx.em.mutate_race(2, [](Race& r) {
+  ctx.em.mutate_race(defender_id, [](Race& r) {
     r.tech = 500.0;
     r.fighters = 10;
     r.morale = 5000;
@@ -175,7 +179,7 @@ void test_mech_defend_mcdc() {
   // 1. Friendly AFV at target (ship.owner() == attacker_race.Playernum) ->
   // skipped
   TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
-      .owned_by(1, 1)
+      .owned_by(attacker_id, 1)
       .landed_on(1, 1, Coordinates{3, 3})
       .with_crew(1, 0)
       .with_guns(guntype_t::MEDIUM, 2)
@@ -186,7 +190,7 @@ void test_mech_defend_mcdc() {
   // 2. Enemy non-AFV ship at target (ship.type() != ShipType::OTYPE_AFV) ->
   // skipped
   TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-      .owned_by(2, 1)
+      .owned_by(defender_id, 1)
       .landed_on(1, 1, Coordinates{3, 3})
       .with_crew(5, 0)
       .with_guns(guntype_t::MEDIUM, 2)
@@ -196,7 +200,7 @@ void test_mech_defend_mcdc() {
 
   // 3. Enemy AFV in orbit (!ship.is_landed()) -> skipped
   TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
-      .owned_by(2, 1)
+      .owned_by(defender_id, 1)
       .in_planet_orbit(1, 1)
       .with_crew(1, 0)
       .with_guns(guntype_t::MEDIUM, 2)
@@ -206,7 +210,7 @@ void test_mech_defend_mcdc() {
 
   // 4. Enemy landed AFV with 0 destruct (ship.retal_strength() == 0) -> skipped
   TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
-      .owned_by(2, 1)
+      .owned_by(defender_id, 1)
       .landed_on(1, 1, Coordinates{3, 3})
       .with_crew(1, 0)
       .with_guns(guntype_t::MEDIUM, 2)
@@ -217,7 +221,7 @@ void test_mech_defend_mcdc() {
   // 5. Enemy landed AFV on different sector (ship.land_coords() !=
   // target_coords) -> skipped
   TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
-      .owned_by(2, 1)
+      .owned_by(defender_id, 1)
       .landed_on(1, 1, Coordinates{4, 4})
       .with_crew(1, 0)
       .with_guns(guntype_t::MEDIUM, 2)
@@ -227,7 +231,7 @@ void test_mech_defend_mcdc() {
 
   // 6. Hostile enemy landed AFV #1 at (3, 3) with overwhelming firepower
   const shipnum_t hostile_afv1 = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
-                                     .owned_by(2, 1)
+                                     .owned_by(defender_id, 1)
                                      .landed_on(1, 1, Coordinates{3, 3})
                                      .with_crew(1, 0)
                                      .with_guns(guntype_t::HEAVY, 2)
@@ -239,7 +243,7 @@ void test_mech_defend_mcdc() {
   // 7. Trailing ship on planet so `if (civ + mil == 0) break;` is exercised
   // after hostile_afv1 wipes out the entering civilian force
   TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
-      .owned_by(2, 1)
+      .owned_by(defender_id, 1)
       .landed_on(1, 1, Coordinates{3, 3})
       .with_crew(1, 0)
       .with_guns(guntype_t::HEAVY, 2)
@@ -252,14 +256,16 @@ void test_mech_defend_mcdc() {
   const auto& smap = *ctx.em.peek_sectormap(1, 1);
   const Sector& target_sect = smap.get(Coordinates{3, 3});
 
-  // One-way alliance: Player 1 allied with Player 2, but Player 2 NOT allied
-  // with Player 1 -> AFV still defends and slaughters the 1 entering civilian!
-  ctx.em.mutate_race(1, [](Race& r) { r.declare_alliance_with(player_t{2}); });
-  ctx.em.mutate_race(2, [](Race& r) { r.rescind_alliance_with(player_t{1}); });
+  // One-way alliance: attacker allied with defender, but defender NOT allied
+  // with attacker -> AFV still defends and slaughters the 1 entering civilian!
+  ctx.em.mutate_race(attacker_id,
+                     [&](Race& r) { r.declare_alliance_with(defender_id); });
+  ctx.em.mutate_race(defender_id,
+                     [&](Race& r) { r.rescind_alliance_with(attacker_id); });
 
   population_t entering_civs = 1;
   const auto defend_res =
-      mech_defend(ctx.em, *ctx.em.peek_race(1), &entering_civs,
+      mech_defend(ctx.em, *ctx.em.peek_race(attacker_id), &entering_civs,
                   PopulationType::CIV, p_earth, Coordinates{3, 3}, target_sect);
   test::expect_eq(entering_civs, 0u);
   test::expect_eq(defend_res.surviving_people, 0u);
@@ -267,23 +273,24 @@ void test_mech_defend_mcdc() {
   test::expect_false(defend_res.rounds[0].people_counterattack.has_value());
   test::expect_true(ctx.em.peek_ship(hostile_afv1)->alive());
 
-  // Mutual alliance: Player 2 reciprocates alliance -> AFVs do not attack
-  ctx.em.mutate_race(2, [](Race& r) { r.declare_alliance_with(player_t{1}); });
+  // Mutual alliance: defender reciprocates alliance -> AFVs do not attack
+  ctx.em.mutate_race(defender_id,
+                     [&](Race& r) { r.declare_alliance_with(attacker_id); });
   population_t allied_civs = 50;
   const auto allied_res =
-      mech_defend(ctx.em, *ctx.em.peek_race(1), &allied_civs,
+      mech_defend(ctx.em, *ctx.em.peek_race(attacker_id), &allied_civs,
                   PopulationType::CIV, p_earth, Coordinates{3, 3}, target_sect);
   test::expect_eq(allied_civs, 50u);
   test::expect_true(allied_res.rounds.empty());
 
   // Defending AFV exhausts ammo while entering troops survive (`(civ + mil) > 0
   // && ship.retal_strength() == 0`)
-  ctx.em.mutate_race(2, [](Race& r) {
-    r.rescind_alliance_with(player_t{1});
+  ctx.em.mutate_race(defender_id, [&](Race& r) {
+    r.rescind_alliance_with(attacker_id);
     r.tech = 1.0;
   });
   TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
-      .owned_by(2, 1)
+      .owned_by(defender_id, 1)
       .landed_on(1, 1, Coordinates{5, 5})
       .with_crew(1, 0)
       .with_guns(guntype_t::LIGHT, 1)
@@ -294,7 +301,7 @@ void test_mech_defend_mcdc() {
       .build();
   population_t entering_troops = 500;
   const auto ammo_res =
-      mech_defend(ctx.em, *ctx.em.peek_race(1), &entering_troops,
+      mech_defend(ctx.em, *ctx.em.peek_race(attacker_id), &entering_troops,
                   PopulationType::MIL, p_earth, Coordinates{5, 5}, target_sect);
   test::expect_gt(entering_troops, 0u);
   test::expect_eq(ammo_res.rounds.size(), 1u);

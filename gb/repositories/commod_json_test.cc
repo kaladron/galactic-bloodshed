@@ -14,7 +14,7 @@ import std;
 
 int main() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_races();
 
   // Create JsonStore and Repository for initial save
   JsonStore store(ctx.db);

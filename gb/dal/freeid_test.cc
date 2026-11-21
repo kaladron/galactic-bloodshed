@@ -12,7 +12,7 @@ import std;
 
 int main() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
   JsonStore store(ctx.db);
   ShipRepository ship_repo(store);
 

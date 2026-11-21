@@ -221,26 +221,27 @@ int main() {
   // sector abandonment
   {
     TestContext ctx;
-    ctx.with_standard_universe();
+    const auto races = ctx.with_races();
+    const player_t mortal = races.empire;
 
-    ctx.em.mutate_planet(1, 1, [](Planet& p) {
+    ctx.em.mutate_planet(1, 1, [&](Planet& p) {
       p.popn() = 100;
-      p.info(1).popn = 100;
-      p.info(1).numsectsowned = 1;
-      p.info(1).fuel = 500;
+      p.info(mortal).popn = 100;
+      p.info(mortal).numsectsowned = 1;
+      p.info(mortal).fuel = 500;
     });
-    ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
+    ctx.em.mutate_sectormap(1, 1, [&](SectorMap& smap) {
       for (auto& s : smap) {
         s.clear_popn();
         s.set_troops_exact(0);
         s.set_owner(0);
       }
       auto& sect = smap.get(Coordinates{1, 1});
-      sect.set_owner(1);
+      sect.set_owner(mortal);
       sect.set_popn_exact(100);
     });
 
-    auto ship = getship(ShipType::STYPE_SHUTTLE, *ctx.em.peek_race(1));
+    auto ship = getship(ShipType::STYPE_SHUTTLE, *ctx.em.peek_race(mortal));
     ship->max_crew() = 100;
     ship->max_fuel() = 50;
     std::pair<population_t, fuel_t> loaded{};
@@ -248,7 +249,7 @@ int main() {
     ctx.em.mutate_planet(1, 1, [&](Planet& p) {
       ctx.em.mutate_sectormap(1, 1, [&](SectorMap& smap) {
         auto& sect = smap.get(Coordinates{1, 1});
-        loaded = autoload_at_planet(1, *ship, p, sect);
+        loaded = autoload_at_planet(mortal, *ship, p, sect);
       });
     });
 
@@ -258,9 +259,9 @@ int main() {
     const auto* p_after = ctx.em.peek_planet(1, 1);
     const auto* smap_after = ctx.em.peek_sectormap(1, 1);
     test::expect_eq(p_after->popn(), 0);
-    test::expect_eq(p_after->info(1).popn, 0);
-    test::expect_eq(p_after->info(1).numsectsowned, 0);
-    test::expect_eq(p_after->info(1).fuel, 450);
+    test::expect_eq(p_after->info(mortal).popn, 0);
+    test::expect_eq(p_after->info(mortal).numsectsowned, 0);
+    test::expect_eq(p_after->info(mortal).fuel, 450);
     test::expect_eq(smap_after->get(Coordinates{1, 1}).get_owner(), 0);
     std::println(std::cout,
                  "Test 11 passed: autoload_at_planet synchronizes planetary "
@@ -270,8 +271,8 @@ int main() {
   // Test 12: autoload_at_ship transfers crew and fuel from builder ship
   {
     TestContext ctx;
-    ctx.with_standard_universe();
-    const auto& r1 = *ctx.em.peek_race(1);
+    const auto races = ctx.with_races();
+    const auto& r1 = *ctx.em.peek_race(races.empire);
     auto builder = getship(ShipType::STYPE_CARRIER, r1);
     builder->popn() = 50;
     builder->admin_override_fuel(200.0, r1.mass);
@@ -341,8 +342,8 @@ int main() {
   // Test 14: initialize_new_ship special ship types and diagnostics
   {
     TestContext ctx;
-    ctx.with_standard_universe();
-    const auto& r1 = *ctx.em.peek_race(1);
+    const auto races = ctx.with_races();
+    const auto& r1 = *ctx.em.peek_race(races.empire);
 
     // VN Ship (robotic ship: max_crew_capacity == 0)
     auto vn = getship(ShipType::OTYPE_VN, r1);
@@ -410,19 +411,20 @@ int main() {
   // shipping_cost
   {
     TestContext ctx;
-    ctx.with_standard_universe();
-    const auto& r1 = *ctx.em.peek_race(1);
+    const auto races = ctx.with_races();
+    const player_t mortal = races.empire;
+    const auto& r1 = *ctx.em.peek_race(mortal);
 
-    ctx.em.mutate_planet(1, 1, [](Planet& p) {
+    ctx.em.mutate_planet(1, 1, [&](Planet& p) {
       p.toxic() = 80;
-      p.info(player_t{1}).resource = 1000;
+      p.info(mortal).resource = 1000;
     });
 
     auto tox_ship = getship(ShipType::OTYPE_TOXWC, r1);
     CreatedShipSummary tox_summary{};
     ctx.em.mutate_planet(1, 1, [&](Planet& p) {
-      tox_summary = create_ship_by_planet(ctx.em, 1, 1, r1, *tox_ship, p, 1, 1,
-                                          Coordinates{2, 2});
+      tox_summary = create_ship_by_planet(ctx.em, mortal, 1, r1, *tox_ship, p,
+                                          1, 1, Coordinates{2, 2});
     });
     test::expect_true(tox_summary.previous_toxicity.has_value());
     test::expect_true(tox_summary.updated_toxicity.has_value());
@@ -437,9 +439,9 @@ int main() {
     auto terra_ship = getship(ShipType::OTYPE_TERRA, r1);
     auto plow_ship = getship(ShipType::OTYPE_PLOW, r1);
     ctx.em.mutate_planet(1, 1, [&](Planet& p) {
-      create_ship_by_planet(ctx.em, 1, 1, r1, *terra_ship, p, 1, 1,
+      create_ship_by_planet(ctx.em, mortal, 1, r1, *terra_ship, p, 1, 1,
                             Coordinates{2, 2});
-      create_ship_by_planet(ctx.em, 1, 1, r1, *plow_ship, p, 1, 1,
+      create_ship_by_planet(ctx.em, mortal, 1, r1, *plow_ship, p, 1, 1,
                             Coordinates{2, 2});
     });
     test::expect_eq(terra_ship->shipclass(), "5");
@@ -456,10 +458,11 @@ int main() {
   // create_ship_by_ship, getship (God), and getfactship
   {
     TestContext ctx;
-    ctx.with_standard_universe();
-    const auto& r1 = *ctx.em.peek_race(1);
-    Race god_race = r1;
-    god_race.God = true;
+    const auto races = ctx.with_races();
+    const player_t mortal = races.empire;
+    const player_t foreign = races.newcomer;
+    const auto& r1 = *ctx.em.peek_race(mortal);
+    const auto& god_race = *ctx.em.peek_race(races.deity);
 
     // getship with God race covering mount/hyperdrive/laser templates
     auto god_probe = getship(ShipType::OTYPE_PROBE, god_race);
@@ -470,18 +473,18 @@ int main() {
     test::expect_true(god_dread->laser());
 
     // can_build_at_planet: enslaved planet
-    ctx.em.mutate_planet(1, 1, [](Planet& p) { p.enslave_to(2); });
-    auto enslaved_res = can_build_at_planet(1, 1, *ctx.em.peek_star(1),
+    ctx.em.mutate_planet(1, 1, [&](Planet& p) { p.enslave_to(foreign); });
+    auto enslaved_res = can_build_at_planet(mortal, 1, *ctx.em.peek_star(1),
                                             *ctx.em.peek_planet(1, 1));
     test::expect_false(enslaved_res.has_value());
     test::expect_contains(
         GB::presentation::format_planet_build_error(enslaved_res.error()),
         "This planet is enslaved by player 2.");
-    test::expect_true(ctx.em.get_telegrams(1, 1).empty());
+    test::expect_true(ctx.em.get_telegrams(mortal, 1).empty());
     ctx.em.mutate_planet(1, 1, [](Planet& p) { p.free_slaves(); });
 
     // can_build_at_planet: unauthorized governor
-    auto unauth_res = can_build_at_planet(1, 2, *ctx.em.peek_star(1),
+    auto unauth_res = can_build_at_planet(mortal, 2, *ctx.em.peek_star(1),
                                           *ctx.em.peek_planet(1, 1));
     test::expect_false(unauth_res.has_value());
     test::expect_contains(
@@ -489,7 +492,7 @@ int main() {
         "You are not authorized in this system.");
 
     // can_build_at_planet: success
-    test::expect_true(can_build_at_planet(1, 1, *ctx.em.peek_star(1),
+    test::expect_true(can_build_at_planet(mortal, 1, *ctx.em.peek_star(1),
                                           *ctx.em.peek_planet(1, 1))
                           .has_value());
 
@@ -505,50 +508,50 @@ int main() {
         can_build_on_ship(ShipType::STYPE_STATION, r1, *shuttle).has_value());
 
     // build_at_ship error paths
-    probe->owner() = 1;
+    probe->owner() = mortal;
     probe->governor() = 1;
     probe->alive() = false;
-    auto dead_res = build_at_ship(1, 1, false, *probe);
+    auto dead_res = build_at_ship(mortal, 1, false, *probe);
     test::expect_false(dead_res.has_value());
     test::expect_contains(
         GB::presentation::format_ship_build_error(dead_res.error()),
         "Has been destroyed.");
     probe->alive() = true;
 
-    probe->owner() = 2;
-    auto unowned_res = build_at_ship(1, 1, false, *probe);
+    probe->owner() = foreign;
+    auto unowned_res = build_at_ship(mortal, 1, false, *probe);
     test::expect_false(unowned_res.has_value());
     test::expect_contains(
         GB::presentation::format_ship_build_error(unowned_res.error()),
         "You do not own this ship.");
-    probe->owner() = 1;
+    probe->owner() = mortal;
 
-    auto gov_res = build_at_ship(1, 2, false, *probe);
+    auto gov_res = build_at_ship(mortal, 2, false, *probe);
     test::expect_false(gov_res.has_value());
     test::expect_contains(
         GB::presentation::format_ship_build_error(gov_res.error()),
         "You are not authorized to do this.");
 
     probe->active() = false;
-    auto irrad_res = build_at_ship(1, 1, false, *probe);
+    auto irrad_res = build_at_ship(mortal, 1, false, *probe);
     test::expect_false(irrad_res.has_value());
     test::expect_contains(
         GB::presentation::format_ship_build_error(irrad_res.error()),
         "irradiated");
 
     probe->active() = true;
-    auto cannot_build_res = build_at_ship(1, 1, false, *probe);
+    auto cannot_build_res = build_at_ship(mortal, 1, false, *probe);
     test::expect_false(cannot_build_res.has_value());
     test::expect_contains(
         GB::presentation::format_ship_build_error(cannot_build_res.error()),
         "This ship cannot construct other ships.");
 
-    shuttle->owner() = 1;
+    shuttle->owner() = mortal;
     shuttle->governor() = 1;
     shuttle->alive() = true;
     shuttle->active() = true;
     shuttle->popn() = 0;
-    auto no_crew_res = build_at_ship(1, 1, false, *shuttle);
+    auto no_crew_res = build_at_ship(mortal, 1, false, *shuttle);
     test::expect_false(no_crew_res.has_value());
     test::expect_contains(
         GB::presentation::format_ship_build_error(no_crew_res.error()),
@@ -556,7 +559,7 @@ int main() {
 
     shuttle->popn() = 10;
     shuttle->dock_with_ship(99);
-    auto docked_res = build_at_ship(1, 1, false, *shuttle);
+    auto docked_res = build_at_ship(mortal, 1, false, *shuttle);
     test::expect_false(docked_res.has_value());
     test::expect_contains(
         GB::presentation::format_ship_build_error(docked_res.error()),
@@ -564,7 +567,7 @@ int main() {
     shuttle->undock_from_ship();
 
     shuttle->admin_override_damage(50);
-    auto damaged_res = build_at_ship(1, 1, false, *shuttle);
+    auto damaged_res = build_at_ship(mortal, 1, false, *shuttle);
     test::expect_false(damaged_res.has_value());
     test::expect_contains(
         GB::presentation::format_ship_build_error(damaged_res.error()),
@@ -574,30 +577,30 @@ int main() {
     // Non-factory ship with on() = false and in orbit succeeds
     shuttle->on() = false;
     shuttle->launch_to_orbit(ScopeLevel::LEVEL_PLAN);
-    test::expect_true(build_at_ship(1, 1, false, *shuttle).has_value());
+    test::expect_true(build_at_ship(mortal, 1, false, *shuttle).has_value());
 
     auto factory = getship(ShipType::OTYPE_FACTORY, r1);
-    factory->owner() = 1;
+    factory->owner() = mortal;
     factory->governor() = 1;
     factory->alive() = true;
     factory->active() = true;
     factory->popn() = 10;
     factory->admin_override_damage(0);
     factory->on() = false;
-    auto offline_res = build_at_ship(1, 1, false, *factory);
+    auto offline_res = build_at_ship(mortal, 1, false, *factory);
     test::expect_false(offline_res.has_value());
     test::expect_contains(
         GB::presentation::format_ship_build_error(offline_res.error()),
         "online");
     factory->on() = true;
     factory->launch_to_orbit(ScopeLevel::LEVEL_PLAN);
-    auto not_landed_res = build_at_ship(1, 1, false, *factory);
+    auto not_landed_res = build_at_ship(mortal, 1, false, *factory);
     test::expect_false(not_landed_res.has_value());
     test::expect_contains(
         GB::presentation::format_ship_build_error(not_landed_res.error()),
         "landed on a planet");
     factory->land_on_planet();
-    test::expect_true(build_at_ship(1, 1, false, *factory).has_value());
+    test::expect_true(build_at_ship(mortal, 1, false, *factory).has_value());
 
     // create_ship_by_ship (outside and hangar) and getfactship (unarmed +
     // armed)
@@ -614,26 +617,26 @@ int main() {
     shuttle->number() = 10;
     shuttle->resource() = 1000;
     auto built_station = getship(ShipType::STYPE_STATION, r1);
-    create_ship_by_ship(ctx.em, 1, 1, r1, true, *built_station, *shuttle);
+    create_ship_by_ship(ctx.em, mortal, 1, r1, true, *built_station, *shuttle);
     test::expect_true(built_station->is_spaceborne());
 
     auto built_terra = getship(ShipType::OTYPE_TERRA, r1);
     auto built_plow = getship(ShipType::OTYPE_PLOW, r1);
-    create_ship_by_ship(ctx.em, 1, 1, r1, true, *built_terra, *shuttle);
-    create_ship_by_ship(ctx.em, 1, 1, r1, true, *built_plow, *shuttle);
+    create_ship_by_ship(ctx.em, mortal, 1, r1, true, *built_terra, *shuttle);
+    create_ship_by_ship(ctx.em, mortal, 1, r1, true, *built_plow, *shuttle);
     test::expect_eq(built_terra->shipclass(), "5");
     test::expect_eq(built_plow->shipclass(), "5");
 
     auto carrier = getship(ShipType::STYPE_CARRIER, r1);
     carrier->number() = 11;
-    carrier->owner() = 1;
+    carrier->owner() = mortal;
     carrier->resource() = 1000;
     {
       JsonStore store(ctx.db);
       ShipRepository(store).save(*carrier);
     }
     auto built_fighter = getship(ShipType::STYPE_FIGHTER, r1);
-    create_ship_by_ship(ctx.em, 1, 1, r1, false, *built_fighter, *carrier);
+    create_ship_by_ship(ctx.em, mortal, 1, r1, false, *built_fighter, *carrier);
     test::expect_true(built_fighter->is_docked());
     std::println(std::cout,
                  "Test 16 passed: build_at_ship, create_ship_by_ship, and "

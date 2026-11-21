@@ -12,9 +12,9 @@ import test;
 import std;
 
 int main() {
-  // Create test context with standard universe (stars 1..2, races 1..4)
+  // Create test context with standard galaxy (stars 1..3, deity race 1)
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
 
   // Create JsonStore for repository operations
   JsonStore store(ctx.db);
@@ -610,7 +610,7 @@ int main() {
   {
     std::println(std::cout, "\nTest 8: Sparse ship IDs iteration");
     TestContext sparse_ctx;
-    sparse_ctx.with_standard_universe();
+    sparse_ctx.with_galaxy();
     JsonStore sparse_store(sparse_ctx.db);
     ShipRepository sparse_repo(sparse_store);
 
@@ -680,7 +680,7 @@ int main() {
         std::cout,
         "\nTest 10: Mid-loop hard-deletion skips destroyed subsequent ships");
     TestContext kill_ctx;
-    kill_ctx.with_standard_universe();
+    kill_ctx.with_galaxy();
     JsonStore kill_store(kill_ctx.db);
     ShipRepository kill_repo(kill_store);
 
@@ -735,7 +735,7 @@ int main() {
     std::println(std::cout,
                  "\nTest 11: Dead ship alive_only MC/DC and LEVEL_SHIP scope");
     TestContext dead_ctx;
-    dead_ctx.with_standard_universe();
+    dead_ctx.with_galaxy();
     JsonStore dead_store(dead_ctx.db);
     ShipRepository dead_repo(dead_store);
 
@@ -822,7 +822,8 @@ int main() {
     std::println(std::cout,
                  "\nTest 12: resolve_explicit_ship and ScopedCommandableShips");
     TestContext cmd_ctx;
-    cmd_ctx.with_standard_universe();
+    cmd_ctx.with_galaxy();
+    TestWorldBuilder(cmd_ctx).add_race("Foreign", 10.0, false, 2);
     JsonStore cmd_store(cmd_ctx.db);
     ShipRepository cmd_repo(cmd_store);
 

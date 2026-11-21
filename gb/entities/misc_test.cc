@@ -31,54 +31,53 @@ void test_adjust_morale() {
 
 void test_telegram_star() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   // 1. Nonexistent star throws EntityNotFoundError (fail-fast)
   try {
-    telegram_star(ctx.em, 999, 1, 1, "Unseen signal\n");
+    telegram_star(ctx.em, 999, races.empire, 1, "Unseen signal\n");
     test::expect_true(false,
                       "Expected EntityNotFoundError for nonexistent star");
   } catch (const EntityNotFoundError&) {
     // Expected fail-fast on missing internal star
   }
 
-  // 2. Sol (Star 1) is inhabited by Player 1 and Player 2.
-  // Player 1 Gov 1 (leader) sends telegram to Star 1:
-  telegram_star(ctx.em, 1, 1, 1, "Welcome to Sol!\n");
+  // 2. Sol (Star 1) is inhabited by empire and nomad in with_races().
+  // Empire Gov 1 (leader) sends telegram to Star 1:
+  telegram_star(ctx.em, 1, races.empire, 1, "Welcome to Sol!\n");
 
-  // Player 2 Gov 1 (leader) must receive the telegram
-  auto p2_telegrams = ctx.em.get_telegrams(2, 1);
-  test::expect_eq(p2_telegrams.size(), 1);
-  test::expect_contains(p2_telegrams[0].message, "Welcome to Sol!");
+  // Nomad Gov 1 (leader) must receive the telegram
+  auto nomad_telegrams = ctx.em.get_telegrams(races.nomad, 1);
+  test::expect_eq(nomad_telegrams.size(), 1);
+  test::expect_contains(nomad_telegrams[0].message, "Welcome to Sol!");
 
-  // Player 1 Gov 1 is the sender, so they should not receive it
-  auto p1_g1_telegrams = ctx.em.get_telegrams(1, 1);
-  test::expect_eq(p1_g1_telegrams.size(), 0);
+  // Empire Gov 1 is the sender, so they should not receive it
+  auto emp_g1_telegrams = ctx.em.get_telegrams(races.empire, 1);
+  test::expect_eq(emp_g1_telegrams.size(), 0);
 
   // 3. Sender with subordinate governor sends telegram:
-  // Activate Gov 2 on Player 1
-  ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
+  // Activate Gov 2 on empire
+  ctx.em.mutate_race(races.empire, [](Race& r) { r.appoint_governor(2); });
 
-  telegram_star(ctx.em, 1, 1, 2, "Notice from Gov 2\n");
+  telegram_star(ctx.em, 1, races.empire, 2, "Notice from Gov 2\n");
 
-  // Player 1 Gov 1 (leader) should receive this notice (sender was Gov 2)
-  p1_g1_telegrams = ctx.em.get_telegrams(1, 1);
-  test::expect_eq(p1_g1_telegrams.size(), 1);
-  test::expect_contains(p1_g1_telegrams[0].message, "Notice from Gov 2");
+  // Empire Gov 1 (leader) should receive this notice (sender was Gov 2)
+  emp_g1_telegrams = ctx.em.get_telegrams(races.empire, 1);
+  test::expect_eq(emp_g1_telegrams.size(), 1);
+  test::expect_contains(emp_g1_telegrams[0].message, "Notice from Gov 2");
 
-  // Player 1 Gov 2 is the sender, so they should not receive it
-  auto p1_g2_telegrams = ctx.em.get_telegrams(1, 2);
-  test::expect_eq(p1_g2_telegrams.size(), 0);
+  // Empire Gov 2 is the sender, so they should not receive it
+  auto emp_g2_telegrams = ctx.em.get_telegrams(races.empire, 2);
+  test::expect_eq(emp_g2_telegrams.size(), 0);
 
-  // 4. Star not inhabited by Player 2
-  ctx.em.mutate_star(3, [](Star& s) { s.clear_inhabited_by(player_t{2}); });
-  telegram_star(ctx.em, 3, 1, 1, "Antares exclusive\n");
+  // 4. Star 3 (Antares) is inhabited by newcomer, not nomad
+  telegram_star(ctx.em, 3, races.newcomer, 1, "Antares exclusive\n");
 
-  // Player 2 should not receive any telegram for Star 3
-  auto p2_new_telegrams = ctx.em.get_telegrams(2, 1);
+  // Nomad should not receive any telegram for Star 3
+  auto nomad_new_telegrams = ctx.em.get_telegrams(races.nomad, 1);
   // Size should still be 2 (from the two earlier Sol telegrams)
-  test::expect_eq(p2_new_telegrams.size(), 2);
-  for (const auto& t : p2_new_telegrams) {
+  test::expect_eq(nomad_new_telegrams.size(), 2);
+  for (const auto& t : nomad_new_telegrams) {
     test::expect_false(t.message.contains("Antares"));
   }
 }

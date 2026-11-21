@@ -13,7 +13,7 @@ import std;
 
 int main() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_races();
 
   // Create a test Planet
   Planet test_planet{1, 2, PlanetType::EARTH, Coordinates{20, 20}};

@@ -230,6 +230,20 @@ void test_assault_validation_and_ap_invariants() {
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"assault", "#1", "#3"});
   test::expect_contains(g.out.str(), "Those ships are not in the same scope.");
+  // Cross-star orbit (same LEVEL_STAR, different storbits) and dead target
+  ctx.em.mutate_ship(3, [](Ship& s) { s.enter_star_orbit(2); });
+  ctx.assert_dispatch_rejected(g, {"assault", "#1", "#3"});
+  test::expect_contains(g.out.str(), "Those ships are not in the same scope.");
+  {
+    auto dws = ctx.em.create_deferred_write_scope();
+    ctx.em.mutate_ship(3, [](Ship& s) {
+      s.enter_star_orbit(1);
+      s.alive() = false;
+    });
+    ctx.assert_dispatch_rejected(g, {"assault", "#1", "#3"});
+    test::expect_contains(g.out.str(), "The ship wasn't found.");
+    dws.rollback();
+  }
   ctx.em.mutate_ship(3, [](Ship& s) { s.enter_star_orbit(1); });
 
   g.out.str("");

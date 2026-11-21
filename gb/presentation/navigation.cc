@@ -174,6 +174,9 @@ std::string format_order_error(const OrderError& err) {
           err.habitat_ship, err.hangar_needed);
     case OrderErrorReason::CannotActivateFactoryHere:
       return "You cannot activate the factory here.\n";
+    case OrderErrorReason::PlanetEnslaved:
+      return std::format("This planet is enslaved to player {}.\n",
+                         err.enslaving_player);
     case OrderErrorReason::InsufficientPlanetResourcesForFactory:
       return std::format(
           "You don't have {} resources on the planet to activate this "

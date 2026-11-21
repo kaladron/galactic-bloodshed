@@ -308,9 +308,22 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
     }
   }
 
+  std::flat_map<starnum_t, std::flat_set<player_t>> ship_inhabited{};
+  if (update) {
+    for (const Ship& s : ShipList::readonly(
+             state.entity_manager, ShipList::IterationType::AllAlive)) {
+      if (!s.is_exploration_capable()) continue;
+      const auto orbit = state.entity_manager.effective_ship_orbit(s);
+      if (orbit.level != ScopeLevel::LEVEL_UNIV) {
+        ship_inhabited[orbit.snum].insert(s.owner());
+      }
+    }
+  }
+
   for (auto star_handle : StarList(state.entity_manager)) {
     const starnum_t star = star_handle->get_struct().star_id;
     std::flat_set<player_t> star_inhabited{};
+    std::flat_set<player_t> post_update_colonies{};
 
     for (auto planet_handle :
          PlanetList(state.entity_manager, star, *star_handle)) {
@@ -332,19 +345,30 @@ static void process_abms_and_missiles(TurnState& state, bool update) {
       if (update) {
         doplanet(state.entity_manager, *star_handle, *planet_handle,
                  state.stats);
+        for (const auto& [owner, info] : planet_handle->info_map()) {
+          if (info.numsectsowned > 0) {
+            post_update_colonies.insert(owner);
+          }
+        }
       }
     }
 
     if (update) {
-      // Build inhabited bitmap from starpopns and calculate APs
+      // Build inhabited bitmap from colonies + exploration-capable ships and
+      // calculate APs
       star_handle->clear_all_inhabitants();
+      const auto ship_it = ship_inhabited.find(star);
       for (const Race& race : RaceList::readonly(state.entity_manager)) {
         const player_t player = race.Playernum;
 
         const auto& star_stats = state.stats.star_player_stats(star, player);
-        if (star_stats.popn) {
+        const bool has_ship_presence =
+            ship_it != ship_inhabited.end() && ship_it->second.contains(player);
+        if (star_stats.popn || post_update_colonies.contains(player) ||
+            has_ship_presence) {
           star_handle->mark_inhabited_by(player);
-
+        }
+        if (star_stats.popn) {
           ap_t APs = star_handle->AP(player) +
                      compute_star_action_points(
                          static_cast<int>(star_stats.num_ships),

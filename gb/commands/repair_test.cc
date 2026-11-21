@@ -154,13 +154,26 @@ void test_repair_scope_and_domain_errors() {
   ctx.assert_dispatch_rejected(g, {"repair", "3,bad"});
   test::expect_contains(g.out.str(), "Invalid coordinate format");
 
-  // 4. Domain error: no sectors owned on planet
+  // 4. Domain error: no sectors owned on planet, enslaved planet, and
+  // subordinate governor without star control
   ctx.em.mutate_planet(
       1, 1, [](Planet& p) { p.info(player_t{1}).numsectsowned = 0; });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"repair", "3:5,3:5"});
   test::expect_contains(g.out.str(),
                         "You don't own any sectors on this planet");
+  ctx.em.mutate_planet(1, 1, [](Planet& p) {
+    p.info(player_t{1}).numsectsowned = 5;
+    p.enslave_to(player_t{2});
+  });
+  ctx.assert_dispatch_rejected(g, {"repair"});
+  test::expect_contains(g.out.str(), "enslaved to player 2");
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.free_slaves(); });
+  ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
+  ctx.setup_game_obj(g, 1, 2);
+  g.set_scope_planet(1, 1);
+  ctx.assert_dispatch_rejected(g, {"repair"});
+  test::expect_contains(g.out.str(), "not authorized");
 }
 
 }  // namespace

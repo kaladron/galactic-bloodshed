@@ -128,7 +128,7 @@ bool fix_ship(const command_t& argv, GameObj& g) {
       if (opt_val) s.admin_override_fuel(*opt_val, race.mass);
       make_res("fuel", "fuel", s.fuel());
     } else if (argv[2] == "max_fuel") {
-      if (opt_val) s.admin_override_max_fuel(*opt_val);
+      if (opt_val) s.admin_override_max_fuel(*opt_val, race.mass);
       make_res("max_fuel", "fuel", s.max_fuel());
     } else if (argv[2] == "destruct") {
       if (opt_val) s.admin_override_destruct(*opt_val, race.mass);

@@ -37,6 +37,18 @@ bool repair(const command_t& argv, GameObj& g) {
 
   const auto& planet_ref =
       *g.entity_manager.peek_planet(where.snum, where.pnum);
+  if (!g.god()) {
+    const auto& star_ref = *g.entity_manager.peek_star(where.snum);
+    if (!star_ref.control(Playernum, g.governor())) {
+      g.out << "You are not authorized to do that in this system.\n";
+      return false;
+    }
+    if (planet_ref.is_enslaved_to_foreign(Playernum)) {
+      g.out << std::format("This planet is enslaved to player {}.\n",
+                           *planet_ref.slaved_to());
+      return false;
+    }
+  }
   if (!planet_ref.info(Playernum).numsectsowned) {
     g.out << "You don't own any sectors on this planet.\n";
     return false;
@@ -78,7 +90,7 @@ bool repair(const command_t& argv, GameObj& g) {
 
 const CommandDescriptor repair_cmd{
     .name = "repair",
-    .roles = {},
+    .roles = {.star_control = true, .forbid_enslaved_planet = true},
     .scopes = AllowedScopes::planet_only(),
     .ap = APCost::free(),
     .min_args = 1,

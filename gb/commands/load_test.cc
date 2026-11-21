@@ -142,10 +142,17 @@ void test_load_syntax_and_errors() {
   test::expect_contains(g.out.str(),
                         "Syntax: load <ship> <commodity> [<amount>]");
 
-  // 2. Unknown commodity
+  // 2. Unknown commodity & enslaved planet stockpile smuggling blocked (while
+  // unloading onto an enslaved planet remains permitted)
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"load", "#1", "z", "10"});
   test::expect_contains(g.out.str(), "No such commodity");
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.enslave_to(player_t{2}); });
+  ctx.assert_dispatch_rejected(g, {"load", "#1", "r", "10"});
+  test::expect_contains(g.out.str(), "enslaved to player 2");
+  ctx.em.mutate_ship(1, [](Ship& s) { s.add_resource(10); });
+  ctx.assert_dispatch_success(g, {"unload", "#1", "r", "5"});
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.free_slaves(); });
 }
 
 void test_load_transporter() {

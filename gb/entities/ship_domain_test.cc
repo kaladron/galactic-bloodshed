@@ -2508,6 +2508,35 @@ void test_subclass_special_data_clamping() {
   test::expect_true(rad_cruiser->prepare_for_flight(true, 2.5) ||
                     !rad_cruiser->active());
   expect_near(rad_cruiser->mass(), rad_cruiser->local_mass(2.5));
+
+  // Clamped speed, retaliate, battery collateral damage, and max_fuel override
+  Ship clamped{};
+  clamped.set_max_speed(speed_t{4});
+  clamped.set_speed(speed_t{9});
+  test::expect_eq(clamped.speed(), speed_t{4});
+  clamped.set_max_speed(speed_t{2});
+  test::expect_eq(clamped.speed(), speed_t{2});
+
+  clamped.guns() = ActiveBattery::PRIMARY;
+  clamped.set_primary_battery(4, guntype_t::MEDIUM);
+  clamped.set_secondary_battery(3, guntype_t::LIGHT);
+  clamped.set_retaliate(10);
+  test::expect_eq(clamped.retaliate(), 4);
+  test::expect_eq(clamped.damage_primary_guns(2), 2);
+  test::expect_eq(clamped.retaliate(), 2);
+  clamped.guns() = ActiveBattery::SECONDARY;
+  clamped.set_retaliate(3);
+  test::expect_eq(clamped.damage_secondary_guns(2), 2);
+  test::expect_eq(clamped.retaliate(), 1);
+  clamped.guns() = ActiveBattery::NONE;
+  clamped.set_retaliate(5);
+  test::expect_eq(clamped.retaliate(), 0);
+
+  clamped.admin_override_max_fuel(100.0);
+  clamped.admin_override_fuel(80.0);
+  clamped.admin_override_max_fuel(30.0);
+  expect_near(clamped.fuel(), 30.0);
+  expect_near(clamped.mass(), clamped.local_mass());
 }
 
 }  // namespace

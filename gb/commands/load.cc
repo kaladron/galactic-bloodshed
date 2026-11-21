@@ -110,6 +110,15 @@ bool dispatch_cargo_transfer(Ship& s, char commod, std::int64_t amt,
                                          dock_ctx->is_different_owner);
     });
   } else {
+    if ((amt > 0 || (amt == 0 && !default_to_lower_limit)) && !g.god()) {
+      const auto& planet_ref =
+          *g.entity_manager.peek_planet(g.snum(), g.pnum());
+      if (planet_ref.is_enslaved_to_foreign(Playernum)) {
+        g.out << std::format("This planet is enslaved to player {}.\n",
+                             *planet_ref.slaved_to());
+        return false;
+      }
+    }
     lim = compute_planet_transfer_limits(g.entity_manager, s, Playernum, cargo,
                                          g.snum(), g.pnum());
   }

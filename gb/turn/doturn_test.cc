@@ -1500,7 +1500,21 @@ void test_doturn_mcdc_branches() {
       .build();
 
   RecordingSessionRegistry reg;
+  // Probe controlled by sub-governor 2 arriving/orbiting at an uninhabited star
+  // assigns initial star governor and retains Star::inhabited across do_turn
+  ctx.em.mutate_race(2, [](Race& r) { r.appoint_governor(2); });
+  ctx.em.mutate_star(2, [](Star& st) {
+    st.clear_explored_by(2);
+    st.clear_inhabited_by(2);
+  });
+  TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
+      .owned_by(2, 2)
+      .in_planet_orbit(2, 1)
+      .build();
   do_turn(ctx.em, reg, true);
+  test::expect_true(ctx.em.peek_star(2)->is_explored_by(2));
+  test::expect_true(ctx.em.peek_star(2)->is_inhabited_by(2));
+  test::expect_eq(ctx.em.peek_star(2)->governor(2), governor_t{2});
 
   // 6. do_segment override when segments <= 1 and nogo turn suppression
   ctx.em.mutate_server_state([](ServerState& s) {

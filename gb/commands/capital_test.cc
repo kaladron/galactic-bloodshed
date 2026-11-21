@@ -20,7 +20,7 @@ void test_capital_matrix() {
   // Landed government center ship on Earth (1, 1)
   shipnum_t landed_gov = TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
                              .owned_by(1, 1)
-                             .landed_on(1, 1, Coordinates{10, 10})
+                             .landed_on(1, 1, Coordinates{5, 5})
                              .build();
 
   // Orbiting non-landed government center ship around Sol (1)
@@ -32,13 +32,13 @@ void test_capital_matrix() {
   // Landed non-gov ship (pod) owned by player 1
   shipnum_t landed_pod = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
                              .owned_by(1, 1)
-                             .landed_on(1, 1, Coordinates{10, 10})
+                             .landed_on(1, 1, Coordinates{5, 5})
                              .build();
 
   // Landed gov ship owned by player 2
   shipnum_t enemy_gov = TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
                             .owned_by(2, 1)
-                            .landed_on(1, 1, Coordinates{10, 10})
+                            .landed_on(1, 1, Coordinates{5, 5})
                             .build();
 
   auto& registry = get_test_session_registry();

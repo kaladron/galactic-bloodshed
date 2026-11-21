@@ -39,7 +39,7 @@ bool toxicity(const command_t& argv, GameObj& g) {
 
 const CommandDescriptor toxicity_cmd{
     .name = "toxicity",
-    .roles = {},
+    .roles = {.star_control = true},
     .scopes = AllowedScopes::planet_only(),
     .ap = APCost::fixed_star(1),
     .min_args = 2,

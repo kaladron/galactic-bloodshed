@@ -68,6 +68,16 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
     }
   }
 
+  if (desc.roles.forbid_enslaved_planet && !g.god() &&
+      g.level() == ScopeLevel::LEVEL_PLAN) {
+    const auto& planet = *g.entity_manager.peek_planet(g.snum(), g.pnum());
+    if (planet.is_enslaved_to_foreign(g.player())) {
+      g.out << std::format("This planet is enslaved to player {}.\n",
+                           *planet.slaved_to());
+      return false;
+    }
+  }
+
   // 3. Argument Count Check
   if (argv.size() < desc.min_args) {
     g.out << std::format("Syntax: {}\n", desc.syntax);

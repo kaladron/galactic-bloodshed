@@ -448,7 +448,7 @@ std::expected<OrderUpdate, OrderError> order_speed(const command_t& argv,
         .reason = OrderErrorReason::InvalidSpeed,
     });
   }
-  ship.speed() = std::min(speed_t{*res}, ship.max_speed_capacity());
+  ship.set_speed(speed_t{*res});
   return OrderUpdate{};
 }
 
@@ -470,8 +470,7 @@ std::expected<OrderUpdate, OrderError> order_salvo(const command_t& argv,
         .reason = OrderErrorReason::InvalidSalvoGunCount,
     });
   }
-  const auto* battery = ship.active_gun_battery();
-  ship.retaliate() = battery ? std::min(*res, battery->count) : 0;
+  ship.set_retaliate(*res);
   return OrderUpdate{};
 }
 
@@ -487,7 +486,7 @@ order_battery(const command_t& argv, Ship& ship, ActiveBattery mode) {
   }
   if (argv.size() < 4) {
     ship.guns() = mode;
-    ship.retaliate() = std::min(ship.retaliate(), battery.count);
+    ship.set_retaliate(ship.retaliate());
     return OrderUpdate{};
   }
   auto res = parse_int<gun_count_t>(argv[3]);
@@ -496,8 +495,8 @@ order_battery(const command_t& argv, Ship& ship, ActiveBattery mode) {
         .reason = OrderErrorReason::InvalidBatteryGunCount,
     });
   }
-  ship.retaliate() = std::min(*res, battery.count);
   ship.guns() = mode;
+  ship.set_retaliate(*res);
   return OrderUpdate{};
 }
 
@@ -763,6 +762,13 @@ activate_factory_on_planet(EntityManager& em, player_t player,
   std::expected<resource_t, OrderError> result{0};
   em.mutate_planet(
       factory.storbits(), factory.pnumorbits(), [&](Planet& planet) {
+        if (planet.is_enslaved_to_foreign(player)) {
+          result = std::unexpected(OrderError{
+              .reason = OrderErrorReason::PlanetEnslaved,
+              .enslaving_player = *planet.slaved_to(),
+          });
+          return;
+        }
         const resource_t oncost = PLAN_FACT_ON_COST * factory.build_cost();
         if (planet.info(player).resource < oncost) {
           result = std::unexpected(OrderError{

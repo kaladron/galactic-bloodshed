@@ -244,10 +244,32 @@ std::optional<AssaultError> validate_assault_attacker(const Ship& s,
   return std::nullopt;
 }
 
+[[nodiscard]] bool ships_co_located_in_space(const Ship& a,
+                                             const Ship& b) noexcept {
+  if (a.whatorbits() != b.whatorbits() ||
+      a.whatorbits() == ScopeLevel::LEVEL_SHIP) {
+    return false;
+  }
+  if (a.whatorbits() == ScopeLevel::LEVEL_UNIV) {
+    return true;
+  }
+  if (a.storbits() != b.storbits()) {
+    return false;
+  }
+  return a.whatorbits() != ScopeLevel::LEVEL_PLAN ||
+         a.pnumorbits() == b.pnumorbits();
+}
+
 std::optional<AssaultError>
 validate_assault_target(const Ship& s, const Ship& s2, PopulationType what,
                         std::optional<population_t> requested_boarders) {
-  if (s.whatorbits() != s2.whatorbits()) {
+  if (!s2.alive() || s2.owner() == 0) {
+    return AssaultError{
+        .reason = AssaultErrorReason::TargetNotFound,
+        .abort_loop = true,
+    };
+  }
+  if (!ships_co_located_in_space(s, s2)) {
     return AssaultError{.reason = AssaultErrorReason::NotInSameScope};
   }
   if (s2.type() == ShipType::OTYPE_VN) {
@@ -344,7 +366,7 @@ dock_single_ship(EntityManager& em, Ship& s, shipnum_t target_id,
         .abort_loop = true,
     });
   }
-  if (s.whatorbits() != s2->whatorbits()) {
+  if (!ships_co_located_in_space(s, *s2)) {
     return std::unexpected(PeacefulDockError{
         .reason = PeacefulDockErrorReason::NotInSameScope,
     });

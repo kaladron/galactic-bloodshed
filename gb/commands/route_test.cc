@@ -256,6 +256,16 @@ void test_route_json_mode() {
   test::expect_contains(g.out.str(), R"("destruct":true)");
   test::expect_contains(g.out.str(), R"("dest_star_name":"Vega")");
   test::expect_contains(g.out.str(), R"("dest_planet_name":"Vega Prime")");
+
+  // Subordinate governor without star control can view routes, but cannot
+  // mutate routes
+  g.set_ui_mode(GB::presentation::UiMode::ASCII);
+  ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
+  ctx.setup_game_obj(g, 1, 2);
+  g.set_scope_planet(1, 1);
+  ctx.assert_dispatch_success(g, {"route", "2"});
+  ctx.assert_dispatch_rejected(g, {"route", "2", "deactivate"});
+  test::expect_contains(g.out.str(), "not authorized");
 }
 
 }  // namespace

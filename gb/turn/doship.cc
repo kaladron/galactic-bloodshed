@@ -117,7 +117,9 @@ void do_meta_infect(player_t who, starnum_t star, planetnum_t pnum, Planet& p,
     const auto& who_race = *entity_manager.peek_race(who);
 
     // Infection succeeds
-    p.info(who).explored = 1;
+    entity_manager.mutate_star(star, [&](Star& st) {
+      record_player_presence(st, &p, who, st.governor(who));
+    });
     p.info(who).numsectsowned += 1;
     s.set_troops(0);
     s.set_popn_exact(who_race.number_sexes);
@@ -401,15 +403,14 @@ void update_ship_inhabited_and_exploration(const Ship& ship,
   }
 
   em.mutate_star(orbit.snum, [&](Star& star) {
-    star.mark_inhabited_by(ship.owner());
-    star.mark_explored_by(ship.owner());
+    if (orbit.level == ScopeLevel::LEVEL_PLAN) {
+      em.mutate_planet(orbit.snum, orbit.pnum, [&](Planet& planet) {
+        record_player_presence(star, &planet, ship.owner(), ship.governor());
+      });
+    } else {
+      record_player_presence(star, nullptr, ship.owner(), ship.governor());
+    }
   });
-
-  if (orbit.level == ScopeLevel::LEVEL_PLAN) {
-    em.mutate_planet(orbit.snum, orbit.pnum, [&](Planet& planet) {
-      planet.mark_explored_by(ship.owner());
-    });
-  }
 }
 
 void accumulate_ship_power_stats(const Ship& ship, EntityManager& em,

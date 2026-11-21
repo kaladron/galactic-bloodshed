@@ -194,6 +194,19 @@ int main() {
     ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "r", "abc"});
     ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "r", "10abc"});
 
+    // Subordinate governor without star control and enslaved planet rejected
+    ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
+    ctx.setup_game_obj(g, 1, 2);
+    g.set_scope_planet(1, 1);
+    ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "r", "10"});
+    test::expect_contains(g.out.str(), "not authorized");
+    ctx.setup_game_obj(g, 1, 1);
+    g.set_scope_planet(1, 1);
+    ctx.em.mutate_planet(1, 1, [](Planet& p) { p.enslave_to(player_t{2}); });
+    ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "r", "10"});
+    test::expect_contains(g.out.str(), "enslaved to player 2");
+    ctx.em.mutate_planet(1, 1, [](Planet& p) { p.free_slaves(); });
+
     // Should not have changed (command fails with error message)
     ctx.em.clear_cache();
     const auto* p_after = ctx.em.peek_planet(1, 1);

@@ -14,6 +14,8 @@ export struct RoleRequirements {
   bool no_guests = false;     ///< Guest races are prohibited
   bool leader_only = false;   ///< Only Governor 1 (leader)
   bool star_control = false;  ///< Must control the current star system
+  bool forbid_enslaved_planet =
+      false;  ///< Prohibited when current planet is enslaved to another empire
 };
 
 /// Allowed scope levels for command execution

@@ -222,7 +222,22 @@ void test_give_dispatch() {
   g.set_ui_mode(UiMode::ASCII);
 
   // 16. Giving away a race's Gov_ship scrubs donor Gov_ship so destroying it
-  // later never trips tbl_race(gov_ship) FK
+  // later never trips tbl_race(gov_ship) FK, and gifting an uncrewed canister
+  // at an unexplored star does not reveal that star to the recipient
+  const shipnum_t can_id = TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST)
+                               .owned_by(1, 1)
+                               .in_star_orbit(2)
+                               .build();
+  ctx.em.mutate_star(2, [](Star& s) {
+    s.AP(1) = 10;
+    s.clear_explored_by(2);
+    s.clear_inhabited_by(2);
+  });
+  ctx.assert_dispatch_success(
+      g, {"give", "Klingons", std::format("#{}", can_id.value)});
+  test::expect_false(ctx.em.peek_star(2)->is_explored_by(2));
+  test::expect_false(ctx.em.peek_star(2)->is_inhabited_by(2));
+
   const shipnum_t gov_id = TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
                                .owned_by(1, 1)
                                .in_star_orbit(1)

@@ -77,11 +77,16 @@ void test_toxicity_dispatch() {
   std::println(std::cout,
                "    ✓ Missing argument rejected by descriptor min_args");
 
-  // 5. Reject invalid scope (universal level)
+  // 5. Reject invalid scope (universal level) and unauthorized subordinate gov
   g.set_scope_univ();
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"toxicity", "50"});
   test::expect_contains(g.out.str(), "Invalid scope");
+  ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
+  ctx.setup_game_obj(g, 1, 2);
+  g.set_scope_planet(1, 1);
+  ctx.assert_dispatch_rejected(g, {"toxicity", "50"});
+  test::expect_contains(g.out.str(), "not authorized");
   std::println(std::cout, "    ✓ Invalid scope rejected");
 }
 

@@ -84,17 +84,21 @@ bool give(const command_t& argv, GameObj& g) {
           g.entity_manager.transfer_ship_ownership(ship, who, Race::leader_id);
           g.present(capture_stuff(g.entity_manager, ship));
 
-          /* set inhabited/explored bits */
-          if (ship.whatorbits() == ScopeLevel::LEVEL_STAR ||
-              ship.whatorbits() == ScopeLevel::LEVEL_PLAN) {
+          /* set inhabited/explored bits when recipient gains exploration sight
+           */
+          if (ship.is_exploration_capable() &&
+              (ship.whatorbits() == ScopeLevel::LEVEL_STAR ||
+               ship.whatorbits() == ScopeLevel::LEVEL_PLAN)) {
             g.entity_manager.mutate_star(ship.storbits(), [&](Star& star) {
-              star.mark_explored_by(who);
+              if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN) {
+                g.entity_manager.mutate_planet(
+                    ship.storbits(), ship.pnumorbits(), [&](Planet& planet) {
+                      record_player_presence(star, &planet, who);
+                    });
+              } else {
+                record_player_presence(star, nullptr, who);
+              }
             });
-          }
-          if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN) {
-            g.entity_manager.mutate_planet(
-                ship.storbits(), ship.pnumorbits(),
-                [&](Planet& planet) { planet.info(who).explored = 1; });
           }
 
           const auto result = presentation::make_give_result(

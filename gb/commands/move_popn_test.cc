@@ -420,6 +420,32 @@ void test_move_popn_assault_metamorph_and_wiped() {
   ctx.assert_dispatch_success(g, {"move", "5,6", "k", "1"});
   test::expect_contains(g.out.str(), "killed your party to the last man");
 
+  // Defending AFV in mech_defend: 0 Star AP aborts BEFORE firing AFV ammo, and
+  // with sufficient AP any AFV-slaughtered attackers are deducted from origin
+  const auto afv_id =
+      TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
+          .owned_by(2, 1)
+          .landed_on(1, 1, {5, 7})
+          .with_crew(1, 0)
+          .with_guns(guntype_t::HEAVY, 4, ActiveBattery::PRIMARY)
+          .with_retaliate(4)
+          .with_destruct(10)
+          .with_armor(20)
+          .build();
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 0; });
+  ctx.assert_dispatch_rejected(g, {"move", "5,6", "k", "50"});
+  test::expect_eq(ctx.em.peek_ship(afv_id)->destruct(), 10);
+
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 20; });
+  const population_t before_planet_pop = ctx.em.peek_planet(1, 1)->popn();
+  const population_t before_origin_pop =
+      ctx.em.peek_sectormap(1, 1)->get({5, 6}).get_popn();
+  ctx.assert_dispatch_success(g, {"move", "5,6", "k", "10"}, 4);
+  test::expect_contains(g.out.str(), "Attack aborted");
+  test::expect_eq(ctx.em.peek_sectormap(1, 1)->get({5, 6}).get_popn(),
+                  before_origin_pop - 10);
+  test::expect_eq(ctx.em.peek_planet(1, 1)->popn(), before_planet_pop - 10);
+
   ctx.verify_universe_invariants();
 }
 

@@ -496,6 +496,13 @@ public:
   speed_t& speed() {
     return data_.speed;
   }
+  void set_speed(speed_t spd) noexcept {
+    data_.speed = std::clamp<speed_t>(spd, 0, max_speed_capacity());
+  }
+  void set_max_speed(speed_t max_spd) noexcept {
+    data_.max_speed = std::max<speed_t>(0, max_spd);
+    data_.speed = std::min(data_.speed, max_speed_capacity());
+  }
 
   // Status flags
   [[nodiscard]] bool active() const {
@@ -650,13 +657,31 @@ public:
   /// \brief Applies collateral damage to the primary gun battery mounts.
   /// \return The actual number of primary guns destroyed.
   gun_count_t damage_primary_guns(gun_count_t hits) noexcept {
-    return data_.primary_battery.damage(hits);
+    const auto destroyed = data_.primary_battery.damage(hits);
+    if (data_.guns == ActiveBattery::PRIMARY) {
+      data_.retaliate = std::min<weapon_power_t>(data_.retaliate,
+                                                 data_.primary_battery.count);
+    }
+    return destroyed;
   }
 
   /// \brief Applies collateral damage to the secondary gun battery mounts.
   /// \return The actual number of secondary guns destroyed.
   gun_count_t damage_secondary_guns(gun_count_t hits) noexcept {
-    return data_.secondary_battery.damage(hits);
+    const auto destroyed = data_.secondary_battery.damage(hits);
+    if (data_.guns == ActiveBattery::SECONDARY) {
+      data_.retaliate = std::min<weapon_power_t>(data_.retaliate,
+                                                 data_.secondary_battery.count);
+    }
+    return destroyed;
+  }
+
+  /// \brief Sets kinetic retaliation salvo limit clamped to the active gun
+  /// battery's mounted count (or 0 if no guns are active).
+  void set_retaliate(weapon_power_t salvo) noexcept {
+    const auto* battery = active_gun_battery();
+    data_.retaliate =
+        battery ? std::clamp<weapon_power_t>(salvo, 0, battery->count) : 0;
   }
 
   // Hanger
@@ -1475,9 +1500,13 @@ public:
     data_.crystals = std::clamp<resource_t>(count, 0, max_crystals_capacity());
   }
 
-  /// \brief Deity override: sets maximum fuel tank capacity.
-  void admin_override_max_fuel(fuel_t amt) noexcept {
+  /// \brief Deity override: sets maximum fuel tank capacity and clamps loaded
+  /// fuel and ship mass to the new capacity.
+  void admin_override_max_fuel(fuel_t amt, double race_mass = 1.0) noexcept {
     data_.max_fuel = std::max(0.0, amt);
+    if (data_.fuel > static_cast<double>(max_fuel_capacity())) {
+      admin_override_fuel(static_cast<double>(max_fuel_capacity()), race_mass);
+    }
   }
 
   /// \brief Deity override: marks a ship as destroyed.

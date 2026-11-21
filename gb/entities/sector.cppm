@@ -617,12 +617,16 @@ public:
     return grid_[coord_to_idx(c)];
   }
 
-  [[nodiscard]] const Sector& get(int x, int y) const noexcept {
+  [[nodiscard]] const Sector& get(int x, int y) const {
     return get_const_ref(Coordinates{x, y});
   }
 
-  [[nodiscard]] const Sector&
-  get_const_ref(const Coordinates c) const noexcept {
+  [[nodiscard]] const Sector& get_const_ref(const Coordinates c) const {
+    if (!in_bounds(c)) {
+      throw std::out_of_range(std::format(
+          "SectorMap::get({}, {}) out of bounds for dimensions ({}, {})", c.x,
+          c.y, dimensions_.x, dimensions_.y));
+    }
     return grid_[coord_to_idx(c)];
   }
 

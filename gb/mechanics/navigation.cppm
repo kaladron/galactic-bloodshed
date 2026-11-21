@@ -196,6 +196,7 @@ export enum class OrderErrorReason {
   InsufficientHabitatResourcesForFactory,
   InsufficientHabitatHangarForFactory,
   CannotActivateFactoryHere,
+  PlanetEnslaved,
   InsufficientPlanetResourcesForFactory,
   CannotDeactivateFactory,
   UnknownOrder,
@@ -211,6 +212,7 @@ export struct OrderError {
   resource_t required_resources{0};
   shipnum_t habitat_ship{0};
   int hangar_needed{0};
+  player_t enslaving_player{0};
   std::string unknown_order{};
 };
 
@@ -684,3 +686,9 @@ export std::expected<LandShipResult, LandError>
 land_single_ship(EntityManager& em, Ship& s, std::string_view target_arg,
                  player_t player, governor_t governor, starnum_t snum,
                  planetnum_t pnum, bool god);
+
+/// \brief Records an empire's presence in a star system (and optional planet),
+/// assigning initial star governor control if not yet inhabited and marking
+/// star/planet exploration and inhabitation bits.
+export void record_player_presence(Star& star, Planet* planet, player_t player,
+                                   governor_t governor = Race::leader_id);

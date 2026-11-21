@@ -1066,7 +1066,17 @@ void test_special_ship_order_mcdc_and_notices() {
   test::expect_contains(g.out.str(), "You cannot activate the factory here.");
 
   ctx.em.mutate_ship(f_err_id, [](Ship& s) { s.land_on_planet(1, 1, {0, 0}); });
-  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(1).resource = 0; });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) {
+    p.info(1).resource = 500;
+    p.enslave_to(player_t{2});
+  });
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"order", f_err_arg, "on"});
+  test::expect_contains(g.out.str(), "This planet is enslaved to player 2.");
+  ctx.em.mutate_planet(1, 1, [](Planet& p) {
+    p.free_slaves();
+    p.info(1).resource = 0;
+  });
   g.out.str("");
   ctx.assert_dispatch_success(g, {"order", f_err_arg, "on"});
   test::expect_contains(g.out.str(),

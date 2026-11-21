@@ -176,6 +176,49 @@ void test_role_star_control() {
       GB::commands::dispatch_command(g, desc, {"mock_star_control"}));
   test::expect_contains(g.out.str(), "handler executed successfully");
 
+  // Declarative forbid_enslaved_planet check (foreign enslaver rejected,
+  // enslaver itself and Deity allowed)
+  Race r2{};
+  r2.Playernum = 2;
+  r2.name = "Enslaver";
+  ctx.em.create_race(r2);
+  PlanetRepository planets(store);
+  planet_struct pdata{
+      .dimensions = {4, 4},
+      .slaved_to = player_t{2},
+      .star_id = 1,
+      .planet_order = 1,
+  };
+  pdata.info[player_t{1}].explored = true;
+  pdata.info[player_t{2}].explored = true;
+  sdata.pnames = {"Earth"};
+  sdata.explored.insert(player_t{1});
+  sdata.explored.insert(player_t{2});
+  stars.save(Star{sdata});
+  planets.save(Planet{pdata});
+  ctx.em.clear_cache();
+
+  GB::commands::CommandDescriptor enslaved_desc{
+      .name = "mock_enslaved",
+      .roles = {.forbid_enslaved_planet = true},
+      .scopes = GB::commands::AllowedScopes::planet_only(),
+      .handler = &mock_success_handler,
+  };
+  g.set_scope_planet(1, 1);
+  g.out.str("");
+  test::expect_false(
+      GB::commands::dispatch_command(g, enslaved_desc, {"mock_enslaved"}));
+  test::expect_contains(g.out.str(), "This planet is enslaved to player 2.");
+
+  g.set_god(true);
+  test::expect_true(
+      GB::commands::dispatch_command(g, enslaved_desc, {"mock_enslaved"}));
+  g.set_god(false);
+
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.enslave_to(player_t{1}); });
+  test::expect_true(
+      GB::commands::dispatch_command(g, enslaved_desc, {"mock_enslaved"}));
+
   ctx.verify_universe_invariants();
 }
 

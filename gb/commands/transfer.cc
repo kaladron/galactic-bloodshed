@@ -108,7 +108,9 @@ bool transfer(const command_t& argv, GameObj& g) {
 
 const CommandDescriptor transfer_cmd{
     .name = "transfer",
-    .roles = {.no_guests = true},
+    .roles = {.no_guests = true,
+              .star_control = true,
+              .forbid_enslaved_planet = true},
     .scopes = AllowedScopes::planet_only(),
     .ap = APCost::fixed_star(1),
     .min_args = 4,

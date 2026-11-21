@@ -542,11 +542,7 @@ void resolve_ship_destination_target(EntityManager& em, Ship& s,
 void explore_arrived_star(EntityManager& em, const Ship& s,
                           starnum_t deststar) {
   em.mutate_star(deststar, [&](Star& dst_star) {
-    if (!dst_star.is_inhabited_by(s.owner())) {
-      dst_star.governor(s.owner()) = s.governor();
-    }
-    dst_star.mark_explored_by(s.owner());
-    dst_star.mark_inhabited_by(s.owner());
+    record_player_presence(dst_star, nullptr, s.owner(), s.governor());
   });
 }
 
@@ -573,11 +569,10 @@ void handle_star_arrival(EntityManager& em, Ship& s, starnum_t deststar,
 
 void explore_arrived_planet(EntityManager& em, const Ship& s,
                             starnum_t deststar, planetnum_t destpnum) {
-  em.mutate_planet(deststar, destpnum,
-                   [&](Planet& p) { p.info(s.owner()).explored = 1; });
   em.mutate_star(deststar, [&](Star& dst_star) {
-    dst_star.mark_explored_by(s.owner());
-    dst_star.mark_inhabited_by(s.owner());
+    em.mutate_planet(deststar, destpnum, [&](Planet& p) {
+      record_player_presence(dst_star, &p, s.owner(), s.governor());
+    });
   });
 }
 
@@ -2067,4 +2062,17 @@ land_single_ship(EntityManager& em, Ship& s, std::string_view target_arg,
     return land_friendly_ship(em, s, target_arg, player, governor, god);
   }
   return land_on_planet_sector(em, s, target_arg, player, snum, pnum, god);
+}
+
+void record_player_presence(Star& star, Planet* planet, player_t player,
+                            governor_t governor) {
+  if (player < 1) return;
+  if (!star.is_inhabited_by(player)) {
+    star.set_governor(player, governor);
+  }
+  star.mark_explored_by(player);
+  star.mark_inhabited_by(player);
+  if (planet != nullptr) {
+    planet->mark_explored_by(player);
+  }
 }

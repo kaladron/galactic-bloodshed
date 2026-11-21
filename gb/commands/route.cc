@@ -140,6 +140,11 @@ bool route(const command_t& argv, GameObj& g) {
     show_single_route(g, *route_num);
     return true;
   }
+  if (!g.god() && !g.entity_manager.peek_star(g.snum())->control(
+                      g.player(), g.governor())) {
+    g.out << "You are not authorized to do that in this system.\n";
+    return false;
+  }
   if (argv.size() == 3) {
     return configure_route_target(g, *route_num, argv[2]);
   }

@@ -361,6 +361,12 @@ void test_sectormap_range_views() {
 
   // 6. Const SectorMap range views
   const SectorMap& const_smap = smap;
+  test::expect_throws<std::out_of_range>(
+      [&]() { static_cast<void>(const_smap.get_const_ref({-1, 0})); });
+  test::expect_throws<std::out_of_range>(
+      [&]() { static_cast<void>(const_smap.get(2, 0)); });
+  test::expect_throws<std::out_of_range>(
+      [&]() { static_cast<void>(const_smap.get(0, 2)); });
   std::size_t const_owned_count = 0;
   for (const Sector& s : const_smap.owned_by(player_t{1})) {
     test::expect_eq(s.get_resource(), 50);

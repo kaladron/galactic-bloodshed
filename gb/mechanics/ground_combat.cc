@@ -591,18 +591,6 @@ std::expected<MovePopnResult, MovePopnError> execute_planet_sector_movement(
     }
 
     MovePopnStepResult step{.moved_people = people};
-    const auto& race_peek = *em.peek_race(player);
-    em.mutate_sectormap(snum, pnum, [&](SectorMap& smap_mut) {
-      auto& sect2_mut = smap_mut.get(next_coords);
-      step.mech_defense = mech_defend(em, race_peek, &people, what, planet_peek,
-                                      next_coords, sect2_mut);
-    });
-    if (people == 0) {
-      res.steps.push_back(std::move(step));
-      res.stop_reason = MovePopnStopReason::AttackAbortedByMechs;
-      return res;
-    }
-
     const auto& sect2_peek = em.peek_sectormap(snum, pnum)->get(next_coords);
     const bool is_assault =
         (sect2_peek.get_owner() != 0 && sect2_peek.get_owner() != player);
@@ -619,6 +607,32 @@ std::expected<MovePopnResult, MovePopnError> execute_planet_sector_movement(
     }
     if (!god) {
       em.mutate_star(snum, [&](Star& s) { s.AP(player) -= ap_cost; });
+    }
+    res.any_moved = true;
+
+    const population_t initial_people = people;
+    const auto& race_peek = *em.peek_race(player);
+    em.mutate_sectormap(snum, pnum, [&](SectorMap& smap_mut) {
+      auto& sect2_mut = smap_mut.get(next_coords);
+      step.mech_defense = mech_defend(em, race_peek, &people, what, planet_peek,
+                                      next_coords, sect2_mut);
+    });
+    if (people < initial_people) {
+      const population_t lost = initial_people - people;
+      em.mutate_planet_and_sectors(
+          snum, pnum, [&](Planet& planet, SectorMap& smap) {
+            auto& sect = smap.get(curr_coords);
+            const population_t civ_delta =
+                (what == PopulationType::CIV) ? -lost : 0;
+            const population_t mil_delta =
+                (what == PopulationType::MIL) ? -lost : 0;
+            planet.adjust_sector_population(sect, player, civ_delta, mil_delta);
+          });
+    }
+    if (people == 0) {
+      res.steps.push_back(std::move(step));
+      res.stop_reason = MovePopnStopReason::AttackAbortedByMechs;
+      return res;
     }
 
     bool stop_after_step = false;

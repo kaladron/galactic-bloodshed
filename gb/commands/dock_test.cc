@@ -230,6 +230,21 @@ void test_dock_domain_errors() {
   test::expect_contains(g.out.str(), "docked with");
   test::expect_contains(g.out.str(), "is already docked.");
 
+  // 16. Cross-star and cross-planet docking rejected by
+  // ships_co_located_in_space
+  ctx.em.mutate_ship(1, [](Ship& s) {
+    s.enter_star_orbit(1);
+    s.set_coordinates({100.0, 200.0});
+  });
+  ctx.em.mutate_ship(2, [](Ship& s) {
+    s.undock_from_ship();
+    s.enter_star_orbit(2);
+    s.set_coordinates({100.0, 200.0});
+  });
+  ctx.assert_dispatch_rejected(g, {"dock", "#1", "#2"});
+  test::expect_contains(g.out.str(), "not in the same scope");
+  ctx.em.mutate_ship(2, [](Ship& s) { s.enter_star_orbit(1); });
+
   ctx.verify_universe_invariants();
 }
 

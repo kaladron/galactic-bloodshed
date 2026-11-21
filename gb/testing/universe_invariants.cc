@@ -146,6 +146,22 @@ void verify_universe_invariants(EntityManager& em, std::source_location loc) {
                   std::format("LEVEL_PLAN ship #{} has invalid pnumorbits {}",
                               ship.number(), ship.pnumorbits()),
                   loc);
+        if (ship.is_landed()) {
+          try {
+            if (const auto* smap =
+                    em.peek_sectormap(ship.storbits(), ship.pnumorbits())) {
+              expect_true(smap->in_bounds(ship.land_coords()),
+                          std::format("Landed ship #{} has out-of-bounds "
+                                      "land_coords ({}, {}) on planet ({}, {})",
+                                      ship.number(), ship.land_coords().x,
+                                      ship.land_coords().y, ship.storbits(),
+                                      ship.pnumorbits()),
+                          loc);
+            }
+          } catch (const EntityNotFoundError&) {
+            // SectorMap may not exist for uninitialized test planets
+          }
+        }
         break;
       case ScopeLevel::LEVEL_SHIP:
         expect_true(ship.destshipno().has_value() &&

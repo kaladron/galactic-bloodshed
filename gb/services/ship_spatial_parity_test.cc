@@ -32,7 +32,7 @@ void test_star_spatial_parity(TestContext& ctx) {
   JsonStore store(ctx.db);
   ShipRepository ships_repo(store);
 
-  // Star 1 already exists in with_standard_universe(); add ships in orbit
+  // Star 1 already exists in with_galaxy(); add ships in orbit
   const auto s1 = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
                       .owned_by(1)
                       .in_star_orbit(1)
@@ -94,7 +94,7 @@ void test_planet_spatial_parity(TestContext& ctx) {
   JsonStore store(ctx.db);
   ShipRepository ships_repo(store);
 
-  // Planet (Star 1, Planet 1) already exists in with_standard_universe()
+  // Planet (Star 1, Planet 1) already exists in with_galaxy()
   const auto p1 = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
                       .owned_by(1)
                       .in_planet_orbit(1, 1)
@@ -232,7 +232,8 @@ int main() {
   std::println(std::cout, "Running Ship spatial parity tests...");
 
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
+  TestWorldBuilder(ctx).add_race("Foreign", 10.0, false, 2);
   test_empty_universe_parity(ctx);
   test_star_spatial_parity(ctx);
   test_planet_spatial_parity(ctx);

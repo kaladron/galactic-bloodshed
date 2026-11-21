@@ -12,7 +12,7 @@ import std;
 
 int main() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_races();
   Database& db = ctx.db;
   EntityManager& em = ctx.em;
   {

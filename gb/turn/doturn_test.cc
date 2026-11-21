@@ -759,9 +759,9 @@ void test_do_update_voting_reset_and_scheduling() {
 
 void test_handle_victory_disabled() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
-  ctx.em.mutate_race(player_t{1}, [](Race& race) {
+  ctx.em.mutate_race(races.empire, [](Race& race) {
     race.victory_turns = VICTORY_UPDATES + 1;
   });
 
@@ -770,18 +770,18 @@ void test_handle_victory_disabled() {
   test::expect_false(result.game_over);
   test::expect_true(result.big_winners.empty());
   test::expect_true(result.lesser_winners.empty());
-  test::expect_false(ctx.em.has_telegrams(player_t{1}, Race::leader_id));
+  test::expect_false(ctx.em.has_telegrams(races.empire, Race::leader_id));
 }
 
 void test_handle_victory_single_winner() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
-  ctx.em.mutate_race(player_t{1}, [](Race& race) {
+  ctx.em.mutate_race(races.newcomer, [](Race& race) {
     race.name = "GloriousEmpire";
     race.victory_turns = VICTORY_UPDATES;
   });
-  ctx.em.mutate_race(player_t{2}, [](Race& race) {
+  ctx.em.mutate_race(races.empire, [](Race& race) {
     race.name = "OtherEmpire";
     race.victory_turns = 0;
   });
@@ -789,57 +789,56 @@ void test_handle_victory_single_winner() {
   auto result = handle_victory(ctx.em, true);
   test::expect_true(result.game_over);
   test::expect_eq(result.big_winners.size(), 1U);
-  test::expect_true(result.big_winners.contains(player_t{1}));
+  test::expect_true(result.big_winners.contains(races.newcomer));
   test::expect_true(result.lesser_winners.empty());
 
-  // Both players receive victory broadcast telegrams
-  test::expect_true(ctx.em.has_telegrams(player_t{1}, Race::leader_id));
-  test::expect_true(ctx.em.has_telegrams(player_t{2}, Race::leader_id));
+  // Mortal players receive victory broadcast telegrams
+  test::expect_true(ctx.em.has_telegrams(races.newcomer, Race::leader_id));
+  test::expect_true(ctx.em.has_telegrams(races.empire, Race::leader_id));
 
-  auto tele1 = ctx.em.get_telegrams(player_t{1}, Race::leader_id);
+  auto tele1 = ctx.em.get_telegrams(races.newcomer, Race::leader_id);
   test::expect_eq(tele1.size(), 1U);
   test::expect_contains(tele1[0].message,
                         "This game of Galactic Bloodshed is now *over*");
   test::expect_contains(tele1[0].message,
-                        "The big winner is\n*** [ 1] GloriousEmpire");
+                        "The big winner is\n*** [ 2] GloriousEmpire");
   test::expect_false(tele1[0].message.contains("Lesser winners:"));
 }
 
 void test_handle_victory_multiple_winners_and_lesser_winners() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
-  // with_standard_universe provisions 2 planets (Earth, Vega Prime).
-  // VICTORY_PERCENT is 10, so std::max(1, 2 * 10 / 100) = 1 planet threshold
-  // for lesser winner. Player 1 & 2 are big winners (victory_turns >=
+  // with_galaxy() provisions 6 non-asteroid planets across Sol, Vega, Antares.
+  // VICTORY_PERCENT is 10, so std::max(1, 6 * 10 / 100) = 1 planet threshold
+  // for lesser winner. Newcomers & Imperium are big winners (victory_turns >=
   // VICTORY_UPDATES)
-  ctx.em.mutate_race(player_t{1}, [](Race& race) {
+  ctx.em.mutate_race(races.newcomer, [](Race& race) {
     race.name = "EmpireAlpha";
     race.victory_turns = VICTORY_UPDATES;
   });
-  ctx.em.mutate_race(player_t{2}, [](Race& race) {
+  ctx.em.mutate_race(races.empire, [](Race& race) {
     race.name = "EmpireBeta";
     race.victory_turns = VICTORY_UPDATES;
   });
 
-  // Player 3 is lesser winner (controlled_planets >= 1, but victory_turns <
-  // VICTORY_UPDATES)
-  JsonStore store(ctx.db);
-  Race race3 = createTestRace(player_t{3});
-  race3.name = "EmpireGamma";
-  race3.controlled_planets = 1;
-  race3.victory_turns = 1;
-  RaceRepository(store).save(race3);
+  // Nomads (player 3) is lesser winner (controlled_planets >= 1, but
+  // victory_turns < VICTORY_UPDATES)
+  ctx.em.mutate_race(races.nomad, [](Race& race) {
+    race.name = "EmpireGamma";
+    race.controlled_planets = 1;
+    race.victory_turns = 1;
+  });
 
   auto result = handle_victory(ctx.em, true);
   test::expect_true(result.game_over);
   test::expect_eq(result.big_winners.size(), 2U);
-  test::expect_true(result.big_winners.contains(player_t{1}));
-  test::expect_true(result.big_winners.contains(player_t{2}));
+  test::expect_true(result.big_winners.contains(races.newcomer));
+  test::expect_true(result.big_winners.contains(races.empire));
   test::expect_eq(result.lesser_winners.size(), 1U);
-  test::expect_true(result.lesser_winners.contains(player_t{3}));
+  test::expect_true(result.lesser_winners.contains(races.nomad));
 
-  auto tele3 = ctx.em.get_telegrams(player_t{3}, Race::leader_id);
+  auto tele3 = ctx.em.get_telegrams(races.nomad, Race::leader_id);
   test::expect_eq(tele3.size(), 1U);
   test::expect_contains(tele3[0].message, "The big winners are\n");
   test::expect_contains(tele3[0].message, "EmpireAlpha");
@@ -850,29 +849,29 @@ void test_handle_victory_multiple_winners_and_lesser_winners() {
 
 void test_calculate_victory_scores_large_accumulation() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   // Test 64-bit integer overflow protection:
   // Accumulate huge money and resources that exceed 32-bit INT_MAX
   // (2,147,483,647)
-  ctx.em.mutate_race(player_t{1}, [](Race& race) {
+  ctx.em.mutate_race(races.empire, [](Race& race) {
     race.morale = 100;
     // 3 billion in treasury across governors
     race.leader().money = 3'000'000'000LL;
   });
 
-  ctx.em.mutate_planet(starnum_t{1}, planetnum_t{1}, [](Planet& planet) {
-    planet.info(player_t{1}).explored = true;
-    planet.info(player_t{1}).numsectsowned = 500;
+  ctx.em.mutate_planet(starnum_t{1}, planetnum_t{1}, [&](Planet& planet) {
+    planet.info(races.empire).explored = true;
+    planet.info(races.empire).numsectsowned = 500;
     // 3 billion resources on planet
-    planet.info(player_t{1}).resource = 3'000'000'000LL;
-    planet.info(player_t{1}).destruct = 500'000'000LL;
-    planet.info(player_t{1}).fuel = 100'000'000;
+    planet.info(races.empire).resource = 3'000'000'000LL;
+    planet.info(races.empire).destruct = 500'000'000LL;
+    planet.info(races.empire).fuel = 100'000'000;
   });
 
   calculate_victory_scores(ctx.em);
 
-  const auto* race_after = ctx.em.peek_race(player_t{1});
+  const auto* race_after = ctx.em.peek_race(races.empire);
   test::expect_ne(race_after, nullptr);
   // (VICT_RES * (3B + 0.5B) + VICT_MONEY * 3B + ...) / VICT_DIVISOR
   // > 0 and no negative integer overflow
@@ -969,7 +968,7 @@ void test_schedule_calculation_pure() {
 
 void test_do_segment_execution() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_races();
 
   ctx.em.mutate_server_state([](ServerState& s) {
     s.segments = 3;
@@ -1006,7 +1005,7 @@ void test_do_segment_execution() {
 
 void test_do_next_thing_dispatch() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_races();
 
   ctx.em.mutate_server_state([](ServerState& s) {
     s.segments = 3;
@@ -1058,13 +1057,13 @@ void test_do_next_thing_dispatch() {
 
 void test_advance_race_technology() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   TurnStats stats{};
-  stats.mutable_power_stats(player_t{1}).popn = 10'000;
-  stats.mutable_power_stats(player_t{1}).planets_owned = 2;
+  stats.mutable_power_stats(races.empire).popn = 10'000;
+  stats.mutable_power_stats(races.empire).planets_owned = 2;
 
-  ctx.em.mutate_race(player_t{1}, [](Race& r) {
+  ctx.em.mutate_race(races.empire, [](Race& r) {
     r.IQ = 100;
     r.tech = 49.5;
     r.morale = 10;
@@ -1073,7 +1072,7 @@ void test_advance_race_technology() {
     r.leader().money = 1000;
   });
 
-  auto r_handle = ctx.em.peek_race(player_t{1});
+  auto r_handle = ctx.em.peek_race(races.empire);
   Race test_race = *r_handle;
 
   advance_race_technology(test_race, stats, ctx.em);
@@ -1119,64 +1118,64 @@ void test_update_victory_progress() {
 
 void test_check_language_translation_unlock() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
-  // Reset player 2's translation of player 1 to 0
-  ctx.em.mutate_race(player_t{2},
-                     [](Race& r) { r.translate[player_t{1}] = 0; });
+  // Reset Newcomers' translation of Imperium to 0
+  ctx.em.mutate_race(races.newcomer,
+                     [&](Race& r) { r.translate[races.empire] = 0; });
 
   // 1. Zero controlled planets: no unlock
   bool unlocked0 = check_language_translation_unlock(
-      player_t{1}, /*controlled_planets=*/0, /*planet_count=*/20, ctx.em);
+      races.empire, /*controlled_planets=*/0, /*planet_count=*/20, ctx.em);
   test::expect_false(unlocked0);
-  test::expect_eq(ctx.em.peek_race(player_t{2})->translation_for(player_t{1}),
-                  0);
+  test::expect_eq(
+      ctx.em.peek_race(races.newcomer)->translation_for(races.empire), 0);
 
   // 2. Below threshold (20 planets * 10% / 2 = 1 planet threshold, player
   // controls 0)
   bool unlocked_below = check_language_translation_unlock(
-      player_t{1}, /*controlled_planets=*/0, /*planet_count=*/20, ctx.em);
+      races.empire, /*controlled_planets=*/0, /*planet_count=*/20, ctx.em);
   test::expect_false(unlocked_below);
-  test::expect_eq(ctx.em.peek_race(player_t{2})->translation_for(player_t{1}),
-                  0);
+  test::expect_eq(
+      ctx.em.peek_race(races.newcomer)->translation_for(races.empire), 0);
 
   // 3. At or above threshold (20 planets * 10% / 2 = 1 planet, player controls
   // 1)
   bool unlocked = check_language_translation_unlock(
-      player_t{1}, /*controlled_planets=*/1, /*planet_count=*/20, ctx.em);
+      races.empire, /*controlled_planets=*/1, /*planet_count=*/20, ctx.em);
   test::expect_true(unlocked);
-  test::expect_eq(ctx.em.peek_race(player_t{2})->translation_for(player_t{1}),
-                  100);
+  test::expect_eq(
+      ctx.em.peek_race(races.newcomer)->translation_for(races.empire), 100);
 }
 
 void test_sync_power_ratings() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   TurnStats stats{};
-  stats.mutable_power_stats(player_t{1}).popn = 5000;
-  stats.mutable_power_stats(player_t{1}).planets_owned = 1;
+  stats.mutable_power_stats(races.empire).popn = 5000;
+  stats.mutable_power_stats(races.empire).planets_owned = 1;
 
-  ctx.em.mutate_race(player_t{1}, [](Race& r) { r.leader().money = 12'345; });
-  ctx.em.mutate_block(1, [](Block& b) {
-    b.invite(1);
-    b.pledge(1);
+  ctx.em.mutate_race(races.empire, [](Race& r) { r.leader().money = 12'345; });
+  ctx.em.mutate_block(races.empire, [&](Block& b) {
+    b.invite(races.empire);
+    b.pledge(races.empire);
   });
 
   sync_power_ratings(ctx.em, stats);
 
   // Verified aggregated money in stats
-  test::expect_eq(stats.power_stats(player_t{1}).money, 12'345);
+  test::expect_eq(stats.power_stats(races.empire).money, 12'345);
 
   // Verified persisted power record
-  const auto* power = ctx.em.peek_power(1);
+  const auto* power = ctx.em.peek_power(races.empire);
   test::expect_ne(power, nullptr);
   test::expect_eq(power->money(), 12'345);
   test::expect_eq(power->popn(), 5000);
 
   // Verified alliance block aggregated this turn's power record (not stale
   // data)
-  const auto* blk = ctx.em.peek_block(1);
+  const auto* blk = ctx.em.peek_block(races.empire);
   test::expect_ne(blk, nullptr);
   test::expect_eq(blk->members(), 1U);
   test::expect_eq(blk->popn(), 5000U);
@@ -1185,13 +1184,13 @@ void test_sync_power_ratings() {
 
 void test_finalize_turn_update_integration() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   TurnStats stats{};
-  stats.mutable_power_stats(player_t{1}).popn = 1000;
-  stats.mutable_power_stats(player_t{1}).planets_owned = 1;
+  stats.mutable_power_stats(races.empire).popn = 1000;
+  stats.mutable_power_stats(races.empire).planets_owned = 1;
 
-  ctx.em.mutate_race(player_t{1}, [](Race& r) {
+  ctx.em.mutate_race(races.empire, [](Race& r) {
     r.IQ = 100;
     r.controlled_planets = 1;
     r.tech = 49.5;
@@ -1199,14 +1198,14 @@ void test_finalize_turn_update_integration() {
 
   finalize_turn_update(ctx.em, stats);
 
-  const auto* r1 = ctx.em.peek_race(player_t{1});
-  test::expect_gt(r1->tech, 49.5);
-  test::expect_true(r1->discoveries.hyperdrive);
-  test::expect_ge(r1->victory_turns, 1);
+  const auto* r_emp = ctx.em.peek_race(races.empire);
+  test::expect_gt(r_emp->tech, 49.5);
+  test::expect_true(r_emp->discoveries.hyperdrive);
+  test::expect_ge(r_emp->victory_turns, 1);
 
   // Other race translation unlocked at 50% threshold
-  const auto* r2 = ctx.em.peek_race(player_t{2});
-  test::expect_eq(r2->translation_for(player_t{1}), 100);
+  const auto* r_other = ctx.em.peek_race(races.newcomer);
+  test::expect_eq(r_other->translation_for(races.empire), 100);
 }
 
 void test_end_to_end_multi_turn_game_lifecycle() {
@@ -1413,7 +1412,7 @@ void test_end_to_end_multi_turn_game_lifecycle() {
 
 void test_doturn_mcdc_branches() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   // 1. fix_stability mid-nova progression (1..14) and low-stability clamping
   ctx.em.mutate_star(1, [&](Star& s) {
@@ -1441,59 +1440,57 @@ void test_doturn_mcdc_branches() {
 
   // 3. compute_governed_status with deep-space/star-orbit habitat and
   // non-habitat carrier
-  shipnum_t deep_hab_id =
-      TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT).owned_by(1).build();
+  shipnum_t deep_hab_id = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
+                              .owned_by(races.nomad)
+                              .build();
   ctx.em.mutate_ship(deep_hab_id, [](Ship& s) { s.enter_deep_space(); });
 
   shipnum_t carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-                             .owned_by(1)
+                             .owned_by(races.nomad)
                              .in_star_orbit(1)
                              .build();
 
   shipnum_t gov_id = TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
-                         .owned_by(1)
+                         .owned_by(races.nomad)
                          .docked_to(deep_hab_id, 1)
                          .build();
-  ctx.em.mutate_race(1, [&](Race& r) {
+  ctx.em.mutate_race(races.nomad, [&](Race& r) {
     r.Gov_ship = gov_id;
     test::expect_false(compute_governed_status(r, ctx.em));
   });
   ctx.em.mutate_ship(deep_hab_id, [](Ship& s) { s.enter_star_orbit(1); });
-  test::expect_true(compute_governed_status(*ctx.em.peek_race(1), ctx.em));
+  test::expect_true(
+      compute_governed_status(*ctx.em.peek_race(races.nomad), ctx.em));
   ctx.em.mutate_ship(gov_id, [&](Ship& s) { s.dock_into_carrier(carrier_id); });
-  test::expect_false(compute_governed_status(*ctx.em.peek_race(1), ctx.em));
+  test::expect_false(
+      compute_governed_status(*ctx.em.peek_race(races.nomad), ctx.em));
 
-  // 4. update_von_neumann_target where player 1 has more hits than player 2
-  ctx.em.mutate_universe([](Universe& u) {
-    u.set_vn_hits(1, 30);
-    u.set_vn_hits(2, 10);
+  // 4. update_von_neumann_target where Newcomers has more hits than Nomads
+  ctx.em.mutate_universe([&](Universe& u) {
+    u.set_vn_hits(races.newcomer, 30);
+    u.set_vn_hits(races.nomad, 10);
   });
   TurnStats stats{};
   update_von_neumann_target(ctx.em, stats);
-  test::expect_eq(stats.VN_brain.most_mad, player_t{1});
+  test::expect_eq(stats.VN_brain.most_mad, races.newcomer);
 
   // 5. Asteroid majority ownership + uninhabited planet with orbiting ship +
   // missiles targeting star vs planet during do_turn(update=true)
-  ctx.em.mutate_planet(1, 1, [](Planet& p) {
+  ctx.em.mutate_planet(1, 1, [&](Planet& p) {
     p.type() = PlanetType::ASTEROID;
-    p.info(1).numsectsowned = 20;
-  });
-  ctx.em.mutate_planet(2, 1, [](Planet& p) {
-    p.popn() = 0;
-    p.info(1).popn = 0;
-    p.info(2).popn = 0;
+    p.info(races.empire).numsectsowned = 20;
   });
   TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-      .owned_by(1)
-      .in_planet_orbit(2, 1)
+      .owned_by(races.empire)
+      .in_planet_orbit(2, 2)
       .build();
   TestShipBuilder(ctx.em, ShipType::STYPE_MISSILE)
-      .owned_by(1)
+      .owned_by(races.empire)
       .in_star_orbit(1)
       .with_on(false)
       .build();
   TestShipBuilder(ctx.em, ShipType::STYPE_MISSILE)
-      .owned_by(1)
+      .owned_by(races.empire)
       .in_planet_orbit(1, 1)
       .targeting_planet(1, 1)
       .with_on(false)
@@ -1502,19 +1499,15 @@ void test_doturn_mcdc_branches() {
   RecordingSessionRegistry reg;
   // Probe controlled by sub-governor 2 arriving/orbiting at an uninhabited star
   // assigns initial star governor and retains Star::inhabited across do_turn
-  ctx.em.mutate_race(2, [](Race& r) { r.appoint_governor(2); });
-  ctx.em.mutate_star(2, [](Star& st) {
-    st.clear_explored_by(2);
-    st.clear_inhabited_by(2);
-  });
+  ctx.em.mutate_race(races.newcomer, [](Race& r) { r.appoint_governor(2); });
   TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-      .owned_by(2, 2)
-      .in_planet_orbit(2, 1)
+      .owned_by(races.newcomer, 2)
+      .in_planet_orbit(2, 2)
       .build();
   do_turn(ctx.em, reg, true);
-  test::expect_true(ctx.em.peek_star(2)->is_explored_by(2));
-  test::expect_true(ctx.em.peek_star(2)->is_inhabited_by(2));
-  test::expect_eq(ctx.em.peek_star(2)->governor(2), governor_t{2});
+  test::expect_true(ctx.em.peek_star(2)->is_explored_by(races.newcomer));
+  test::expect_true(ctx.em.peek_star(2)->is_inhabited_by(races.newcomer));
+  test::expect_eq(ctx.em.peek_star(2)->governor(races.newcomer), governor_t{2});
 
   // 6. do_segment override when segments <= 1 and nogo turn suppression
   ctx.em.mutate_server_state([](ServerState& s) {

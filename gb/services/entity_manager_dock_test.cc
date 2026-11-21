@@ -21,7 +21,7 @@ void expect_near(double actual, double expected, double eps = 1e-5) {
 
 void test_dock_carrier_happy_path() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
   auto& em = ctx.em;
 
   const auto carrier_id = TestShipBuilder(em, ShipType::STYPE_CARRIER)
@@ -66,7 +66,7 @@ void test_dock_carrier_happy_path() {
 
 void test_dock_carrier_errors_and_nested_hierarchy() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
   auto& em = ctx.em;
 
   const auto supercarrier_id = TestShipBuilder(em, ShipType::STYPE_CARRIER)
@@ -178,7 +178,7 @@ void test_dock_carrier_errors_and_nested_hierarchy() {
 
 void test_undock_carrier() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
   auto& em = ctx.em;
 
   const auto carrier_id = TestShipBuilder(em, ShipType::STYPE_CARRIER)
@@ -227,7 +227,7 @@ void test_undock_carrier() {
 
 void test_moor_and_unmoor_ships() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
   auto& em = ctx.em;
 
   const auto s1_id = TestShipBuilder(em, ShipType::STYPE_FIGHTER)
@@ -287,7 +287,7 @@ void test_moor_and_unmoor_ships() {
 
 void test_kill_ship_carrier_and_child_accounting() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
   auto& em = ctx.em;
 
   const auto carrier_id = TestShipBuilder(em, ShipType::STYPE_CARRIER)
@@ -380,7 +380,7 @@ void test_kill_ship_carrier_and_child_accounting() {
 
 void test_ancestor_carriers_and_corrupt_db_cycles() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
   auto& em = ctx.em;
 
   const auto carrier1_id = TestShipBuilder(em, ShipType::STYPE_CARRIER)

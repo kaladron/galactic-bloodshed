@@ -169,7 +169,7 @@ void test_process_command_fail_fast_logging_and_rollback() {
   // 1. EntityNotFoundError at planet scope logs [FATAL], stops server, rethrows
   {
     TestContext ctx;
-    ctx.with_standard_universe();
+    ctx.with_races();
 
     asio::io_context io;
     Server server(io, 0, ctx.em);
@@ -204,12 +204,13 @@ void test_process_command_fail_fast_logging_and_rollback() {
   //    prior SQL writes, logs [FATAL], stops server, and propagates fail-fast
   {
     TestContext ctx;
-    ctx.with_standard_universe();
-    ctx.em.mutate_star(1, [](Star& star) { star.AP(2) = 60; });
+    const auto races = ctx.with_races();
+    ctx.with_populated_planet(1, 1, races.nomad, 100, Coordinates{1, 1});
+    ctx.em.mutate_star(1, [&](Star& star) { star.AP(races.nomad) = 60; });
 
     const shipnum_t gov_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
-                                   .owned_by(2, 1)
-                                   .landed_on(1, 1, Coordinates{0, 0})
+                                   .owned_by(races.nomad, 1)
+                                   .landed_on(1, 1, Coordinates{1, 1})
                                    .build();
     // Cache gov_ship in EntityManager, then delete its row from tbl_ship so
     // saving Race.Gov_ship triggers SQLITE_CONSTRAINT_FOREIGNKEY after Star AP
@@ -220,7 +221,7 @@ void test_process_command_fail_fast_logging_and_rollback() {
     asio::io_context io;
     Server server(io, 0, ctx.em);
     GameObj g(ctx.em, server);
-    ctx.setup_game_obj(g, 2, 1);
+    ctx.setup_game_obj(g, races.nomad, 1);
     g.set_scope_planet(1, 1);
 
     std::ostringstream log_buf;
@@ -242,23 +243,23 @@ void test_process_command_fail_fast_logging_and_rollback() {
     test::expect_contains(
         log_buf.str(),
         std::format(
-            "[FATAL] Unhandled exception in command execution: player=2 "
+            "[FATAL] Unhandled exception in command execution: player={} "
             "governor=1 scope=PLAN(snum=1,pnum=1) raw_command=\"{}\":",
-            raw));
+            races.nomad.value, raw));
     test::expect_contains(log_buf.str(), "FOREIGN KEY");
 
     // Verify ReleaseGuard released race_refcount so Transaction::rollback()
     // evicted the dirty in-memory Race AND rolled back Star(1) AP in SQLite.
-    test::expect_false(ctx.em.peek_race(2)->Gov_ship.has_value());
+    test::expect_false(ctx.em.peek_race(races.nomad)->Gov_ship.has_value());
     ctx.em.clear_cache();
-    test::expect_eq(ctx.em.peek_star(1)->AP(2), 60);
+    test::expect_eq(ctx.em.peek_star(1)->AP(races.nomad), 60);
   }
 
   // 3. Scope context formatting covers UNIV, STAR, and SHIP scopes
   for (const ScopeLevel level : {ScopeLevel::LEVEL_UNIV, ScopeLevel::LEVEL_STAR,
                                  ScopeLevel::LEVEL_SHIP}) {
     TestContext ctx;
-    ctx.with_standard_universe();
+    ctx.with_races();
     const shipnum_t ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
                                   .owned_by(1, 1)
                                   .in_planet_orbit(1, 1)
@@ -308,9 +309,13 @@ void test_process_command_fail_fast_logging_and_rollback() {
   // 4. Scrapping the currently scoped ship reconciles scope before do_prompt
   {
     TestContext ctx;
-    ctx.with_standard_universe().with_populated_planet(1, 1, 2, 500,
-                                                       Coordinates{2, 2});
-    ctx.em.mutate_star(1, [](Star& star) { star.AP(2) = 20; });
+    ctx.with_races();
+    ctx.with_populated_planet(1, 1, 2, 500, Coordinates{2, 2});
+    ctx.em.mutate_star(1, [](Star& star) {
+      star.mark_explored_by(2);
+      star.AP(2) = 20;
+    });
+    ctx.em.mutate_planet(1, 1, [](Planet& p) { p.mark_explored_by(2); });
     const shipnum_t fac_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
                                  .owned_by(2, 1)
                                  .landed_on(1, 1, Coordinates{2, 2})
@@ -337,7 +342,6 @@ void test_process_command_fail_fast_logging_and_rollback() {
     // 5. Revoked or dissolved session skips illegal-command & JSON prompt
     // crashes, while an emulating Deity restores identity on both illegal
     // commands and mid-command target dissolution
-    ctx.em.mutate_race(1, [](Race& r) { r.God = true; });
     ctx.em.mutate_race(2, [](Race& r) { r.appoint_governor(2); });
     ctx.setup_game_obj(g, 1, 1);
     g.set_god(true);

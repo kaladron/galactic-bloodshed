@@ -98,14 +98,16 @@ void test_deduct_univ_ap() {
 
 void test_validate_commandable() {
   TestContext ctx;
-  ctx.with_standard_universe();
-  ctx.em.mutate_race(1, [](Race& r) {
+  const auto races = ctx.with_races();
+  const player_t owner = races.empire;
+  const player_t foreign = races.newcomer;
+  ctx.em.mutate_race(owner, [](Race& r) {
     r.appoint_governor(2);
     r.appoint_governor(3);
   });
 
   const auto ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)
-                           .owned_by(1, 2)
+                           .owned_by(owner, 2)
                            .named("Valkyrie")
                            .in_star_orbit(1)
                            .build();
@@ -126,22 +128,24 @@ void test_validate_commandable() {
   };
 
   const std::array<Case, 9> cases{{
-      {"assigned governor succeeds", 1, 2, false, true, true, std::nullopt, ""},
-      {"race leader succeeds", 1, 1, false, true, true, std::nullopt, ""},
-      {"wrong player fails NotOwner", 2, 1, false, true, true,
+      {"assigned governor succeeds", owner, 2, false, true, true, std::nullopt,
+       ""},
+      {"race leader succeeds", owner, 1, false, true, true, std::nullopt, ""},
+      {"wrong player fails NotOwner", foreign, 1, false, true, true,
        CommandableError::NotOwner, not_owner_msg},
-      {"unauthorized governor fails NotAuthorizedGovernor", 1, 3, false, true,
-       true, CommandableError::NotAuthorizedGovernor, not_owner_msg},
-      {"foreign dead ship fails NotOwner without leaking ship name", 2, 1,
+      {"unauthorized governor fails NotAuthorizedGovernor", owner, 3, false,
+       true, true, CommandableError::NotAuthorizedGovernor, not_owner_msg},
+      {"foreign dead ship fails NotOwner without leaking ship name", foreign, 1,
        false, false, false, CommandableError::NotOwner, not_owner_msg},
-      {"unauthorized dead ship fails NotAuthorizedGovernor", 1, 3, false, false,
-       false, CommandableError::NotAuthorizedGovernor, not_owner_msg},
-      {"owned dead ship fails ShipDead before ShipIrradiated", 1, 2, false,
+      {"unauthorized dead ship fails NotAuthorizedGovernor", owner, 3, false,
+       false, false, CommandableError::NotAuthorizedGovernor, not_owner_msg},
+      {"owned dead ship fails ShipDead before ShipIrradiated", owner, 2, false,
        false, false, CommandableError::ShipDead, "has been destroyed."},
-      {"owned irradiated ship fails ShipIrradiated", 1, 2, false, true, false,
-       CommandableError::ShipIrradiated, "is irradiated 85% and inactive."},
-      {"god mode bypasses ownership and governor authorization", 2, 3, true,
-       true, true, std::nullopt, ""},
+      {"owned irradiated ship fails ShipIrradiated", owner, 2, false, true,
+       false, CommandableError::ShipIrradiated,
+       "is irradiated 85% and inactive."},
+      {"god mode bypasses ownership and governor authorization", foreign, 3,
+       true, true, true, std::nullopt, ""},
   }};
 
   auto& registry = get_test_session_registry();

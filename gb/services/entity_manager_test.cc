@@ -562,7 +562,7 @@ void test_peek_caching_and_clear_cache() {
 
 void test_entity_manager_commods() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_races();
   Database& db = ctx.db;
   EntityManager& em = ctx.em;
 
@@ -706,7 +706,7 @@ void test_entity_manager_powers() {
 
 void test_entity_manager_create_ship() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_races();
   EntityManager& em = ctx.em;
 
   std::println(std::cout, "Test: EntityManager create_ship");
@@ -878,7 +878,7 @@ void test_entity_manager_with_scoped_peeks() {
 
 void test_entity_manager_mutate_planet_and_sectors() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_races();
 
   std::println(std::cout, "Test: EntityManager mutate_planet_and_sectors");
 
@@ -911,7 +911,7 @@ void test_entity_manager_mutate_planet_and_sectors() {
 
 void test_deletion_barrier() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
   EntityManager& em = ctx.em;
 
   std::println(std::cout, "Test: EntityManager DeletionBarrier");
@@ -1068,11 +1068,11 @@ void test_entity_manager_count_non_asteroid_planets() {
 
 void test_entity_manager_create_race() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_races();
 
   std::println(std::cout, "Test: EntityManager create_race auto-seeding");
 
-  // Verify standard universe races (players 1..4) auto-seeded blocks & powers
+  // Verify archetype races (players 1..4) auto-seeded blocks & powers
   for (player_t pid : {player_t{1}, player_t{2}, player_t{3}, player_t{4}}) {
     const auto* r = ctx.em.peek_race(pid);
     test::expect_ne(r, nullptr);
@@ -1153,7 +1153,7 @@ void test_entity_manager_mutation_tracking() {
                "Test: EntityManager mutation tracking and DirtyEntitySet");
 
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
   EntityManager& em = ctx.em;
 
   // 1. Initial state

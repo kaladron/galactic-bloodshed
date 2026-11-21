@@ -657,10 +657,10 @@ void test_detect_terminal_capabilities() {
 
 void test_canonical_session_message_error_views() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_planet(1, 1);
 
   // SessionView intentionally does not satisfy HasModeRenderOverload so
@@ -673,7 +673,7 @@ void test_canonical_session_message_error_views() {
   g.set_ui_mode(UiMode::JSON);
   const std::string session_json = GB::presentation::do_prompt(g);
   test::expect_count(session_json, R"("type":"session")", 1);
-  test::expect_contains(session_json, R"("race_name":"Federation")");
+  test::expect_contains(session_json, R"("race_name":"Imperium")");
   test::expect_contains(session_json, R"("path":"/Sol/Earth")");
 
   const auto msg_vm =
@@ -729,10 +729,18 @@ void test_canonical_session_message_error_views() {
 
 void test_canonical_star_planet_sector_projectors() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
+  TestWorldBuilder(ctx)
+      .add_race("Terrans", 10.0, false, 2)
+      .add_race("Aliens", 10.0, false, 3);
+  ctx.with_populated_planet(1, 1, 2, 100, Coordinates{0, 0});
+  ctx.em.mutate_star(1, [](Star& s) { s.mark_explored_by(2); });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.mark_explored_by(2); });
 
+  const player_t viewer_id = 2;
+  const player_t alien_id = 3;
   const ScopeContext viewer1{
-      .player = 1,
+      .player = viewer_id,
       .governor = 0,
       .god = false,
   };
@@ -749,13 +757,6 @@ void test_canonical_star_planet_sector_projectors() {
   test::expect_true(god_viewer.can_see(false));
 
   // 1. project_star_view
-  // Mark Star 2 (Vega) and Vega Prime unexplored by Player 1:
-  ctx.em.mutate_star(2, [](Star& s) { s.clear_explored_by(1); });
-  ctx.em.mutate_planet(2, 1, [](Planet& p) {
-    p.explored() = false;
-    p.info(1).explored = false;
-  });
-
   // Unexplored star for mortal (Vega = 2)
   const auto sv_unexplored =
       GB::presentation::project_star_view(ctx.em, viewer1, 2);
@@ -771,17 +772,17 @@ void test_canonical_star_planet_sector_projectors() {
 
   // Explored star for mortal with low tech (Sol = 1, tech = 5 <
   // TECH_SEE_STABILITY)
-  ctx.em.mutate_race(1, [](Race& r) { r.tech = 5.0; });
+  ctx.em.mutate_race(viewer_id, [](Race& r) { r.tech = 5.0; });
   const auto sv_low_tech =
       GB::presentation::project_star_view(ctx.em, viewer1, 1);
   test::expect_true(sv_low_tech.explored);
   test::expect_true(sv_low_tech.details.has_value());
   test::expect_false(sv_low_tech.details->stability.has_value());
-  test::expect_eq(sv_low_tech.details->planets.size(), 1);
+  test::expect_eq(sv_low_tech.details->planets.size(), 2);
 
   // Explored star for mortal with high tech (Sol = 1, tech = 20 >=
   // TECH_SEE_STABILITY)
-  ctx.em.mutate_race(1, [](Race& r) { r.tech = 20.0; });
+  ctx.em.mutate_race(viewer_id, [](Race& r) { r.tech = 20.0; });
   const auto sv_high_tech =
       GB::presentation::project_star_view(ctx.em, viewer1, 1);
   test::expect_true(sv_high_tech.details->stability.has_value());
@@ -808,9 +809,10 @@ void test_canonical_star_planet_sector_projectors() {
 
   // Orbiting ship sight on unexplored planet (place ship in orbit of Vega
   // Prime)
-  ctx.em.mutate_race(1, [](Race& r) { r.tech = 5.0; });  // < TECH_EXPLORE
+  ctx.em.mutate_race(viewer_id,
+                     [](Race& r) { r.tech = 5.0; });  // < TECH_EXPLORE
   TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-      .owned_by(1)
+      .owned_by(viewer_id)
       .in_planet_orbit(2, 1)
       .with_crew(10, 0)
       .build();
@@ -833,25 +835,27 @@ void test_canonical_star_planet_sector_projectors() {
       "You have not explored Vega Prime yet.");
 
   // Orbiting ship sight on unexplored planet with high tech (reveals aliens)
-  ctx.em.mutate_race(1, [](Race& r) { r.tech = 15.0; });  // >= TECH_EXPLORE
+  ctx.em.mutate_race(viewer_id,
+                     [](Race& r) { r.tech = 15.0; });  // >= TECH_EXPLORE
   const auto pv_orbit_high_tech =
       GB::presentation::project_planet_view(ctx.em, viewer1, 2, 1);
   test::expect_false(pv_orbit_high_tech.environment->aliens_unknown);
 
   // Mortal with numsectsowned > 0 on an unexplored planet
-  ctx.em.mutate_planet(2, 1, [](Planet& p) {
-    p.info(1).explored = false;
-    p.info(1).numsectsowned = 1;
+  ctx.em.mutate_planet(2, 1, [&](Planet& p) {
+    p.info(viewer_id).explored = false;
+    p.info(viewer_id).numsectsowned = 1;
   });
   const auto pv_unexp_owned =
       GB::presentation::project_planet_view(ctx.em, viewer1, 2, 1);
   test::expect_true(pv_unexp_owned.environment.has_value());
   test::expect_true(pv_unexp_owned.colony.has_value());
-  ctx.em.mutate_planet(2, 1, [](Planet& p) { p.info(1).numsectsowned = 0; });
+  ctx.em.mutate_planet(2, 1,
+                       [&](Planet& p) { p.info(viewer_id).numsectsowned = 0; });
 
   // Explored & colonized planet (Earth = star 1, planet 1)
   // Without crystal discovery:
-  ctx.em.mutate_race(1, [](Race& r) {
+  ctx.em.mutate_race(viewer_id, [](Race& r) {
     r.discoveries.crystal = false;
     r.tech = TECH_EXPLORE;
   });
@@ -865,41 +869,42 @@ void test_canonical_star_planet_sector_projectors() {
   test::expect_true(pv_no_crystal.colony.has_value());
 
   // With crystal discovery, routes, and alien presence:
-  ctx.em.mutate_race(1, [](Race& r) {
+  ctx.em.mutate_race(viewer_id, [&](Race& r) {
     r.discoveries.crystal = true;
-    r.declare_war_on(2);
+    r.declare_war_on(alien_id);
   });
   // Add active route, inactive configured route, route without planet, and
   // route without star:
-  ctx.em.mutate_planet(1, 1, [](Planet& p) {
-    p.mark_explored_by(1);
-    auto& rt1 = p.info(1).route_at(1);
+  ctx.em.mutate_planet(1, 1, [&](Planet& p) {
+    p.mark_explored_by(viewer_id);
+    auto& rt1 = p.info(viewer_id).route_at(1);
     rt1.set = true;
     rt1.set_destination(2, 1);
     rt1.dest_coords = Coordinates{3, 4};
     rt1.load = CommodityManifest::parse("fr");
     rt1.unload = CommodityManifest::parse("dx");
 
-    auto& rt2 = p.info(1).route_at(2);
+    auto& rt2 = p.info(viewer_id).route_at(2);
     rt2.set = false;
     rt2.set_destination(2, 1);
     rt2.dest_coords = Coordinates{5, 6};
 
-    auto& rt3 = p.info(1).route_at(3);
+    auto& rt3 = p.info(viewer_id).route_at(3);
     rt3.set = true;
     rt3.dest_star = 2;
     rt3.dest_planet = std::nullopt;
 
-    auto& rt4 = p.info(1).route_at(4);
+    auto& rt4 = p.info(viewer_id).route_at(4);
     rt4.set = true;
     rt4.dest_star = std::nullopt;
     rt4.dest_planet = std::nullopt;
 
-    // Alien presence: player 2 owns 1 sector
-    p.info(2).numsectsowned = 1;
+    // Alien presence: alien_id owns 1 sector
+    p.info(alien_id).numsectsowned = 1;
   });
-  ctx.em.mutate_sectormap(
-      1, 1, [](SectorMap& smap) { smap.get(Coordinates{1, 0}).set_owner(2); });
+  ctx.em.mutate_sectormap(1, 1, [&](SectorMap& smap) {
+    smap.get(Coordinates{1, 0}).set_owner(alien_id);
+  });
 
   const auto pv_full =
       GB::presentation::project_planet_view(ctx.em, viewer1, 1, 1);
@@ -909,7 +914,7 @@ void test_canonical_star_planet_sector_projectors() {
   test::expect_eq(*pv_full.environment->crystal_sectors, 1);
   test::expect_false(pv_full.environment->aliens_unknown);
   test::expect_eq(pv_full.environment->aliens.size(), 1);
-  test::expect_eq(pv_full.environment->aliens[0].player, 2);
+  test::expect_eq(pv_full.environment->aliens[0].player, alien_id);
   test::expect_true(pv_full.environment->aliens[0].at_war);
 
   test::expect_true(pv_full.colony.has_value());
@@ -929,7 +934,7 @@ void test_canonical_star_planet_sector_projectors() {
   test::expect_eq(pv_full.colony->routes[3].dest_star_name, "");
 
   // Test neutral alien presence:
-  ctx.em.mutate_race(1, [](Race& r) { r.make_peace_with(2); });
+  ctx.em.mutate_race(viewer_id, [&](Race& r) { r.make_peace_with(alien_id); });
   const auto pv_neutral =
       GB::presentation::project_planet_view(ctx.em, viewer1, 1, 1);
   test::expect_false(pv_neutral.environment->aliens[0].at_war);
@@ -943,10 +948,6 @@ void test_canonical_star_planet_sector_projectors() {
 
   // 3. project_sector_grid_view
   // Unseen planet returns std::nullopt (Star 3, Planet 1 for mortal viewer1)
-  ctx.em.mutate_planet(3, 1, [](Planet& p) {
-    p.info(1).explored = false;
-    p.info(1).numsectsowned = 0;
-  });
   const auto grid_mortal_unseen =
       GB::presentation::project_sector_grid_view(ctx.em, viewer1, 3, 1);
   test::expect_false(grid_mortal_unseen.has_value());
@@ -960,8 +961,8 @@ void test_canonical_star_planet_sector_projectors() {
   test::expect_eq(grid_full->pnum, 1);
 
   // Sparse coordinate filter on Earth
-  // Sector {0, 0} is owned by player 1 with crystals
-  // Sector {1, 0} is owned by player 2 (foreign)
+  // Sector {0, 0} is owned by viewer_id with crystals
+  // Sector {1, 0} is owned by alien_id (foreign)
   // Sector {2, 0} is unowned (set owner to 0)
   ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
     smap.get(Coordinates{2, 0}).set_owner(0);
@@ -969,19 +970,19 @@ void test_canonical_star_planet_sector_projectors() {
   });
   // Add landed visible ship at {0, 0}
   TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-      .owned_by(1)
+      .owned_by(viewer_id)
       .landed_on(1, 1, Coordinates{0, 0})
       .with_crew(10, 0)
       .build();
   // Add orbiting (unlanded) ship at planet 1, 1
   TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-      .owned_by(1)
+      .owned_by(viewer_id)
       .in_planet_orbit(1, 1)
       .with_crew(10, 0)
       .build();
   // Add foreign invisible landed canister at {0, 0}
   TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST)
-      .owned_by(2)
+      .owned_by(alien_id)
       .landed_on(1, 1, Coordinates{0, 0})
       .build();
 
@@ -993,21 +994,21 @@ void test_canonical_star_planet_sector_projectors() {
   test::expect_true(grid_filtered->partial);
   test::expect_eq(grid_filtered->sectors.size(), 3);
 
-  // Sector {0, 0}: owned by player 1, has landed ship, has crystals
+  // Sector {0, 0}: owned by viewer_id, has landed ship, has crystals
   const auto& sec0 = grid_filtered->sectors[0];
   test::expect_eq(sec0.coords, (Coordinates{0, 0}));
-  test::expect_eq(sec0.owner, 1);
+  test::expect_eq(sec0.owner, viewer_id);
   test::expect_eq(sec0.ships.size(), 1);
-  test::expect_eq(sec0.ships[0].owner, 1);
+  test::expect_eq(sec0.ships[0].owner, viewer_id);
   test::expect_true(sec0.details.has_value());
   test::expect_true(sec0.details->crystals);
   test::expect_true(sec0.details->mobilization.has_value());
 
-  // Sector {1, 0}: owned by player 2 (foreign) -> mobilization hidden from
+  // Sector {1, 0}: owned by alien_id (foreign) -> mobilization hidden from
   // mortal
   const auto& sec1 = grid_filtered->sectors[1];
   test::expect_eq(sec1.coords, (Coordinates{1, 0}));
-  test::expect_eq(sec1.owner, 2);
+  test::expect_eq(sec1.owner, alien_id);
   test::expect_false(sec1.details->mobilization.has_value());
 
   // Sector {2, 0}: unowned -> owner nullopt, mobilization nullopt, crystals
@@ -1028,23 +1029,25 @@ void test_canonical_star_planet_sector_projectors() {
 
 void test_canonical_ship_view_projectors() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
+  const player_t viewer_id = races.newcomer;
+  const player_t foreign_id = races.empire;
 
   const ScopeContext viewer1{
-      .player = 1,
+      .player = viewer_id,
       .governor = 0,
       .god = false,
   };
 
-  // Add active ships with crew for player 1 at Sol (star scope) and Earth
+  // Add active ships with crew for viewer_id at Sol (star scope) and Earth
   // (planet scope)
   TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-      .owned_by(1)
+      .owned_by(viewer_id)
       .in_star_orbit(1)
       .with_crew(10, 0)
       .build();
   TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-      .owned_by(1)
+      .owned_by(viewer_id)
       .landed_on(1, 1, Coordinates{0, 0})
       .with_crew(10, 0)
       .build();
@@ -1052,11 +1055,11 @@ void test_canonical_ship_view_projectors() {
   // 1. SightContext memoization test (star and planet cache hit/miss)
   GB::presentation::SightContext sight;
   // Star sight miss then hit
-  test::expect_true(sight.has_star_sight(ctx.em, 1, 1));
-  test::expect_true(sight.has_star_sight(ctx.em, 1, 1));
+  test::expect_true(sight.has_star_sight(ctx.em, viewer_id, 1));
+  test::expect_true(sight.has_star_sight(ctx.em, viewer_id, 1));
   // Planet sight miss then hit
-  test::expect_true(sight.has_planet_sight(ctx.em, 1, 1, 1));
-  test::expect_true(sight.has_planet_sight(ctx.em, 1, 1, 1));
+  test::expect_true(sight.has_planet_sight(ctx.em, viewer_id, 1, 1));
+  test::expect_true(sight.has_planet_sight(ctx.em, viewer_id, 1, 1));
 
   // 2. project_deleted_ship_view
   const auto deleted_view = GB::presentation::project_deleted_ship_view(99);
@@ -1075,14 +1078,14 @@ void test_canonical_ship_view_projectors() {
 
   // 4. Contact visibility:
   const auto s1_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                         .owned_by(1)
+                         .owned_by(viewer_id)
                          .in_star_orbit(1)
                          .build();
 
   // Deep space foreign ship (whatorbits == LEVEL_UNIV) -> invisible to foreign
   // mortal
   const auto univ_ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                                .owned_by(2)
+                                .owned_by(foreign_id)
                                 .in_deep_space()
                                 .build();
   const auto univ_proj = GB::presentation::project_ship_view(
@@ -1092,7 +1095,7 @@ void test_canonical_ship_view_projectors() {
   // Foreign visible ship in system orbit with star sight -> visible
   const auto foreign_star_ship_id =
       TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-          .owned_by(2)
+          .owned_by(foreign_id)
           .in_star_orbit(1)
           .build();
   const auto foreign_star_proj = GB::presentation::project_ship_view(
@@ -1110,7 +1113,7 @@ void test_canonical_ship_view_projectors() {
   // Foreign landed ship with planet sight (planet scope)
   const auto foreign_landed_ship_id =
       TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-          .owned_by(2)
+          .owned_by(foreign_id)
           .landed_on(1, 1, Coordinates{0, 0})
           .with_crew(10, 0)
           .build();
@@ -1126,7 +1129,7 @@ void test_canonical_ship_view_projectors() {
   // LEVEL_PLAN)
   const auto foreign_orbit_ship_id =
       TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-          .owned_by(2)
+          .owned_by(foreign_id)
           .in_planet_orbit(1, 1)
           .with_crew(10, 0)
           .build();
@@ -1137,7 +1140,7 @@ void test_canonical_ship_view_projectors() {
 
   // Foreign invisible ship (e.g. canister) -> returns nullopt
   const auto foreign_invis_id = TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST)
-                                    .owned_by(2)
+                                    .owned_by(foreign_id)
                                     .landed_on(1, 1, Coordinates{0, 0})
                                     .build();
   const auto foreign_invis_proj = GB::presentation::project_ship_view(
@@ -1148,13 +1151,13 @@ void test_canonical_ship_view_projectors() {
   // mortals even with system sight, visible to Deity
   const auto foreign_carrier_id =
       TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-          .owned_by(2)
+          .owned_by(foreign_id)
           .in_star_orbit(1)
           .with_max_hanger(100)
           .build();
   const auto foreign_hangar_id =
       TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-          .owned_by(2)
+          .owned_by(foreign_id)
           .in_star_orbit(1)
           .build();
   test::expect_true(
@@ -1163,7 +1166,8 @@ void test_canonical_ship_view_projectors() {
       GB::presentation::project_ship_view(
           ctx.em, viewer1, *ctx.em.peek_ship(foreign_hangar_id), &sight)
           .has_value());
-  const ScopeContext god_viewer{.player = 1, .governor = 1, .god = true};
+  const ScopeContext god_viewer{
+      .player = races.deity, .governor = 1, .god = true};
   const auto god_hangar_proj = GB::presentation::project_ship_view(
       ctx.em, god_viewer, *ctx.em.peek_ship(foreign_hangar_id), &sight);
   test::expect_true(god_hangar_proj.has_value());
@@ -1184,7 +1188,7 @@ void test_canonical_ship_view_projectors() {
 
   // 5. SpaceMirrorShip targeting and orientation
   const auto mirror_id = TestShipBuilder(ctx.em, ShipType::STYPE_MIRROR)
-                             .owned_by(1)
+                             .owned_by(viewer_id)
                              .in_star_orbit(1)
                              .build();
   ctx.em.mutate_as<SpaceMirrorShip>(
@@ -1231,7 +1235,7 @@ void test_canonical_ship_view_projectors() {
 
   // Own deep space ship (whatorbits == LEVEL_UNIV) -> snum and pnum nullopt
   const auto own_univ_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                               .owned_by(1)
+                               .owned_by(viewer_id)
                                .in_deep_space()
                                .build();
   const auto own_univ_proj = GB::presentation::project_ship_view(
@@ -1247,7 +1251,7 @@ void test_canonical_ship_view_projectors() {
 
   // - Factory unconfigured with STYPE_POD
   const auto factory_pod_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
-                                  .owned_by(1)
+                                  .owned_by(viewer_id)
                                   .in_star_orbit(1)
                                   .build();
   ctx.em.mutate_ship(factory_pod_id,
@@ -1292,11 +1296,14 @@ void test_canonical_ship_view_projectors() {
 
 void test_canonical_race_block_market_combat_views() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
+  const player_t self_id = races.nomad;
+  const player_t foreign_id = races.newcomer;
+  const player_t third_id = races.empire;
 
-  ctx.em.mutate_power(1, [](Power& p) {
+  ctx.em.mutate_power(self_id, [&](Power& p) {
     p = Power{{
-        .id = 1,
+        .id = self_id,
         .troops = 1000,
         .popn = 50000,
         .resource = 5000,
@@ -1307,9 +1314,9 @@ void test_canonical_race_block_market_combat_views() {
         .money = 20000,
     }};
   });
-  ctx.em.mutate_power(2, [](Power& p) {
+  ctx.em.mutate_power(foreign_id, [&](Power& p) {
     p = Power{{
-        .id = 2,
+        .id = foreign_id,
         .troops = 2000,
         .popn = 60000,
         .resource = 7000,
@@ -1321,13 +1328,13 @@ void test_canonical_race_block_market_combat_views() {
     }};
   });
 
-  ctx.em.mutate_block(1, [](Block& b) {
+  ctx.em.mutate_block(self_id, [&](Block& b) {
     b = Block{{
-        .Playernum = 1,
+        .Playernum = self_id,
         .name = "FederationBloc",
         .motto = "Peace and exploration",
-        .invited = {player_t{1}, player_t{2}},
-        .pledged = {player_t{1}},
+        .invited = {foreign_id, self_id},
+        .pledged = {self_id},
         .popn = 80000,
         .resource = 9000,
         .fuel = 4000,
@@ -1338,13 +1345,13 @@ void test_canonical_race_block_market_combat_views() {
         .money = 35000,
     }};
   });
-  ctx.em.mutate_block(2, [](Block& b) {
+  ctx.em.mutate_block(foreign_id, [&](Block& b) {
     b = Block{{
-        .Playernum = 2,
+        .Playernum = foreign_id,
         .name = "KlingonEmpire",
         .motto = "Honor in combat",
-        .invited = {player_t{2}},
-        .pledged = {player_t{2}},
+        .invited = {foreign_id},
+        .pledged = {foreign_id},
         .popn = 60000,
         .resource = 7000,
         .fuel = 3000,
@@ -1357,17 +1364,17 @@ void test_canonical_race_block_market_combat_views() {
   });
 
   const ScopeContext viewer1{
-      .player = 1,
+      .player = self_id,
       .governor = 0,
       .god = false,
   };
 
-  // 1. project_race_view for self (player 1 inspecting player 1)
+  // 1. project_race_view for self (self_id inspecting self_id)
   // First with Gov_ship unset (nullopt / 0)
-  auto race1_view = GB::presentation::project_race_view(ctx.em, viewer1, 1,
-                                                        std::optional<int>{1});
-  test::expect_eq(race1_view.player, 1);
-  test::expect_eq(race1_view.name, "Federation");
+  auto race1_view = GB::presentation::project_race_view(
+      ctx.em, viewer1, self_id, std::optional<int>{1});
+  test::expect_eq(race1_view.player, self_id);
+  test::expect_eq(race1_view.name, "Nomads");
   test::expect_false(race1_view.dissolved);
   test::expect_false(race1_view.is_god);
   test::expect_false(race1_view.is_guest);
@@ -1402,26 +1409,28 @@ void test_canonical_race_block_market_combat_views() {
 
   // Now set Gov_ship != 0 with an actual ship in tbl_ship
   const auto gov_ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                               .owned_by(1)
+                               .owned_by(self_id)
                                .in_star_orbit(1)
                                .build();
-  ctx.em.mutate_race(1, [gov_ship_id](Race& r) { r.Gov_ship = gov_ship_id; });
-  race1_view = GB::presentation::project_race_view(ctx.em, viewer1, 1,
+  ctx.em.mutate_race(self_id,
+                     [gov_ship_id](Race& r) { r.Gov_ship = gov_ship_id; });
+  race1_view = GB::presentation::project_race_view(ctx.em, viewer1, self_id,
                                                    std::optional<int>{1});
   test::expect_true(race1_view.self->gov_ship.has_value());
   test::expect_eq(race1_view.self->gov_ship.value(), gov_ship_id);
 
   // 2. project_race_view for foreign mortal at different translation thresholds
-  // Target race 2 has Metamorph set
-  ctx.em.mutate_race(2, [](Race& r) {
+  // Target foreign_id has Metamorph set
+  ctx.em.mutate_race(foreign_id, [](Race& r) {
     r.Metamorph = true;
     r.likesbest = SectorType::SEC_LAND;
   });
 
   // A. know <= 10
-  ctx.em.mutate_race(1, [](Race& r) { r.translate[2] = Percentage{5}; });
+  ctx.em.mutate_race(self_id,
+                     [&](Race& r) { r.translate[foreign_id] = Percentage{5}; });
   const auto race2_know5 =
-      GB::presentation::project_race_view(ctx.em, viewer1, 2);
+      GB::presentation::project_race_view(ctx.em, viewer1, foreign_id);
   test::expect_false(race2_know5.self.has_value());
   test::expect_false(race2_know5.stats.is_metamorph.has_value());
   test::expect_false(race2_know5.stats.best_sector.has_value());
@@ -1435,9 +1444,10 @@ void test_canonical_race_block_market_combat_views() {
   test::expect_false(race2_know5.standings->troops.has_value());
 
   // B. 10 < know <= 50
-  ctx.em.mutate_race(1, [](Race& r) { r.translate[2] = Percentage{30}; });
+  ctx.em.mutate_race(
+      self_id, [&](Race& r) { r.translate[foreign_id] = Percentage{30}; });
   const auto race2_know30 =
-      GB::presentation::project_race_view(ctx.em, viewer1, 2);
+      GB::presentation::project_race_view(ctx.em, viewer1, foreign_id);
   test::expect_false(race2_know30.self.has_value());
   test::expect_false(race2_know30.stats.is_metamorph.has_value());
   test::expect_false(race2_know30.stats.best_sector.has_value());
@@ -1450,60 +1460,65 @@ void test_canonical_race_block_market_combat_views() {
   test::expect_true(race2_know30.standings->troops.has_value());
 
   // C. 50 < know <= 80
-  ctx.em.mutate_race(1, [](Race& r) { r.translate[2] = Percentage{60}; });
+  ctx.em.mutate_race(
+      self_id, [&](Race& r) { r.translate[foreign_id] = Percentage{60}; });
   const auto race2_know60 =
-      GB::presentation::project_race_view(ctx.em, viewer1, 2);
+      GB::presentation::project_race_view(ctx.em, viewer1, foreign_id);
   test::expect_true(race2_know60.stats.is_metamorph.has_value());
   test::expect_true(race2_know60.stats.is_metamorph.value());
   test::expect_false(race2_know60.stats.best_sector.has_value());
 
   // D. know > 80
-  ctx.em.mutate_race(1, [](Race& r) { r.translate[2] = Percentage{90}; });
+  ctx.em.mutate_race(
+      self_id, [&](Race& r) { r.translate[foreign_id] = Percentage{90}; });
   const auto race2_know90 =
-      GB::presentation::project_race_view(ctx.em, viewer1, 2);
+      GB::presentation::project_race_view(ctx.em, viewer1, foreign_id);
   test::expect_true(race2_know90.stats.is_metamorph.has_value());
   test::expect_true(race2_know90.stats.best_sector.has_value());
   test::expect_eq(race2_know90.stats.best_sector.value(), SectorType::SEC_LAND);
 
   // 3. Diplomatic stances: Neutral, Allied, AtWar
-  // Viewer declares alliance with player 2
-  ctx.em.mutate_race(1, [](Race& r) { r.declare_alliance_with(2); });
-  auto dip_view = GB::presentation::project_race_view(ctx.em, viewer1, 2);
+  // Viewer declares alliance with foreign_id
+  ctx.em.mutate_race(self_id,
+                     [&](Race& r) { r.declare_alliance_with(foreign_id); });
+  auto dip_view =
+      GB::presentation::project_race_view(ctx.em, viewer1, foreign_id);
   test::expect_eq(dip_view.you_to_them,
                   GB::presentation::DiplomaticRelation::Allied);
   test::expect_eq(dip_view.them_to_you,
                   GB::presentation::DiplomaticRelation::Neutral);
 
-  // Player 2 declares war on viewer
-  ctx.em.mutate_race(2, [](Race& r) { r.declare_war_on(1); });
-  dip_view = GB::presentation::project_race_view(ctx.em, viewer1, 2);
+  // Foreign declares war on viewer
+  ctx.em.mutate_race(foreign_id, [&](Race& r) { r.declare_war_on(self_id); });
+  dip_view = GB::presentation::project_race_view(ctx.em, viewer1, foreign_id);
   test::expect_eq(dip_view.you_to_them,
                   GB::presentation::DiplomaticRelation::Allied);
   test::expect_eq(dip_view.them_to_you,
                   GB::presentation::DiplomaticRelation::AtWar);
 
-  // Viewer declares war on player 2 (rescinding alliance first)
-  ctx.em.mutate_race(1, [](Race& r) {
-    r.rescind_alliance_with(2);
-    r.declare_war_on(2);
+  // Viewer declares war on foreign_id (rescinding alliance first)
+  ctx.em.mutate_race(self_id, [&](Race& r) {
+    r.rescind_alliance_with(foreign_id);
+    r.declare_war_on(foreign_id);
   });
-  dip_view = GB::presentation::project_race_view(ctx.em, viewer1, 2);
+  dip_view = GB::presentation::project_race_view(ctx.em, viewer1, foreign_id);
   test::expect_eq(dip_view.you_to_them,
                   GB::presentation::DiplomaticRelation::AtWar);
   test::expect_eq(dip_view.them_to_you,
                   GB::presentation::DiplomaticRelation::AtWar);
 
   // 4. project_block_view
-  // Self block (id = 1)
+  // Self block (id = self_id)
   const auto block1_view =
-      GB::presentation::project_block_view(ctx.em, viewer1, 1);
-  test::expect_eq(block1_view.block_id, 1);
+      GB::presentation::project_block_view(ctx.em, viewer1, self_id);
+  test::expect_eq(block1_view.block_id, self_id);
   test::expect_eq(block1_view.name, "FederationBloc");
   test::expect_eq(block1_view.motto, "Peace and exploration");
   test::expect_eq(block1_view.know_pct, 100);
-  test::expect_eq(block1_view.members, std::vector<player_t>{1});
-  test::expect_eq(block1_view.invited, (std::vector<player_t>{1, 2}));
-  test::expect_eq(block1_view.pledged, std::vector<player_t>{1});
+  test::expect_eq(block1_view.members, std::vector<player_t>{self_id});
+  test::expect_eq(block1_view.invited,
+                  (std::vector<player_t>{foreign_id, self_id}));
+  test::expect_eq(block1_view.pledged, std::vector<player_t>{self_id});
   test::expect_true(block1_view.standings.has_value());
   test::expect_eq(block1_view.standings->victory_score, 120);
   test::expect_eq(block1_view.standings->money, 35000);
@@ -1515,10 +1530,10 @@ void test_canonical_race_block_market_combat_views() {
   test::expect_eq(block1_view.standings->destruct, 200);
   test::expect_false(block1_view.standings->troops.has_value());
 
-  // Foreign block (id = 2) at know = 90
+  // Foreign block (id = foreign_id) at know = 90
   const auto block2_view =
-      GB::presentation::project_block_view(ctx.em, viewer1, 2);
-  test::expect_eq(block2_view.block_id, 2);
+      GB::presentation::project_block_view(ctx.em, viewer1, foreign_id);
+  test::expect_eq(block2_view.block_id, foreign_id);
   test::expect_eq(block2_view.name, "KlingonEmpire");
   test::expect_eq(block2_view.know_pct, 90);
   test::expect_true(block2_view.standings.has_value());
@@ -1526,14 +1541,15 @@ void test_canonical_race_block_market_combat_views() {
   test::expect_false(block2_view.standings->troops.has_value());
 
   // Foreign block at know <= 10
-  ctx.em.mutate_race(1, [](Race& r) { r.translate[2] = Percentage{5}; });
+  ctx.em.mutate_race(self_id,
+                     [&](Race& r) { r.translate[foreign_id] = Percentage{5}; });
   const auto block2_low =
-      GB::presentation::project_block_view(ctx.em, viewer1, 2);
+      GB::presentation::project_block_view(ctx.em, viewer1, foreign_id);
   test::expect_false(block2_low.standings->victory_score.has_value());
 
   // 5. project_market_lot_view and project_deleted_market_lot_view
   auto commod_handle = ctx.em.create_commod({
-      .owner = 2,
+      .owner = foreign_id,
       .type = CommodType::RESOURCE,
       .amount = 100,
       .bid = 500,
@@ -1556,20 +1572,20 @@ void test_canonical_race_block_market_combat_views() {
       ctx.em, viewer1, *commod_handle, std::optional<starnum_t>{2});
   test::expect_gt(lot_shipping.shipping_cost, 0);
 
-  // C. Foreign bidder (bidder = 3, destination hidden from viewer1)
-  commod_handle->place_bid(3, 1, 600, 2, 1);
+  // C. Foreign bidder (bidder = third_id, destination hidden from viewer1)
+  commod_handle->place_bid(third_id, 1, 600, 2, 1);
   const auto lot_foreign_bid = GB::presentation::project_market_lot_view(
       ctx.em, viewer1, *commod_handle);
-  test::expect_eq(lot_foreign_bid.bidder, 3);
+  test::expect_eq(lot_foreign_bid.bidder, third_id);
   test::expect_eq(lot_foreign_bid.bid, 600);
   test::expect_false(lot_foreign_bid.dest_star.has_value());
   test::expect_false(lot_foreign_bid.dest_planet.has_value());
 
-  // D. Self bidder (bidder = 1, destination visible to viewer1)
-  commod_handle->place_bid(1, 1, 700, 1, 1);
+  // D. Self bidder (bidder = self_id, destination visible to viewer1)
+  commod_handle->place_bid(self_id, 1, 700, 1, 1);
   const auto lot_self_bid = GB::presentation::project_market_lot_view(
       ctx.em, viewer1, *commod_handle);
-  test::expect_eq(lot_self_bid.bidder, 1);
+  test::expect_eq(lot_self_bid.bidder, self_id);
   test::expect_eq(lot_self_bid.bid, 700);
   test::expect_true(lot_self_bid.dest_star.has_value());
   test::expect_eq(lot_self_bid.dest_star.value(), 1);
@@ -1586,7 +1602,7 @@ void test_canonical_race_block_market_combat_views() {
   const std::string race_json =
       GB::presentation::render_json_race_view(race1_view);
   test::expect_contains(race_json, R"("type":"race")");
-  test::expect_contains(race_json, R"("name":"Federation")");
+  test::expect_contains(race_json, R"("name":"Nomads")");
   test::expect_contains(race_json, R"("stats":)");
   test::expect_contains(race_json, R"("standings":)");
   test::expect_contains(race_json, R"("self":)");
@@ -1595,7 +1611,7 @@ void test_canonical_race_block_market_combat_views() {
       GB::presentation::render_json_block_view(block1_view);
   test::expect_contains(block_json, R"("type":"block")");
   test::expect_contains(block_json, R"("name":"FederationBloc")");
-  test::expect_contains(block_json, R"("members":[1])");
+  test::expect_contains(block_json, R"("members":[3])");
 
   const std::string market_json =
       GB::presentation::render_json_market_lot_view(lot_self_bid);

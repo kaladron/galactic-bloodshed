@@ -2853,7 +2853,7 @@ void test_planet_turn_simulation_defaults() {
 
 void test_moveplanet_and_ground_mcdc() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_races();
 
   // 1. advance_ground_vehicle empty orders, invalid index, and 'c' -> 's'
   shipnum_t terra_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TERRA)

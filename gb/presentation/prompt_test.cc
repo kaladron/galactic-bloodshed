@@ -378,10 +378,11 @@ void test_prompt_nested_docked_ships() {
 
 void test_prompt_json_mode() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
-  ctx.em.mutate_universe([](Universe& u) { u.set_AP(player_t{1}, ap_t{42}); });
-  ctx.em.mutate_star(1, [](Star& star) { star.AP(player_t{1}) = ap_t{17}; });
+  ctx.em.mutate_universe(
+      [&](Universe& u) { u.set_AP(races.empire, ap_t{42}); });
+  ctx.em.mutate_star(1, [&](Star& star) { star.AP(races.empire) = ap_t{17}; });
   ctx.em.mutate_server_state([](ServerState& state) {
     state.update_time_minutes = 45;
     state.segments = 3;
@@ -395,13 +396,13 @@ void test_prompt_json_mode() {
   });
 
   const auto ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
-                           .owned_by(1, 1)
+                           .owned_by(races.empire, 1)
                            .in_planet_orbit(1, 1)
                            .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, player_t{1}, governor_t{1});
+  ctx.setup_game_obj(g, races.empire, governor_t{1});
   g.set_ui_mode(UiMode::JSON);
 
   g.set_scope_univ();
@@ -409,7 +410,7 @@ void test_prompt_json_mode() {
   test::expect_contains(out, "\"type\":\"session\"");
   test::expect_contains(out, "\"ap\":42");
   test::expect_contains(out, "\"global_ap\":42");
-  test::expect_contains(out, "\"race_name\":\"Federation\"");
+  test::expect_contains(out, "\"race_name\":\"Imperium\"");
   test::expect_contains(out, "\"scope\":");
   test::expect_contains(out, "\"viewport\":");
   test::expect_contains(out, "\"toggles\":");

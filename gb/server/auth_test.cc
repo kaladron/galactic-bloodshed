@@ -112,19 +112,19 @@ void test_check_connect_failure() {
 
 void test_check_connect_duplicate_session_rejection() {
   TestContext ctx;
-  ctx.with_standard_universe();
-  ctx.em.mutate_race(1, [](Race& race) {
+  const auto races = ctx.with_races();
+  ctx.em.mutate_race(races.empire, [](Race& race) {
     race.name = "TestRace";
     race.password = "raceword";
     race.leader().name = "Gov1";
     race.leader().password = "govword";
   });
 
-  // Use RecordingSessionRegistry configured with active session for player 1
+  // Use RecordingSessionRegistry configured with active session for Imperium
   // governor 1
   RecordingSessionRegistry busy_registry;
   busy_registry.sessions = {
-      SessionInfo{.player = 1, .governor = 1, .connected = true},
+      SessionInfo{.player = races.empire, .governor = 1, .connected = true},
   };
 
   asio::io_context io;
@@ -140,18 +140,13 @@ void test_check_connect_duplicate_session_rejection() {
 
 void test_check_connect_success_and_clamping() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
+  const auto gov_id = races.empire_gov_ship;
 
-  const auto gov_id = TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
-                          .owned_by(1, 1)
-                          .landed_on(1, 1, {0, 0})
-                          .build();
-
-  ctx.em.mutate_race(1, [&](Race& race) {
+  ctx.em.mutate_race(races.empire, [&](Race& race) {
     race.name = "TestRace";
     race.password = "raceword";
     race.morale = 100;
-    race.Gov_ship = gov_id;
     race.leader().name = "Gov1";
     race.leader().password = "govword";
     race.leader().set_default_scope_planet(1, 1);
@@ -166,19 +161,21 @@ void test_check_connect_success_and_clamping() {
   check_connect(*session, "raceword govword");
 
   test::expect_true(session->connected());
-  test::expect_eq(session->player(), player_t{1});
+  test::expect_eq(session->player(), races.empire);
   test::expect_eq(session->governor(), governor_t{1});
   test::expect_eq(session->snum(), starnum_t{1});
   test::expect_eq(session->pnum(), planetnum_t{1});
 
   // Verify race login time updated in database
-  const auto* updated_race = ctx.em.peek_race(1);
+  const auto* updated_race = ctx.em.peek_race(races.empire);
   test::expect_true(updated_race != nullptr);
   test::expect_gt(updated_race->leader().login, 1000000);
 
   // Verify login output
   std::string_view output = session->pending_output();
-  test::expect_contains(output, "TestRace \"Gov1\" [1,1] logged on.");
+  test::expect_contains(
+      output,
+      std::format("TestRace \"Gov1\" [{},1] logged on.", races.empire.value));
   test::expect_contains(
       output, std::format("Government Center #{} is active.", gov_id));
   test::expect_contains(
@@ -187,9 +184,10 @@ void test_check_connect_success_and_clamping() {
   test::expect_contains(output, "You have:");
 
   // 0-planet star with deflevel = LEVEL_STAR logs in cleanly with pnum = 0
-  ctx.create_star("VoidStar", 4).with_explored(1).build();
-  ctx.em.mutate_race(
-      1, [](Race& race) { race.leader().set_default_scope_star(4); });
+  ctx.create_star("VoidStar", 4).with_explored(races.empire).build();
+  ctx.em.mutate_race(races.empire, [](Race& race) {
+    race.leader().set_default_scope_star(4);
+  });
   RecordingSessionRegistry empty_reg;
   asio::ip::tcp::socket socket_void(io);
   auto session_void =
@@ -201,8 +199,9 @@ void test_check_connect_success_and_clamping() {
   test::expect_eq(session_void->pnum(), planetnum_t{0});
 
   // Corrupt out-of-bounds defsystem fails fast via EntityNotFoundError
-  ctx.em.mutate_race(
-      1, [](Race& race) { race.leader().set_default_scope_star(999); });
+  ctx.em.mutate_race(races.empire, [](Race& race) {
+    race.leader().set_default_scope_star(999);
+  });
   RecordingSessionRegistry corrupt_reg;
   asio::ip::tcp::socket socket_corrupt(io);
   auto session_corrupt =
@@ -210,17 +209,18 @@ void test_check_connect_success_and_clamping() {
   check_connect(*session_corrupt, "raceword govword");
   test::expect_contains(session_corrupt->pending_output(),
                         "Connection refused.");
-  ctx.em.mutate_race(
-      1, [](Race& race) { race.leader().set_default_scope_planet(1, 1); });
+  ctx.em.mutate_race(races.empire, [](Race& race) {
+    race.leader().set_default_scope_planet(1, 1);
+  });
 
   ctx.verify_universe_invariants();
 }
 
 void test_check_connect_json_mode() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
-  ctx.em.mutate_race(1, [](Race& race) {
+  ctx.em.mutate_race(races.empire, [](Race& race) {
     race.name = "JsonRace";
     race.password = "raceword";
     race.morale = 85;
@@ -239,7 +239,7 @@ void test_check_connect_json_mode() {
   test::expect_true(session->ui_mode() == UiMode::JSON);
 
   // Verify race login time updated in database
-  const auto* updated_race = ctx.em.peek_race(1);
+  const auto* updated_race = ctx.em.peek_race(races.empire);
   test::expect_true(updated_race != nullptr);
   const std::time_t updated_login = updated_race->leader().login;
   test::expect_gt(updated_login, 1000000);
@@ -269,12 +269,11 @@ void test_check_connect_json_mode() {
 
 void test_check_connect_deity_arrival_broadcast() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_races();
 
   ctx.em.mutate_race(1, [](Race& race) {
     race.name = "GodRace";
     race.password = "godword";
-    race.God = true;
     race.leader().name = "Almighty";
     race.leader().password = "govword";
   });
@@ -282,7 +281,6 @@ void test_check_connect_deity_arrival_broadcast() {
   ctx.em.mutate_race(2, [](Race& race) {
     race.name = "MortalRace";
     race.password = "mortalword";
-    race.God = false;
     race.leader().name = "Peasant";
     race.leader().password = "govword";
   });

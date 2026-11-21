@@ -12,22 +12,38 @@ import std;
 
 namespace {
 
+constexpr player_t p1 = 2;
+constexpr player_t p2 = 3;
+
 void test_arm_command() {
   std::println(std::cout, "Test: arm command dispatch, MC/DC, and JSON output");
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
+  TestWorldBuilder world(ctx);
+  world.add_race("Federation", 100.0, false, p1);
+  world.add_race("Klingons", 100.0, false, p2);
 
-  ctx.em.mutate_race(1, [](Race& r) { r.fighters = 100; });
+  ctx.em.mutate_race(p1, [](Race& r) {
+    r.fighters = 100;
+    r.leader().money = 20000;
+  });
+
+  ctx.em.mutate_star(1, [](Star& s) {
+    s.mark_explored_by(p1);
+    s.mark_inhabited_by(p1);
+    s.AP(p1) = 50;
+  });
 
   ctx.em.mutate_planet(1, 1, [](Planet& planet) {
-    planet.info(player_t{1}).numsectsowned += 1;
-    planet.info(player_t{1}).destruct = 1000;
+    planet.mark_explored_by(p1);
+    planet.info(p1).numsectsowned += 1;
+    planet.info(p1).destruct = 1000;
     planet.popn() += 1000;
   });
 
   ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
     auto& sect = smap.get(Coordinates{5, 5});
-    sect.set_owner(1);
+    sect.set_owner(p1);
     sect.set_popn_exact(1000);
     sect.set_troops(0);
     sect.set_mobilization(1);
@@ -36,7 +52,7 @@ void test_arm_command() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, p1, 1);
 
   // 1. Scope rejection at UNIV scope
   g.set_scope_univ();
@@ -45,15 +61,15 @@ void test_arm_command() {
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
 
   // 2. Guest rejection
-  ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });
-  ctx.setup_game_obj(g);
+  ctx.em.mutate_race(p1, [](Race& r) { r.Guest = true; });
+  ctx.setup_game_obj(g, p1, 1);
   g.set_scope_planet(1, 1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"arm", "5,5", "100"});
   test::expect_contains(g.out.str(), "Guest races cannot use this command.");
 
-  ctx.em.mutate_race(1, [](Race& r) { r.Guest = false; });
-  ctx.setup_game_obj(g);
+  ctx.em.mutate_race(p1, [](Race& r) { r.Guest = false; });
+  ctx.setup_game_obj(g, p1, 1);
 
   // 3. Bad sector format, out-of-bounds coordinates, unowned sector
   g.out.str("");
@@ -69,7 +85,7 @@ void test_arm_command() {
   test::expect_contains(g.out.str(), "You don't own that sector.");
 
   // 4. Enslaved planet rejection
-  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.slaved_to() = player_t{2}; });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.slaved_to() = p2; });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"arm", "5,5", "10"});
   test::expect_contains(g.out.str(), "That planet has been enslaved!");
@@ -87,13 +103,11 @@ void test_arm_command() {
                         "You must specify a positive number of civs to arm.");
 
   // 6. Zero destruct / zero civs -> cannot arm
-  ctx.em.mutate_planet(1, 1,
-                       [](Planet& p) { p.info(player_t{1}).destruct = 0; });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(p1).destruct = 0; });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"arm", "5,5", "10"});
   test::expect_contains(g.out.str(), "You can't arm any civilians now.");
-  ctx.em.mutate_planet(1, 1,
-                       [](Planet& p) { p.info(player_t{1}).destruct = 1000; });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(p1).destruct = 1000; });
 
   // 7. Insufficient money
   g.out.str("");
@@ -114,8 +128,8 @@ void test_arm_command() {
   test::expect_eq(saved_sect.get_popn(), 900);
 
   // 9. Default max amount (2-arg invocation) in JSON mode
-  ctx.em.mutate_race(1, [](Race& r) { r.leader().money = 500000; });
-  ctx.setup_game_obj(g);
+  ctx.em.mutate_race(p1, [](Race& r) { r.leader().money = 500000; });
+  ctx.setup_game_obj(g, p1, 1);
   g.set_scope_planet(1, 1);
   g.set_ui_mode(GB::presentation::UiMode::JSON);
   g.out.str("");

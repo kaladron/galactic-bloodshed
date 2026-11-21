@@ -12,23 +12,33 @@ import std;
 
 namespace {
 
+constexpr player_t p1 = 2;
+
 void test_disarm_command() {
   std::println(std::cout,
                "Test: disarm command dispatch, MC/DC, and JSON output");
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
+  TestWorldBuilder(ctx).add_race("Federation", 100.0, false, p1);
+
+  ctx.em.mutate_star(1, [](Star& s) {
+    s.mark_explored_by(p1);
+    s.mark_inhabited_by(p1);
+    s.AP(p1) = 50;
+  });
 
   ctx.em.mutate_planet(1, 1, [](Planet& planet) {
-    planet.info(player_t{1}).numsectsowned += 1;
+    planet.mark_explored_by(p1);
+    planet.info(p1).numsectsowned += 1;
     planet.popn() += 900;
     planet.troops() += 100;
-    planet.info(player_t{1}).popn += 900;
-    planet.info(player_t{1}).troops += 100;
+    planet.info(p1).popn += 900;
+    planet.info(p1).troops += 100;
   });
 
   ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
     auto& sect = smap.get(Coordinates{5, 5});
-    sect.set_owner(1);
+    sect.set_owner(p1);
     sect.set_popn_exact(900);
     sect.set_troops(100);
     sect.set_condition(SectorType::SEC_MOUNT);
@@ -36,7 +46,7 @@ void test_disarm_command() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, p1, 1);
 
   // 1. Scope rejection at STAR scope
   g.set_scope_star(1);

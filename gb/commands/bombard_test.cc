@@ -11,26 +11,44 @@ import std;
 
 namespace {
 
-void setup_test_world(TestContext& ctx) {
-  ctx.with_standard_universe();
+constexpr player_t attacker = 2;
+constexpr player_t defender = 3;
+constexpr player_t guest_player = 4;
 
-  // Configure target sector (5,5) on planet (1,1) for defender (player 2)
+void setup_test_world(TestContext& ctx) {
+  ctx.with_galaxy();
+  TestWorldBuilder world(ctx);
+  world.add_race("Federation", 100.0, false, attacker);
+  world.add_race("Klingons", 100.0, false, defender);
+
+  ctx.em.mutate_star(1, [](Star& s) {
+    s.mark_explored_by(attacker);
+    s.mark_inhabited_by(attacker);
+    s.AP(attacker) = 50;
+    s.mark_explored_by(defender);
+    s.mark_inhabited_by(defender);
+    s.AP(defender) = 50;
+  });
+
+  // Configure target sector (5,5) on planet (1,1) for defender
   ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
     auto& sect = smap.get(Coordinates{5, 5});
     sect.set_condition(SectorType::SEC_LAND);
     sect.set_popn_exact(100);
-    sect.set_owner(2);
+    sect.set_owner(defender);
     sect.set_troops(10);
   });
   ctx.em.mutate_planet(1, 1, [](Planet& planet) {
-    planet.info(player_t{2}).numsectsowned += 1;
+    planet.mark_explored_by(attacker);
+    planet.mark_explored_by(defender);
+    planet.info(defender).numsectsowned += 1;
     planet.popn() += 100;
     planet.troops() += 10;
   });
 
   // Create attacker ship in orbit with guns and ammo
   TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
-      .owned_by(1, 1)
+      .owned_by(attacker, 1)
       .named("Battleship")
       .in_planet_orbit(1, 1)
       .with_guns(guntype_t::LIGHT, 10)
@@ -46,7 +64,7 @@ void test_bombard_happy_paths() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, attacker, 1);
   g.set_scope_planet(1, 1);
 
   // Execute bombard command on sector 5,5 with strength 10 (deducts 1 Star AP
@@ -82,11 +100,11 @@ void test_bombard_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set Star AP to 0
-  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 0; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(attacker) = 0; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, attacker, 1);
   g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_rejected(g, {"bombard", "#1", "5,5", "10"});
@@ -101,20 +119,20 @@ void test_bombard_role_and_scope_rejections() {
 
   // Create Guest Race
   TestWorldBuilder(ctx).add_race("GuestAttacker", 100.0, /*guest=*/true,
-                                 player_t{3});
+                                 guest_player);
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
 
   // 1. Guest race rejection
-  ctx.setup_game_obj(g, 3, 1);
+  ctx.setup_game_obj(g, guest_player, 1);
   g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_rejected(g, {"bombard", "#1", "5,5", "10"});
   test::expect_contains(g.out.str(), "Guest races cannot use this command.");
 
   // 2. Scope rejection (LEVEL_UNIV is not allowed for bombard)
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, attacker, 1);
   g.set_scope_univ();
 
   ctx.assert_dispatch_rejected(g, {"bombard", "#1", "5,5", "10"});
@@ -129,7 +147,7 @@ void test_bombard_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, attacker, 1);
   g.set_scope_planet(1, 1);
 
   // 1. Min args check (< 2 args)
@@ -151,32 +169,32 @@ void test_bombard_preconditions_afv_and_retaliation() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, attacker, 1);
   g.set_scope_planet(1, 1);
 
-  const ap_t ap_before = ctx.em.peek_star(1)->AP(1);
+  const ap_t ap_before = ctx.em.peek_star(1)->AP(attacker);
 
   // 1. Invalid sector format and out-of-bounds sector do NOT deduct Star AP
   ctx.assert_dispatch_rejected(g, {"bombard", "#1", "bad_coords", "10"});
   test::expect_contains(g.out.str(), "Invalid sector format.");
-  test::expect_eq(ctx.em.peek_star(1)->AP(1), ap_before);
+  test::expect_eq(ctx.em.peek_star(1)->AP(attacker), ap_before);
 
   ctx.assert_dispatch_rejected(g, {"bombard", "#1", "99,99", "10"});
   test::expect_contains(g.out.str(), "Illegal sector.");
-  test::expect_eq(ctx.em.peek_star(1)->AP(1), ap_before);
+  test::expect_eq(ctx.em.peek_star(1)->AP(attacker), ap_before);
 
   // 2. Non-numeric or zero strength does NOT deduct Star AP
   ctx.assert_dispatch_rejected(g, {"bombard", "#1", "5,5", "abc"});
   test::expect_contains(g.out.str(), "No attack.");
-  test::expect_eq(ctx.em.peek_star(1)->AP(1), ap_before);
+  test::expect_eq(ctx.em.peek_star(1)->AP(attacker), ap_before);
 
   ctx.assert_dispatch_rejected(g, {"bombard", "#1", "5,5", "0"});
   test::expect_contains(g.out.str(), "No attack.");
-  test::expect_eq(ctx.em.peek_star(1)->AP(1), ap_before);
+  test::expect_eq(ctx.em.peek_star(1)->AP(attacker), ap_before);
 
   // 3. Spaceborne AFV cannot bombard
   const auto afv_id = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
-                          .owned_by(1, 1)
+                          .owned_by(attacker, 1)
                           .in_planet_orbit(1, 1)
                           .with_guns(guntype_t::LIGHT, 5)
                           .with_destruct(20)
@@ -200,16 +218,16 @@ void test_bombard_preconditions_afv_and_retaliation() {
     auto& adj = smap.get({0, 1});
     adj.set_condition(SectorType::SEC_SEA);
     adj.set_type(SectorType::SEC_SEA);
-    adj.set_owner(2);
+    adj.set_owner(defender);
     adj.set_popn_exact(100);
   });
   ctx.assert_dispatch_success(
       g, {"bombard", std::format("#{}", afv_id.value), "0,1", "5"}, 1);
-  ctx.em.mutate_star(1, [ap_before](Star& s) { s.AP(1) = ap_before; });
+  ctx.em.mutate_star(1, [ap_before](Star& s) { s.AP(attacker) = ap_before; });
 
   // 5. Planetary defense network blocks orbital bombardment without AP loss
   const auto pdef_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF)
-                           .owned_by(2, 1)
+                           .owned_by(defender, 1)
                            .landed_on(1, 1, {5, 5})
                            .with_guns(guntype_t::MEDIUM, 5)
                            .with_destruct(20)
@@ -217,7 +235,7 @@ void test_bombard_preconditions_afv_and_retaliation() {
                            .build();
   ctx.assert_dispatch_rejected(g, {"bombard", "#1", "5,5", "10"});
   test::expect_contains(g.out.str(), "Target has planetary defense networks.");
-  test::expect_eq(ctx.em.peek_star(1)->AP(1), ap_before);
+  test::expect_eq(ctx.em.peek_star(1)->AP(attacker), ap_before);
 
   // Remove planetary defense network
   ctx.em.mutate_ship(pdef_id, [&](Ship& s) { ctx.em.destroy_ship(s); });
@@ -234,23 +252,23 @@ void test_bombard_preconditions_afv_and_retaliation() {
     for (int y = 0; y < 2; ++y) {
       for (int x = 0; x < 10; ++x) {
         auto& s = smap.get({x, y});
-        s.set_owner(2);
+        s.set_owner(defender);
         s.set_popn_exact(1000);
         s.set_mobilization(100);
       }
     }
     auto& target = smap.get({5, 5});
     target.set_condition(SectorType::SEC_WASTED);
-    target.set_owner(2);
+    target.set_owner(defender);
     target.set_popn_exact(50000);
     target.set_troops(50000);
   });
   ctx.em.mutate_planet(1, 1, [](Planet& p) {
-    p.info(2).guns = 3;
-    p.info(2).destruct = 5;
+    p.info(defender).guns = 3;
+    p.info(defender).destruct = 5;
   });
   const auto protector_id = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
-                                .owned_by(2, 1)
+                                .owned_by(defender, 1)
                                 .in_planet_orbit(1, 1)
                                 .with_guns(guntype_t::LIGHT, 5)
                                 .with_destruct(50)
@@ -261,7 +279,7 @@ void test_bombard_preconditions_afv_and_retaliation() {
 
   const auto inactive_protector_id =
       TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
-          .owned_by(2, 1)
+          .owned_by(defender, 1)
           .in_planet_orbit(1, 1)
           .with_guns(guntype_t::LIGHT, 5)
           .with_destruct(50)
@@ -275,7 +293,8 @@ void test_bombard_preconditions_afv_and_retaliation() {
   // Bombard with excessive strength (clamped to maxstrength) on (5,5)
   ctx.assert_dispatch_success(g, {"bombard", "#1", "5,5", "999"}, 1);
   test::expect_contains(g.out.str(), "Laser strength set to");
-  test::expect_lt(ctx.em.peek_planet(1, 1)->info(2).destruct, 5, g.out.str());
+  test::expect_lt(ctx.em.peek_planet(1, 1)->info(defender).destruct, 5,
+                  g.out.str());
   test::expect_lt(ctx.em.peek_ship(protector_id)->destruct(), 50);
 
   // Bombard with omitted coordinates (random sector selection)
@@ -288,12 +307,12 @@ void test_bombard_crystal_overload_burnout_and_explosion() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, attacker, 1);
   g.set_scope_planet(1, 1);
 
   // 1. Friendly OTYPE_PLANDEF on the planet does NOT block bombardment
   const auto friendly_pdef = TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF)
-                                 .owned_by(1, 1)
+                                 .owned_by(attacker, 1)
                                  .landed_on(1, 1, {2, 2})
                                  .with_guns(guntype_t::MEDIUM, 5)
                                  .with_destruct(20)
@@ -305,7 +324,7 @@ void test_bombard_crystal_overload_burnout_and_explosion() {
   // 2. Non-lethal crystal burnout during laser bombardment commits and deducts
   // 1 Star AP
   shipnum_t burnout_bomber = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
-                                 .owned_by(1, 1)
+                                 .owned_by(attacker, 1)
                                  .named("BurnoutBomber")
                                  .in_planet_orbit(1, 1)
                                  .with_crew(10, 10)
@@ -320,7 +339,7 @@ void test_bombard_crystal_overload_burnout_and_explosion() {
 
   bool burned_out = false;
   for (int attempt = 0; attempt < 40 && !burned_out; ++attempt) {
-    ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 10; });
+    ctx.em.mutate_star(1, [](Star& s) { s.AP(attacker) = 10; });
     g.out.str("");
     ctx.assert_dispatch_success(
         g, {"bombard", std::format("#{}", burnout_bomber.value), "5,5", "1"},
@@ -331,7 +350,7 @@ void test_bombard_crystal_overload_burnout_and_explosion() {
       burned_out = true;
       test::expect_eq(s->fire_laser(), 0u);
       test::expect_contains(g.out.str(), "No attack.");
-      test::expect_eq(ctx.em.peek_star(1)->AP(1), 9);
+      test::expect_eq(ctx.em.peek_star(1)->AP(attacker), 9);
     }
   }
   test::expect_true(burned_out);
@@ -339,7 +358,7 @@ void test_bombard_crystal_overload_burnout_and_explosion() {
   // 3. Lethal crystal explosion during laser bombardment commits ship
   // destruction and deducts 1 Star AP
   shipnum_t explode_bomber = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
-                                 .owned_by(1, 1)
+                                 .owned_by(attacker, 1)
                                  .named("ExplodeBomber")
                                  .in_planet_orbit(1, 1)
                                  .with_crew(10, 10)
@@ -351,13 +370,13 @@ void test_bombard_crystal_overload_burnout_and_explosion() {
     s.fire_laser() = 10000;
     s.mounted() = true;
   });
-  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 5; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(attacker) = 5; });
   g.out.str("");
   ctx.assert_dispatch_success(
       g, {"bombard", std::format("#{}", explode_bomber.value), "5,5", "10000"},
       1);
   test::expect_contains(g.out.str(), "No attack.");
-  test::expect_eq(ctx.em.peek_star(1)->AP(1), 4);
+  test::expect_eq(ctx.em.peek_star(1)->AP(attacker), 4);
   test::expect_throws<EntityNotFoundError>(
       [&]() { ctx.em.peek_ship(explode_bomber); });
 

@@ -11,12 +11,26 @@ import std;
 
 namespace {
 
+constexpr player_t p1 = 2;
+constexpr player_t p2 = 3;
+constexpr player_t guest_player = 4;
+
 void setup_test_world(TestContext& ctx) {
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
+  TestWorldBuilder world(ctx);
+  world.add_race("Federation", 100.0, false, p1);
+  world.add_race("Klingons", 100.0, false, p2);
+
+  ctx.em.mutate_star(1, [](Star& s) {
+    s.mark_explored_by(p1);
+    s.mark_inhabited_by(p1);
+    s.AP(p1) = 50;
+  });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.mark_explored_by(p1); });
 
   // Create mine ship (activated)
   TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
-      .owned_by(1, 1)
+      .owned_by(p1, 1)
       .named("Mine")
       .in_star_orbit(1, SystemCoordinates{100.0, 100.0})
       .with_destruct(10)
@@ -27,7 +41,7 @@ void setup_test_world(TestContext& ctx) {
 
   // Create target ship nearby
   TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-      .owned_by(2, 1)
+      .owned_by(p2, 1)
       .named("Target")
       .in_star_orbit(1, SystemCoordinates{105.0, 105.0})
       .with_armor(10)
@@ -44,7 +58,7 @@ void test_detonate_happy_path() {
   // Create GameObj
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, p1, 1);
   g.set_scope_star(1);
 
   // Execute detonate command: detonate #1
@@ -73,11 +87,11 @@ void test_detonate_role_rejection() {
 
   // Create Guest Race
   TestWorldBuilder(ctx).add_race("GuestMineLayer", 100.0, /*guest=*/true,
-                                 player_t{3});
+                                 guest_player);
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 3, 1);
+  ctx.setup_game_obj(g, guest_player, 1);
   g.set_scope_star(1);
 
   ctx.assert_dispatch_rejected(g, {"detonate", "#1"});
@@ -92,21 +106,21 @@ void test_detonate_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, p1, 1);
   g.set_scope_star(1);
 
   // 1. Min args check (< 2 args)
   ctx.assert_dispatch_rejected(g, {"detonate"});
   test::expect_contains(g.out.str(), "Syntax: detonate <mine>");
 
-  // 2. Explicit foreign ship (#2 is owned by player 2)
+  // 2. Explicit foreign ship (#2 is owned by p2)
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"detonate", "#2"});
   test::expect_contains(g.out.str(), "You don't own ship #2.");
 
   // 2b. Owned ship is not a mine
   const auto non_mine_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                               .owned_by(1, 1)
+                               .owned_by(p1, 1)
                                .in_star_orbit(1)
                                .build();
   ctx.assert_dispatch_rejected(g,

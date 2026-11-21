@@ -11,21 +11,32 @@ import std;
 
 namespace {
 
+constexpr player_t seller = 2;
+constexpr player_t guest_rival = 3;
+
 shipnum_t setup_test_world(TestContext& ctx) {
-  ctx.with_standard_universe();
-  ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
-  ctx.em.mutate_race(2, [](Race& r) { r.Guest = true; });
+  ctx.with_galaxy();
+  TestWorldBuilder world(ctx);
+  world.add_race("Federation", 100.0, false, seller);
+  world.add_race("Guests", 100.0, true, guest_rival);
+  ctx.em.mutate_race(seller, [](Race& r) { r.appoint_governor(2); });
+  ctx.em.mutate_star(1, [](Star& s) {
+    s.mark_explored_by(seller);
+    s.mark_inhabited_by(seller);
+    s.set_governor(seller, 1);
+    s.AP(seller) = 100;
+  });
   ctx.em.mutate_planet(1, 1, [](Planet& p) {
-    p.info(player_t{1}).explored = true;
-    p.info(player_t{1}).numsectsowned = 5;
-    p.info(player_t{1}).resource = 1000;
-    p.info(player_t{1}).fuel = 500;
-    p.info(player_t{1}).destruct = 200;
-    p.info(player_t{1}).crystals = 50;
+    p.info(seller).explored = true;
+    p.info(seller).numsectsowned = 5;
+    p.info(seller).resource = 1000;
+    p.info(seller).fuel = 500;
+    p.info(seller).destruct = 200;
+    p.info(seller).crystals = 50;
   });
 
   return TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
-      .owned_by(1, 1)
+      .owned_by(seller, 1)
       .in_planet_orbit(1, 1)
       .build();
 }
@@ -36,14 +47,14 @@ void test_sell_happy_paths() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, seller, 1);
   g.set_scope_planet(1, 1);
 
   // 1. Sell resources (min(20, 100) = 20 AP deducted)
   ctx.assert_dispatch_success(g, {"sell", "r", "100"}, 20);
   test::expect_contains(g.out.str(), "Lot #1 - 100 units of resources.");
   const auto* p1 = ctx.em.peek_planet(1, 1);
-  test::expect_eq(p1->info(player_t{1}).resource, 900);
+  test::expect_eq(p1->info(seller).resource, 900);
   const auto* lot1 = ctx.em.peek_commod(1);
   test::expect_ne(lot1, nullptr);
   test::expect_eq(lot1->star_from(), starnum_t{1});
@@ -54,12 +65,12 @@ void test_sell_happy_paths() {
   // 2. Sell fuel (min(20, 50) = 20 AP)
   ctx.assert_dispatch_success(g, {"sell", "f", "50"}, 20);
   const auto* p2 = ctx.em.peek_planet(1, 1);
-  test::expect_eq(p2->info(player_t{1}).fuel, 450);
+  test::expect_eq(p2->info(seller).fuel, 450);
 
   // 3. Sell destruct (min(20, 25) = 20 AP)
   ctx.assert_dispatch_success(g, {"sell", "d", "25"}, 20);
   const auto* p3 = ctx.em.peek_planet(1, 1);
-  test::expect_eq(p3->info(player_t{1}).destruct, 175);
+  test::expect_eq(p3->info(seller).destruct, 175);
 
   // 4. Sell crystals in JSON mode (min(20, 10) = 10 AP)
   g.set_ui_mode(UiMode::JSON);
@@ -69,7 +80,7 @@ void test_sell_happy_paths() {
   test::expect_contains(g.out.str(), R"("type":"planet")");
   g.set_ui_mode(UiMode::ASCII);
   const auto* p4 = ctx.em.peek_planet(1, 1);
-  test::expect_eq(p4->info(player_t{1}).crystals, 40);
+  test::expect_eq(p4->info(seller).crystals, 40);
 }
 
 void test_sell_insufficient_ap() {
@@ -77,11 +88,11 @@ void test_sell_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set Star AP to 5 (< 20 required for 100 units)
-  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 5; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(seller) = 5; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, seller, 1);
   g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_rejected(g, {"sell", "r", "100"});
@@ -96,7 +107,7 @@ void test_sell_role_rejections() {
   {
     auto& registry = get_test_session_registry();
     GameObj g(ctx.em, registry);
-    ctx.setup_game_obj(g, 2, 1);  // Player 2 is guest
+    ctx.setup_game_obj(g, guest_rival, 1);
     g.set_scope_planet(1, 1);
 
     ctx.assert_dispatch_rejected(g, {"sell", "r", "100"});
@@ -107,7 +118,7 @@ void test_sell_role_rejections() {
   {
     auto& registry = get_test_session_registry();
     GameObj g(ctx.em, registry);
-    ctx.setup_game_obj(g, 1, 2);  // Governor 2
+    ctx.setup_game_obj(g, seller, 2);  // Governor 2
     g.set_scope_planet(1, 1);
 
     ctx.assert_dispatch_rejected(g, {"sell", "r", "100"});
@@ -122,7 +133,7 @@ void test_sell_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, seller, 1);
   g.set_scope_planet(1, 1);
 
   // 1. Min args check (< 3 args)
@@ -146,18 +157,18 @@ void test_sell_domain_errors() {
                         "Permitted commodities are r, d, f, and x");
 
   // 4. Enslaved planet
-  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.slaved_to() = player_t{2}; });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.slaved_to() = guest_rival; });
   ctx.assert_dispatch_rejected(g, {"sell", "r", "100"});
-  test::expect_contains(g.out.str(), "This planet is enslaved to player 2.");
+  test::expect_contains(g.out.str(), "This planet is enslaved to player 3.");
   ctx.em.mutate_planet(1, 1, [](Planet& p) { p.slaved_to() = std::nullopt; });
 
   // 5. Starport conditions (damaged, non-starport, alien-owned, dead)
   TestShipBuilder(ctx.em, ShipType::STYPE_POD)
-      .owned_by(1, 1)
+      .owned_by(seller, 1)
       .in_planet_orbit(1, 1)
       .build();
   TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
-      .owned_by(2, 1)
+      .owned_by(guest_rival, 1)
       .in_planet_orbit(1, 1)
       .build();
   ctx.em.mutate_ship(port_ship, [](Ship& s) { s.admin_override_damage(50); });
@@ -169,10 +180,10 @@ void test_sell_domain_errors() {
 
   // 6. Zero stockpile for r, d, f, x
   ctx.em.mutate_planet(1, 1, [](Planet& p) {
-    p.info(player_t{1}).resource = 0;
-    p.info(player_t{1}).destruct = 0;
-    p.info(player_t{1}).fuel = 0;
-    p.info(player_t{1}).crystals = 0;
+    p.info(seller).resource = 0;
+    p.info(seller).destruct = 0;
+    p.info(seller).fuel = 0;
+    p.info(seller).crystals = 0;
   });
   ctx.assert_dispatch_rejected(g, {"sell", "r", "10"});
   test::expect_contains(g.out.str(),

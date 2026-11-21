@@ -13,12 +13,25 @@ import std;
 
 namespace {
 
+constexpr player_t attacker = 2;
+constexpr player_t defender = 3;
+constexpr player_t guest_player = 4;
+
 void setup_cew_world(TestContext& ctx) {
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
+  TestWorldBuilder world(ctx);
+  world.add_race("Federation", 100.0, false, attacker);
+  world.add_race("Klingons", 100.0, false, defender);
+
+  ctx.em.mutate_star(1, [](Star& s) {
+    s.mark_explored_by(attacker);
+    s.mark_inhabited_by(attacker);
+    s.AP(attacker) = 50;
+  });
 
   // Create attacker ship #1 - armed with CEW (power 10, range 1000, mounted)
   TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
-      .owned_by(1, 1)
+      .owned_by(attacker, 1)
       .named("Cruiser")
       .in_star_orbit(1, SystemCoordinates{100.0, 200.0})
       .with_cew(10, 1000)
@@ -28,7 +41,7 @@ void setup_cew_world(TestContext& ctx) {
 
   // Create target ship #2 at distance ~14.14 (well within optical range)
   TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-      .owned_by(2, 1)
+      .owned_by(defender, 1)
       .named("Freighter")
       .in_star_orbit(1, SystemCoordinates{110.0, 210.0})
       .with_armor(10)
@@ -42,7 +55,7 @@ void test_cew_happy_path_and_json() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, attacker, 1);
   g.set_scope_star(1);
 
   // 1. Fire CEW in ASCII mode
@@ -70,19 +83,19 @@ void test_cew_syntax_and_target_validation() {
   setup_cew_world(ctx);
 
   TestWorldBuilder(ctx).add_race("GuestAttacker", 100.0, /*guest=*/true,
-                                 player_t{3});
+                                 guest_player);
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
 
   // 1. Guest rejection
-  ctx.setup_game_obj(g, 3, 1);
+  ctx.setup_game_obj(g, guest_player, 1);
   g.set_scope_star(1);
   ctx.assert_dispatch_rejected(g, {"cew", "#1", "#2"});
   test::expect_contains(g.out.str(), "Guest races cannot use this command.");
 
-  // Switch back to Player 1
-  ctx.setup_game_obj(g, 1, 1);
+  // Switch back to attacker
+  ctx.setup_game_obj(g, attacker, 1);
   g.set_scope_star(1);
 
   // 2. Too few arguments via dispatcher and direct command handler
@@ -104,7 +117,7 @@ void test_cew_syntax_and_target_validation() {
   // 5. Destroyed target ship
   const shipnum_t temp_target =
       TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-          .owned_by(2, 1)
+          .owned_by(defender, 1)
           .named("Doomed")
           .in_star_orbit(1, SystemCoordinates{110.0, 210.0})
           .build();
@@ -127,7 +140,7 @@ void test_cew_equipment_and_state_validation() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, attacker, 1);
   g.set_scope_star(1);
 
   const UniverseCoordinates star_coords = ctx.em.peek_star(1)->coordinates();
@@ -207,7 +220,7 @@ void test_cew_equipment_and_state_validation() {
   ctx.em.mutate_ship(2, [&](Ship& s2) { s2.set_coordinates(orig_s2_coords); });
 
   // 9. Insufficient Star AP
-  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 0; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(attacker) = 0; });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"cew", "#1", "#2"});
   test::expect_contains(g.out.str(), "You don't have 1 action points there.");
@@ -221,7 +234,7 @@ void test_cew_overload_explosion() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, attacker, 1);
   g.set_scope_star(1);
 
   // Give Ship #1 0 tech and high CEW power so check_overload deterministically

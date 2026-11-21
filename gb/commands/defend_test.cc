@@ -11,37 +11,50 @@ import std;
 
 namespace {
 
+constexpr player_t defender = 2;
+constexpr player_t attacker = 3;
+
 void setup_test_world(TestContext& ctx) {
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
+  TestWorldBuilder world(ctx);
+  world.add_race("Federation", 100.0, false, defender);
+  world.add_race("Klingons", 100.0, false, attacker);
+
+  ctx.em.mutate_star(1, [](Star& s) {
+    s.mark_explored_by(defender);
+    s.mark_inhabited_by(defender);
+    s.AP(defender) = 50;
+  });
 
   ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
     auto& sect = smap.get(Coordinates{5, 5});
-    sect.set_owner(1);
+    sect.set_owner(defender);
     sect.set_popn_exact(1000);
     sect.set_troops(500);
     sect.set_condition(SectorType::SEC_MOUNT);
 
     auto& sect_enemy = smap.get(Coordinates{0, 0});
-    sect_enemy.set_owner(2);
+    sect_enemy.set_owner(attacker);
     sect_enemy.set_popn_exact(200);
     sect_enemy.set_condition(SectorType::SEC_LAND);
   });
 
-  // Setup planet info and sectors for player 1 defense
+  // Setup planet info and sectors for defender
   ctx.em.mutate_planet(1, 1, [](Planet& planet) {
-    planet.info(player_t{1}).numsectsowned = 5;
-    planet.info(player_t{1}).guns = 50;
-    planet.info(player_t{1}).destruct = 100;
-    planet.info(player_t{1}).popn = 1000;
-    planet.info(player_t{1}).troops = 500;
-    planet.info(player_t{2}).popn = 200;
+    planet.mark_explored_by(defender);
+    planet.info(defender).numsectsowned = 5;
+    planet.info(defender).guns = 50;
+    planet.info(defender).destruct = 100;
+    planet.info(defender).popn = 1000;
+    planet.info(defender).troops = 500;
+    planet.info(attacker).popn = 200;
     planet.popn() = 1200;
     planet.troops() = 500;
   });
 
   // Create first attacking enemy ship in planet orbit
   TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
-      .owned_by(2, 1)
+      .owned_by(attacker, 1)
       .named("Factory")
       .in_planet_orbit(1, 1)
       .with_armor(100)
@@ -49,7 +62,7 @@ void setup_test_world(TestContext& ctx) {
 
   // Create second attacking enemy ship in planet orbit
   TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
-      .owned_by(2, 1)
+      .owned_by(attacker, 1)
       .named("Cargo")
       .in_planet_orbit(1, 1)
       .with_armor(100)
@@ -62,7 +75,7 @@ void test_defend_happy_path() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, defender, 1);
   g.set_scope_planet(1, 1);
 
   // 1. Defend with explicit strength (1 star AP deducted)
@@ -71,7 +84,7 @@ void test_defend_happy_path() {
   ctx.em.clear_cache();
   const auto* saved_planet = ctx.em.peek_planet(1, 1);
   test::expect_ne(saved_planet, nullptr);
-  test::expect_lt(saved_planet->info(player_t{1}).destruct, 100);
+  test::expect_lt(saved_planet->info(defender).destruct, 100);
   std::println(std::cout, "    ✓ Defend with explicit strength succeeded");
 
   // 2. Defend with default strength (omitted 4th argument, 1 star AP deducted)
@@ -96,7 +109,7 @@ void test_defend_retaliation_and_escort() {
 
   // Target ship with guns, destruct, and self-retaliation enabled
   const shipnum_t target_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                                  .owned_by(2, 1)
+                                  .owned_by(attacker, 1)
                                   .named("Attacker")
                                   .in_planet_orbit(1, 1)
                                   .with_guns(guntype_t::HEAVY, 10)
@@ -108,7 +121,7 @@ void test_defend_retaliation_and_escort() {
 
   // Escort ship on planet protecting target_id
   const shipnum_t escort_id = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)
-                                  .owned_by(2, 1)
+                                  .owned_by(attacker, 1)
                                   .named("Escort")
                                   .in_planet_orbit(1, 1)
                                   .with_guns(guntype_t::LIGHT, 5)
@@ -122,7 +135,7 @@ void test_defend_retaliation_and_escort() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, defender, 1);
   g.set_scope_planet(1, 1);
 
   g.out.str("");
@@ -152,10 +165,10 @@ void test_defend_retaliation_and_escort() {
   });
   bool escort_burned_out = false;
   for (int attempt = 0; attempt < 40 && !escort_burned_out; ++attempt) {
-    ctx.em.mutate_star(1, [](Star& s) { s.AP(player_t{1}) = 10; });
+    ctx.em.mutate_star(1, [](Star& s) { s.AP(defender) = 10; });
     ctx.em.mutate_planet(1, 1, [](Planet& p) {
-      p.info(player_t{1}).destruct = 100;
-      p.info(player_t{1}).guns = 50;
+      p.info(defender).destruct = 100;
+      p.info(defender).guns = 50;
     });
     ctx.em.mutate_ship(target_id, [](Ship& s) { s.repair_damage(100); });
     ctx.assert_dispatch_success(
@@ -181,12 +194,12 @@ void test_defend_target_scope_validations() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, defender, 1);
   g.set_scope_planet(1, 1);
 
   // 1. Ship in star orbit (not planet orbit)
   const shipnum_t star_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-                                  .owned_by(2, 1)
+                                  .owned_by(attacker, 1)
                                   .in_star_orbit(1)
                                   .build();
   g.out.str("");
@@ -196,12 +209,9 @@ void test_defend_target_scope_validations() {
 
   // 2. Ship in orbit around different planet (Planet 2 instead of Planet 1, or
   // Star 2 Planet 1)
-  TestPlanetBuilder(ctx.em, ctx.db, 1, PlanetType::MARS, {5, 5}, 2)
-      .named("Mars")
-      .build();
   const shipnum_t other_planet_ship =
       TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-          .owned_by(2, 1)
+          .owned_by(attacker, 1)
           .in_planet_orbit(1, 2)
           .build();
   g.out.str("");
@@ -220,7 +230,7 @@ void test_defend_target_scope_validations() {
 
   // 3. Ship is landed on planet
   const shipnum_t landed_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-                                    .owned_by(2, 1)
+                                    .owned_by(attacker, 1)
                                     .landed_on(1, 1, Coordinates{0, 0})
                                     .build();
   g.out.str("");
@@ -235,7 +245,7 @@ void test_defend_target_scope_validations() {
 
   // 5. Armed target ship with protect.retaliate false vs true
   const shipnum_t armed_target = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
-                                     .owned_by(2, 1)
+                                     .owned_by(attacker, 1)
                                      .in_planet_orbit(1, 1)
                                      .with_size(1000)
                                      .with_guns(guntype_t::LIGHT, 5)
@@ -245,7 +255,7 @@ void test_defend_target_scope_validations() {
                                      .build();
   ctx.em.mutate_ship(armed_target,
                      [](Ship& s) { s.protect().retaliate = false; });
-  ctx.em.mutate_star(1, [](Star& s) { s.AP(player_t{1}) = 10; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(defender) = 10; });
   ctx.assert_dispatch_success(
       g, {"defend", std::format("#{}", armed_target.value), "5,5", "10"}, 1);
   test::expect_eq(ctx.em.peek_ship(armed_target)->destruct(), 50);
@@ -265,20 +275,20 @@ void test_defend_planetary_validations() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, defender, 1);
   g.set_scope_planet(1, 1);
 
   // 1. Player owns no sectors
-  ctx.em.mutate_planet(
-      1, 1, [](Planet& p) { p.info(player_t{1}).numsectsowned = 0; });
+  ctx.em.mutate_planet(1, 1,
+                       [](Planet& p) { p.info(defender).numsectsowned = 0; });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"defend", "1", "5,5", "10"});
   test::expect_contains(g.out.str(), "You do not occupy any sectors here.");
-  ctx.em.mutate_planet(
-      1, 1, [](Planet& p) { p.info(player_t{1}).numsectsowned = 5; });
+  ctx.em.mutate_planet(1, 1,
+                       [](Planet& p) { p.info(defender).numsectsowned = 5; });
 
   // 2. Planet enslaved to another player
-  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.enslave_to(player_t{2}); });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.enslave_to(attacker); });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"defend", "1", "5,5", "10"});
   test::expect_contains(g.out.str(), "This planet is enslaved.");
@@ -295,7 +305,7 @@ void test_defend_planetary_validations() {
   test::expect_contains(g.out.str(), "Nice try.");
 
   // 5. Zero guns available
-  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(player_t{1}).guns = 0; });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(defender).guns = 0; });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"defend", "1", "5,5", "10"});
   test::expect_contains(g.out.str(), "No attack - 0 guns");
@@ -309,11 +319,11 @@ void test_defend_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set AP to 0
-  ctx.em.mutate_star(1, [](Star& s) { s.AP(player_t{1}) = 0; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(defender) = 0; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, defender, 1);
   g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_rejected(g, {"defend", "1", "5,5", "25"});
@@ -330,17 +340,17 @@ void test_defend_role_and_scope_rejections() {
   GameObj g(ctx.em, registry);
 
   // 1. Scope rejection (LEVEL_UNIV)
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, defender, 1);
   g.set_scope_univ();
   ctx.assert_dispatch_rejected(g, {"defend", "1", "5,5", "25"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
 
   // 2. Star control rejection (Star governed by Gov 1, tested by Gov 2)
-  ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
+  ctx.em.mutate_race(defender, [](Race& r) { r.appoint_governor(2); });
   ctx.em.mutate_star(1, [](Star& s) {
-    s.set_governor(player_t{1}, 1);  // Star governed by Gov 1
+    s.set_governor(defender, 1);  // Star governed by Gov 1
   });
-  ctx.setup_game_obj(g, 1, 2);  // Player 1, Gov 2
+  ctx.setup_game_obj(g, defender, 2);  // Defender, Gov 2
   g.set_scope_planet(1, 1);
   ctx.assert_dispatch_rejected(g, {"defend", "1", "5,5", "25"});
   test::expect_contains(g.out.str(), "not authorized");
@@ -354,7 +364,7 @@ void test_defend_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, defender, 1);
   g.set_scope_planet(1, 1);
 
   // 1. Min args (< 3 args)

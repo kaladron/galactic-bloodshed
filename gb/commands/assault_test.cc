@@ -15,29 +15,48 @@ import std;
 
 namespace {
 
-void setup_test_world(TestContext& ctx) {
-  ctx.with_standard_universe();
+constexpr player_t attacker = 2;
+constexpr player_t defender = 3;
 
-  // Ship 1: Player 1 Fighter
+void setup_test_world(TestContext& ctx) {
+  ctx.with_galaxy();
+  TestWorldBuilder world(ctx);
+  world.add_race("Federation", 100.0, false, attacker);
+  world.add_race("Klingons", 100.0, false, defender);
+
+  ctx.em.mutate_star(1, [](Star& s) {
+    s.mark_explored_by(attacker);
+    s.mark_inhabited_by(attacker);
+    s.AP(attacker) = 50;
+    s.mark_explored_by(defender);
+    s.mark_inhabited_by(defender);
+    s.AP(defender) = 50;
+  });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) {
+    p.mark_explored_by(attacker);
+    p.mark_explored_by(defender);
+  });
+
+  // Ship 1: Attacker Fighter
   TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-      .owned_by(1, 1)
+      .owned_by(attacker, 1)
       .named("Docker")
       .in_star_orbit(1, 100.0, 200.0)
       .with_crew(0, 10)
       .with_fuel(100.0)
       .build();
 
-  // Ship 2: Player 1 Carrier (close to ship 1)
+  // Ship 2: Attacker Carrier (close to ship 1)
   TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-      .owned_by(1, 1)
+      .owned_by(attacker, 1)
       .named("Carrier")
       .in_star_orbit(1, 100.0, 200.0)
       .with_fuel(100.0)
       .build();
 
-  // Ship 3: Player 2 Cargo Ship (target for assault)
+  // Ship 3: Defender Cargo Ship (target for assault)
   TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-      .owned_by(2, 1)
+      .owned_by(defender, 1)
       .named("Target")
       .in_star_orbit(1, 100.0, 200.0)
       .with_destruct(0)
@@ -46,7 +65,7 @@ void setup_test_world(TestContext& ctx) {
 
   // Ship 4: Far away ship
   TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-      .owned_by(1, 1)
+      .owned_by(attacker, 1)
       .named("FarTarget")
       .in_star_orbit(1, 500.0, 500.0)
       .with_fuel(100.0)
@@ -59,7 +78,7 @@ void test_assault_happy_path_and_json_presentation() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, attacker, 1);
   g.set_scope_star(1);
 
   // 1. Successful assault (1 AP deducted via dynamic AP)
@@ -67,7 +86,7 @@ void test_assault_happy_path_and_json_presentation() {
   test::expect_contains(g.out.str(), "Damage taken:  You:");
   test::expect_true(g.out.str().contains("VICTORY") ||
                     g.out.str().contains("CAPTURED"));
-  test::expect_eq(ctx.em.peek_ship(3)->owner(), 1);
+  test::expect_eq(ctx.em.peek_ship(3)->owner(), attacker);
 
   // 2. JSON presentation mode for assault
   ctx.em.mutate_ship(1, [](Ship& s) {
@@ -76,7 +95,7 @@ void test_assault_happy_path_and_json_presentation() {
   });
   ctx.em.mutate_ship(3, [](Ship& s) {
     s.undock_from_ship();
-    s.owner() = 2;
+    s.owner() = defender;
     s.troops() = 0;
     s.popn() = 0;
   });
@@ -93,21 +112,21 @@ void test_assault_insufficient_ap_and_guest_rejection() {
   TestContext ctx;
   setup_test_world(ctx);
 
-  // Set Star AP to 0 for Player 1
-  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 0; });
+  // Set Star AP to 0 for attacker
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(attacker) = 0; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, attacker, 1);
   g.set_scope_star(1);
 
   ctx.assert_dispatch_rejected(g, {"assault", "#1", "#3"});
   test::expect_contains(g.out.str(), "action points");
 
   // Guest race rejection
-  ctx.em.mutate_race(2, [](Race& r) { r.Guest = true; });
+  ctx.em.mutate_race(defender, [](Race& r) { r.Guest = true; });
   GameObj g2(ctx.em, registry);
-  ctx.setup_game_obj(g2, 2, 1);
+  ctx.setup_game_obj(g2, defender, 1);
   g2.set_scope_star(1);
 
   ctx.assert_dispatch_rejected(g2, {"assault", "#3", "#1"});
@@ -122,11 +141,11 @@ void test_assault_validation_and_ap_invariants() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, attacker, 1);
   g.set_scope_star(1);
 
   // Set star AP to 5 to verify failed assaults do NOT deduct AP
-  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 5; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(attacker) = 5; });
 
   // 0. Direct handler missing args check
   g.out.str("");
@@ -144,11 +163,11 @@ void test_assault_validation_and_ap_invariants() {
   ctx.assert_dispatch_rejected(g, {"assault", "#1", "#3", "civ"});
   test::expect_contains(g.out.str(),
                         "You have no crew on this ship to assault with.");
-  test::expect_eq(ctx.em.peek_star(1)->AP(1), 5);
+  test::expect_eq(ctx.em.peek_star(1)->AP(attacker), 5);
 
   // 2. Pods cannot assault
   shipnum_t pod_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
-                         .owned_by(1, 1)
+                         .owned_by(attacker, 1)
                          .named("SporePod")
                          .in_star_orbit(1, 100.0, 200.0)
                          .with_crew(0, 5)
@@ -158,14 +177,14 @@ void test_assault_validation_and_ap_invariants() {
   ctx.assert_dispatch_rejected(
       g, {"assault", std::format("#{}", pod_id.value), "#3"});
   test::expect_contains(g.out.str(), "Sorry. Pods cannot be used to assault.");
-  test::expect_eq(ctx.em.peek_star(1)->AP(1), 5);
+  test::expect_eq(ctx.em.peek_star(1)->AP(attacker), 5);
 
   // 3. No civilians on ship when assaulting with "civ"
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"assault", "#1", "#3", "5", "civ"});
   test::expect_contains(g.out.str(),
                         "You have no crew on this ship to assault with.");
-  test::expect_eq(ctx.em.peek_star(1)->AP(1), 5);
+  test::expect_eq(ctx.em.peek_star(1)->AP(attacker), 5);
 
   // 4. No troops on ship when assaulting with "mil"
   ctx.em.mutate_ship(1, [](Ship& s) { s.troops() = 0; });
@@ -173,12 +192,12 @@ void test_assault_validation_and_ap_invariants() {
   ctx.assert_dispatch_rejected(g, {"assault", "#1", "#3", "5", "mil"});
   test::expect_contains(g.out.str(),
                         "You have no troops on this ship to assault with.");
-  test::expect_eq(ctx.em.peek_star(1)->AP(1), 5);
+  test::expect_eq(ctx.em.peek_star(1)->AP(attacker), 5);
   ctx.em.mutate_ship(1, [](Ship& s) { s.troops() = 10; });
 
   // 5. Cannot assault Von Neumann machines
   shipnum_t vn_id = TestShipBuilder(ctx.em, ShipType::OTYPE_VN)
-                        .owned_by(2, 1)
+                        .owned_by(defender, 1)
                         .named("VNProbe")
                         .in_star_orbit(1, 100.0, 200.0)
                         .build();
@@ -186,7 +205,7 @@ void test_assault_validation_and_ap_invariants() {
   ctx.assert_dispatch_rejected(
       g, {"assault", "#1", std::format("#{}", vn_id.value)});
   test::expect_contains(g.out.str(), "You can't assault Von Neumann machines.");
-  test::expect_eq(ctx.em.peek_star(1)->AP(1), 5);
+  test::expect_eq(ctx.em.peek_star(1)->AP(attacker), 5);
 
   // 6. Cannot use a docked ship or hangar-berthed ship to assault
   ctx.em.mutate_ship(1, [](Ship& s) { s.dock_with_ship(2); });
@@ -198,7 +217,7 @@ void test_assault_validation_and_ap_invariants() {
   ctx.assert_dispatch_rejected(g, {"assault", "#1", "#3"});
   test::expect_contains(g.out.str(), "Your ship is landed on another ship.");
   ctx.em.mutate_ship(1, [](Ship& s) { s.enter_star_orbit(1); });
-  test::expect_eq(ctx.em.peek_star(1)->AP(1), 5);
+  test::expect_eq(ctx.em.peek_star(1)->AP(attacker), 5);
 
   // 7. Irradiated ship, self-assault, non-existent target, invalid ship number,
   // different scope, too far away, insufficient fuel
@@ -265,12 +284,12 @@ void test_assault_combat_boobytrap_and_unmooring() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, attacker, 1);
   g.set_scope_star(1);
 
   // 1a. Repulsed boarding assault where attacker survives: moderate defense
-  ctx.em.mutate_race(1, [](Race& r) { r.fighters = 10; });
-  ctx.em.mutate_race(2, [](Race& r) { r.fighters = 10; });
+  ctx.em.mutate_race(attacker, [](Race& r) { r.fighters = 10; });
+  ctx.em.mutate_race(defender, [](Race& r) { r.fighters = 10; });
   ctx.em.mutate_ship(3, [](Ship& s) {
     s.max_crew() = 100;
     s.troops() = 3;
@@ -279,7 +298,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
   g.out.str("");
   ctx.assert_dispatch_success(g, {"assault", "#1", "#3", "1", "military"}, 1);
   test::expect_contains(g.out.str(), "The boarding was repulsed; try again.");
-  test::expect_eq(ctx.em.peek_ship(3)->owner(), 2);
+  test::expect_eq(ctx.em.peek_ship(3)->owner(), defender);
 
   // 1b. Overwhelming defense destroys attacking ship during boarding
   ctx.em.mutate_ship(3, [](Ship& s) {
@@ -287,7 +306,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
     s.popn() = 20;
   });
   shipnum_t doomed_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-                            .owned_by(1, 1)
+                            .owned_by(attacker, 1)
                             .named("DoomedFighter")
                             .in_star_orbit(1, 100.0, 200.0)
                             .with_damage(99)
@@ -302,7 +321,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
 
   // 2. Assaulting spaceborne-moored ship unmoors it first (and hyperdrive off)
   shipnum_t partner_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                             .owned_by(2, 1)
+                             .owned_by(defender, 1)
                              .named("MooredPartner")
                              .in_star_orbit(1, 100.0, 200.0)
                              .build();
@@ -321,7 +340,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
   ctx.assert_dispatch_success(g, {"assault", "#1", "#3", "5", "mil"}, 1);
   test::expect_contains(g.out.str(), "Hyper-drive deactivated.");
   test::expect_contains(g.out.str(), "VICTORY! the ship is yours!");
-  test::expect_eq(ctx.em.peek_ship(3)->owner(), 1);
+  test::expect_eq(ctx.em.peek_ship(3)->owner(), attacker);
   test::expect_eq(ctx.em.peek_ship(partner_id)->docked(), 0);
 
   // 3. Boobytrapped unmanned robot ship inflicts boobytrap damage on attacker
@@ -331,7 +350,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
     s.troops() = 20;
   });
   shipnum_t mine_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
-                          .owned_by(2, 1)
+                          .owned_by(defender, 1)
                           .named("BoobyMine")
                           .in_star_orbit(1, 100.0, 200.0)
                           .with_max_crew(0)
@@ -350,7 +369,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
     s.troops() = 20;
   });
   shipnum_t safe_mine_id = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
-                               .owned_by(2, 1)
+                               .owned_by(defender, 1)
                                .named("SafeMine")
                                .in_star_orbit(1, 100.0, 200.0)
                                .with_max_crew(0)
@@ -369,23 +388,23 @@ void test_assault_combat_boobytrap_and_unmooring() {
     s.troops() = 20;
   });
   shipnum_t univ_target = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                              .owned_by(2, 1)
+                              .owned_by(defender, 1)
                               .named("UnivCargo")
                               .in_star_orbit(1, 100.0, 200.0)
                               .build();
   ctx.em.mutate_ship(univ_target, [](Ship& s) { s.enter_deep_space(); });
   g.set_scope_univ();
-  ctx.em.mutate_universe([](Universe& u) { u.set_AP(1, 0); });
+  ctx.em.mutate_universe([](Universe& u) { u.set_AP(attacker, 0); });
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"assault", "#1", std::format("#{}", univ_target.value)});
   test::expect_contains(g.out.str(), "You need 1 universe action point.");
 
-  ctx.em.mutate_universe([](Universe& u) { u.set_AP(1, 5); });
+  ctx.em.mutate_universe([](Universe& u) { u.set_AP(attacker, 5); });
   g.out.str("");
   ctx.assert_dispatch_success(
       g, {"assault", "#1", std::format("#{}", univ_target.value)}, 0);
-  test::expect_eq(ctx.em.peek_universe()->get_AP(1), 4);
+  test::expect_eq(ctx.em.peek_universe()->get_AP(attacker), 4);
 
   // 5. Civilian boarding assault (victory with civilian boarders)
   g.set_scope_star(1);
@@ -396,7 +415,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
     s.troops() = 0;
   });
   shipnum_t civ_target = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                             .owned_by(2, 1)
+                             .owned_by(defender, 1)
                              .named("CivTarget")
                              .in_star_orbit(1, 100.0, 200.0)
                              .with_destruct(0)
@@ -407,7 +426,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
       g, {"assault", "#1", std::format("#{}", civ_target.value), "20", "civ"},
       1);
   test::expect_contains(g.out.str(), "VICTORY! the ship is yours!");
-  test::expect_eq(ctx.em.peek_ship(civ_target)->owner(), 1);
+  test::expect_eq(ctx.em.peek_ship(civ_target)->owner(), attacker);
   test::expect_eq(ctx.em.peek_ship(civ_target)->popn(), 20);
 
   // 6. Illegal boarder count (0 or negative boarders requested)
@@ -416,7 +435,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
     s.troops() = 20;
   });
   shipnum_t zero_target = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                              .owned_by(2, 1)
+                              .owned_by(defender, 1)
                               .named("ZeroTarget")
                               .in_star_orbit(1, 100.0, 200.0)
                               .with_destruct(0)
@@ -453,7 +472,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
     s.troops() = 20;
   });
   shipnum_t landed_target = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                                .owned_by(2, 1)
+                                .owned_by(defender, 1)
                                 .named("LandedTarget")
                                 .landed_on(1, 1, {1, 1})
                                 .build();
@@ -471,16 +490,16 @@ void test_assault_defensive_fire_and_escort_retaliation() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, attacker, 1);
   g.set_scope_star(1);
 
-  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 10; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(attacker) = 10; });
 
   // 1. Defensive gun fire from target destroys the attacking ship (!s.alive()).
   // Transaction must commit so AP is deducted and attacker stays dead, and
-  // defending player (Player 2) receives the defensive fire telegram.
+  // defending player receives the defensive fire telegram.
   shipnum_t gun_defender = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                               .owned_by(2, 1)
+                               .owned_by(defender, 1)
                                .named("GunDefender")
                                .in_star_orbit(1, 100.0, 200.0)
                                .with_guns(guntype_t::HEAVY, 10)
@@ -490,7 +509,7 @@ void test_assault_defensive_fire_and_escort_retaliation() {
   ctx.em.mutate_ship(gun_defender, [](Ship& s) { s.tech() = 1000.0; });
 
   shipnum_t fragile_attacker = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-                                   .owned_by(1, 1)
+                                   .owned_by(attacker, 1)
                                    .named("FragileAttacker")
                                    .in_star_orbit(1, 100.0, 200.0)
                                    .with_armor(0)
@@ -508,15 +527,15 @@ void test_assault_defensive_fire_and_escort_retaliation() {
   test::expect_throws<EntityNotFoundError>(
       [&]() { ctx.em.peek_ship(fragile_attacker); });
   test::expect_true(ctx.em.peek_ship(gun_defender)->alive());
-  test::expect_eq(ctx.em.peek_star(1)->AP(1), 9);
+  test::expect_eq(ctx.em.peek_star(1)->AP(attacker), 9);
 
-  const auto p2_telegrams = ctx.em.get_telegrams(2, 1);
+  const auto p2_telegrams = ctx.em.get_telegrams(defender, 1);
   test::expect_false(p2_telegrams.empty());
 
   // 2a. Target fires defensive guns, and attacker's self-defense retaliation
   // destroys the target ship (!s2.alive()). Transaction must commit.
   shipnum_t glass_defender = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-                                 .owned_by(2, 1)
+                                 .owned_by(defender, 1)
                                  .named("GlassDefender")
                                  .in_star_orbit(1, 100.0, 200.0)
                                  .with_guns(guntype_t::HEAVY, 5)
@@ -530,7 +549,7 @@ void test_assault_defensive_fire_and_escort_retaliation() {
   ctx.em.mutate_ship(glass_defender, [](Ship& s) { s.tech() = 100000.0; });
 
   shipnum_t heavy_attacker = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
-                                 .owned_by(1, 1)
+                                 .owned_by(attacker, 1)
                                  .named("HeavyAttacker")
                                  .in_star_orbit(1, 100.0, 200.0)
                                  .with_guns(guntype_t::HEAVY, 100)
@@ -555,7 +574,7 @@ void test_assault_defensive_fire_and_escort_retaliation() {
   test::expect_true(ctx.em.peek_ship(heavy_attacker)->alive());
   test::expect_throws<EntityNotFoundError>(
       [&]() { ctx.em.peek_ship(glass_defender); });
-  test::expect_eq(ctx.em.peek_star(1)->AP(1), 8);
+  test::expect_eq(ctx.em.peek_star(1)->AP(attacker), 8);
 
   // 2b. Target fires defensive guns at an attacker with self-retaliate off,
   // and an escort ship protecting the attacker retaliates.
@@ -566,7 +585,7 @@ void test_assault_defensive_fire_and_escort_retaliation() {
   });
 
   shipnum_t escort_ship = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
-                              .owned_by(1, 1)
+                              .owned_by(attacker, 1)
                               .named("EscortShip")
                               .in_star_orbit(1, 100.0, 200.0)
                               .with_guns(guntype_t::HEAVY, 100)
@@ -581,11 +600,11 @@ void test_assault_defensive_fire_and_escort_retaliation() {
   });
 
   shipnum_t escort_target = TestShipBuilder(ctx.em, ShipType::STYPE_BATTLE)
-                                .owned_by(2, 1)
+                                .owned_by(defender, 1)
                                 .named("EscortTarget")
                                 .in_star_orbit(1, 100.0, 200.0)
-                                .with_guns(guntype_t::LIGHT, 1)
-                                .with_destruct(10)
+                                .with_guns(guntype_t::HEAVY, 5)
+                                .with_destruct(100)
                                 .with_armor(0)
                                 .with_size(10000)
                                 .with_max_hanger(0)
@@ -603,7 +622,7 @@ void test_assault_defensive_fire_and_escort_retaliation() {
                               1);
   test::expect_throws<EntityNotFoundError>(
       [&]() { ctx.em.peek_ship(escort_target); });
-  test::expect_eq(ctx.em.peek_star(1)->AP(1), 7);
+  test::expect_eq(ctx.em.peek_star(1)->AP(attacker), 7);
 
   // 3. Defensive laser fire with crystal mounted, plus laser self-retaliation
   // and planet-orbit laser escort retaliation
@@ -629,7 +648,7 @@ void test_assault_defensive_fire_and_escort_retaliation() {
   // planet orbit to exercise is_eligible_escort rejection branches
   shipnum_t inactive_escort =
       TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-          .owned_by(1, 1)
+          .owned_by(attacker, 1)
           .named("InactiveEscort")
           .in_planet_orbit(1, 1, UniverseCoordinates{100.0, 200.0})
           .with_crew(10, 10)
@@ -642,7 +661,7 @@ void test_assault_defensive_fire_and_escort_retaliation() {
 
   shipnum_t other_escort =
       TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-          .owned_by(1, 1)
+          .owned_by(attacker, 1)
           .named("OtherEscort")
           .in_planet_orbit(1, 1, UniverseCoordinates{100.0, 200.0})
           .with_crew(10, 10)
@@ -654,7 +673,7 @@ void test_assault_defensive_fire_and_escort_retaliation() {
 
   shipnum_t laser_defender =
       TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-          .owned_by(2, 1)
+          .owned_by(defender, 1)
           .named("LaserDefender")
           .in_planet_orbit(1, 1, UniverseCoordinates{100.0, 200.0})
           .with_armor(0)
@@ -687,7 +706,7 @@ void test_assault_defensive_fire_and_escort_retaliation() {
   });
   shipnum_t overload_defender =
       TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-          .owned_by(2, 1)
+          .owned_by(defender, 1)
           .named("OverloadDefender")
           .in_planet_orbit(1, 1, UniverseCoordinates{100.0, 200.0})
           .with_crew(0, 0)
@@ -724,18 +743,18 @@ void test_assault_defensive_fire_and_escort_retaliation() {
 
   ctx.em.mutate_ship(escort_ship, [](Ship& s) { s.protect().on = false; });
 
-  ctx.em.mutate_race(1, [](Race& r) {
+  ctx.em.mutate_race(attacker, [](Race& r) {
     r.tech = 100.0;
     r.morale = 100;
   });
-  ctx.em.mutate_race(2, [](Race& r) {
+  ctx.em.mutate_race(defender, [](Race& r) {
     r.tech = 100.0;
     r.morale = 100;
   });
 
   shipnum_t moderate_defender =
       TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-          .owned_by(2, 1)
+          .owned_by(defender, 1)
           .named("ModerateDefender")
           .in_planet_orbit(1, 1, UniverseCoordinates{100.0, 200.0})
           .with_crew(1, 0)
@@ -751,9 +770,9 @@ void test_assault_defensive_fire_and_escort_retaliation() {
   bool civ_lost = false;
   for (int attempt = 0; attempt < 25 && !civ_lost; ++attempt) {
     (void)ctx.em.unmoor_ships(heavy_attacker);
-    ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 10; });
+    ctx.em.mutate_star(1, [](Star& s) { s.AP(attacker) = 10; });
     ctx.em.mutate_ship(moderate_defender, [](Ship& s) {
-      s.owner() = 2;
+      s.owner() = defender;
       s.admin_override_damage(0);
       s.popn() = 1;
       s.troops() = 0;
@@ -772,7 +791,7 @@ void test_assault_defensive_fire_and_escort_retaliation() {
     ctx.em.mutate_ship(heavy_attacker, [&](Ship& s) {
       auto res =
           assault_single_ship(ctx.em, s, moderate_defender, PopulationType::CIV,
-                              1, player_t{1}, governor_t{1}, true);
+                              1, attacker, governor_t{1}, true);
       if (res && !res->boarding.has_value() && s.alive()) {
         civ_lost = true;
       }

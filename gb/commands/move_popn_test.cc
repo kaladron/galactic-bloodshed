@@ -11,31 +11,44 @@ import std;
 
 namespace {
 
+constexpr player_t p1 = 2;
+constexpr player_t p2 = 3;
+
 void setup_test_world(TestContext& ctx) {
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
+  TestWorldBuilder world(ctx);
+  world.add_race("Federation", 100.0, false, p1);
+  world.add_race("Klingons", 100.0, false, p2);
 
   // Set race fighters
-  ctx.em.mutate_race(1, [](Race& r) { r.fighters = 10; });
+  ctx.em.mutate_race(p1, [](Race& r) { r.fighters = 10; });
+
+  ctx.em.mutate_star(1, [](Star& s) {
+    s.mark_explored_by(p1);
+    s.mark_inhabited_by(p1);
+    s.AP(p1) = 50;
+  });
 
   // Setup sectormap and planet population
   ctx.em.mutate_planet(1, 1, [](Planet& planet) {
+    planet.mark_explored_by(p1);
     planet.popn() = 1000;
     planet.troops() = 500;
-    planet.info(player_t{1}).popn = 1000;
-    planet.info(player_t{1}).troops = 500;
-    planet.info(player_t{1}).numsectsowned = 2;
+    planet.info(p1).popn = 1000;
+    planet.info(p1).troops = 500;
+    planet.info(p1).numsectsowned = 2;
   });
 
   ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
     smap.get(Coordinates{0, 0}).set_owner(0);
     smap.get(Coordinates{0, 0}).set_popn_exact(0);
 
-    smap.get(Coordinates{5, 5}).set_owner(1);
+    smap.get(Coordinates{5, 5}).set_owner(p1);
     smap.get(Coordinates{5, 5}).set_popn_exact(1000);
     smap.get(Coordinates{5, 5}).set_troops(500);
     smap.get(Coordinates{5, 5}).set_condition(SectorType::SEC_MOUNT);
 
-    smap.get(Coordinates{5, 6}).set_owner(1);
+    smap.get(Coordinates{5, 6}).set_owner(p1);
     smap.get(Coordinates{5, 6}).set_popn_exact(0);
     smap.get(Coordinates{5, 6}).set_troops(0);
     smap.get(Coordinates{5, 6}).set_condition(SectorType::SEC_LAND);
@@ -48,7 +61,7 @@ void test_move_popn_happy_paths() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, p1, 1);
   g.set_scope_planet(1, 1);
 
   // 1. Test move command - 'k' moves south (y+1)
@@ -83,24 +96,22 @@ void test_move_popn_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set Star AP to 0
-  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 0; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(p1) = 0; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, p1, 1);
   g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_rejected(g, {"move", "5,5", "k", "500"});
   test::expect_contains(g.out.str(), "action points");
 
   // Deity bypasses Star AP check even when AP is 0
-  ctx.em.mutate_race(1, [](Race& r) { r.God = true; });
-  ctx.setup_game_obj(g, 1, 1);
   g.set_god(true);
   g.set_scope_planet(1, 1);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"move", "5,5", "k", "100"});
-  test::expect_eq(ctx.em.peek_star(1)->AP(1), 0u);
+  test::expect_eq(ctx.em.peek_star(1)->AP(p1), 0u);
 
   ctx.verify_universe_invariants();
 }
@@ -113,18 +124,18 @@ void test_move_popn_role_and_scope_rejections() {
   GameObj g(ctx.em, registry);
 
   // 1. Scope rejection (LEVEL_UNIV is not allowed for move/deploy)
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, p1, 1);
   g.set_scope_univ();
 
   ctx.assert_dispatch_rejected(g, {"move", "5,5", "k", "500"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
 
   // 2. Star control rejection (Star governed by Gov 1, tested by Gov 2)
-  ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
+  ctx.em.mutate_race(p1, [](Race& r) { r.appoint_governor(2); });
   ctx.em.mutate_star(1, [](Star& s) {
-    s.set_governor(1, 1);  // Player 1, Star governed by Gov 1
+    s.set_governor(p1, 1);  // Star governed by Gov 1
   });
-  ctx.setup_game_obj(g, 1, 2);  // Player 1, Gov 2
+  ctx.setup_game_obj(g, p1, 2);  // Gov 2
   g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_rejected(g, {"move", "5,5", "k", "500"});
@@ -139,7 +150,7 @@ void test_move_popn_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, p1, 1);
   g.set_scope_planet(1, 1);
 
   // 1. Min args check (< 3 args)
@@ -167,13 +178,13 @@ void test_move_popn_domain_errors() {
 
   // 6. Illegal coordinates (moving north from y=0 off grid edge)
   ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
-    smap.get(Coordinates{5, 0}).set_owner(1);
+    smap.get(Coordinates{5, 0}).set_owner(p1);
     smap.get(Coordinates{5, 0}).set_popn_exact(100);
   });
   ctx.em.mutate_planet(1, 1, [](Planet& p) {
     p.popn() += 100;
-    p.info(player_t{1}).popn += 100;
-    p.info(player_t{1}).numsectsowned += 1;
+    p.info(p1).popn += 100;
+    p.info(p1).numsectsowned += 1;
   });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"move", "5,0", "j", "10"});
@@ -186,10 +197,10 @@ void test_move_popn_assault_and_unowned() {
   TestContext ctx;
   setup_test_world(ctx);
 
-  // Setup sectors: (5,5) owned by P1, (5,6) unowned (owner 0), (5,7) owned by
-  // P2
+  // Setup sectors: (5,5) owned by p1, (5,6) unowned (owner 0), (5,7) owned by
+  // p2
   ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
-    smap.get(Coordinates{5, 5}).set_owner(1);
+    smap.get(Coordinates{5, 5}).set_owner(p1);
     smap.get(Coordinates{5, 5}).set_popn_exact(1000);
     smap.get(Coordinates{5, 5}).set_troops(500);
 
@@ -197,7 +208,7 @@ void test_move_popn_assault_and_unowned() {
     smap.get(Coordinates{5, 6}).set_popn_exact(0);
     smap.get(Coordinates{5, 6}).set_troops(0);
 
-    smap.get(Coordinates{5, 7}).set_owner(2);
+    smap.get(Coordinates{5, 7}).set_owner(p2);
     smap.get(Coordinates{5, 7}).set_popn_exact(100);
     smap.get(Coordinates{5, 7}).set_troops(50);
   });
@@ -205,24 +216,24 @@ void test_move_popn_assault_and_unowned() {
   ctx.em.mutate_planet(1, 1, [](Planet& planet) {
     planet.popn() = 1100;
     planet.troops() = 550;
-    planet.info(player_t{2}).popn = 100;
-    planet.info(player_t{2}).troops = 50;
-    planet.info(player_t{2}).numsectsowned = 1;
+    planet.info(p2).popn = 100;
+    planet.info(p2).troops = 50;
+    planet.info(p2).numsectsowned = 1;
   });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, p1, 1);
   g.set_scope_planet(1, 1);
 
   // 1. Move into unowned sector (owner == 0) -> does not trigger assault
   ctx.em.mutate_star(1, [](Star& s) { s.clear_all_ground_assaults(); });
   ctx.assert_dispatch_success(g, {"move", "5,5", "k", "100"});
-  test::expect_eq(ctx.em.peek_star(1)->ground_assault_count(1, 2), 0U);
+  test::expect_eq(ctx.em.peek_star(1)->ground_assault_count(p1, p2), 0U);
 
-  // 2. Move into enemy sector (owner == 2) -> triggers assault
+  // 2. Move into enemy sector (owner == p2) -> triggers assault
   ctx.assert_dispatch_success(g, {"move", "5,6", "k", "50"});
-  test::expect_ge(ctx.em.peek_star(1)->ground_assault_count(1, 2), 1U);
+  test::expect_ge(ctx.em.peek_star(1)->ground_assault_count(p1, p2), 1U);
 
   // Clean up
   ctx.em.mutate_star(1, [](Star& s) { s.clear_all_ground_assaults(); });
@@ -235,7 +246,7 @@ void test_move_popn_negative_and_default_counts() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, p1, 1);
   g.set_scope_planet(1, 1);
 
   // 1. Move with default count (all 1000 civs)
@@ -276,16 +287,16 @@ void test_move_popn_multistep_path() {
 
   // Setup intermediate sector (5,6) and destination (5,7)
   ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
-    smap.get(Coordinates{5, 6}).set_owner(1);
+    smap.get(Coordinates{5, 6}).set_owner(p1);
     smap.get(Coordinates{5, 6}).set_popn_exact(0);
 
-    smap.get(Coordinates{5, 7}).set_owner(1);
+    smap.get(Coordinates{5, 7}).set_owner(p1);
     smap.get(Coordinates{5, 7}).set_popn_exact(0);
   });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, p1, 1);
   g.set_scope_planet(1, 1);
 
   // Multi-step move: 'kk' moves south twice (5,5 -> 5,6 -> 5,7)
@@ -305,11 +316,11 @@ void test_move_popn_enslaved_and_origin_validations() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, p1, 1);
   g.set_scope_planet(1, 1);
 
   // 1. Enslaved planet check
-  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.enslave_to(2); });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.enslave_to(p2); });
   ctx.assert_dispatch_rejected(g, {"move", "5,5", "k", "100"});
   test::expect_contains(g.out.str(), "enslaved");
 
@@ -339,7 +350,7 @@ void test_move_popn_assault_metamorph_and_wiped() {
   setup_test_world(ctx);
 
   // Configure attacker as Metamorph with absorb enabled
-  ctx.em.mutate_race(1, [](Race& r) {
+  ctx.em.mutate_race(p1, [](Race& r) {
     r.fighters = 50.0;
     r.tech = 100.0;
     r.morale = 150;
@@ -348,7 +359,7 @@ void test_move_popn_assault_metamorph_and_wiped() {
   });
 
   // Configure defender with minimal defense
-  ctx.em.mutate_race(2, [](Race& r) {
+  ctx.em.mutate_race(p2, [](Race& r) {
     r.fighters = 1.0;
     r.tech = 10.0;
     r.morale = 20;
@@ -356,13 +367,13 @@ void test_move_popn_assault_metamorph_and_wiped() {
     r.likes[SectorType::SEC_LAND] = 10;
   });
 
-  // Setup sectors: (5,5) has 1000 civs P1, (5,6) has 10 civs P2
+  // Setup sectors: (5,5) has 1000 civs p1, (5,6) has 10 civs p2
   ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
-    smap.get(Coordinates{5, 5}).set_owner(1);
+    smap.get(Coordinates{5, 5}).set_owner(p1);
     smap.get(Coordinates{5, 5}).set_popn_exact(1000);
     smap.get(Coordinates{5, 5}).set_troops(0);
 
-    smap.get(Coordinates{5, 6}).set_owner(2);
+    smap.get(Coordinates{5, 6}).set_owner(p2);
     smap.get(Coordinates{5, 6}).set_popn_exact(10);
     smap.get(Coordinates{5, 6}).set_troops(0);
   });
@@ -370,15 +381,15 @@ void test_move_popn_assault_metamorph_and_wiped() {
   ctx.em.mutate_planet(1, 1, [](Planet& planet) {
     planet.popn() = 1010;
     planet.troops() = 0;
-    planet.info(player_t{1}).popn = 1000;
-    planet.info(player_t{1}).numsectsowned = 1;
-    planet.info(player_t{2}).popn = 10;
-    planet.info(player_t{2}).numsectsowned = 1;
+    planet.info(p1).popn = 1000;
+    planet.info(p1).numsectsowned = 1;
+    planet.info(p2).popn = 10;
+    planet.info(p2).numsectsowned = 1;
   });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, p1, 1);
   g.set_scope_planet(1, 1);
 
   // Assault and conquer with metamorph attacker
@@ -388,12 +399,12 @@ void test_move_popn_assault_metamorph_and_wiped() {
   ctx.em.clear_cache();
   const auto* smap = ctx.em.peek_sectormap(1, 1);
   test::expect_true(smap != nullptr);
-  test::expect_eq(smap->get(Coordinates{5, 6}).get_owner(), 1);
+  test::expect_eq(smap->get(Coordinates{5, 6}).get_owner(), p1);
   ctx.verify_universe_invariants();
 
   // Now test defeat where attacker is killed to the last man
   // Setup strong defender at (5,7) with absorb
-  ctx.em.mutate_race(2, [](Race& r) {
+  ctx.em.mutate_race(p2, [](Race& r) {
     r.fighters = 100.0;
     r.tech = 200.0;
     r.morale = 200;
@@ -402,7 +413,7 @@ void test_move_popn_assault_metamorph_and_wiped() {
   });
 
   ctx.em.mutate_sectormap(1, 1, [](SectorMap& sm) {
-    sm.get(Coordinates{5, 7}).set_owner(2);
+    sm.get(Coordinates{5, 7}).set_owner(p2);
     sm.get(Coordinates{5, 7}).set_popn_exact(1000);
     sm.get(Coordinates{5, 7}).set_troops(500);
   });
@@ -410,9 +421,9 @@ void test_move_popn_assault_metamorph_and_wiped() {
   ctx.em.mutate_planet(1, 1, [](Planet& planet) {
     planet.popn() += 1000;
     planet.troops() += 500;
-    planet.info(player_t{2}).popn += 1000;
-    planet.info(player_t{2}).troops += 500;
-    planet.info(player_t{2}).numsectsowned += 1;
+    planet.info(p2).popn += 1000;
+    planet.info(p2).troops += 500;
+    planet.info(p2).numsectsowned += 1;
   });
 
   g.out.str("");
@@ -424,7 +435,7 @@ void test_move_popn_assault_metamorph_and_wiped() {
   // with sufficient AP any AFV-slaughtered attackers are deducted from origin
   const auto afv_id =
       TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
-          .owned_by(2, 1)
+          .owned_by(p2, 1)
           .landed_on(1, 1, {5, 7})
           .with_crew(1, 0)
           .with_guns(guntype_t::HEAVY, 4, ActiveBattery::PRIMARY)
@@ -432,11 +443,11 @@ void test_move_popn_assault_metamorph_and_wiped() {
           .with_destruct(10)
           .with_armor(20)
           .build();
-  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 0; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(p1) = 0; });
   ctx.assert_dispatch_rejected(g, {"move", "5,6", "k", "50"});
   test::expect_eq(ctx.em.peek_ship(afv_id)->destruct(), 10);
 
-  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 20; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(p1) = 20; });
   const population_t before_planet_pop = ctx.em.peek_planet(1, 1)->popn();
   const population_t before_origin_pop =
       ctx.em.peek_sectormap(1, 1)->get({5, 6}).get_popn();
@@ -455,7 +466,7 @@ void test_move_popn_command_matrix() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, p1, 1);
   g.set_scope_planet(1, 1);
 
   TestCommandMatrix(ctx, "move")

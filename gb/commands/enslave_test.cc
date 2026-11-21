@@ -12,22 +12,36 @@ import std;
 
 namespace {
 
+constexpr player_t enslaver = 2;
+constexpr player_t victim = 3;
+constexpr player_t guest_player = 4;
+
 void setup_test_world(TestContext& ctx) {
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
+  TestWorldBuilder world(ctx);
+  world.add_race("Federation", 100.0, false, enslaver);
+  world.add_race("Klingons", 100.0, false, victim);
+
+  ctx.em.mutate_star(1, [](Star& s) {
+    s.mark_explored_by(enslaver);
+    s.mark_inhabited_by(enslaver);
+    s.AP(enslaver) = 50;
+  });
 
   // Setup planet info
   ctx.em.mutate_planet(1, 1, [](Planet& planet) {
-    planet.info(player_t{1}).numsectsowned = 5;
-    planet.info(player_t{2}).popn = 1000;
-    planet.info(player_t{2}).numsectsowned = 5;
-    planet.info(player_t{1}).destruct = 1000;
-    planet.info(player_t{2}).destruct = 10;
+    planet.mark_explored_by(enslaver);
+    planet.info(enslaver).numsectsowned = 5;
+    planet.info(victim).popn = 1000;
+    planet.info(victim).numsectsowned = 5;
+    planet.info(enslaver).destruct = 1000;
+    planet.info(victim).destruct = 10;
     planet.free_slaves();
   });
 
   // Create OAP ship in planet orbit with destruct > 0
   TestShipBuilder(ctx.em, ShipType::STYPE_OAP)
-      .owned_by(1, 1)
+      .owned_by(enslaver, 1)
       .named("Observer")
       .in_planet_orbit(1, 1)
       .with_destruct(100)
@@ -40,18 +54,18 @@ void test_enslave_happy_path() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, enslaver, 1);
   g.set_scope_univ();
 
-  // Enslave victim race (player 2)
+  // Enslave victim race
   ctx.assert_dispatch_success(g, {"enslave", "1"});
   test::expect_contains(g.out.str(), "Enslavement successful");
   test::expect_contains(g.out.str(), "0.1% the population");
 
-  // Verify planet is slaved to player 1
+  // Verify planet is slaved to enslaver
   const auto* planet = ctx.em.peek_planet(1, 1);
   test::expect_true(planet != nullptr);
-  test::expect_eq(planet->slaved_to(), player_t{1});
+  test::expect_eq(planet->slaved_to(), enslaver);
 
   ctx.verify_universe_invariants();
 }
@@ -60,15 +74,14 @@ void test_enslave_repulsed_and_json() {
   TestContext ctx;
   setup_test_world(ctx);
 
-  // Give defender (player 2) an orbiting ship with high destruct and an
-  // inactive ship
+  // Give defender an orbiting ship with high destruct and an inactive ship
   TestShipBuilder(ctx.em, ShipType::STYPE_DREADNT)
-      .owned_by(2, 1)
+      .owned_by(victim, 1)
       .in_planet_orbit(1, 1)
       .with_destruct(500)
       .build();
   TestShipBuilder(ctx.em, ShipType::STYPE_DREADNT)
-      .owned_by(2, 1)
+      .owned_by(victim, 1)
       .in_planet_orbit(1, 1)
       .with_active(false)
       .with_destruct(500)
@@ -76,7 +89,7 @@ void test_enslave_repulsed_and_json() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, enslaver, 1);
   g.set_scope_univ();
 
   ctx.assert_dispatch_success(g, {"enslave", "1"});
@@ -91,7 +104,7 @@ void test_enslave_repulsed_and_json() {
   test::expect_contains(g.out.str(), R"("type":"message")");
   test::expect_contains(g.out.str(), R"(Enslavement successful.)");
   test::expect_contains(g.out.str(), R"("type":"planet")");
-  test::expect_contains(g.out.str(), R"("slaved_to":1)");
+  test::expect_contains(g.out.str(), R"("slaved_to":2)");
   test::expect_contains(g.out.str(), R"("type":"star")");
 
   ctx.verify_universe_invariants();
@@ -102,11 +115,11 @@ void test_enslave_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set AP to 0
-  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 0; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(enslaver) = 0; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, enslaver, 1);
   g.set_scope_univ();
 
   ctx.assert_dispatch_rejected(g, {"enslave", "1"});
@@ -120,11 +133,11 @@ void test_enslave_role_rejection() {
   setup_test_world(ctx);
 
   // Create guest race
-  TestWorldBuilder(ctx).add_race("GuestEnslaver", 100.0, true, player_t{3});
+  TestWorldBuilder(ctx).add_race("GuestEnslaver", 100.0, true, guest_player);
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 3, 1);
+  ctx.setup_game_obj(g, guest_player, 1);
   g.set_scope_univ();
 
   ctx.assert_dispatch_rejected(g, {"enslave", "1"});
@@ -139,7 +152,7 @@ void test_enslave_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, enslaver, 1);
   g.set_scope_univ();
 
   // 1. Min args check (< 2 args)
@@ -156,19 +169,16 @@ void test_enslave_domain_errors() {
   test::expect_contains(g.out.str(), "Ship not found.");
 
   // 3. No aliens on planet
-  ctx.em.mutate_planet(1, 1, [](Planet& p) {
-    p.info(player_t{2}).numsectsowned = 0;
-    p.info(player_t{3}).numsectsowned = 0;
-    p.info(player_t{4}).numsectsowned = 0;
-  });
+  ctx.em.mutate_planet(1, 1,
+                       [](Planet& p) { p.info(victim).numsectsowned = 0; });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"enslave", "1"});
   test::expect_contains(g.out.str(),
                         "There is no one else on this planet to enslave!");
 
   // 4. No garrison on planet
-  ctx.em.mutate_planet(
-      1, 1, [](Planet& p) { p.info(player_t{1}).numsectsowned = 0; });
+  ctx.em.mutate_planet(1, 1,
+                       [](Planet& p) { p.info(enslaver).numsectsowned = 0; });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"enslave", "1"});
   test::expect_contains(g.out.str(),
@@ -187,7 +197,7 @@ void test_enslave_domain_errors() {
   test::expect_contains(g.out.str(), "not an Ob Asst Pltfrm");
 
   // 7. Ship owned by another player
-  ctx.em.mutate_ship(1, [](Ship& s) { s.owner() = 2; });
+  ctx.em.mutate_ship(1, [](Ship& s) { s.owner() = victim; });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"enslave", "1"});
 

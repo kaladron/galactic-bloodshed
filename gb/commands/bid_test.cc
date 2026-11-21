@@ -9,24 +9,36 @@ import test;
 import commands;
 import std;
 
+namespace {
+constexpr player_t buyer = 2;
+constexpr player_t seller = 3;
+}  // namespace
+
 int main() {
   TestContext ctx;
-  ctx.with_standard_universe();
-  ctx.create_planet(1, PlanetType::MARS, Coordinates{10, 10}, 2)
-      .named("Mars")
-      .build();
+  ctx.with_galaxy();
+  TestWorldBuilder world(ctx);
+  world.add_race("Buyers", 100.0, false, buyer);
+  world.add_race("Sellers", 100.0, false, seller);
 
-  ctx.em.mutate_race(1, [](Race& r) { r.leader().money = 10000; });
-  ctx.em.mutate_race(2, [](Race& r) { r.leader().money = 5000; });
+  ctx.em.mutate_star(1, [](Star& s) {
+    s.mark_explored_by(buyer);
+    s.mark_inhabited_by(buyer);
+    s.AP(buyer) = 50;
+  });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.mark_explored_by(buyer); });
+
+  ctx.em.mutate_race(buyer, [](Race& r) { r.leader().money = 10000; });
+  ctx.em.mutate_race(seller, [](Race& r) { r.leader().money = 5000; });
 
   // Create a space port for bidding on Sol / Earth (Star 1, Planet 1)
   const shipnum_t port_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
-                                  .owned_by(1, 1)
+                                  .owned_by(buyer, 1)
                                   .in_planet_orbit(1, 1)
                                   .build();
 
   (void)ctx.em.create_commod({
-      .owner = 2,
+      .owner = seller,
       .governor = 1,
       .type = CommodType::RESOURCE,
       .amount = 100,
@@ -36,7 +48,7 @@ int main() {
       .planet_from = 1,
   });
   (void)ctx.em.create_commod({
-      .owner = 1,
+      .owner = buyer,
       .governor = 1,
       .type = CommodType::DESTRUCT,
       .amount = 50,
@@ -46,13 +58,13 @@ int main() {
       .planet_from = 1,
   });
   (void)ctx.em.create_commod({
-      .owner = 2,
+      .owner = seller,
       .governor = 1,
       .type = CommodType::FUEL,
       .amount = 200,
       .deliver = false,
       .bid = 100,
-      .bidder = player_t{2},
+      .bidder = seller,
       .bidder_gov = 1,
       .star_from = 1,
       .planet_from = 1,
@@ -60,7 +72,7 @@ int main() {
       .planet_to = planetnum_t{1},
   });
   (void)ctx.em.create_commod({
-      .owner = 2,
+      .owner = seller,
       .governor = 1,
       .type = CommodType::CRYSTAL,
       .amount = 10,
@@ -71,7 +83,7 @@ int main() {
   });
   // Create and delete lot 5 to test missing lot lookup within 1..max_commod_id
   (void)ctx.em.create_commod({
-      .owner = 2,
+      .owner = seller,
       .governor = 1,
       .type = CommodType::RESOURCE,
       .amount = 25,
@@ -84,7 +96,7 @@ int main() {
     ctx.em.delete_commod(5);
   }
   (void)ctx.em.create_commod({
-      .owner = 2,
+      .owner = seller,
       .governor = 1,
       .type = CommodType::RESOURCE,
       .amount = 25,
@@ -93,10 +105,10 @@ int main() {
       .planet_from = 1,
   });
 
-  // Create GameObj for player 1 (bidder)
+  // Create GameObj for mortal buyer
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, buyer, 1);
   g.set_scope_univ();
 
   std::println(std::cout,
@@ -111,7 +123,7 @@ int main() {
     test::expect_contains(g.out.str(), "Galactic Bloodshed Commodities Market");
 
     const shipnum_t orbiter = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
-                                  .owned_by(1, 1)
+                                  .owned_by(buyer, 1)
                                   .in_star_orbit(1)
                                   .build();
     g.set_scope_ship(orbiter);
@@ -144,23 +156,24 @@ int main() {
     ctx.em.clear_cache();
     const auto* c_after = ctx.em.peek_commod(1);
     test::expect_eq(c_after->bid(), 1000);
-    test::expect_eq(c_after->bidder(), player_t{1});
+    test::expect_eq(c_after->bidder(), buyer);
     test::expect_eq(c_after->bidder_gov(), 1);
     test::expect_eq(c_after->star_to(), starnum_t{1});
     test::expect_eq(c_after->planet_to(), planetnum_t{1});
 
-    // Listing at PLAN scope hides player 2's destination on lot 3 from mortals,
-    // reveals player 1's destination on lot 1, and reveals all to Deity
+    // Listing at PLAN scope hides seller's destination on lot 3 from mortals,
+    // reveals buyer's destination on lot 1, and reveals all to Deity
     ctx.em.mutate_commod(3, [](Commod& c) {
-      c.place_bid(2, 1, 200, 1, 2);  // Sol/Mars -> "Sol /Mars"
+      c.place_bid(seller, 1, 200, 1, 2);  // Sol/Mars -> "Sol /Mars"
     });
     ctx.assert_dispatch_success(g, {"bid"});
     test::expect_contains(g.out.str(), "Sol /Eart");
     test::expect_false(g.out.str().contains("Sol /Mars"));
-    g.set_god(true);
-    ctx.assert_dispatch_success(g, {"bid"});
-    test::expect_contains(g.out.str(), "Sol /Mars");
-    g.set_god(false);
+    GameObj god_g(ctx.em, registry);
+    ctx.setup_game_obj(god_g, 1, 1);
+    god_g.set_scope_planet(1, 1);
+    ctx.assert_dispatch_success(god_g, {"bid"});
+    test::expect_contains(god_g.out.str(), "Sol /Mars");
 
     g.set_ui_mode(UiMode::JSON);
     ctx.assert_dispatch_success(g, {"bid", "r"});
@@ -184,7 +197,7 @@ int main() {
     ctx.em.clear_cache();
     const auto* c_after = ctx.em.peek_commod(1);
     test::expect_eq(c_after->bid(), new_bid);
-    const auto outbid_teles = ctx.em.get_telegrams(1, 1);
+    const auto outbid_teles = ctx.em.get_telegrams(buyer, 1);
     test::expect_false(outbid_teles.empty());
     test::expect_contains(outbid_teles.back().message,
                           "The bid on lot #1 (100 resources) has been upped");
@@ -238,13 +251,13 @@ int main() {
     ctx.em.mutate_ship(port_ship, [](Ship& s) { s.admin_override_damage(0); });
 
     // Enslaved planet
-    ctx.em.mutate_planet(1, 1, [](Planet& p) { p.slaved_to() = player_t{2}; });
+    ctx.em.mutate_planet(1, 1, [](Planet& p) { p.slaved_to() = seller; });
     ctx.assert_dispatch_rejected(g, {"bid", "4", "500"});
-    test::expect_contains(g.out.str(), "This planet is enslaved to player 2.");
+    test::expect_contains(g.out.str(), "This planet is enslaved to player 3.");
     ctx.em.mutate_planet(1, 1, [](Planet& p) { p.slaved_to() = std::nullopt; });
 
     // Unauthorized governor in star system
-    ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
+    ctx.em.mutate_race(buyer, [](Race& r) { r.appoint_governor(2); });
     g.set_governor(2);
     ctx.assert_dispatch_rejected(g, {"bid", "4", "500"});
     test::expect_contains(g.out.str(),
@@ -252,9 +265,9 @@ int main() {
     g.set_governor(1);
 
     // Guest race cannot bid
-    ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });
+    ctx.em.mutate_race(buyer, [](Race& r) { r.Guest = true; });
     GameObj g2(ctx.em, registry);
-    ctx.setup_game_obj(g2);
+    ctx.setup_game_obj(g2, buyer, 1);
     g2.set_scope_planet(1, 1);
     ctx.assert_dispatch_rejected(g2, {"bid", "4", "500"});
     test::expect_contains(g2.out.str(), "Guest races cannot bid.");

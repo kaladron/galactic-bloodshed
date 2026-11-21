@@ -12,11 +12,26 @@ import std;
 
 namespace {
 
+constexpr player_t attacker = 2;
+constexpr player_t defender = 3;
+
 void setup_test_world(TestContext& ctx) {
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
+  TestWorldBuilder world(ctx);
+  world.add_race("Federation", 100.0, false, attacker);
+  world.add_race("Klingons", 100.0, false, defender);
+
+  ctx.em.mutate_star(1, [](Star& s) {
+    s.mark_explored_by(attacker);
+    s.mark_inhabited_by(attacker);
+    s.AP(attacker) = 50;
+    s.mark_explored_by(defender);
+    s.mark_inhabited_by(defender);
+    s.AP(defender) = 50;
+  });
 
   // Set attacker race likes and governor
-  ctx.em.mutate_race(1, [](Race& r) {
+  ctx.em.mutate_race(attacker, [](Race& r) {
     r.fighters = 10.0;
     r.mass = 1.0;
     r.morale = 100;
@@ -24,7 +39,7 @@ void setup_test_world(TestContext& ctx) {
     r.appoint_governor(2);
   });
 
-  ctx.em.mutate_race(2, [](Race& r) {
+  ctx.em.mutate_race(defender, [](Race& r) {
     r.fighters = 1.0;
     r.mass = 1.0;
     r.morale = 50;
@@ -33,21 +48,22 @@ void setup_test_world(TestContext& ctx) {
   // Create sectormap with troops for attacker
   ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
     auto& sect = smap.get(Coordinates{5, 5});
-    sect.set_owner(1);
+    sect.set_owner(attacker);
     sect.set_popn_exact(50);
     sect.set_troops(100);
     sect.set_condition(SectorType::SEC_LAND);
   });
 
   ctx.em.mutate_planet(1, 1, [](Planet& planet) {
-    planet.info(player_t{1}).numsectsowned += 1;
+    planet.mark_explored_by(attacker);
+    planet.info(attacker).numsectsowned += 1;
     planet.popn() += 50;
     planet.troops() += 100;
   });
 
   // Create defender's ship (landed on planet at 5, 5)
   TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-      .owned_by(2, 1)
+      .owned_by(defender, 1)
       .named("Cargo")
       .landed_on(1, 1, Coordinates(5, 5))
       .with_crew(10, 5)
@@ -61,7 +77,7 @@ void test_capture_happy_path() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, attacker, 1);
   g.set_scope_planet(1, 1);
 
   // Execute capture command - capture #1 50 military
@@ -78,8 +94,8 @@ void test_capture_happy_path() {
         [&] { (void)ctx.em.peek_ship(1); });
   } else {
     const auto* captured_ship = ctx.em.peek_ship(1);
-    test::expect_true(captured_ship->owner() == 1 ||
-                      captured_ship->owner() == 2);
+    test::expect_true(captured_ship->owner() == attacker ||
+                      captured_ship->owner() == defender);
   }
 
   ctx.verify_universe_invariants();
@@ -90,11 +106,11 @@ void test_capture_insufficient_ap() {
   setup_test_world(ctx);
 
   // Set AP to 0
-  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 0; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(attacker) = 0; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, attacker, 1);
   g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_rejected(g, {"capture", "#1", "50", "military"});
@@ -111,16 +127,16 @@ void test_capture_role_and_scope_rejections() {
   GameObj g(ctx.em, registry);
 
   // 1. Scope rejection (LEVEL_UNIV)
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, attacker, 1);
   g.set_scope_univ();
   ctx.assert_dispatch_rejected(g, {"capture", "#1"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
 
   // 2. Star control rejection (Star governed by Gov 1, tested by Gov 2)
   ctx.em.mutate_star(1, [](Star& s) {
-    s.set_governor(1, 1);  // Star governed by Gov 1
+    s.set_governor(attacker, 1);  // Star governed by Gov 1
   });
-  ctx.setup_game_obj(g, 1, 2);  // Player 1, Gov 2
+  ctx.setup_game_obj(g, attacker, 2);  // Attacker, Gov 2
   g.set_scope_planet(1, 1);
   ctx.assert_dispatch_rejected(g, {"capture", "#1"});
   test::expect_contains(g.out.str(), "not authorized");
@@ -134,7 +150,7 @@ void test_capture_domain_errors() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, attacker, 1);
   g.set_scope_planet(1, 1);
 
   // 1. Min args check (< 2 args)
@@ -143,7 +159,7 @@ void test_capture_domain_errors() {
       g.out.str(), "Syntax: capture <ship> [<number>] [civilians|military]");
 
   // 2. Enslaved planet check
-  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.enslave_to(2); });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.enslave_to(defender); });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"capture", "#1"});
   test::expect_contains(g.out.str(), "enslaved");
@@ -158,7 +174,7 @@ void test_capture_domain_errors() {
 
   // 4. Von Neumann machine rejection
   shipnum_t vn_id = TestShipBuilder(ctx.em, ShipType::OTYPE_VN)
-                        .owned_by(2, 1)
+                        .owned_by(defender, 1)
                         .landed_on(1, 1, Coordinates(5, 5))
                         .build();
   g.out.str("");
@@ -166,24 +182,24 @@ void test_capture_domain_errors() {
   test::expect_contains(g.out.str(), "Von Neumann");
 
   // 5. Unowned landing sector (must preserve Star AP)
-  const auto initial_ap = ctx.em.peek_star(1)->AP(1);
+  const auto initial_ap = ctx.em.peek_star(1)->AP(attacker);
   ctx.em.mutate_sectormap(
       1, 1, [](SectorMap& smap) { smap.get(Coordinates{2, 2}).set_owner(0); });
   const auto unowned_sect_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                                     .owned_by(2, 1)
+                                     .owned_by(defender, 1)
                                      .landed_on(1, 1, Coordinates(2, 2))
                                      .build();
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"capture", std::format("#{}", unowned_sect_ship.value)});
   test::expect_contains(g.out.str(), "don't own the sector");
-  test::expect_eq(ctx.em.peek_star(1)->AP(1), initial_ap);
+  test::expect_eq(ctx.em.peek_star(1)->AP(attacker), initial_ap);
 
   // 6. Invalid population type and non-numeric / zero boarder counts
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"capture", "#1", "10", "lasers"});
   test::expect_contains(g.out.str(), "Capture with what?");
-  test::expect_eq(ctx.em.peek_star(1)->AP(1), initial_ap);
+  test::expect_eq(ctx.em.peek_star(1)->AP(attacker), initial_ap);
 
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"capture", "#1", "0"});
@@ -191,7 +207,7 @@ void test_capture_domain_errors() {
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"capture", "#1", "abc"});
   test::expect_contains(g.out.str(), "Illegal number of boarders");
-  test::expect_eq(ctx.em.peek_star(1)->AP(1), initial_ap);
+  test::expect_eq(ctx.em.peek_star(1)->AP(attacker), initial_ap);
 
   // 7. Illegal ship values, non-existent ship, self-owned ship, and wrong
   // planet/star
@@ -207,7 +223,7 @@ void test_capture_domain_errors() {
   test::expect_contains(g.out.str(), "No such ship");
 
   const auto own_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                            .owned_by(1, 1)
+                            .owned_by(attacker, 1)
                             .landed_on(1, 1, Coordinates(5, 5))
                             .build();
   g.out.str("");
@@ -216,7 +232,7 @@ void test_capture_domain_errors() {
   test::expect_contains(g.out.str(), "already own");
 
   const auto other_star_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                                   .owned_by(2, 1)
+                                   .owned_by(defender, 1)
                                    .landed_on(2, 1, Coordinates(0, 0))
                                    .build();
   g.out.str("");
@@ -224,11 +240,8 @@ void test_capture_domain_errors() {
       g, {"capture", std::format("#{}", other_star_ship.value)});
   test::expect_contains(g.out.str(), "not landed on this planet");
 
-  ctx.create_planet(1, PlanetType::MARS, Coordinates{4, 4}, 2)
-      .named("Mars")
-      .build();
   const auto other_planet_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                                     .owned_by(2, 1)
+                                     .owned_by(defender, 1)
                                      .landed_on(1, 2, Coordinates(0, 0))
                                      .build();
   g.out.str("");
@@ -245,7 +258,7 @@ void test_capture_civilian_victory() {
 
   // Setup empty enemy cargo ship with no crew
   shipnum_t target_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                              .owned_by(2, 1)
+                              .owned_by(defender, 1)
                               .landed_on(1, 1, Coordinates(5, 5))
                               .with_crew(0, 0)
                               .with_destruct(0)
@@ -253,7 +266,7 @@ void test_capture_civilian_victory() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, attacker, 1);
   g.set_scope_planet(1, 1);
 
   // Capture with civilians
@@ -261,7 +274,7 @@ void test_capture_civilian_victory() {
       g, {"capture", std::format("#{}", target_ship.value), "20", "civilians"});
   test::expect_contains(g.out.str(), "VICTORY! The ship is yours!");
 
-  const auto victim_teles = ctx.em.get_telegrams(2, 1);
+  const auto victim_teles = ctx.em.get_telegrams(defender, 1);
   test::expect_false(victim_teles.empty());
   test::expect_contains(victim_teles.front().message, "BULLETIN from");
   test::expect_contains(victim_teles.front().message, "CAPTURED!");
@@ -270,7 +283,7 @@ void test_capture_civilian_victory() {
   ctx.em.clear_cache();
   const auto* ship = ctx.em.peek_ship(target_ship);
   test::expect_true(ship != nullptr);
-  test::expect_eq(ship->owner(), 1);
+  test::expect_eq(ship->owner(), attacker);
   test::expect_eq(ship->popn(), 20);
 
   const auto* smap = ctx.em.peek_sectormap(1, 1);
@@ -278,32 +291,33 @@ void test_capture_civilian_victory() {
 
   // Capture with military omitting optional <boarders> count
   shipnum_t mil_target = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                             .owned_by(2, 1)
+                             .owned_by(defender, 1)
                              .landed_on(1, 1, Coordinates(5, 5))
                              .with_crew(0, 0)
                              .with_destruct(0)
                              .build();
   ctx.assert_dispatch_success(
       g, {"capture", std::format("#{}", mil_target.value), "military"}, 1);
-  test::expect_eq(ctx.em.peek_ship(mil_target)->owner(), 1);
+  test::expect_eq(ctx.em.peek_ship(mil_target)->owner(), attacker);
   test::expect_gt(ctx.em.peek_ship(mil_target)->troops(), 0);
 
   // Capture a manned landed ship (non-factory) and a manned landed factory
-  ctx.em.mutate_race(1, [](Race& r) { r.likes[SectorType::SEC_LAND] = 0.0; });
-  ctx.em.mutate_race(2, [](Race& r) {
+  ctx.em.mutate_race(attacker,
+                     [](Race& r) { r.likes[SectorType::SEC_LAND] = 0.0; });
+  ctx.em.mutate_race(defender, [](Race& r) {
     r.tech = 100.0;
     r.morale = 100;
   });
   for (ShipType stype : {ShipType::STYPE_CARGO, ShipType::OTYPE_FACTORY}) {
     shipnum_t manned_id = TestShipBuilder(ctx.em, stype)
-                              .owned_by(2, 1)
+                              .owned_by(defender, 1)
                               .landed_on(1, 1, Coordinates(5, 5))
                               .with_crew(1, 0)
                               .with_armor(0)
                               .with_destruct(0)
                               .build();
-    while (ctx.em.peek_ship(manned_id)->owner() != 1) {
-      ctx.em.mutate_star(1, [](Star& s) { s.AP(player_t{1}) = 10; });
+    while (ctx.em.peek_ship(manned_id)->owner() != attacker) {
+      ctx.em.mutate_star(1, [](Star& s) { s.AP(attacker) = 10; });
       ctx.em.mutate_ship(manned_id, [](Ship& s) {
         s.admin_override_damage(0);
         s.popn() = 1;
@@ -312,18 +326,18 @@ void test_capture_civilian_victory() {
           g,
           {"capture", std::format("#{}", manned_id.value), "2", "civilians"});
     }
-    test::expect_eq(ctx.em.peek_ship(manned_id)->owner(), 1);
+    test::expect_eq(ctx.em.peek_ship(manned_id)->owner(), attacker);
   }
 
   // Uncrewed ship boarded with 0 surviving boarders stays uncaptured
   shipnum_t empty_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                             .owned_by(2, 1)
+                             .owned_by(defender, 1)
                              .landed_on(1, 1, Coordinates(5, 5))
                              .with_crew(0, 0)
                              .with_destruct(0)
                              .build();
   auto zero_res = execute_landed_ship_boarding(
-      ctx.em, empty_ship, 0, PopulationType::CIV, player_t{1}, governor_t{1});
+      ctx.em, empty_ship, 0, PopulationType::CIV, attacker, governor_t{1});
   test::expect_false(zero_res.captured);
 
   ctx.verify_universe_invariants();
@@ -333,11 +347,12 @@ void test_capture_default_boarders_and_allied_ship() {
   TestContext ctx;
   setup_test_world(ctx);
 
-  // Mark race 1 allied with race 2
-  ctx.em.mutate_race(1, [](Race& r) { r.declare_alliance_with(player_t{2}); });
+  // Mark attacker allied with defender
+  ctx.em.mutate_race(attacker,
+                     [](Race& r) { r.declare_alliance_with(defender); });
 
   shipnum_t target_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                              .owned_by(2, 1)
+                              .owned_by(defender, 1)
                               .landed_on(1, 1, Coordinates(5, 5))
                               .with_crew(0, 0)
                               .with_destruct(0)
@@ -345,7 +360,7 @@ void test_capture_default_boarders_and_allied_ship() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, attacker, 1);
   g.set_scope_planet(1, 1);
 
   // Capture without specifying count or type (defaults to all available civs)
@@ -356,11 +371,11 @@ void test_capture_default_boarders_and_allied_ship() {
 
   ctx.em.clear_cache();
   const auto* ship = ctx.em.peek_ship(target_ship);
-  test::expect_eq(ship->owner(), 1);
+  test::expect_eq(ship->owner(), attacker);
 
   // Also verify JSON presentation mode with "mil" prefix
   const auto json_target = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                               .owned_by(2, 1)
+                               .owned_by(defender, 1)
                                .landed_on(1, 1, Coordinates(5, 5))
                                .with_crew(0, 0)
                                .with_destruct(0)
@@ -382,7 +397,7 @@ void test_capture_booby_trap_robot_ship() {
 
   // Create booby-trapped robot cargo ship (destruct > 0, crew == 0)
   shipnum_t target_ship = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                              .owned_by(2, 1)
+                              .owned_by(defender, 1)
                               .landed_on(1, 1, Coordinates(5, 5))
                               .with_crew(0, 0)
                               .with_destruct(5)
@@ -390,7 +405,7 @@ void test_capture_booby_trap_robot_ship() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, attacker, 1);
   g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_success(
@@ -412,13 +427,13 @@ void test_capture_booby_trap_robot_ship() {
   bool saw_100pct_booby = false;
   for (int attempt = 0; attempt < 20 && !saw_100pct_booby; ++attempt) {
     const shipnum_t heavy_trap = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
-                                     .owned_by(2, 1)
+                                     .owned_by(defender, 1)
                                      .landed_on(1, 1, Coordinates(5, 5))
                                      .with_crew(0, 0)
                                      .with_destruct(100)
                                      .build();
     const auto trap_res = execute_landed_ship_boarding(
-        ctx.em, heavy_trap, 10'000'000, PopulationType::CIV, 1, 1);
+        ctx.em, heavy_trap, 10'000'000, PopulationType::CIV, attacker, 1);
     if (trap_res.booby_damage == 100) {
       test::expect_eq(trap_res.attacker_casualties, 10'000'000);
       test::expect_eq(trap_res.surviving_boarders, 0);
@@ -437,13 +452,13 @@ void test_capture_boarders_wiped_and_ship_destroyed() {
 
   // Strong defender ship
   shipnum_t dreadnought = TestShipBuilder(ctx.em, ShipType::STYPE_DREADNT)
-                              .owned_by(2, 1)
+                              .owned_by(defender, 1)
                               .landed_on(1, 1, Coordinates(5, 5))
                               .with_crew(500, 200)
                               .with_armor(100)
                               .build();
 
-  ctx.em.mutate_race(2, [](Race& r) {
+  ctx.em.mutate_race(defender, [](Race& r) {
     r.fighters = 100.0;
     r.tech = 200.0;
     r.morale = 200;
@@ -451,7 +466,7 @@ void test_capture_boarders_wiped_and_ship_destroyed() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, attacker, 1);
   g.set_scope_planet(1, 1);
 
   // Send 1 civilian against dreadnought -> wiped out
@@ -460,7 +475,7 @@ void test_capture_boarders_wiped_and_ship_destroyed() {
   test::expect_contains(g.out.str(), "Attack strength:");
   test::expect_contains(g.out.str(), "killed your party to the last man");
 
-  const auto defender_teles = ctx.em.get_telegrams(2, 1);
+  const auto defender_teles = ctx.em.get_telegrams(defender, 1);
   test::expect_ge(defender_teles.size(), 2u);
   test::expect_contains(defender_teles.front().message, "BULLETIN from");
   test::expect_contains(defender_teles.front().message, "You fought them off!");
@@ -475,7 +490,7 @@ void test_capture_command_matrix() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, attacker, 1);
   g.set_scope_planet(1, 1);
 
   TestCommandMatrix(ctx, "capture")

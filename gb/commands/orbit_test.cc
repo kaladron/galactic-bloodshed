@@ -59,8 +59,7 @@ void test_orbit_happy_path() {
   // TEST: Orbit display at star level
   std::println(std::cout, "Orbit command displays ship at star");
   {
-    g.set_level(ScopeLevel::LEVEL_STAR);
-    g.set_snum(1);
+    g.set_scope_star(1);
 
     ctx.assert_dispatch_success(g, {"orbit"});
 
@@ -76,8 +75,7 @@ void test_orbit_happy_path() {
   // TEST: Orbit -1 flag suppresses 1-based planet #1 and ship #1
   std::println(std::cout, "Orbit -1 flag suppresses object #1");
   {
-    g.set_level(ScopeLevel::LEVEL_STAR);
-    g.set_snum(1);
+    g.set_scope_star(1);
 
     g.out.str("");
     ctx.assert_dispatch_success(g, {"orbit", "-1", "/TestStar"});
@@ -92,9 +90,7 @@ void test_orbit_happy_path() {
   // TEST: Orbit display at planet level
   std::println(std::cout, "Orbit at planet level");
   {
-    g.set_level(ScopeLevel::LEVEL_PLAN);
-    g.set_snum(1);
-    g.set_pnum(1);
+    g.set_scope_planet(1, 1);
 
     g.out.str("");
     ctx.assert_dispatch_success(g, {"orbit"});
@@ -108,8 +104,7 @@ void test_orbit_happy_path() {
   // TEST: Orbit options flags (-s, -p, -S) preserve star scope and filter
   std::println(std::cout, "Orbit options flags (-s, -p, -S)");
   {
-    g.set_level(ScopeLevel::LEVEL_STAR);
-    g.set_snum(1);
+    g.set_scope_star(1);
 
     g.out.str("");
     ctx.assert_dispatch_success(g, {"orbit", "-s"});
@@ -135,8 +130,7 @@ void test_orbit_happy_path() {
   // TEST: Orbit inverse video standout and JSON mode
   std::println(std::cout, "Orbit inverse standout and JSON mode");
   {
-    g.set_level(ScopeLevel::LEVEL_STAR);
-    g.set_snum(1);
+    g.set_scope_star(1);
 
     ctx.em.mutate_race(1, [](Race& r) {
       r.governor(1).toggle.inverse = true;
@@ -169,7 +163,7 @@ void test_orbit_happy_path() {
   // TEST: Orbit display at universe level
   std::println(std::cout, "Orbit at universe level");
   {
-    g.set_level(ScopeLevel::LEVEL_UNIV);
+    g.set_scope_univ();
 
     ctx.assert_dispatch_success(g, {"orbit"});
 
@@ -194,8 +188,7 @@ void test_orbit_domain_errors() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // 1. Invalid option number format (non-numeric and trailing garbage)
   ctx.assert_dispatch_rejected(g, {"orbit", "-abc"});
@@ -286,8 +279,7 @@ void test_orbit_visibility_and_filtering() {
   ctx.em.mutate_ship(1, [](Ship& s) { s.popn() = 1; });
   ctx.em.mutate_ship(3, [](Ship& s) { s.popn() = 1; });
   ctx.em.mutate_race(1, [](Race& r) { r.governor(1).toggle.compat = true; });
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"orbit"});
   std::string star_out = g.out.str();
@@ -317,9 +309,7 @@ void test_orbit_visibility_and_filtering() {
 
   // 3. Planet scope: landed ship is hidden; enemy ship is visible
   // when #3 has sight, hidden when #3 has no crew, and -s / -3 flags work.
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"orbit"});
   test::expect_contains(g.out.str(), "s #3");
@@ -341,7 +331,7 @@ void test_orbit_visibility_and_filtering() {
 
   // 4. Universe scope: enemy deep-space ship hidden unless god; -1 and
   // -s flags filter universe stars and ships.
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   g.out.str("");
   ctx.assert_dispatch_success(g, {"orbit"});
   test::expect_contains(g.out.str(), "C #2");
@@ -416,8 +406,7 @@ void test_orbit_space_mirror_aiming() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"orbit"});

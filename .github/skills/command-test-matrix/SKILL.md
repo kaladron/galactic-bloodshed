@@ -41,9 +41,7 @@ void test_command_matrix() {
 
   // 1. Setup entities (Race, Star, Planet, Ship)
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // Set initial star AP to 20
   ctx.em.mutate_star(1, [](Star& star) {
@@ -68,11 +66,11 @@ void test_command_matrix() {
   });
 
   // --- Case 3: Invalid Scope / Role ---
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   g.out.clear();
   assert(!GB::commands::dispatch_command(g, GB::commands::example_cmd, {"example", "arg"}));
   assert(ctx.em.peek_star(1)->AP(1) == 20); // 0 AP deducted
-  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_scope_planet(1, 1);
 
   // --- Case 4: Domain Error / Bad Arguments ---
   g.out.clear();

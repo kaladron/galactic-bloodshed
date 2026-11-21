@@ -173,7 +173,7 @@ void test_profile_disembodied_race() {
   });
 
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   g.set_god(true);
 
   ctx.assert_dispatch_success(g, {"profile"});

@@ -24,8 +24,7 @@ void test_name_ship_persistence() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(ship_id);
+  g.set_scope_ship(ship_id);
 
   std::println(std::cout, "  Testing: Rename ship to 'USS Enterprise'");
   {
@@ -53,7 +52,7 @@ void test_name_race_persistence() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   g.set_governor(1);  // Must be leader (governor 1)
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
 
   std::println(std::cout, "  Testing: Rename race to 'Klingons'");
   {
@@ -79,8 +78,7 @@ void test_name_star_persistence() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
   g.set_god(true);
 
   std::println(std::cout, "  Testing: Rename star to 'Alpha Centauri'");
@@ -108,9 +106,7 @@ void test_name_planet_persistence() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
   g.set_god(true);
 
   std::println(std::cout, "  Testing: Rename planet to 'New Earth'");
@@ -268,11 +264,10 @@ void test_name_factory_class() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
-  g.set_level(ScopeLevel::LEVEL_SHIP);
 
   // TEST: Name class at factory off-line -> success
   {
-    g.set_shipno(fac_id);
+    g.set_scope_ship(fac_id);
     g.out.str("");
     ctx.assert_dispatch_success(g, {"name", "class", "Battleship"});
     test::expect_contains(g.out.str(), "Class set.");
@@ -286,7 +281,7 @@ void test_name_factory_class() {
   // TEST: Name class when factory is on-line -> error
   {
     ctx.em.mutate_ship(fac_id, [](Ship& f) { f.on() = true; });
-    g.set_shipno(fac_id);
+    g.set_scope_ship(fac_id);
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "class", "Cruiser"});
     test::expect_contains(g.out.str(), "This factory is already on line.");
@@ -294,7 +289,7 @@ void test_name_factory_class() {
 
   // TEST: Name class at non-factory ship -> error
   {
-    g.set_shipno(non_fac_id);
+    g.set_scope_ship(non_fac_id);
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "class", "Destroyer"});
     test::expect_contains(g.out.str(), "You are not at a factory!");
@@ -302,7 +297,7 @@ void test_name_factory_class() {
 
   // TEST: Name class when not at ship scope -> error
   {
-    g.set_level(ScopeLevel::LEVEL_UNIV);
+    g.set_scope_univ();
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "class", "Destroyer"});
     test::expect_contains(
@@ -328,8 +323,7 @@ void test_name_permissions_scope_and_json() {
 
   // TEST: Non-god naming star -> rejected
   {
-    g.set_level(ScopeLevel::LEVEL_STAR);
-    g.set_snum(1);
+    g.set_scope_star(1);
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "star", "Forbidden"});
     test::expect_contains(g.out.str(), "Only dieties may name a star.");
@@ -337,7 +331,7 @@ void test_name_permissions_scope_and_json() {
 
   // TEST: Naming star when not at star scope -> rejected
   {
-    g.set_level(ScopeLevel::LEVEL_UNIV);
+    g.set_scope_univ();
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "star", "Forbidden"});
     test::expect_contains(g.out.str(),
@@ -346,9 +340,7 @@ void test_name_permissions_scope_and_json() {
 
   // TEST: Non-god naming planet -> rejected
   {
-    g.set_level(ScopeLevel::LEVEL_PLAN);
-    g.set_snum(1);
-    g.set_pnum(1);
+    g.set_scope_planet(1, 1);
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "planet", "Forbidden"});
     test::expect_contains(g.out.str(), "Only deity can rename planets.");
@@ -356,7 +348,7 @@ void test_name_permissions_scope_and_json() {
 
   // TEST: Naming planet when not at planet scope -> rejected
   {
-    g.set_level(ScopeLevel::LEVEL_UNIV);
+    g.set_scope_univ();
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "planet", "Forbidden"});
     test::expect_contains(g.out.str(),
@@ -375,7 +367,7 @@ void test_name_permissions_scope_and_json() {
 
   // TEST: Naming ship when not at ship level -> wrong scope message
   {
-    g.set_level(ScopeLevel::LEVEL_UNIV);
+    g.set_scope_univ();
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "ship", "Enterprise"});
     test::expect_contains(g.out.str(),
@@ -397,39 +389,43 @@ void test_name_permissions_scope_and_json() {
                                .named("EnemyHull")
                                .with_on(false)
                                .build();
-    g.set_level(ScopeLevel::LEVEL_SHIP);
-    g.set_shipno(enemy_fac);
+    g.set_scope_ship(enemy_fac);
     const auto before_rejects = ctx.db.total_changes();
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "ship", "Hijacked"});
     test::expect_contains(g.out.str(), "You don't own ship #");
-    g.set_level(ScopeLevel::LEVEL_SHIP);
-    g.set_shipno(enemy_fac);
+    g.set_scope_ship(enemy_fac);
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "class", "HijackedClass"});
     test::expect_contains(g.out.str(), "You don't own ship #");
     test::expect_eq(ctx.em.peek_ship(enemy_fac)->name(), "EnemyHull");
 
     // Unauthorized governor on own race's ship & destroyed/deleted ship ID
-    g.set_level(ScopeLevel::LEVEL_SHIP);
-    g.set_shipno(ship_id);
+    g.set_scope_ship(ship_id);
     g.set_governor(2);
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "ship", "WrongGov"});
     test::expect_contains(g.out.str(), "You don't own ship #");
+    test::expect_eq(ctx.db.total_changes(), before_rejects);
     g.set_governor(1);
 
-    g.set_shipno(9999);
+    const auto ghost_ship = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
+                                .owned_by(1, 1)
+                                .in_planet_orbit(1, 1)
+                                .build();
+    g.set_scope_ship(ghost_ship);
+    ctx.em.mutate_ship(ghost_ship, [&](Ship& s) { ctx.em.destroy_ship(s); });
+    const auto before_ghost = ctx.db.total_changes();
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "ship", "Ghost"});
-    test::expect_contains(g.out.str(),
-                          "Ship #9999 no longer exists; scope reset");
-    test::expect_eq(ctx.db.total_changes(), before_rejects);
+    test::expect_contains(
+        g.out.str(),
+        std::format("Ship #{} no longer exists; scope reset", ghost_ship));
+    test::expect_eq(ctx.db.total_changes(), before_ghost);
 
     // Deity can rename a foreign ship
     g.set_god(true);
-    g.set_level(ScopeLevel::LEVEL_SHIP);
-    g.set_shipno(enemy_fac);
+    g.set_scope_ship(enemy_fac);
     g.out.str("");
     ctx.assert_dispatch_success(g, {"name", "ship", "DeityNamed"});
     test::expect_eq(ctx.em.peek_ship(enemy_fac)->name(), "DeityNamed");
@@ -439,8 +435,7 @@ void test_name_permissions_scope_and_json() {
   // TEST: JSON mode output
   {
     g.set_ui_mode(UiMode::JSON);
-    g.set_level(ScopeLevel::LEVEL_SHIP);
-    g.set_shipno(ship_id);
+    g.set_scope_ship(ship_id);
     g.out.str("");
     ctx.assert_dispatch_success(g, {"name", "ship", "Defiant"});
     test::expect_contains(g.out.str(), R"("type":"message")");

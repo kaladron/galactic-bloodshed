@@ -35,13 +35,11 @@ void test_modify_command_matrix() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_shipno(factory_id);
-  g.set_snum(1);
+  g.set_scope_ship(factory_id);
 
   TestCommandMatrix(ctx, GB::commands::modify_cmd)
-      .with_valid_scope(ScopeLevel::LEVEL_SHIP)
-      .with_invalid_scopes({ScopeLevel::LEVEL_UNIV, ScopeLevel::LEVEL_STAR,
-                            ScopeLevel::LEVEL_PLAN})
+      .with_invalid_scopes(
+          {Place::universe(), Place::star(1), Place::planet(1, 1)})
       .with_valid_argv({"modify", "armor", "20"})
       .with_invalid_argv({"modify", "armor", "-5"})
       .run_matrix(g);
@@ -80,16 +78,14 @@ void test_modify_attributes_and_batteries() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_snum(1);
 
   // 0. Non-factory ship rejected
-  g.set_shipno(non_factory_id);
+  g.set_scope_ship(non_factory_id);
   ctx.assert_dispatch_rejected(g, {"modify", "armor", "20"});
   test::expect_contains(g.out.str(), "That is not a factory.");
 
   // 1. Modify before make
-  g.set_shipno(factory_id);
+  g.set_scope_ship(factory_id);
   ctx.assert_dispatch_rejected(g, {"modify", "armor", "20"});
   test::expect_contains(g.out.str(), "No ship design specified.");
 
@@ -283,9 +279,7 @@ void test_modify_template_capability_restrictions() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_snum(1);
-  g.set_shipno(factory_id);
+  g.set_scope_ship(factory_id);
 
   // 1. Space Mine ('+'): modifiable, but lacks primary, secondary, cew, mount,
   // hyperdrive, laser, crew, cargo, and hanger capacities.

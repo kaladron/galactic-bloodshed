@@ -43,13 +43,21 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
     g.out << "Only the leader (Governor 1) may use this command.\n";
     return false;
   }
+
+  // 2. Scope Verification
+  if (!desc.scopes.allows(g.level())) {
+    g.out << "Invalid scope for this command.\n";
+    return false;
+  }
+
   if (desc.roles.star_control && !g.god()) {
-    if (g.snum() == 0) {
+    const auto star_id = g.enclosing_star();
+    if (!star_id) {
       g.out << "You are not authorized to do that in this system.\n";
       return false;
     }
     try {
-      const auto& star = *g.entity_manager.peek_star(g.snum());
+      const auto& star = *g.entity_manager.peek_star(*star_id);
       if (!star.control(g.player(), g.governor())) {
         g.out << "You are not authorized to do that in this system.\n";
         return false;
@@ -58,12 +66,6 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
       g.out << "You are not authorized to do that in this system.\n";
       return false;
     }
-  }
-
-  // 2. Scope Verification
-  if (!desc.scopes.allows(g.level())) {
-    g.out << "Invalid scope for this command.\n";
-    return false;
   }
 
   // 3. Argument Count Check
@@ -77,16 +79,11 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
     const shipnum_t prev_shipno = g.shipno();
     const ShipScopeStatus status = g.reconcile_ship_scope();
     if (status != ShipScopeStatus::Valid) {
-      const Place reset_place{g.level(), g.snum(), g.pnum(), g.shipno()};
-      const std::string dest = reset_place.to_string(g.entity_manager);
+      const std::string dest = g.place().to_string(g.entity_manager);
       std::string msg;
       switch (status) {
         case ShipScopeStatus::Valid:
           std::unreachable();
-        case ShipScopeStatus::NoShipScoped:
-          msg = std::format("No ship is currently scoped; scope reset to {}.\n",
-                            dest);
-          break;
         case ShipScopeStatus::ShipMissing:
           msg = std::format("Ship #{} no longer exists; scope reset to {}.\n",
                             prev_shipno, dest);
@@ -104,13 +101,14 @@ bool dispatch_command(GameObj& g, const CommandDescriptor& desc,
   // 4. Fixed-Cost AP Pre-check
   if (!g.god()) {
     if (desc.ap.model == APModel::FixedStar) {
-      if (g.snum() == 0) {
+      const auto star_id = g.enclosing_star();
+      if (!star_id) {
         g.out << std::format("You don't have {} action points there.\n",
                              desc.ap.amount);
         return false;
       }
       try {
-        const auto& star = *g.entity_manager.peek_star(g.snum());
+        const auto& star = *g.entity_manager.peek_star(*star_id);
         if (star.AP(g.player()) < desc.ap.amount) {
           g.out << std::format("You don't have {} action points there.\n",
                                desc.ap.amount);

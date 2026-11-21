@@ -19,11 +19,7 @@ std::optional<CommodType> parse_commod_type(std::string_view arg) {
 
 void present_commodities(GameObj& g, std::optional<CommodType> filter) {
   GB::presentation::CommodityMarketViewModel vm{.filter = filter};
-  const std::optional<starnum_t> shipping_dest_star =
-      (g.level() == ScopeLevel::LEVEL_STAR ||
-       g.level() == ScopeLevel::LEVEL_PLAN)
-          ? std::optional<starnum_t>{g.snum()}
-          : std::nullopt;
+  const std::optional<starnum_t> shipping_dest_star = g.enclosing_star();
 
   for (const Commod& c : CommodList::readonly(g.entity_manager)) {
     if (filter && c.type() != *filter) continue;
@@ -39,10 +35,9 @@ void present_commodities(GameObj& g, std::optional<CommodType> filter) {
     }
 
     money_t ship_cost = 0;
-    if (g.level() == ScopeLevel::LEVEL_STAR ||
-        g.level() == ScopeLevel::LEVEL_PLAN) {
-      std::tie(ship_cost, std::ignore) =
-          shipping_cost(g.entity_manager, c.star_from(), g.snum(), c.bid());
+    if (shipping_dest_star) {
+      std::tie(ship_cost, std::ignore) = shipping_cost(
+          g.entity_manager, c.star_from(), *shipping_dest_star, c.bid());
     }
 
     vm.rows.push_back(GB::presentation::CommodityLotRow{

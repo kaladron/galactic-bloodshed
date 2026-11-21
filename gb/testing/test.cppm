@@ -590,20 +590,19 @@ public:
 
   TestCommandMatrix& with_valid_argv(command_t argv);
   TestCommandMatrix& with_invalid_argv(command_t argv);
-  TestCommandMatrix& with_valid_scope(ScopeLevel scope);
-  TestCommandMatrix& with_invalid_scopes(std::vector<ScopeLevel> scopes);
+  TestCommandMatrix& with_invalid_scopes(std::vector<Place> scopes);
   TestCommandMatrix& with_expected_star_ap(ap_t ap);
   TestCommandMatrix& with_expected_univ_ap(ap_t ap);
 
-  /// Run Happy Path: executes valid_argv in valid_scope and asserts exact AP
-  /// deduction.
+  /// Run Happy Path: executes valid_argv in g's configured scope and asserts
+  /// exact AP deduction.
   void run_happy_path(GameObj& g) const;
 
   /// Run Insufficient AP rejection: sets star/univ AP to 0, asserts rejection
   /// + 0 AP deduction, then restores AP.
   void run_insufficient_ap_check(GameObj& g) const;
 
-  /// Run Invalid Scopes rejection: tests each invalid scope level, asserting
+  /// Run Invalid Scopes rejection: tests each invalid Place scope, asserting
   /// rejection + 0 AP deduction.
   void run_scope_checks(GameObj& g) const;
 
@@ -630,8 +629,7 @@ private:
   const GB::commands::CommandDescriptor& desc_;
   command_t valid_argv_;
   command_t invalid_argv_;
-  ScopeLevel valid_scope_{ScopeLevel::LEVEL_UNIV};
-  std::vector<ScopeLevel> invalid_scopes_;
+  std::vector<Place> invalid_scopes_;
   ap_t expected_star_ap_{0};
   ap_t expected_univ_ap_{0};
 };

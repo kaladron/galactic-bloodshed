@@ -26,7 +26,7 @@ std::optional<SurveyRequest> parse_survey_location(const command_t& argv,
   if (argv.size() == 1 || argv[1].empty()) {
     // No args - use current scope
     return SurveyRequest{
-        .where = Place(g.level(), g.snum(), g.pnum()),
+        .where = g.place(),
     };
   }
 
@@ -41,7 +41,7 @@ std::optional<SurveyRequest> parse_survey_location(const command_t& argv,
       return std::nullopt;
     }
     return SurveyRequest{
-        .where = Place(ScopeLevel::LEVEL_PLAN, g.snum(), g.pnum()),
+        .where = g.place(),
         .all_sectors = is_all,
         .range_arg = is_range ? argv[1] : std::string{},
     };

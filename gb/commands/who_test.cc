@@ -65,7 +65,7 @@ void test_who_matrix() {
   // --- Case 1: Happy Path (Normal player viewing who) ---
   ctx.setup_game_obj(g, 1, 1);
   g.set_god(false);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_scope_star(1);
 
   test::expect_true(
       GB::commands::dispatch_command(g, GB::commands::who_cmd, {"who"}));
@@ -178,12 +178,9 @@ void test_who_matrix() {
                             .owned_by(3, 1)
                             .in_star_orbit(1)
                             .build();
-  for (auto scope : {ScopeLevel::LEVEL_UNIV, ScopeLevel::LEVEL_STAR,
-                     ScopeLevel::LEVEL_PLAN, ScopeLevel::LEVEL_SHIP}) {
-    g.set_level(scope);
-    if (scope == ScopeLevel::LEVEL_SHIP) {
-      g.set_shipno(probe_id);
-    }
+  for (const Place& place : {Place::universe(), Place::star(1),
+                             Place::planet(1, 1), Place::ship(probe_id)}) {
+    g.set_scope(place);
     test::expect_true(
         GB::commands::dispatch_command(g, GB::commands::who_cmd, {"who"}));
   }

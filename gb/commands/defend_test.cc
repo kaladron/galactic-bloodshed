@@ -63,9 +63,7 @@ void test_defend_happy_path() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Defend with explicit strength (1 star AP deducted)
   ctx.assert_dispatch_success(g, {"defend", "1", "5,5", "25"}, 1);
@@ -125,9 +123,7 @@ void test_defend_retaliation_and_escort() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   g.out.str("");
   ctx.assert_dispatch_success(
@@ -186,9 +182,7 @@ void test_defend_target_scope_validations() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Ship in star orbit (not planet orbit)
   const shipnum_t star_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
@@ -272,9 +266,7 @@ void test_defend_planetary_validations() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Player owns no sectors
   ctx.em.mutate_planet(
@@ -322,9 +314,7 @@ void test_defend_insufficient_ap() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_rejected(g, {"defend", "1", "5,5", "25"});
   test::expect_contains(g.out.str(), "action points");
@@ -341,7 +331,7 @@ void test_defend_role_and_scope_rejections() {
 
   // 1. Scope rejection (LEVEL_UNIV)
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   ctx.assert_dispatch_rejected(g, {"defend", "1", "5,5", "25"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
 
@@ -351,9 +341,7 @@ void test_defend_role_and_scope_rejections() {
     s.set_governor(player_t{1}, 1);  // Star governed by Gov 1
   });
   ctx.setup_game_obj(g, 1, 2);  // Player 1, Gov 2
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
   ctx.assert_dispatch_rejected(g, {"defend", "1", "5,5", "25"});
   test::expect_contains(g.out.str(), "not authorized");
 
@@ -367,9 +355,7 @@ void test_defend_domain_errors() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Min args (< 3 args)
   ctx.assert_dispatch_rejected(g, {"defend", "1"});
@@ -388,7 +374,6 @@ void test_defend_domain_errors() {
   TestCommandMatrix(ctx, "defend")
       .with_valid_argv({"defend", "1", "5,5", "10"})
       .with_invalid_argv({"defend", "9999", "5,5", "10"})
-      .with_valid_scope(ScopeLevel::LEVEL_PLAN)
       .with_expected_star_ap(1)
       .run_matrix(g);
 

@@ -18,11 +18,12 @@ bool deduct_page_ap(GameObj& g, ap_t ap_cost) {
   if (ap_cost == 0) {
     return true;
   }
-  if (g.level() == ScopeLevel::LEVEL_UNIV || g.snum() == 0) {
+  const auto star_id = g.enclosing_star();
+  if (!star_id) {
     g.out << "Invalid scope for this command.\n";
     return false;
   }
-  if (!g.deduct_ap(g.snum(), ap_cost)) {
+  if (!g.deduct_ap(*star_id, ap_cost)) {
     g.out << std::format("You don't have {} action points there.\n", ap_cost);
     return false;
   }
@@ -30,10 +31,11 @@ bool deduct_page_ap(GameObj& g, ap_t ap_cost) {
 }
 
 std::string page_origin_name(GameObj& g) {
-  if (g.level() == ScopeLevel::LEVEL_UNIV || g.snum() == 0) {
+  const auto star_id = g.enclosing_star();
+  if (!star_id) {
     return "universe";
   }
-  return g.entity_manager.peek_star(g.snum())->get_name();
+  return g.entity_manager.peek_star(*star_id)->get_name();
 }
 
 std::expected<std::optional<governor_t>, bool>

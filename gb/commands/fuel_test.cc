@@ -29,14 +29,12 @@ void test_fuel_matrix() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // 1. 4-Way Command Matrix runner on fuel projection
   TestCommandMatrix(ctx, "fuel")
       .with_valid_argv({"fuel", std::format("#{}", ship_num.value), "/Vega"})
       .with_invalid_argv({"fuel", "#999", "/Vega"})
-      .with_valid_scope(ScopeLevel::LEVEL_STAR)
       .with_expected_star_ap(0)
       .run_matrix(g);
 
@@ -461,9 +459,7 @@ void test_fuel_output_and_do_trip_branches() {
     GameObj guest_g(ctx.em, registry);
     ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });
     ctx.setup_game_obj(guest_g, 1, 1);
-    guest_g.set_level(ScopeLevel::LEVEL_SHIP);
-    guest_g.set_shipno(loaded_carrier_id);
-    guest_g.set_snum(1);
+    guest_g.set_scope_ship(loaded_carrier_id);
     ctx.assert_dispatch_success(guest_g,
                                 {"fuel",
                                  std::format("#{}", loaded_carrier_id.value),

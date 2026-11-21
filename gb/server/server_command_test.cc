@@ -158,9 +158,8 @@ void test_process_command_fail_fast_logging_and_rollback() {
     Server server(io, 0, ctx.em);
     GameObj g(ctx.em, server);
     ctx.setup_game_obj(g, 2, 1);
-    g.set_level(ScopeLevel::LEVEL_PLAN);
-    g.set_snum(99);  // Non-existent star triggers EntityNotFoundError
-    g.set_pnum(1);
+    g.set_scope_planet(99,
+                       1);  // Non-existent star triggers EntityNotFoundError
 
     std::ostringstream log_buf;
     GB::log::ScopedSink sink{log_buf};
@@ -205,9 +204,7 @@ void test_process_command_fail_fast_logging_and_rollback() {
     Server server(io, 0, ctx.em);
     GameObj g(ctx.em, server);
     ctx.setup_game_obj(g, 2, 1);
-    g.set_level(ScopeLevel::LEVEL_PLAN);
-    g.set_snum(1);
-    g.set_pnum(1);
+    g.set_scope_planet(1, 1);
 
     std::ostringstream log_buf;
     GB::log::ScopedSink sink{log_buf};
@@ -244,19 +241,29 @@ void test_process_command_fail_fast_logging_and_rollback() {
   for (const ScopeLevel level : {ScopeLevel::LEVEL_UNIV, ScopeLevel::LEVEL_STAR,
                                  ScopeLevel::LEVEL_SHIP}) {
     TestContext ctx;
-    {
-      Database closed = std::move(ctx.db);
-    }
+    ctx.with_standard_universe();
+    const shipnum_t ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
+                                  .owned_by(1, 1)
+                                  .in_planet_orbit(1, 1)
+                                  .build();
 
     asio::io_context io;
     Server server(io, 0, ctx.em);
     GameObj g(ctx.em, server);
     g.set_player(3);
     g.set_governor(2);
-    g.set_level(level);
-    g.set_snum(4);
-    g.set_pnum(2);
-    g.set_shipno(7);
+    if (level == ScopeLevel::LEVEL_UNIV) {
+      g.set_scope_univ();
+    } else if (level == ScopeLevel::LEVEL_STAR) {
+      g.set_scope_star(4);
+    } else {
+      g.set_scope_ship(ship_id);
+    }
+
+    {
+      Database closed = std::move(ctx.db);
+    }
+    ctx.em.clear_cache();
 
     std::ostringstream log_buf;
     GB::log::ScopedSink sink{log_buf};
@@ -275,8 +282,9 @@ void test_process_command_fail_fast_logging_and_rollback() {
     } else if (level == ScopeLevel::LEVEL_STAR) {
       test::expect_contains(log_buf.str(), "scope=STAR(snum=4)");
     } else {
-      test::expect_contains(log_buf.str(),
-                            "scope=SHIP(snum=4,pnum=2,shipno=7)");
+      test::expect_contains(
+          log_buf.str(),
+          std::format("scope=SHIP(snum=1,pnum=1,shipno={})", ship_id));
     }
   }
 
@@ -295,9 +303,7 @@ void test_process_command_fail_fast_logging_and_rollback() {
     Server server(io, 0, ctx.em);
     GameObj g(ctx.em, server);
     ctx.setup_game_obj(g, 2, 1);
-    g.set_level(ScopeLevel::LEVEL_PLAN);
-    g.set_snum(1);
-    g.set_pnum(1);
+    g.set_scope_planet(1, 1);
 
     server.process_command(g, {"cs", std::format("#{}", fac_id)});
     test::expect_eq(g.level(), ScopeLevel::LEVEL_SHIP);

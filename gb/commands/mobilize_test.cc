@@ -26,9 +26,7 @@ void test_mobilize_dispatch() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Query mobilization (no args)
   ctx.assert_dispatch_success(g, {"mobilize"});
@@ -87,7 +85,7 @@ void test_mobilize_dispatch() {
   test::expect_contains(g.out.str(), "You don't have 1 action points there.");
 
   // 7. Reject invalid scope (universal level)
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"mobilize", "50"});
   test::expect_contains(g.out.str(), "Invalid scope");

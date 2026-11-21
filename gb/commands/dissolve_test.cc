@@ -95,7 +95,7 @@ void test_dissolve_happy_path() {
   };
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
 
   std::println(std::cout, "Dissolve race with correct passwords and waste");
   {
@@ -185,14 +185,14 @@ void test_dissolve_role_rejections() {
 
   // 1. Guest race rejection
   ctx.setup_game_obj(g, 3, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   ctx.assert_dispatch_rejected(g, {"dissolve", "guestpass", "guestgov"});
   test::expect_contains(g.out.str(), "Guest races cannot use this command.");
 
   // 2. Leader-only rejection (Governor 2 via dispatcher)
   g.out.str("");
   ctx.setup_game_obj(g, 1, 2);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   ctx.assert_dispatch_rejected(g, {"dissolve", "testpass", "subpass"});
   test::expect_contains(g.out.str(), "leader (Governor 1)");
 
@@ -210,7 +210,7 @@ void test_dissolve_domain_errors() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
 
   // 0. Feature switch disabled (dissolve_enabled = false)
   test::expect_false(GB::commands::dissolve({"dissolve", "testpass", "govpass"},
@@ -258,7 +258,7 @@ void test_dissolve_without_waste_and_json() {
     auto& registry = get_test_session_registry();
     GameObj g(ctx.em, registry);
     ctx.setup_game_obj(g, 1, 1);
-    g.set_level(ScopeLevel::LEVEL_UNIV);
+    g.set_scope_univ();
 
     const auto orig_cond =
         ctx.em.peek_sectormap(1, 1)->get({0, 0}).get_condition();
@@ -284,7 +284,7 @@ void test_dissolve_without_waste_and_json() {
     auto& registry = get_test_session_registry();
     GameObj g(ctx.em, registry);
     ctx.setup_game_obj(g, 1, 1);
-    g.set_level(ScopeLevel::LEVEL_UNIV);
+    g.set_scope_univ();
     g.set_ui_mode(UiMode::JSON);
 
     ctx.assert_dispatch_success(g, {"dissolve", "testpass", "govpass", "keep"});

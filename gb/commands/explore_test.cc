@@ -73,7 +73,7 @@ void test_explore_dispatch() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
 
   // 1. Happy path: explore without arguments (all explored stars, high tech)
   ctx.assert_dispatch_success(g, {"explore"});
@@ -90,7 +90,7 @@ void test_explore_dispatch() {
   // 2. Low tech: stability hidden as (/?/?)
   ctx.em.mutate_race(player_t{1}, [](Race& race) { race.tech = 10.0; });
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   ctx.assert_dispatch_success(g, {"explore", "/Sol"});
   output = g.out.str();
   test::expect_contains(output, "Sol (/?/?)[20]");

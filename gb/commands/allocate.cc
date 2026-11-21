@@ -12,7 +12,8 @@ import std;
 
 namespace GB::commands {
 bool allocate(const command_t& argv, GameObj& g) {
-  if (g.snum() == 0) {
+  const auto star_id = g.enclosing_star();
+  if (!star_id) {
     g.out << "Invalid scope for this command.\n";
     return false;
   }
@@ -25,7 +26,7 @@ bool allocate(const command_t& argv, GameObj& g) {
   const auto alloc = static_cast<ap_t>(*scanned);
 
   const auto& univ = *g.entity_manager.peek_universe();
-  const auto& star_ref = *g.entity_manager.peek_star(g.snum());
+  const auto& star_ref = *g.entity_manager.peek_star(*star_id);
   ap_t maxalloc =
       std::min(univ.get_AP(Playernum), LIMIT_APs - star_ref.AP(Playernum));
 
@@ -36,7 +37,7 @@ bool allocate(const command_t& argv, GameObj& g) {
   }
   g.entity_manager.mutate_universe(
       [&](Universe& u) { u.deduct_AP(Playernum, alloc); });
-  g.entity_manager.mutate_star(g.snum(), [&](Star& star) {
+  g.entity_manager.mutate_star(*star_id, [&](Star& star) {
     star.AP(Playernum) = std::min(LIMIT_APs, star.AP(Playernum) + alloc);
   });
   g.present(GB::presentation::make_output_message("Allocated\n"));

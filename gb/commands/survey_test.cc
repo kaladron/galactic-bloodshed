@@ -26,9 +26,7 @@ void test_survey_no_args_planet_scope() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_success(g, {"survey"});
 
@@ -48,9 +46,7 @@ void test_survey_sector_range_with_header() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_success(g, {"survey", "0:2,0:2"});
 
@@ -72,8 +68,7 @@ void test_survey_star_scope() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(2);
+  g.set_scope_star(2);
 
   ctx.assert_dispatch_success(g, {"survey"});
 
@@ -96,7 +91,7 @@ void test_survey_universe_scope() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
 
   ctx.assert_dispatch_success(g, {"survey"});
   test::expect_contains(g.out.str(), "It's just _there_, you know?");
@@ -125,9 +120,7 @@ void test_survey_sectors_json_and_landed_ships() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 2);
   g.set_ui_mode(GB::presentation::UiMode::JSON);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(2);
-  g.set_pnum(1);
+  g.set_scope_planet(2, 1);
 
   // Sector survey in JSON mode with coordinate range
   ctx.assert_dispatch_success(g, {"survey", "0:0,0:0"});
@@ -163,9 +156,7 @@ void test_survey_planet_star_and_universe_json() {
   g.set_ui_mode(GB::presentation::UiMode::JSON);
 
   // Planet overview in JSON mode
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
   ctx.assert_dispatch_success(g, {"survey"});
   std::string planet_json = g.out.str();
   test::expect_contains(planet_json, R"("type":"planet")");
@@ -175,8 +166,7 @@ void test_survey_planet_star_and_universe_json() {
   // Star survey in JSON mode
   g.out.str("");
   g.out.clear();
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(2);
+  g.set_scope_star(2);
   ctx.assert_dispatch_success(g, {"survey"});
   std::string star_json = g.out.str();
   test::expect_contains(star_json, R"("type":"star")");
@@ -186,7 +176,7 @@ void test_survey_planet_star_and_universe_json() {
   // Universe survey in JSON mode
   g.out.str("");
   g.out.clear();
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   ctx.assert_dispatch_success(g, {"survey"});
   std::string univ_json = g.out.str();
   test::expect_contains(univ_json, R"("type":"message")");
@@ -213,15 +203,14 @@ void test_survey_location_and_scope_errors() {
   ctx.setup_game_obj(g, 1, 1);
 
   // Empty second argument falls back to current scope
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   ctx.assert_dispatch_success(g, {"survey", ""});
   test::expect_contains(g.out.str(), "It's just _there_, you know?");
 
   // Sector range or '-' outside planet scope fails
   g.out.str("");
   g.out.clear();
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
   test::expect_false(GB::commands::survey({"survey", "-"}, g));
   test::expect_contains(g.out.str(), "There are no sectors here.");
 
@@ -244,15 +233,14 @@ void test_survey_location_and_scope_errors() {
   // No-arg survey while scoped to a ship hits default Illegal scope branch
   g.out.str("");
   g.out.clear();
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(probe_id);
+  g.set_scope_ship(probe_id);
   test::expect_false(GB::commands::survey({"survey"}, g));
   test::expect_contains(g.out.str(), "Illegal scope.");
 
   // Named star and planet locations succeed from universe scope
   g.out.str("");
   g.out.clear();
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   ctx.assert_dispatch_success(g, {"survey", "/Sol"});
   test::expect_contains(g.out.str(), "Star Sol");
 
@@ -264,9 +252,7 @@ void test_survey_location_and_scope_errors() {
   // Invalid coordinate range format at planet scope
   g.out.str("");
   g.out.clear();
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
   ctx.assert_dispatch_success(g, {"survey", "0,bad"});
   test::expect_contains(g.out.str(), "Invalid coordinate format.");
   std::println(std::cout, "    ✓ Location and scope error branches verified");
@@ -295,9 +281,7 @@ void test_survey_sector_presence_crystals_and_cloaking() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
   g.set_ui_mode(GB::presentation::UiMode::JSON);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(2);
-  g.set_pnum(1);
+  g.set_scope_planet(2, 1);
 
   // Survey sectors in JSON mode on unexplored planet with no sight returns
   // nullopt grid
@@ -336,8 +320,7 @@ void test_survey_sector_presence_crystals_and_cloaking() {
   // Without crystal discovery or God, crystals are hidden; with discovery or
   // God, shown
   g.set_ui_mode(GB::presentation::UiMode::ASCII);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
   ctx.em.mutate_race(1, [](Race& r) {
     r.discoveries.crystal = false;
     r.God = false;
@@ -385,8 +368,7 @@ void test_survey_sector_presence_crystals_and_cloaking() {
   ctx.assert_dispatch_success(g, {"survey", "0:0,0:0"});
   test::expect_contains(g.out.str(), "yes");
 
-  g.set_snum(2);
-  g.set_pnum(1);
+  g.set_scope_planet(2, 1);
   g.set_ui_mode(GB::presentation::UiMode::JSON);
   g.out.str("");
   g.out.clear();
@@ -412,8 +394,7 @@ void test_survey_star_stability_and_god_branches() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(2);
+  g.set_scope_star(2);
 
   // Low tech and non-God cannot determine stability
   ctx.em.mutate_race(1, [](Race& r) {

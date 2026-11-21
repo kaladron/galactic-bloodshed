@@ -28,10 +28,7 @@ struct SavedGameObjState {
   bool god;
   bool disconnect_requested;
   bool shutdown_requested;
-  starnum_t snum;
-  planetnum_t pnum;
-  shipnum_t shipno;
-  ScopeLevel level;
+  Place scope;
   UiMode ui_mode;
   bool color;
   UniverseCoordinates universe_center;
@@ -50,10 +47,7 @@ struct SavedGameObjState {
         .god = g.god(),
         .disconnect_requested = g.disconnect_requested(),
         .shutdown_requested = g.shutdown_requested(),
-        .snum = g.snum(),
-        .pnum = g.pnum(),
-        .shipno = g.shipno(),
-        .level = g.level(),
+        .scope = g.place(),
         .ui_mode = g.ui_mode(),
         .color = g.color(),
         .universe_center = g.universe_center(),
@@ -72,10 +66,7 @@ struct SavedGameObjState {
     g.set_god(god);
     g.set_disconnect_requested(disconnect_requested);
     g.set_shutdown_requested(shutdown_requested);
-    g.set_snum(snum);
-    g.set_pnum(pnum);
-    g.set_shipno(shipno);
-    g.set_level(level);
+    g.set_scope(scope);
     g.set_ui_mode(ui_mode);
     g.set_color(color);
     g.set_universe_center(universe_center);
@@ -129,13 +120,8 @@ TestCommandMatrix& TestCommandMatrix::with_invalid_argv(command_t argv) {
   return *this;
 }
 
-TestCommandMatrix& TestCommandMatrix::with_valid_scope(ScopeLevel scope) {
-  valid_scope_ = scope;
-  return *this;
-}
-
 TestCommandMatrix&
-TestCommandMatrix::with_invalid_scopes(std::vector<ScopeLevel> scopes) {
+TestCommandMatrix::with_invalid_scopes(std::vector<Place> scopes) {
   invalid_scopes_ = std::move(scopes);
   return *this;
 }
@@ -151,7 +137,6 @@ TestCommandMatrix& TestCommandMatrix::with_expected_univ_ap(ap_t ap) {
 }
 
 void TestCommandMatrix::run_happy_path(GameObj& g) const {
-  g.set_level(valid_scope_);
   ctx_.assert_dispatch_success(g, desc_, valid_argv_, expected_star_ap_,
                                expected_univ_ap_);
 }
@@ -159,7 +144,7 @@ void TestCommandMatrix::run_happy_path(GameObj& g) const {
 void TestCommandMatrix::run_insufficient_ap_check(GameObj& g) const {
   if (expected_star_ap_ == 0 && expected_univ_ap_ == 0) return;
 
-  g.set_level(valid_scope_);
+  const auto saved = SavedGameObjState::capture(g);
   starnum_t snum = g.snum();
   ap_t orig_star_ap = 0;
   if (expected_star_ap_ > 0) {
@@ -193,14 +178,16 @@ void TestCommandMatrix::run_insufficient_ap_check(GameObj& g) const {
     ctx_.em.mutate_universe(
         [&](Universe& u) { u.set_AP(g.player(), orig_univ_ap); });
   }
+  saved.restore(ctx_.em, g);
 }
 
 void TestCommandMatrix::run_scope_checks(GameObj& g) const {
-  for (ScopeLevel scope : invalid_scopes_) {
-    g.set_level(scope);
+  const auto saved = SavedGameObjState::capture(g);
+  for (const Place& place : invalid_scopes_) {
+    g.set_scope(place);
     ctx_.assert_dispatch_rejected(g, desc_, valid_argv_);
+    saved.restore(ctx_.em, g);
   }
-  g.set_level(valid_scope_);
 }
 
 bool TestCommandMatrix::run_json_mode_check(GameObj& g) const {
@@ -209,7 +196,6 @@ bool TestCommandMatrix::run_json_mode_check(GameObj& g) const {
   ctx_.db.copy_to(snapshot);
 
   g.set_ui_mode(UiMode::JSON);
-  g.set_level(valid_scope_);
   const auto before_changes = ctx_.db.total_changes();
   ctx_.assert_dispatch_success(g, desc_, valid_argv_, expected_star_ap_,
                                expected_univ_ap_);
@@ -234,7 +220,6 @@ void TestCommandMatrix::run_guest_check(GameObj& g,
   });
   g.race = ctx_.em.peek_race(saved.player);
   g.set_god(false);
-  g.set_level(valid_scope_);
 
   const auto guest_before = ctx_.db.total_changes();
   if (expect_rejected) {
@@ -262,8 +247,9 @@ void TestCommandMatrix::run_guest_check(GameObj& g) const {
 
 void TestCommandMatrix::run_domain_error_check(GameObj& g) const {
   if (invalid_argv_.empty()) return;
-  g.set_level(valid_scope_);
+  const auto saved = SavedGameObjState::capture(g);
   ctx_.assert_dispatch_rejected(g, desc_, invalid_argv_);
+  saved.restore(ctx_.em, g);
 }
 
 void TestCommandMatrix::run_matrix(GameObj& g) const {

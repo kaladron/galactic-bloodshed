@@ -32,13 +32,11 @@ void test_make_command_matrix() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_shipno(factory_id);
-  g.set_snum(1);
+  g.set_scope_ship(factory_id);
 
   TestCommandMatrix(ctx, GB::commands::make_cmd)
-      .with_valid_scope(ScopeLevel::LEVEL_SHIP)
-      .with_invalid_scopes({ScopeLevel::LEVEL_UNIV, ScopeLevel::LEVEL_STAR,
-                            ScopeLevel::LEVEL_PLAN})
+      .with_invalid_scopes(
+          {Place::universe(), Place::star(1), Place::planet(1, 1)})
       .with_valid_argv({"make", "f"})
       .with_invalid_argv({"make", "z"})
       .run_matrix(g);
@@ -79,16 +77,14 @@ void test_make_designations_and_errors() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_snum(1);
 
   // 1. Non-factory ship rejected
-  g.set_shipno(non_factory_id);
+  g.set_scope_ship(non_factory_id);
   ctx.assert_dispatch_rejected(g, {"make", "f"});
   test::expect_contains(g.out.str(), "That is not a factory.");
 
   // 2. Make with 0 args before build_type is set
-  g.set_shipno(factory_id);
+  g.set_scope_ship(factory_id);
   ctx.assert_dispatch_rejected(g, {"make"});
   test::expect_contains(g.out.str(), "No ship type specified.");
 

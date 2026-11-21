@@ -147,9 +147,7 @@ ctx.with_standard_universe();
 auto& registry = get_test_session_registry();
 GameObj g(ctx.em, registry);
 ctx.setup_game_obj(g, 1, 0);  // Sets player 1, gov 0, and g.race = peek_race(1)
-g.set_level(ScopeLevel::LEVEL_PLAN);
-g.set_snum(1);
-g.set_pnum(1);
+g.set_scope_planet(1, 1);
 
 // Dispatch through command descriptor or TestContext
 bool ok = ctx.dispatch(g, {"commandname", "arg1"});

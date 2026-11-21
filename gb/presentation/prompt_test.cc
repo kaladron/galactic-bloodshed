@@ -30,7 +30,7 @@ void test_prompt_universe_scope() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, player_t{1}, governor_t{1});
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
 
   std::string prompt = do_prompt(g);
   test::expect_eq(prompt, " ( [100] / )\n");
@@ -43,8 +43,7 @@ void test_prompt_star_scope() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, player_t{1}, governor_t{1});
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   std::string prompt = do_prompt(g);
   test::expect_eq(prompt, " ( [50] /Sol )\n");
@@ -60,9 +59,7 @@ void test_prompt_planet_scope() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, player_t{1}, governor_t{1});
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   std::string prompt = do_prompt(g);
   test::expect_eq(prompt, " ( [50] /Sol/Earth )\n");
@@ -115,23 +112,29 @@ void test_prompt_ship_orbiting_scopes() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, player_t{1}, governor_t{1});
-  g.set_level(ScopeLevel::LEVEL_SHIP);
 
-  // Missing ship throws EntityNotFoundError (database corruption / invalid ID)
-  g.set_shipno(999);
-  test::expect_throws<EntityNotFoundError>([&]() { (void)do_prompt(g); });
+  // Missing ship throws EntityNotFoundError on set_scope_ship and when ship is
+  // deleted while scoped
+  test::expect_throws<EntityNotFoundError>([&]() { g.set_scope_ship(999); });
+  const shipnum_t doomed = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
+                               .owned_by(1, 1)
+                               .in_deep_space()
+                               .build();
+  g.set_scope_ship(doomed);
+  ctx.em.mutate_ship(doomed, [&](Ship& s) { ctx.em.destroy_ship(s); });
+  test::expect_throws<EntityNotFoundError>(
+      [&]() { test::expect_true(do_prompt(g).empty()); });
 
   // Ship in universe
-  g.set_shipno(10);
+  g.set_scope_ship(10);
   test::expect_eq(do_prompt(g), " ( [100] /#10 )\n");
 
   // Ship in star
-  g.set_shipno(11);
+  g.set_scope_ship(11);
   test::expect_eq(do_prompt(g), " ( [50] /Sol/#11 )\n");
 
   // Ship in planet
-  g.set_shipno(12);
-  g.set_pnum(1);
+  g.set_scope_ship(12);
   test::expect_eq(do_prompt(g), " ( [50] /Sol/Earth/#12 )\n");
 }
 
@@ -341,30 +344,29 @@ void test_prompt_nested_docked_ships() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, player_t{1}, governor_t{1});
-  g.set_level(ScopeLevel::LEVEL_SHIP);
 
   // 2-level nested prompts
-  g.set_shipno(20);
+  g.set_scope_ship(20);
   test::expect_eq(do_prompt(g), " ( [100] /#21/#20 )\n");
 
-  g.set_shipno(22);
+  g.set_scope_ship(22);
   test::expect_eq(do_prompt(g), " ( [50] /Sol/#23/#22 )\n");
 
-  g.set_shipno(24);
+  g.set_scope_ship(24);
   test::expect_eq(do_prompt(g), " ( [50] /Sol/Earth/#25/#24 )\n");
 
   // 3-level nested prompts
-  g.set_shipno(30);
+  g.set_scope_ship(30);
   test::expect_eq(do_prompt(g), " ( [100] /#32/#31/#30 )\n");
 
-  g.set_shipno(33);
+  g.set_scope_ship(33);
   test::expect_eq(do_prompt(g), " ( [50] /Sol/#35/#34/#33 )\n");
 
-  g.set_shipno(36);
+  g.set_scope_ship(36);
   test::expect_eq(do_prompt(g), " ( [50] /Sol/Earth/#38/#37/#36 )\n");
 
   // 4-level nested prompt (arbitrary depth)
-  g.set_shipno(40);
+  g.set_scope_ship(40);
   test::expect_eq(do_prompt(g), " ( [50] /Sol/Earth/#44/#43/#42/#41/#40 )\n");
 
   // Direct format_ship_prompt testing
@@ -402,7 +404,7 @@ void test_prompt_json_mode() {
   ctx.setup_game_obj(g, player_t{1}, governor_t{1});
   g.set_ui_mode(UiMode::JSON);
 
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   std::string out = do_prompt(g);
   test::expect_contains(out, "\"type\":\"session\"");
   test::expect_contains(out, "\"ap\":42");
@@ -428,8 +430,7 @@ void test_prompt_json_mode() {
       [](ServerState& state) { state.nsegments_done = state.segments; });
   test::expect_contains(do_prompt(g), "\"current_segment\":1");
 
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
   out = do_prompt(g);
   test::expect_contains(out, "\"type\":\"session\"");
   test::expect_contains(out, "\"ap\":17");
@@ -438,8 +439,7 @@ void test_prompt_json_mode() {
   test::expect_contains(out, "\"star\":\"Sol\"");
   test::expect_contains(out, "\"path\":\"/Sol\"");
 
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
   out = do_prompt(g);
   test::expect_contains(out, "\"type\":\"session\"");
   test::expect_contains(out, "\"level\":2");
@@ -447,8 +447,7 @@ void test_prompt_json_mode() {
   test::expect_contains(out, "\"planet\":\"Earth\"");
   test::expect_contains(out, "\"path\":\"/Sol/Earth\"");
 
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(ship_id);
+  g.set_scope_ship(ship_id);
   out = do_prompt(g);
   test::expect_contains(out, "\"type\":\"session\"");
   test::expect_contains(out, "\"level\":3");

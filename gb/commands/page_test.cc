@@ -40,8 +40,7 @@ void test_page_dispatch() {
   RecordingSessionRegistry registry;
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
   g.set_god(false);
 
   // 1. Page player 2 (costs 1 AP) and specific governor 2 (costs 1 AP)
@@ -71,12 +70,12 @@ void test_page_dispatch() {
   test::expect_eq(g.out.str(), "No such governor.\n");
 
   // 4. Scope and invalid player checks
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"page", "2"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
 
-  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_scope_star(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"page", "99"});
   test::expect_eq(g.out.str(), "No such player.\n");
@@ -121,8 +120,7 @@ void test_page_universe_scope_deity_messaging() {
   RecordingSessionRegistry registry;
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
-  g.set_snum(0);
+  g.set_scope_univ();
   g.set_god(false);
 
   // 1. Mortal paging another mortal at LEVEL_UNIV (costs 1 AP): rejected
@@ -152,8 +150,7 @@ void test_page_universe_scope_deity_messaging() {
   test::expect_contains(registry.messages_for(player_t{2}).at(0),
                         "page(s) you from the universe star system.");
 
-  g.set_level(ScopeLevel::LEVEL_UNIV);
-  g.set_snum(0);
+  g.set_scope_univ();
   registry.clear_notifications();
   g.out.str("");
   ctx.assert_dispatch_success(g, {"page", "2"}, 0);

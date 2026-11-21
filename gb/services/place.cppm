@@ -51,11 +51,46 @@ export [[nodiscard]] std::string format_place_error(const PlaceError& error) {
 
 export class Place { /* used in function return for finding place */
 public:
+  Place() = default;
+
   Place(ScopeLevel level_, starnum_t snum_, planetnum_t pnum_,
-        shipnum_t shipno_)
+        shipnum_t shipno_ = 0)
       : level(level_), snum(snum_), pnum(pnum_), shipno(shipno_) {}
 
-  Place(ScopeLevel level_, starnum_t snum_, planetnum_t pnum_);
+  [[nodiscard]] static constexpr Place universe() noexcept {
+    return Place{ScopeLevel::LEVEL_UNIV, 0, 0, 0};
+  }
+
+  [[nodiscard]] static constexpr Place star(starnum_t s) {
+    if (s <= 0) {
+      throw std::invalid_argument("Place::star requires positive star ID");
+    }
+    return Place{ScopeLevel::LEVEL_STAR, s, 0, 0};
+  }
+
+  [[nodiscard]] static constexpr Place planet(starnum_t s, planetnum_t p) {
+    if (s <= 0 || p <= 0) {
+      throw std::invalid_argument(
+          "Place::planet requires positive star and planet IDs");
+    }
+    return Place{ScopeLevel::LEVEL_PLAN, s, p, 0};
+  }
+
+  [[nodiscard]] static constexpr Place ship(shipnum_t id, starnum_t s = 0,
+                                            planetnum_t p = 0) {
+    if (id <= 0) {
+      throw std::invalid_argument("Place::ship requires positive ship ID");
+    }
+    return Place{ScopeLevel::LEVEL_SHIP, s, p, id};
+  }
+
+  /// Returns the enclosing star system ID when this place is inside a star
+  /// system (`LEVEL_STAR`, `LEVEL_PLAN`, or an in-system `LEVEL_SHIP`), or
+  /// `std::nullopt` at `LEVEL_UNIV` / deep space.
+  [[nodiscard]] constexpr std::optional<starnum_t>
+  enclosing_star() const noexcept {
+    return (snum > 0) ? std::optional<starnum_t>{snum} : std::nullopt;
+  }
 
   [[nodiscard]] static std::expected<Place, PlaceError>
   resolve(EntityManager& em, const ScopeContext& ctx, std::string_view string,
@@ -65,7 +100,6 @@ public:
   starnum_t snum{0};
   planetnum_t pnum{0};
   shipnum_t shipno{0};
-  bool err = false;
   [[nodiscard]] std::string to_string(EntityManager& em) const;
 
 private:
@@ -171,9 +205,12 @@ Place::ascend_parent_scope(EntityManager& em, const ScopeContext& ctx,
     }
     case ScopeLevel::LEVEL_STAR:
       level = ScopeLevel::LEVEL_UNIV;
+      snum = 0;
+      pnum = 0;
       break;
     case ScopeLevel::LEVEL_PLAN:
       level = ScopeLevel::LEVEL_STAR;
+      pnum = 0;
       break;
   }
   while (string.starts_with('.')) {
@@ -264,11 +301,6 @@ std::expected<void, PlaceError> Place::getplace2(EntityManager& em,
   }
 }
 
-Place::Place(ScopeLevel level_, starnum_t snum_, planetnum_t pnum_)
-    : level(level_), snum(snum_), pnum(pnum_), shipno(0) {
-  if (level_ == ScopeLevel::LEVEL_SHIP) err = true;
-}
-
 std::string Place::to_string(EntityManager& em) const {
   std::string result;
   switch (level) {
@@ -329,9 +361,7 @@ std::expected<Place, PlaceError> Place::resolve(EntityManager& em,
                                                 const ScopeContext& ctx,
                                                 std::string_view string,
                                                 const bool ignore_explore) {
-  Place place(ctx.level, ctx.snum, ctx.pnum,
-              (ctx.level == ScopeLevel::LEVEL_SHIP) ? ctx.shipno
-                                                    : shipnum_t{0});
+  Place place(ctx.level, ctx.snum, ctx.pnum, ctx.shipno);
 
   if (string.empty()) {
     return place;

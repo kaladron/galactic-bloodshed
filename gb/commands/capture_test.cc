@@ -62,9 +62,7 @@ void test_capture_happy_path() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // Execute capture command - capture #1 50 military
   ctx.assert_dispatch_success(g, {"capture", "#1", "50", "military"}, 1);
@@ -97,9 +95,7 @@ void test_capture_insufficient_ap() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_rejected(g, {"capture", "#1", "50", "military"});
   test::expect_contains(g.out.str(), "action points");
@@ -116,7 +112,7 @@ void test_capture_role_and_scope_rejections() {
 
   // 1. Scope rejection (LEVEL_UNIV)
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   ctx.assert_dispatch_rejected(g, {"capture", "#1"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
 
@@ -125,9 +121,7 @@ void test_capture_role_and_scope_rejections() {
     s.set_governor(1, 1);  // Star governed by Gov 1
   });
   ctx.setup_game_obj(g, 1, 2);  // Player 1, Gov 2
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
   ctx.assert_dispatch_rejected(g, {"capture", "#1"});
   test::expect_contains(g.out.str(), "not authorized");
 
@@ -141,9 +135,7 @@ void test_capture_domain_errors() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Min args check (< 2 args)
   ctx.assert_dispatch_rejected(g, {"capture"});
@@ -262,9 +254,7 @@ void test_capture_civilian_victory() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // Capture with civilians
   ctx.assert_dispatch_success(
@@ -356,9 +346,7 @@ void test_capture_default_boarders_and_allied_ship() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // Capture without specifying count or type (defaults to all available civs)
   ctx.assert_dispatch_success(
@@ -403,9 +391,7 @@ void test_capture_booby_trap_robot_ship() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_success(
       g, {"capture", std::format("#{}", target_ship.value), "10", "military"});
@@ -466,9 +452,7 @@ void test_capture_boarders_wiped_and_ship_destroyed() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // Send 1 civilian against dreadnought -> wiped out
   ctx.assert_dispatch_success(
@@ -492,14 +476,11 @@ void test_capture_command_matrix() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   TestCommandMatrix(ctx, "capture")
       .with_valid_argv({"capture", "#1", "5", "military"})
       .with_invalid_argv({"capture"})
-      .with_valid_scope(ScopeLevel::LEVEL_PLAN)
       .run_matrix(g);
 
   ctx.verify_universe_invariants();

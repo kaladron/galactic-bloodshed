@@ -33,9 +33,7 @@ void test_launch_happy_paths() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Launch landed ship from planet (costs 1 Star AP)
   ctx.assert_dispatch_success(g, {"launch", "#1"}, 1);
@@ -74,9 +72,7 @@ void test_launch_insufficient_ap() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_rejected(g, {"launch", "#1"});
   test::expect_contains(g.out.str(), "action points");
@@ -91,9 +87,7 @@ void test_launch_domain_errors() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Min args check (< 2 args)
   ctx.assert_dispatch_rejected(g, {"launch"});
@@ -115,9 +109,7 @@ void test_launch_canister_ships() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // Create test canister ship landed on planet with initial count 5
   const auto canist_id = TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST)
@@ -165,17 +157,13 @@ void test_launch_from_carrier_all_scopes() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_snum(1);
-  g.set_pnum(1);
-
   const auto carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
                               .owned_by(1, 1)
                               .named("MotherCarrier")
                               .landed_on(1, 1, {5, 5})
                               .with_max_hanger(100)
                               .build();
-  g.set_shipno(carrier_id);
+  g.set_scope_ship(carrier_id);
 
   // 1. Online factory berthed in carrier cannot be launched
   const auto fac_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
@@ -279,9 +267,7 @@ void test_launch_planet_fuel_precheck_preserves_ap_and_coords() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   const auto no_fuel_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                               .owned_by(1, 1)
@@ -326,9 +312,6 @@ void test_launch_mcdc_undock_observers_and_json() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_snum(1);
-  g.set_pnum(1);
 
   // 1. Offline factory berthed inside a carrier (s.type() == OTYPE_FACTORY &&
   // !s.on(), and !s.max_speed_capacity() && !s.is_landed()) launches cleanly
@@ -338,7 +321,7 @@ void test_launch_mcdc_undock_observers_and_json() {
                               .landed_on(1, 1, {5, 5})
                               .with_max_hanger(100)
                               .build();
-  g.set_shipno(carrier_id);
+  g.set_scope_ship(carrier_id);
   const auto off_fac_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
                               .owned_by(1, 1)
                               .with_on(false)
@@ -352,7 +335,7 @@ void test_launch_mcdc_undock_observers_and_json() {
 
   // 2. Undocking a moored ship in LEVEL_UNIV (insufficient Univ AP, then
   // sufficient Univ AP) and in LEVEL_PLAN (insufficient Star AP)
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   const auto univ_s1 = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)
                            .owned_by(1, 1)
                            .named("UnivAlpha")
@@ -388,7 +371,7 @@ void test_launch_mcdc_undock_observers_and_json() {
 
   // Insufficient Star AP when undocking moored ship in LEVEL_PLAN (and Deity
   // bypass for both undock and planet launch)
-  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_scope_planet(1, 1);
   const auto plan_s2 = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                            .owned_by(1, 1)
                            .in_planet_orbit(1, 1)

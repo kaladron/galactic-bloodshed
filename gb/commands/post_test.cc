@@ -21,8 +21,7 @@ void test_post_bulletin_ascii_and_json() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // Missing message argument rejected by min_args
   ctx.assert_dispatch_rejected(g, {"post"});
@@ -40,7 +39,7 @@ void test_post_bulletin_ascii_and_json() {
                         "bulletin\n");
 
   // Post from universe scope in JSON mode
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"post", "Universe", "bulletin"}, 0);
@@ -51,7 +50,6 @@ void test_post_bulletin_ascii_and_json() {
   TestCommandMatrix(ctx, "post")
       .with_valid_argv({"post", "Hello"})
       .with_invalid_argv({"post"})
-      .with_valid_scope(ScopeLevel::LEVEL_UNIV)
       .run_matrix(g);
 
   ctx.verify_universe_invariants();

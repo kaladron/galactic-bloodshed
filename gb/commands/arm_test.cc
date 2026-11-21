@@ -39,8 +39,7 @@ void test_arm_command() {
   ctx.setup_game_obj(g);
 
   // 1. Scope rejection at UNIV scope
-  g.set_level(ScopeLevel::LEVEL_UNIV);
-  g.set_snum(1);
+  g.set_scope_univ();
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"arm", "5,5", "100"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
@@ -48,9 +47,7 @@ void test_arm_command() {
   // 2. Guest rejection
   ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });
   ctx.setup_game_obj(g);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"arm", "5,5", "100"});
   test::expect_contains(g.out.str(), "Guest races cannot use this command.");
@@ -119,9 +116,7 @@ void test_arm_command() {
   // 9. Default max amount (2-arg invocation) in JSON mode
   ctx.em.mutate_race(1, [](Race& r) { r.leader().money = 500000; });
   ctx.setup_game_obj(g);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
   g.set_ui_mode(GB::presentation::UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"arm", "5,5"});

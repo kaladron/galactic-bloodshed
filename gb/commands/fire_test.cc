@@ -44,8 +44,7 @@ void test_fire_happy_paths() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // 1. Execute fire command: Ship #1 attacks Ship #2 with strength 10
   ctx.assert_dispatch_success(g, {"fire", "#1", "#2", "10"}, 1);
@@ -82,7 +81,7 @@ void test_fire_universe_ap_and_god_exemption() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
 
   // 1. Firing from Universe command scope with ships in Star 1 orbit succeeds
   // and deducts 1 Star AP from Star 1.
@@ -124,8 +123,7 @@ void test_fire_insufficient_ap() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   ctx.assert_dispatch_rejected(g, {"fire", "#1", "#2", "10"});
   test::expect_contains(g.out.str(), "action points");
@@ -144,8 +142,7 @@ void test_fire_role_and_guest_rejections() {
   GameObj g(ctx.em, registry);
 
   ctx.setup_game_obj(g, 3, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   ctx.assert_dispatch_rejected(g, {"fire", "#1", "#2", "10"});
   test::expect_contains(g.out.str(), "Guest races cannot use this command.");
@@ -160,8 +157,7 @@ void test_fire_domain_errors_and_surface_geometry() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // 1. Min args check (< 3 args) via dispatch and direct handler call
   ctx.assert_dispatch_rejected(g, {"fire", "#1"});
@@ -203,8 +199,7 @@ void test_fire_domain_errors_and_surface_geometry() {
   ctx.em.mutate_ship(1, [](Ship& s) { s.active() = true; });
 
   // 5. AFV and surface combat geometry checks
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
   const auto afv_id = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
                           .owned_by(1, 1)
                           .in_planet_orbit(1, 1)
@@ -276,7 +271,7 @@ void test_fire_domain_errors_and_surface_geometry() {
       g, {"fire", std::format("#{}", afv_id.value), "#2"}, 1);
 
   // 6. Target self-retaliation (protect().retaliate) and laser fire clamping
-  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_scope_star(1);
   ctx.em.mutate_ship(1, [](Ship& s) {
     s.laser() = true;
     s.fire_laser() = 10;
@@ -338,8 +333,7 @@ void test_protecting_ship_retaliation() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // 1. Live protecting ship retaliates when target takes damage
   ctx.assert_dispatch_success(g, {"fire", "#1", "#2", "10"}, 1);
@@ -370,8 +364,7 @@ void test_fire_crystal_overload_burnout_and_explosion() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 20; });
 

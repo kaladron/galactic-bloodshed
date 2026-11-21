@@ -38,9 +38,7 @@ void test_jettison_happy_path() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
-  g.set_shipno(1);
+  g.set_scope_star(1);
 
   std::println(std::cout, "Jettison crystals");
   {
@@ -149,9 +147,7 @@ void test_jettison_domain_errors() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
-  g.set_shipno(1);
+  g.set_scope_star(1);
 
   // 1. Min args check (< 3 args)
   ctx.assert_dispatch_rejected(g, {"jettison"});

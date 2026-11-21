@@ -19,20 +19,22 @@ void test_bless_matrix() {
 
   ctx.em.mutate_race(1, [](Race& r) { r.God = true; });
 
+  const shipnum_t ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
+                                .owned_by(1, 1)
+                                .in_planet_orbit(1, 1)
+                                .build();
+
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
   g.set_god(true);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   TestCommandMatrix(ctx, "bless")
       .with_valid_argv({"bless", "2", "technology", "10"})
       .with_invalid_argv({"bless", "99", "technology", "10"})
-      .with_valid_scope(ScopeLevel::LEVEL_PLAN)
-      .with_invalid_scopes({ScopeLevel::LEVEL_STAR, ScopeLevel::LEVEL_UNIV,
-                            ScopeLevel::LEVEL_SHIP})
+      .with_invalid_scopes(
+          {Place::star(1), Place::universe(), Place::ship(ship_id)})
       .with_expected_star_ap(0)
       .with_expected_univ_ap(0)
       .run_matrix(g);
@@ -49,9 +51,7 @@ void test_bless_role_and_scope_rejection() {
 
   // 1. Role Rejection: Mortal player 2 is rejected
   ctx.setup_game_obj(g, 2, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
   g.set_god(false);
   ctx.assert_dispatch_rejected(g, {"bless", "2", "technology", "5"});
   test::expect_contains(g.out.str(), "Only deity can use this command.");
@@ -60,7 +60,7 @@ void test_bless_role_and_scope_rejection() {
   ctx.em.mutate_race(1, [](Race& r) { r.God = true; });
   ctx.setup_game_obj(g, 1, 1);
   g.set_god(true);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   ctx.assert_dispatch_rejected(g, {"bless", "2", "technology", "5"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
 
@@ -76,9 +76,7 @@ void test_bless_race_characteristics() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
   g.set_god(true);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // Integer attributes
   ctx.assert_dispatch_success(g, {"bless", "2", "money", "500"});
@@ -157,8 +155,7 @@ void test_bless_race_characteristics() {
   ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(1).explored = 1; });
   ctx.em.mutate_race(1, [](Race& r) { r.God = true; });
   g.set_god(true);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // Sector preferences
   auto expect_near = [](double actual, double expected, double eps = 1e-6) {
@@ -205,9 +202,7 @@ void test_bless_planet_and_star() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
   g.set_god(true);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // explorebit / noexplorebit
   ctx.assert_dispatch_success(g, {"bless", "2", "explorebit", "0"});
@@ -242,9 +237,7 @@ void test_bless_commodities() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
   g.set_god(true);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // resources: full word, plural, and char
   ctx.assert_dispatch_success(g, {"bless", "2", "resource", "100"});
@@ -300,9 +293,7 @@ void test_bless_error_handling() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
   g.set_god(true);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // Extra trailing arguments
   ctx.assert_dispatch_rejected(g, {"bless", "2", "technology", "10", "extra"});

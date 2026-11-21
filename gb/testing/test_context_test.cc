@@ -114,7 +114,7 @@ void test_test_context_dispatch_helpers() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, player_t{1}, governor_t{1});
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   GB::commands::CommandDescriptor star_cost_cmd{
       .name = "star_cost",
@@ -519,11 +519,15 @@ void test_test_command_matrix() {
   TestContext ctx;
   TestWorldBuilder::create_standard_solar_system(ctx);
 
+  const shipnum_t ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
+                                .owned_by(1, 1)
+                                .in_planet_orbit(1, 1)
+                                .build();
+
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, player_t{1}, governor_t{1});
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   static auto matrix_cmd_handler = [](const command_t& argv, GameObj& g) {
     if (argv.size() > 1 && argv[1] == "bad") {
@@ -546,9 +550,8 @@ void test_test_command_matrix() {
   TestCommandMatrix(ctx, matrix_cmd)
       .with_valid_argv({"matrix_test_cmd", "good"})
       .with_invalid_argv({"matrix_test_cmd", "bad"})
-      .with_valid_scope(ScopeLevel::LEVEL_PLAN)
-      .with_invalid_scopes({ScopeLevel::LEVEL_UNIV, ScopeLevel::LEVEL_STAR,
-                            ScopeLevel::LEVEL_SHIP})
+      .with_invalid_scopes(
+          {Place::universe(), Place::star(1), Place::ship(ship_id)})
       .with_expected_star_ap(5)
       .run_matrix(g);
 
@@ -565,7 +568,6 @@ void test_test_command_matrix() {
   TestCommandMatrix(ctx, ro_matrix_cmd)
       .with_valid_argv({"matrix_ro_cmd", "good"})
       .with_invalid_argv({"matrix_ro_cmd", "bad"})
-      .with_valid_scope(ScopeLevel::LEVEL_PLAN)
       .run_matrix(g);
 
   // Mutating command without .no_guests is rejected as Guest via ReadOnlyScope
@@ -582,7 +584,6 @@ void test_test_command_matrix() {
   };
   TestCommandMatrix(ctx, mut_matrix_cmd)
       .with_valid_argv({"matrix_mut_cmd"})
-      .with_valid_scope(ScopeLevel::LEVEL_PLAN)
       .run_matrix(g);
   test::expect_eq(ctx.em.peek_block(1)->motto(), "Mutated");
   std::println(std::cout, "  ✓ TestCommandMatrix verified successfully");

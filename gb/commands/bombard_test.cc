@@ -47,9 +47,7 @@ void test_bombard_happy_paths() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // Execute bombard command on sector 5,5 with strength 10 (deducts 1 Star AP
   // dynamically)
@@ -89,9 +87,7 @@ void test_bombard_insufficient_ap() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_rejected(g, {"bombard", "#1", "5,5", "10"});
   test::expect_contains(g.out.str(), "action points");
@@ -112,16 +108,14 @@ void test_bombard_role_and_scope_rejections() {
 
   // 1. Guest race rejection
   ctx.setup_game_obj(g, 3, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_rejected(g, {"bombard", "#1", "5,5", "10"});
   test::expect_contains(g.out.str(), "Guest races cannot use this command.");
 
   // 2. Scope rejection (LEVEL_UNIV is not allowed for bombard)
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
 
   ctx.assert_dispatch_rejected(g, {"bombard", "#1", "5,5", "10"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
@@ -136,9 +130,7 @@ void test_bombard_domain_errors() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Min args check (< 2 args)
   ctx.assert_dispatch_rejected(g, {"bombard"});
@@ -160,9 +152,7 @@ void test_bombard_preconditions_afv_and_retaliation() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   const ap_t ap_before = ctx.em.peek_star(1)->AP(1);
 
@@ -299,9 +289,7 @@ void test_bombard_crystal_overload_burnout_and_explosion() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Friendly OTYPE_PLANDEF on the planet does NOT block bombardment
   const auto friendly_pdef = TestShipBuilder(ctx.em, ShipType::OTYPE_PLANDEF)

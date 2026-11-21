@@ -31,7 +31,7 @@ void test_zoom_happy_path() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_scope_star(1);
 
   // 1. Query current zoom
   ctx.assert_dispatch_success(g, {"zoom"});
@@ -50,7 +50,7 @@ void test_zoom_happy_path() {
   test::expect_eq(g.zoom[0], 0.5);
 
   // 4. Zoom at universe level (affects index 1) and UiMode::JSON envelope
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"zoom", "3.0"});
@@ -66,7 +66,7 @@ void test_zoom_domain_errors() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_scope_star(1);
 
   // Division by zero denominator
   ctx.assert_dispatch_rejected(g, {"zoom", "5/0"});

@@ -59,8 +59,7 @@ void test_dock_happy_paths_and_json_presentation() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // 1. Successful dock (0 AP)
   ctx.assert_dispatch_success(g, {"dock", "#1", "#2"}, 0);
@@ -101,8 +100,7 @@ void test_dock_domain_errors() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // 1. Min args violation (< 3 args) and direct handler invocation
   ctx.assert_dispatch_rejected(g, {"dock", "#1"});

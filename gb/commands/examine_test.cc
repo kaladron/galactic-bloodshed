@@ -40,8 +40,7 @@ void test_examine_dispatch() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // 1. Min args check: examine without arguments, and invalid ship string
   ctx.assert_dispatch_rejected(g, {"examine"});
@@ -133,8 +132,7 @@ void test_examine_seeded_catalog_alignment() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   const std::array<std::pair<ShipType, std::string_view>, 8> samples = {{
       {ShipType::STYPE_GOD, "Godship"},

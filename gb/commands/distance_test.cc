@@ -58,7 +58,7 @@ void test_distance_dispatch() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
 
   // 1. Min args check: rejected when fewer than 3 args
   ctx.assert_dispatch_rejected(g, {"distance"});
@@ -166,18 +166,23 @@ void test_distance_dispatch() {
   ctx.assert_dispatch_rejected(g, {"distance", "/Sol", "/Vega", "extra"});
   test::expect_contains(g.out.str(), "Syntax: 'distance <from> <to>'.");
 
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(999);
+  const auto doomed_ship = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
+                               .owned_by(1, 1)
+                               .in_deep_space()
+                               .build();
+  g.set_scope_ship(doomed_ship);
+  ctx.em.mutate_ship(doomed_ship, [&](Ship& s) { ctx.em.destroy_ship(s); });
   const auto dot_res = Place::resolve(ctx.em, g.scope_context(), ".");
   test::expect_false(dot_res.has_value());
   test::expect_eq(dot_res.error().kind, PlaceErrorKind::ShipNotFound);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"distance", ".", "/Sol"});
-  test::expect_contains(g.out.str(), "Ship #999 no longer exists; scope reset");
+  test::expect_contains(
+      g.out.str(),
+      std::format("Ship #{} no longer exists; scope reset", doomed_ship));
 
   // 16. UiMode::JSON output
-  g.set_level(ScopeLevel::LEVEL_UNIV);
-  g.set_shipno(0);
+  g.set_scope_univ();
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"distance", "/Sol", "/Vega"});
@@ -192,12 +197,11 @@ void test_distance_matrix() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
 
   TestCommandMatrix(ctx, "distance")
       .with_valid_argv({"distance", "/Sol", "/Vega"})
       .with_invalid_argv({"distance", "/NonExistentStar", "/Sol"})
-      .with_valid_scope(ScopeLevel::LEVEL_UNIV)
       .with_expected_star_ap(0)
       .run_matrix(g);
 }

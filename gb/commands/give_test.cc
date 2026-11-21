@@ -38,9 +38,7 @@ void test_give_dispatch() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Happy path: give ship in planet orbit to mutual ally
   ctx.assert_dispatch_success(

@@ -14,7 +14,7 @@ namespace GB::commands {
 bool repair(const command_t& argv, GameObj& g) {
   const player_t Playernum = g.player();
 
-  Place where{g.level(), g.snum(), g.pnum()};
+  Place where = g.place();
   bool has_coords = false;
   if (argv.size() > 1) {
     if (std::isdigit(static_cast<unsigned char>(first_char(argv[1]))) &&

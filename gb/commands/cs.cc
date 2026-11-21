@@ -19,29 +19,14 @@ namespace {
  * scope.
  */
 bool change_to_default_scope(GameObj& g) {
-  const starnum_t numstars = g.entity_manager.num_stars();
-  if (numstars == 0) {
-    g.out << "cs: Universe data not available.\n";
-    return false;
-  }
-
-  const auto& gov = g.current_governor();
-  g.set_level(gov.deflevel);
-  g.set_snum(gov.defsystem);
-  if (g.snum() < 1 || g.snum() > numstars) {
-    g.set_snum(numstars);
-  }
-
-  const auto& star = *g.entity_manager.peek_star(g.snum());
-  g.set_pnum(gov.defplanetnum);
-  if (g.pnum() < 1 || g.pnum() > star.numplanets()) {
-    g.set_pnum(star.numplanets());
-  }
-
-  g.set_shipno(0);
-  g.reconcile_scope();
+  g.set_default_scope(g.current_governor());
   g.set_system_center({0.0, 0.0});
-  g.set_universe_center(star.coordinates());
+  if (const auto star_id = g.enclosing_star()) {
+    const auto& star = *g.entity_manager.peek_star(*star_id);
+    g.set_universe_center(star.coordinates());
+  } else {
+    g.set_universe_center({0.0, 0.0});
+  }
   return true;
 }
 
@@ -150,9 +135,19 @@ bool change_default_home_scope(GameObj& g, std::string_view target_arg) {
   const governor_t governor = g.governor();
   g.entity_manager.mutate_race(playernum, [&](Race& race) {
     auto& gov = race.governor(governor);
-    gov.deflevel = where->level;
-    gov.defsystem = where->snum;
-    gov.defplanetnum = where->pnum;
+    switch (where->level) {
+      case ScopeLevel::LEVEL_UNIV:
+        gov.set_default_scope_univ();
+        break;
+      case ScopeLevel::LEVEL_STAR:
+        gov.set_default_scope_star(where->snum);
+        break;
+      case ScopeLevel::LEVEL_PLAN:
+        gov.set_default_scope_planet(where->snum, where->pnum);
+        break;
+      case ScopeLevel::LEVEL_SHIP:
+        std::unreachable();
+    }
   });
 
   g.present(GB::presentation::make_output_message(std::format(
@@ -180,10 +175,7 @@ bool cs(const command_t& argv, GameObj& g) {
     }
 
     update_viewport_center(g, *where);
-    g.set_level(where->level);
-    g.set_snum(where->snum);
-    g.set_pnum(where->pnum);
-    g.set_shipno(where->shipno);
+    g.set_scope(*where);
     g.reconcile_scope();
     return true;
   }

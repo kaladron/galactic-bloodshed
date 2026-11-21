@@ -14,11 +14,7 @@ namespace {
 
 void setup_test_world(TestContext& ctx) {
   ctx.with_standard_universe();
-  ctx.em.mutate_race(1, [](Race& r) {
-    r.leader().deflevel = ScopeLevel::LEVEL_STAR;
-    r.leader().defsystem = 1;
-    r.leader().defplanetnum = 1;
-  });
+  ctx.em.mutate_race(1, [](Race& r) { r.leader().set_default_scope_star(1); });
 }
 
 void test_cs_happy_paths() {
@@ -30,8 +26,7 @@ void test_cs_happy_paths() {
   ctx.setup_game_obj(g, 1, 1);
 
   // 1. Switch to universe scope (free AP)
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
   ctx.assert_dispatch_success(g, {"cs", "/"}, 0);
   test::expect_eq(g.level(), ScopeLevel::LEVEL_UNIV);
 
@@ -52,7 +47,7 @@ void test_cs_happy_paths() {
   test::expect_eq(g.snum(), 1);
 
   // 5. Change default system with -d to universe (/ sets defsystem=0,
-  // defplanetnum=0), then run default cs to cover snum < 1 and pnum < 1
+  // defplanetnum=0), then run default cs (keeps snum=0, pnum=0 at LEVEL_UNIV)
   g.out.str("");
   ctx.assert_dispatch_success(g, {"cs", "-d", "/"}, 0);
   test::expect_eq(g.out.str(), std::string_view{"New home system is /\n"});
@@ -61,28 +56,20 @@ void test_cs_happy_paths() {
   ctx.assert_dispatch_success(g, {"cs"}, 0);
   test::expect_eq(g.out.str(), std::string_view{""});
   test::expect_eq(g.level(), ScopeLevel::LEVEL_UNIV);
-  test::expect_eq(g.snum(), 3);
-  test::expect_eq(g.pnum(), 1);
+  test::expect_eq(g.snum(), 0);
+  test::expect_eq(g.pnum(), 0);
 
-  // 6. Default cs clamps upper-out-of-bounds defsystem/defplanetnum to last
-  // star and planet
-  ctx.em.mutate_race(1, [](Race& r) {
-    r.leader().deflevel = ScopeLevel::LEVEL_PLAN;
-    r.leader().defsystem = 99;
-    r.leader().defplanetnum = 5;
-  });
+  // 6. Default cs to star and planet scopes updates universe_center and zeroes
+  // child coordinates
+  ctx.assert_dispatch_success(g, {"cs", "-d", "/Vega/Vega Prime"}, 0);
   ctx.setup_game_obj(g, 1, 1);
   ctx.assert_dispatch_success(g, {"cs"}, 0);
-  test::expect_eq(g.snum(), 3);
+  test::expect_eq(g.level(), ScopeLevel::LEVEL_PLAN);
+  test::expect_eq(g.snum(), 2);
   test::expect_eq(g.pnum(), 1);
 
-  // 7. 0-planet star with deflevel = LEVEL_PLAN steps up cleanly to LEVEL_STAR
   ctx.create_star("VoidStar", 4).with_explored(1).build();
-  ctx.em.mutate_race(1, [](Race& r) {
-    r.leader().deflevel = ScopeLevel::LEVEL_PLAN;
-    r.leader().defsystem = 4;
-    r.leader().defplanetnum = 1;
-  });
+  ctx.assert_dispatch_success(g, {"cs", "-d", "/VoidStar"}, 0);
   ctx.setup_game_obj(g, 1, 1);
   ctx.assert_dispatch_success(g, {"cs"}, 0);
   test::expect_eq(g.level(), ScopeLevel::LEVEL_STAR);
@@ -91,19 +78,29 @@ void test_cs_happy_paths() {
 }
 
 void test_cs_domain_errors() {
-  // 0. Empty universe (numstars == 0) rejects default cs
+  // 0. Empty universe (numstars == 0): Deity at LEVEL_UNIV succeeds on default
+  // cs, while corrupt out-of-bounds defsystem fails fast via
+  // EntityNotFoundError
   {
     TestContext empty_ctx;
     Race r{};
     r.Playernum = 1;
-    r.name = "Terrans";
+    r.God = true;
+    r.name = "Deity";
+    r.init_deity_leader("dpass");
     empty_ctx.em.create_race(r);
     auto& empty_registry = get_test_session_registry();
     GameObj empty_g(empty_ctx.em, empty_registry);
     empty_ctx.setup_game_obj(empty_g, 1, 1);
-    empty_ctx.assert_dispatch_rejected(empty_g, {"cs"});
-    test::expect_contains(empty_g.out.str(),
-                          "cs: Universe data not available.");
+    empty_g.set_god(true);
+    empty_ctx.assert_dispatch_success(empty_g, {"cs"});
+    test::expect_eq(empty_g.level(), ScopeLevel::LEVEL_UNIV);
+
+    empty_ctx.em.mutate_race(
+        1, [](Race& race) { race.leader().set_default_scope_star(99); });
+    empty_ctx.setup_game_obj(empty_g, 1, 1);
+    test::expect_throws<EntityNotFoundError>(
+        [&]() { empty_ctx.dispatch(empty_g, {"cs"}); });
   }
 
   TestContext ctx;
@@ -112,7 +109,7 @@ void test_cs_domain_errors() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
 
   // 1. Invalid star name
   ctx.assert_dispatch_rejected(g, {"cs", "NonExistentStar"});
@@ -150,9 +147,7 @@ void test_cs_viewport_coordinates() {
   ctx.setup_game_obj(g, 1, 1);
 
   // 1. Planet to star and universe viewport coordinates
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   const auto* earth = ctx.em.peek_planet(1, 1);
   const auto* sol = ctx.em.peek_star(1);
@@ -246,8 +241,12 @@ void test_cs_viewport_coordinates() {
   // 5. Navigating away from a destroyed/deleted ship scope does not crash
   // (regression test for uncaught EntityNotFoundError in
   // update_viewport_from_ship)
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(9999);
+  const auto doomed_ship = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
+                               .owned_by(1, 1)
+                               .in_star_orbit(1)
+                               .build();
+  g.set_scope_ship(doomed_ship);
+  ctx.em.mutate_ship(doomed_ship, [&](Ship& s) { ctx.em.destroy_ship(s); });
   g.set_system_center({99.0, 99.0});
   ctx.assert_dispatch_success(g, {"cs", "/Sol"});
   test::expect_eq(g.level(), ScopeLevel::LEVEL_STAR);

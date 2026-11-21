@@ -187,9 +187,7 @@ void test_fix_command_dispatch() {
   // 2. Deity happy path - planet fix and read-only inspection
   ctx.setup_game_obj(g, 1, 1);
   g.set_god(true);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"fix", "planet", "temperature", "100"});
   test::expect_contains(g.out.str(), "temperature = 100");
@@ -197,8 +195,7 @@ void test_fix_command_dispatch() {
   test::expect_contains(g.out.str(), "temperature = 100");
 
   // 3. Deity happy path - ship fix and read-only inspection
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(ship1_id);
+  g.set_scope_ship(ship1_id);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"fix", "ship", "fuel", "200"});
   test::expect_contains(g.out.str(), "fuel = 200");
@@ -217,14 +214,12 @@ void test_fix_command_dispatch() {
   test::expect_contains(g.out.str(), "Fix what?");
 
   // 6. Planet scope error & invalid numeric value & all condition options
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"fix", "planet", "temperature", "100"});
   test::expect_contains(g.out.str(), "Change scope to the planet first.");
 
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"fix", "planet", "temperature", "abc"});
@@ -269,14 +264,13 @@ void test_fix_command_dispatch() {
   }
 
   // 7. Ship scope error, invalid numeric value, and all ship options
-  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_scope_planet(1, 1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"fix", "ship", "fuel", "100"});
   test::expect_contains(g.out.str(),
                         "Change scope to the ship you wish to fix.");
 
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(1);
+  g.set_scope_ship(1);
 
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"fix", "ship", "fuel", "notanumber"});
@@ -340,8 +334,7 @@ void test_fix_command_dispatch() {
                             .with_build_cost(100)
                             .with_special(WasteData{.toxic = 40})
                             .build();
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(ship2_id);
+  g.set_scope_ship(ship2_id);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"fix", "ship", "dead"});
   test::expect_contains(g.out.str(), "destroyed");

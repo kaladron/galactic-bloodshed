@@ -97,21 +97,27 @@ int main() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_scope_univ();
 
   std::println(std::cout,
-               "List all commodities at UNIV and STAR scopes, and by type");
+               "List all commodities at UNIV, STAR, and orbiting SHIP scopes");
   {
     ctx.assert_dispatch_success(g, {"bid"});
     test::expect_contains(g.out.str(), "Galactic Bloodshed Commodities Market");
     test::expect_contains(g.out.str(), "*");
 
-    g.set_level(ScopeLevel::LEVEL_STAR);
-    g.set_snum(1);
+    g.set_scope_star(1);
     ctx.assert_dispatch_success(g, {"bid"});
     test::expect_contains(g.out.str(), "Galactic Bloodshed Commodities Market");
+
+    const shipnum_t orbiter = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
+                                  .owned_by(1, 1)
+                                  .in_star_orbit(1)
+                                  .build();
+    g.set_scope_ship(orbiter);
+    ctx.assert_dispatch_success(g, {"bid"});
+    test::expect_contains(g.out.str(), "Galactic Bloodshed Commodities Market");
+    g.set_scope_star(1);
 
     ctx.assert_dispatch_rejected(g, {"bid", "1", "1000"});
     test::expect_contains(g.out.str(),
@@ -128,9 +134,7 @@ int main() {
     test::expect_contains(g.out.str(), "No such type of commodity.");
   }
 
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   std::println(std::cout, "Place initial bid on commodity and list in JSON");
   {
@@ -243,9 +247,7 @@ int main() {
     ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });
     GameObj g2(ctx.em, registry);
     ctx.setup_game_obj(g2);
-    g2.set_level(ScopeLevel::LEVEL_PLAN);
-    g2.set_snum(1);
-    g2.set_pnum(1);
+    g2.set_scope_planet(1, 1);
     ctx.assert_dispatch_rejected(g2, {"bid", "4", "500"});
     test::expect_contains(g2.out.str(), "Guest races cannot bid.");
   }

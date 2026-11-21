@@ -31,9 +31,7 @@ void test_technology_happy_paths() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Query current technology investment (0 AP, zero DB writes)
   const auto before_query = ctx.db.total_changes();
@@ -76,9 +74,7 @@ void test_technology_insufficient_ap() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_success(g, {"technology"}, 0);
   test::expect_contains(g.out.str(), "Current investment : 100");
@@ -99,9 +95,7 @@ void test_technology_role_and_scope_rejections() {
 
   // 1. Star control rejection (Governor 2 on star assigned to Governor 1)
   ctx.setup_game_obj(g, 1, 2);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
   ctx.assert_dispatch_rejected(g, {"technology", "200"});
   test::expect_contains(g.out.str(),
                         "You are not authorized to do that in this system.");
@@ -109,7 +103,7 @@ void test_technology_role_and_scope_rejections() {
   // 2. Scope rejection (ScopeLevel::LEVEL_UNIV)
   g.out.str("");
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   ctx.assert_dispatch_rejected(g, {"technology", "200"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
 }
@@ -122,9 +116,7 @@ void test_technology_domain_errors() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   for (std::string bad : {"-100", "abc", "500abc"}) {
     g.out.str("");

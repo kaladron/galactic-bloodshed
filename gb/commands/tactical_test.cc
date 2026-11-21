@@ -103,9 +103,7 @@ void test_tactical_planet_scope() {
   auto& registry = get_test_session_registry();
   GameObj g_tactical(ctx.em, registry);
   ctx.setup_game_obj(g_tactical, 1, 1);
-  g_tactical.set_level(ScopeLevel::LEVEL_PLAN);
-  g_tactical.set_snum(1);
-  g_tactical.set_pnum(1);
+  g_tactical.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_success(g_tactical, {"tactical"});
   std::string tactical_output = g_tactical.out.str();
@@ -142,10 +140,7 @@ void test_tactical_ship_scope() {
   auto& registry = get_test_session_registry();
   GameObj g_tactical(ctx.em, registry);
   ctx.setup_game_obj(g_tactical, 1, 1);
-  g_tactical.set_level(ScopeLevel::LEVEL_SHIP);
-  g_tactical.set_snum(1);
-  g_tactical.set_pnum(1);
-  g_tactical.set_shipno(ships.destroyer);
+  g_tactical.set_scope_ship(ships.destroyer);
 
   ctx.assert_dispatch_success(g_tactical, {"tactical"});
   std::string tactical_output = g_tactical.out.str();
@@ -180,9 +175,7 @@ void test_tactical_star_scope() {
   auto& registry = get_test_session_registry();
   GameObj g_tactical(ctx.em, registry);
   ctx.setup_game_obj(g_tactical, 1, 1);
-  g_tactical.set_level(ScopeLevel::LEVEL_STAR);
-  g_tactical.set_snum(1);
-  g_tactical.set_pnum(1);
+  g_tactical.set_scope_star(1);
 
   ctx.assert_dispatch_success(g_tactical, {"tactical"});
   std::string tactical_output = g_tactical.out.str();
@@ -206,9 +199,7 @@ void test_tactical_explicit_ship_and_filters() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // Explicit ship + player filter: tactical #<destroyer> 2
   const auto destroyer_arg = std::format("#{}", ships.destroyer);
@@ -238,7 +229,9 @@ void test_tactical_explicit_ship_and_filters() {
   ctx.assert_dispatch_rejected(g, {"tactical", "#0"});
   test::expect_contains(g.out.str(), "no such ship");
 
-  // Sparse ship table: destroy ship #1 while higher-numbered ships exist
+  // Sparse ship table: scope to factory before it is destroyed, verify #factory
+  // argument fails with "no such ship" while higher-numbered ship succeeds, and
+  // tactical with no args from destroyed scoped ship resets scope gracefully
   const auto high_ship = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)
                              .owned_by(1)
                              .named("HighIdShip")
@@ -253,16 +246,16 @@ void test_tactical_explicit_ship_and_filters() {
   ctx.assert_dispatch_success(g, {"tactical", std::format("#{}", high_ship)});
   test::expect_contains(g.out.str(), "HighIdShip");
 
-  // Ship scope with shipno == 0 or destroyed scoped ship (#1)
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(0);
-  g.out.str("");
-  ctx.assert_dispatch_rejected(g, {"tactical"});
-  test::expect_contains(g.out.str(), "No ship is currently scoped");
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(ships.factory);
+  // Destroyed scoped ship resets scope on dispatch
+  const auto doomed_ship = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
+                               .owned_by(1)
+                               .in_planet_orbit(1, 1)
+                               .build();
+  g.set_scope_ship(doomed_ship);
+  ctx.em.mutate_ship(doomed_ship, [&](Ship& s) { ctx.em.destroy_ship(s); });
   ctx.assert_dispatch_rejected(g, {"tactical"});
   test::expect_contains(g.out.str(), "no longer exists; scope reset");
+  g.set_scope_planet(1, 1);
 
   // JSON mode output
   g.set_ui_mode(UiMode::JSON);
@@ -286,7 +279,7 @@ void test_tactical_scope_rejection() {
   auto& registry = get_test_session_registry();
   GameObj g_tactical(ctx.em, registry);
   ctx.setup_game_obj(g_tactical, 1, 1);
-  g_tactical.set_level(ScopeLevel::LEVEL_UNIV);
+  g_tactical.set_scope_univ();
 
   ctx.assert_dispatch_rejected(g_tactical, {"tactical"});
   test::expect_contains(g_tactical.out.str(), "Invalid scope for this command");
@@ -429,9 +422,7 @@ void test_tactical_combat_params_and_target_filtering() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, player_t{1}, governor_t{2});
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_success(g, {"tactical"});
   const std::string out = g.out.str();
@@ -488,9 +479,7 @@ void test_tactical_orbits_and_argument_edge_cases() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, player_t{1}, governor_t{1});
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // Numeric ship argument without '#' prefix
   ctx.assert_dispatch_success(g,
@@ -528,8 +517,7 @@ void test_tactical_orbits_and_argument_edge_cases() {
 
   // Unexplored star at LEVEL_STAR
   ctx.em.mutate_star(2, [](Star& s) { s.clear_explored_by(player_t{1}); });
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(2);
+  g.set_scope_star(2);
   ctx.assert_dispatch_success(g, {"tactical"});
   test::expect_true(g.out.str().empty());
 

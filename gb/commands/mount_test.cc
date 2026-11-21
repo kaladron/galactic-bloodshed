@@ -25,8 +25,7 @@ void test_mount_persistence() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(ship_id);
+  g.set_scope_ship(ship_id);
 
   ctx.assert_dispatch_success(g, {"mount", std::format("#{}", ship_id)});
 
@@ -70,8 +69,7 @@ void test_mount_errors() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // 1. Min args check (< 2 args)
   ctx.assert_dispatch_rejected(g, {"mount"});
@@ -116,8 +114,7 @@ void test_mount_json_mode() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(ship_id);
+  g.set_scope_ship(ship_id);
   g.set_ui_mode(GB::presentation::UiMode::JSON);
 
   ctx.assert_dispatch_success(g, {"mount", std::format("#{}", ship_id)});

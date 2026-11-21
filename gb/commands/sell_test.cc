@@ -37,9 +37,7 @@ void test_sell_happy_paths() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Sell resources (min(20, 100) = 20 AP deducted)
   ctx.assert_dispatch_success(g, {"sell", "r", "100"}, 20);
@@ -84,9 +82,7 @@ void test_sell_insufficient_ap() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_rejected(g, {"sell", "r", "100"});
   test::expect_contains(g.out.str(), "action points");
@@ -101,9 +97,7 @@ void test_sell_role_rejections() {
     auto& registry = get_test_session_registry();
     GameObj g(ctx.em, registry);
     ctx.setup_game_obj(g, 2, 1);  // Player 2 is guest
-    g.set_level(ScopeLevel::LEVEL_PLAN);
-    g.set_snum(1);
-    g.set_pnum(1);
+    g.set_scope_planet(1, 1);
 
     ctx.assert_dispatch_rejected(g, {"sell", "r", "100"});
     test::expect_contains(g.out.str(), "Guest races cannot use this command.");
@@ -114,9 +108,7 @@ void test_sell_role_rejections() {
     auto& registry = get_test_session_registry();
     GameObj g(ctx.em, registry);
     ctx.setup_game_obj(g, 1, 2);  // Governor 2
-    g.set_level(ScopeLevel::LEVEL_PLAN);
-    g.set_snum(1);
-    g.set_pnum(1);
+    g.set_scope_planet(1, 1);
 
     ctx.assert_dispatch_rejected(g, {"sell", "r", "100"});
     test::expect_contains(g.out.str(),
@@ -131,9 +123,7 @@ void test_sell_domain_errors() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Min args check (< 3 args)
   ctx.assert_dispatch_rejected(g, {"sell", "r"});
@@ -197,7 +187,7 @@ void test_sell_domain_errors() {
                         "You don't have any crystals here to sell!");
 
   // 7. Invalid scope (universe level)
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   ctx.assert_dispatch_rejected(g, {"sell", "r", "100"});
   test::expect_contains(g.out.str(), "Invalid scope");
 }

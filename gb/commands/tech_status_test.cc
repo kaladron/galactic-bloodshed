@@ -41,7 +41,7 @@ void test_status_dispatch() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
 
   // 1. Happy path: status without arguments (covers explored colony on Sol,
   //    uncolonized explored planet on Vega, and unexplored planet on Antares)

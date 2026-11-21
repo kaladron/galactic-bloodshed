@@ -20,9 +20,7 @@ void test_toggle_database_persistence() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
   const auto& leader = ctx.em.peek_race(1)->leader();
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(leader.homesystem);
-  g.set_pnum(leader.homeplanetnum);
+  g.set_scope_planet(leader.homesystem, leader.homeplanetnum);
 
   // TEST 1: Display all toggle settings (no argument)
   {

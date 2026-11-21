@@ -55,16 +55,14 @@ void test_walk_role_and_domain_errors() {
   // 1. Guest rejection
   ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });
   ctx.setup_game_obj(g);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   ctx.assert_dispatch_rejected(g, {"walk", "1", "k"});
   test::expect_contains(g.out.str(), "Guest races cannot use this command.");
 
   // Restore non-guest race
   ctx.em.mutate_race(1, [](Race& r) { r.Guest = false; });
   ctx.setup_game_obj(g);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_univ();
 
   // 2. Invalid ship number & non-existent ship rejection
   g.out.str("");
@@ -180,9 +178,7 @@ void test_walk_happy_path() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_univ();
 
   // 3. Test walk command success - move south (k or '2')
   ctx.assert_dispatch_success(g, {"walk", "1", "k"});
@@ -248,9 +244,7 @@ void test_walk_afv_and_sector_combat() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // Execute walk into hostile sector (5, 6)
   ctx.assert_dispatch_success(

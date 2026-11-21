@@ -63,8 +63,7 @@ void test_rst_dispatch() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // 1. report command: summary of ships
   ctx.assert_dispatch_success(g, {"report"});
@@ -102,9 +101,7 @@ void test_rst_dispatch() {
 
   // 6. factories command: factory report
   g.out.str("");
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
   ctx.assert_dispatch_success(g, {"factories"});
   output = g.out.str();
   test::expect_true(output.contains("Cost") && output.contains("Weapons") &&
@@ -122,8 +119,7 @@ void test_rst_dispatch() {
 
   // 8. Specific ship letter filter: report s (shuttle)
   g.out.str("");
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
   ctx.assert_dispatch_success(g, {"report", "s"});
   test::expect_contains(g.out.str(), "Hermes");
   std::println(std::cout, "    ✓ report shiptype filter succeeded");
@@ -157,17 +153,16 @@ void test_rst_dispatch() {
                           .with_size(10)
                           .with_pod(88)
                           .build();
-  ctx.em.mutate_ship(2, [&](Ship& s) { ctx.em.destroy_ship(s); });
-  ctx.assert_dispatch_rejected(g, {"report", "#2"});
-  test::expect_contains(g.out.str(), "no such ship");
-
   g.out.str("");
   ctx.assert_dispatch_success(g, {"stats", std::format("#{}", pod_id)});
   test::expect_contains(g.out.str(), "10 (88)");
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(2);
+
+  g.set_scope_ship(2);
+  ctx.em.mutate_ship(2, [&](Ship& s) { ctx.em.destroy_ship(s); });
   ctx.assert_dispatch_rejected(g, {"report"});
   test::expect_contains(g.out.str(), "Ship #2 no longer exists; scope reset");
+  ctx.assert_dispatch_rejected(g, {"report", "#2"});
+  test::expect_contains(g.out.str(), "no such ship");
   std::println(std::cout, "    ✓ pod temperature suffix displayed");
 }
 
@@ -243,7 +238,7 @@ void test_rst_filters_scopes_and_json() {
 
   // Universe scope report for governor 1 (skips FreeCan, FreeGreen,
   // EnemyShip; includes Terraformer, LandedCan, INACTIVE(50)).
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   ctx.assert_dispatch_success(g, {"report"});
   const std::string univ_out = g.out.str();
   test::expect_contains(univ_out, "Terraformer");
@@ -273,16 +268,19 @@ void test_rst_filters_scopes_and_json() {
                                   std::format("#{}", fac2_id)});
   test::expect_contains(g.out.str(), "(No ship type specified yet)");
 
-  // Ship scope: unscoped (shipno == 0) fails; scoped to #1 reports #1 + #10
+  // Ship scope: destroyed ship resets scope; scoped to #1 reports #1 + #10
+  const auto doomed_ship = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
+                               .owned_by(1, 1)
+                               .in_star_orbit(1)
+                               .build();
+  g.set_scope_ship(doomed_ship);
+  ctx.em.mutate_ship(doomed_ship, [&](Ship& s) { ctx.em.destroy_ship(s); });
   g.out.str("");
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(0);
   ctx.assert_dispatch_rejected(g, {"report"});
-  test::expect_contains(g.out.str(), "No ship is currently scoped");
+  test::expect_contains(g.out.str(), "no longer exists; scope reset");
 
   g.out.str("");
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(1);
+  g.set_scope_ship(1);
   ctx.assert_dispatch_success(g, {"report"});
   test::expect_contains(g.out.str(), "Hermes");
   test::expect_contains(g.out.str(), "DockedGreen");

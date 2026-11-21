@@ -44,7 +44,7 @@ void test_capital_matrix() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // 0. Error paths before designation
   g.out.str("");
@@ -72,7 +72,6 @@ void test_capital_matrix() {
   TestCommandMatrix(ctx, "capital")
       .with_valid_argv({"capital", std::to_string(landed_gov.value)})
       .with_invalid_argv({"capital", std::to_string(orbit_gov.value)})
-      .with_valid_scope(ScopeLevel::LEVEL_UNIV)
       .with_expected_star_ap(50)
       .run_matrix(g);
 
@@ -94,7 +93,7 @@ void test_capital_matrix() {
 
   // 3. Role Rejection: Governor 2 cannot designate capital
   ctx.setup_game_obj(g, 1, 2);
-  g.set_snum(1);
+  g.set_scope_star(1);
   ctx.assert_dispatch_rejected(g,
                                {"capital", std::to_string(landed_gov.value)});
   test::expect_contains(g.out.str(),
@@ -103,7 +102,7 @@ void test_capital_matrix() {
   // 4. Governmental Center berthed inside a Habitat in stellar orbit succeeds,
   // whereas one inside a deep-space Habitat is rejected
   ctx.setup_game_obj(g, 1, 1);
-  g.set_snum(1);
+  g.set_scope_star(1);
   ctx.em.mutate_star(1, [](Star& s) { s.AP(player_t{1}) = 100; });
   const shipnum_t star_hab = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
                                  .owned_by(1, 1)

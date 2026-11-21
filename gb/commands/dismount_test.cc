@@ -31,8 +31,7 @@ void test_dismount_with_hyperdrive_and_laser() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(ship_id);
+  g.set_scope_ship(ship_id);
 
   ctx.assert_dispatch_success(g, {"dismount", std::format("#{}", ship_id)});
 
@@ -83,8 +82,7 @@ void test_dismount_without_charge_or_active_laser() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   ctx.assert_dispatch_success(g, {"dismount", std::format("#{}", ship1_id)});
   test::expect_eq(g.out.str(), std::string("Dismounted.\n"));
@@ -133,8 +131,7 @@ void test_dismount_errors() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // 1. Min args check (< 2 args)
   ctx.assert_dispatch_rejected(g, {"dismount"});
@@ -183,8 +180,7 @@ void test_dismount_json_mode() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(ship_id);
+  g.set_scope_ship(ship_id);
   g.set_ui_mode(GB::presentation::UiMode::JSON);
 
   ctx.assert_dispatch_success(g, {"dismount", std::format("#{}", ship_id)});

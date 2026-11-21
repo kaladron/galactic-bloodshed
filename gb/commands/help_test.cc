@@ -42,7 +42,6 @@ void test_help_matrix() {
   TestCommandMatrix(ctx, "help")
       .with_valid_argv({"help"})
       .with_invalid_argv({"help", "this_topic_does_not_exist"})
-      .with_valid_scope(ScopeLevel::LEVEL_UNIV)
       .with_expected_star_ap(0)
       .run_matrix(g);
 }

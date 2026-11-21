@@ -23,7 +23,7 @@ void test_declare_dispatch() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
 
   // 1. Declare alliance without modifier (default 30)
   ctx.assert_dispatch_success(g, {"declare", "2", "alliance"});

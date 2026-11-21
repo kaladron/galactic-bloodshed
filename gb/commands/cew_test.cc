@@ -43,8 +43,7 @@ void test_cew_happy_path_and_json() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // 1. Fire CEW in ASCII mode
   ctx.assert_dispatch_success(g, {"cew", "#1", "#2"}, 1);
@@ -78,15 +77,13 @@ void test_cew_syntax_and_target_validation() {
 
   // 1. Guest rejection
   ctx.setup_game_obj(g, 3, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
   ctx.assert_dispatch_rejected(g, {"cew", "#1", "#2"});
   test::expect_contains(g.out.str(), "Guest races cannot use this command.");
 
   // Switch back to Player 1
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // 2. Too few arguments via dispatcher and direct command handler
   g.out.str("");
@@ -131,8 +128,7 @@ void test_cew_equipment_and_state_validation() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   const UniverseCoordinates star_coords = ctx.em.peek_star(1)->coordinates();
   const UniverseCoordinates orig_s1_coords = ctx.em.peek_ship(1)->coordinates();
@@ -226,8 +222,7 @@ void test_cew_overload_explosion() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // Give Ship #1 0 tech and high CEW power so check_overload deterministically
   // explodes the crystal and kills the ship.

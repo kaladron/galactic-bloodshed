@@ -49,9 +49,7 @@ void test_move_popn_happy_paths() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Test move command - 'k' moves south (y+1)
   ctx.assert_dispatch_success(g, {"move", "5,5", "k", "500"});
@@ -90,9 +88,7 @@ void test_move_popn_insufficient_ap() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_rejected(g, {"move", "5,5", "k", "500"});
   test::expect_contains(g.out.str(), "action points");
@@ -101,9 +97,7 @@ void test_move_popn_insufficient_ap() {
   ctx.em.mutate_race(1, [](Race& r) { r.God = true; });
   ctx.setup_game_obj(g, 1, 1);
   g.set_god(true);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"move", "5,5", "k", "100"});
   test::expect_eq(ctx.em.peek_star(1)->AP(1), 0u);
@@ -120,7 +114,7 @@ void test_move_popn_role_and_scope_rejections() {
 
   // 1. Scope rejection (LEVEL_UNIV is not allowed for move/deploy)
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
 
   ctx.assert_dispatch_rejected(g, {"move", "5,5", "k", "500"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
@@ -131,9 +125,7 @@ void test_move_popn_role_and_scope_rejections() {
     s.set_governor(1, 1);  // Player 1, Star governed by Gov 1
   });
   ctx.setup_game_obj(g, 1, 2);  // Player 1, Gov 2
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_rejected(g, {"move", "5,5", "k", "500"});
   test::expect_contains(g.out.str(), "not authorized");
@@ -148,9 +140,7 @@ void test_move_popn_domain_errors() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Min args check (< 3 args)
   ctx.assert_dispatch_rejected(g, {"move", "5,5"});
@@ -223,9 +213,7 @@ void test_move_popn_assault_and_unowned() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Move into unowned sector (owner == 0) -> does not trigger assault
   ctx.em.mutate_star(1, [](Star& s) { s.clear_all_ground_assaults(); });
@@ -248,9 +236,7 @@ void test_move_popn_negative_and_default_counts() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Move with default count (all 1000 civs)
   ctx.assert_dispatch_success(g, {"move", "5,5", "k"});
@@ -300,9 +286,7 @@ void test_move_popn_multistep_path() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // Multi-step move: 'kk' moves south twice (5,5 -> 5,6 -> 5,7)
   ctx.assert_dispatch_success(g, {"move", "5,5", "kk", "300"});
@@ -322,9 +306,7 @@ void test_move_popn_enslaved_and_origin_validations() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Enslaved planet check
   ctx.em.mutate_planet(1, 1, [](Planet& p) { p.enslave_to(2); });
@@ -397,9 +379,7 @@ void test_move_popn_assault_metamorph_and_wiped() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // Assault and conquer with metamorph attacker
   ctx.assert_dispatch_success(g, {"move", "5,5", "k", "500"});
@@ -450,14 +430,11 @@ void test_move_popn_command_matrix() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   TestCommandMatrix(ctx, "move")
       .with_valid_argv({"move", "5,5", "k", "10"})
       .with_invalid_argv({"move", "5,5"})
-      .with_valid_scope(ScopeLevel::LEVEL_PLAN)
       .run_matrix(g);
 
   ctx.verify_universe_invariants();

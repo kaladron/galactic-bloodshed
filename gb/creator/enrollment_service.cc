@@ -72,7 +72,7 @@ void EnrollmentService::seed_deity(std::string_view password,
   deity.name = "Deity";
   deity.password = std::string(password);
   deity.turn = 0;
-  deity.init_leader(0, 0, std::string(gov_password), ScopeLevel::LEVEL_UNIV);
+  deity.init_deity_leader(std::string(gov_password));
   deity.translate[player_t{1}] = 100;
   deity.mass = 1.0;
   deity.birthrate = 0.5;

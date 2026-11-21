@@ -33,7 +33,7 @@ void test_treasury_dispatch() {
   ctx.setup_game_obj(g);
 
   // Test treasury output at universe level
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   ctx.assert_dispatch_success(g, {"treasury"});
   test::expect_contains(g.out.str(), "Income");
   test::expect_contains(g.out.str(), "Costs");

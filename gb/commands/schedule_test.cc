@@ -28,7 +28,7 @@ void test_schedule_display() {
   ctx.setup_game_obj(g);
 
   // Test schedule command at universe scope
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   g.out.str("");
   ctx.assert_dispatch_success(g, {"schedule"});
   std::string out = g.out.str();

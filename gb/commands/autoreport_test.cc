@@ -23,9 +23,7 @@ void test_autoreport_dispatch() {
   ctx.setup_game_obj(g, 1, 1);
 
   // 1. Happy path: toggle autoreport ON at planet scope without args
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_success(g, {"autoreport"});
   test::expect_contains(g.out.str(), "has been set");
@@ -50,8 +48,7 @@ void test_autoreport_dispatch() {
 
   // 3. Happy path: toggle autoreport with explicit planet argument from star
   // scope
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"autoreport", "Earth"});
   test::expect_contains(g.out.str(), "has been set");
@@ -64,7 +61,7 @@ void test_autoreport_dispatch() {
                "    ✓ Autoreport toggled with explicit planet argument");
 
   // 4. Star scope without args rejected
-  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_scope_star(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"autoreport"});
   test::expect_contains(g.out.str(), "Scope must be a planet.");
@@ -88,8 +85,7 @@ void test_autoreport_dispatch() {
     p.info(player_t{1}).explored = 0;
     p.info(player_t{1}).autorep = 0;
   });
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"autoreport", "Earth"});
   test::expect_contains(g.out.str(), "You have not explored Earth yet.");
@@ -104,8 +100,7 @@ void test_autoreport_dispatch() {
       1, [](Race& r) { r.appoint_governor(2, {.name = "SubGov"}); });
   ctx.em.mutate_star(1, [](Star& s) { s.set_governor(1, 2); });
   g.set_governor(2);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"autoreport", "/Vega/Vega Prime"});
   test::expect_contains(g.out.str(), "You are not authorized to do this here.");
@@ -116,9 +111,7 @@ void test_autoreport_dispatch() {
 
   // 9. UiMode::JSON output
   g.set_ui_mode(UiMode::JSON);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"autoreport"});
   test::expect_contains(g.out.str(), R"("type":"message")");
@@ -140,7 +133,6 @@ void test_autoreport_dispatch() {
   TestCommandMatrix(ctx, "autoreport")
       .with_valid_argv({"autoreport"})
       .with_invalid_argv({"autoreport", "1", "extra"})
-      .with_valid_scope(ScopeLevel::LEVEL_PLAN)
       .run_matrix(g);
 
   ctx.verify_universe_invariants();

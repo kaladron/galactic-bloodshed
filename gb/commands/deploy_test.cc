@@ -46,9 +46,7 @@ void test_deploy_happy_paths_and_json() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_success(g, {"deploy", "5,5", "k", "200"});
 
@@ -114,9 +112,7 @@ void test_deploy_military_assault() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_success(g, {"deploy", "5,5", "k", "200"});
   test::expect_contains(g.out.str(), "VICTORY");
@@ -158,7 +154,6 @@ void test_deploy_military_assault() {
   TestCommandMatrix(ctx, "deploy")
       .with_valid_argv({"deploy", "5,5", "k", "10"})
       .with_invalid_argv({"deploy", "5,5"})
-      .with_valid_scope(ScopeLevel::LEVEL_PLAN)
       .run_matrix(g);
 
   ctx.verify_universe_invariants();

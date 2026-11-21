@@ -60,8 +60,7 @@ void test_assault_happy_path_and_json_presentation() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // 1. Successful assault (1 AP deducted via dynamic AP)
   ctx.assert_dispatch_success(g, {"assault", "#1", "#3"}, 1);
@@ -100,8 +99,7 @@ void test_assault_insufficient_ap_and_guest_rejection() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   ctx.assert_dispatch_rejected(g, {"assault", "#1", "#3"});
   test::expect_contains(g.out.str(), "action points");
@@ -110,8 +108,7 @@ void test_assault_insufficient_ap_and_guest_rejection() {
   ctx.em.mutate_race(2, [](Race& r) { r.Guest = true; });
   GameObj g2(ctx.em, registry);
   ctx.setup_game_obj(g2, 2, 1);
-  g2.set_level(ScopeLevel::LEVEL_STAR);
-  g2.set_snum(1);
+  g2.set_scope_star(1);
 
   ctx.assert_dispatch_rejected(g2, {"assault", "#3", "#1"});
   test::expect_contains(g2.out.str(), "Guest races cannot use this command.");
@@ -126,8 +123,7 @@ void test_assault_validation_and_ap_invariants() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // Set star AP to 5 to verify failed assaults do NOT deduct AP
   ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 5; });
@@ -256,8 +252,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // 1a. Repulsed boarding assault where attacker survives: moderate defense
   ctx.em.mutate_race(1, [](Race& r) { r.fighters = 10; });
@@ -365,7 +360,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
                               .in_star_orbit(1, 100.0, 200.0)
                               .build();
   ctx.em.mutate_ship(univ_target, [](Ship& s) { s.enter_deep_space(); });
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   ctx.em.mutate_universe([](Universe& u) { u.set_AP(1, 0); });
   g.out.str("");
   ctx.assert_dispatch_rejected(
@@ -379,8 +374,7 @@ void test_assault_combat_boobytrap_and_unmooring() {
   test::expect_eq(ctx.em.peek_universe()->get_AP(1), 4);
 
   // 5. Civilian boarding assault (victory with civilian boarders)
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
   ctx.em.mutate_ship(1, [](Ship& s) {
     s.undock_from_ship();
     s.enter_star_orbit(1);
@@ -464,8 +458,7 @@ void test_assault_defensive_fire_and_escort_retaliation() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 10; });
 
@@ -662,8 +655,7 @@ void test_assault_defensive_fire_and_escort_retaliation() {
     s.tech() = 100000.0;
   });
 
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
   g.out.str("");
   ctx.assert_dispatch_success(g,
                               {"assault",

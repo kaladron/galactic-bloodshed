@@ -25,9 +25,7 @@ void test_tax_happy_paths() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Query current tax rate
   ctx.assert_dispatch_success(g, {"tax"});
@@ -75,9 +73,7 @@ void test_tax_role_and_scope_rejections() {
 
   // 1. Guest race rejection
   ctx.setup_game_obj(g, 2, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
   ctx.assert_dispatch_rejected(g, {"tax", "20"});
   test::expect_contains(g.out.str(), "Guest races cannot use this command.");
 
@@ -94,7 +90,7 @@ void test_tax_role_and_scope_rejections() {
   // 3. Scope rejection (ScopeLevel::LEVEL_UNIV)
   g.out.str("");
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   ctx.assert_dispatch_rejected(g, {"tax", "20"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
 
@@ -116,9 +112,7 @@ void test_tax_domain_errors() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Domain error: No government center active
   ctx.assert_dispatch_rejected(g, {"tax", "20"});

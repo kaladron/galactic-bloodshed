@@ -138,9 +138,7 @@ void test_map_dispatch() {
   ctx.setup_game_obj(g, 1, 1);
 
   // 1. Happy path: Map at planet scope (stable star, ASCII mode)
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
   ctx.assert_dispatch_success(g, {"map"});
   test::expect_contains(g.out.str(), "     TestPlanet\n");
   test::expect_contains(g.out.str(), "   01234\n");
@@ -175,8 +173,7 @@ void test_map_dispatch() {
   std::println(std::cout, "    ✓ Map in JSON mode succeeded");
 
   // 2. Happy path: Map at planet scope (unstable star warning)
-  g.set_snum(2);
-  g.set_pnum(1);
+  g.set_scope_planet(2, 1);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"map"});
   test::expect_contains(g.out.str(),
@@ -184,7 +181,7 @@ void test_map_dispatch() {
   std::println(std::cout, "    ✓ Map displayed unstable star warning");
 
   // 3. Happy path: Map at universe level falls back to orbit
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   g.out.str("");
   ctx.assert_dispatch_success(g, {"map"});
   std::println(std::cout, "    ✓ Map at universe level fell back to orbit");
@@ -194,15 +191,14 @@ void test_map_dispatch() {
                             .owned_by(1, 1)
                             .in_planet_orbit(1, 1)
                             .build();
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(probe_id);
+  g.set_scope_ship(probe_id);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"map"});
   test::expect_contains(g.out.str(), "Bad scope");
   std::println(std::cout, "    ✓ Map rejected at ship scope");
 
   // 5. Explicit planet path argument and invalid path error reporting
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   g.out.str("");
   ctx.assert_dispatch_success(g, {"map", "/TestStar/TestPlanet"});
   test::expect_contains(g.out.str(), "TestPlanet");

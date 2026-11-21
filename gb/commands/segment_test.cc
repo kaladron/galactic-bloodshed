@@ -86,12 +86,9 @@ void test_segment_matrix() {
                             .owned_by(1, 1)
                             .in_deep_space()
                             .build();
-  for (auto scope : {ScopeLevel::LEVEL_UNIV, ScopeLevel::LEVEL_STAR,
-                     ScopeLevel::LEVEL_PLAN, ScopeLevel::LEVEL_SHIP}) {
-    g.set_level(scope);
-    if (scope == ScopeLevel::LEVEL_SHIP) {
-      g.set_shipno(probe_id);
-    }
+  for (const Place& place : {Place::universe(), Place::star(1),
+                             Place::planet(1, 1), Place::ship(probe_id)}) {
+    g.set_scope(place);
     g.out.str("");
     test::expect_true(GB::commands::dispatch_command(
         g, GB::commands::segment_cmd, {"@@segment"}));

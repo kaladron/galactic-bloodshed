@@ -37,9 +37,7 @@ void test_unload_happy_path() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_success(
       g, {"unload", std::format("#{}", ship_id.value), "r", "50"});
@@ -110,9 +108,7 @@ void test_unload_syntax_and_errors() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Min args check (< 3 args)
   ctx.assert_dispatch_rejected(g, {"unload", "#1"});
@@ -208,8 +204,7 @@ void test_unload_ship_to_ship_and_alien_telegrams() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   ctx.assert_dispatch_success(
       g, {"unload", std::format("#{}", s1_id.value), "r", "40"});
@@ -328,9 +323,7 @@ void test_unload_onto_alien_sector() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 0. Zero Star AP rejects hostile sector disembarkation without combat
   const ap_t saved_ap = ctx.em.peek_star(1)->AP(1);

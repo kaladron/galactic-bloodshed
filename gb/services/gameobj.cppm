@@ -9,8 +9,10 @@ import gb.entities;
 import :sessionregistry;  // For SessionRegistry interface
 import std;
 
-// Forward declaration to avoid coupling gblib:gameobj to :services
+// Forward declarations to avoid coupling gb.services:gameobj to :services or
+// :place
 export class EntityManager;
+export class Place;
 
 /// Failure reasons when checking whether a ship can be commanded.
 export enum class CommandableError {
@@ -30,10 +32,9 @@ export enum class SessionStatus {
 
 /// Outcome of validating an active `ScopeLevel::LEVEL_SHIP` scope.
 export enum class ShipScopeStatus {
-  Valid,         ///< Scoped ship is alive and owned by player (or Deity)
-  NoShipScoped,  ///< Scope was LEVEL_SHIP with shipno <= 0; stepped up
-  ShipMissing,   ///< Scoped ship was destroyed or deleted; stepped up
-  NotOwned,      ///< Scoped ship belongs to another empire; stepped up
+  Valid,        ///< Scoped ship is alive and owned by player (or Deity)
+  ShipMissing,  ///< Scoped ship was destroyed or deleted; stepped up
+  NotOwned,     ///< Scoped ship belongs to another empire; stepped up
 };
 
 /// Pure validation of whether a ship can be commanded by (player, governor).
@@ -68,6 +69,14 @@ export struct ScopeContext {
   [[nodiscard]] constexpr bool can_see(bool mortal_visible) const noexcept {
     if (god) return true;
     return mortal_visible;
+  }
+
+  /// Returns the enclosing star system ID when this scope is inside a star
+  /// system (`LEVEL_STAR`, `LEVEL_PLAN`, or an in-system `LEVEL_SHIP`), or
+  /// `std::nullopt` at `LEVEL_UNIV` / deep space.
+  [[nodiscard]] constexpr std::optional<starnum_t>
+  enclosing_star() const noexcept {
+    return (snum > 0) ? std::optional<starnum_t>{snum} : std::nullopt;
   }
 };
 
@@ -172,6 +181,15 @@ public:
   ScopeLevel level() const {
     return level_;
   }
+  /// Returns the enclosing star system ID when this scope is inside a star
+  /// system (`LEVEL_STAR`, `LEVEL_PLAN`, or an in-system `LEVEL_SHIP`), or
+  /// `std::nullopt` at `LEVEL_UNIV` / deep space.
+  [[nodiscard]] constexpr std::optional<starnum_t>
+  enclosing_star() const noexcept {
+    return (snum_ > 0) ? std::optional<starnum_t>{snum_} : std::nullopt;
+  }
+  /// Returns the session's current scope as a `Place` value.
+  [[nodiscard]] Place place() const noexcept;
   [[nodiscard]] UiMode ui_mode() const noexcept {
     return ui_mode_;
   }
@@ -187,7 +205,7 @@ public:
         .level = level_,
         .snum = snum_,
         .pnum = pnum_,
-        .shipno = (level_ == ScopeLevel::LEVEL_SHIP) ? shipno_ : shipnum_t{0},
+        .shipno = shipno_,
     };
   }
 
@@ -208,22 +226,38 @@ public:
   void set_shutdown_requested(bool value) {
     shutdown_requested_ = value;
   }
-  void set_snum(starnum_t s) {
-    snum_ = s;
-  }
-  void set_pnum(planetnum_t p) {
-    pnum_ = p;
-  }
-  void set_shipno(shipnum_t s) {
-    shipno_ = s;
+
+  /// Sets scope to universe (`/`), clearing child star, planet, and ship
+  /// coordinates.
+  void set_scope_univ() noexcept {
+    level_ = ScopeLevel::LEVEL_UNIV;
+    snum_ = 0;
+    pnum_ = 0;
+    shipno_ = 0;
     carrier_ancestors_.clear();
   }
-  void set_level(ScopeLevel l) {
-    level_ = l;
-    if (l != ScopeLevel::LEVEL_SHIP) {
-      carrier_ancestors_.clear();
-    }
-  }
+
+  /// Sets scope to `star`, clearing child planet and ship coordinates. Throws
+  /// `std::invalid_argument` if `star <= 0`.
+  void set_scope_star(starnum_t star);
+
+  /// Sets scope to `(star, planet)`, clearing child ship coordinates. Throws
+  /// `std::invalid_argument` if `star <= 0` or `planet <= 0`.
+  void set_scope_planet(starnum_t star, planetnum_t planet);
+
+  /// Sets scope to `ship`, peeking the ship in `entity_manager` and syncing its
+  /// ancestor carrier chain and enclosing celestial coordinates. Throws
+  /// `std::invalid_argument` if `ship <= 0` or `EntityNotFoundError` if `ship`
+  /// does not exist.
+  void set_scope_ship(shipnum_t ship);
+
+  /// Sets scope from a resolved `Place` value.
+  void set_scope(const Place& where);
+
+  /// Applies `gov`'s persistent default scope (`deflevel` / `defsystem` /
+  /// `defplanetnum`) and reconciles exploration against live database state.
+  void set_default_scope(const Race::gov& gov);
+
   void set_ui_mode(UiMode mode) noexcept {
     ui_mode_ = mode;
   }
@@ -334,10 +368,10 @@ private:
   bool god_ = false;
   bool disconnect_requested_ = false;
   bool shutdown_requested_ = false;
-  starnum_t snum_{};
-  planetnum_t pnum_{};
-  shipnum_t shipno_{};
-  ScopeLevel level_ = ScopeLevel::LEVEL_PLAN;
+  starnum_t snum_{0};
+  planetnum_t pnum_{0};
+  shipnum_t shipno_{0};
+  ScopeLevel level_ = ScopeLevel::LEVEL_UNIV;
   UiMode ui_mode_ = UiMode::ASCII;
   bool color_ = false;
   UniverseCoordinates universe_center_{0.0, 0.0};

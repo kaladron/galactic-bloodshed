@@ -54,8 +54,7 @@ void test_send_message_and_translation_cap() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
   g.set_god(false);
 
   // Regular message: send 2 Hello World (costs 1 AP, increments translation by
@@ -82,8 +81,7 @@ void test_send_to_governor_self_deity_and_json() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
   g.set_god(false);
 
   // Send to specific governor 1 of player 2 (costs 1 AP)
@@ -119,8 +117,7 @@ void test_send_block_and_star() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
   g.set_god(false);
 
   // Send to alliance block 1 (costs 1 AP)
@@ -161,8 +158,7 @@ void test_send_validation_errors() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
   g.set_god(false);
 
   // Missing message arguments for block, star, and governor forms
@@ -234,8 +230,7 @@ void test_send_universe_scope_deity_messaging() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
-  g.set_snum(0);
+  g.set_scope_univ();
   g.set_god(false);
 
   // 1. Mortal sending to mortal (costs 1 AP): rejected at LEVEL_UNIV
@@ -256,8 +251,7 @@ void test_send_universe_scope_deity_messaging() {
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"send", "2", "Deep", "Message"});
   test::expect_eq(g.out.str(), "Invalid scope for this command.\n");
-  g.set_level(ScopeLevel::LEVEL_UNIV);
-  g.set_snum(0);
+  g.set_scope_univ();
 
   // 2. Mortal sending to Deity (alien.God == true, ap_cost == 0): succeeds from
   // LEVEL_UNIV

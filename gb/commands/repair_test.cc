@@ -56,9 +56,7 @@ void test_repair_happy_path() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_success(g, {"repair", "3:5,3:5"});
   test::expect_contains(g.out.str(), "3 sectors repaired at a cost of");
@@ -103,9 +101,7 @@ void test_repair_whole_planet_and_json() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
   g.set_ui_mode(GB::presentation::UiMode::JSON);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_success(g, {"repair"});
   test::expect_contains(g.out.str(), R"("type":"message")");
@@ -135,14 +131,12 @@ void test_repair_scope_and_domain_errors() {
   ctx.setup_game_obj(g, 1, 1);
 
   // 1. Scope rejection at UNIV level
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   ctx.assert_dispatch_rejected(g, {"repair"});
   test::expect_contains(g.out.str(), "Invalid scope for this command");
 
   // 2. Place resolution errors at PLAN level
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"repair", "/NoSuchStar"});
   test::expect_false(g.out.str().empty());

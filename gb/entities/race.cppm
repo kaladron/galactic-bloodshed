@@ -189,10 +189,10 @@ public:
     std::string name;
     std::string password;
     ScopeLevel deflevel{ScopeLevel::LEVEL_UNIV};
-    starnum_t defsystem{1};
-    planetnum_t defplanetnum{1}; /* current default */
-    starnum_t homesystem{1};
-    planetnum_t homeplanetnum{1}; /* home place */
+    starnum_t defsystem{0};
+    planetnum_t defplanetnum{0}; /* current default */
+    starnum_t homesystem{0};
+    planetnum_t homeplanetnum{0}; /* home place */
     NewsValues<news_id_t>
         newspos{}; /* last-read news database IDs per NewsType */
     toggletype toggle{};
@@ -203,6 +203,38 @@ public:
     money_t cost_market{0};
     money_t profit_market{0};
     std::time_t login{0}; /* last login for this governor */
+
+    /// Sets this governor's default scope to universe (`/`), zeroing child
+    /// star and planet coordinates.
+    void set_default_scope_univ() noexcept {
+      deflevel = ScopeLevel::LEVEL_UNIV;
+      defsystem = 0;
+      defplanetnum = 0;
+    }
+
+    /// Sets this governor's default scope to `star`, zeroing child planet
+    /// coordinates. Throws `std::invalid_argument` if `star <= 0`.
+    void set_default_scope_star(starnum_t star) {
+      if (star <= 0) {
+        throw std::invalid_argument(
+            "set_default_scope_star requires positive star ID");
+      }
+      deflevel = ScopeLevel::LEVEL_STAR;
+      defsystem = star;
+      defplanetnum = 0;
+    }
+
+    /// Sets this governor's default scope to `(star, planet)`. Throws
+    /// `std::invalid_argument` if `star <= 0` or `planet <= 0`.
+    void set_default_scope_planet(starnum_t star, planetnum_t planet) {
+      if (star <= 0 || planet <= 0) {
+        throw std::invalid_argument(
+            "set_default_scope_planet requires positive star and planet IDs");
+      }
+      deflevel = ScopeLevel::LEVEL_PLAN;
+      defsystem = star;
+      defplanetnum = planet;
+    }
   };
   /// Canonical governor ID of the race leader.
   static constexpr governor_t leader_id{1};
@@ -263,9 +295,6 @@ public:
     std::string name{};
     std::string password{};
     money_t money{0};
-    std::optional<ScopeLevel> deflevel{std::nullopt};
-    std::optional<starnum_t> homesystem{std::nullopt};
-    std::optional<planetnum_t> homeplanetnum{std::nullopt};
     std::optional<toggletype> toggle{std::nullopt};
   };
 
@@ -278,8 +307,8 @@ public:
   }
 
   /// \brief Appoints a new governor at the next available ID (>= 2),
-  /// inheriting default home scope from the race leader unless overridden in
-  /// `spec`, and returns the assigned governor ID.
+  /// inheriting default home scope from the race leader, and returns the
+  /// assigned governor ID.
   governor_t appoint_governor(GovernorSpec spec) {
     const int max_id =
         governors_.empty() ? leader_id.value : governors_.rbegin()->first.value;
@@ -296,8 +325,8 @@ public:
     return appoint_governor(id, GovernorSpec{});
   }
 
-  /// \brief Appoints and activates a governor slot, inheriting default home
-  /// scope from the race leader unless overridden in `spec`.
+  /// \brief Appoints and activates a governor slot, inheriting default and home
+  /// scope from the race leader.
   /// Throws `std::out_of_range` if `id < 1` or `std::invalid_argument` if
   /// `is_leader(id)`.
   gov& appoint_governor(governor_t id, GovernorSpec spec) {
@@ -314,11 +343,11 @@ public:
     target.name = std::move(spec.name);
     target.password = std::move(spec.password);
     target.money = spec.money;
-    target.deflevel = spec.deflevel.value_or(ldr.deflevel);
-    target.homesystem = target.defsystem =
-        spec.homesystem.value_or(ldr.defsystem);
-    target.homeplanetnum = target.defplanetnum =
-        spec.homeplanetnum.value_or(ldr.defplanetnum);
+    target.deflevel = ldr.deflevel;
+    target.defsystem = ldr.defsystem;
+    target.defplanetnum = ldr.defplanetnum;
+    target.homesystem = ldr.homesystem;
+    target.homeplanetnum = ldr.homeplanetnum;
     if (spec.toggle) {
       target.toggle = *spec.toggle;
     } else {
@@ -350,16 +379,29 @@ public:
     return transferred;
   }
 
-  /// \brief Initializes the Race Leader with 1-based home/default coordinates.
-  void init_leader(starnum_t home_star = 1, planetnum_t home_planet = 1,
-                   std::string gov_password = "",
-                   ScopeLevel level = ScopeLevel::LEVEL_PLAN) {
+  /// \brief Initializes a disembodied Deity Race Leader at universe scope
+  /// (`/`).
+  void init_deity_leader(std::string gov_password = "") {
     auto& ldr = governors_[leader_id];
     ldr.name = "Leader";
     ldr.password = std::move(gov_password);
-    ldr.deflevel = level;
-    ldr.homesystem = ldr.defsystem = home_star;
-    ldr.homeplanetnum = ldr.defplanetnum = home_planet;
+    ldr.homesystem = 0;
+    ldr.homeplanetnum = 0;
+    ldr.set_default_scope_univ();
+    ldr.toggle.highlight = Playernum;
+    ldr.toggle.inverse = true;
+  }
+
+  /// \brief Initializes the Race Leader with 1-based home/default planet
+  /// coordinates.
+  void init_leader(starnum_t home_star = 1, planetnum_t home_planet = 1,
+                   std::string gov_password = "") {
+    auto& ldr = governors_[leader_id];
+    ldr.name = "Leader";
+    ldr.password = std::move(gov_password);
+    ldr.homesystem = home_star;
+    ldr.homeplanetnum = home_planet;
+    ldr.set_default_scope_planet(home_star, home_planet);
     ldr.toggle.highlight = Playernum;
     ldr.toggle.inverse = true;
   }

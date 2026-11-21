@@ -520,12 +520,21 @@ void test_server_json_mode_single_session_stanza() {
   test::expect_count(login_reply, R"("type":"message")", 0);
   test::expect_contains(login_reply, R"("race_name":"ServerTestRace")");
 
-  // 2. Command 'cs /Sol': scope change reflected in single canonical session
+  // 2. Command 'cs /Sol': scope change reflected in single canonical session,
+  // and 'cs ..' back to '/' zeroes snum and pnum in JSON SessionScopeView and
+  // clears [Star] from Deity 'who' output
   const std::string cs_reply = send_cmd("cs /Sol");
   test::expect_count(cs_reply, R"("type":"session")", 1);
   test::expect_count(cs_reply, R"("type":"message")", 0);
   test::expect_contains(cs_reply, R"("star":"Sol")");
   test::expect_contains(cs_reply, R"("path":"/Sol")");
+  test::expect_contains(send_cmd("who"), R"("star_name":"Sol")");
+
+  const std::string cs_up_reply = send_cmd("cs ..");
+  test::expect_contains(cs_up_reply,
+                        R"("level":0,"snum":0,"pnum":0,"shipno":0)");
+  test::expect_contains(send_cmd("who"), R"("star_name":"")");
+  test::expect_contains(send_cmd("cs /Sol"), R"("path":"/Sol")");
 
   // 3. Command 'center /Sol': viewport center reflected in single session
   const std::string center_reply = send_cmd("center /Sol");

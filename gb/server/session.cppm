@@ -123,18 +123,6 @@ public:
   void set_god(bool g) {
     game_obj_.set_god(g);
   }
-  void set_snum(starnum_t s) {
-    game_obj_.set_snum(s);
-  }
-  void set_pnum(planetnum_t p) {
-    game_obj_.set_pnum(p);
-  }
-  void set_shipno(shipnum_t s) {
-    game_obj_.set_shipno(s);
-  }
-  void set_level(ScopeLevel l) {
-    game_obj_.set_level(l);
-  }
   void set_ui_mode(UiMode mode) noexcept {
     game_obj_.set_ui_mode(mode);
   }

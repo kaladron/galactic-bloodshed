@@ -45,9 +45,7 @@ void test_order_happy_path() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   std::println(std::cout, "Set ship defense order");
   {
@@ -137,9 +135,7 @@ void test_order_combat_and_movement_options() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // Speed, primary, secondary, salvo, laser, focus, merchant
   ctx.assert_dispatch_success(g, {"order", "#1", "speed", "7"});
@@ -253,9 +249,7 @@ void test_order_specialty_ships() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Missile orders (impact and scatter)
   const auto missile_id = TestShipBuilder(ctx.em, ShipType::STYPE_MISSILE)
@@ -386,9 +380,7 @@ void test_order_specialty_ships() {
   ctx.assert_dispatch_success(
       g, {"order", std::format("#{}", tele_id.value), "aim", "/Sol"});
   // Aim telescope at ship and universe while in UNIV scope (snum == 0)
-  g.set_level(ScopeLevel::LEVEL_UNIV);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_scope_univ();
   g.out.str("");
   ctx.assert_dispatch_success(
       g, {"order", std::format("#{}", tele_id.value), "aim", "#1"});
@@ -397,9 +389,7 @@ void test_order_specialty_ships() {
   ctx.assert_dispatch_success(
       g, {"order", std::format("#{}", tele_id.value), "aim", "/"});
   test::expect_contains(g.out.str(), "There is nothing out here to aim at.");
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 5. Terraformer move sequence (valid, cycling, truncation, invalid)
   const auto terra_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TERRA)
@@ -453,9 +443,7 @@ void test_order_factory_activation_and_errors() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Landed Factory on Earth (starts damaged at 75% like newly built
   // factories; can be turned off while offline and activated while damaged,
@@ -537,8 +525,7 @@ void test_order_factory_activation_and_errors() {
   f2->build_cost() = 20;
   const auto f2_id = f2->number();
 
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(hab);
+  g.set_scope_ship(hab);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"order", std::format("#{}", f2_id), "on"});
   test::expect_contains(g.out.str(), "Factory activated");
@@ -555,7 +542,7 @@ void test_order_factory_activation_and_errors() {
                           .with_active(false)
                           .with_radiation(75)
                           .build();
-  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_scope_planet(1, 1);
   g.out.str("");
   ctx.assert_dispatch_success(
       g, {"order", std::format("#{}", rad_id), "evade", "on"});
@@ -637,9 +624,7 @@ void test_navigation_and_combat_order_mcdc_and_json() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Navigate with turns == 0 or invalid args disables navigation;
   // bearing >= 360 wraps modulo 360
@@ -805,9 +790,7 @@ void test_special_ship_order_mcdc_and_notices() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. SpaceMirrorShip preserves configured intensity across aim updates, and
   // tests fuel shortage, docked mirror rejection, missing/invalid aim arg,
@@ -997,8 +980,7 @@ void test_special_ship_order_mcdc_and_notices() {
 
   // Transported mine cannot use switch
   ctx.em.mutate_ship(mine_id, [](Ship& s) { s.dock_into_carrier(1); });
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(1);
+  g.set_scope_ship(1);
   g.out.str("");
   ctx.assert_dispatch_success(g,
                               {"order", std::format("#{}", mine_id), "switch"});
@@ -1034,7 +1016,7 @@ void test_special_ship_order_mcdc_and_notices() {
                           .with_hanger(20)
                           .build();
   ctx.em.mutate_ship(f_err_id, [&](Ship& s) { s.dock_into_carrier(hab_id); });
-  g.set_shipno(hab_id);
+  g.set_scope_ship(hab_id);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"order", f_err_arg, "on"});
   test::expect_contains(g.out.str(), "You don't have");
@@ -1044,7 +1026,7 @@ void test_special_ship_order_mcdc_and_notices() {
   ctx.assert_dispatch_success(g, {"order", f_err_arg, "on"});
   test::expect_contains(g.out.str(), "Not enough hanger space free on Habitat");
 
-  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_scope_planet(1, 1);
   ctx.em.mutate_ship(f_err_id, [](Ship& s) { s.enter_planet_orbit(1, 1); });
   g.out.str("");
   ctx.assert_dispatch_success(g, {"order", f_err_arg, "on"});

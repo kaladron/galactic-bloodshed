@@ -51,9 +51,7 @@ void test_insurgency_happy_path_success() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_success(g, {"insurgency", "2", "500000"}, 10);
   test::expect_contains(g.out.str(), "Success!  You liberate");
@@ -93,9 +91,7 @@ void test_insurgency_failed_revolt() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_success(g, {"insurgency", "2", "100"}, 10);
   test::expect_contains(g.out.str(), "The insurgency failed!");
@@ -112,9 +108,7 @@ void test_insurgency_insufficient_ap() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_rejected(g, {"insurgency", "2", "5000"});
   test::expect_contains(g.out.str(), "action points");
@@ -135,7 +129,7 @@ void test_insurgency_role_and_scope_rejections() {
 
   // 1. Scope rejection (LEVEL_UNIV)
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   ctx.assert_dispatch_rejected(g, {"insurgency", "2", "5000"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
 
@@ -146,9 +140,7 @@ void test_insurgency_role_and_scope_rejections() {
   });
   g.out.str("");
   ctx.setup_game_obj(g, 1, 2);  // Player 1, Gov 2
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
   ctx.assert_dispatch_rejected(g, {"insurgency", "2", "5000"});
   test::expect_contains(g.out.str(), "not authorized");
   std::println(std::cout, "    ✓ Role and scope rejections verified");
@@ -161,9 +153,7 @@ void test_insurgency_domain_errors() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Min args check (< 3 args)
   ctx.assert_dispatch_rejected(g, {"insurgency", "2"});
@@ -235,7 +225,6 @@ void test_insurgency_domain_errors() {
   TestCommandMatrix(ctx, "insurgency")
       .with_valid_argv({"insurgency", "2", "100"})
       .with_invalid_argv({"insurgency", "99", "100"})
-      .with_valid_scope(ScopeLevel::LEVEL_PLAN)
       .with_expected_star_ap(10)
       .run_matrix(g);
 }

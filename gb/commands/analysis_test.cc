@@ -138,9 +138,7 @@ int main() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   std::println(std::cout,
                "\n========== Analysis Command Output Test ==========\n");
@@ -521,9 +519,7 @@ int main() {
   {
     GameObj g_p2(ctx.em, registry);
     ctx.setup_game_obj(g_p2, player_t{2}, governor_t{1});
-    g_p2.set_level(ScopeLevel::LEVEL_PLAN);
-    g_p2.set_snum(1);
-    g_p2.set_pnum(1);
+    g_p2.set_scope_planet(1, 1);
     ctx.assert_dispatch_success(g_p2, {"analysis", "/TestStar"});
     test::expect_contains(g_p2.out.str(), "Analysis of /TestStar/TestPlanet:");
 
@@ -547,12 +543,11 @@ int main() {
                                    .owned_by(1, 1)
                                    .in_planet_orbit(1, 1)
                                    .build();
-    g.set_level(ScopeLevel::LEVEL_SHIP);
-    g.set_shipno(ship_scope_id);
+    g.set_scope_ship(ship_scope_id);
     ctx.assert_dispatch_rejected(g, {"analysis"});
     test::expect_contains(g.out.str(), "You can only analyze planets");
 
-    g.set_level(ScopeLevel::LEVEL_PLAN);
+    g.set_scope_planet(1, 1);
     g.set_ui_mode(UiMode::JSON);
     ctx.assert_dispatch_success(g, {"analysis"});
     test::expect_contains(g.out.str(), R"("type":"message")");

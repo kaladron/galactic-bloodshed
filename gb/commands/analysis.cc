@@ -349,7 +349,7 @@ bool analysis(const command_t& argv, GameObj& g) {
   auto filter = PlayerFilter::all_players();
   auto mode = Mode::TopFive;
 
-  auto where = Place{g.level(), g.snum(), g.pnum(), g.shipno()};
+  auto where = g.place();
 
   for (const auto& arg : argv | std::views::drop(1)) {
     // Mode flag: "-" switches to bottom five

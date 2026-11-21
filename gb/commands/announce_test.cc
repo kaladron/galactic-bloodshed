@@ -36,8 +36,7 @@ void test_announce_dispatch() {
   RecordingSessionRegistry registry;
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // 1. Announce in inhabited star system (separator ':')
   registry.clear_notifications();
@@ -48,7 +47,7 @@ void test_announce_dispatch() {
 
   // 2. Announce at LEVEL_UNIV or deep-space LEVEL_SHIP (snum == 0) upgrades to
   // broadcast (separator '>')
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   registry.clear_notifications();
   ctx.assert_dispatch_success(g, {":", "Galaxy", "Wide"});
   test::expect_false(registry.notifications.empty());
@@ -67,14 +66,13 @@ void test_announce_dispatch() {
                         "> Deep Space\n");
 
   // 3. Announce in uninhabited star rejected for mortal, allowed for deity
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(4);
+  g.set_scope_star(4);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"announce", "Trespass"});
   test::expect_contains(g.out.str(), "You do not inhabit this system");
 
   // Broadcast/think at snum=99 succeed without touching peek_star
-  g.set_snum(99);
+  g.set_scope_star(99);
   registry.clear_notifications();
   ctx.assert_dispatch_success(g, {";", "Internal", "Memo"});
   test::expect_false(registry.notifications.empty());
@@ -88,7 +86,7 @@ void test_announce_dispatch() {
                         "> Quick Message\n");
 
   // 4. Shout rejected for mortal
-  g.set_snum(4);
+  g.set_scope_star(4);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"shout", "Deity", "Announcement"});
   test::expect_contains(g.out.str(), "Only deity can use this command.");

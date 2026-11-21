@@ -23,7 +23,7 @@ int main() {
   ctx.setup_game_obj(g, player_t{1}, governor_t{1});
 
   // 1. Scope rejection at universe level and deep-space ship scope (snum == 0)
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"allocate", "10"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
@@ -39,8 +39,7 @@ int main() {
   std::println(std::cout, "    ✓ Scope rejection at universe level verified");
 
   // Switch to star scope
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // 2. Syntax / argument rejection
   g.out.str("");

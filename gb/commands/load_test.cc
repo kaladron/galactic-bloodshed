@@ -42,9 +42,7 @@ void test_load_happy_path() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   std::println(std::cout, "Load fuel from planet to ship");
   {
@@ -137,9 +135,7 @@ void test_load_syntax_and_errors() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Min args check (< 3 args)
   ctx.assert_dispatch_rejected(g, {"load"});
@@ -159,9 +155,7 @@ void test_load_transporter() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // Target receiver transporter ship 2
   const auto trans2_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV)
@@ -249,8 +243,7 @@ void test_load_ship_to_ship() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // A. Load commodities from s2 into s1
   {
@@ -442,9 +435,7 @@ void test_planet_crew_load_and_unload() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Unload civilians onto empty sector -> sector COLONIZED
   g.out.str("");
@@ -556,9 +547,7 @@ void test_load_from_alien_sector_rejected() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_success(
       g, {"load", std::format("#{}", assault_id.value), "c", "5"});
@@ -574,9 +563,7 @@ void test_transporter_edge_cases() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   const auto recv_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TRANSDEV)
                            .owned_by(2, 1)
@@ -739,9 +726,7 @@ void test_docking_and_validation_edge_cases() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Irradiated and inactive ship rejection
   shipnum_t rad_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
@@ -761,12 +746,12 @@ void test_docking_and_validation_edge_cases() {
                          .named("OrbitShip")
                          .in_star_orbit(1)
                          .build();
-  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_scope_star(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"load", std::format("#{}", orb_id.value), "r", "10"});
   test::expect_contains(g.out.str(), "is not landed or docked");
-  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_scope_planet(1, 1);
 
   // 3. Wrong planet scope rejection (attempting to load landed ship from star
   // scope, wrong star, and wrong planet)
@@ -775,13 +760,13 @@ void test_docking_and_validation_edge_cases() {
                                 .named("OtherPlanetShip")
                                 .landed_on(1, 1, {1, 1})
                                 .build();
-  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_scope_star(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"load", std::format("#{}", wrong_plan_id.value), "r", "10"});
   test::expect_contains(g.out.str(),
                         "Change scope to the planet this ship is landed on");
-  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_scope_planet(1, 1);
   ctx.em.mutate_ship(wrong_plan_id, [&](Ship& s) {
     const auto wrong_star =
         validate_ship_docking(ctx.em, s, 1, ScopeLevel::LEVEL_PLAN, 2, 1);
@@ -872,7 +857,7 @@ void test_docking_and_validation_edge_cases() {
                      [&](Ship& s) { s.dock_with_ship(carrier_id); });
   ctx.em.mutate_ship(carrier_id,
                      [&](Ship& s) { s.dock_with_ship(shuttle_id); });
-  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_scope_star(1);
   g.out.str("");
   ctx.assert_dispatch_success(
       g, {"load", std::format("#{}", shuttle_id.value), "r", "50"});

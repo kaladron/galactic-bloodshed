@@ -45,8 +45,7 @@ void test_detonate_happy_path() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // Execute detonate command: detonate #1
   ctx.assert_dispatch_success(g, {"detonate", "#1"});
@@ -79,8 +78,7 @@ void test_detonate_role_rejection() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 3, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   ctx.assert_dispatch_rejected(g, {"detonate", "#1"});
   test::expect_contains(g.out.str(), "Guest races cannot use this command.");
@@ -95,8 +93,7 @@ void test_detonate_domain_errors() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // 1. Min args check (< 2 args)
   ctx.assert_dispatch_rejected(g, {"detonate"});

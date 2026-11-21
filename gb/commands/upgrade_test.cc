@@ -36,15 +36,14 @@ void test_upgrade_command() {
   ctx.setup_game_obj(g);
 
   // 1. Scope rejection at UNIV scope
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "2"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
   std::println(std::cout, "    ✓ Scope rejection at universe level verified");
 
   // 2. Scope rejection at STAR scope
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "2"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
@@ -53,9 +52,7 @@ void test_upgrade_command() {
   // 3. Guest rejection
   ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });
   ctx.setup_game_obj(g);
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(ship_id);
-  g.set_snum(1);
+  g.set_scope_ship(ship_id);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "2"});
   test::expect_contains(g.out.str(), "Guest races cannot use this command.");
@@ -69,9 +66,7 @@ void test_upgrade_command() {
   std::println(std::cout, "Upgrade ship armor");
   {
     ctx.setup_game_obj(g);
-    g.set_level(ScopeLevel::LEVEL_SHIP);
-    g.set_shipno(ship_id);
-    g.set_snum(1);
+    g.set_scope_ship(ship_id);
 
     const auto* ship_before = ctx.em.peek_ship(ship_id);
     test::expect_ne(ship_before, nullptr);
@@ -110,9 +105,7 @@ void test_upgrade_command() {
   std::println(std::cout, "Upgrade ship speed");
   {
     ctx.setup_game_obj(g);
-    g.set_level(ScopeLevel::LEVEL_SHIP);
-    g.set_shipno(ship_id);
-    g.set_snum(1);
+    g.set_scope_ship(ship_id);
 
     const auto* ship_before = ctx.em.peek_ship(ship_id);
     test::expect_ne(ship_before, nullptr);
@@ -191,9 +184,7 @@ void test_upgrade_numeric_attributes_and_validations() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(ship_id);
-  g.set_snum(1);
+  g.set_scope_ship(ship_id);
 
   // Negative value rejected
   g.out.str("");
@@ -279,9 +270,7 @@ void test_upgrade_weapons_and_systems() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g);
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(ship_id);
-  g.set_snum(1);
+  g.set_scope_ship(ship_id);
 
   // Primary battery validation & upgrades
   g.out.str("");
@@ -355,9 +344,7 @@ void test_upgrade_weapons_and_systems() {
     r.discoveries.cew = true;
   });
   ctx.setup_game_obj(g);
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(ship_id);
-  g.set_snum(1);
+  g.set_scope_ship(ship_id);
 
   ctx.assert_dispatch_success(g, {"upgrade", "mount"}, 1);
   test::expect_true(ctx.em.peek_ship(ship_id)->mount());
@@ -444,15 +431,13 @@ void test_upgrade_preconditions_and_carrier_hangar() {
   ctx.setup_game_obj(g);
 
   // Factory rejection
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(factory_id);
-  g.set_snum(1);
+  g.set_scope_ship(factory_id);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "5"});
   test::expect_contains(g.out.str(), "You can't upgrade factories.");
 
   // Pod rejection
-  g.set_shipno(pod_id);
+  g.set_scope_ship(pod_id);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "5"});
   test::expect_contains(g.out.str(), "This ship cannot be upgraded.");
@@ -461,7 +446,7 @@ void test_upgrade_preconditions_and_carrier_hangar() {
   ctx.em.mutate_ship(cruiser_id, [](Ship& s) {
     test::expect_false(s.apply_damage(10).destroyed);
   });
-  g.set_shipno(cruiser_id);
+  g.set_scope_ship(cruiser_id);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "10"});
   test::expect_contains(g.out.str(), "You cannot upgrade damaged ships.");
@@ -482,9 +467,7 @@ void test_upgrade_preconditions_and_carrier_hangar() {
   // Insufficient tech rejection
   ctx.em.mutate_race(1, [](Race& r) { r.tech = 0.1; });
   ctx.setup_game_obj(g);
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(cruiser_id);
-  g.set_snum(1);
+  g.set_scope_ship(cruiser_id);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "20"});
   test::expect_contains(g.out.str(),
@@ -495,9 +478,7 @@ void test_upgrade_preconditions_and_carrier_hangar() {
   ctx.em.mutate_ship(cruiser_id, [](Ship& s) { s.resource() = 0; });
   ctx.em.mutate_ship(carrier_id, [](Ship& c) { c.resource() = 0; });
   ctx.setup_game_obj(g);
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(cruiser_id);
-  g.set_snum(1);
+  g.set_scope_ship(cruiser_id);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "armor", "20"});
   test::expect_contains(g.out.str(),
@@ -551,16 +532,14 @@ void test_upgrade_json_god_mode_and_edge_cases() {
   ctx.setup_game_obj(g);
 
   // Direct handler call at non-SHIP scope
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
   g.out.str("");
   test::expect_false(GB::commands::upgrade({"upgrade", "armor", "5"}, g));
   test::expect_contains(
       g.out.str(), "You have to change scope to the ship you wish to upgrade.");
 
   // Non-commandable ship rejection (owned by player 2)
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(ship2_id);
+  g.set_scope_ship(ship2_id);
   g.out.str("");
   test::expect_false(GB::commands::upgrade({"upgrade", "armor", "5"}, g));
   test::expect_contains(g.out.str(),
@@ -571,8 +550,7 @@ void test_upgrade_json_god_mode_and_edge_cases() {
                         std::format("You don't own ship #{}.", ship2_id));
 
   // Switch to Ship 1
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(ship1_id);
+  g.set_scope_ship(ship1_id);
 
   // 1. NoCaliberDefined when upgrading battery strength with NONE caliber
   g.out.str("");
@@ -647,9 +625,7 @@ void test_upgrade_json_god_mode_and_edge_cases() {
     r.tech = 0.0;
   });
   ctx.setup_game_obj(g);
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(ship1_id);
-  g.set_snum(1);
+  g.set_scope_ship(ship1_id);
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   const auto res_before_god = ctx.em.peek_ship(ship1_id)->resource();
@@ -678,9 +654,7 @@ void test_upgrade_json_god_mode_and_edge_cases() {
                                    .landed_on(1, 1, {0, 0})
                                    .with_resource(0)
                                    .build();
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(landed_ftr);
-  g.set_snum(1);
+  g.set_scope_ship(landed_ftr);
   ctx.assert_dispatch_success(g, {"upgrade", "armor", "5"}, 1);
   test::expect_eq(ctx.em.peek_ship(landed_ftr)->armor(), 5);
   test::expect_lt(ctx.em.peek_planet(1, 1)->info(1).resource, 500);
@@ -702,7 +676,7 @@ void test_upgrade_json_god_mode_and_edge_cases() {
   ctx.em.mutate_ship(carrier, [&](Ship& c) {
     c.load_docked_craft(*ctx.em.peek_ship(berthed_ftr));
   });
-  g.set_shipno(berthed_ftr);
+  g.set_scope_ship(berthed_ftr);
   ctx.assert_dispatch_success(g, {"upgrade", "armor", "5"}, 1);
   test::expect_eq(ctx.em.peek_ship(berthed_ftr)->armor(), 5);
   test::expect_lt(ctx.em.peek_ship(carrier)->resource(), 300);
@@ -720,7 +694,7 @@ void test_upgrade_json_god_mode_and_edge_cases() {
                               .with_damage(0)
                               .with_resource(50)
                               .build();
-  g.set_shipno(gr_id);
+  g.set_scope_ship(gr_id);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"upgrade", "cew", "strength", "5"});
   test::expect_contains(g.out.str(), "doesn't exist or can't be modified");

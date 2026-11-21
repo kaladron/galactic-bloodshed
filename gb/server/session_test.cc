@@ -367,15 +367,12 @@ int main() {
     test::expect_true(&session->game_obj().entity_manager == &em);
     test::expect_true(&session->game_obj().session_registry == &registry);
 
-    // State mutations via Session accessors are reflected in GameObj
+    // State mutations via Session and GameObj scope accessors stay synchronized
     session->set_connected(true);
     session->set_player(2);
     session->set_governor(3);
     session->set_god(true);
-    session->set_snum(4);
-    session->set_pnum(5);
-    session->set_shipno(6);
-    session->set_level(ScopeLevel::LEVEL_PLAN);
+    session->game_obj().set_scope_planet(4, 5);
     session->touch();
 
     test::expect_true(session->connected());
@@ -384,7 +381,7 @@ int main() {
     test::expect_true(session->god());
     test::expect_eq(session->snum(), 4);
     test::expect_eq(session->pnum(), 5);
-    test::expect_eq(session->shipno(), 6);
+    test::expect_eq(session->shipno(), 0);
     test::expect_true(session->level() == ScopeLevel::LEVEL_PLAN);
     test::expect_true(session->last_time() > 0);
 
@@ -394,15 +391,28 @@ int main() {
     test::expect_true(const_session.game_obj().god());
     test::expect_eq(const_session.game_obj().snum(), 4);
     test::expect_eq(const_session.game_obj().pnum(), 5);
-    test::expect_eq(const_session.game_obj().shipno(), 6);
+    test::expect_eq(const_session.game_obj().shipno(), 0);
     test::expect_true(const_session.game_obj().level() ==
                       ScopeLevel::LEVEL_PLAN);
 
-    // State mutations directly on GameObj are immediately visible via Session
-    session->game_obj().set_level(ScopeLevel::LEVEL_STAR);
-    session->game_obj().set_snum(9);
+    // Hierarchy zeroing on GameObj scope transitions: STAR clears pnum, UNIV
+    // clears snum
+    session->game_obj().set_scope_star(9);
     test::expect_true(session->level() == ScopeLevel::LEVEL_STAR);
     test::expect_eq(session->snum(), 9);
+    test::expect_eq(session->pnum(), 0);
+    session->game_obj().set_scope_univ();
+    test::expect_true(session->level() == ScopeLevel::LEVEL_UNIV);
+    test::expect_eq(session->snum(), 0);
+    test::expect_eq(session->pnum(), 0);
+    test::expect_throws<std::invalid_argument>(
+        [&]() { session->game_obj().set_scope_star(0); });
+    test::expect_throws<std::invalid_argument>(
+        [&]() { session->game_obj().set_scope_planet(0, 1); });
+    test::expect_throws<std::invalid_argument>(
+        [&]() { session->game_obj().set_scope_planet(1, 0); });
+    test::expect_throws<std::invalid_argument>(
+        [&]() { session->game_obj().set_scope_ship(0); });
 
     // Rate limiting quota mechanics
     session->use_quota();

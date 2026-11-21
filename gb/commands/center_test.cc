@@ -19,12 +19,11 @@ void test_center_matrix() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
 
   TestCommandMatrix(ctx, "center")
       .with_valid_argv({"center", "/Sol"})
       .with_invalid_argv({"center", "/NonexistentStar"})
-      .with_valid_scope(ScopeLevel::LEVEL_UNIV)
       .with_expected_star_ap(0)
       .run_matrix(g);
 }
@@ -36,7 +35,7 @@ void test_center_happy_path() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
 
   // 1. Center on Sol at (0, 0)
   ctx.assert_dispatch_success(g, {"center", "/Sol"});
@@ -66,7 +65,7 @@ void test_center_domain_errors() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
 
   // 1. Min args check (< 2 args)
   ctx.assert_dispatch_rejected(g, {"center"});

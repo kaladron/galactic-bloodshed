@@ -32,8 +32,7 @@ void test_dump_happy_paths() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // 1. Dump exploration data (10 AP deducted via FixedStar)
   ctx.assert_dispatch_success(g, {"dump", "Klingons"}, 10);
@@ -64,8 +63,7 @@ void test_dump_insufficient_ap() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   ctx.assert_dispatch_rejected(g, {"dump", "Klingons"});
   test::expect_contains(g.out.str(), "You don't have 10 action points there.");
@@ -82,8 +80,7 @@ void test_dump_role_rejections() {
     auto& registry = get_test_session_registry();
     GameObj g(ctx.em, registry);
     ctx.setup_game_obj(g, 2, 1);
-    g.set_level(ScopeLevel::LEVEL_STAR);
-    g.set_snum(1);
+    g.set_scope_star(1);
 
     ctx.assert_dispatch_rejected(g, {"dump", "Federation"});
     test::expect_contains(g.out.str(), "Guest races cannot use this command.");
@@ -94,8 +91,7 @@ void test_dump_role_rejections() {
     auto& registry = get_test_session_registry();
     GameObj g(ctx.em, registry);
     ctx.setup_game_obj(g, 1, 2);
-    g.set_level(ScopeLevel::LEVEL_STAR);
-    g.set_snum(1);
+    g.set_scope_star(1);
 
     ctx.assert_dispatch_rejected(g, {"dump", "Klingons"});
     test::expect_contains(g.out.str(),
@@ -110,8 +106,7 @@ void test_dump_domain_errors() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // 1. Min args check (< 2 args)
   ctx.assert_dispatch_rejected(g, {"dump"});
@@ -130,8 +125,7 @@ void test_dump_specific_places() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // Reset explored status on recipient for further tests
   ctx.em.mutate_planet(1, 1,
@@ -179,13 +173,11 @@ void test_dump_matrix() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   TestCommandMatrix(ctx, "dump")
       .with_valid_argv({"dump", "Klingons"})
       .with_invalid_argv({"dump", "NonExistentPlayer"})
-      .with_valid_scope(ScopeLevel::LEVEL_STAR)
       .with_expected_star_ap(10)
       .run_matrix(g);
 }

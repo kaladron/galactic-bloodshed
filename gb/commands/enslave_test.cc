@@ -41,9 +41,7 @@ void test_enslave_happy_path() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_univ();
 
   // Enslave victim race (player 2)
   ctx.assert_dispatch_success(g, {"enslave", "1"});
@@ -79,7 +77,7 @@ void test_enslave_repulsed_and_json() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
 
   ctx.assert_dispatch_success(g, {"enslave", "1"});
   test::expect_contains(g.out.str(), "Enslavement repulsed.");
@@ -109,9 +107,7 @@ void test_enslave_insufficient_ap() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_univ();
 
   ctx.assert_dispatch_rejected(g, {"enslave", "1"});
   test::expect_contains(g.out.str(), "action points");
@@ -129,7 +125,7 @@ void test_enslave_role_rejection() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 3, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
 
   ctx.assert_dispatch_rejected(g, {"enslave", "1"});
   test::expect_contains(g.out.str(), "Guest races cannot use this command.");
@@ -144,9 +140,7 @@ void test_enslave_domain_errors() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_univ();
 
   // 1. Min args check (< 2 args)
   ctx.assert_dispatch_rejected(g, {"enslave"});
@@ -227,9 +221,7 @@ void test_enslave_maxplayers_boundary() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_UNIV);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_univ();
 
   ctx.assert_dispatch_success(g, {"enslave", "1"});
   test::expect_contains(g.out.str(), "Enslavement successful");

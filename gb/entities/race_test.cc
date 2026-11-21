@@ -186,8 +186,28 @@ int main() {
   {
     Race race{};
     race.Playernum = 1;
-    race.init_leader(starnum_t{3}, planetnum_t{2}, "leadpass",
-                     ScopeLevel::LEVEL_PLAN);
+    race.init_leader(starnum_t{3}, planetnum_t{2}, "leadpass");
+
+    // Default scope mutators reject <= 0 and zero child coordinates
+    Race deity_race{};
+    deity_race.Playernum = 9;
+    deity_race.init_deity_leader("dpass");
+    test::expect_eq(deity_race.leader().deflevel, ScopeLevel::LEVEL_UNIV);
+    test::expect_eq(deity_race.leader().defsystem, starnum_t{0});
+    test::expect_eq(deity_race.leader().defplanetnum, planetnum_t{0});
+    test::expect_eq(deity_race.leader().homesystem, starnum_t{0});
+    test::expect_eq(deity_race.leader().homeplanetnum, planetnum_t{0});
+    deity_race.leader().set_default_scope_planet(2, 4);
+    deity_race.leader().set_default_scope_star(5);
+    test::expect_eq(deity_race.leader().deflevel, ScopeLevel::LEVEL_STAR);
+    test::expect_eq(deity_race.leader().defsystem, starnum_t{5});
+    test::expect_eq(deity_race.leader().defplanetnum, planetnum_t{0});
+    test::expect_throws<std::invalid_argument>(
+        [&]() { deity_race.leader().set_default_scope_star(0); });
+    test::expect_throws<std::invalid_argument>(
+        [&]() { deity_race.leader().set_default_scope_planet(0, 1); });
+    test::expect_throws<std::invalid_argument>(
+        [&]() { deity_race.leader().set_default_scope_planet(1, 0); });
 
     // Default constructor / init_leader activates leader (Governor 1)
     test::expect_eq(Race::leader_id, governor_t{1});

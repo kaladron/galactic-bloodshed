@@ -75,8 +75,7 @@ void test_grant_dispatch() {
   test::expect_contains(g.out.str(), "Invalid amount.");
 
   // 6. Grant star when scoped to star
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"grant", "2", "star"});
   const auto* saved_star = ctx.em.peek_star(1);
@@ -85,7 +84,7 @@ void test_grant_dispatch() {
   std::println(std::cout, "    ✓ Star granted to governor");
 
   // 7. Grant star when not scoped to star
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"grant", "2", "star"});
   test::expect_contains(g.out.str(), "Please cs to the star system first.");

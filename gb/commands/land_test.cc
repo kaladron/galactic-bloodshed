@@ -35,10 +35,7 @@ void test_land_on_planet() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
-  g.set_shipno(1);
+  g.set_scope_planet(1, 1);
 
   ctx.em.mutate_ship(1, [](Ship& s) {
     s.set_ship_destination(1);
@@ -75,9 +72,7 @@ void test_cannot_land_docked_ship() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // First land the ship so it is docked
   ctx.assert_dispatch_success(g, {"land", "#1", "5,5"}, 1);
@@ -117,9 +112,7 @@ void test_land_on_friendly_carrier() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // Now the shuttle (already at 5,5 landed) can land on carrier
   ctx.assert_dispatch_success(g, {"land", "#1", "#2"}, 0);
@@ -144,9 +137,7 @@ void test_land_insufficient_ap() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_rejected(g, {"land", "#1", "5,5"});
   test::expect_contains(g.out.str(), "action points");
@@ -162,9 +153,7 @@ void test_land_domain_errors() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Min args check (< 3 args)
   ctx.assert_dispatch_rejected(g, {"land", "#1"});
@@ -184,9 +173,7 @@ void test_land_spaceborne_on_carrier_and_edge_cases() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // Carrier in planet orbit at same coordinates as shuttle #1
   const auto carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
@@ -229,7 +216,7 @@ void test_land_spaceborne_on_carrier_and_edge_cases() {
   test::expect_contains(g.out.str(), "not in the same scope");
 
   // 6. Universe scope rejected WITHOUT losing fuel
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   ctx.em.mutate_ship(1, [](Ship& s) { s.enter_deep_space(); });
   ctx.em.mutate_ship(carrier_id, [](Ship& c) { c.enter_deep_space(); });
   const double fuel_before = ctx.em.peek_ship(1)->fuel();
@@ -239,7 +226,7 @@ void test_land_spaceborne_on_carrier_and_edge_cases() {
   test::expect_eq(ctx.em.peek_ship(1)->fuel(), fuel_before);
 
   // Restore both to planet orbit, test distance > DIST_TO_DOCK
-  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_scope_planet(1, 1);
   ctx.em.mutate_ship(1, [&](Ship& s) {
     s.enter_planet_orbit(1, 1);
     s.set_coordinates({0.0, 0.0});
@@ -289,9 +276,7 @@ void test_land_mothership_loading_edge_cases() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // Land shuttle #1 at (5, 5)
   ctx.assert_dispatch_success(g, {"land", "#1", "5,5"}, 1);
@@ -377,9 +362,7 @@ void test_land_planet_preconditions_and_crashes() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Out-of-bounds coordinates do NOT deduct Star AP
   const ap_t ap_before = ctx.em.peek_star(1)->AP(1);
@@ -482,8 +465,7 @@ void test_land_json_and_remaining_conditions() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // 1. Star-scope spaceborne carrier landing + carrier mass conservation check
   const auto carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
@@ -533,27 +515,21 @@ void test_land_json_and_remaining_conditions() {
                           .owned_by(1, 1)
                           .in_planet_orbit(1, 1)
                           .build();
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
   ctx.assert_dispatch_rejected(
       g, {"land", std::format("#{}", hab_id.value), "5,5"});
   test::expect_contains(g.out.str(), "This ship is not equipped to land.");
 
   ctx.em.mutate_ship(1, [](Ship& s) { s.enter_planet_orbit(1, 1); });
-  g.set_level(ScopeLevel::LEVEL_UNIV);
-  g.set_snum(0);
-  g.set_pnum(0);
+  g.set_scope_univ();
   ctx.assert_dispatch_rejected(g, {"land", "#1", "5,5"});
   test::expect_contains(g.out.str(), "You have to cs to the planet it orbits.");
 
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
-  g.set_pnum(0);
+  g.set_scope_star(1);
   ctx.assert_dispatch_rejected(g, {"land", "#1", "5,5"});
   test::expect_contains(g.out.str(), "You have to cs to the planet it orbits.");
 
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
   ctx.em.mutate_ship(1, [](Ship& s) { s.max_speed() = 0; });
   ctx.assert_dispatch_rejected(g, {"land", "#1", "5,5"});
   test::expect_contains(g.out.str(), "This ship is not rated for maneuvering.");

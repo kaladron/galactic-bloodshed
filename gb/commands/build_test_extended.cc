@@ -37,10 +37,20 @@ struct BuildTestFixture {
     g.set_player(1);
     g.set_governor(1);
     g.race = em.peek_race(1);
-    g.set_level(level);
-    g.set_snum(star_id);
-    g.set_pnum(planet_id);
-    g.set_shipno(shipno);
+    switch (level) {
+      case ScopeLevel::LEVEL_UNIV:
+        g.set_scope_univ();
+        break;
+      case ScopeLevel::LEVEL_STAR:
+        g.set_scope_star(star_id);
+        break;
+      case ScopeLevel::LEVEL_PLAN:
+        g.set_scope_planet(star_id, planet_id);
+        break;
+      case ScopeLevel::LEVEL_SHIP:
+        g.set_scope_ship(shipno);
+        break;
+    }
   }
 
   shipnum_t count_ships() {

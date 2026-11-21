@@ -143,6 +143,82 @@ GameObj::resolve_active_player(const std::string& token) {
   return target;
 }
 
+Place GameObj::place() const noexcept {
+  return Place{level_, snum_, pnum_, shipno_};
+}
+
+void GameObj::set_scope_star(starnum_t star) {
+  if (star <= 0) {
+    throw std::invalid_argument("set_scope_star requires positive star ID");
+  }
+  level_ = ScopeLevel::LEVEL_STAR;
+  snum_ = star;
+  pnum_ = 0;
+  shipno_ = 0;
+  carrier_ancestors_.clear();
+}
+
+void GameObj::set_scope_planet(starnum_t star, planetnum_t planet) {
+  if (star <= 0 || planet <= 0) {
+    throw std::invalid_argument(
+        "set_scope_planet requires positive star and planet IDs");
+  }
+  level_ = ScopeLevel::LEVEL_PLAN;
+  snum_ = star;
+  pnum_ = planet;
+  shipno_ = 0;
+  carrier_ancestors_.clear();
+}
+
+void GameObj::set_scope_ship(shipnum_t ship) {
+  if (ship <= 0) {
+    throw std::invalid_argument("set_scope_ship requires positive ship ID");
+  }
+  const auto* s = entity_manager.peek_ship(ship);
+  auto ancestors = entity_manager.ancestor_carriers(ship);
+  const Ship* root =
+      ancestors.empty() ? s : entity_manager.peek_ship(ancestors.back());
+  level_ = ScopeLevel::LEVEL_SHIP;
+  shipno_ = ship;
+  carrier_ancestors_ = std::move(ancestors);
+  sync_celestial_coords_from_ship(*root);
+}
+
+void GameObj::set_scope(const Place& where) {
+  switch (where.level) {
+    case ScopeLevel::LEVEL_UNIV:
+      set_scope_univ();
+      break;
+    case ScopeLevel::LEVEL_STAR:
+      set_scope_star(where.snum);
+      break;
+    case ScopeLevel::LEVEL_PLAN:
+      set_scope_planet(where.snum, where.pnum);
+      break;
+    case ScopeLevel::LEVEL_SHIP:
+      set_scope_ship(where.shipno);
+      break;
+  }
+}
+
+void GameObj::set_default_scope(const Race::gov& gov) {
+  switch (gov.deflevel) {
+    case ScopeLevel::LEVEL_UNIV:
+      set_scope_univ();
+      break;
+    case ScopeLevel::LEVEL_STAR:
+      set_scope_star(gov.defsystem);
+      break;
+    case ScopeLevel::LEVEL_PLAN:
+      set_scope_planet(gov.defsystem, gov.defplanetnum);
+      break;
+    case ScopeLevel::LEVEL_SHIP:
+      throw std::invalid_argument(
+          "Governor default scope cannot be LEVEL_SHIP");
+  }
+  reconcile_scope();
+}
+
 bool GameObj::is_valid_ship_scope(const Ship& ship) const noexcept {
   if (!ship.alive()) return false;
   if (god_) return true;
@@ -187,26 +263,27 @@ void GameObj::step_up_from_ship_scope() {
     }
   }
   shipno_ = 0;
-  level_ = ScopeLevel::LEVEL_PLAN;
+  if (snum_ <= 0) {
+    level_ = ScopeLevel::LEVEL_UNIV;
+    snum_ = 0;
+    pnum_ = 0;
+  } else if (pnum_ <= 0) {
+    level_ = ScopeLevel::LEVEL_STAR;
+    pnum_ = 0;
+  } else {
+    level_ = ScopeLevel::LEVEL_PLAN;
+  }
 }
 
 void GameObj::reconcile_celestial_scope() {
   if (level_ == ScopeLevel::LEVEL_SHIP || level_ == ScopeLevel::LEVEL_UNIV) {
     return;
   }
-  if (snum_ <= 0) {
-    level_ = ScopeLevel::LEVEL_UNIV;
-    snum_ = 0;
-    pnum_ = 0;
-    return;
-  }
   const auto* star = entity_manager.peek_star(snum_);
   if (level_ == ScopeLevel::LEVEL_PLAN) {
-    if (pnum_ >= 1 && pnum_ <= star->numplanets()) {
-      const auto* planet = entity_manager.peek_planet(snum_, pnum_);
-      if (god_ || planet->info(player_).explored) {
-        return;
-      }
+    const auto* planet = entity_manager.peek_planet(snum_, pnum_);
+    if (god_ || planet->info(player_).explored) {
+      return;
     }
     level_ = ScopeLevel::LEVEL_STAR;
     pnum_ = 0;
@@ -214,16 +291,10 @@ void GameObj::reconcile_celestial_scope() {
   if (!god_ && !star->is_explored_by(player_)) {
     level_ = ScopeLevel::LEVEL_UNIV;
     snum_ = 0;
-    pnum_ = 0;
   }
 }
 
 ShipScopeStatus GameObj::reconcile_ship_scope_internal() {
-  if (shipno_ <= 0) {
-    step_up_from_ship_scope();
-    reconcile_celestial_scope();
-    return ShipScopeStatus::NoShipScoped;
-  }
   try {
     const auto* ship = entity_manager.peek_ship(shipno_);
     auto ancestors = entity_manager.ancestor_carriers(shipno_);

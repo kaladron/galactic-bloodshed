@@ -76,8 +76,7 @@ void test_star_spatial_parity(TestContext& ctx) {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   std::vector<shipnum_t> shiplist_scope_alive;
   for (const Ship& s :
@@ -135,9 +134,7 @@ void test_planet_spatial_parity(TestContext& ctx) {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   std::vector<shipnum_t> shiplist_scope_alive;
   for (const Ship& s :

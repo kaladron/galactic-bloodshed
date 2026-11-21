@@ -34,9 +34,7 @@ void test_build_happy_paths() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Build info queries (0 AP, zero DB writes including peek_ship_exam)
   const auto before_info = ctx.db.total_changes();
@@ -83,9 +81,7 @@ void test_build_insufficient_ap() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_rejected(g, {"build", ":", "5,5", "1"});
   test::expect_contains(g.out.str(), "action points");
@@ -98,9 +94,7 @@ void test_build_domain_errors() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Missing type argument at planet scope
   ctx.assert_dispatch_rejected(g, {"build"});
@@ -169,10 +163,7 @@ void test_build_from_ships() {
                              .with_build_type(ShipType::STYPE_SHUTTLE)
                              .build();
 
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_snum(1);
-  g.set_pnum(1);
-  g.set_shipno(factory_id);
+  g.set_scope_ship(factory_id);
 
   // "build" with no arguments in factory scope builds 1 ship
   g.out.str("");
@@ -192,7 +183,7 @@ void test_build_from_ships() {
                              .with_crew(50, 0)
                              .build();
 
-  g.set_shipno(shuttle_id);
+  g.set_scope_ship(shuttle_id);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"build", "H", "1"}, 1);
   test::expect_eq(ctx.em.num_ships(), shipnum_t{initial_ships.value + 6});
@@ -207,7 +198,7 @@ void test_build_from_ships() {
                          .with_crew(100, 0)
                          .build();
 
-  g.set_shipno(hab_id);
+  g.set_scope_ship(hab_id);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"build", ":", "1"}, 0, 1);
   test::expect_eq(ctx.em.num_ships(), shipnum_t{initial_ships.value + 8});
@@ -227,9 +218,7 @@ void test_factory_all_classes_and_toxic_waste() {
   ctx.setup_game_obj(g, 1, 1);
 
   // 1. Planetary `build w` preserves extracted 20% toxic payload on new ship
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
   ctx.assert_dispatch_success(g, {"build", "w", "5,5", "1"}, 1);
   test::expect_eq(static_cast<int>(ctx.em.peek_planet(1, 1)->toxic()), 30);
   const auto* waste_ship = ctx.em.peek_ship(1)->as<ToxicWasteShip>();
@@ -255,8 +244,7 @@ void test_factory_all_classes_and_toxic_waste() {
                                  .with_on(false)
                                  .with_crew(20, 0)
                                  .build();
-    g.set_level(ScopeLevel::LEVEL_SHIP);
-    g.set_shipno(fac_id);
+    g.set_scope_ship(fac_id);
     ctx.assert_dispatch_success(g, {"make", std::string(1, tmpl.letter)});
     if (tmpl.type == ShipType::STYPE_CRUISER) {
       ctx.em.mutate_ship(fac_id, [](Ship& f) {

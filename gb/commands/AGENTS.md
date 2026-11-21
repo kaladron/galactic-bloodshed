@@ -80,14 +80,12 @@ void test_commandname_matrix() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 0);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // 3. 4-Way Command Matrix runner
   TestCommandMatrix(ctx, "commandname")
       .with_valid_argv({"commandname", std::format("#{}", ship_id.value)})
       .with_invalid_argv({"commandname", "#999"})
-      .with_valid_scope(ScopeLevel::LEVEL_STAR)
       .with_expected_star_ap(1)
       .run_matrix(g);
 

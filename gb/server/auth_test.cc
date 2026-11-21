@@ -154,9 +154,7 @@ void test_check_connect_success_and_clamping() {
     race.Gov_ship = gov_id;
     race.leader().name = "Gov1";
     race.leader().password = "govword";
-    race.leader().deflevel = ScopeLevel::LEVEL_PLAN;
-    race.leader().defsystem = 999;     // Out of bounds -> should clamp to 1
-    race.leader().defplanetnum = 999;  // Out of bounds -> should clamp to 1
+    race.leader().set_default_scope_planet(1, 1);
     race.leader().login = 1000000;
   });
 
@@ -170,8 +168,8 @@ void test_check_connect_success_and_clamping() {
   test::expect_true(session->connected());
   test::expect_eq(session->player(), player_t{1});
   test::expect_eq(session->governor(), governor_t{1});
-  test::expect_eq(session->snum(), starnum_t{1});    // Clamped from 999
-  test::expect_eq(session->pnum(), planetnum_t{1});  // Clamped from 999
+  test::expect_eq(session->snum(), starnum_t{1});
+  test::expect_eq(session->pnum(), planetnum_t{1});
 
   // Verify race login time updated in database
   const auto* updated_race = ctx.em.peek_race(1);
@@ -188,13 +186,10 @@ void test_check_connect_success_and_clamping() {
   test::expect_contains(output, "Morale: 100");
   test::expect_contains(output, "You have:");
 
-  // 0-planet star with deflevel = LEVEL_PLAN steps up to LEVEL_STAR (pnum = 0)
+  // 0-planet star with deflevel = LEVEL_STAR logs in cleanly with pnum = 0
   ctx.create_star("VoidStar", 4).with_explored(1).build();
-  ctx.em.mutate_race(1, [](Race& race) {
-    race.leader().deflevel = ScopeLevel::LEVEL_PLAN;
-    race.leader().defsystem = 4;
-    race.leader().defplanetnum = 1;
-  });
+  ctx.em.mutate_race(
+      1, [](Race& race) { race.leader().set_default_scope_star(4); });
   RecordingSessionRegistry empty_reg;
   asio::ip::tcp::socket socket_void(io);
   auto session_void =
@@ -204,6 +199,19 @@ void test_check_connect_success_and_clamping() {
   test::expect_eq(session_void->level(), ScopeLevel::LEVEL_STAR);
   test::expect_eq(session_void->snum(), starnum_t{4});
   test::expect_eq(session_void->pnum(), planetnum_t{0});
+
+  // Corrupt out-of-bounds defsystem fails fast via EntityNotFoundError
+  ctx.em.mutate_race(
+      1, [](Race& race) { race.leader().set_default_scope_star(999); });
+  RecordingSessionRegistry corrupt_reg;
+  asio::ip::tcp::socket socket_corrupt(io);
+  auto session_corrupt =
+      Session::create(std::move(socket_corrupt), ctx.em, corrupt_reg);
+  check_connect(*session_corrupt, "raceword govword");
+  test::expect_contains(session_corrupt->pending_output(),
+                        "Connection refused.");
+  ctx.em.mutate_race(
+      1, [](Race& race) { race.leader().set_default_scope_planet(1, 1); });
 
   ctx.verify_universe_invariants();
 }

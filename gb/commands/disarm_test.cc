@@ -39,16 +39,13 @@ void test_disarm_command() {
   ctx.setup_game_obj(g);
 
   // 1. Scope rejection at STAR scope
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"disarm", "5,5", "50"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
 
   // 2. Bad sector format, illegal coordinates, unowned sector
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"disarm", "bad_coords", "10"});

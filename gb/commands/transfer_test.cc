@@ -70,16 +70,14 @@ int main() {
   ctx.setup_game_obj(g);
 
   // 1. Scope rejection at UNIV level
-  g.set_level(ScopeLevel::LEVEL_UNIV);
-  g.set_snum(1);
+  g.set_scope_univ();
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "r", "100"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
   std::println(std::cout, "    ✓ Scope rejection at universe level verified");
 
   // 2. Scope rejection at STAR level
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "r", "100"});
   test::expect_contains(g.out.str(), "Invalid scope for this command.");
@@ -88,9 +86,7 @@ int main() {
   // 3. Guest rejection
   ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });
   ctx.setup_game_obj(g);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"transfer", "Receiver", "r", "100"});
   test::expect_contains(g.out.str(), "Guest races cannot use this command.");
@@ -99,9 +95,7 @@ int main() {
   // Restore non-guest race
   ctx.em.mutate_race(1, [](Race& r) { r.Guest = false; });
   ctx.setup_game_obj(g);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   std::println(std::cout, "Transfer resources");
   {

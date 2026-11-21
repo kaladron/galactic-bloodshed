@@ -70,11 +70,12 @@ constexpr std::string_view think_aliases[] = {";"};
 namespace GB::commands {
 
 bool announce(const command_t& argv, GameObj& g) {
-  if (g.level() == ScopeLevel::LEVEL_UNIV || g.snum() == 0) {
+  const auto star_id = g.enclosing_star();
+  if (!star_id) {
     return emit_communication(GB::presentation::AnnounceMode::Broadcast, argv,
                               g);
   }
-  const auto& star = *g.entity_manager.peek_star(g.snum());
+  const auto& star = *g.entity_manager.peek_star(*star_id);
   if (!star.is_inhabited_by(g.player()) && !g.god()) {
     g.out << "You do not inhabit this system or have diety privileges.\n";
     return false;

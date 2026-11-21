@@ -51,8 +51,7 @@ void test_scrap_happy_paths() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // 1. Scrap docked fighter (1 AP deducted via dynamic AP)
   ctx.assert_dispatch_success(g, {"scrap", "#2"}, 1);
@@ -121,8 +120,7 @@ void test_scrap_docked_capacity_clamping() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   ctx.assert_dispatch_success(g, {"scrap", std::format("#{}", scrap_id.value)},
                               1);
@@ -207,9 +205,7 @@ void test_scrap_landed_sectors_and_spaceborne() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Landed on owned sector (5, 5) with crew, troops, fuel, destruct,
   // crystals
@@ -286,7 +282,7 @@ void test_scrap_landed_sectors_and_spaceborne() {
 
   // 5. Spaceborne ship in star orbit (neither landed nor docked) -> Destroyed,
   // no resources reclaimed
-  g.set_level(ScopeLevel::LEVEL_STAR);
+  g.set_scope_star(1);
   auto space_ship = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
                         .owned_by(player_t{1}, governor_t{1})
                         .in_star_orbit(1)
@@ -311,8 +307,7 @@ void test_scrap_insufficient_ap() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   ctx.assert_dispatch_rejected(g, {"scrap", "#2"});
   test::expect_contains(g.out.str(), "action points");
@@ -325,8 +320,7 @@ void test_scrap_domain_errors() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // 1. Min args check (< 2 args)
   ctx.assert_dispatch_rejected(g, {"scrap"});
@@ -358,7 +352,7 @@ void test_scrap_domain_errors() {
                        .in_deep_space()
                        .with_crew(2, 0)
                        .build();
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   ctx.em.mutate_universe([](Universe& u) { u.set_AP(player_t{1}, 0); });
   g.out.str("");
   ctx.assert_dispatch_rejected(g,
@@ -383,9 +377,7 @@ void test_scrap_toxic_waste_warning() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // Create Toxic Waste Canister landed on planet
   auto tox_id = TestShipBuilder(ctx.em, ShipType::OTYPE_TOXWC)
@@ -422,8 +414,7 @@ void test_scrap_toxic_waste_warning() {
   test::expect_true(
       ctx.em.dock_carrier(berthed_tox, landed_carrier).has_value());
 
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(landed_carrier);
+  g.set_scope_ship(landed_carrier);
   g.out.str("");
   ctx.assert_dispatch_success(
       g, {"scrap", std::format("#{}", berthed_tox.value)}, 1);
@@ -444,7 +435,7 @@ void test_scrap_toxic_waste_warning() {
                             .docked_to(star_carrier, 1)
                             .with_special(WasteData{.toxic = 20})
                             .build();
-  g.set_shipno(star_carrier);
+  g.set_scope_ship(star_carrier);
   g.out.str("");
   ctx.assert_dispatch_success(g, {"scrap", std::format("#{}", star_tox.value)},
                               1);
@@ -467,9 +458,7 @@ void test_scrap_query_and_scope_reconciliation() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // Starting #1 Shuttle, then build #2 Factory, #3 Terraformer, #4 Waste
   // Canister, and #5 Cruiser
@@ -560,15 +549,8 @@ void test_scrap_query_and_scope_reconciliation() {
   test::expect_eq(g.snum(), starnum_t{2});
   test::expect_true(g.reconcile_ship_scope() == ShipScopeStatus::Valid);
 
-  // Captured/gifted ship, dead ship (!alive), NoShipScoped, foreign carrier
-  // skip, and unexplored planet/star celestial step-up
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(0);
-  g.out.str("");
-  ctx.assert_dispatch_rejected(g, {"report"});
-  test::expect_contains(g.out.str(),
-                        "No ship is currently scoped; scope reset to /Vega");
-
+  // Captured/gifted ship, dead ship (!alive), foreign carrier skip, and
+  // unexplored planet/star celestial step-up
   const auto captured_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
                                .owned_by(1, 1)
                                .in_planet_orbit(1, 1)
@@ -610,12 +592,9 @@ void test_scrap_query_and_scope_reconciliation() {
     defer.commit();
   }
 
-  // Unexplored planet -> explored star; unexplored star -> UNIV; snum == 0 ->
-  // UNIV
+  // Unexplored planet -> explored star; unexplored star -> UNIV
   ctx.em.mutate_planet(2, 1, [](Planet& p) { p.info(1).explored = 0; });
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(2);
-  g.set_pnum(1);
+  g.set_scope_planet(2, 1);
   g.reconcile_scope();
   test::expect_eq(g.level(), ScopeLevel::LEVEL_STAR);
   test::expect_eq(g.snum(), starnum_t{2});
@@ -624,10 +603,6 @@ void test_scrap_query_and_scope_reconciliation() {
   g.reconcile_scope();
   test::expect_eq(g.level(), ScopeLevel::LEVEL_UNIV);
 
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(0);
-  g.reconcile_scope();
-  test::expect_eq(g.level(), ScopeLevel::LEVEL_UNIV);
   ctx.em.mutate_star(2, [](Star& s) { s.mark_explored_by(1); });
   ctx.em.mutate_planet(2, 1, [](Planet& p) { p.info(1).explored = 1; });
 
@@ -642,35 +617,49 @@ void test_scrap_query_and_scope_reconciliation() {
   test::expect_eq(g.level(), ScopeLevel::LEVEL_UNIV);
 
   // Stale LEVEL_SHIP pre-dispatch guard & ':' Place::resolve safety
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_snum(1);
-  g.set_pnum(1);
-  g.set_shipno(3);
-  const auto colon_res = Place::resolve(ctx.em, g.scope_context(), ":");
-  test::expect_false(colon_res.has_value());
-  test::expect_eq(colon_res.error().kind, PlaceErrorKind::ShipNotFound);
+  {
+    const auto gone = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
+                          .owned_by(1, 1)
+                          .in_planet_orbit(1, 1)
+                          .build();
+    g.set_scope_ship(gone);
+    ctx.em.mutate_ship(gone, [&](Ship& s) { ctx.em.destroy_ship(s); });
+    const auto colon_res = Place::resolve(ctx.em, g.scope_context(), ":");
+    test::expect_false(colon_res.has_value());
+    test::expect_eq(colon_res.error().kind, PlaceErrorKind::ShipNotFound);
+  }
 
   for (const command_t& cmd :
        {command_t{"fuel", "#1", ":"}, command_t{"build", ":", "1"},
         command_t{"make", "f"}, command_t{"modify", "armor", "5"},
         command_t{"upgrade", "speed", "4"}}) {
-    g.set_level(ScopeLevel::LEVEL_SHIP);
-    g.set_snum(1);
-    g.set_pnum(1);
-    g.set_shipno(3);
+    const auto gone = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
+                          .owned_by(1, 1)
+                          .in_planet_orbit(1, 1)
+                          .build();
+    g.set_scope_ship(gone);
+    ctx.em.mutate_ship(gone, [&](Ship& s) { ctx.em.destroy_ship(s); });
     g.out.str("");
     ctx.assert_dispatch_rejected(g, cmd);
     test::expect_contains(
-        g.out.str(), "Ship #3 no longer exists; scope reset to /Sol/Earth");
+        g.out.str(),
+        std::format("Ship #{} no longer exists; scope reset to /Sol/Earth",
+                    gone));
     test::expect_eq(g.level(), ScopeLevel::LEVEL_PLAN);
   }
   g.set_god(true);
-  g.set_level(ScopeLevel::LEVEL_SHIP);
-  g.set_shipno(3);
+  const auto god_gone = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
+                            .owned_by(1, 1)
+                            .in_planet_orbit(1, 1)
+                            .build();
+  g.set_scope_ship(god_gone);
+  ctx.em.mutate_ship(god_gone, [&](Ship& s) { ctx.em.destroy_ship(s); });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"fix", "ship", "fuel", "10"});
-  test::expect_contains(g.out.str(),
-                        "Ship #3 no longer exists; scope reset to /Sol/Earth");
+  test::expect_contains(
+      g.out.str(),
+      std::format("Ship #{} no longer exists; scope reset to /Sol/Earth",
+                  god_gone));
 
   ctx.verify_universe_invariants();
 }

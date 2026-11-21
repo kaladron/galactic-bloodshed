@@ -139,7 +139,7 @@ void test_role_star_control() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 2);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   GB::commands::CommandDescriptor desc{
       .name = "mock_star_control",
@@ -148,14 +148,14 @@ void test_role_star_control() {
       .handler = &mock_success_handler,
   };
 
-  // Gov 2 does not control system (or deep-space snum == 0); Deity bypasses
+  // Gov 2 does not control system (or universe / deep-space); Deity bypasses
   g.out.str("");
   test::expect_false(
       GB::commands::dispatch_command(g, desc, {"mock_star_control"}));
   test::expect_contains(g.out.str(),
                         "You are not authorized to do that in this system");
 
-  g.set_snum(0);
+  g.set_scope_univ();
   g.out.str("");
   test::expect_false(
       GB::commands::dispatch_command(g, desc, {"mock_star_control"}));
@@ -167,7 +167,7 @@ void test_role_star_control() {
   test::expect_true(
       GB::commands::dispatch_command(g, desc, {"mock_star_control"}));
   g.set_god(false);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // Gov 1 controls system
   g.set_governor(1);
@@ -192,14 +192,14 @@ void test_scope_validation() {
   };
 
   // Rejected at UNIV
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   g.out.str("");
   test::expect_false(
       GB::commands::dispatch_command(g, desc, {"mock_plan_only"}));
   test::expect_contains(g.out.str(), "Invalid scope for this command");
 
   // Allowed at PLAN
-  g.set_level(ScopeLevel::LEVEL_PLAN);
+  g.set_scope_planet(1, 1);
   g.out.str("");
   test::expect_true(
       GB::commands::dispatch_command(g, desc, {"mock_plan_only"}));
@@ -251,7 +251,7 @@ void test_fixed_star_ap_transactions() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   GB::commands::CommandDescriptor success_desc{
       .name = "mock_cost",
@@ -392,7 +392,7 @@ void test_edge_cases_and_socket_outbox() {
   g.set_player(1);
 
   // 2. Missing star in star_control and FixedStar catches EntityNotFoundError
-  g.set_snum(999);
+  g.set_scope_star(999);
   GB::commands::CommandDescriptor star_ctrl_desc{
       .name = "mock_star_ctrl_missing",
       .roles = {.star_control = true},
@@ -410,7 +410,7 @@ void test_edge_cases_and_socket_outbox() {
   };
   test::expect_false(GB::commands::dispatch_command(
       g, fixed_star_desc, {"mock_fixed_star_missing"}));
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // 3. Null handler returns false
   GB::commands::CommandDescriptor null_handler_desc{
@@ -498,8 +498,8 @@ void test_json_dirty_entity_auto_emission() {
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_star(1);
+  g.set_scope_planet(1, 1);
 
   // 1. ASCII mode: mutations are not tracked or emitted as JSON
   g.set_ui_mode(UiMode::ASCII);
@@ -738,8 +738,7 @@ void test_json_dirty_entity_auto_emission() {
 
   // 11a. LEVEL_STAR scope with star 2 as viewer location (calculates shipping
   // cost)
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(2);
+  g.set_scope_star(2);
   GB::commands::CommandDescriptor commod_star_cmd{
       .name = "commod_star",
       .scopes = GB::commands::AllowedScopes::any(),
@@ -760,9 +759,7 @@ void test_json_dirty_entity_auto_emission() {
   test::expect_false(out.contains(R"("shipping_cost":0)"));
 
   // 11b. LEVEL_PLAN scope
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(2);
-  g.set_pnum(1);
+  g.set_scope_planet(2, 1);
   GB::commands::CommandDescriptor commod_plan_cmd{
       .name = "commod_plan",
       .scopes = GB::commands::AllowedScopes::any(),
@@ -780,7 +777,7 @@ void test_json_dirty_entity_auto_emission() {
   test::expect_contains(out, R"("dest_star":1)");
 
   // 11c. LEVEL_UNIV scope with active and deleted commod
-  g.set_level(ScopeLevel::LEVEL_UNIV);
+  g.set_scope_univ();
   GB::commands::CommandDescriptor commod_univ_cmd{
       .name = "commod_univ",
       .scopes = GB::commands::AllowedScopes::any(),
@@ -804,8 +801,7 @@ void test_json_dirty_entity_auto_emission() {
       out, std::format(R"("id":{},"active":false)", g_c2_id.value));
 
   // 12. Fixed AP deduction mutates star and emits updated StarView
-  g.set_level(ScopeLevel::LEVEL_STAR);
-  g.set_snum(1);
+  g.set_scope_star(1);
   GB::commands::CommandDescriptor ap_cmd{
       .name = "ap_cmd",
       .scopes = GB::commands::AllowedScopes::any(),
@@ -836,9 +832,7 @@ void test_guest_read_only_scope_enforcement() {
   RecordingSessionRegistry registry;
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
-  g.set_level(ScopeLevel::LEVEL_PLAN);
-  g.set_snum(1);
-  g.set_pnum(1);
+  g.set_scope_planet(1, 1);
 
   // 1. Read-only modes (including examine and silenced Guest broadcasts)
   // succeed under Guest ReadOnlyScope with zero DB writes and zero live socket
@@ -914,12 +908,12 @@ void test_guest_read_only_scope_enforcement() {
   // 3. Deity override (!g.god()) bypasses Guest read-only enforcement AND
   // FixedStar/FixedUniv AP pre-checks and deductions (including at snum == 0)
   g.set_god(true);
-  g.set_snum(0);
+  g.set_scope_univ();
   test::expect_true(
       GB::commands::dispatch_command(g, fixed_ap_cmd, {"guest_fixed_ap"}));
   test::expect_false(registry.notifications.empty());
   test::expect_eq(ctx.em.peek_star(1)->AP(1), 10U);
-  g.set_snum(1);
+  g.set_scope_star(1);
 
   // 4. Non-Guest internal ReadOnlyError rethrows fail-fast instead of masking
   g.set_god(false);

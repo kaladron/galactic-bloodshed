@@ -18,7 +18,8 @@ namespace GB::commands {
 bool mount(const command_t& argv, GameObj& g) {
   bool success = false;
 
-  for (auto ship_handle : ScopedCommandableShips(g, argv[1])) {
+  for (auto ship_handle :
+       ScopedCommandableShips(g, argv[1], /*require_active=*/true)) {
     auto res = mount_ship_crystal(*ship_handle);
     if (!res) {
       g.out << GB::presentation::render_mount_crystal_error(res.error());

@@ -135,6 +135,7 @@ namespace {
   s.set_coordinates(p.absolute_coordinates(star));
   s.consume_fuel(fuel);
   s.land_on_planet();
+  em.sync_carrier_descendants(s);
   return true;
 }
 
@@ -728,6 +729,9 @@ void moveship(EntityManager& em, Ship& s, bool is_update, bool send_messages,
 
   if (s.hyper_drive().has && s.hyper_drive().on) {
     execute_hyperdrive_jump(em, s, is_update, send_messages);
+    if (s.alive()) {
+      em.sync_carrier_descendants(s);
+    }
     return;
   }
 
@@ -751,6 +755,9 @@ void moveship(EntityManager& em, Ship& s, bool is_update, bool send_messages,
   } else {
     execute_destination_step(em, s, fuse, mfactor, send_messages,
                              checking_fuel);
+  }
+  if (s.alive()) {
+    em.sync_carrier_descendants(s);
   }
 }
 
@@ -1354,17 +1361,24 @@ execute_ship_to_ship_cargo_transfer(EntityManager& em, Ship& s,
       .is_metamorph = is_metamorph,
   };
 
-  em.mutate_ship(*s.destshipno(), [&](Ship& s2) {
+  const double old_s_mass = s.mass();
+  double s2_delta = 0.0;
+  const shipnum_t target_no = *s.destshipno();
+  em.mutate_ship(target_no, [&](Ship& s2) {
+    const double old_s2_mass = s2.mass();
     if (amt > 0) {
       s2.transfer_cargo_to(s, cargo, amt, race_mass);
     } else {
       s.transfer_cargo_to(s2, cargo, -amt, race_mass);
     }
+    s2_delta = s2.mass() - old_s2_mass;
     result.target_ship_display = std::format("{}", s2);
     result.target_owner = s2.owner();
     result.target_governor = s2.governor();
     result.notify_target_owner = (s2.owner() != s.owner());
   });
+  em.propagate_carried_mass_delta(s, s.mass() - old_s_mass);
+  em.propagate_carried_mass_delta(*em.peek_ship(target_no), s2_delta);
 
   result.resulting_popn = s.popn();
   result.resulting_troops = s.troops();
@@ -1463,6 +1477,12 @@ launch_from_carrier(EntityManager& em, Ship& s) {
     }
 
     if (s2.is_landed()) {
+      if (!s.can_deploy_to_planet_surface()) {
+        outcome = std::unexpected(LaunchError{
+            .reason = LaunchErrorReason::NotDesignedToLaunch,
+        });
+        return;
+      }
       const auto& star = *em.peek_star(s2.storbits());
       s.land_on_planet(s2);
       s2.unload_docked_craft(s);
@@ -1496,7 +1516,9 @@ launch_from_carrier(EntityManager& em, Ship& s) {
     }
     outcome = std::move(res);
   });
-
+  if (outcome && outcome->has_value()) {
+    em.sync_carrier_descendants(s);
+  }
   return *outcome;
 }
 
@@ -1587,6 +1609,7 @@ launch_from_planet(EntityManager& em, Ship& s, player_t player, bool god) {
 
     s.consume_fuel(fuel);
     s.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
+    em.sync_carrier_descendants(s);
     const bool is_canister = (s.as<CanisterShip>() != nullptr);
     if (auto* canist = s.as<CanisterShip>()) {
       canist->reset_timer();
@@ -1711,7 +1734,7 @@ load_landed_onto_mothership(EntityManager& em, Ship& s,
 
 std::expected<LandShipResult, LandError>
 land_spaceborne_on_carrier(EntityManager& em, Ship& s, const Ship& carrier) {
-  if (s.whatorbits() != carrier.whatorbits()) {
+  if (carrier.is_landed() || s.whatorbits() != carrier.whatorbits()) {
     return std::unexpected(LandError{
         .reason = LandErrorReason::NotInSameScope,
     });
@@ -1720,6 +1743,17 @@ land_spaceborne_on_carrier(EntityManager& em, Ship& s, const Ship& carrier) {
       s.whatorbits() != ScopeLevel::LEVEL_STAR) {
     return std::unexpected(LandError{
         .reason = LandErrorReason::NotInPlanetOrStarScope,
+    });
+  }
+  if (s.storbits() != carrier.storbits()) {
+    return std::unexpected(LandError{
+        .reason = LandErrorReason::NotInSameStarSystem,
+    });
+  }
+  if (s.whatorbits() == ScopeLevel::LEVEL_PLAN &&
+      s.pnumorbits() != carrier.pnumorbits()) {
+    return std::unexpected(LandError{
+        .reason = LandErrorReason::NotOnSamePlanet,
     });
   }
 
@@ -1969,6 +2003,7 @@ land_on_planet_sector(EntityManager& em, Ship& s, std::string_view target_arg,
     s.set_coordinates(p.absolute_coordinates(star));
     s.consume_fuel(fuel);
     s.land_on_planet();
+    em.sync_carrier_descendants(s);
 
     em.with_sectormap(s.storbits(), s.pnumorbits(), [&](const SectorMap& smap) {
       const auto& sector = smap.get(target_coords);

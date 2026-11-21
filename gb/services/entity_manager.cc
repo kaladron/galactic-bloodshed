@@ -1072,11 +1072,63 @@ std::vector<shipnum_t> EntityManager::ancestor_carriers(shipnum_t ship_id) {
   return ancestors;
 }
 
+ShipOrbit EntityManager::effective_ship_orbit(const Ship& ship) {
+  const Ship* root = &ship;
+  if (ship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
+    if (ship.number() != 0) {
+      const auto ancestors = ancestor_carriers(ship.number());
+      if (!ancestors.empty()) {
+        root = peek_ship(ancestors.back());
+      }
+    } else if (ship.destshipno().has_value()) {
+      const auto ancestors = ancestor_carriers(*ship.destshipno());
+      root =
+          peek_ship(ancestors.empty() ? *ship.destshipno() : ancestors.back());
+    }
+  }
+  switch (root->whatorbits()) {
+    case ScopeLevel::LEVEL_STAR:
+      return {.level = ScopeLevel::LEVEL_STAR, .snum = root->storbits()};
+    case ScopeLevel::LEVEL_PLAN:
+      return {.level = ScopeLevel::LEVEL_PLAN,
+              .snum = root->storbits(),
+              .pnum = root->pnumorbits()};
+    default:
+      return {.level = ScopeLevel::LEVEL_UNIV};
+  }
+}
+
+void EntityManager::sync_carrier_descendants(const Ship& carrier) {
+  if (carrier.number() == 0 || carrier.hanger() <= 0) return;
+  const auto orbit = effective_ship_orbit(carrier);
+  for (shipnum_t child_id : ships_in_hangar(carrier.number())) {
+    mutate_ship(child_id, [&](Ship& child) {
+      child.sync_carrier_orbit(orbit.level, orbit.snum, orbit.pnum,
+                               carrier.coordinates(), carrier.land_coords());
+    });
+    sync_carrier_descendants(*peek_ship(child_id));
+  }
+}
+
 void EntityManager::propagate_ancestor_mass_delta(shipnum_t direct_carrier_id,
                                                   double delta_mass) {
   constexpr double mass_delta_epsilon = 1e-9;
   if (std::abs(delta_mass) < mass_delta_epsilon) return;
   for (const shipnum_t ancestor_id : ancestor_carriers(direct_carrier_id)) {
+    mutate_ship(ancestor_id, [&](Ship& anc) {
+      anc.set_mass(std::max(anc.base_mass(), anc.mass() + delta_mass));
+    });
+  }
+}
+
+void EntityManager::propagate_carried_mass_delta(const Ship& ship,
+                                                 double delta_mass) {
+  if (ship.number() == 0 || ship.whatorbits() != ScopeLevel::LEVEL_SHIP) {
+    return;
+  }
+  constexpr double mass_delta_epsilon = 1e-9;
+  if (std::abs(delta_mass) < mass_delta_epsilon) return;
+  for (const shipnum_t ancestor_id : ancestor_carriers(ship.number())) {
     mutate_ship(ancestor_id, [&](Ship& anc) {
       anc.set_mass(std::max(anc.base_mass(), anc.mass() + delta_mass));
     });
@@ -1091,25 +1143,50 @@ EntityManager::dock_carrier(shipnum_t child_id, shipnum_t carrier_id) {
 
   const auto* child_peek = peek_ship(child_id);
   const auto* carrier_peek = peek_ship(carrier_id);
+  const auto carrier_ancestors = ancestor_carriers(carrier_id);
 
   // Cycle detection: ensure child_id is not an ancestor of carrier_id
-  if (std::ranges::contains(ancestor_carriers(carrier_id), child_id)) {
+  if (std::ranges::contains(carrier_ancestors, child_id)) {
     return std::unexpected(DockError::CycleDetected);
+  }
+
+  const auto* root_peek = carrier_ancestors.empty()
+                              ? carrier_peek
+                              : peek_ship(carrier_ancestors.back());
+  if (child_peek->is_docked() ||
+      child_peek->is_landed() != root_peek->is_landed()) {
+    return std::unexpected(DockError::NotSpaceborne);
+  }
+  if (child_peek->is_landed()) {
+    if (child_peek->storbits() != root_peek->storbits() ||
+        child_peek->pnumorbits() != root_peek->pnumorbits() ||
+        child_peek->land_coords() != root_peek->land_coords()) {
+      return std::unexpected(DockError::ScopeMismatch);
+    }
+  } else if (effective_ship_orbit(*child_peek) !=
+             effective_ship_orbit(*root_peek)) {
+    return std::unexpected(DockError::ScopeMismatch);
   }
 
   if (child_peek->size() > carrier_peek->hanger_space()) {
     return std::unexpected(DockError::CarrierFull);
   }
 
+  const auto orbit = effective_ship_orbit(*root_peek);
+  const UniverseCoordinates root_coords = root_peek->coordinates();
+  const Coordinates root_land = root_peek->land_coords();
   const double child_mass = child_peek->mass();
 
   // Atomically mutate carrier and child
   mutate_ship(carrier_id, [&](Ship& carrier) {
     mutate_ship(child_id, [&](Ship& child) {
-      child.dock_into_carrier(carrier_id);
+      child.dock_into_carrier(carrier);
+      child.sync_carrier_orbit(orbit.level, orbit.snum, orbit.pnum, root_coords,
+                               root_land);
       carrier.load_docked_craft(child);
     });
   });
+  sync_carrier_descendants(*peek_ship(child_id));
 
   // Propagate mass delta up ancestor carriers
   propagate_ancestor_mass_delta(carrier_id, child_mass);
@@ -1126,14 +1203,18 @@ EntityManager::undock_carrier(shipnum_t child_id, ScopeLevel orbit_level) {
   }
 
   const shipnum_t carrier_id = *carrier_id_opt;
+  const auto orbit = effective_ship_orbit(*peek_ship(carrier_id));
   const double child_mass = child_peek->mass();
 
   mutate_ship(carrier_id, [&](Ship& carrier) {
     mutate_ship(child_id, [&](Ship& child) {
       carrier.unload_docked_craft(child);
+      child.sync_carrier_orbit(orbit_level, orbit.snum, orbit.pnum,
+                               carrier.coordinates(), carrier.land_coords());
       child.launch_to_orbit(orbit_level);
     });
   });
+  sync_carrier_descendants(*peek_ship(child_id));
 
   // Propagate mass reduction up ancestor carriers
   propagate_ancestor_mass_delta(carrier_id, -child_mass);
@@ -1157,7 +1238,9 @@ std::expected<void, DockError> EntityManager::moor_ships(shipnum_t ship1_id,
     return std::unexpected(DockError::NotSpaceborne);
   }
 
-  if (s1_peek->whatorbits() != s2_peek->whatorbits()) {
+  if (s1_peek->whatorbits() != s2_peek->whatorbits() ||
+      s1_peek->storbits() != s2_peek->storbits() ||
+      s1_peek->pnumorbits() != s2_peek->pnumorbits()) {
     return std::unexpected(DockError::ScopeMismatch);
   }
 

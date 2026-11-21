@@ -111,7 +111,9 @@ bool fix_ship(const command_t& argv, GameObj& g) {
   }
 
   std::optional<GB::presentation::FixResult> result;
+  double mass_delta = 0.0;
   g.entity_manager.mutate_ship(g.shipno(), [&](Ship& s) {
+    const double old_mass = s.mass();
     const auto& race = *g.entity_manager.peek_race(s.owner());
     auto make_res = [&](std::string_view prop, std::string_view display_prop,
                         double val) {
@@ -151,7 +153,14 @@ bool fix_ship(const command_t& argv, GameObj& g) {
     } else {
       g.out << "No such option for 'fix ship'.\n";
     }
+    if (s.alive()) {
+      mass_delta = s.mass() - old_mass;
+    }
   });
+  if (result && !result->ship_destroyed) {
+    g.entity_manager.propagate_carried_mass_delta(
+        *g.entity_manager.peek_ship(g.shipno()), mass_delta);
+  }
   if (!result) {
     return false;
   }

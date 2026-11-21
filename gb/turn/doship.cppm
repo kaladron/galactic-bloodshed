@@ -122,11 +122,12 @@ export void update_ship_inhabited_and_exploration(const Ship& ship,
 /// \brief Accumulates ship counts, population, fuel, resources, and ordnance
 /// into turn statistics for power ratings and census reporting.
 /// \param ship Ship to tally.
+/// \param em Entity manager for resolving carrier orbital hierarchy.
 /// \param stats Turn statistics accumulator.
 /// \param update Whether this is a full turn update pass (true) or segment
 /// (false).
-export void accumulate_ship_power_stats(const Ship& ship, TurnStats& stats,
-                                        bool update);
+export void accumulate_ship_power_stats(const Ship& ship, EntityManager& em,
+                                        TurnStats& stats, bool update);
 
 /// \brief Evaluates environmental hazards (such as supernovae) against an
 /// active ship.

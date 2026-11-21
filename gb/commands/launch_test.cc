@@ -427,6 +427,50 @@ void test_launch_mcdc_undock_observers_and_json() {
     };
     test::expect_false(GB::presentation::format_launch_error(err).empty());
   }
+
+  // 6. Landed carrier blocks orbital-only Station surface deployment while
+  // allowing AFV ground deployment, blocks orbit-to-surface `land` teleport,
+  // and rejects irradiated ships on launch/land
+  const auto landed_mothership = TestShipBuilder(ctx.em, ShipType::STYPE_LANDER)
+                                     .owned_by(1, 1)
+                                     .landed_on(1, 1, {5, 5})
+                                     .with_max_hanger(200)
+                                     .build();
+  const auto station_id = TestShipBuilder(ctx.em, ShipType::STYPE_STATION)
+                              .owned_by(1, 1)
+                              .with_size(10)
+                              .build();
+  const auto afv_id = TestShipBuilder(ctx.em, ShipType::OTYPE_AFV)
+                          .owned_by(1, 1)
+                          .with_size(5)
+                          .build();
+  ctx.em.mutate_ship(station_id,
+                     [&](Ship& s) { s.dock_into_carrier(landed_mothership); });
+  ctx.em.mutate_ship(afv_id,
+                     [&](Ship& s) { s.dock_into_carrier(landed_mothership); });
+  ctx.em.mutate_ship(landed_mothership, [](Ship& m) { m.hanger() = 15; });
+  g.set_scope_ship(landed_mothership);
+  ctx.assert_dispatch_rejected(
+      g, {"launch", std::format("#{}", station_id.value)});
+  test::expect_contains(g.out.str(), "not designed to be launched");
+  ctx.assert_dispatch_success(g, {"launch", std::format("#{}", afv_id.value)},
+                              0);
+  test::expect_true(ctx.em.peek_ship(afv_id)->is_landed());
+
+  const auto orb_ftr = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+                           .owned_by(1, 1)
+                           .in_planet_orbit(1, 1)
+                           .with_fuel(50.0)
+                           .build();
+  g.set_scope_planet(1, 1);
+  ctx.assert_dispatch_rejected(g,
+                               {"land", std::format("#{}", orb_ftr.value),
+                                std::format("#{}", landed_mothership.value)});
+  ctx.em.mutate_ship(orb_ftr, [](Ship& s) { s.active() = false; });
+  g.out.str("");
+  ctx.assert_dispatch_rejected(
+      g, {"land", std::format("#{}", orb_ftr.value), "5,5"});
+  test::expect_contains(g.out.str(), "irradiated");
 }
 
 }  // namespace

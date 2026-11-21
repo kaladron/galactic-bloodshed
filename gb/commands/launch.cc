@@ -18,7 +18,8 @@ namespace GB::commands {
 bool launch(const command_t& argv, GameObj& g) {
   bool any_launched = false;
 
-  for (auto ship_handle : ScopedCommandableShips(g, argv[1])) {
+  for (auto ship_handle :
+       ScopedCommandableShips(g, argv[1], /*require_active=*/true)) {
     auto res =
         launch_single_ship(g.entity_manager, *ship_handle, g.player(), g.god());
     if (!res) {

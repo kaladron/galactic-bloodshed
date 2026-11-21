@@ -744,11 +744,15 @@ activate_factory_on_habitat(EntityManager& em, Ship& factory) {
       });
       return;
     }
-    habitat.resource() -= oncost;
+    double habitat_delta = 0.0;
+    const double old_mass = habitat.mass();
+    habitat.consume_resource(oncost);
     habitat.hanger() -= factory.size();
     factory.size() = new_size;
     habitat.hanger() += factory.size();
+    habitat_delta = habitat.mass() - old_mass;
     result = oncost;
+    em.propagate_carried_mass_delta(habitat, habitat_delta);
   });
   return result;
 }

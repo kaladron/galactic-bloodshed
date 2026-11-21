@@ -91,21 +91,15 @@ void test_cannot_land_docked_ship() {
   ctx.verify_universe_invariants();
 }
 
-// Test: Create carrier and shuttle for friendly landing
+// Test: Create landed mothership and shuttle for friendly ground loading
 void test_land_on_friendly_carrier() {
   TestContext ctx;
   setup_test_world(ctx);
 
-  // Reset shuttle to spaceborne state with land_coords at 5,5
-  ctx.em.mutate_ship(1, [](Ship& s) {
-    s.launch_to_orbit(ScopeLevel::LEVEL_PLAN);
-    s.set_land_coords({5, 5});
-  });
-
-  // Create a carrier landed at (5, 5)
-  TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
+  // Create a Lander mothership landed at (5, 5)
+  TestShipBuilder(ctx.em, ShipType::STYPE_LANDER)
       .owned_by(1, 1)
-      .named("TestCarrier")
+      .named("TestLander")
       .landed_on(1, 1, Coordinates(5, 5))
       .build();
 
@@ -114,14 +108,20 @@ void test_land_on_friendly_carrier() {
   ctx.setup_game_obj(g, 1, 1);
   g.set_scope_planet(1, 1);
 
-  // Now the shuttle (already at 5,5 landed) can land on carrier
+  // Spaceborne shuttle in orbit cannot teleport onto a landed mothership
+  ctx.assert_dispatch_rejected(g, {"land", "#1", "#2"});
+  test::expect_contains(g.out.str(), "not in the same scope");
+
+  // Land shuttle at (5, 5), power down, and load onto the landed mothership
+  ctx.assert_dispatch_success(g, {"land", "#1", "5,5"}, 1);
+  ctx.assert_dispatch_success(g, {"order", "#1", "off"}, 0);
   ctx.assert_dispatch_success(g, {"land", "#1", "#2"}, 0);
-  test::expect_true(g.out.str().contains("landed on") ||
-                    g.out.str().contains("loaded onto"));
+  test::expect_contains(g.out.str(), "loaded onto");
 
   const auto* shuttle_after = ctx.em.peek_ship(1);
   test::expect_true(shuttle_after != nullptr);
   test::expect_true(shuttle_after->docked());
+  test::expect_eq(shuttle_after->whatorbits(), ScopeLevel::LEVEL_SHIP);
 
   ctx.verify_universe_invariants();
 }

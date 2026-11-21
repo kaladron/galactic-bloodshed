@@ -1770,6 +1770,8 @@ void test_synchronize_docked_carrier_ownership() {
 }
 
 void test_accumulate_ship_power_stats() {
+  TestContext ctx;
+  const auto races = ctx.with_races();
   TurnStats stats{};
 
   // 1. Star-orbiting ship during update pass
@@ -1787,7 +1789,7 @@ void test_accumulate_ship_power_stats() {
   };
   Ship star_ship{star_ship_data};
 
-  accumulate_ship_power_stats(star_ship, stats, true);
+  accumulate_ship_power_stats(star_ship, ctx.em, stats, true);
   test::expect_eq(stats.power_stats(player_t{1}).ships_owned, 1U);
   test::expect_eq(stats.power_stats(player_t{1}).fuel, 25.0);
   test::expect_eq(stats.power_stats(player_t{1}).destruct, 5);
@@ -1797,7 +1799,9 @@ void test_accumulate_ship_power_stats() {
   test::expect_eq(stats.star_player_stats(1, player_t{1}).num_ships, 1U);
   test::expect_eq(stats.star_player_stats(1, player_t{1}).popn, 10);
 
-  // 2. Deep space ship in LEVEL_UNIV does not increment star-level census
+  // 2. Deep space ship in LEVEL_UNIV (and craft berthed inside a deep-space
+  // carrier with storbits == 0) does not increment star-level census or index
+  // star 0
   ship_struct univ_ship_data{
       .owner = player_t{1},
       .popn = 20,
@@ -1807,7 +1811,23 @@ void test_accumulate_ship_power_stats() {
   };
   Ship univ_ship{univ_ship_data};
 
-  accumulate_ship_power_stats(univ_ship, stats, false);
+  accumulate_ship_power_stats(univ_ship, ctx.em, stats, false);
+  const auto deep_carrier = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
+                                .owned_by(races.nomad)
+                                .in_deep_space()
+                                .with_max_hanger(50)
+                                .build();
+  const auto deep_fighter = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+                                .owned_by(races.nomad)
+                                .in_deep_space()
+                                .with_crew(2, 0)
+                                .build();
+  test::expect_true(
+      ctx.em.dock_carrier(deep_fighter, deep_carrier).has_value());
+  accumulate_ship_power_stats(*ctx.em.peek_ship(deep_fighter), ctx.em, stats,
+                              true);
+  test::expect_true(ctx.em.mutate_ship(
+      deep_fighter, [&](Ship& f) { return evaluate_ship_hazards(f, ctx.em); }));
   test::expect_eq(stats.star_player_stats(1, player_t{1}).num_ships, 1U);
   test::expect_eq(stats.star_player_stats(1, player_t{1}).popn, 10);
 }

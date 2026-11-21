@@ -292,7 +292,10 @@ CreatedShipSummary create_ship_by_ship(EntityManager& entity_manager,
   if (outside) {
     newship.launch_from_carrier_to_orbit(builder);
   } else {
+    const auto orbit = entity_manager.effective_ship_orbit(builder);
     newship.dock_into_carrier(builder);
+    newship.sync_carrier_orbit(orbit.level, orbit.snum, orbit.pnum,
+                               builder.coordinates(), builder.land_coords());
   }
   newship.tech() = race.tech;
   newship.set_coordinates(builder.coordinates());
@@ -384,17 +387,9 @@ std::tuple<money_t, double> shipping_cost(EntityManager& em, const starnum_t to,
 
 std::optional<std::pair<starnum_t, planetnum_t>>
 resolve_ship_planet_orbit(EntityManager& em, const Ship& ship) {
-  if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN) {
-    return std::pair{ship.storbits(), ship.pnumorbits()};
-  }
-  if (ship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
-    const auto ancestors = em.ancestor_carriers(ship.number());
-    if (!ancestors.empty()) {
-      const auto& root = *em.peek_ship(ancestors.back());
-      if (root.whatorbits() == ScopeLevel::LEVEL_PLAN) {
-        return std::pair{root.storbits(), root.pnumorbits()};
-      }
-    }
+  const auto orbit = em.effective_ship_orbit(ship);
+  if (orbit.level == ScopeLevel::LEVEL_PLAN) {
+    return std::pair{orbit.snum, orbit.pnum};
   }
   return std::nullopt;
 }
@@ -412,7 +407,8 @@ scrap_single_ship(EntityManager& em, Ship& s, const Race& race) {
     }
   }
 
-  const bool in_deep_space = (s.whatorbits() == ScopeLevel::LEVEL_UNIV);
+  const auto orbit = em.effective_ship_orbit(s);
+  const bool in_deep_space = (orbit.level == ScopeLevel::LEVEL_UNIV);
   if (in_deep_space) {
     if (!race.God) {
       const auto* univ = em.peek_universe();
@@ -422,7 +418,7 @@ scrap_single_ship(EntityManager& em, Ship& s, const Race& race) {
       em.mutate_universe([&](Universe& u) { u.deduct_AP(race.Playernum, 1); });
     }
   } else {
-    const auto* star = em.peek_star(s.storbits());
+    const auto* star = em.peek_star(orbit.snum);
     if (!star) {
       return std::unexpected(ScrapError::StarNotFound);
     }
@@ -430,8 +426,7 @@ scrap_single_ship(EntityManager& em, Ship& s, const Race& race) {
       if (star->AP(race.Playernum) < 1) {
         return std::unexpected(ScrapError::InsufficientStarAp);
       }
-      em.mutate_star(s.storbits(),
-                     [&](Star& st) { st.AP(race.Playernum) -= 1; });
+      em.mutate_star(orbit.snum, [&](Star& st) { st.AP(race.Playernum) -= 1; });
     }
   }
 
@@ -529,14 +524,18 @@ scrap_single_ship(EntityManager& em, Ship& s, const Race& race) {
 
   if (s.is_docked()) {
     const shipnum_t dest_ship = *s.destshipno();
+    double s2_gain = 0.0;
     em.mutate_ship(dest_ship, [&](Ship& s2) {
+      const double old_mass = s2.mass();
       s2.add_crystals(xtalval);
       s2.add_fuel(fuelval);
       s2.add_destruct(destval);
       s2.add_resource(scrapval);
       s2.add_troops(troopval, race.mass);
       s2.add_popn(crewval, race.mass);
+      s2_gain = s2.mass() - old_mass;
     });
+    em.propagate_carried_mass_delta(*em.peek_ship(dest_ship), s2_gain);
   }
 
   kill_ship(em, race.Playernum, s);
@@ -1195,13 +1194,18 @@ void commit_ship_upgrade(EntityManager& entity_manager, Ship& dirship,
   }
 
   if (dirship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
-    entity_manager.mutate_ship(*dirship.destshipno(), [&](Ship& carrier) {
+    const shipnum_t carrier_id = *dirship.destshipno();
+    double carrier_delta = 0.0;
+    entity_manager.mutate_ship(carrier_id, [&](Ship& carrier) {
+      const double old_carrier_mass = carrier.mass();
       if (remaining > 0) {
         carrier.consume_resource(remaining);
       }
       carrier.unload_docked_craft(old_size, old_mass);
       carrier.load_docked_craft(dirship);
+      carrier_delta = carrier.mass() - old_carrier_mass;
     });
+    entity_manager.propagate_ancestor_mass_delta(carrier_id, carrier_delta);
   }
 }
 

@@ -432,6 +432,72 @@ void test_ancestor_carriers_and_corrupt_db_cycles() {
       [&]() { static_cast<void>(em.ancestor_carriers(fighter_id)); });
 }
 
+void test_carrier_colocation_orbit_sync_and_mass_propagation() {
+  TestContext ctx;
+  const auto races = ctx.with_races();
+  auto& em = ctx.em;
+
+  const auto super_id = TestShipBuilder(em, ShipType::STYPE_CARRIER)
+                            .owned_by(races.empire)
+                            .in_star_orbit(1)
+                            .with_max_hanger(200)
+                            .build();
+  const auto sub_id = TestShipBuilder(em, ShipType::STYPE_CARRIER)
+                          .owned_by(races.empire)
+                          .in_star_orbit(2)
+                          .with_size(20)
+                          .with_max_hanger(50)
+                          .build();
+  const auto landed_id = TestShipBuilder(em, ShipType::STYPE_SHUTTLE)
+                             .owned_by(races.empire)
+                             .landed_on(1, 1, Coordinates{0, 0})
+                             .build();
+
+  // Cross-star docking & mooring rejected; orbit-to-surface rejected
+  test::expect_eq(em.dock_carrier(sub_id, super_id).error(),
+                  DockError::ScopeMismatch);
+  test::expect_eq(em.moor_ships(sub_id, super_id).error(),
+                  DockError::ScopeMismatch);
+  test::expect_eq(em.dock_carrier(landed_id, super_id).error(),
+                  DockError::NotSpaceborne);
+
+  // Co-locate sub_id & craft_id at Star 1, dock craft -> sub -> super
+  em.mutate_ship(sub_id, [](Ship& s) { s.enter_star_orbit(1); });
+  const auto craft_id = TestShipBuilder(em, ShipType::STYPE_SHUTTLE)
+                            .owned_by(races.empire)
+                            .in_star_orbit(1)
+                            .with_size(5)
+                            .build();
+  test::expect_true(em.dock_carrier(craft_id, sub_id).has_value());
+  test::expect_true(em.dock_carrier(sub_id, super_id).has_value());
+
+  // Move super_id to deep space and sync descendants: effective_ship_orbit and
+  // descendant storbits/coordinates update recursively
+  em.mutate_ship(super_id, [](Ship& s) {
+    s.enter_deep_space();
+    s.set_coordinates({4200.0, -1800.0});
+  });
+  em.sync_carrier_descendants(*em.peek_ship(super_id));
+  test::expect_eq(em.effective_ship_orbit(*em.peek_ship(craft_id)),
+                  (ShipOrbit{.level = ScopeLevel::LEVEL_UNIV}));
+  test::expect_eq(em.peek_ship(craft_id)->storbits(), starnum_t{0});
+  test::expect_eq(em.peek_ship(craft_id)->coordinates(),
+                  (UniverseCoordinates{4200.0, -1800.0}));
+
+  // Adding cargo to craft_id propagates exact mass delta up sub_id and super_id
+  const double super_before = em.peek_ship(super_id)->mass();
+  const double sub_before = em.peek_ship(sub_id)->mass();
+  double delta = 0.0;
+  em.mutate_ship(craft_id, [&](Ship& c) {
+    const double m0 = c.mass();
+    c.add_resource(10);
+    delta = c.mass() - m0;
+  });
+  em.propagate_carried_mass_delta(*em.peek_ship(craft_id), delta);
+  expect_near(em.peek_ship(sub_id)->mass(), sub_before + delta);
+  expect_near(em.peek_ship(super_id)->mass(), super_before + delta);
+}
+
 }  // namespace
 
 int main() {
@@ -441,6 +507,7 @@ int main() {
   test_moor_and_unmoor_ships();
   test_kill_ship_carrier_and_child_accounting();
   test_ancestor_carriers_and_corrupt_db_cycles();
+  test_carrier_colocation_orbit_sync_and_mass_propagation();
   std::println(std::cout, "All EntityManager dock tests passed!");
   return 0;
 }

@@ -19,7 +19,8 @@ namespace GB::commands {
 bool land(const command_t& argv, GameObj& g) {
   bool any_landed = false;
 
-  for (auto ship_handle : ScopedCommandableShips(g, argv[1])) {
+  for (auto ship_handle :
+       ScopedCommandableShips(g, argv[1], /*require_active=*/true)) {
     auto res =
         land_single_ship(g.entity_manager, *ship_handle, argv[2], g.player(),
                          g.governor(), g.snum(), g.pnum(), g.god());

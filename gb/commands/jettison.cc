@@ -32,6 +32,7 @@ bool jettison(const command_t& argv, GameObj& g) {
   bool success = false;
 
   for (auto ship_handle : ScopedCommandableShips(g, argv[1])) {
+    const double old_mass = ship_handle->mass();
     auto res = jettison_ship_cargo(*ship_handle, commod, requested_amount,
                                    g.race->mass);
     if (!res) {
@@ -41,6 +42,8 @@ bool jettison(const command_t& argv, GameObj& g) {
       }
       continue;
     }
+    g.entity_manager.propagate_carried_mass_delta(
+        *ship_handle, ship_handle->mass() - old_mass);
     g.present(*res);
     success = true;
   }

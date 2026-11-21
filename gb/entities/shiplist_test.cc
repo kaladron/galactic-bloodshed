@@ -997,7 +997,23 @@ int main() {
                                            /*require_active=*/true)) {
         ids.push_back(h->number());
       }
-      test::expect_eq(ids, (std::vector<shipnum_t>{1, 5}));
+      const std::vector<shipnum_t> expected =
+          (lvl == ScopeLevel::LEVEL_SHIP) ? std::vector<shipnum_t>{1}
+                                          : std::vector<shipnum_t>{1, 5};
+      test::expect_eq(ids, expected);
+    }
+    {
+      // Explicit #5 at LEVEL_SHIP (#1) resolves #5 directly, matching 1989
+      // start_shiplist behavior while wildcard 'f' stays scoped to #1 + hangar
+      ScopeContext ship_ctx = p1_leader_star;
+      ship_ctx.level = ScopeLevel::LEVEL_SHIP;
+      ship_ctx.shipno = 1;
+      std::vector<shipnum_t> explicit_ids;
+      for (auto h : ScopedCommandableShips(cmd_ctx.em, ship_ctx, "#5",
+                                           /*require_active=*/true)) {
+        explicit_ids.push_back(h->number());
+      }
+      test::expect_eq(explicit_ids, (std::vector<shipnum_t>{5}));
     }
     {
       // Kill ship #5 while visiting ship #1 in ScopedCommandableShips

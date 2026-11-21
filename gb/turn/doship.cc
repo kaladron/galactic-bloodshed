@@ -61,6 +61,7 @@ void do_repair(Ship& ship, EntityManager& entity_manager) {
 
 void do_habitat(Ship& ship, EntityManager& entity_manager) {
   const auto& race = *entity_manager.peek_race(ship.owner());
+  const double old_hab_mass = ship.mass();
 
   /* In v5.0+ Habitats make resources out of fuel */
   if (ship.on() && ship.max_crew_capacity() > 0) {
@@ -79,7 +80,11 @@ void do_habitat(Ship& ship, EntityManager& entity_manager) {
         break;
       }
       if (nested_ship->type() == ShipType::OTYPE_WPLANT) {
+        const double old_nested_mass = nested_ship->mass();
         ship.add_destruct(do_weapon_plant(*nested_ship, entity_manager, room));
+        ship.set_mass(
+            std::max(ship.base_mass(),
+                     ship.mass() + (nested_ship->mass() - old_nested_mass)));
       }
     }
   }
@@ -88,6 +93,7 @@ void do_habitat(Ship& ship, EntityManager& entity_manager) {
     auto add = round_rand(ship.popn(), race.birthrate);
     ship.add_popn(add, race.mass);
   }
+  entity_manager.propagate_carried_mass_delta(ship, ship.mass() - old_hab_mass);
 }
 
 void do_meta_infect(player_t who, starnum_t star, planetnum_t pnum, Planet& p,
@@ -389,25 +395,25 @@ void synchronize_docked_carrier_ownership(Ship& ship, EntityManager& em) {
 
 void update_ship_inhabited_and_exploration(const Ship& ship,
                                            EntityManager& em) {
-  if (ship.whatorbits() == ScopeLevel::LEVEL_UNIV ||
-      !ship.is_exploration_capable()) {
+  const auto orbit = em.effective_ship_orbit(ship);
+  if (orbit.level == ScopeLevel::LEVEL_UNIV || !ship.is_exploration_capable()) {
     return;
   }
 
-  em.mutate_star(ship.storbits(), [&](Star& star) {
+  em.mutate_star(orbit.snum, [&](Star& star) {
     star.mark_inhabited_by(ship.owner());
     star.mark_explored_by(ship.owner());
   });
 
-  if (ship.whatorbits() == ScopeLevel::LEVEL_PLAN) {
-    em.mutate_planet(ship.storbits(), ship.pnumorbits(), [&](Planet& planet) {
+  if (orbit.level == ScopeLevel::LEVEL_PLAN) {
+    em.mutate_planet(orbit.snum, orbit.pnum, [&](Planet& planet) {
       planet.mark_explored_by(ship.owner());
     });
   }
 }
 
-void accumulate_ship_power_stats(const Ship& ship, TurnStats& stats,
-                                 bool update) {
+void accumulate_ship_power_stats(const Ship& ship, EntityManager& em,
+                                 TurnStats& stats, bool update) {
   if (update) {
     auto& pwr = stats.mutable_power_stats(ship.owner());
     pwr.ships_owned++;
@@ -418,15 +424,17 @@ void accumulate_ship_power_stats(const Ship& ship, TurnStats& stats,
     pwr.troops += ship.troops();
   }
 
-  if (ship.whatorbits() != ScopeLevel::LEVEL_UNIV) {
-    stats.add_star_ships(ship.storbits(), ship.owner(), 1);
-    stats.add_star_popn(ship.storbits(), ship.owner(), ship.popn());
+  const auto orbit = em.effective_ship_orbit(ship);
+  if (orbit.level != ScopeLevel::LEVEL_UNIV) {
+    stats.add_star_ships(orbit.snum, ship.owner(), 1);
+    stats.add_star_popn(orbit.snum, ship.owner(), ship.popn());
   }
 }
 
 bool evaluate_ship_hazards(Ship& ship, EntityManager& entity_manager) {
-  if (ship.whatorbits() != ScopeLevel::LEVEL_UNIV) {
-    const auto& star = *entity_manager.peek_star(ship.storbits());
+  const auto orbit = entity_manager.effective_ship_orbit(ship);
+  if (orbit.level != ScopeLevel::LEVEL_UNIV) {
+    const auto& star = *entity_manager.peek_star(orbit.snum);
     const auto& state = *entity_manager.peek_server_state();
     if (!process_ship_supernova(ship, star, state, entity_manager)) {
       return false;
@@ -529,7 +537,7 @@ void doship(Ship& ship, bool update, EntityManager& entity_manager,
 
   synchronize_docked_carrier_ownership(ship, entity_manager);
   update_ship_inhabited_and_exploration(ship, entity_manager);
-  accumulate_ship_power_stats(ship, stats, update);
+  accumulate_ship_power_stats(ship, entity_manager, stats, update);
 
   if (ship.active()) {
     dispatch_ship_subsystems(ship, update, entity_manager, stats);

@@ -18,7 +18,8 @@ namespace GB::commands {
 bool detonate(const command_t& argv, GameObj& g) {
   bool any_detonated = false;
 
-  for (auto ship_handle : ScopedCommandableShips(g, argv[1])) {
+  for (auto ship_handle :
+       ScopedCommandableShips(g, argv[1], /*require_active=*/true)) {
     Ship& s = *ship_handle;
     auto report = detonate_ship_mine(g.entity_manager, s);
     if (!report) {

@@ -941,6 +941,7 @@ void moveplanet(EntityManager& entity_manager, const Star& star,
   for (auto ship_handle : ShipList::on_planet(entity_manager, planet.star_id(),
                                               planet.planet_order())) {
     ship_handle->set_coordinates(ship_handle->coordinates() + delta);
+    entity_manager.sync_carrier_descendants(*ship_handle);
   }
 
   planet.set_system_coordinates(new_coords);

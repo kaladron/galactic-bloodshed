@@ -308,13 +308,14 @@ bool execute_single_habitat_factory_build(GameObj& g, const Ship& builder) {
     g.out << std::format("You need {}r to construct this ship.\n", shipcost);
     return false;
   }
-  if (habitat.whatorbits() == ScopeLevel::LEVEL_UNIV) {
+  const auto hab_orbit = g.entity_manager.effective_ship_orbit(habitat);
+  if (hab_orbit.level == ScopeLevel::LEVEL_UNIV) {
     if (!g.deduct_univ_ap(1)) {
       g.out << "You need 1 universe action point.\n";
       return false;
     }
   } else {
-    if (!g.deduct_ap(habitat.storbits(), 1)) {
+    if (!g.deduct_ap(hab_orbit.snum, 1)) {
       g.out << "You don't have 1 action points there.\n";
       return false;
     }
@@ -330,9 +331,12 @@ bool execute_single_habitat_factory_build(GameObj& g, const Ship& builder) {
   g.present(
       initialize_new_ship(race, Governor, *newship, load_fuel, load_crew));
   habitat.load_docked_craft(*newship);
+  const double hab_delta = habitat.mass() - habitat_ref.mass();
   g.entity_manager.create_ship(std::move(newship));
   g.entity_manager.mutate_ship(habitat.number(),
                                [&](Ship& h) { h = Ship(habitat.to_struct()); });
+  g.entity_manager.propagate_carried_mass_delta(
+      *g.entity_manager.peek_ship(habitat.number()), hab_delta);
   return true;
 }
 
@@ -429,6 +433,7 @@ bool execute_single_non_factory_ship_build(GameObj& g, Ship& builder,
     }
   }
 
+  const double old_builder_mass = builder.mass();
   g.present(create_ship_by_ship(g.entity_manager, Playernum, Governor, race,
                                 plan.outside, *newship, builder));
   const auto [load_crew, load_fuel] =
@@ -441,9 +446,12 @@ bool execute_single_non_factory_ship_build(GameObj& g, Ship& builder,
   if (!plan.outside) {
     builder.load_docked_craft(*newship);
   }
+  const double builder_delta = builder.mass() - old_builder_mass;
   g.entity_manager.create_ship(std::move(newship));
   g.entity_manager.mutate_ship(builder.number(),
                                [&](Ship& b) { b = Ship(builder.to_struct()); });
+  g.entity_manager.propagate_carried_mass_delta(
+      *g.entity_manager.peek_ship(builder.number()), builder_delta);
   return true;
 }
 

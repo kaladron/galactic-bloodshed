@@ -818,6 +818,27 @@ public:
     data_.destpnum = carrier.data_.destpnum;
   }
 
+  /// Synchronizes a berthed ship's enclosing celestial coordinates and surface
+  /// sector with its root carrier's physical location.
+  void sync_carrier_orbit(ScopeLevel orbit_level, starnum_t star,
+                          planetnum_t planet, UniverseCoordinates coords,
+                          Coordinates surface_coords) noexcept {
+    set_coordinates(coords);
+    set_land_coords(surface_coords);
+    data_.storbits = (orbit_level == ScopeLevel::LEVEL_UNIV)
+                         ? std::nullopt
+                         : std::optional<starnum_t>{star};
+    data_.pnumorbits = (orbit_level == ScopeLevel::LEVEL_PLAN)
+                           ? std::optional<planetnum_t>{planet}
+                           : std::nullopt;
+  }
+
+  /// Whether this ship can be deployed onto a planetary surface from a landed
+  /// carrier (true for landable vessels and surface-only ground units).
+  [[nodiscard]] constexpr bool can_deploy_to_planet_surface() const noexcept {
+    return can_land() || get_template().base_speed == 0;
+  }
+
   /// Moors the ship to another spaceborne ship (ship-to-ship docking).
   ///
   /// Note: Unlike carrier hangar docking (`dock_into_carrier`), the ship

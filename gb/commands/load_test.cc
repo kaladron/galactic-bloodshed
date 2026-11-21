@@ -222,11 +222,11 @@ void test_load_ship_to_ship() {
                         .with_crew(20, 10)
                         .build();
 
-  // Create tender/cargo ship (s1) docked to s2
+  // Create tender/cargo ship (s1) moored to s2 in star orbit
   shipnum_t s1_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
                         .owned_by(1, 1)
                         .named("Tender")
-                        .docked_to(s2_id, 1)
+                        .in_star_orbit(1)
                         .with_fuel(50.0)
                         .with_max_fuel(200.0)
                         .with_resource(50)
@@ -237,8 +237,8 @@ void test_load_ship_to_ship() {
                         .with_crew(5, 2)
                         .build();
 
-  // Set mutual docking on carrier s2
-  ctx.em.mutate_ship(s2_id, [&](Ship& s2) { s2.dock_with_ship(s1_id); });
+  // Establish mutual peer mooring in star orbit
+  test::expect_true(ctx.em.moor_ships(s1_id, s2_id).has_value());
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -353,6 +353,57 @@ void test_load_ship_to_ship() {
     test::expect_eq(ctx.em.peek_ship(s1_id)->troops(), 3);
     test::expect_eq(ctx.em.peek_ship(s2_id)->troops(), 9);
     std::println(std::cout, "✓ Ship-to-ship transfers persisted to SQLite");
+  }
+
+  // C. Carrier-to-berthed-craft load, unload, and jettison preserve ancestor
+  //    carrier masses without drift
+  {
+    const shipnum_t super_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
+                                   .owned_by(1, 1)
+                                   .named("SuperCarrier")
+                                   .in_star_orbit(1)
+                                   .with_max_hanger(2000)
+                                   .build();
+    const shipnum_t sub_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
+                                 .owned_by(1, 1)
+                                 .named("EscortCarrier")
+                                 .in_star_orbit(1)
+                                 .with_max_hanger(500)
+                                 .with_resource(100)
+                                 .with_max_resource(500)
+                                 .build();
+    const shipnum_t craft_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                                   .owned_by(1, 1)
+                                   .named("HangarShuttle")
+                                   .in_star_orbit(1)
+                                   .with_resource(10)
+                                   .with_max_resource(100)
+                                   .with_crew(2, 0)
+                                   .build();
+    test::expect_true(ctx.em.dock_carrier(sub_id, super_id).has_value());
+    test::expect_true(ctx.em.dock_carrier(craft_id, sub_id).has_value());
+
+    const double initial_super_mass = ctx.em.peek_ship(super_id)->mass();
+    const double initial_sub_mass = ctx.em.peek_ship(sub_id)->mass();
+    const double initial_craft_mass = ctx.em.peek_ship(craft_id)->mass();
+
+    g.set_scope_ship(sub_id);
+    ctx.assert_dispatch_success(
+        g, {"load", std::format("#{}", craft_id.value), "r", "20"});
+    test::expect_true(std::abs(ctx.em.peek_ship(super_id)->mass() -
+                               initial_super_mass) < 1e-6);
+    test::expect_true(
+        std::abs(ctx.em.peek_ship(sub_id)->mass() - initial_sub_mass) < 1e-6);
+    test::expect_true(std::abs(ctx.em.peek_ship(craft_id)->mass() -
+                               (initial_craft_mass + 2.0)) < 1e-6);
+
+    ctx.assert_dispatch_success(
+        g, {"jettison", std::format("#{}", craft_id.value), "r", "10"});
+    test::expect_true(std::abs(ctx.em.peek_ship(super_id)->mass() -
+                               (initial_super_mass - 1.0)) < 1e-6);
+    test::expect_true(std::abs(ctx.em.peek_ship(sub_id)->mass() -
+                               (initial_sub_mass - 1.0)) < 1e-6);
+    ctx.verify_universe_invariants();
   }
 
   // C. Alien ship transfer rules (can give goods to alien, cannot take)

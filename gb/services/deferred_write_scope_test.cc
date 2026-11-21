@@ -345,7 +345,10 @@ void test_deferred_write_spatial_and_ownership_cache_overlay() {
                                             races.nomad_cruiser));
     test::expect_true(std::ranges::is_sorted(ctx.em.ships_on_planet(2, 1)));
 
-    // 2. Mid-turn carrier berth: nomad shuttle docks into empire cruiser.
+    // 2. Mid-turn carrier berth: nomad shuttle moves to /Sol/Earth and docks
+    // into empire cruiser.
+    ctx.em.mutate_ship(races.nomad_shuttle,
+                       [](Ship& s) { s.enter_planet_orbit(1, 1); });
     test::expect_true(
         ctx.em.dock_carrier(races.nomad_shuttle, races.empire_cruiser)
             .has_value());

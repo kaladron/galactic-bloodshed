@@ -18,7 +18,8 @@ namespace GB::commands {
 bool scrap(const command_t& argv, GameObj& g) {
   bool any_scrapped = false;
 
-  for (auto ship_handle : ScopedCommandableShips(g, argv[1])) {
+  for (auto ship_handle :
+       ScopedCommandableShips(g, argv[1], /*require_active=*/true)) {
     auto res = scrap_single_ship(g.entity_manager, *ship_handle, *g.race);
     if (!res) {
       g.out << GB::presentation::render_scrap_error(res.error());

@@ -660,6 +660,34 @@ void test_scrap_query_and_scope_reconciliation() {
       g.out.str(),
       std::format("Ship #{} no longer exists; scope reset to /Sol/Earth",
                   god_gone));
+  g.set_god(false);
+
+  // Deep-space carrier (storbits == 0) with berthed shuttle: scrapping the
+  // berthed shuttle deducts Universe AP cleanly without calling peek_star(0),
+  // and `scrap *` at LEVEL_SHIP only scraps ships in that carrier's scope.
+  const auto deep_hab = TestShipBuilder(ctx.em, ShipType::STYPE_HABITAT)
+                            .owned_by(1, 1)
+                            .in_deep_space()
+                            .with_crew(50, 0)
+                            .with_max_hanger(100)
+                            .build();
+  const auto deep_shuttle = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                                .owned_by(1, 1)
+                                .in_deep_space()
+                                .with_crew(2, 0)
+                                .build();
+  const auto distant_probe = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
+                                 .owned_by(1, 1)
+                                 .in_star_orbit(1)
+                                 .build();
+  test::expect_true(ctx.em.dock_carrier(deep_shuttle, deep_hab).has_value());
+  ctx.em.mutate_universe([](Universe& u) { u.set_AP(1, 5); });
+  g.set_scope_ship(deep_hab);
+  ctx.assert_dispatch_success(
+      g, {"scrap", std::format("#{}", deep_shuttle.value)}, 0);
+  test::expect_eq(ctx.em.peek_universe()->get_AP(1), 4);
+  ctx.assert_dispatch_rejected(g, {"scrap", ":"});
+  test::expect_true(ctx.em.peek_ship(distant_probe)->alive());
 
   ctx.verify_universe_invariants();
 }

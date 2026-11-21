@@ -9,6 +9,19 @@ import std;
 
 module gb.services;
 
+namespace {
+std::vector<shipnum_t> ships_in_ship_scope(EntityManager& em,
+                                           shipnum_t shipno) {
+  if (shipno == 0) return {};
+  auto ids = em.ships_in_hangar(shipno);
+  ids.push_back(shipno);
+  std::ranges::sort(ids);
+  const auto dup = std::ranges::unique(ids);
+  ids.erase(dup.begin(), dup.end());
+  return ids;
+}
+}  // namespace
+
 // ShipList constructors
 
 ShipList::ShipList(EntityManager& em, const ScopeContext& ctx,
@@ -30,7 +43,7 @@ ShipList::ShipList(EntityManager& em, const ScopeContext& ctx,
         ship_ids_ = em.ships_on_planet(ctx.snum, ctx.pnum);
         break;
       case ScopeLevel::LEVEL_SHIP:
-        ship_ids_ = em.ships_by_owner(ctx.player);
+        ship_ids_ = ships_in_ship_scope(em, ctx.shipno);
         break;
     }
   }
@@ -243,6 +256,12 @@ ScopedCommandableShips::ScopedCommandableShips(EntityManager& em,
                                                std::string_view filter,
                                                bool require_active)
     : em_(&em), ctx_(ctx), filter_(filter), require_active_(require_active) {
+  if (GB::is_ship_number_filter(filter)) {
+    if (const auto shipno = string_to_shipnum(filter); shipno && *shipno > 0) {
+      ship_ids_ = {*shipno};
+    }
+    return;
+  }
   switch (ctx.level) {
     case ScopeLevel::LEVEL_UNIV:
       ship_ids_ = em.ships_alive();
@@ -254,7 +273,7 @@ ScopedCommandableShips::ScopedCommandableShips(EntityManager& em,
       ship_ids_ = em.ships_on_planet(ctx.snum, ctx.pnum);
       break;
     case ScopeLevel::LEVEL_SHIP:
-      ship_ids_ = em.ships_by_owner(ctx.player);
+      ship_ids_ = ships_in_ship_scope(em, ctx.shipno);
       break;
   }
 }

@@ -18,7 +18,8 @@ namespace GB::commands {
 bool dismount(const command_t& argv, GameObj& g) {
   bool success = false;
 
-  for (auto ship_handle : ScopedCommandableShips(g, argv[1])) {
+  for (auto ship_handle :
+       ScopedCommandableShips(g, argv[1], /*require_active=*/true)) {
     auto res = dismount_ship_crystal(*ship_handle);
     if (!res) {
       g.out << GB::presentation::render_dismount_crystal_error(res.error());

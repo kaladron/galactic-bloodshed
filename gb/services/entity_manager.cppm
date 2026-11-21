@@ -63,6 +63,16 @@ export enum class UndockError : std::uint8_t {
   CarrierNotFound,
 };
 
+/// \brief Effective physical orbital frame of a ship after resolving any
+/// enclosing carrier hierarchy (`LEVEL_UNIV`, `LEVEL_STAR`, or `LEVEL_PLAN`).
+export struct ShipOrbit {
+  ScopeLevel level{ScopeLevel::LEVEL_UNIV};
+  starnum_t snum{0};
+  planetnum_t pnum{0};
+
+  constexpr bool operator==(const ShipOrbit&) const noexcept = default;
+};
+
 // Forward declaration
 export class EntityManager;
 
@@ -493,6 +503,11 @@ public:
 
   // Docking & Mooring operations (service layer)
   [[nodiscard]] std::vector<shipnum_t> ancestor_carriers(shipnum_t ship_id);
+  [[nodiscard]] ShipOrbit effective_ship_orbit(const Ship& ship);
+  void sync_carrier_descendants(const Ship& carrier);
+  void propagate_ancestor_mass_delta(shipnum_t direct_carrier_id,
+                                     double delta_mass);
+  void propagate_carried_mass_delta(const Ship& ship, double delta_mass);
   [[nodiscard]] std::expected<void, DockError>
   dock_carrier(shipnum_t child_id, shipnum_t carrier_id);
   [[nodiscard]] std::expected<void, UndockError>
@@ -649,6 +664,4 @@ private:
   [[nodiscard]] std::vector<shipnum_t>
   reconcile_ship_query(std::vector<shipnum_t> ids, Pred&& matches) const;
   void drain_pending_deletions();
-  void propagate_ancestor_mass_delta(shipnum_t direct_carrier_id,
-                                     double delta_mass);
 };

@@ -14,12 +14,13 @@ void test_toggle_database_persistence() {
   std::println(std::cout, "Test: toggle command database persistence");
 
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
+  const player_t self_id = races.empire;
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
-  const auto& leader = ctx.em.peek_race(1)->leader();
+  ctx.setup_game_obj(g, self_id, 1);
+  const auto& leader = ctx.em.peek_race(self_id)->leader();
   g.set_scope_planet(leader.homesystem, leader.homeplanetnum);
 
   // TEST 1: Display all toggle settings (no argument)
@@ -41,12 +42,12 @@ void test_toggle_database_persistence() {
   {
     ctx.assert_dispatch_success(g, {"toggle", "gag"});
     test::expect_contains(g.out.str(), "gag is now on");
-    test::expect_true(ctx.em.peek_race(1)->leader().toggle.gag);
+    test::expect_true(ctx.em.peek_race(self_id)->leader().toggle.gag);
     g.out.str("");
 
     ctx.assert_dispatch_success(g, {"toggle", "gag"});
     test::expect_contains(g.out.str(), "gag is now off");
-    test::expect_false(ctx.em.peek_race(1)->leader().toggle.gag);
+    test::expect_false(ctx.em.peek_race(self_id)->leader().toggle.gag);
     g.out.str("");
   }
 
@@ -54,11 +55,11 @@ void test_toggle_database_persistence() {
   // compatibility, and visible
   {
     ctx.assert_dispatch_success(g, {"toggle", "inverse"});
-    test::expect_false(ctx.em.peek_race(1)->leader().toggle.inverse);
+    test::expect_false(ctx.em.peek_race(self_id)->leader().toggle.inverse);
     g.out.str("");
 
     ctx.assert_dispatch_success(g, {"toggle", "geography"});
-    test::expect_true(ctx.em.peek_race(1)->leader().toggle.geography);
+    test::expect_true(ctx.em.peek_race(self_id)->leader().toggle.geography);
     g.out.str("");
 
     ctx.assert_dispatch_success(g, {"toggle", "color"});
@@ -78,19 +79,19 @@ void test_toggle_database_persistence() {
     g.out.str("");
 
     ctx.assert_dispatch_success(g, {"toggle", "double_digits"});
-    test::expect_true(ctx.em.peek_race(1)->leader().toggle.double_digits);
+    test::expect_true(ctx.em.peek_race(self_id)->leader().toggle.double_digits);
     g.out.str("");
 
     ctx.assert_dispatch_success(g, {"toggle", "autoload"});
-    test::expect_true(ctx.em.peek_race(1)->leader().toggle.autoload);
+    test::expect_true(ctx.em.peek_race(self_id)->leader().toggle.autoload);
     g.out.str("");
 
     ctx.assert_dispatch_success(g, {"toggle", "compatibility"});
-    test::expect_true(ctx.em.peek_race(1)->leader().toggle.compat);
+    test::expect_true(ctx.em.peek_race(self_id)->leader().toggle.compat);
     g.out.str("");
 
     ctx.assert_dispatch_success(g, {"toggle", "visible"});
-    test::expect_true(ctx.em.peek_race(1)->leader().toggle.invisible);
+    test::expect_true(ctx.em.peek_race(self_id)->leader().toggle.invisible);
     g.out.str("");
   }
 

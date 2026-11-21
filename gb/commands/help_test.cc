@@ -34,10 +34,10 @@ struct ScopedTempDirAndCwd {
 
 void test_help_matrix() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
 
   TestCommandMatrix(ctx, "help")
       .with_valid_argv({"help"})
@@ -49,10 +49,10 @@ void test_help_matrix() {
 // Test help command dispatch with valid and invalid topics
 void test_help_command_dispatch() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
 
   // 1. Happy Path: General help success
   ctx.assert_dispatch_success(g, {"help"});
@@ -133,10 +133,10 @@ void test_help_command_dispatch() {
 
 void test_help_dir_fallbacks() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
 
   ScopedTempDirAndCwd guard;
   const std::string tmp_dir_str = guard.tmp_dir.string();

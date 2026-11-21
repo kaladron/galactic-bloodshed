@@ -13,13 +13,14 @@ import std;
 namespace {
 
 struct DistanceShips {
+  player_t owner;
   shipnum_t ship1;
   shipnum_t ship2;
   shipnum_t ship3;
 };
 
 DistanceShips setup_distance_ships(TestContext& ctx) {
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   // Set Earth to (60, 80) system coordinates for standard 3-4-5 Pythagorean
   // tests
@@ -27,37 +28,37 @@ DistanceShips setup_distance_ships(TestContext& ctx) {
     p.set_system_coordinates(SystemCoordinates{60.0, 80.0});
   });
 
-  // Ship 1: Player 1 at (0, 0)
+  // Ship 1: Imperium at (0, 0)
   const auto s1 = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                      .owned_by(1, 1)
+                      .owned_by(races.empire, 1)
                       .in_star_orbit(1, UniverseCoordinates{0.0, 0.0})
                       .build();
 
-  // Ship 2: Player 1 at (30, 40) -> distance to ship 1 should be 50
+  // Ship 2: Imperium at (30, 40) -> distance to ship 1 should be 50
   const auto s2 = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                      .owned_by(1, 1)
+                      .owned_by(races.empire, 1)
                       .in_star_orbit(1, UniverseCoordinates{30.0, 40.0})
                       .build();
 
-  // Ship 3: Player 2 (enemy)
+  // Ship 3: Newcomers (enemy)
   const auto s3 = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                      .owned_by(2, 1)
+                      .owned_by(races.newcomer, 1)
                       .in_star_orbit(1, UniverseCoordinates{100.0, 100.0})
                       .build();
 
-  return {s1, s2, s3};
+  return {races.empire, s1, s2, s3};
 }
 
 void test_distance_dispatch() {
   TestContext ctx;
-  const auto [ship1, ship2, ship3] = setup_distance_ships(ctx);
+  const auto [owner, ship1, ship2, ship3] = setup_distance_ships(ctx);
   const std::string s1_arg = std::format("#{}", ship1);
   const std::string s2_arg = std::format("#{}", ship2);
   const std::string s3_arg = std::format("#{}", ship3);
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, owner, 1);
   g.set_scope_univ();
 
   // 1. Min args check: rejected when fewer than 3 args
@@ -147,9 +148,6 @@ void test_distance_dispatch() {
   // 13. Happy path: Cross-quadrant negative coordinates (300,400) to
   // (-300,-400) -> 1000 (even when Antares is unexplored, while unexplored
   // planets do not leak coordinates or planet names to mortals)
-  ctx.em.mutate_star(3, [](Star& s) { s.clear_explored_by(player_t{1}); });
-  ctx.em.mutate_planet(3, 1,
-                       [](Planet& p) { p.info(player_t{1}).explored = 0; });
   g.out.str("");
   ctx.assert_dispatch_success(g, {"distance", "/Vega", "/Antares"});
   test::expect_contains(g.out.str(), "Distance = 1000");
@@ -177,7 +175,7 @@ void test_distance_dispatch() {
   test::expect_contains(g.out.str(), "Syntax: 'distance <from> <to>'.");
 
   const auto doomed_ship = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
-                               .owned_by(1, 1)
+                               .owned_by(owner, 1)
                                .in_deep_space()
                                .build();
   g.set_scope_ship(doomed_ship);
@@ -202,11 +200,11 @@ void test_distance_dispatch() {
 
 void test_distance_matrix() {
   TestContext ctx;
-  setup_distance_ships(ctx);
+  const auto ships = setup_distance_ships(ctx);
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, ships.owner, 1);
   g.set_scope_univ();
 
   TestCommandMatrix(ctx, "distance")

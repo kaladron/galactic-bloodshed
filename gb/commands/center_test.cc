@@ -14,11 +14,11 @@ namespace {
 
 void test_center_matrix() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_univ();
 
   TestCommandMatrix(ctx, "center")
@@ -30,11 +30,11 @@ void test_center_matrix() {
 
 void test_center_happy_path() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_univ();
 
   // 1. Center on Sol at (0, 0)
@@ -60,11 +60,11 @@ void test_center_happy_path() {
 
 void test_center_domain_errors() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_univ();
 
   // 1. Min args check (< 2 args)
@@ -76,13 +76,10 @@ void test_center_domain_errors() {
   ctx.assert_dispatch_rejected(g, {"center", "/Sol", "extra"});
   test::expect_contains(g.out.str(), "center: which star?");
 
-  // 3. Ship scope rejection (Player 1 Government Center)
-  const auto gov_id = TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
-                          .owned_by(1, 1)
-                          .landed_on(1, 1, Coordinates{0, 0})
-                          .build();
+  // 3. Ship scope rejection (Imperium Government Center)
   g.out.str("");
-  ctx.assert_dispatch_rejected(g, {"center", std::format("#{}", gov_id)});
+  ctx.assert_dispatch_rejected(
+      g, {"center", std::format("#{}", races.empire_gov_ship)});
   test::expect_contains(g.out.str(), "CHEATER!!!");
 
   // 4. Universe scope rejection

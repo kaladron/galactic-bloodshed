@@ -11,7 +11,7 @@ import std;
 
 int main() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   const std::time_t now = std::time(nullptr);
   ctx.em.mutate_server_state([now](ServerState& state) {
@@ -28,7 +28,7 @@ int main() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_univ();
 
   // 1. Test time command in ASCII mode

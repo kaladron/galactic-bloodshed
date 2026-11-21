@@ -12,18 +12,20 @@ import std;
 
 namespace {
 
-void setup_test_world(TestContext& ctx) {
-  ctx.with_standard_universe();
-  ctx.em.mutate_race(1, [](Race& r) { r.leader().set_default_scope_star(1); });
+player_t setup_test_world(TestContext& ctx) {
+  const auto races = ctx.with_races();
+  ctx.em.mutate_race(races.empire,
+                     [](Race& r) { r.leader().set_default_scope_star(1); });
+  return races.empire;
 }
 
 void test_cs_happy_paths() {
   TestContext ctx;
-  setup_test_world(ctx);
+  const player_t p = setup_test_world(ctx);
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, p, 1);
 
   // 1. Switch to universe scope (free AP)
   g.set_scope_star(1);
@@ -62,15 +64,15 @@ void test_cs_happy_paths() {
   // 6. Default cs to star and planet scopes updates universe_center and zeroes
   // child coordinates
   ctx.assert_dispatch_success(g, {"cs", "-d", "/Vega/Vega Prime"}, 0);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, p, 1);
   ctx.assert_dispatch_success(g, {"cs"}, 0);
   test::expect_eq(g.level(), ScopeLevel::LEVEL_PLAN);
   test::expect_eq(g.snum(), 2);
   test::expect_eq(g.pnum(), 1);
 
-  ctx.create_star("VoidStar", 4).with_explored(1).build();
+  ctx.create_star("VoidStar", 4).with_explored(p).build();
   ctx.assert_dispatch_success(g, {"cs", "-d", "/VoidStar"}, 0);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, p, 1);
   ctx.assert_dispatch_success(g, {"cs"}, 0);
   test::expect_eq(g.level(), ScopeLevel::LEVEL_STAR);
   test::expect_eq(g.snum(), 4);
@@ -104,11 +106,11 @@ void test_cs_domain_errors() {
   }
 
   TestContext ctx;
-  setup_test_world(ctx);
+  const player_t p = setup_test_world(ctx);
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, p, 1);
   g.set_scope_univ();
 
   // 1. Invalid star name
@@ -123,7 +125,7 @@ void test_cs_domain_errors() {
 
   // 3. Ship scope rejected as default home system
   shipnum_t snum =
-      TestShipBuilder(ctx.em, ShipType::STYPE_POD).owned_by(1, 1).build();
+      TestShipBuilder(ctx.em, ShipType::STYPE_POD).owned_by(p, 1).build();
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"cs", "-d", std::format("#{}", snum)});
   test::expect_contains(g.out.str(), "cs: bad home system");
@@ -140,11 +142,12 @@ void test_cs_domain_errors() {
 
 void test_cs_viewport_coordinates() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
+  const player_t p = races.empire;
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, p, 1);
 
   // 1. Planet to star and universe viewport coordinates
   g.set_scope_planet(1, 1);
@@ -176,7 +179,7 @@ void test_cs_viewport_coordinates() {
   // 2. Ship orbiting star viewport coordinates (and star-orbiting -> planet
   // mismatch)
   shipnum_t ship_star = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                            .owned_by(1, 1)
+                            .owned_by(p, 1)
                             .in_star_orbit(1, UniverseCoordinates{15.0, 25.0})
                             .build();
 
@@ -200,7 +203,7 @@ void test_cs_viewport_coordinates() {
 
   // Deep-space ship (LEVEL_UNIV) navigating to star resets system_center to 0
   shipnum_t ship_deep = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-                            .owned_by(1, 1)
+                            .owned_by(p, 1)
                             .in_deep_space(UniverseCoordinates{40.0, 60.0})
                             .build();
   ctx.assert_dispatch_success(g, {"cs", std::format("#{}", ship_deep.value)});
@@ -211,7 +214,7 @@ void test_cs_viewport_coordinates() {
   // 3. Ship orbiting planet viewport coordinates (same planet, different planet
   // in same star, and planet in different star)
   shipnum_t ship_plan = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                            .owned_by(1, 1)
+                            .owned_by(p, 1)
                             .in_planet_orbit(1, 1,
                                              earth->absolute_coordinates(*sol) +
                                                  SystemCoordinates{2.0, 3.0})
@@ -221,7 +224,7 @@ void test_cs_viewport_coordinates() {
   ctx.assert_dispatch_success(g, {"cs", "/Sol/Earth"});
   test::expect_eq(g.system_center(), SystemCoordinates(2.0, 3.0));
 
-  ctx.create_planet(1).named("Mars").with_explored(1, true).build();
+  ctx.em.mutate_planet(1, 2, [&](Planet& pl) { pl.mark_explored_by(p); });
   ctx.assert_dispatch_success(g, {"cs", std::format("#{}", ship_plan)});
   g.set_system_center({50.0, 50.0});
   ctx.assert_dispatch_success(g, {"cs", "/Sol/Mars"});
@@ -242,7 +245,7 @@ void test_cs_viewport_coordinates() {
   // (regression test for uncaught EntityNotFoundError in
   // update_viewport_from_ship)
   const auto doomed_ship = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
-                               .owned_by(1, 1)
+                               .owned_by(p, 1)
                                .in_star_orbit(1)
                                .build();
   g.set_scope_ship(doomed_ship);
@@ -275,11 +278,11 @@ void test_cs_viewport_coordinates() {
 
 void test_cs_json_mode() {
   TestContext ctx;
-  setup_test_world(ctx);
+  const player_t p = setup_test_world(ctx);
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, p, 1);
   g.set_ui_mode(UiMode::JSON);
 
   g.out.str("");

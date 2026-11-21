@@ -12,17 +12,17 @@ import std;
 
 namespace {
 
-void setup_test_world(TestContext& ctx) {
-  ctx.with_standard_universe();
+player_t setup_test_world(TestContext& ctx) {
+  return ctx.with_races().empire;
 }
 
 void test_stars_dispatch() {
   TestContext ctx;
-  setup_test_world(ctx);
+  const player_t p = setup_test_world(ctx);
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, p, 1);
   g.set_scope_univ();
   g.set_universe_center({0.0, 0.0});
 

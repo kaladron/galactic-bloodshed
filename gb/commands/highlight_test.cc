@@ -15,8 +15,9 @@ void test_highlight_database_persistence() {
 
   // Create in-memory database
   TestContext ctx;
-  ctx.with_standard_universe();
-  ctx.em.mutate_race(1, [](Race& r) { r.leader().toggle.highlight = 0; });
+  const auto races = ctx.with_races();
+  const player_t self_id = races.empire;
+  ctx.em.mutate_race(self_id, [](Race& r) { r.leader().toggle.highlight = 0; });
 
   JsonStore store(ctx.db);
   RaceRepository races_repo(store);
@@ -24,28 +25,29 @@ void test_highlight_database_persistence() {
   // Create GameObj for command execution
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, self_id, 1);
   // TEST 1: Set highlight to player 2
   std::println(std::cout, "  Testing: Set highlight to player 2");
   {
     ctx.assert_dispatch_success(g, {"highlight", "2"});
 
     // Verify database: highlight should be set to 2
-    auto saved = races_repo.find_by_player(1);
+    auto saved = races_repo.find_by_player(self_id);
     test::expect_true(saved.has_value());
     test::expect_eq(saved->leader().toggle.highlight, 2);
     std::println(std::cout, "    ✓ Database: highlight = {}",
                  saved->leader().toggle.highlight);
   }
 
-  // TEST 2: Change highlight to player 1 (self)
-  std::println(std::cout, "  Testing: Change highlight to player 1 (self)");
+  // TEST 2: Change highlight to self
+  std::println(std::cout, "  Testing: Change highlight to self");
   {
-    ctx.assert_dispatch_success(g, {"highlight", "1"});
+    ctx.assert_dispatch_success(
+        g, {"highlight", std::format("{}", self_id.value)});
 
-    auto saved = races_repo.find_by_player(1);
+    auto saved = races_repo.find_by_player(self_id);
     test::expect_true(saved.has_value());
-    test::expect_eq(saved->leader().toggle.highlight, 1);
+    test::expect_eq(saved->leader().toggle.highlight, self_id);
     std::println(std::cout, "    ✓ Database: highlight = {}",
                  saved->leader().toggle.highlight);
   }
@@ -55,7 +57,7 @@ void test_highlight_database_persistence() {
   {
     ctx.assert_dispatch_success(g, {"highlight", "2"});
 
-    auto saved = races_repo.find_by_player(1);
+    auto saved = races_repo.find_by_player(self_id);
     test::expect_true(saved.has_value());
     test::expect_eq(saved->leader().toggle.highlight, 2);
     std::println(std::cout, "    ✓ Database: highlight = {}",
@@ -73,18 +75,20 @@ void test_highlight_database_persistence() {
     g.out.str("");
 
     // Verify highlight wasn't changed
-    auto saved = races_repo.find_by_player(1);
+    auto saved = races_repo.find_by_player(self_id);
     test::expect_true(saved.has_value());
     test::expect_eq(saved->leader().toggle.highlight,
                     2);  // Should still be 2
   }
 
   // TEST 5: Extra arguments rejected and JSON output mode
-  ctx.assert_dispatch_rejected(g, {"highlight", "1", "extra"});
+  ctx.assert_dispatch_rejected(g, {"highlight", "2", "extra"});
   test::expect_contains(g.out.str(), "Syntax: highlight <player>");
   g.set_ui_mode(UiMode::JSON);
-  ctx.assert_dispatch_success(g, {"highlight", "1"});
-  test::expect_eq(ctx.em.peek_race(1)->leader().toggle.highlight, 1);
+  ctx.assert_dispatch_success(g,
+                              {"highlight", std::format("{}", self_id.value)});
+  test::expect_eq(ctx.em.peek_race(self_id)->leader().toggle.highlight,
+                  self_id);
   test::expect_contains(g.out.str(), R"("type":"race")");
   test::expect_not_contains(g.out.str(), R"("type":"session")");
 

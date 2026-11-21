@@ -13,19 +13,19 @@ import std;
 
 namespace {
 
-void setup_test_world(TestContext& ctx) {
-  ctx.with_standard_universe();
+TestRaces setup_test_world(TestContext& ctx) {
+  return ctx.with_races();
 }
 
 void test_survey_no_args_planet_scope() {
   std::println(std::cout, "Test: survey (no args) at planet scope");
 
   TestContext ctx;
-  setup_test_world(ctx);
+  const auto races = setup_test_world(ctx);
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_success(g, {"survey"});
@@ -41,11 +41,11 @@ void test_survey_sector_range_with_header() {
                "Test: survey command with sector range shows header");
 
   TestContext ctx;
-  setup_test_world(ctx);
+  const auto races = setup_test_world(ctx);
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_planet(1, 1);
 
   ctx.assert_dispatch_success(g, {"survey", "0:2,0:2"});
@@ -63,11 +63,11 @@ void test_survey_star_scope() {
   std::println(std::cout, "Test: survey command at star scope");
 
   TestContext ctx;
-  setup_test_world(ctx);
+  const auto races = setup_test_world(ctx);
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_star(2);
 
   ctx.assert_dispatch_success(g, {"survey"});
@@ -86,11 +86,11 @@ void test_survey_universe_scope() {
   std::println(std::cout, "Test: survey command at universe scope");
 
   TestContext ctx;
-  setup_test_world(ctx);
+  const auto races = setup_test_world(ctx);
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_univ();
 
   ctx.assert_dispatch_success(g, {"survey"});
@@ -103,24 +103,24 @@ void test_survey_sectors_json_and_landed_ships() {
                "Test: survey sectors JSON envelope and landed ship visibility");
 
   TestContext ctx;
-  setup_test_world(ctx);
+  const auto races = setup_test_world(ctx);
 
-  // Land a probe owned by player 1, governor 3 on planet (2, 1) at (0, 0),
-  // where player 1 owns 0 sectors so ship sight governs planetary presence.
-  ctx.em.mutate_race(1, [](Race& r) {
+  // Land a probe owned by Imperium, governor 3 on planet (2, 2) at (0, 0),
+  // where Imperium owns 0 sectors so ship sight governs planetary presence.
+  ctx.em.mutate_race(races.empire, [](Race& r) {
     r.appoint_governor(2);
     r.appoint_governor(3);
   });
   const auto probe_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-                            .owned_by(1, 3)
-                            .landed_on(2, 1, {0, 0})
+                            .owned_by(races.empire, 3)
+                            .landed_on(2, 2, {0, 0})
                             .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 2);
+  ctx.setup_game_obj(g, races.empire, 2);
   g.set_ui_mode(GB::presentation::UiMode::JSON);
-  g.set_scope_planet(2, 1);
+  g.set_scope_planet(2, 2);
 
   // Sector survey in JSON mode with coordinate range
   ctx.assert_dispatch_success(g, {"survey", "0:0,0:0"});
@@ -148,11 +148,11 @@ void test_survey_planet_star_and_universe_json() {
                "Test: survey planet overview, star, and universe JSON");
 
   TestContext ctx;
-  setup_test_world(ctx);
+  const auto races = setup_test_world(ctx);
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_ui_mode(GB::presentation::UiMode::JSON);
 
   // Planet overview in JSON mode
@@ -191,16 +191,16 @@ void test_survey_location_and_scope_errors() {
                "Test: survey location parsing, empty arg, and scope errors");
 
   TestContext ctx;
-  setup_test_world(ctx);
+  const auto races = setup_test_world(ctx);
 
   const auto probe_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-                            .owned_by(1, 1)
+                            .owned_by(races.empire, 1)
                             .in_planet_orbit(1, 1)
                             .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
 
   // Empty second argument falls back to current scope
   g.set_scope_univ();
@@ -264,52 +264,54 @@ void test_survey_sector_presence_crystals_and_cloaking() {
       "Test: survey sector ship sight, crystals, and cloaking branches");
 
   TestContext ctx;
-  setup_test_world(ctx);
+  const auto races = setup_test_world(ctx);
 
-  // Planet (2, 1): player 1 owns 0 sectors initially.
-  // Place foreign ship and sightless ship (canister) on planet (2, 1).
+  // Planet (2, 2): Imperium owns 0 sectors and has not explored it initially.
+  // Place foreign ship and sightless ship (canister) on planet (2, 2).
   TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-      .owned_by(2, 1)
-      .landed_on(2, 1, {0, 0})
+      .owned_by(races.newcomer, 1)
+      .landed_on(2, 2, {0, 0})
       .build();
   TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST)
-      .owned_by(1, 1)
-      .landed_on(2, 1, {0, 0})
+      .owned_by(races.empire, 1)
+      .landed_on(2, 2, {0, 0})
       .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_ui_mode(GB::presentation::UiMode::JSON);
-  g.set_scope_planet(2, 1);
+  g.set_scope_planet(2, 2);
 
   // Survey sectors in JSON mode on unexplored planet with no sight returns
   // nullopt grid
-  ctx.em.mutate_planet(2, 1, [](Planet& p) { p.info(1).explored = false; });
+  ctx.em.mutate_planet(
+      2, 2, [&](Planet& p) { p.info(races.empire).explored = false; });
   ctx.assert_dispatch_success(g, {"survey", "0:0,0:0"});
   test::expect_contains(g.out.str(), R"("type":"planet")");
   test::expect_false(g.out.str().contains(R"("type":"sectors")"));
 
-  // Restore explored status on planet (2, 1) -> grid present in JSON mode
-  ctx.em.mutate_planet(2, 1, [](Planet& p) { p.info(1).explored = true; });
+  // Restore explored status on planet (2, 2) -> grid present in JSON mode
+  ctx.em.mutate_planet(
+      2, 2, [&](Planet& p) { p.info(races.empire).explored = true; });
   g.out.str("");
   ctx.assert_dispatch_success(g, {"survey", "0:0,0:0"});
   test::expect_contains(g.out.str(), R"("type":"planet")");
   test::expect_contains(g.out.str(), R"("type":"sectors")");
 
-  // Add an orbiting probe owned by (1, 1): grants planetary presence
+  // Add an orbiting probe owned by Imperium: grants planetary presence
   // via has_sight() while being skipped by !is_landed() in sector ship list
   TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-      .owned_by(1, 1)
-      .in_planet_orbit(2, 1)
+      .owned_by(races.empire, 1)
+      .in_planet_orbit(2, 2)
       .build();
 
   // Add 11 landed probes on (0, 0) to exercise MAX_SHIPS_PER_SECTOR (10) cap
   shipnum_t last_probe_id = 0;
   for (int i = 0; i < 11; ++i) {
     last_probe_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-                        .owned_by(1, 1)
-                        .landed_on(2, 1, {0, 0})
+                        .owned_by(races.empire, 1)
+                        .landed_on(2, 2, {0, 0})
                         .build();
   }
 
@@ -321,9 +323,8 @@ void test_survey_sector_presence_crystals_and_cloaking() {
   // God, shown
   g.set_ui_mode(GB::presentation::UiMode::ASCII);
   g.set_scope_planet(1, 1);
-  ctx.em.mutate_race(1, [](Race& r) {
+  ctx.em.mutate_race(races.empire, [](Race& r) {
     r.discoveries.crystal = false;
-    r.God = false;
     r.Metamorph = true;
   });
   ctx.em.mutate_planet(1, 1, [](Planet& p) { p.slaved_to() = 2; });
@@ -341,7 +342,8 @@ void test_survey_sector_presence_crystals_and_cloaking() {
   test::expect_false(g.out.str().contains("yes"));
 
   // Enable crystal discovery -> crystals shown in overview and sector table
-  ctx.em.mutate_race(1, [](Race& r) { r.discoveries.crystal = true; });
+  ctx.em.mutate_race(races.empire,
+                     [](Race& r) { r.discoveries.crystal = true; });
   g.out.str("");
   g.out.clear();
   ctx.assert_dispatch_success(g, {"survey"});
@@ -353,11 +355,9 @@ void test_survey_sector_presence_crystals_and_cloaking() {
   test::expect_contains(g.out.str(), "yes");
 
   // God without crystal discovery also sees crystals, and all 11 ships on (2,
-  // 1) are included in SectorGridView
-  ctx.em.mutate_race(1, [](Race& r) {
-    r.discoveries.crystal = false;
-    r.God = true;
-  });
+  // 2) are included in SectorGridView
+  ctx.em.mutate_race(races.empire,
+                     [](Race& r) { r.discoveries.crystal = false; });
   g.set_god(true);
   g.out.str("");
   g.out.clear();
@@ -369,7 +369,7 @@ void test_survey_sector_presence_crystals_and_cloaking() {
   ctx.assert_dispatch_success(g, {"survey", "0:0,0:0"});
   test::expect_contains(g.out.str(), "yes");
 
-  g.set_scope_planet(2, 1);
+  g.set_scope_planet(2, 2);
   g.set_ui_mode(GB::presentation::UiMode::JSON);
   g.out.str("");
   g.out.clear();
@@ -377,8 +377,8 @@ void test_survey_sector_presence_crystals_and_cloaking() {
   test::expect_contains(g.out.str(), std::format(R"("id":{})", last_probe_id));
 
   // Foreign sector mobilization is redacted for mortals and visible to Deity
-  ctx.em.mutate_sectormap(1, 1, [](SectorMap& smap) {
-    smap.get({1, 0}).set_owner(2);
+  ctx.em.mutate_sectormap(1, 1, [&](SectorMap& smap) {
+    smap.get({1, 0}).set_owner(races.newcomer);
     smap.get({1, 0}).set_mobilization(77);
   });
   g.set_god(false);
@@ -406,23 +406,20 @@ void test_survey_star_stability_and_god_branches() {
   std::println(std::cout, "Test: survey star stability thresholds and God");
 
   TestContext ctx;
-  setup_test_world(ctx);
+  const auto races = setup_test_world(ctx);
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_star(2);
 
   // Low tech and non-God cannot determine stability
-  ctx.em.mutate_race(1, [](Race& r) {
-    r.tech = 0.0;
-    r.God = false;
-  });
+  ctx.em.mutate_race(races.empire, [](Race& r) { r.tech = 0.0; });
   ctx.assert_dispatch_success(g, {"survey"});
   test::expect_contains(g.out.str(), "(cannot determine)");
 
   // Low tech with God sees stability and quoted planet names
-  ctx.em.mutate_race(1, [](Race& r) { r.God = true; });
+  ctx.setup_game_obj(g, races.deity, 1);
   g.set_god(true);
   constexpr std::array<std::pair<int, std::string_view>, 5> kStages = {{
       {10, "stable"},

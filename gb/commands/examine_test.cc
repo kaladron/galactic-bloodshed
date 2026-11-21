@@ -13,13 +13,18 @@ import std;
 
 namespace {
 
-void setup_test_world(TestContext& ctx) {
-  ctx.with_standard_universe();
+struct ExamineSetup {
+  TestRaces races;
+  shipnum_t shuttle_id;
+};
 
-  TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-      .owned_by(1)
-      .in_star_orbit(starnum_t{1})
-      .build();
+ExamineSetup setup_test_world(TestContext& ctx) {
+  const auto races = ctx.with_races();
+
+  const shipnum_t shuttle_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                                   .owned_by(races.empire)
+                                   .in_star_orbit(starnum_t{1})
+                                   .build();
 
   // Seed / set a custom ShipExam description in SQLite
   ctx.em.mutate_ship_exam(ShipType::STYPE_SHUTTLE, [&](ShipExam& exam) {
@@ -31,15 +36,17 @@ void setup_test_world(TestContext& ctx) {
   });
   ctx.em.mutate_ship_exam(ShipType::STYPE_FIGHTER,
                           [&](ShipExam& exam) { exam.description = ""; });
+  return {races, shuttle_id};
 }
 
 void test_examine_dispatch() {
   TestContext ctx;
-  setup_test_world(ctx);
+  const auto [races, shuttle_id] = setup_test_world(ctx);
+  const std::string shuttle_arg = std::format("#{}", shuttle_id);
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_star(1);
 
   // 1. Min args check: examine without arguments, and invalid ship string
@@ -48,13 +55,14 @@ void test_examine_dispatch() {
   ctx.assert_dispatch_rejected(g, {"examine", "abc"});
   std::println(std::cout, "    ✓ examine rejected with insufficient arguments");
 
-  // 2. Happy path: examine #1 (first and second time when already examined)
+  // 2. Happy path: examine shuttle (first and second time when already
+  // examined)
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"examine", "#1"});
+  ctx.assert_dispatch_success(g, {"examine", shuttle_arg});
   test::expect_contains(
       g.out.str(),
       "Shuttle: SQLite stored short-range spacecraft description.");
-  ctx.assert_dispatch_success(g, {"examine", "#1"});
+  ctx.assert_dispatch_success(g, {"examine", shuttle_arg});
   std::println(std::cout, "    ✓ examine #1 succeeded with description");
 
   // 3. Domain errors: non-existent, deep-space, uninhabited star
@@ -63,7 +71,7 @@ void test_examine_dispatch() {
   test::expect_contains(g.out.str(), "Ship not found.");
 
   shipnum_t univ_ship = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                            .owned_by(1)
+                            .owned_by(races.empire)
                             .in_deep_space()
                             .build();
   ctx.assert_dispatch_rejected(
@@ -71,11 +79,11 @@ void test_examine_dispatch() {
   test::expect_contains(g.out.str(), "That ship is not visible to you.");
 
   shipnum_t deep_carrier = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-                               .owned_by(1)
+                               .owned_by(races.empire)
                                .in_deep_space()
                                .build();
   shipnum_t berthed_deep = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-                               .owned_by(1)
+                               .owned_by(races.empire)
                                .in_deep_space()
                                .build();
   test::expect_true(
@@ -84,9 +92,9 @@ void test_examine_dispatch() {
       g, {"examine", std::format("#{}", berthed_deep.value)});
   test::expect_contains(g.out.str(), "That ship is not visible to you.");
 
-  ctx.em.mutate_star(2, [](Star& s) { s.clear_inhabited_by(player_t{1}); });
+  ctx.em.mutate_star(2, [&](Star& s) { s.clear_inhabited_by(races.empire); });
   shipnum_t unvis_ship = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                             .owned_by(1)
+                             .owned_by(races.empire)
                              .in_star_orbit(starnum_t{2})
                              .build();
   ctx.assert_dispatch_rejected(
@@ -96,7 +104,7 @@ void test_examine_dispatch() {
   // Foreign stealthed orbital mine in an inhabited star is hidden from mortals,
   // while Deity can examine both the mine and deep-space ships.
   shipnum_t enemy_mine = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
-                             .owned_by(2)
+                             .owned_by(races.newcomer)
                              .in_star_orbit(starnum_t{1})
                              .build();
   ctx.assert_dispatch_rejected(
@@ -111,7 +119,7 @@ void test_examine_dispatch() {
 
   // 4. Switch, irradiated (!active), empty/newline descriptions, and JSON mode
   shipnum_t fac_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
-                           .owned_by(1)
+                           .owned_by(races.empire)
                            .in_star_orbit(starnum_t{1})
                            .with_active(false)
                            .build();
@@ -121,14 +129,14 @@ void test_examine_dispatch() {
   test::expect_contains(g.out.str(), "irradiated");
 
   shipnum_t empty_desc_ship = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-                                  .owned_by(1)
+                                  .owned_by(races.empire)
                                   .in_star_orbit(starnum_t{1})
                                   .build();
   ctx.assert_dispatch_success(
       g, {"examine", std::format("#{}", empty_desc_ship.value)});
 
   g.set_ui_mode(UiMode::JSON);
-  ctx.assert_dispatch_success(g, {"examine", "#1"});
+  ctx.assert_dispatch_success(g, {"examine", shuttle_arg});
   test::expect_contains(g.out.str(), R"("type":"message")");
   test::expect_contains(
       g.out.str(),
@@ -139,7 +147,7 @@ void test_examine_dispatch() {
 
 void test_examine_seeded_catalog_alignment() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   JsonStore store(ctx.db);
   ShipExamRepository exams(store);
@@ -147,7 +155,7 @@ void test_examine_seeded_catalog_alignment() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_star(1);
 
   const std::array<std::pair<ShipType, std::string_view>, 8> samples = {{
@@ -163,7 +171,7 @@ void test_examine_seeded_catalog_alignment() {
 
   for (const auto& [stype, expected_heading] : samples) {
     const shipnum_t shipno = TestShipBuilder(ctx.em, stype)
-                                 .owned_by(1)
+                                 .owned_by(races.empire)
                                  .in_star_orbit(starnum_t{1})
                                  .build();
     g.out.str("");

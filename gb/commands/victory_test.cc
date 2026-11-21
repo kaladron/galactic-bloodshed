@@ -16,22 +16,21 @@ void test_victory_dispatch() {
   std::println(std::cout, "Test: victory command dispatch and rankings");
 
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
+  TestWorldBuilder(ctx)
+      .add_race("Terrans", 50.0, false, player_t{2})
+      .add_race("Martians", 80.0, false, player_t{3});
 
-  ctx.em.mutate_race(1, [](Race& race1) {
-    race1.name = "Terrans";
+  ctx.em.mutate_race(2, [](Race& race1) {
     race1.victory_score = 100;
-    race1.tech = 50.0;
     race1.IQ = 120;
     race1.password = "secret1";
     race1.leader().password = "govsec1";
   });
 
-  ctx.em.mutate_race(2, [](Race& race2) {
-    race2.name = "Martians";
+  ctx.em.mutate_race(3, [](Race& race2) {
     race2.Metamorph = true;
     race2.victory_score = 250;
-    race2.tech = 80.0;
     race2.IQ = 140;
     race2.password = "secret2";
     race2.leader().password = "govsec2";
@@ -39,7 +38,7 @@ void test_victory_dispatch() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, 2, 1);
   g.race = ctx.em.peek_race(g.player());
 
   // 1. Victory standings (no args - shows all players)
@@ -96,18 +95,16 @@ void test_victory_dispatch() {
   // 6. God, Guest, and dissolved races mark no_count=true in
   // create_victory_list and compute_power_blocks aggregates allied member power
   TestWorldBuilder(ctx)
-      .add_race("Deity", 100.0, false, player_t{3})
       .add_race("Visitor", 100.0, false, player_t{4})
       .add_race("Fallen", 100.0, false, player_t{5});
-  ctx.em.mutate_race(3, [](Race& r) { r.God = true; });
   ctx.em.mutate_race(4, [](Race& r) { r.Guest = true; });
   ctx.em.mutate_race(5, [](Race& r) { r.dissolved = true; });
   const auto vics = create_victory_list(ctx.em);
   test::expect_eq(vics.size(), 5U);
 
-  ctx.em.mutate_block(1, [](Block& b) {
-    b.invite(player_t{1});
-    b.pledge(player_t{1});
+  ctx.em.mutate_block(2, [](Block& b) {
+    b.invite(player_t{2});
+    b.pledge(player_t{2});
   });
   compute_power_blocks(ctx.em);
 

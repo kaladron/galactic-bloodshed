@@ -26,11 +26,11 @@ void test_read_command_descriptor() {
 
 void test_read_command_matrix() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
 
   TestCommandMatrix(ctx, "read")
       .with_valid_argv({"read"})
@@ -42,11 +42,11 @@ void test_read_command_matrix() {
 
 void test_read_telegrams() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
 
   // Initially empty mailbox
   check_for_telegrams(g);
@@ -61,9 +61,9 @@ void test_read_telegrams() {
   test::expect_contains(g.out.str(), "Telegrams:\n None.\n");
   g.out.str("");
 
-  // Post telegrams to Player 1, Governor 1
-  push_telegram(ctx.em, 1, 1, "First telegram with newline\n");
-  push_telegram(ctx.em, 1, 1, "Second telegram without newline");
+  // Post telegrams to Imperium, Governor 1
+  push_telegram(ctx.em, races.empire, 1, "First telegram with newline\n");
+  push_telegram(ctx.em, races.empire, 1, "Second telegram without newline");
 
   // Check notification prompt
   check_for_telegrams(g);
@@ -80,7 +80,7 @@ void test_read_telegrams() {
   g.out.str("");
 
   // Verify delete-on-read behavior
-  test::expect_false(ctx.em.has_telegrams(1, 1));
+  test::expect_false(ctx.em.has_telegrams(races.empire, 1));
 
   ctx.assert_dispatch_success(g, {"read"});
   test::expect_contains(g.out.str(), "Telegrams:\n None.\n");
@@ -94,23 +94,24 @@ void test_read_telegrams() {
 
 void test_read_telegrams_governor_isolation() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
-  ctx.em.mutate_race(1, [](Race& race) { race.appoint_governor(2); });
+  ctx.em.mutate_race(races.empire,
+                     [](Race& race) { race.appoint_governor(2); });
 
   auto& registry = get_test_session_registry();
   GameObj g1(ctx.em, registry);
-  ctx.setup_game_obj(g1, 1, 1);
+  ctx.setup_game_obj(g1, races.empire, 1);
 
   GameObj g2(ctx.em, registry);
-  ctx.setup_game_obj(g2, 1, 2);
+  ctx.setup_game_obj(g2, races.empire, 2);
 
   // Send separate telegrams to Gov 1 and Gov 2
-  push_telegram(ctx.em, 1, 1, "Confidential for Governor 1\n");
-  push_telegram(ctx.em, 1, 2, "Confidential for Governor 2\n");
+  push_telegram(ctx.em, races.empire, 1, "Confidential for Governor 1\n");
+  push_telegram(ctx.em, races.empire, 2, "Confidential for Governor 2\n");
 
-  test::expect_true(ctx.em.has_telegrams(1, 1));
-  test::expect_true(ctx.em.has_telegrams(1, 2));
+  test::expect_true(ctx.em.has_telegrams(races.empire, 1));
+  test::expect_true(ctx.em.has_telegrams(races.empire, 2));
 
   // Governor 1 reads messages
   ctx.assert_dispatch_success(g1, {"read"});
@@ -118,26 +119,26 @@ void test_read_telegrams_governor_isolation() {
   test::expect_false(g1.out.str().contains("Confidential for Governor 2"));
 
   // Governor 1's mailbox is now empty, but Governor 2's is untouched
-  test::expect_false(ctx.em.has_telegrams(1, 1));
-  test::expect_true(ctx.em.has_telegrams(1, 2));
+  test::expect_false(ctx.em.has_telegrams(races.empire, 1));
+  test::expect_true(ctx.em.has_telegrams(races.empire, 2));
 
   // Governor 2 reads messages
   ctx.assert_dispatch_success(g2, {"read"});
   test::expect_contains(g2.out.str(), "Confidential for Governor 2");
   test::expect_false(g2.out.str().contains("Confidential for Governor 1"));
 
-  test::expect_false(ctx.em.has_telegrams(1, 2));
+  test::expect_false(ctx.em.has_telegrams(races.empire, 2));
 
   ctx.verify_universe_invariants();
 }
 
 void test_read_news() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
 
   // Initially empty news feed
   ctx.assert_dispatch_success(g, {"read", "news"});
@@ -176,7 +177,7 @@ void test_read_news() {
   const auto latest_announce =
       ctx.em.get_news_since(NewsType::ANNOUNCE).back().id;
 
-  ctx.em.with_race(1, [&](const Race& race) {
+  ctx.em.with_race(races.empire, [&](const Race& race) {
     test::expect_eq(race.leader().newspos[NewsType::DECLARATION], latest_decl);
     test::expect_eq(race.leader().newspos[NewsType::COMBAT], latest_combat);
     test::expect_eq(race.leader().newspos[NewsType::TRANSFER], latest_transfer);
@@ -194,10 +195,10 @@ void test_read_news() {
   post(ctx.em, "Second clash reported at Sol\n", NewsType::COMBAT);
 
   // Guest race reading news or telegrams does not mutate DB or consume items
-  ctx.em.mutate_race(2, [](Race& r) { r.Guest = true; });
-  push_telegram(ctx.em, 2, 1, "Guest welcome notice\n");
+  ctx.em.mutate_race(races.nomad, [](Race& r) { r.Guest = true; });
+  push_telegram(ctx.em, races.nomad, 1, "Guest welcome notice\n");
   GameObj guest_g(ctx.em, registry);
-  ctx.setup_game_obj(guest_g, 2, 1);
+  ctx.setup_game_obj(guest_g, races.nomad, 1);
   const auto before_guest_read = ctx.db.total_changes();
   ctx.assert_dispatch_success(guest_g, {"read", "news"});
   test::expect_contains(guest_g.out.str(), "Second clash reported at Sol");
@@ -205,7 +206,7 @@ void test_read_news() {
   ctx.assert_dispatch_success(guest_g, {"read"});
   test::expect_contains(guest_g.out.str(), "Guest welcome notice");
   test::expect_eq(ctx.db.total_changes(), before_guest_read);
-  test::expect_true(ctx.em.has_telegrams(2, 1));
+  test::expect_true(ctx.em.has_telegrams(races.nomad, 1));
 
   ctx.assert_dispatch_success(g, {"read", "news"});
   std::string updated_news = g.out.str();
@@ -225,11 +226,11 @@ void test_read_news() {
 
 void test_read_invalid_arguments() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
 
   ctx.assert_dispatch_rejected(g, {"read", "invalid_topic"});
   test::expect_contains(g.out.str(), "Read what?\n");
@@ -244,21 +245,21 @@ void test_read_invalid_arguments() {
 
 void test_read_json_mode() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_ui_mode(UiMode::JSON);
 
-  push_telegram(ctx.em, 1, 1, "Structured alert");
+  push_telegram(ctx.em, races.empire, 1, "Structured alert");
   post(ctx.em, "War declared", NewsType::DECLARATION);
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"read"});
   test::expect_contains(g.out.str(), R"("type":"message")");
   test::expect_contains(g.out.str(), R"("message":"Structured alert")");
-  test::expect_false(ctx.em.has_telegrams(1, 1));
+  test::expect_false(ctx.em.has_telegrams(races.empire, 1));
 
   g.out.str("");
   ctx.assert_dispatch_success(g, {"read", "news"});

@@ -15,7 +15,11 @@ import :ship_types;
 import :types;
 import :tweakables;
 
+export class ShipFactory;
+
 export class Ship {
+  friend class ShipFactory;
+
 protected:
   ship_struct
       data_;  // Protected data member for encapsulation and subclass access
@@ -28,32 +32,30 @@ protected:
     }
   }
 
-public:
-  // Constructors
   Ship() {
     ensure_valid_special_data();
   }
-  Ship(ship_struct in) : data_(std::move(in)) {
+  explicit Ship(ship_struct in) : data_(std::move(in)) {
     ensure_valid_special_data();
   }
+
+public:
   virtual ~Ship() = default;
+
+  Ship(const Ship&) = delete;
+  Ship& operator=(const Ship&) = delete;
+  Ship(Ship&&) = delete;
+  Ship& operator=(Ship&&) = delete;
+
+  /// \brief Creates a polymorphic deep copy of this ship preserving dynamic
+  /// subclass identity and specialized payload state.
+  [[nodiscard]] virtual std::unique_ptr<Ship> clone() const;
 
   template <typename Derived>
   [[nodiscard]] Derived* as() noexcept;
 
   template <typename Derived>
   [[nodiscard]] const Derived* as() const noexcept;
-
-  // Delete copy, allow move
-  Ship(const Ship&) = delete;
-  Ship& operator=(const Ship&) = delete;
-  Ship(Ship&& other) noexcept : data_(std::move(other.data_)) {}
-  Ship& operator=(Ship&& other) noexcept {
-    if (this != &other) {
-      data_ = std::move(other.data_);
-    }
-    return *this;
-  }
 
   /// \brief Returns whether this ship is an in-memory simulation clone.
   [[nodiscard]] virtual bool is_simulation() const noexcept {
@@ -211,6 +213,11 @@ public:
   /// \brief Synchronizes derived hull size, base_mass, mass (preserving loaded
   /// cargo and hangar craft deltas), build_cost, and complexity.
   void recalculate_hull_stats(bool free_build = false) noexcept;
+
+  /// \brief Synchronizes stored empty-hull baseline mass with `base_mass()`.
+  void sync_base_mass() noexcept {
+    data_.base_mass = base_mass();
+  }
 
   [[nodiscard]] constexpr double tech() const noexcept {
     return data_.tech;
@@ -409,10 +416,7 @@ public:
   }
 
   // Type and speed
-  [[nodiscard]] ShipType type() const {
-    return data_.type;
-  }
-  ShipType& type() {
+  [[nodiscard]] constexpr ShipType type() const noexcept {
     return data_.type;
   }
 
@@ -1827,10 +1831,6 @@ public:
 
   // Direct access to internal struct (FOR SERIALIZATION USE ONLY)
   [[nodiscard]] virtual ship_struct to_struct() const {
-    ensure_valid_special_data();
-    return data_;
-  }
-  [[nodiscard]] ship_struct& to_struct() noexcept {
     ensure_valid_special_data();
     return data_;
   }

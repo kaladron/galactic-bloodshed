@@ -65,8 +65,7 @@ deserialize_ship(const std::string& json_str) {
 
 }  // namespace
 
-ShipRepository::ShipRepository(JsonStore& store)
-    : Repository<Ship>(store, "tbl_ship") {}
+ShipRepository::ShipRepository(JsonStore& js) : store(js) {}
 
 std::optional<std::string> ShipRepository::serialize(const Ship& ship) const {
   ship_struct data = ship.to_struct();
@@ -75,20 +74,6 @@ std::optional<std::string> ShipRepository::serialize(const Ship& ship) const {
     return result.value();
   }
   return std::nullopt;
-}
-
-std::optional<Ship>
-ShipRepository::deserialize(const std::string& json_str) const {
-  ship_struct data{};
-  auto result = glz::read_json(data, json_str);
-  if (!result) {
-    return Ship(data);
-  }
-  return std::nullopt;
-}
-
-std::optional<Ship> ShipRepository::find_by_number(shipnum_t num) {
-  return find(num);
 }
 
 std::unique_ptr<Ship> ShipRepository::find_ship(shipnum_t num) {
@@ -103,15 +88,26 @@ bool ShipRepository::save(const Ship& ship) {
     throw std::logic_error(
         "Attempted to persist a SimulatedShip to the database!");
   }
-  return Repository<Ship>::save(ship.number(), ship);
+  if (auto json = serialize(ship)) {
+    return store.store(table_name, ship.number(), *json);
+  }
+  return false;
 }
 
 void ShipRepository::delete_ship(shipnum_t num) {
-  remove(num);
+  store.remove(table_name, num);
+}
+
+std::int64_t ShipRepository::next_available_id() {
+  return store.find_next_available_id(table_name);
 }
 
 shipnum_t ShipRepository::next_ship_number() {
-  return next_available_id();
+  return static_cast<shipnum_t>(next_available_id());
+}
+
+std::vector<int> ShipRepository::list_ids() {
+  return store.list_ids(table_name);
 }
 
 shipnum_t ShipRepository::count_all_ships() {

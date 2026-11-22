@@ -132,8 +132,7 @@ resolve_fuel_trip_target(const command_t& argv, GameObj& g, const Ship& ship) {
       g.out << "Nice try.\n";
       return std::nullopt;
     }
-    Ship mutable_target(tmpship->get_struct());
-    if (!viewer.god && !followable(g.entity_manager, ship, mutable_target)) {
+    if (!viewer.god && !followable(g.entity_manager, ship, *tmpship)) {
       g.out << "The ship's destination is out of range.\n";
       return std::nullopt;
     }

@@ -297,20 +297,20 @@ bool execute_single_habitat_factory_build(GameObj& g,
   const player_t Playernum = g.player();
   const governor_t Governor = g.governor();
   const auto& race = *g.race;
-  const auto& habitat_ref = *g.entity_manager.peek_ship(*builder.destshipno());
-  Ship habitat(habitat_ref.to_struct());
+  const shipnum_t habitat_id = *builder.destshipno();
+  const auto& habitat_ref = *g.entity_manager.peek_ship(habitat_id);
   auto newship = getfactship(builder);
   const resource_t shipcost = newship->build_cost();
 
-  if (!habitat.can_fit_in_hangar(newship->size())) {
+  if (!habitat_ref.can_fit_in_hangar(newship->size())) {
     g.out << "Not enough hanger space.\n";
     return false;
   }
-  if (habitat.resource() < shipcost) {
+  if (habitat_ref.resource() < shipcost) {
     g.out << std::format("You need {}r to construct this ship.\n", shipcost);
     return false;
   }
-  const auto hab_orbit = g.entity_manager.effective_ship_orbit(habitat);
+  const auto hab_orbit = g.entity_manager.effective_ship_orbit(habitat_ref);
   if (hab_orbit.level == ScopeLevel::LEVEL_UNIV) {
     if (!g.deduct_univ_ap(1)) {
       g.out << "You need 1 universe action point.\n";
@@ -323,26 +323,28 @@ bool execute_single_habitat_factory_build(GameObj& g,
     }
   }
 
-  g.present(create_ship_by_ship(g.entity_manager, Playernum, Governor, race,
-                                false, *newship, habitat));
-  const auto [load_crew, load_fuel] =
-      (g.current_governor().toggle.autoload && !race.God)
-          ? autoload_at_ship(*newship, habitat, race.mass)
-          : std::pair<population_t, fuel_t>{0, 0.0};
+  double hab_delta = 0.0;
+  g.entity_manager.mutate_ship(habitat_id, [&](Ship& habitat) {
+    const double old_mass = habitat.mass();
+    g.present(create_ship_by_ship(g.entity_manager, Playernum, Governor, race,
+                                  false, *newship, habitat));
+    const auto [load_crew, load_fuel] =
+        (g.current_governor().toggle.autoload && !race.God)
+            ? autoload_at_ship(*newship, habitat, race.mass)
+            : std::pair<population_t, fuel_t>{0, 0.0};
 
-  g.present(
-      initialize_new_ship(race, Governor, *newship, load_fuel, load_crew));
-  habitat.load_docked_craft(*newship);
-  const double hab_delta = habitat.mass() - habitat_ref.mass();
+    g.present(
+        initialize_new_ship(race, Governor, *newship, load_fuel, load_crew));
+    habitat.load_docked_craft(*newship);
+    hab_delta = habitat.mass() - old_mass;
+  });
   g.entity_manager.create_ship(std::move(newship));
-  g.entity_manager.mutate_ship(habitat.number(),
-                               [&](Ship& h) { h = Ship(habitat.to_struct()); });
   g.entity_manager.propagate_carried_mass_delta(
-      *g.entity_manager.peek_ship(habitat.number()), hab_delta);
+      *g.entity_manager.peek_ship(habitat_id), hab_delta);
   return true;
 }
 
-bool execute_single_factory_build(GameObj& g, FactoryShip& builder,
+bool execute_single_factory_build(GameObj& g, const FactoryShip& builder,
                                   const ShipBuildPlan& plan,
                                   ScopeLevel build_level, starnum_t snum,
                                   planetnum_t pnum) {
@@ -397,33 +399,32 @@ bool execute_single_factory_build(GameObj& g, FactoryShip& builder,
   g.present(
       initialize_new_ship(race, Governor, *newship, load_fuel, load_crew));
   g.entity_manager.create_ship(std::move(newship));
-  g.entity_manager.mutate_ship(builder.number(),
-                               [&](Ship& b) { b = Ship(builder.to_struct()); });
   return true;
 }
 
-bool execute_single_non_factory_ship_build(GameObj& g, Ship& builder,
+bool execute_single_non_factory_ship_build(GameObj& g, shipnum_t builder_id,
                                            const ShipBuildPlan& plan,
                                            starnum_t snum) {
   const player_t Playernum = g.player();
   const governor_t Governor = g.governor();
   const auto& race = *g.race;
+  const auto& builder_ref = *g.entity_manager.peek_ship(builder_id);
   auto newship = getship(plan.what, race);
   const resource_t shipcost = newship->build_cost();
 
-  if (!builder.popn()) {
+  if (!builder_ref.popn()) {
     g.out << GB::presentation::format_ship_build_error(ShipBuildError::NoCrew);
     return false;
   }
-  if (!plan.outside && !builder.can_fit_in_hangar(newship->size())) {
+  if (!plan.outside && !builder_ref.can_fit_in_hangar(newship->size())) {
     g.out << "Not enough hanger space.\n";
     return false;
   }
-  if (builder.resource() < shipcost) {
+  if (builder_ref.resource() < shipcost) {
     g.out << std::format("You need {}r to construct the ship.\n", shipcost);
     return false;
   }
-  if (!plan.outside && builder.whatorbits() == ScopeLevel::LEVEL_UNIV) {
+  if (!plan.outside && builder_ref.whatorbits() == ScopeLevel::LEVEL_UNIV) {
     if (!g.deduct_univ_ap(1)) {
       g.out << "You need 1 universe action point.\n";
       return false;
@@ -435,34 +436,34 @@ bool execute_single_non_factory_ship_build(GameObj& g, Ship& builder,
     }
   }
 
-  const double old_builder_mass = builder.mass();
-  g.present(create_ship_by_ship(g.entity_manager, Playernum, Governor, race,
-                                plan.outside, *newship, builder));
-  const auto [load_crew, load_fuel] =
-      (g.current_governor().toggle.autoload && !race.God)
-          ? autoload_at_ship(*newship, builder, race.mass)
-          : std::pair<population_t, fuel_t>{0, 0.0};
+  double builder_delta = 0.0;
+  g.entity_manager.mutate_ship(builder_id, [&](Ship& builder) {
+    const double old_builder_mass = builder.mass();
+    g.present(create_ship_by_ship(g.entity_manager, Playernum, Governor, race,
+                                  plan.outside, *newship, builder));
+    const auto [load_crew, load_fuel] =
+        (g.current_governor().toggle.autoload && !race.God)
+            ? autoload_at_ship(*newship, builder, race.mass)
+            : std::pair<population_t, fuel_t>{0, 0.0};
 
-  g.present(
-      initialize_new_ship(race, Governor, *newship, load_fuel, load_crew));
-  if (!plan.outside) {
-    builder.load_docked_craft(*newship);
-  }
-  const double builder_delta = builder.mass() - old_builder_mass;
+    g.present(
+        initialize_new_ship(race, Governor, *newship, load_fuel, load_crew));
+    if (!plan.outside) {
+      builder.load_docked_craft(*newship);
+    }
+    builder_delta = builder.mass() - old_builder_mass;
+  });
   g.entity_manager.create_ship(std::move(newship));
-  g.entity_manager.mutate_ship(builder.number(),
-                               [&](Ship& b) { b = Ship(builder.to_struct()); });
   g.entity_manager.propagate_carried_mass_delta(
-      *g.entity_manager.peek_ship(builder.number()), builder_delta);
+      *g.entity_manager.peek_ship(builder_id), builder_delta);
   return true;
 }
 
 bool execute_ship_build_command(const command_t& argv, GameObj& g) {
-  const auto& builder_ref = *g.entity_manager.peek_ship(g.shipno());
-  auto builder_ptr = ShipFactory::create(builder_ref.to_struct());
-  Ship& builder = *builder_ptr;
+  const shipnum_t builder_id = g.shipno();
+  const auto& builder_ref = *g.entity_manager.peek_ship(builder_id);
   const auto build_loc = build_at_ship(g.player(), g.governor(), g.god(),
-                                       builder, &g.entity_manager);
+                                       builder_ref, &g.entity_manager);
   if (!build_loc) {
     g.out << GB::presentation::format_ship_build_error(build_loc.error());
     g.out << "You can't build here.\n";
@@ -470,21 +471,23 @@ bool execute_ship_build_command(const command_t& argv, GameObj& g) {
   }
   const auto [build_level, snum, pnum] = *build_loc;
 
-  auto* factory = builder.as<FactoryShip>();
+  const auto* factory = builder_ref.as<FactoryShip>();
   std::optional<ShipBuildPlan> plan =
       factory ? validate_factory_ship_build(argv, g, *factory, build_level,
                                             snum, pnum)
-              : validate_non_factory_ship_build(argv, g, builder);
+              : validate_non_factory_ship_build(argv, g, builder_ref);
   if (!plan) {
     return false;
   }
 
   bool any_built = false;
   for (int _ : std::views::iota(0, plan->count)) {
-    bool built = factory ? execute_single_factory_build(g, *factory, *plan,
-                                                        build_level, snum, pnum)
-                         : execute_single_non_factory_ship_build(g, builder,
-                                                                 *plan, snum);
+    bool built =
+        factory
+            ? execute_single_factory_build(
+                  g, *g.entity_manager.peek_ship(builder_id)->as<FactoryShip>(),
+                  *plan, build_level, snum, pnum)
+            : execute_single_non_factory_ship_build(g, builder_id, *plan, snum);
     if (!built) {
       break;
     }

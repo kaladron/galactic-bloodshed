@@ -463,7 +463,9 @@ void test_dynamic_base_mass() {
 
   // FactoryShip stores manufactured blueprint in SpecialData without altering
   // the factory's own physical hull attributes.
-  FactoryShip default_fac;
+  auto default_fac_ptr =
+      ShipFactory::create_from_template(ShipType::OTYPE_FACTORY);
+  auto& default_fac = *default_fac_ptr->as<FactoryShip>();
   test::expect_false(default_fac.has_design());
   default_fac.blueprint_mut().build_type = ShipType::STYPE_POD;
   test::expect_false(default_fac.has_design());
@@ -2364,7 +2366,8 @@ void test_subclass_special_data_clamping() {
   std::println(std::cout, "Testing Ship subclass special data clamping...");
 
   // 1. SpaceMirrorShip intensity clamped to [0, 100]
-  SpaceMirrorShip mirror{};
+  auto mirror_ptr = ShipFactory::create_from_template(ShipType::STYPE_MIRROR);
+  auto& mirror = *mirror_ptr->as<SpaceMirrorShip>();
   mirror.set_intensity(150);
   test::expect_eq(mirror.intensity(), 100);
   mirror.set_intensity(-20);
@@ -2373,7 +2376,8 @@ void test_subclass_special_data_clamping() {
   test::expect_eq(mirror.intensity(), 75);
 
   // 2. ToxicWasteShip toxic_level clamped to [0, 100]
-  ToxicWasteShip toxic{};
+  auto toxic_ptr = ShipFactory::create_from_template(ShipType::OTYPE_TOXWC);
+  auto& toxic = *toxic_ptr->as<ToxicWasteShip>();
   toxic.set_toxic_level(120);
   test::expect_eq(toxic.toxic_level(), 100);
   toxic.set_toxic_level(-10);
@@ -2382,7 +2386,8 @@ void test_subclass_special_data_clamping() {
   test::expect_eq(toxic.toxic_level(), 45);
 
   // 3. SporePodShip decay and temperature clamped to >= 0
-  SporePodShip pod{};
+  auto pod_ptr = ShipFactory::create_from_template(ShipType::STYPE_POD);
+  auto& pod = *pod_ptr->as<SporePodShip>();
   pod.set_decay(-5);
   test::expect_eq(pod.decay(), 0);
   pod.set_decay(8);
@@ -2393,20 +2398,23 @@ void test_subclass_special_data_clamping() {
   test::expect_eq(pod.temperature(), 12);
 
   // 4. CanisterShip count and TerraformerShip index clamped to >= 0
-  CanisterShip canister{};
+  auto canister_ptr = ShipFactory::create_from_template(ShipType::OTYPE_CANIST);
+  auto& canister = *canister_ptr->as<CanisterShip>();
   canister.set_count(-1);
   test::expect_eq(canister.count(), 0);
   canister.set_count(5);
   test::expect_eq(canister.count(), 5);
 
-  TerraformerShip terra{};
+  auto terra_ptr = ShipFactory::create_from_template(ShipType::OTYPE_TERRA);
+  auto& terra = *terra_ptr->as<TerraformerShip>();
   terra.set_index(-4);
   test::expect_eq(terra.index(), 0);
   terra.set_index(3);
   test::expect_eq(terra.index(), 3);
 
   // 5. MineShip trigger radius clamped to >= 0
-  MineShip mine{};
+  auto mine_ptr = ShipFactory::create_from_template(ShipType::STYPE_MINE);
+  auto& mine = *mine_ptr->as<MineShip>();
   mine.set_trigger_radius(-15);
   test::expect_eq(mine.trigger_radius(), 0);
   mine.set_trigger_radius(25);
@@ -2436,7 +2444,8 @@ void test_subclass_special_data_clamping() {
   test::expect_true(carrier.can_fit_in_hangar(10));
   test::expect_false(carrier.can_fit_in_hangar(20));
 
-  FactoryShip fac{};
+  auto fac_ptr = ShipFactory::create_from_template(ShipType::OTYPE_FACTORY);
+  auto& fac = *fac_ptr->as<FactoryShip>();
   test::expect_false(fac.has_design());
   fac.blueprint_mut().build_type = ShipType::STYPE_POD;
   test::expect_false(fac.has_design());
@@ -2540,7 +2549,8 @@ void test_subclass_special_data_clamping() {
   test::expect_true(ftr.can_navigate());
   test::expect_false(fac.can_navigate());
   test::expect_false(terra.can_navigate());
-  VonNeumannShip vn{};
+  auto vn_ptr = ShipFactory::create_from_template(ShipType::OTYPE_VN);
+  auto& vn = *vn_ptr->as<VonNeumannShip>();
   test::expect_false(vn.can_navigate());
   test::expect_false(ftr.can_aim());
   test::expect_true(mirror.can_aim());
@@ -2641,6 +2651,63 @@ void test_subclass_special_data_clamping() {
   expect_near(clamped.mass(), clamped.local_mass());
 }
 
+void test_ship_constructor_lockdown_and_polymorphic_clone() {
+  static_assert(!std::is_default_constructible_v<Ship>);
+  static_assert(!std::is_constructible_v<Ship, ship_struct>);
+  static_assert(!std::is_copy_constructible_v<Ship>);
+  static_assert(!std::is_copy_assignable_v<Ship>);
+  static_assert(!std::is_move_constructible_v<Ship>);
+  static_assert(!std::is_move_assignable_v<Ship>);
+
+  static_assert(!std::is_default_constructible_v<FactoryShip>);
+  static_assert(!std::is_constructible_v<FactoryShip, ship_struct>);
+  static_assert(!std::is_move_constructible_v<FactoryShip>);
+  static_assert(!std::is_move_assignable_v<FactoryShip>);
+
+  static_assert(!std::is_default_constructible_v<VonNeumannShip>);
+  static_assert(!std::is_constructible_v<VonNeumannShip, ship_struct>);
+  static_assert(!std::is_default_constructible_v<BerserkerShip>);
+  static_assert(!std::is_default_constructible_v<SpaceMirrorShip>);
+  static_assert(!std::is_default_constructible_v<SporePodShip>);
+  static_assert(!std::is_default_constructible_v<CanisterShip>);
+  static_assert(!std::is_default_constructible_v<MissileShip>);
+  static_assert(!std::is_default_constructible_v<MineShip>);
+  static_assert(!std::is_default_constructible_v<TerraformerShip>);
+  static_assert(!std::is_default_constructible_v<GroundPlowShip>);
+  static_assert(!std::is_default_constructible_v<TransporterShip>);
+  static_assert(!std::is_default_constructible_v<ToxicWasteShip>);
+
+  static_assert(std::is_constructible_v<SimulatedShip, const Ship&>);
+  static_assert(!std::is_copy_constructible_v<SimulatedShip>);
+  static_assert(!std::is_move_constructible_v<SimulatedShip>);
+  static_assert(!std::is_move_assignable_v<SimulatedShip>);
+  static_assert(!std::is_reference_v<decltype(std::declval<Ship&>().type())>);
+
+  // Polymorphic clone preserves dynamic FactoryShip vtable and blueprint
+  auto fac = TestShipBuilder(ShipType::OTYPE_FACTORY)
+                 .numbered(42)
+                 .owned_by(2, 1)
+                 .with_on(true)
+                 .build_in_memory();
+  fac->as<FactoryShip>()->configure_blueprint(ShipType::STYPE_CRUISER, nullptr,
+                                              "Vanguard");
+  auto fac_clone = fac->clone();
+  test::expect_ne(fac_clone->as<FactoryShip>(), nullptr);
+  test::expect_eq(fac_clone->number(), shipnum_t{42});
+  test::expect_eq(fac_clone->as<FactoryShip>()->blueprint().shipclass,
+                  "Vanguard");
+  test::expect_eq(fac_clone->effective_cost(), fac->effective_cost());
+
+  // SimulatedShip::clone preserves simulation guard and source_ship_number
+  SimulatedShip sim{*fac};
+  auto sim_clone = sim.clone();
+  test::expect_true(sim_clone->is_simulation());
+  test::expect_eq(sim_clone->number(), shipnum_t{0});
+  test::expect_eq(
+      static_cast<const SimulatedShip&>(*sim_clone).source_ship_number(),
+      shipnum_t{42});
+}
+
 }  // namespace
 
 int main() {
@@ -2673,6 +2740,7 @@ int main() {
   test_moveship_and_followable();
   test_orbital_and_destination_transitions();
   test_subclass_special_data_clamping();
+  test_ship_constructor_lockdown_and_polymorphic_clone();
   std::println(std::cout, "All Ship domain tests passed!");
   return 0;
 }

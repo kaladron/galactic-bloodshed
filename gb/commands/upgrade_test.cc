@@ -516,10 +516,7 @@ void test_upgrade_json_god_mode_and_edge_cases() {
     s.set_primary_battery({.count = 0, .caliber = guntype_t::NONE});
     s.set_secondary_battery({.count = 0, .caliber = guntype_t::NONE});
     s.active_battery() = ActiveBattery::NONE;
-    s.build_cost() = static_cast<resource_t>(cost(s));
-    s.size() = s.calculate_size();
-    s.to_struct().base_mass = s.base_mass();
-    s.set_mass(s.base_mass() + s.resource() * MASS_RESOURCE);
+    s.recalculate_hull_stats();
   });
 
   // Ship 2: Cruiser owned by Nomads (non-commandable by Imperium)
@@ -597,19 +594,15 @@ void test_upgrade_json_god_mode_and_edge_cases() {
     s.set_primary_battery({.count = 1, .caliber = guntype_t::LIGHT});
     s.set_secondary_battery({.count = 0, .caliber = guntype_t::NONE});
     s.active_battery() = ActiveBattery::NONE;
-    s.size() = s.calculate_size();
-    s.to_struct().base_mass = s.base_mass();
-    s.build_cost() = static_cast<resource_t>(cost(s));
+    s.recalculate_hull_stats();
   });
-  const double base_mass_before =
-      ctx.em.peek_ship(ship1_id)->to_struct().base_mass;
+  const double base_mass_before = ctx.em.peek_ship(ship1_id)->base_mass();
   ctx.assert_dispatch_success(g, {"upgrade", "primary", "caliber", "medium"},
                               1);
   ctx.assert_dispatch_success(g, {"upgrade", "primary", "strength", "2"}, 1);
   test::expect_eq(ctx.em.peek_ship(ship1_id)->active_battery(),
                   ActiveBattery::PRIMARY);
-  test::expect_gt(ctx.em.peek_ship(ship1_id)->to_struct().base_mass,
-                  base_mass_before);
+  test::expect_gt(ctx.em.peek_ship(ship1_id)->base_mass(), base_mass_before);
 
   // 5. "resource" alias for "cargo" and 2-arg no-op upgrade (net_cost = 1)
   const auto cur_res_cap = ctx.em.peek_ship(ship1_id)->max_resource();

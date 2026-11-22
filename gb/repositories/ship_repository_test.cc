@@ -553,6 +553,29 @@ int main() {
         loaded_cruiser->to_struct().special));
     repo.delete_ship(210);
 
+    // FactoryShip + FactoryBlueprint Glaze schema roundtrip
+    auto fac_ship = TestShipBuilder(ShipType::OTYPE_FACTORY)
+                        .numbered(211)
+                        .owned_by(1)
+                        .with_on(true)
+                        .build_in_memory();
+    fac_ship->as<FactoryShip>()->configure_blueprint(ShipType::STYPE_INTCPT,
+                                                     nullptr, "Dart");
+    test::expect_true(repo.save(*fac_ship));
+    auto fac_json = store.retrieve("tbl_ship", 211);
+    test::expect_true(fac_json.has_value());
+    test::expect_contains(*fac_json, "\"shipclass\":\"Dart\"");
+    test::expect_contains(*fac_json, "\"has_hyperdrive\":true");
+    auto loaded_fac = repo.find_ship(211);
+    test::expect_ne(loaded_fac, nullptr);
+    test::expect_ne(loaded_fac->as<FactoryShip>(), nullptr);
+    test::expect_eq(loaded_fac->as<FactoryShip>()->blueprint().build_type,
+                    ShipType::STYPE_INTCPT);
+    test::expect_eq(loaded_fac->as<FactoryShip>()->blueprint().shipclass,
+                    "Dart");
+    test::expect_eq(loaded_fac->effective_cost(), fac_ship->effective_cost());
+    repo.delete_ship(211);
+
     std::println(std::cout,
                  "  ✓ All specialty ship subclasses instantiate and downcast");
   }

@@ -229,6 +229,21 @@ struct meta<WasteData> {
 };
 
 template <>
+struct meta<FactoryBlueprint> {
+  using T = FactoryBlueprint;
+  static constexpr auto value = object(
+      "build_type", &T::build_type, "shipclass", &T::shipclass, "armor",
+      &T::armor, "max_crew", &T::max_crew, "max_resource", &T::max_resource,
+      "max_destruct", &T::max_destruct, "max_fuel", &T::max_fuel, "max_speed",
+      &T::max_speed, "max_hanger", &T::max_hanger, "mount", &T::mount,
+      "has_hyperdrive", &T::has_hyperdrive, "cew", &T::cew, "cew_range",
+      &T::cew_range, "cloak", &T::cloak, "laser", &T::laser, "primary_battery",
+      &T::primary_battery, "secondary_battery", &T::secondary_battery,
+      "build_cost", &T::build_cost, "base_mass", &T::base_mass, "complexity",
+      &T::complexity);
+};
+
+template <>
 struct meta<NavigateData> {
   using T = NavigateData;
   static constexpr auto value =

@@ -1101,7 +1101,7 @@ void commit_ship_upgrade(EntityManager& entity_manager, Ship& dirship,
                          resource_t netcost) {
   const ship_size_t old_size = dirship.size();
   const double old_mass = dirship.mass();
-  dirship.to_struct().base_mass = dirship.base_mass();
+  dirship.sync_base_mass();
 
   dirship.armor() = candidate.armor();
   dirship.max_crew() = candidate.max_crew();
@@ -1174,7 +1174,7 @@ upgrade_single_ship(EntityManager& entity_manager, Ship& dirship,
         UpgradeError{.reason = UpgradeErrorReason::CannotUpgradeShip});
   }
 
-  Ship candidate(dirship.get_struct());
+  SimulatedShip candidate(dirship);
   if (const auto ok =
           apply_upgrade_characteristic(candidate, dirship, race, btmpl, argv);
       !ok) {

@@ -116,18 +116,29 @@ protected:
   deserialize(const std::string& json_str) const override;
 };
 
-// ShipRepository - provides type-safe access to Ship entities
-export class ShipRepository : public Repository<Ship> {
+// ShipRepository - provides polymorphic persistence for Ship and its subclasses
+export class ShipRepository {
+  JsonStore& store;
+  std::string table_name{"tbl_ship"};
+
+  [[nodiscard]] std::optional<std::string> serialize(const Ship& ship) const;
+
 public:
-  ShipRepository(JsonStore& store);
+  explicit ShipRepository(JsonStore& store);
+
+  ShipRepository(const ShipRepository&) = delete;
+  ShipRepository& operator=(const ShipRepository&) = delete;
+  ShipRepository(ShipRepository&&) = default;
+  ShipRepository& operator=(ShipRepository&&) = delete;
 
   // Domain-specific methods
-  std::optional<Ship> find_by_number(shipnum_t num);
   [[nodiscard]] std::unique_ptr<Ship> find_ship(shipnum_t num);
   bool save(const Ship& ship);
   void delete_ship(shipnum_t num);
   shipnum_t next_ship_number();
+  std::int64_t next_available_id();
   shipnum_t count_all_ships();
+  std::vector<int> list_ids();
 
   // Spatial and indexed query methods
   [[nodiscard]] std::vector<shipnum_t> find_in_star_system(starnum_t star_id);
@@ -138,12 +149,6 @@ public:
   [[nodiscard]] std::vector<shipnum_t> find_by_owner(player_t owner_id);
   [[nodiscard]] std::vector<shipnum_t> find_at_scope(ScopeLevel scope);
   [[nodiscard]] std::vector<shipnum_t> find_alive();
-
-protected:
-  [[nodiscard]] std::optional<std::string>
-  serialize(const Ship& ship) const override;
-  [[nodiscard]] std::optional<Ship>
-  deserialize(const std::string& json_str) const override;
 };
 
 // PlanetRepository - provides type-safe access to Planet entities

@@ -733,7 +733,7 @@ void resolve_afv_duel(EntityManager& em, Ship& attacker, Ship& defender,
   while (defender.retal_strength() > 0 && attacker.retal_strength() > 0) {
     const auto def_strength = defender.retal_strength();
     const auto att_strength = attacker.retal_strength();
-    Ship attacker_snapshot(attacker.get_struct());
+    auto attacker_snapshot = attacker.clone();
     if (auto def_shot = shoot_ship_to_ship(em, defender, attacker, def_strength,
                                            0, false)) {
       defender.consume_destruct(def_strength);
@@ -743,7 +743,7 @@ void resolve_afv_duel(EntityManager& em, Ship& attacker, Ship& defender,
           .shot = std::move(*def_shot),
       });
     }
-    if (auto att_shot = shoot_ship_to_ship(em, attacker_snapshot, defender,
+    if (auto att_shot = shoot_ship_to_ship(em, *attacker_snapshot, defender,
                                            att_strength, 0, true)) {
       attacker.consume_destruct(att_strength);
       shots.push_back({

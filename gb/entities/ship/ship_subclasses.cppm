@@ -34,7 +34,6 @@ protected:
     return std::get<MindData>(data_.special);
   }
 
-public:
   AutonomousShip() {
     data_.type = ShipType::OTYPE_VN;
     ensure_valid_special_data();
@@ -46,6 +45,7 @@ public:
     }
   }
 
+public:
   [[nodiscard]] bool is_busy() const noexcept {
     return mind().busy;
   }
@@ -130,12 +130,17 @@ public:
 };
 
 export class VonNeumannShip : public AutonomousShip {
-public:
+  friend class ShipFactory;
+
+protected:
+  VonNeumannShip() = default;
   using AutonomousShip::AutonomousShip;
 };
 
 export class BerserkerShip : public AutonomousShip {
-public:
+  friend class ShipFactory;
+
+protected:
   BerserkerShip() {
     data_.type = ShipType::OTYPE_BERS;
     ensure_valid_special_data();
@@ -144,6 +149,8 @@ public:
 };
 
 export class SpaceMirrorShip : public Ship {
+  friend class ShipFactory;
+
 private:
   [[nodiscard]] AimedAtData& aim() noexcept {
     if (!std::holds_alternative<AimedAtData>(data_.special)) {
@@ -158,7 +165,7 @@ private:
     return std::get<AimedAtData>(data_.special);
   }
 
-public:
+protected:
   SpaceMirrorShip() {
     data_.type = ShipType::STYPE_MIRROR;
     ensure_valid_special_data();
@@ -169,6 +176,7 @@ public:
     }
   }
 
+public:
   [[nodiscard]] Percentage intensity() const noexcept {
     return aim().intensity;
   }
@@ -208,6 +216,8 @@ public:
 };
 
 export class SporePodShip : public Ship {
+  friend class ShipFactory;
+
 private:
   [[nodiscard]] PodData& pod() noexcept {
     if (!std::holds_alternative<PodData>(data_.special)) {
@@ -222,7 +232,7 @@ private:
     return std::get<PodData>(data_.special);
   }
 
-public:
+protected:
   SporePodShip() {
     data_.type = ShipType::STYPE_POD;
     ensure_valid_special_data();
@@ -233,6 +243,7 @@ public:
     }
   }
 
+public:
   [[nodiscard]] int decay() const noexcept {
     return pod().decay;
   }
@@ -248,6 +259,8 @@ public:
 };
 
 export class CanisterShip : public Ship {
+  friend class ShipFactory;
+
 private:
   [[nodiscard]] TimerData& timer() noexcept {
     if (!std::holds_alternative<TimerData>(data_.special)) {
@@ -262,7 +275,7 @@ private:
     return std::get<TimerData>(data_.special);
   }
 
-public:
+protected:
   CanisterShip() {
     data_.type = ShipType::OTYPE_CANIST;
     ensure_valid_special_data();
@@ -273,6 +286,7 @@ public:
     }
   }
 
+public:
   [[nodiscard]] int count() const noexcept {
     return timer().count;
   }
@@ -285,6 +299,8 @@ public:
 };
 
 export class MissileShip : public Ship {
+  friend class ShipFactory;
+
 private:
   [[nodiscard]] ImpactData& impact() noexcept {
     if (!std::holds_alternative<ImpactData>(data_.special)) {
@@ -299,7 +315,7 @@ private:
     return std::get<ImpactData>(data_.special);
   }
 
-public:
+protected:
   MissileShip() {
     data_.type = ShipType::STYPE_MISSILE;
     ensure_valid_special_data();
@@ -310,6 +326,7 @@ public:
     }
   }
 
+public:
   [[nodiscard]] Coordinates impact_coords() const noexcept {
     return impact().coords;
   }
@@ -327,6 +344,8 @@ public:
 };
 
 export class MineShip : public Ship {
+  friend class ShipFactory;
+
 private:
   [[nodiscard]] TriggerData& trigger() noexcept {
     if (!std::holds_alternative<TriggerData>(data_.special)) {
@@ -341,7 +360,7 @@ private:
     return std::get<TriggerData>(data_.special);
   }
 
-public:
+protected:
   MineShip() {
     data_.type = ShipType::STYPE_MINE;
     ensure_valid_special_data();
@@ -352,6 +371,7 @@ public:
     }
   }
 
+public:
   [[nodiscard]] weapon_range_t trigger_radius() const noexcept {
     return trigger().radius;
   }
@@ -367,6 +387,8 @@ public:
 };
 
 export class TerraformerShip : public Ship {
+  friend class ShipFactory;
+
 protected:
   [[nodiscard]] TerraformData& terraform() noexcept {
     if (!std::holds_alternative<TerraformData>(data_.special)) {
@@ -381,7 +403,6 @@ protected:
     return std::get<TerraformData>(data_.special);
   }
 
-public:
   TerraformerShip() {
     data_.type = ShipType::OTYPE_TERRA;
     ensure_valid_special_data();
@@ -392,6 +413,7 @@ public:
     }
   }
 
+public:
   [[nodiscard]] int index() const noexcept {
     return terraform().index;
   }
@@ -401,7 +423,9 @@ public:
 };
 
 export class GroundPlowShip : public TerraformerShip {
-public:
+  friend class ShipFactory;
+
+protected:
   GroundPlowShip() {
     data_.type = ShipType::OTYPE_PLOW;
     ensure_valid_special_data();
@@ -410,6 +434,8 @@ public:
 };
 
 export class TransporterShip : public Ship {
+  friend class ShipFactory;
+
 private:
   [[nodiscard]] TransportData& transport() noexcept {
     if (!std::holds_alternative<TransportData>(data_.special)) {
@@ -424,7 +450,7 @@ private:
     return std::get<TransportData>(data_.special);
   }
 
-public:
+protected:
   TransporterShip() {
     data_.type = ShipType::OTYPE_TRANSDEV;
     ensure_valid_special_data();
@@ -435,6 +461,7 @@ public:
     }
   }
 
+public:
   [[nodiscard]] std::optional<shipnum_t> target_ship() const noexcept {
     return transport().target_ship;
   }
@@ -444,6 +471,8 @@ public:
 };
 
 export class ToxicWasteShip : public Ship {
+  friend class ShipFactory;
+
 private:
   [[nodiscard]] WasteData& waste() noexcept {
     if (!std::holds_alternative<WasteData>(data_.special)) {
@@ -458,7 +487,7 @@ private:
     return std::get<WasteData>(data_.special);
   }
 
-public:
+protected:
   ToxicWasteShip() {
     data_.type = ShipType::OTYPE_TOXWC;
     ensure_valid_special_data();
@@ -469,6 +498,7 @@ public:
     }
   }
 
+public:
   [[nodiscard]] Percentage toxic_level() const noexcept {
     return waste().toxic;
   }
@@ -478,7 +508,9 @@ public:
 };
 
 export class FactoryShip : public Ship {
-public:
+  friend class ShipFactory;
+
+protected:
   FactoryShip() {
     data_.type = ShipType::OTYPE_FACTORY;
     ensure_valid_special_data();
@@ -488,6 +520,7 @@ public:
     ensure_valid_special_data();
   }
 
+public:
   [[nodiscard]] const FactoryBlueprint& blueprint() const noexcept {
     ensure_valid_special_data();
     return std::get<FactoryBlueprint>(data_.special);
@@ -542,6 +575,9 @@ public:
 export class SimulatedShip : public Ship {
   shipnum_t source_ship_number_{0};
 
+  SimulatedShip(ship_struct in, shipnum_t source_num)
+      : Ship(std::move(in)), source_ship_number_(source_num) {}
+
 public:
   explicit SimulatedShip(const Ship& base)
       : Ship(base.get_struct()), source_ship_number_(base.number()) {
@@ -551,6 +587,11 @@ public:
 
   [[nodiscard]] bool is_simulation() const noexcept override {
     return true;
+  }
+
+  [[nodiscard]] std::unique_ptr<Ship> clone() const override {
+    return std::unique_ptr<Ship>(
+        new SimulatedShip(to_struct(), source_ship_number_));
   }
 
   /// \brief Original carrier ship ID for read-only hangar mass aggregation.

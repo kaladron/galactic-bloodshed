@@ -19,11 +19,11 @@ void test_shoot_planet_to_ship_invalid_cases() {
   race.Playernum = player_t{1};
   race.tech = 100.0;
 
-  Ship ship{};
+  auto ship_ptr =
+      ShipFactory::create_from_template(ShipType::STYPE_SHUTTLE, player_t{2});
+  Ship& ship = *ship_ptr;
   ship.number() = 1;
-  ship.owner() = player_t{2};
   ship.enter_planet_orbit(1, 1);
-  ship.alive() = true;
 
   // Test 1: Zero strength -> returns std::nullopt
   auto dam1 = shoot_planet_to_ship(ctx.em, race, ship, 0);
@@ -50,12 +50,11 @@ void test_shoot_planet_to_ship_valid_attack() {
   const auto races = ctx.with_races();
 
   // Create a target ship in planet scope
-  Ship ship{};
+  auto ship_ptr =
+      ShipFactory::create_from_template(ShipType::OTYPE_CANIST, races.newcomer);
+  Ship& ship = *ship_ptr;
   ship.number() = 1;
-  ship.owner() = races.newcomer;
-  ship.type() = ShipType::OTYPE_CANIST;
   ship.enter_planet_orbit(1, 1);
-  ship.alive() = true;
   ship.on() = true;
   ship.tech() = 10.0;
   ship.size() = 10;
@@ -88,11 +87,11 @@ void test_shoot_ship_to_planet_invalid_cases() {
 
   SectorMap smap(planet);
 
-  Ship ship{};
+  auto ship_ptr =
+      ShipFactory::create_from_template(ShipType::STYPE_DESTROYER, player_t{1});
+  Ship& ship = *ship_ptr;
   ship.number() = 1;
-  ship.owner() = player_t{1};
   ship.enter_planet_orbit(1, 1);
-  ship.alive() = true;
   ship.on() = true;
 
   // Test 1: Zero strength -> returns std::nullopt
@@ -123,11 +122,14 @@ void test_shoot_ship_to_planet_invalid_cases() {
   test::expect_false(res4.has_value());
 
   // Test 5: Ship with switch turned off -> returns std::nullopt
-  ship.enter_planet_orbit(1, 1);
-  ship.type() = ShipType::STYPE_MINE;
-  ship.on() = false;
-  auto res5 = shoot_ship_to_planet(ctx.em, ship, planet, 10, Coordinates{0, 0},
-                                   smap, 0, guntype_t::HEAVY);
+  auto offline_mine =
+      ShipFactory::create_from_template(ShipType::STYPE_MINE, player_t{1});
+  offline_mine->number() = 2;
+  offline_mine->enter_planet_orbit(1, 1);
+  offline_mine->on() = false;
+  auto res5 =
+      shoot_ship_to_planet(ctx.em, *offline_mine, planet, 10, Coordinates{0, 0},
+                           smap, 0, guntype_t::HEAVY);
   test::expect_false(res5.has_value());
 
   std::println(std::cout, "  ✓ shoot_ship_to_planet invalid cases passed");
@@ -156,12 +158,11 @@ void test_shoot_ship_to_planet_valid_attack() {
   far_sec.set_popn_exact(100);
   far_sec.set_mobilization(50);
 
-  Ship ship{};
+  auto ship_ptr =
+      ShipFactory::create_from_template(ShipType::OTYPE_CANIST, races.empire);
+  Ship& ship = *ship_ptr;
   ship.number() = 1;
-  ship.owner() = races.empire;
-  ship.type() = ShipType::OTYPE_CANIST;
   ship.enter_planet_orbit(1, 1);
-  ship.alive() = true;
   ship.on() = true;
   ship.tech() = 10.0;
   ship.size() = 10;
@@ -207,12 +208,11 @@ void test_shoot_ship_to_planet_cylindrical_seam_symmetry() {
   s_b.set_condition(SectorType::SEC_LAND);
   s_b.set_type(SectorType::SEC_LAND);
 
-  Ship ship{};
+  auto ship_ptr =
+      ShipFactory::create_from_template(ShipType::OTYPE_CANIST, races.empire);
+  Ship& ship = *ship_ptr;
   ship.number() = 1;
-  ship.owner() = races.empire;
-  ship.type() = ShipType::OTYPE_CANIST;
   ship.enter_planet_orbit(1, 1);
-  ship.alive() = true;
   ship.on() = true;
   ship.tech() = 10.0;
   ship.size() = 10;
@@ -248,12 +248,11 @@ void test_shoot_ship_to_planet_sub10_and_plated_casualties() {
   Planet planet(ctx.em.peek_planet(1, 1)->get_struct());
   planet.dimensions() = Coordinates{5, 5};
 
-  Ship ship{};
+  auto ship_ptr =
+      ShipFactory::create_from_template(ShipType::OTYPE_CANIST, races.empire);
+  Ship& ship = *ship_ptr;
   ship.number() = 1;
-  ship.owner() = races.empire;
-  ship.type() = ShipType::OTYPE_CANIST;
   ship.enter_planet_orbit(1, 1);
-  ship.alive() = true;
   ship.on() = true;
 
   // 1. Sub-10 fac (strength=9, HEAVY => fac = 0.3 * 9 * 3 = 8.1 > 5.0 * 1):
@@ -394,12 +393,11 @@ void test_zero_body_ship_combat() {
 
   // Target ship with 0 size and 0 armor (shipbody() == 0, effective_armor()
   // == 0)
-  Ship ship{};
+  auto ship_ptr =
+      ShipFactory::create_from_template(ShipType::OTYPE_CANIST, races.newcomer);
+  Ship& ship = *ship_ptr;
   ship.number() = 1;
-  ship.owner() = races.newcomer;
-  ship.type() = ShipType::OTYPE_CANIST;
   ship.enter_planet_orbit(1, 1);
-  ship.alive() = true;
   ship.on() = true;
   ship.tech() = 10.0;
   ship.size() = 0;
@@ -468,12 +466,11 @@ void test_do_collateral_casualties() {
       std::cout,
       "Test: do_collateral casualty tracking and mass synchronization");
 
-  ship_struct sdata{
-      .max_crew = 100,
-      .popn = 50,
-      .troops = 30,
-  };
-  Ship ship{sdata};
+  auto ship_ptr = ShipFactory::create_from_template(ShipType::STYPE_HABITAT, 1);
+  Ship& ship = *ship_ptr;
+  ship.max_crew() = 100;
+  ship.popn() = 50;
+  ship.troops() = 30;
   const double initial_mass = ship.local_mass(2.0);
   ship.set_mass(initial_mass);
 
@@ -496,11 +493,12 @@ void test_do_collateral_casualties() {
   test::expect_eq(ship.mass(), initial_mass - 80.0 * 2.0);
 
   // O(1) binomial collateral damage on 10,000,000-colonist habitat ship
-  Ship mega_hab{ship_struct{
-      .max_crew = 10'000'000,
-      .popn = 10'000'000,
-      .troops = 1'000'000,
-  }};
+  auto mega_hab_ptr =
+      ShipFactory::create_from_template(ShipType::STYPE_HABITAT, 1);
+  Ship& mega_hab = *mega_hab_ptr;
+  mega_hab.max_crew() = 10'000'000;
+  mega_hab.popn() = 10'000'000;
+  mega_hab.troops() = 1'000'000;
   mega_hab.set_mass(mega_hab.local_mass(1.0));
   seed_rand(42);
   const CollateralDamage mega_res = do_collateral(mega_hab, 50, 1.0);
@@ -577,12 +575,17 @@ void test_shoot_ship_to_ship_and_cew_caliber() {
       shoot_ship_to_ship(ctx.em, attacker, target, 10, 2, false).has_value());
   target.enter_star_orbit(1);
 
-  attacker.type() = ShipType::STYPE_MINE;
-  attacker.on() = false;
+  auto mine_attacker_h = TestShipBuilder(ctx.em, ShipType::STYPE_MINE)
+                             .owned_by(races.empire, 1)
+                             .named("MineAttacker")
+                             .in_star_orbit(1, SystemCoordinates{10.0, 10.0})
+                             .with_tech(100.0)
+                             .with_on(false)
+                             .build_handle();
+  Ship& mine_attacker = *mine_attacker_h;
   test::expect_false(
-      shoot_ship_to_ship(ctx.em, attacker, target, 10, 2, false).has_value());
-  attacker.on() = true;
-  attacker.type() = ShipType::STYPE_DESTROYER;
+      shoot_ship_to_ship(ctx.em, mine_attacker, target, 10, 2, false)
+          .has_value());
 
   // 1. Conventional attack with ActiveBattery::NONE fails (caliber == NONE)
   test::expect_false(
@@ -608,15 +611,14 @@ void test_shoot_ship_to_ship_and_cew_caliber() {
   target.navigate().on = 1;
   target.protect().evade = 1;
   target.speed() = 3;
-  attacker.type() = ShipType::STYPE_MINE;
-  attacker.mode() = 1;
-  auto rad_res = shoot_ship_to_ship(ctx.em, attacker, target, 10, 0, true);
+  mine_attacker.on() = true;
+  mine_attacker.mode() = 1;
+  auto rad_res = shoot_ship_to_ship(ctx.em, mine_attacker, target, 10, 0, true);
   test::expect_true(rad_res.has_value());
   test::expect_eq(rad_res->weapon, ShipShotWeaponKind::Radiation);
   test::expect_eq(rad_res->damage, rad_res->radiation_dosage);
 
   // 5. Focused laser mode (is_laser_on() && focus())
-  attacker.type() = ShipType::STYPE_DESTROYER;
   attacker.mode() = 0;
   attacker.laser() = 1;
   attacker.fire_laser() = 5;

@@ -46,8 +46,6 @@ int main() {
   const Ship& ship1 = *ctx.em.peek_ship(ship1_id);
   const Ship& ship2 = *ctx.em.peek_ship(ship2_id);
 
-  ShipRepository ships_repo(store);
-
   // Test 1: Star-scoped iteration via ShipList::in_star
   {
     auto list = ShipList::in_star(ctx.em, starnum_t{1});
@@ -66,35 +64,23 @@ int main() {
 
   // Test 1b: Carrier hangar iteration via ShipList::in_carrier
   {
-    // Create a cargo ship that contains other ships
-    Ship cargo{};
-    cargo.number() = 4;  // Use contiguous numbering
-    cargo.owner() = 1;
-    cargo.alive() = true;
-    cargo.enter_star_orbit(1);
-    cargo.type() = ShipType::STYPE_CARGO;
-    cargo.max_fuel() = 1000.0;
-
-    Ship inner1{};
-    inner1.number() = 5;
-    inner1.owner() = 1;
-    inner1.alive() = true;
-    inner1.dock_into_carrier(cargo);
-    inner1.type() = ShipType::OTYPE_PROBE;
-
-    Ship inner2{};
-    inner2.number() = 6;
-    inner2.owner() = 1;
-    inner2.alive() = true;
-    inner2.dock_into_carrier(cargo);
-    inner2.type() = ShipType::OTYPE_PROBE;
-
-    ships_repo.save(cargo);
-    ships_repo.save(inner1);
-    ships_repo.save(inner2);
+    // Create a cargo ship (#4) that contains two docked probes (#5, #6)
+    const shipnum_t cargo_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
+                                   .owned_by(1)
+                                   .in_star_orbit(1)
+                                   .with_fuel(0.0)
+                                   .build();
+    TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
+        .owned_by(1)
+        .docked_to(cargo_id, 1)
+        .build();
+    TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
+        .owned_by(1)
+        .docked_to(cargo_id, 1)
+        .build();
 
     // Iterate over ships contained in cargo via ShipList::in_carrier
-    auto list = ShipList::in_carrier(ctx.em, shipnum_t{4});
+    auto list = ShipList::in_carrier(ctx.em, cargo_id);
     int count = 0;
     for (auto handle : list) {
       count++;
@@ -158,23 +144,15 @@ int main() {
 
   // Test 2b: Scope iteration at star level
   {
-    // Create ships at specific star
-    Ship star_ship1{};
-    star_ship1.number() = 7;
-    star_ship1.owner() = 1;
-    star_ship1.alive() = true;
-    star_ship1.enter_star_orbit(5);  // At star 5
-    star_ship1.type() = ShipType::OTYPE_FACTORY;
-
-    Ship star_ship2{};
-    star_ship2.number() = 8;
-    star_ship2.owner() = 1;
-    star_ship2.alive() = true;
-    star_ship2.enter_star_orbit(5);  // Also at star 5
-    star_ship2.type() = ShipType::OTYPE_PROBE;
-
-    ships_repo.save(star_ship1);
-    ships_repo.save(star_ship2);
+    // Create ships (#7, #8) at specific star 5
+    TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
+        .owned_by(1)
+        .in_star_orbit(5)
+        .build();
+    TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
+        .owned_by(1)
+        .in_star_orbit(5)
+        .build();
 
     auto& registry = get_test_session_registry();
     GameObj g_star(ctx.em, registry);
@@ -198,15 +176,11 @@ int main() {
 
   // Test 2c: Scope iteration at planet level
   {
-    // Create ships at specific planet
-    Ship planet_ship{};
-    planet_ship.number() = 9;
-    planet_ship.owner() = 1;
-    planet_ship.alive() = true;
-    planet_ship.enter_planet_orbit(10, 3);  // At planet 3 of star 10
-    planet_ship.type() = ShipType::STYPE_CARGO;
-
-    ships_repo.save(planet_ship);
+    // Create ship (#9) at planet 3 of star 10
+    TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
+        .owned_by(1)
+        .in_planet_orbit(10, 3)
+        .build();
 
     auto& registry = get_test_session_registry();
     GameObj g_plan(ctx.em, registry);
@@ -520,13 +494,10 @@ int main() {
                  alive_count);
 
     // Create ship #10
-    Ship ship10{};
-    ship10.number() = 10;
-    ship10.owner() = 1;
-    ship10.alive() = true;
-    ship10.enter_star_orbit(1);
-    ship10.type() = ShipType::OTYPE_FACTORY;
-    ships_repo.save(ship10);
+    TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
+        .owned_by(1)
+        .in_star_orbit(1)
+        .build();
 
     ShipList all_ships(ctx.em, ShipList::IterationType::All);
     int all_count = 0;
@@ -610,21 +581,15 @@ int main() {
     ShipRepository sparse_repo(sparse_store);
 
     // Create only ship 1 and ship 5 (gaps at 2, 3, 4)
-    Ship s1{};
-    s1.number() = 1;
-    s1.owner() = 1;
-    s1.alive() = true;
-    s1.enter_star_orbit(1);
-    s1.type() = ShipType::OTYPE_PROBE;
-    sparse_repo.save(s1);
+    auto s1 = ShipFactory::create_from_template(ShipType::OTYPE_PROBE, 1);
+    s1->number() = 1;
+    s1->enter_star_orbit(1);
+    sparse_repo.save(*s1);
 
-    Ship s5{};
-    s5.number() = 5;
-    s5.owner() = 1;
-    s5.alive() = true;
-    s5.enter_star_orbit(1);
-    s5.type() = ShipType::OTYPE_FACTORY;
-    sparse_repo.save(s5);
+    auto s5 = ShipFactory::create_from_template(ShipType::OTYPE_FACTORY, 1);
+    s5->number() = 5;
+    s5->enter_star_orbit(1);
+    sparse_repo.save(*s5);
 
     // Test mutable iteration over sparse IDs
     std::vector<shipnum_t> visited_mutable;
@@ -676,17 +641,12 @@ int main() {
         "\nTest 10: Mid-loop hard-deletion skips destroyed subsequent ships");
     TestContext kill_ctx;
     kill_ctx.with_galaxy();
-    JsonStore kill_store(kill_ctx.db);
-    ShipRepository kill_repo(kill_store);
 
-    for (shipnum_t num : {shipnum_t{1}, shipnum_t{2}, shipnum_t{3}}) {
-      Ship s{};
-      s.number() = num;
-      s.owner() = 1;
-      s.alive() = true;
-      s.enter_star_orbit(1);
-      s.type() = ShipType::STYPE_FIGHTER;
-      kill_repo.save(s);
+    for (int i = 0; i < 3; ++i) {
+      TestShipBuilder(kill_ctx.em, ShipType::STYPE_FIGHTER)
+          .owned_by(1)
+          .in_star_orbit(1)
+          .build();
     }
 
     // Mutable iteration: when visiting ship 1, kill ship 2.
@@ -731,28 +691,15 @@ int main() {
                  "\nTest 11: Dead ship alive_only MC/DC and LEVEL_SHIP scope");
     TestContext dead_ctx;
     dead_ctx.with_galaxy();
-    JsonStore dead_store(dead_ctx.db);
-    ShipRepository dead_repo(dead_store);
 
-    Ship alive_ship{};
-    alive_ship.number() = 1;
-    alive_ship.owner() = 1;
-    alive_ship.governor() = Race::leader_id;
-    alive_ship.alive() = true;
-    alive_ship.active() = true;
-    alive_ship.enter_star_orbit(1);
-    alive_ship.type() = ShipType::STYPE_FIGHTER;
-    dead_repo.save(alive_ship);
-
-    Ship dead_ship{};
-    dead_ship.number() = 2;
-    dead_ship.owner() = 1;
-    dead_ship.governor() = Race::leader_id;
-    dead_ship.alive() = true;
-    dead_ship.active() = true;
-    dead_ship.enter_star_orbit(1);
-    dead_ship.type() = ShipType::STYPE_FIGHTER;
-    dead_repo.save(dead_ship);
+    TestShipBuilder(dead_ctx.em, ShipType::STYPE_FIGHTER)
+        .owned_by(1, Race::leader_id)
+        .in_star_orbit(1)
+        .build();
+    TestShipBuilder(dead_ctx.em, ShipType::STYPE_FIGHTER)
+        .owned_by(1, Race::leader_id)
+        .in_star_orbit(1)
+        .build();
 
     auto dws = dead_ctx.em.create_deferred_write_scope();
     dead_ctx.em.mutate_ship(2, [](Ship& s) { s.alive() = false; });
@@ -819,66 +766,40 @@ int main() {
     TestContext cmd_ctx;
     cmd_ctx.with_galaxy();
     TestWorldBuilder(cmd_ctx).add_race("Foreign", 10.0, false, 2);
-    JsonStore cmd_store(cmd_ctx.db);
-    ShipRepository cmd_repo(cmd_store);
 
     // Ship 1: owned by player 1, governor 1, active fighter at star 1, planet 1
-    Ship s1{};
-    s1.number() = 1;
-    s1.owner() = 1;
-    s1.governor() = Race::leader_id;
-    s1.alive() = true;
-    s1.active() = true;
-    s1.enter_planet_orbit(1, 1);
-    s1.type() = ShipType::STYPE_FIGHTER;
-    cmd_repo.save(s1);
+    TestShipBuilder(cmd_ctx.em, ShipType::STYPE_FIGHTER)
+        .owned_by(1, Race::leader_id)
+        .in_planet_orbit(1, 1)
+        .build();
 
     // Ship 2: owned by player 2 (foreign!), governor 1, active fighter at star
     // 1, planet 1
-    Ship s2{};
-    s2.number() = 2;
-    s2.owner() = 2;
-    s2.governor() = Race::leader_id;
-    s2.alive() = true;
-    s2.active() = true;
-    s2.enter_planet_orbit(1, 1);
-    s2.type() = ShipType::STYPE_FIGHTER;
-    cmd_repo.save(s2);
+    TestShipBuilder(cmd_ctx.em, ShipType::STYPE_FIGHTER)
+        .owned_by(2, Race::leader_id)
+        .in_planet_orbit(1, 1)
+        .build();
 
     // Ship 3: owned by player 1, governor 1, irradiated/inactive cargo ship at
     // star 1, planet 1
-    Ship s3{};
-    s3.number() = 3;
-    s3.owner() = 1;
-    s3.governor() = Race::leader_id;
-    s3.alive() = true;
-    s3.active() = false;
-    s3.enter_planet_orbit(1, 1);
-    s3.type() = ShipType::STYPE_CARGO;
-    cmd_repo.save(s3);
+    TestShipBuilder(cmd_ctx.em, ShipType::STYPE_CARGO)
+        .owned_by(1, Race::leader_id)
+        .in_planet_orbit(1, 1)
+        .with_active(false)
+        .build();
 
     // Ship 4: owned by player 1, governor 1, marked dead in memory at star 1,
     // planet 1
-    Ship s4{};
-    s4.number() = 4;
-    s4.owner() = 1;
-    s4.governor() = Race::leader_id;
-    s4.alive() = true;
-    s4.active() = true;
-    s4.enter_planet_orbit(1, 1);
-    s4.type() = ShipType::STYPE_FIGHTER;
-    cmd_repo.save(s4);
+    TestShipBuilder(cmd_ctx.em, ShipType::STYPE_FIGHTER)
+        .owned_by(1, Race::leader_id)
+        .in_planet_orbit(1, 1)
+        .build();
 
     // Ship 5: owned by player 1, governor 1, active fighter at star 1, planet 1
-    Ship s5{};
-    s5.number() = 5;
-    s5.owner() = 1;
-    s5.governor() = Race::leader_id;
-    s5.alive() = true;
-    s5.active() = true;
-    s5.enter_planet_orbit(1, 1);
-    s5.type() = ShipType::STYPE_FIGHTER;
-    cmd_repo.save(s5);
+    TestShipBuilder(cmd_ctx.em, ShipType::STYPE_FIGHTER)
+        .owned_by(1, Race::leader_id)
+        .in_planet_orbit(1, 1)
+        .build();
 
     auto dws = cmd_ctx.em.create_deferred_write_scope();
     cmd_ctx.em.mutate_ship(4, [](Ship& s) { s.alive() = false; });

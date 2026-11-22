@@ -1480,26 +1480,25 @@ void test_blueprint_complexity_defense_and_capture() {
   // Blueprint and constructed state initialization for VN, Berserker, Mine,
   // Transdev, and specialty ships
   const auto* race1 = ctx.em.peek_race(mortal);
-  Ship factory_ship;
-  factory_ship.set_factory_blueprint(ShipType::STYPE_CRUISER, race1);
-  test::expect_eq(factory_ship.build_type(), ShipType::STYPE_CRUISER);
-  test::expect_true(factory_ship.calculate_size() > 0);
-  test::expect_true(cost(factory_ship) > 0.0);
-  expect_near(complexity(factory_ship), complexity(ShipType::STYPE_CRUISER));
+  auto cruiser_ship =
+      ShipFactory::create_from_template(ShipType::STYPE_CRUISER, mortal);
+  test::expect_eq(cruiser_ship->build_type(), ShipType::STYPE_CRUISER);
+  test::expect_true(cruiser_ship->calculate_size() > 0);
+  test::expect_true(cost(*cruiser_ship) > 0.0);
+  expect_near(complexity(*cruiser_ship), complexity(ShipType::STYPE_CRUISER));
 
   // Upgraded and downgraded stats in complexity()
-  factory_ship.armor() += 10;
-  factory_ship.max_speed() = 1;
-  test::expect_true(complexity(factory_ship) > 0.0);
+  cruiser_ship->armor() += 10;
+  cruiser_ship->max_speed() = 1;
+  test::expect_true(complexity(*cruiser_ship) > 0.0);
 
   for (const auto stype :
        {ShipType::OTYPE_VN, ShipType::OTYPE_BERS, ShipType::STYPE_MIRROR,
         ShipType::STYPE_POD, ShipType::OTYPE_CANIST, ShipType::STYPE_MISSILE,
         ShipType::STYPE_MINE, ShipType::OTYPE_TERRA, ShipType::OTYPE_TRANSDEV,
         ShipType::OTYPE_TOXWC}) {
-    ship_struct sd{.build_type = stype, .type = stype};
-    Ship special{sd};
-    special.set_factory_blueprint(stype, race1);
+    auto special_ptr = ShipFactory::create_from_template(stype, mortal);
+    Ship& special = *special_ptr;
     special.initialize_constructed_state(*race1, 0, 10.0, 5);
     test::expect_true(special.alive());
 
@@ -1552,35 +1551,36 @@ void test_blueprint_complexity_defense_and_capture() {
     }
   }
 
-  // set_factory_blueprint resets cew_range, preserves Factory hull size, and
+  // configure_blueprint resets cew_range, preserves Factory hull size, and
   // gates mount/hyperdrive/cloak/laser on template capability and Race tech
   auto fac = ShipFactory::create_from_template(ShipType::OTYPE_FACTORY, 1);
+  auto* fac_typed = fac->as<FactoryShip>();
   const ship_size_t fac_hull_size = fac->size();
-  fac->set_factory_blueprint(ShipType::STYPE_BATTLE, race1);
-  fac->cew() = 10;
-  fac->cew_range() = 200;
-  fac->set_factory_blueprint(ShipType::STYPE_EXPLORER, race1);
-  test::expect_eq(fac->cew(), 0);
-  test::expect_eq(fac->cew_range(), 0);
+  fac_typed->configure_blueprint(ShipType::STYPE_BATTLE, race1);
+  fac_typed->blueprint_mut().cew = 10;
+  fac_typed->blueprint_mut().cew_range = 200;
+  fac_typed->configure_blueprint(ShipType::STYPE_EXPLORER, race1);
+  test::expect_eq(fac_typed->blueprint().cew, 0);
+  test::expect_eq(fac_typed->blueprint().cew_range, 0);
   test::expect_eq(fac->size(), fac_hull_size);
 
-  fac->set_factory_blueprint(ShipType::STYPE_CRUISER, nullptr);
-  test::expect_true(fac->mount());
-  test::expect_true(fac->hyper_drive().has);
-  test::expect_true(fac->laser());
+  fac_typed->configure_blueprint(ShipType::STYPE_CRUISER, nullptr);
+  test::expect_true(fac_typed->blueprint().mount);
+  test::expect_true(fac_typed->blueprint().has_hyperdrive);
+  test::expect_true(fac_typed->blueprint().laser);
   Race undisc{};
-  fac->set_factory_blueprint(ShipType::STYPE_CRUISER, &undisc);
-  test::expect_false(fac->mount());
-  test::expect_false(fac->hyper_drive().has);
-  test::expect_false(fac->laser());
+  fac_typed->configure_blueprint(ShipType::STYPE_CRUISER, &undisc);
+  test::expect_false(fac_typed->blueprint().mount);
+  test::expect_false(fac_typed->blueprint().has_hyperdrive);
+  test::expect_false(fac_typed->blueprint().laser);
   Race disc{};
   disc.discoveries.hyperdrive = true;
   disc.discoveries.crystal = true;
   disc.discoveries.laser = true;
-  fac->set_factory_blueprint(ShipType::STYPE_CRUISER, &disc);
-  test::expect_true(fac->mount());
-  test::expect_true(fac->hyper_drive().has);
-  test::expect_true(fac->laser());
+  fac_typed->configure_blueprint(ShipType::STYPE_CRUISER, &disc);
+  test::expect_true(fac_typed->blueprint().mount);
+  test::expect_true(fac_typed->blueprint().has_hyperdrive);
+  test::expect_true(fac_typed->blueprint().laser);
 
   // GunBattery count > 0 with NONE caliber normalizes to empty
   GunBattery raw_none{.count = 2, .caliber = guntype_t::NONE};
@@ -2421,15 +2421,12 @@ void test_subclass_special_data_clamping() {
   test::expect_true(carrier.can_fit_in_hangar(10));
   test::expect_false(carrier.can_fit_in_hangar(20));
 
-  Ship fac{};
-  fac.type() = ShipType::OTYPE_FACTORY;
-  test::expect_eq(fac.build_type(), ShipType::STYPE_POD);
-  test::expect_false(carrier.has_factory_design());
-  test::expect_false(fac.has_factory_design());
-  fac.build_type() = ShipType::OTYPE_FACTORY;
-  test::expect_false(fac.has_factory_design());
-  fac.build_type() = ShipType::STYPE_FIGHTER;
-  test::expect_true(fac.has_factory_design());
+  FactoryShip fac{};
+  test::expect_false(fac.has_design());
+  fac.blueprint_mut().build_type = ShipType::STYPE_POD;
+  test::expect_false(fac.has_design());
+  fac.blueprint_mut().build_type = ShipType::STYPE_FIGHTER;
+  test::expect_true(fac.has_design());
 
   carrier.laser() = true;
   carrier.fire_laser() = 0;
@@ -2548,16 +2545,19 @@ void test_subclass_special_data_clamping() {
   // of manufactured blueprint capacities
   auto fac_ship = ShipFactory::create_from_template(ShipType::OTYPE_FACTORY, 1);
   const auto& fac_tmpl = ship_template(ShipType::OTYPE_FACTORY);
-  fac_ship->set_factory_blueprint(ShipType::STYPE_FIGHTER);
-  test::expect_eq(fac_ship->max_crew(), 1);
+  fac_ship->as<FactoryShip>()->configure_blueprint(ShipType::STYPE_FIGHTER);
+  test::expect_eq(fac_ship->as<FactoryShip>()->blueprint().max_crew, 1);
+  test::expect_eq(fac_ship->max_crew(), fac_tmpl.max_crew);
   test::expect_eq(fac_ship->max_crew_capacity(), fac_tmpl.max_crew);
   fac_ship->add_popn(15, 1.5);
   test::expect_eq(fac_ship->popn(), 15);
-  fac_ship->set_factory_blueprint(ShipType::STYPE_DREADNT);
+  fac_ship->as<FactoryShip>()->configure_blueprint(ShipType::STYPE_DREADNT);
   test::expect_eq(fac_ship->max_crew_capacity(), fac_tmpl.max_crew);
   test::expect_eq(fac_ship->max_resource_capacity(), fac_tmpl.max_resource);
   expect_near(fac_ship->max_fuel_capacity(), fac_tmpl.max_fuel);
   test::expect_eq(fac_ship->max_destruct_capacity(), fac_tmpl.max_destruct);
+  test::expect_eq(fac_ship->max_hanger(), fac_tmpl.max_hangar);
+  test::expect_false(fac_ship->can_fit_in_hangar(1));
 
   // Fractional destination fuel does not destroy transferred fuel
   auto src_tanker =

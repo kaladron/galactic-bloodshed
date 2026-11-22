@@ -155,12 +155,22 @@ void test_cew_equipment_and_state_validation() {
   test::expect_contains(g.out.str(), "is irradiated and inactive.");
   ctx.em.mutate_ship(1, [](Ship& s1) { s1.active() = true; });
 
-  // 2. Ship not equipped for CEWs
+  // 2. Ship not equipped for CEWs (including Factory with blueprint CEW)
   ctx.em.mutate_ship(1, [](Ship& s1) { s1.cew() = 0; });
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"cew", "#1", "#2"});
   test::expect_contains(g.out.str(), "That ship is not equipped to fire CEWs.");
   ctx.em.mutate_ship(1, [](Ship& s1) { s1.cew() = 10; });
+
+  const auto fac_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
+                          .owned_by(attacker, 1)
+                          .in_star_orbit(1)
+                          .with_build_type(ShipType::STYPE_BATTLE)
+                          .build();
+  ctx.em.mutate_ship(
+      fac_id, [](Ship& f) { f.as<FactoryShip>()->blueprint_mut().cew = 20; });
+  ctx.assert_dispatch_rejected(g, {"cew", std::format("#{}", fac_id), "#2"});
+  test::expect_contains(g.out.str(), "That ship is not equipped to fire CEWs.");
 
   // 3. No crystal mounted
   ctx.em.mutate_ship(1, [](Ship& s1) { s1.mounted() = false; });

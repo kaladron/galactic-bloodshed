@@ -92,10 +92,20 @@ void test_mount_errors() {
   ctx.assert_dispatch_rejected(g, {"mount", std::format("#{}", ship1_id)});
   test::expect_contains(g.out.str(), "You already have a crystal mounted.");
 
-  // 5. Explicit foreign ship rejected
+  // 5. Explicit foreign ship and Factory with blueprint mount rejected
   ctx.assert_dispatch_rejected(g, {"mount", std::format("#{}", ship3_id)});
   test::expect_contains(g.out.str(),
                         std::format("You don't own ship #{}.", ship3_id));
+
+  const auto fac_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
+                          .owned_by(races.empire, 1)
+                          .in_star_orbit(1)
+                          .with_build_type(ShipType::STYPE_BATTLE)
+                          .with_crystals(2)
+                          .build();
+  ctx.assert_dispatch_rejected(g, {"mount", std::format("#{}", fac_id)});
+  test::expect_contains(g.out.str(),
+                        "This ship is not equipped with a crystal mount.");
 
   std::println(std::cout, "✓ mount error cases passed");
 }

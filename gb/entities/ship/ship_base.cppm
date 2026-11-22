@@ -193,20 +193,6 @@ public:
     return data_.build_type;
   }
 
-  /// \brief Returns whether this factory ship has been programmed with a ship
-  /// design (`STYPE_POD` default zero-init and `OTYPE_FACTORY` both denote an
-  /// unconfigured blueprint).
-  [[nodiscard]] bool has_factory_design() const noexcept {
-    return data_.type == ShipType::OTYPE_FACTORY &&
-           data_.build_type != ShipType::STYPE_POD &&
-           data_.build_type != ShipType::OTYPE_FACTORY;
-  }
-
-  /// \brief Initializes this factory ship's blueprint attributes from a target
-  /// ship class template, applying optional racial technology discoveries.
-  void set_factory_blueprint(ShipType build_type,
-                             const Race* race = nullptr) noexcept;
-
   [[nodiscard]] resource_t build_cost() const {
     return data_.build_cost;
   }
@@ -1265,11 +1251,9 @@ public:
     return (data_.type == ShipType::OTYPE_PROBE) || data_.popn > 0;
   }
 
-  /// Effective armor accounting for factory overrides and structural damage.
+  /// Effective armor accounting for structural damage.
   [[nodiscard]] constexpr armor_t effective_armor() const noexcept {
-    return (data_.type == ShipType::OTYPE_FACTORY)
-               ? get_template().base_armor
-               : (data_.armor * data_.damage.complement()) / 100;
+    return (data_.armor * data_.damage.complement()) / 100;
   }
 
   /// Active weapon battery strength based on selected gun mode.
@@ -1290,16 +1274,12 @@ public:
 
   /// Available civilian crew capacity accounting for military troops on board.
   [[nodiscard]] population_t available_crew() const noexcept {
-    return (data_.type == ShipType::OTYPE_FACTORY)
-               ? (get_template().max_crew - data_.troops)
-               : (data_.max_crew - data_.troops);
+    return data_.max_crew - data_.troops;
   }
 
   /// Available military troop capacity accounting for civilian crew on board.
   [[nodiscard]] population_t available_mil() const noexcept {
-    return (data_.type == ShipType::OTYPE_FACTORY)
-               ? (get_template().max_crew - data_.popn)
-               : (data_.max_crew - data_.popn);
+    return data_.max_crew - data_.popn;
   }
 
   /// \brief Available berth capacity for crew and troops combined
@@ -1313,36 +1293,29 @@ public:
   /// \brief Epsilon threshold for fuel comparisons and consumption tests.
   static constexpr double FUEL_EPSILON = 1e-4;
 
-  /// Maximum total crew capacity including factory template overrides.
+  /// Maximum total crew capacity.
   [[nodiscard]] population_t max_crew_capacity() const noexcept {
-    return (data_.type == ShipType::OTYPE_FACTORY) ? get_template().max_crew
-                                                   : data_.max_crew;
+    return data_.max_crew;
   }
 
-  /// Maximum cargo resource capacity including factory template overrides.
+  /// Maximum cargo resource capacity.
   [[nodiscard]] resource_t max_resource_capacity() const noexcept {
-    return (data_.type == ShipType::OTYPE_FACTORY) ? get_template().max_resource
-                                                   : data_.max_resource;
+    return data_.max_resource;
   }
 
-  /// Maximum fuel tank capacity including factory template overrides.
+  /// Maximum fuel tank capacity.
   [[nodiscard]] fuel_t max_fuel_capacity() const noexcept {
-    return (data_.type == ShipType::OTYPE_FACTORY) ? get_template().max_fuel
-                                                   : data_.max_fuel;
+    return data_.max_fuel;
   }
 
-  /// Maximum ammo / ordnance capacity including factory template overrides.
+  /// Maximum ammo / ordnance capacity.
   [[nodiscard]] resource_t max_destruct_capacity() const noexcept {
-    return (data_.type == ShipType::OTYPE_FACTORY) ? get_template().max_destruct
-                                                   : data_.max_destruct;
+    return data_.max_destruct;
   }
 
-  /// Maximum impulse engine speed throttle including factory template
-  /// overrides.
+  /// Maximum impulse engine speed throttle.
   [[nodiscard]] speed_t max_speed_capacity() const noexcept {
-    return (data_.type == ShipType::OTYPE_FACTORY)
-               ? ship_template(data_.type).base_speed
-               : data_.max_speed;
+    return data_.max_speed;
   }
 
   /// Maximum alien power crystal storage capacity.
@@ -1352,14 +1325,18 @@ public:
 
   /// Repair work capacity per turn (operational status for factories, crew for
   /// others).
-  [[nodiscard]] long repair_capacity() const noexcept {
-    return (data_.type == ShipType::OTYPE_FACTORY) ? data_.on
-                                                   : available_crew();
+  [[nodiscard]] virtual long repair_capacity() const noexcept {
+    return available_crew();
   }
 
   /// Effective build / maintenance cost including factory activation scaling.
   [[nodiscard]] virtual long effective_cost() const noexcept {
     return data_.build_cost;
+  }
+
+  /// Morale swing awarded when capturing a defended ship in boarding combat.
+  [[nodiscard]] virtual int capture_morale_value() const noexcept {
+    return static_cast<int>(data_.build_cost);
   }
 
   /// Ship classification type letter code.
@@ -1882,7 +1859,7 @@ public:
 
   /// \brief Synchronizes offline factory technological capability with current
   /// empire technology.
-  void sync_factory_technology(const Race& race) noexcept;
+  virtual void sync_factory_technology(const Race&) noexcept {}
 
 private:
   [[nodiscard]] constexpr weapon_power_t

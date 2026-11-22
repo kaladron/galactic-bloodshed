@@ -1635,24 +1635,20 @@ void test_sync_factory_technology() {
   race.tech = 150.0;
 
   // 1. Offline factory updates tech
-  ship_struct offline_factory_data{
-      .tech = 50.0,
-      .type = ShipType::OTYPE_FACTORY,
-      .on = 0,
-  };
-  Ship offline_factory{offline_factory_data};
-  offline_factory.sync_factory_technology(race);
-  test::expect_eq(offline_factory.tech(), 150.0);
+  auto offline_factory =
+      ShipFactory::create_from_template(ShipType::OTYPE_FACTORY, 1);
+  offline_factory->tech() = 50.0;
+  offline_factory->on() = false;
+  offline_factory->sync_factory_technology(race);
+  test::expect_eq(offline_factory->tech(), 150.0);
 
   // 2. Online factory preserves tech
-  ship_struct online_factory_data{
-      .tech = 50.0,
-      .type = ShipType::OTYPE_FACTORY,
-      .on = 1,
-  };
-  Ship online_factory{online_factory_data};
-  online_factory.sync_factory_technology(race);
-  test::expect_eq(online_factory.tech(), 50.0);
+  auto online_factory =
+      ShipFactory::create_from_template(ShipType::OTYPE_FACTORY, 1);
+  online_factory->tech() = 50.0;
+  online_factory->on() = true;
+  online_factory->sync_factory_technology(race);
+  test::expect_eq(online_factory->tech(), 50.0);
 }
 
 void test_exploration_domain_methods() {

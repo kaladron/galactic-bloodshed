@@ -96,17 +96,16 @@ int main() {
 
   // Test Factory specialization methods
   {
-    ship_struct fact_data{};
-    fact_data.type = ShipType::OTYPE_FACTORY;
-    fact_data.build_cost = 50;
-    fact_data.on = true;
+    auto fact = ShipFactory::create_from_template(ShipType::OTYPE_FACTORY, 1);
+    fact->as<FactoryShip>()->configure_blueprint(ShipType::STYPE_CRUISER);
+    fact->on() = true;
 
-    Ship fact(fact_data);
-    test::expect_true(fact.has_switch());
-    test::expect_eq(fact.repair_capacity(), 1L);
+    test::expect_true(fact->has_switch());
+    test::expect_eq(fact->repair_capacity(), 1L);
+    test::expect_eq(fact->capture_morale_value(), 0);
     const auto& fact_tmpl = ship_template(ShipType::OTYPE_FACTORY);
-    test::expect_eq(fact.max_crew_capacity(), fact_tmpl.max_crew);
-    test::expect_eq(fact.max_resource_capacity(), fact_tmpl.max_resource);
+    test::expect_eq(fact->max_crew_capacity(), fact_tmpl.max_crew);
+    test::expect_eq(fact->max_resource_capacity(), fact_tmpl.max_resource);
   }
 
   std::println(std::cout, "✓ gblib_test passed!");

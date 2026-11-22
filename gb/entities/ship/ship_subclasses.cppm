@@ -517,8 +517,22 @@ public:
   /// Materializes a standalone prototype `Ship` from this factory's blueprint.
   [[nodiscard]] std::unique_ptr<Ship> instantiate_blueprint() const;
 
+  [[nodiscard]] long repair_capacity() const noexcept override {
+    return data_.on;
+  }
+
   [[nodiscard]] long effective_cost() const noexcept override {
     return 2L * blueprint().build_cost * data_.on + get_template().build_cost;
+  }
+
+  [[nodiscard]] int capture_morale_value() const noexcept override {
+    return 0;
+  }
+
+  void sync_factory_technology(const Race& race) noexcept override {
+    if (!data_.on) {
+      data_.tech = race.tech;
+    }
   }
 };
 

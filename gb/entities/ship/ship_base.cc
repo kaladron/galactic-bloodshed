@@ -109,15 +109,6 @@ private:
   double disadvantage_ = 0.0;
 };
 
-void apply_blueprint_capabilities(ship_struct& data, const ShipTemplate& itmpl,
-                                  const Race* race) noexcept {
-  data.mount = itmpl.can_mount && (!race || race->discoveries.crystal);
-  data.hyper_drive.has =
-      itmpl.can_hyperjump && (!race || race->discoveries.hyperdrive);
-  data.cloak = itmpl.can_cloak;
-  data.laser = itmpl.can_mount_laser && (!race || race->discoveries.laser);
-}
-
 template <typename StockT, typename CapT>
 [[nodiscard]] constexpr std::int64_t
 clamp_cargo_transfer(std::int64_t requested, StockT available_stock,
@@ -219,37 +210,6 @@ double complexity(const Ship& s) {
       normalized_deviation * normalized_deviation;
 
   return complexity_multiplier * base_tech;
-}
-
-void Ship::set_factory_blueprint(ShipType build_type,
-                                 const Race* race) noexcept {
-  const auto& itmpl = ship_template(build_type);
-  const ship_size_t own_size = data_.size;
-  data_.build_type = build_type;
-  data_.armor = itmpl.base_armor;
-  data_.guns = ActiveBattery::NONE;
-  data_.primary_battery =
-      GunBattery::create(itmpl.max_guns, shipdata_primary(build_type));
-  data_.secondary_battery =
-      GunBattery::create(itmpl.max_guns, shipdata_secondary(build_type));
-  data_.max_crew = itmpl.max_crew;
-  data_.max_resource = itmpl.max_resource;
-  data_.max_hanger = itmpl.max_hangar;
-  data_.max_fuel = itmpl.max_fuel;
-  data_.max_destruct = itmpl.max_destruct;
-  data_.max_speed = itmpl.base_speed;
-  apply_blueprint_capabilities(data_, itmpl, race);
-  data_.cew = 0;
-  data_.cew_range = 0;
-  data_.mode = 0;
-  data_.size = calculate_size();
-  const bool free_build = race ? race->God : false;
-  data_.build_cost = free_build ? 0 : ::cost(*this);
-  data_.base_mass = base_mass();
-  data_.complexity = ::complexity(*this);
-  if (data_.type == ShipType::OTYPE_FACTORY) {
-    data_.size = own_size;
-  }
 }
 
 void Ship::initialize_constructed_state(const Race& race, governor_t gov,
@@ -405,10 +365,4 @@ bool Ship::prepare_for_flight(bool update, double race_mass) {
   }
 
   return true;
-}
-
-void Ship::sync_factory_technology(const Race& race) noexcept {
-  if (type() == ShipType::OTYPE_FACTORY && !on()) {
-    tech() = race.tech;
-  }
 }

@@ -23,35 +23,30 @@ int main() {
   stars.save(Star{10, "Star10"});
   PlanetRepository(store).save(Planet{10, 3});
 
-  // Create test ships
-  Ship ship1{};
-  ship1.number() = 1;
-  ship1.owner() = 1;
-  ship1.alive() = true;
-  ship1.enter_star_orbit(1);
-  ship1.type() = ShipType::OTYPE_FACTORY;
-  ship1.max_fuel() = 1000.0;
-
-  Ship ship2{};
-  ship2.number() = 2;
-  ship2.owner() = 1;
-  ship2.alive() = true;
-  ship2.enter_star_orbit(1);
-  ship2.type() = ShipType::OTYPE_PROBE;
-  ship2.max_fuel() = 1000.0;
-
-  Ship ship3{};
-  ship3.number() = 3;
-  ship3.owner() = 1;
-  ship3.alive() = true;
-  ship3.enter_star_orbit(1);
-  ship3.type() = ShipType::STYPE_CARGO;
-  ship3.max_fuel() = 1000.0;
+  // Create test ships via TestShipBuilder
+  const shipnum_t ship1_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
+                                 .owned_by(1)
+                                 .in_star_orbit(1)
+                                 .with_destruct(0)
+                                 .build();
+  const shipnum_t ship2_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
+                                 .owned_by(1)
+                                 .in_star_orbit(1)
+                                 .with_fuel(0.0)
+                                 .with_max_fuel(1000.0)
+                                 .with_destruct(0)
+                                 .build();
+  TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
+      .owned_by(1)
+      .in_star_orbit(1)
+      .with_fuel(0.0)
+      .with_max_fuel(1000.0)
+      .with_destruct(0)
+      .build();
+  const Ship& ship1 = *ctx.em.peek_ship(ship1_id);
+  const Ship& ship2 = *ctx.em.peek_ship(ship2_id);
 
   ShipRepository ships_repo(store);
-  ships_repo.save(ship1);
-  ships_repo.save(ship2);
-  ships_repo.save(ship3);
 
   // Test 1: Star-scoped iteration via ShipList::in_star
   {

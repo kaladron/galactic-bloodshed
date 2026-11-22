@@ -206,18 +206,14 @@ int main() {
   {
     std::println(std::cout, "Factory ship (has ABIL_REPAIR ability)");
 
-    Ship ship{};
+    auto ship_ptr =
+        ShipFactory::create_from_template(ShipType::OTYPE_FACTORY, 1);
+    Ship& ship = *ship_ptr;
     ship.number() = 4;
-    ship.owner() = player_t{1};
     ship.governor() = 1;
     ship.name() = "Factory1";
-    ship.type() = ShipType::OTYPE_FACTORY;  // Has ABIL_REPAIR
-    ship.alive() = 1;
-    ship.active() = 1;
-    ship.on() = 1;  // Factory is on
+    ship.on() = true;
     ship.admin_override_damage(60);
-    ship.popn() = 0;  // Factories have no crew
-    ship.max_crew() = 0;
     ship.resource() = 5000;
     ship.build_cost() = 1000;
     ship.launch_to_orbit(ScopeLevel::LEVEL_UNIV);

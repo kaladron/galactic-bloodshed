@@ -285,13 +285,37 @@ void test_rst_filters_scopes_and_json() {
   test::expect_contains(g.out.str(), "Hermes");
   test::expect_contains(g.out.str(), "DockedGreen");
 
-  // JSON mode output
+  // JSON mode output + Factory hull vs blueprint stock/factories isolation
+  const auto carrier_fac_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
+                                  .owned_by(1)
+                                  .named("CarrierPlant")
+                                  .landed_on(1, 1, {2, 2})
+                                  .with_build_type(ShipType::STYPE_CARRIER)
+                                  .with_on(true)
+                                  .build();
+  const auto carrier_ref =
+      ShipFactory::create_from_template(ShipType::STYPE_CARRIER, 1);
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"stock", std::format("#{}", carrier_fac_id)});
+  test::expect_contains(g.out.str(), "0:0");
+  test::expect_not_contains(g.out.str(), "0:200");
+
+  g.out.str("");
+  ctx.assert_dispatch_success(
+      g, {"factories", std::format("#{}", carrier_fac_id)});
+  test::expect_contains(g.out.str(), std::format("{}", carrier_ref->size()));
+  test::expect_contains(g.out.str(), "200");
+
   g.out.str("");
   g.set_ui_mode(UiMode::JSON);
-  ctx.assert_dispatch_success(g, {"report", "#1"});
+  ctx.assert_dispatch_success(
+      g, {"report", "#1", std::format("#{}", carrier_fac_id)});
   const std::string json_out = g.out.str();
   test::expect_contains(json_out, R"("type":"ship")");
   test::expect_contains(json_out, R"("name":"Hermes")");
+  test::expect_contains(json_out, R"("max_hanger":0)");
+  test::expect_contains(json_out, R"("max_hanger":200)");
+  test::expect_contains(json_out, R"("max_crew":30)");
   g.set_ui_mode(UiMode::ASCII);
 
   // Command-specific diagnostic prefixes (not hardcoded "rst:")

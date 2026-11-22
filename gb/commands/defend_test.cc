@@ -57,7 +57,6 @@ void setup_test_world(TestContext& ctx) {
       .owned_by(attacker, 1)
       .named("Factory")
       .in_planet_orbit(1, 1)
-      .with_armor(100)
       .build();
 
   // Create second attacking enemy ship in planet orbit
@@ -65,7 +64,6 @@ void setup_test_world(TestContext& ctx) {
       .owned_by(attacker, 1)
       .named("Cargo")
       .in_planet_orbit(1, 1)
-      .with_armor(100)
       .build();
 }
 

@@ -120,7 +120,7 @@ void finalize_boarding_ownership_and_morale(EntityManager& em, Ship& s,
     em.transfer_ship_ownership(s2, s.owner(), s.governor());
     add_ship_boarders(s2, what, report.surviving_boarders, race.mass);
     if (report.defender_civ_casualties + report.defender_mil_casualties > 0) {
-      race.adjust_morale(alien, static_cast<int>(s2.build_cost()));
+      race.adjust_morale(alien, s2.capture_morale_value());
     }
     report.captured = true;
     report.captured_ships = capture_stuff(em, s2);
@@ -587,11 +587,11 @@ void finalize_landed_ship_capture(EntityManager& em, Ship& ship, Planet& planet,
       net_mil_lost = res.boarders_moved_in + res.attacker_casualties;
     }
     res.captured_ships = capture_stuff(em, ship);
-    if (res.had_defenders && ship.type() != ShipType::OTYPE_FACTORY) {
+    const int morale_delta = ship.capture_morale_value();
+    if (res.had_defenders && morale_delta > 0) {
       em.mutate_race(attacker_player, [&](Race& r) {
-        em.mutate_race(res.old_defender_owner, [&](Race& a) {
-          r.adjust_morale(a, static_cast<int>(ship.build_cost()));
-        });
+        em.mutate_race(res.old_defender_owner,
+                       [&](Race& a) { r.adjust_morale(a, morale_delta); });
       });
     }
   } else if (what == PopulationType::CIV) {

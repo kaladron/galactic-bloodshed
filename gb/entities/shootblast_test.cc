@@ -738,6 +738,34 @@ void test_critical_hit_systems_and_mine_guards() {
   test::expect_false(domine(mine, false, ctx.em).has_value());
   test::expect_true(domine(mine, true, ctx.em).has_value());
 
+  // Configured FactoryShip takes hull/crew damage without corrupting its
+  // manufactured vessel blueprint systems, guns, armor, or build_cost.
+  auto fac_h = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
+                   .owned_by(races.newcomer, 1)
+                   .landed_on(1, 1, {0, 0})
+                   .with_build_type(ShipType::STYPE_BATTLE)
+                   .with_crew(20, 0)
+                   .with_on(true)
+                   .build_handle();
+  auto& bp = fac_h->as<FactoryShip>()->blueprint_mut();
+  bp.cew = 25;
+  bp.cew_range = 500;
+  bp.laser = true;
+  bp.cloak = true;
+  bp.has_hyperdrive = true;
+  const FactoryBlueprint saved_bp = bp;
+  auto fac_shot = shoot_ship_to_ship(ctx.em, attacker, *fac_h, 30, 0);
+  test::expect_true(fac_shot.has_value());
+  test::expect_eq(fac_h->as<FactoryShip>()->blueprint().armor, saved_bp.armor);
+  test::expect_eq(fac_h->as<FactoryShip>()->blueprint().primary_battery,
+                  saved_bp.primary_battery);
+  test::expect_eq(fac_h->as<FactoryShip>()->blueprint().cew, 25u);
+  test::expect_true(fac_h->as<FactoryShip>()->blueprint().laser);
+  test::expect_true(fac_h->as<FactoryShip>()->blueprint().cloak);
+  test::expect_true(fac_h->as<FactoryShip>()->blueprint().has_hyperdrive);
+  test::expect_eq(fac_h->as<FactoryShip>()->blueprint().build_cost,
+                  saved_bp.build_cost);
+
   std::println(std::cout,
                "  ✓ critical hit subsystem destruction and mine guards passed");
 }

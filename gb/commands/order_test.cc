@@ -1089,8 +1089,26 @@ void test_special_ship_order_mcdc_and_notices() {
   ctx.assert_dispatch_success(g, {"order", f_err_arg, "on"});
   test::expect_contains(g.out.str(), "Not enough hanger space free on Habitat");
 
+  // Activating FactoryShip inside Habitat updates physical Factory & Habitat
+  // mass, while blueprint drive/laser/guns never leak onto FactoryShip orders
+  ctx.em.mutate_ship(hab_id, [](Ship& s) { s.max_hanger() = 200; });
+  const double fac_mass_before = ctx.em.peek_ship(f_err_id)->mass();
+  ctx.assert_dispatch_success(g, {"order", f_err_arg, "on"});
+  test::expect_gt(ctx.em.peek_ship(f_err_id)->mass(), fac_mass_before);
+  ctx.em.mutate_ship(f_err_id, [](Ship& s) {
+    s.on() = false;
+    s.as<FactoryShip>()->configure_blueprint(ShipType::STYPE_BATTLE);
+    s.as<FactoryShip>()->blueprint_mut().build_cost = 50;
+  });
+
   g.set_scope_planet(1, 1);
   ctx.em.mutate_ship(f_err_id, [](Ship& s) { s.enter_planet_orbit(1, 1); });
+  ctx.assert_dispatch_success(g, {"order", f_err_arg, "jump"});
+  test::expect_contains(g.out.str(), "does not have hyper drive capability");
+  ctx.assert_dispatch_success(g, {"order", f_err_arg, "laser", "on", "5"});
+  test::expect_contains(g.out.str(), "not equipped with combat lasers");
+  ctx.assert_dispatch_success(g, {"order", f_err_arg, "primary"});
+  test::expect_contains(g.out.str(), "does not have primary guns");
   g.out.str("");
   ctx.assert_dispatch_success(g, {"order", f_err_arg, "on"});
   test::expect_contains(g.out.str(), "You cannot activate the factory here.");

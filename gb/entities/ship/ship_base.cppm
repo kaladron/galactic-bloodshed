@@ -16,9 +16,11 @@ import :types;
 import :tweakables;
 
 export class ShipFactory;
+export struct ShipPersistence;
 
 export class Ship {
   friend class ShipFactory;
+  friend struct ShipPersistence;
 
 protected:
   ship_struct
@@ -30,6 +32,11 @@ protected:
     if (!holds_expected_special_data(data_.type, data_.special)) {
       data_.special = default_special_data(data_.type, data_.owner);
     }
+  }
+
+  [[nodiscard]] ship_struct to_struct() const {
+    ensure_valid_special_data();
+    return data_;
   }
 
   Ship() {
@@ -1818,21 +1825,6 @@ public:
     remove_popn(crew_loss, race_mass);
     remove_troops(troop_loss, race_mass);
     return {.crew = old_popn - data_.popn, .troops = old_troops - data_.troops};
-  }
-
-  // =========================================================================
-  // SERIALIZATION SUPPORT
-  // =========================================================================
-
-  // For repository serialization - returns copy of internal struct
-  [[nodiscard]] virtual ship_struct get_struct() const {
-    return to_struct();
-  }
-
-  // Direct access to internal struct (FOR SERIALIZATION USE ONLY)
-  [[nodiscard]] virtual ship_struct to_struct() const {
-    ensure_valid_special_data();
-    return data_;
   }
 
   /// \brief Refuels ship in orbit around a gas giant planet based on ship type

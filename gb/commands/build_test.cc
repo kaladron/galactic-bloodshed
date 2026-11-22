@@ -275,7 +275,7 @@ void test_factory_all_classes_and_toxic_waste() {
     test::expect_ne(built, nullptr);
     test::expect_eq(built->type(), tmpl.type);
     test::expect_eq(built->shipclass(), std::format("mod {}", fac_id.value));
-    test::expect_true(built->get_struct().base_mass > 0.0);
+    test::expect_true(built->base_mass() > 0.0);
     if (tmpl.type == ShipType::STYPE_CRUISER) {
       test::expect_true(built->cloak());
       test::expect_eq(built->guns(), ActiveBattery::SECONDARY);

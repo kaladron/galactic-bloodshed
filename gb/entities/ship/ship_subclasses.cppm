@@ -579,11 +579,7 @@ export class SimulatedShip : public Ship {
       : Ship(std::move(in)), source_ship_number_(source_num) {}
 
 public:
-  explicit SimulatedShip(const Ship& base)
-      : Ship(base.get_struct()), source_ship_number_(base.number()) {
-    data_.number = 0;  // Neutralize entity identity: cannot match or overwrite
-                       // real entities
-  }
+  explicit SimulatedShip(const Ship& base);
 
   [[nodiscard]] bool is_simulation() const noexcept override {
     return true;
@@ -719,13 +715,29 @@ struct ShipTypeTraits<FactoryShip> {
   static constexpr ShipType expected_type = ShipType::OTYPE_FACTORY;
 };
 
-// ShipFactory - instantiates polymorphic Ship subclasses from ship_struct or
-// ShipType templates
+// ShipFactory - instantiates polymorphic Ship subclasses from canonical
+// ShipType templates (persistence hydration goes through ShipPersistence)
 export class ShipFactory {
-public:
+  friend class Ship;
+  friend class FactoryShip;
+  friend struct ShipPersistence;
+
   [[nodiscard]] static std::unique_ptr<Ship> create(ship_struct data);
+
+public:
   [[nodiscard]] static std::unique_ptr<Ship>
   create_from_template(ShipType type, player_t owner = 1);
+};
+
+/// Persistence hydration boundary between aggregate `ship_struct` storage
+/// records (used by Glaze JSON reflection) and polymorphic `Ship` entities.
+export struct ShipPersistence {
+  [[nodiscard]] static std::unique_ptr<Ship> from_struct(ship_struct data) {
+    return ShipFactory::create(std::move(data));
+  }
+  [[nodiscard]] static ship_struct to_struct(const Ship& ship) {
+    return ship.to_struct();
+  }
 };
 
 export enum class GroundMovementError {

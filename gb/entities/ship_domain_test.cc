@@ -1501,6 +1501,7 @@ void test_blueprint_complexity_defense_and_capture() {
     test::expect_true(special.alive());
 
     const Ship& const_special = special;
+    const auto persisted_special = ShipPersistence::to_struct(const_special);
     if (stype == ShipType::OTYPE_VN || stype == ShipType::OTYPE_BERS) {
       const auto* auto_ship = const_special.as<AutonomousShip>();
       test::expect_true(auto_ship != nullptr);
@@ -1508,29 +1509,29 @@ void test_blueprint_complexity_defense_and_capture() {
       test::expect_eq(auto_ship->generation(), 1u);
       test::expect_true(auto_ship->is_busy());
       test::expect_true(
-          std::holds_alternative<MindData>(const_special.get_struct().special));
+          std::holds_alternative<MindData>(persisted_special.special));
     } else if (stype == ShipType::STYPE_POD) {
       test::expect_true(
-          std::holds_alternative<PodData>(const_special.get_struct().special));
+          std::holds_alternative<PodData>(persisted_special.special));
     } else if (stype == ShipType::OTYPE_CANIST) {
-      test::expect_true(std::holds_alternative<TimerData>(
-          const_special.get_struct().special));
+      test::expect_true(
+          std::holds_alternative<TimerData>(persisted_special.special));
     } else if (stype == ShipType::STYPE_MISSILE) {
-      test::expect_true(std::holds_alternative<ImpactData>(
-          const_special.get_struct().special));
+      test::expect_true(
+          std::holds_alternative<ImpactData>(persisted_special.special));
     } else if (stype == ShipType::STYPE_MINE) {
-      test::expect_true(std::holds_alternative<TriggerData>(
-          const_special.get_struct().special));
+      test::expect_true(
+          std::holds_alternative<TriggerData>(persisted_special.special));
       test::expect_eq(const_special.as<MineShip>()->trigger_radius(), 100);
     } else if (stype == ShipType::OTYPE_TERRA) {
-      test::expect_true(std::holds_alternative<TerraformData>(
-          const_special.get_struct().special));
+      test::expect_true(
+          std::holds_alternative<TerraformData>(persisted_special.special));
     } else if (stype == ShipType::OTYPE_TRANSDEV) {
-      test::expect_true(std::holds_alternative<TransportData>(
-          const_special.get_struct().special));
+      test::expect_true(
+          std::holds_alternative<TransportData>(persisted_special.special));
     } else if (stype == ShipType::OTYPE_TOXWC) {
-      test::expect_true(std::holds_alternative<WasteData>(
-          const_special.get_struct().special));
+      test::expect_true(
+          std::holds_alternative<WasteData>(persisted_special.special));
     }
   }
 
@@ -1539,11 +1540,12 @@ void test_blueprint_complexity_defense_and_capture() {
   for (const auto& tmpl : ship_templates) {
     auto tmpl_ship = ShipFactory::create_from_template(tmpl.type, 1);
     test::expect_true(tmpl_ship != nullptr);
+    const auto tmpl_data = ShipPersistence::to_struct(*tmpl_ship);
     test::expect_true(
-        holds_expected_special_data(tmpl.type, tmpl_ship->to_struct().special));
+        holds_expected_special_data(tmpl.type, tmpl_data.special));
     expect_near(complexity(*tmpl_ship), tmpl.base_tech);
     expect_near(tmpl_ship->complexity(), tmpl.base_tech);
-    test::expect_true(tmpl_ship->get_struct().base_mass > 0.0);
+    test::expect_true(tmpl_data.base_mass > 0.0);
     if (tmpl.has_secondary()) {
       test::expect_eq(tmpl_ship->secondary_battery().count, tmpl.max_guns);
     }
@@ -1601,7 +1603,7 @@ void test_blueprint_complexity_defense_and_capture() {
   const auto cruiser_tmpl =
       ShipFactory::create_from_template(ShipType::STYPE_CRUISER, 1);
   test::expect_true(std::holds_alternative<std::monostate>(
-      cruiser_tmpl->to_struct().special));
+      ShipPersistence::to_struct(*cruiser_tmpl).special));
 
   // roll_landing_crash() fuel and damage checks
   auto crash_ship_ptr = TestShipBuilder(ShipType::STYPE_SHUTTLE)
@@ -2242,8 +2244,8 @@ void test_orbital_and_destination_transitions() {
   test::expect_eq(s.whatdest(), ScopeLevel::LEVEL_UNIV);
   test::expect_eq(s.destination_star(), std::nullopt);
   test::expect_eq(s.destination_planet(), std::nullopt);
-  test::expect_false(s.to_struct().deststar.has_value());
-  test::expect_false(s.to_struct().destpnum.has_value());
+  test::expect_false(ShipPersistence::to_struct(s).deststar.has_value());
+  test::expect_false(ShipPersistence::to_struct(s).destpnum.has_value());
 
   s.enter_star_orbit(4);
   test::expect_eq(s.whatorbits(), ScopeLevel::LEVEL_STAR);
@@ -2257,8 +2259,8 @@ void test_orbital_and_destination_transitions() {
   test::expect_eq(s.orbited_planet(), std::nullopt);
   test::expect_eq(s.storbits(), starnum_t{0});
   test::expect_eq(s.pnumorbits(), planetnum_t{0});
-  test::expect_false(s.to_struct().storbits.has_value());
-  test::expect_false(s.to_struct().pnumorbits.has_value());
+  test::expect_false(ShipPersistence::to_struct(s).storbits.has_value());
+  test::expect_false(ShipPersistence::to_struct(s).pnumorbits.has_value());
   test::expect_true(
       ShipFactory::create_from_template(ShipType::STYPE_SHUTTLE, 1)->alive());
 
@@ -2359,7 +2361,7 @@ void test_orbital_and_destination_transitions() {
   test::expect_eq(s.destpnum(), planetnum_t{0});
   test::expect_eq(s.destination_star(), std::optional<starnum_t>{9});
   test::expect_eq(s.destination_planet(), std::nullopt);
-  test::expect_false(s.to_struct().destpnum.has_value());
+  test::expect_false(ShipPersistence::to_struct(s).destpnum.has_value());
 }
 
 void test_subclass_special_data_clamping() {
@@ -2682,6 +2684,14 @@ void test_ship_constructor_lockdown_and_polymorphic_clone() {
   static_assert(!std::is_move_constructible_v<SimulatedShip>);
   static_assert(!std::is_move_assignable_v<SimulatedShip>);
   static_assert(!std::is_reference_v<decltype(std::declval<Ship&>().type())>);
+
+  static_assert(std::is_aggregate_v<ship_struct>);
+  static_assert(std::is_default_constructible_v<ship_struct>);
+  []<typename T = Ship, typename F = ShipFactory> {
+    static_assert(!requires(const T& s) { s.to_struct(); });
+    static_assert(!requires(const T& s) { s.get_struct(); });
+    static_assert(!requires(ship_struct d) { F::create(d); });
+  }();
 
   // Polymorphic clone preserves dynamic FactoryShip vtable and blueprint
   auto fac = TestShipBuilder(ShipType::OTYPE_FACTORY)

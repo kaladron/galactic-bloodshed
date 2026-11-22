@@ -96,7 +96,7 @@ int main() {
   test_data.retaliate = 5;
 
   // Wrap in polymorphic Ship for saving
-  auto test_ship = ShipFactory::create(test_data);
+  auto test_ship = ShipPersistence::from_struct(test_data);
 
   // Save ship
   std::println(std::cout, "Save ship...");
@@ -186,13 +186,13 @@ int main() {
   ship_struct ship2_data = test_data;  // Copy the POD struct
   ship2_data.number = 2;
   ship2_data.name = "USS Defiant";
-  auto ship2 = ShipFactory::create(ship2_data);
+  auto ship2 = ShipPersistence::from_struct(ship2_data);
   repo.save(*ship2);
 
   ship_struct ship3_data = test_data;  // Copy the POD struct
   ship3_data.number = 5;               // Gap at 3 and 4
   ship3_data.name = "USS Voyager";
-  auto ship3 = ShipFactory::create(ship3_data);
+  auto ship3 = ShipPersistence::from_struct(ship3_data);
   repo.save(*ship3);
 
   std::println(std::cout, "  ✓ Multiple ships saved");
@@ -315,7 +315,7 @@ int main() {
     vn_data.number = 100;
     vn_data.owner = 1;
     vn_data.type = ShipType::OTYPE_VN;
-    auto vn_ship = ShipFactory::create(vn_data);
+    auto vn_ship = ShipPersistence::from_struct(vn_data);
     test::expect_true(vn_ship != nullptr);
     test::expect_true(vn_ship->as<VonNeumannShip>() != nullptr);
     test::expect_true(vn_ship->as<AutonomousShip>() != nullptr);
@@ -336,7 +336,7 @@ int main() {
     bers_data.number = 101;
     bers_data.owner = 1;
     bers_data.type = ShipType::OTYPE_BERS;
-    auto bers_ship = ShipFactory::create(bers_data);
+    auto bers_ship = ShipPersistence::from_struct(bers_data);
     test::expect_true(bers_ship != nullptr);
     test::expect_true(bers_ship->as<BerserkerShip>() != nullptr);
     test::expect_true(bers_ship->as<AutonomousShip>() != nullptr);
@@ -347,7 +347,7 @@ int main() {
     cruiser_data.number = 102;
     cruiser_data.owner = 2;
     cruiser_data.type = ShipType::STYPE_CRUISER;
-    auto cruiser_ship = ShipFactory::create(cruiser_data);
+    auto cruiser_ship = ShipPersistence::from_struct(cruiser_data);
     test::expect_true(cruiser_ship != nullptr);
     test::expect_true(cruiser_ship->as<AutonomousShip>() == nullptr);
     test::expect_true(cruiser_ship->as<VonNeumannShip>() == nullptr);
@@ -369,11 +369,11 @@ int main() {
     test::expect_eq(des_vn->progenitor(), player_t{1});
     std::println(
         std::cout,
-        "  ✓ ShipFactory creates and deserializes polymorphic subclasses");
+        "  ✓ ShipPersistence hydrates and deserializes polymorphic subclasses");
 
     // 5. EntityManager polymorphic integration and monadic mutation
     EntityManager em(db);
-    em.create_ship(ShipFactory::create(vn_data));
+    em.create_ship(ShipPersistence::from_struct(vn_data));
 
     // Mutate as VonNeumannShip
     bool mutated =
@@ -417,7 +417,7 @@ int main() {
     mirror_data.type = ShipType::STYPE_MIRROR;
     mirror_data.special =
         AimedAtData::at_planet(starnum_t{3}, planetnum_t{2}, 85);
-    auto mirror_ship = ShipFactory::create(mirror_data);
+    auto mirror_ship = ShipPersistence::from_struct(mirror_data);
     test::expect_true(mirror_ship != nullptr);
     test::expect_true(repo.save(*mirror_ship));
     auto mirror_json = store.retrieve("tbl_ship", 201);
@@ -436,7 +436,7 @@ int main() {
     pod_data.number = 202;
     pod_data.type = ShipType::STYPE_POD;
     pod_data.special = PodData{.decay = 10, .temperature = 25};
-    auto pod_ship = ShipFactory::create(pod_data);
+    auto pod_ship = ShipPersistence::from_struct(pod_data);
     test::expect_true(pod_ship != nullptr);
     auto* pod = pod_ship->as<SporePodShip>();
     test::expect_true(pod != nullptr);
@@ -448,7 +448,7 @@ int main() {
     canist_data.number = 203;
     canist_data.type = ShipType::OTYPE_CANIST;
     canist_data.special = TimerData{.count = 8};
-    auto canist_ship = ShipFactory::create(canist_data);
+    auto canist_ship = ShipPersistence::from_struct(canist_data);
     test::expect_true(canist_ship != nullptr);
     auto* canist = canist_ship->as<CanisterShip>();
     test::expect_true(canist != nullptr);
@@ -459,7 +459,7 @@ int main() {
     missile_data.number = 204;
     missile_data.type = ShipType::STYPE_MISSILE;
     missile_data.special = ImpactData{.coords = {12, 34}, .scatter = true};
-    auto missile_ship = ShipFactory::create(missile_data);
+    auto missile_ship = ShipPersistence::from_struct(missile_data);
     test::expect_true(missile_ship != nullptr);
     auto* missile = missile_ship->as<MissileShip>();
     test::expect_true(missile != nullptr);
@@ -472,7 +472,7 @@ int main() {
     mine_data.type = ShipType::STYPE_MINE;
     mine_data.mode = true;
     mine_data.special = TriggerData{.radius = 50};
-    auto mine_ship = ShipFactory::create(mine_data);
+    auto mine_ship = ShipPersistence::from_struct(mine_data);
     test::expect_true(mine_ship != nullptr);
     auto* mine = mine_ship->as<MineShip>();
     test::expect_true(mine != nullptr);
@@ -484,7 +484,7 @@ int main() {
     terra_data.number = 206;
     terra_data.type = ShipType::OTYPE_TERRA;
     terra_data.special = TerraformData{.index = 3};
-    auto terra_ship = ShipFactory::create(terra_data);
+    auto terra_ship = ShipPersistence::from_struct(terra_data);
     test::expect_true(terra_ship != nullptr);
     auto* terra = terra_ship->as<TerraformerShip>();
     test::expect_true(terra != nullptr);
@@ -495,7 +495,7 @@ int main() {
     plow_data.number = 207;
     plow_data.type = ShipType::OTYPE_PLOW;
     plow_data.special = TerraformData{.index = 5};
-    auto plow_ship = ShipFactory::create(plow_data);
+    auto plow_ship = ShipPersistence::from_struct(plow_data);
     test::expect_true(plow_ship != nullptr);
     auto* plow = plow_ship->as<GroundPlowShip>();
     test::expect_true(plow != nullptr);
@@ -513,7 +513,7 @@ int main() {
     trans_data.owner = 1;
     trans_data.type = ShipType::OTYPE_TRANSDEV;
     trans_data.special = TransportData{.target_ship = 42};
-    auto trans_ship = ShipFactory::create(trans_data);
+    auto trans_ship = ShipPersistence::from_struct(trans_data);
     test::expect_true(trans_ship != nullptr);
     test::expect_true(repo.save(*trans_ship));
     auto trans_json = store.retrieve("tbl_ship", 208);
@@ -528,7 +528,7 @@ int main() {
     waste_data.number = 209;
     waste_data.type = ShipType::OTYPE_TOXWC;
     waste_data.special = WasteData{.toxic = 95};
-    auto waste_ship = ShipFactory::create(waste_data);
+    auto waste_ship = ShipPersistence::from_struct(waste_data);
     test::expect_true(waste_ship != nullptr);
     auto* waste = waste_ship->as<ToxicWasteShip>();
     test::expect_true(waste != nullptr);
@@ -540,9 +540,9 @@ int main() {
     std_cruiser_data.owner = 1;
     std_cruiser_data.type = ShipType::STYPE_CRUISER;
     std_cruiser_data.build_type = ShipType::STYPE_CRUISER;
-    auto std_cruiser = ShipFactory::create(std_cruiser_data);
+    auto std_cruiser = ShipPersistence::from_struct(std_cruiser_data);
     test::expect_true(std::holds_alternative<std::monostate>(
-        std_cruiser->to_struct().special));
+        ShipPersistence::to_struct(*std_cruiser).special));
     test::expect_true(repo.save(*std_cruiser));
     auto raw_json = store.retrieve("tbl_ship", 210);
     test::expect_true(raw_json.has_value());
@@ -550,7 +550,7 @@ int main() {
     auto loaded_cruiser = repo.find_ship(210);
     test::expect_true(loaded_cruiser != nullptr);
     test::expect_true(std::holds_alternative<std::monostate>(
-        loaded_cruiser->to_struct().special));
+        ShipPersistence::to_struct(*loaded_cruiser).special));
     repo.delete_ship(210);
 
     // FactoryShip + FactoryBlueprint Glaze schema roundtrip
@@ -628,7 +628,7 @@ int main() {
     test::expect_eq(battle->secondary_battery().count, 30);
     test::expect_eq(battle->secondary_battery().caliber, guntype_t::MEDIUM);
     test::expect_eq(battle->retaliate(), 30);
-    test::expect_true(battle->get_struct().base_mass > 0.0);
+    test::expect_true(ShipPersistence::to_struct(*battle).base_mass > 0.0);
     test::expect_eq(battle->complexity(),
                     ship_template(ShipType::STYPE_BATTLE).base_tech);
 

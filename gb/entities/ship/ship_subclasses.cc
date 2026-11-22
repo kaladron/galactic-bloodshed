@@ -67,6 +67,13 @@ bearing_t SpaceMirrorShip::aim_direction(
                          : octant_for_negative_dy(slope);
 }
 
+SimulatedShip::SimulatedShip(const Ship& base)
+    : Ship(ShipPersistence::to_struct(base)),
+      source_ship_number_(base.number()) {
+  data_.number = 0;  // Neutralize entity identity: cannot match or overwrite
+                     // real entities
+}
+
 std::unique_ptr<Ship> Ship::clone() const {
   return ShipFactory::create(to_struct());
 }

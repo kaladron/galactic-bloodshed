@@ -60,7 +60,7 @@ deserialize_ship(const std::string& json_str) {
   if (result) {
     return nullptr;
   }
-  return ShipFactory::create(std::move(data));
+  return ShipPersistence::from_struct(std::move(data));
 }
 
 }  // namespace
@@ -68,7 +68,7 @@ deserialize_ship(const std::string& json_str) {
 ShipRepository::ShipRepository(JsonStore& js) : store(js) {}
 
 std::optional<std::string> ShipRepository::serialize(const Ship& ship) const {
-  ship_struct data = ship.to_struct();
+  ship_struct data = ShipPersistence::to_struct(ship);
   auto result = glz::write_json(data);
   if (result.has_value()) {
     return result.value();

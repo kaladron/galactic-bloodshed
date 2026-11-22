@@ -18,6 +18,7 @@ These are the architectural guarantees the project is converging toward. Some ar
 6. **Lookup semantics are consistent.** The target API is that entity lookup failures are treated as service-layer errors, with user-input paths translating those errors into clear command output.
 7. **Iteration semantics are consistent.** Read-only loops use explicit readonly patterns (`XxxList::readonly`); mutable loops use handle-based iterators or scoped monadic mutations.
 8. **Relational integrity and fail-fast persistence.** Database connections run with `PRAGMA foreign_keys = ON`. `JsonStore` updates existing rows in-place (`INSERT INTO ... ON CONFLICT(...) DO UPDATE SET data = excluded.data`) rather than using `REPLACE INTO` (`DELETE` + `INSERT`), preserving parent rows referenced by child foreign keys. Parent rows (`Star`, `Planet`, `Race`) are always persisted before child rows (`Planet`, `Sector`, `Ship`), and any `SqliteError` (`SQLITE_CONSTRAINT_FOREIGNKEY`, `SQLITE_CONSTRAINT_CHECK`) or `EntityNotFoundError` propagates immediately without defensive `try`/`catch` silencing.
+9. **Aggregate storage records stay behind the persistence boundary.** Domain entities wrap default-constructible C++ aggregate storage structs (`ship_struct`, `planet_struct`, `star_struct`, `sector_struct`, `commod_struct`, `power_struct`, `block_struct`, `universe_struct`) so Glaze JSON serialization and future C++26 static reflection operate directly without per-field translation glue. Raw `*_struct` types and persistence hydration bridges (`ShipPersistence`) belong strictly to Tier 1 entity internals, Tier 2 repository `.cc` serialization, and `gb/testing/` builders — never to Tiers 3–7 (`services`, `mechanics`, `presentation`, `turn`, `commands`, `creator`, `server`).
 
 ## Layer Responsibilities
 
@@ -79,7 +80,7 @@ Galactic Bloodshed uses **C++26 modules** to enforce architectural boundaries. S
 
 - **Tier 1: `gb.entities`** (Domain Model) - `gb/entities/entities.cppm` (`gb_entities` target)
   - Pure in-memory domain entities (`Race`, `Star`, `Planet`, `Ship`, `Sector`, `SectorMap`, `Universe`, `Commod`, `Power`, `Block`, `NewsItem`, `TelegramItem`, `ServerState`, `ShipExam`) with zero database, Glaze, or service dependencies
-  - Polymorphic specialized ship hierarchy (`gb/entities/ship/`) with `protected` constructors and deleted copy/move operations (instantiated exclusively via `ShipFactory` and `Ship::clone()`, with stack-only `SimulatedShip` for hypothetical simulations and immutable `Ship::type()`), compile-time checked downcasting via `Ship::as<T>()`, and encapsulated typed members (eliminating object slicing and raw variant unpacking):
+  - Polymorphic specialized ship hierarchy (`gb/entities/ship/`) with `protected` constructors and deleted copy/move operations (instantiated via `ShipFactory::create_from_template()` and `Ship::clone()`, hydrated at the repository boundary via `ShipPersistence` over aggregate `ship_struct`, with stack-only `SimulatedShip` for hypothetical simulations and immutable `Ship::type()`), compile-time checked downcasting via `Ship::as<T>()`, and encapsulated typed members (eliminating object slicing and raw variant unpacking):
     - Base: `Ship` (`ship_base.cppm`)
     - Autonomous / Replicating: `AutonomousShip` $\to$ (`VonNeumannShip`, `BerserkerShip`) (`ship_subclasses.cppm`)
     - Directed Energy & Optics: `SpaceMirrorShip` (space mirrors, orbital/ground telescopes, tractor beams)
@@ -280,10 +281,10 @@ public:
 
 **Specific Repositories**
 
-Each game entity type has its own `Repository<T>` adapter backed by `JsonStore` + Glaze:
+Monomorphic game entities use a value-returning `Repository<T>` adapter backed by `JsonStore` + Glaze, whereas polymorphic `Ship` entities use a dedicated `ShipRepository` returning `std::unique_ptr<Ship>`:
 
 - **`RaceRepository`**: Player races (`tbl_race`)
-- **`ShipRepository`**: Spacecraft (`tbl_ship`)
+- **`ShipRepository`**: Polymorphic spacecraft (`tbl_ship`, standalone `std::unique_ptr<Ship>` interface)
 - **`PlanetRepository`**: Planets (`tbl_planet`)
 - **`StarRepository`**: Star systems (`tbl_star`)
 - **`SectorRepository`**: Planet surface sector maps (`tbl_sector`)
@@ -296,58 +297,19 @@ Each game entity type has its own `Repository<T>` adapter backed by `JsonStore` 
 - **`ServerStateRepository`**: Turn/segment schedule state (`tbl_server_state`)
 - **`ShipExamRepository`**: Ship class examination blueprints (`tbl_ship_exam`)
 
-**Example: ShipRepository**
-```cpp
-export class ShipRepository : public Repository<Ship> {
-public:
-  ShipRepository(JsonStore& store);
-  
-  // Standard operations
-  std::optional<Ship> find_by_number(shipnum_t num);
-  bool save(const Ship& ship);
-  void delete_ship(shipnum_t num);
-  
-  // Ship-specific operations
-  shipnum_t next_ship_number();
-  shipnum_t count_all_ships();
-  
-  // Spatial and indexed queries
-  std::vector<shipnum_t> find_in_star(starnum_t star_id);
-  std::vector<shipnum_t> find_on_planet(starnum_t star_id, planetnum_t planet_id);
-  std::vector<shipnum_t> find_in_hangar(shipnum_t carrier_id);
-  std::vector<shipnum_t> find_by_owner(player_t owner_id);
-  std::vector<shipnum_t> find_alive();
-  
-protected:
-  std::optional<std::string> serialize(const Ship& ship) const override;
-  std::optional<Ship> deserialize(const std::string& json) const override;
-};
-```
+**Monomorphic `Repository<T>` vs. Polymorphic `ShipRepository`**
+
+Monomorphic entities (`Planet`, `Star`, `Sector`, `Commod`, `Block`, `Power`, `Universe`, `NewsItem`, `TelegramItem`, `ServerState`, `ShipExam`) have no subclasses, so inheriting `Repository<T>` and returning `std::optional<T>` by value is fast and slice-free. By contrast, `Ship` is the root of a polymorphic hierarchy (`FactoryShip`, `VonNeumannShip`, `BerserkerShip`, `SpaceMirrorShip`, etc.) with `protected` constructors and deleted copy/move operations. `ShipRepository` therefore omits `Repository<Ship>` and returns `std::unique_ptr<Ship>` from `find_ship(shipnum_t)`, preventing object slicing at compile time while also exposing SQLite-indexed spatial lookups (`find_in_star`, `find_on_planet`, `find_in_hangar`, `find_by_owner`, `find_alive`).
 
 #### Design Principles
-- **Type safety**: Strong typing for all operations
-- **Encapsulation**: Hides JSON/database details
+- **Type safety**: Strong typing for all operations, preserving polymorphic vtables for `Ship`
+- **Encapsulation**: Hides JSON/database details and raw `*_struct` storage records
 - **Single entity focus**: Each repository handles one entity type
 - **No business logic**: Pure data access
 - **Dependency injection**: Receives `JsonStore` reference
 
-#### JSON Serialization
-Repositories use **Glaze** library for JSON serialization:
-```cpp
-// Glaze reflection defines the JSON mapping
-namespace glz {
-template<>
-struct meta<Ship> {
-  using T = Ship;
-  static constexpr auto value = object(
-    "owner", &T::owner,
-    "shipnum", &T::shipnum,
-    "fuel", &T::fuel,
-    // ... all fields
-  );
-};
-}
-```
+#### Aggregate Storage Records & JSON Serialization
+Each rich domain entity wraps a pure default-constructible C++ aggregate (`ship_struct`, `planet_struct`, `star_struct`, `sector_struct`, etc.). Repositories define `glz::meta<*_struct>` schemas inside `gb/repositories/` `.cc` implementation units (and `gb.repositories.glaze`) and convert between the storage aggregate and the domain wrapper at the persistence boundary (e.g., `ShipPersistence::from_struct()` and `ShipPersistence::to_struct()` in `ship_repository.cc`). This keeps Glaze headers out of `gb.entities` and `gb.repositories`'s public module interfaces while avoiding manual field-by-field serialization glue.
 
 ---
 
@@ -659,12 +621,12 @@ flowchart TD
 Command (examine.cc)
   ↓ g.entity_manager.peek_ship(shipnum)
 Service (EntityManager)
-    ↓ ships.find_by_number(shipnum)
+  ↓ ships.find_ship(shipnum)
 Repository (ShipRepository)
-    ↓ store.retrieve("tbl_ship", shipnum)
-    ↓ deserialize(json)
+  ↓ store.retrieve("tbl_ship", shipnum)
+  ↓ glz::read_json<ship_struct> + ShipPersistence::from_struct(...)
 DAL (JsonStore)
-    ↓ SELECT ship_data FROM tbl_ship WHERE ship_id = ?
+  ↓ SELECT data FROM tbl_ship WHERE id = ?
 Database (SQLite)
 ```
 
@@ -678,10 +640,10 @@ Service (EntityManager)
   ↓ [executes lambda mutating planet]
   ↓ [lambda completion triggers auto-save]
 Repository (PlanetRepository)
-    ↓ serialize(planet)
-    ↓ store.store("tbl_planet", id, json)
+  ↓ serialize(planet)
+  ↓ store.store_multi("tbl_planet", keys, json)
 DAL (JsonStore)
-    ↓ REPLACE INTO tbl_planet VALUES (?, ?, ?, ?)
+  ↓ INSERT INTO tbl_planet ... ON CONFLICT(star_id, planet_order) DO UPDATE SET data = excluded.data
 Database (SQLite)
 ```
 
@@ -689,19 +651,16 @@ Database (SQLite)
 
 ```
 Command (build.cc)
-  ↓ g.entity_manager.create_ship(init_data)
+  ↓ create_new_ship(...) -> ShipFactory::create_from_template(type, owner)
+  ↓ g.entity_manager.create_ship(std::move(proto))
 Service (EntityManager)
-    ↓ [Check tech requirements]
-  ↓ [Create ship object]
   ↓ ships.next_ship_number()
-  ↓ ships.save(new_ship)
-  ↓ planets.find_by_location(...)
-    ↓ [Deduct resources from planet]
-  ↓ [planet handle persists changes]
+  ↓ ships.save(*new_ship) -> ShipPersistence::to_struct(*new_ship)
+  ↓ mutate_planet(...) [Deduct resources from planet]
 Repository Layer
-    ↓ [Multiple repository operations]
+  ↓ [Multiple repository operations]
 DAL (JsonStore)
-  ↓ [Multiple SQL statements]
+  ↓ [Multiple SQL statements inside active Transaction]
 Database (SQLite)
 ```
 
@@ -751,9 +710,11 @@ graph TD
     end
 
     subgraph FoundationLayer ["Tier 1: Domain Entities & DAL"]
-        Entities["gb.entities (Race, Star, Planet, Ship, Sector, Power, Block, NewsItem, TelegramItem)"]
+        Entities["gb.entities: Domain Wrappers (Race, Star, Planet, Ship, Sector, Power, Block, ...)"]
+        Records["gb.entities: Aggregate Storage Records (*_struct) & ShipPersistence"]
         DAL["dallib (Database, JsonStore, Schema)"]
         SQLite[("SQLite3 Storage")]
+        Entities --> Records
         DAL --> SQLite
     end
 
@@ -785,6 +746,7 @@ graph TD
     EntityMgr -. "PRIVATE (.cc only)" .-> Repos
 
     Repos --> Entities
+    Repos -. "Hydration & Glaze Reflection" .-> Records
     Repos --> DAL
 ```
 
@@ -886,18 +848,19 @@ assert(result.has_value());
 
 **Repository Tests**
 ```cpp
-// Tests use in-memory database
+// Tests use in-memory database (seed foreign-key parent Race 1 first)
 Database db(":memory:");
 initialize_schema(db);
 JsonStore store(db);
 ShipRepository repo(store);
 
-Ship ship = create_test_ship();
-repo.save_ship(ship);
+auto ship = ShipFactory::create_from_template(ShipType::STYPE_CRUISER, 1);
+ship->number() = 1;
+repo.save(*ship);
 
-auto retrieved = repo.find_by_number(ship.shipnum);
-assert(retrieved.has_value());
-assert(retrieved->owner == ship.owner);
+auto retrieved = repo.find_ship(1);
+assert(retrieved != nullptr);
+assert(retrieved->owner() == player_t{1});
 ```
 
 **Service Tests**
@@ -1123,7 +1086,7 @@ gb/
 │   │   ├── ship_types.cppm     # ShipType enum & payload structs
 │   │   ├── ship_templates.cppm # Static ship hull specifications
 │   │   ├── ship_base.cppm / .cc        # Base Ship class
-│   │   └── ship_subclasses.cppm / .cc  # Specialized Ship subclasses & ShipFactory
+│   │   └── ship_subclasses.cppm / .cc  # Specialized Ship subclasses, ShipFactory & ShipPersistence
 │   ├── universe.cppm           # Universe & VnTargetRecord structures
 │   └── *_test.cc               # Entity unit tests
 │

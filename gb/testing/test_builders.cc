@@ -15,7 +15,7 @@ import std;
 template <bool HasEntityManager>
 void TestShipBuilder<HasEntityManager>::init(ShipType type) {
   auto ship = ShipFactory::create_from_template(type, 1);
-  ship_ = ship->to_struct();
+  ship_ = ShipPersistence::to_struct(*ship);
   ship_.number = 0;
   ship_.on = true;
   ship_.tech = 100.0;
@@ -243,7 +243,7 @@ template <bool HasEntityManager>
 TestShipBuilder<HasEntityManager>&
 TestShipBuilder<HasEntityManager>::with_build_type(ShipType build_type) {
   if (ship_.type == ShipType::OTYPE_FACTORY) {
-    auto temp = ShipFactory::create(std::move(ship_));
+    auto temp = ShipPersistence::from_struct(std::move(ship_));
     auto* fac = temp->as<FactoryShip>();
     if (build_type == ShipType::OTYPE_FACTORY ||
         build_type == ShipType::STYPE_POD) {
@@ -251,7 +251,7 @@ TestShipBuilder<HasEntityManager>::with_build_type(ShipType build_type) {
     } else {
       fac->configure_blueprint(build_type);
     }
-    ship_ = temp->to_struct();
+    ship_ = ShipPersistence::to_struct(*temp);
     return *this;
   }
   ship_.build_type = build_type;
@@ -503,7 +503,7 @@ TestShipBuilder<HasEntityManager>::with_pod(unsigned char temp,
 
 template <bool HasEntityManager>
 std::unique_ptr<Ship> TestShipBuilder<HasEntityManager>::finalize_ship() {
-  auto ship_obj = ShipFactory::create(std::move(ship_));
+  auto ship_obj = ShipPersistence::from_struct(std::move(ship_));
   if (explicit_mass_.has_value()) {
     ship_obj->set_mass(*explicit_mass_);
   } else {

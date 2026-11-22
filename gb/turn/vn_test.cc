@@ -163,14 +163,12 @@ int main() {
                                         .secondary_star = starnum_t{4}});
     });
 
-    ship_struct bers_data{};
-    bers_data.number = 200;
-    bers_data.owner = 1;
-    bers_data.type = ShipType::OTYPE_BERS;
-    bers_data.hyper_drive.has = true;
-    bers_data.mounted = true;
-
-    auto bers_ship = ShipFactory::create(bers_data);
+    auto bers_ship = TestShipBuilder(ShipType::OTYPE_BERS)
+                         .numbered(200)
+                         .owned_by(1)
+                         .build_in_memory();
+    bers_ship->hyper_drive().has = true;
+    bers_ship->mounted() = true;
     auto* bers = bers_ship->as<BerserkerShip>();
     test::expect_true(bers != nullptr);
 
@@ -231,14 +229,11 @@ int main() {
   {
     std::println(std::cout, "\nTest: select_vn_destination");
 
-    ship_struct vn_data{};
-    vn_data.number = 201;
-    vn_data.owner = 1;
-    vn_data.type = ShipType::OTYPE_VN;
-    vn_data.storbits = 1;
-    vn_data.coordinates = UniverseCoordinates{0.0, 0.0};
-
-    auto vn_ship = ShipFactory::create(vn_data);
+    auto vn_ship = TestShipBuilder(ShipType::OTYPE_VN)
+                       .numbered(201)
+                       .owned_by(1)
+                       .in_star_orbit(1, UniverseCoordinates{0.0, 0.0})
+                       .build_in_memory();
     auto* vn = vn_ship->as<VonNeumannShip>();
     test::expect_true(vn != nullptr);
 
@@ -270,15 +265,14 @@ int main() {
   {
     std::println(std::cout, "\nTest: mine_sector");
 
-    ship_struct vn_data{};
-    vn_data.number = 301;
-    vn_data.owner = 1;
-    vn_data.fuel = 0.0;
-    vn_data.max_resource = 100;
-    vn_data.max_fuel = 100.0;
-    vn_data.resource = 0;
-    vn_data.type = ShipType::OTYPE_VN;
-    auto vn_ship = ShipFactory::create(vn_data);
+    auto vn_ship = TestShipBuilder(ShipType::OTYPE_VN)
+                       .numbered(301)
+                       .owned_by(1)
+                       .with_max_resource(100)
+                       .with_resource(0)
+                       .with_max_fuel(100.0)
+                       .with_fuel(0.0)
+                       .build_in_memory();
     auto* vn = vn_ship->as<VonNeumannShip>();
     test::expect_true(vn != nullptr);
 
@@ -300,15 +294,14 @@ int main() {
     test::expect_eq(vn->resource(), 50);
 
     // Berserker mining converts to destruct (5x) and fuel
-    ship_struct bers_data{};
-    bers_data.number = 302;
-    bers_data.owner = 1;
-    bers_data.fuel = 0.0;
-    bers_data.max_destruct = 500;
-    bers_data.max_fuel = 1000.0;
-    bers_data.destruct = 0;
-    bers_data.type = ShipType::OTYPE_BERS;
-    auto bers_ship = ShipFactory::create(bers_data);
+    auto bers_ship = TestShipBuilder(ShipType::OTYPE_BERS)
+                         .numbered(302)
+                         .owned_by(1)
+                         .with_max_destruct(500)
+                         .with_destruct(0)
+                         .with_max_fuel(1000.0)
+                         .with_fuel(0.0)
+                         .build_in_memory();
     auto* bers = bers_ship->as<BerserkerShip>();
     test::expect_true(bers != nullptr);
 
@@ -345,12 +338,11 @@ int main() {
 
     Planet planet(1, 1, PlanetType::EARTH, Coordinates{10, 10});
 
-    ship_struct vn_data{};
-    vn_data.number = 303;
-    vn_data.owner = 1;
-    vn_data.type = ShipType::OTYPE_VN;
-    vn_data.land_coords = {5, 5};
-    auto vn_ship = ShipFactory::create(vn_data);
+    auto vn_ship = TestShipBuilder(ShipType::OTYPE_VN)
+                       .numbered(303)
+                       .owned_by(1)
+                       .landed_on(1, 1, {5, 5})
+                       .build_in_memory();
     auto* vn = vn_ship->as<VonNeumannShip>();
     test::expect_true(vn != nullptr);
 
@@ -410,15 +402,13 @@ int main() {
     // Berserker theft converts stolen resources into destruct and sends
     // identical theft telegram
     em.purge_all_telegrams();
-    ship_struct bers_steal_data{};
-    bers_steal_data.number = 305;
-    bers_steal_data.owner = 1;
-    bers_steal_data.governor = 1;
-    bers_steal_data.max_destruct = 500;
-    bers_steal_data.storbits = 1;
-    bers_steal_data.pnumorbits = 1;
-    bers_steal_data.type = ShipType::OTYPE_BERS;
-    auto bers_steal_ship = ShipFactory::create(bers_steal_data);
+    auto bers_steal_ship = TestShipBuilder(ShipType::OTYPE_BERS)
+                               .numbered(305)
+                               .owned_by(1, 1)
+                               .in_planet_orbit(1, 1)
+                               .with_max_destruct(500)
+                               .with_destruct(0)
+                               .build_in_memory();
     auto* bers_thief = bers_steal_ship->as<BerserkerShip>();
     auto bers_steal = steal_planetary_resources(em, *bers_thief);
     test::expect_eq(bers_steal.victim, player_t{2});
@@ -466,23 +456,22 @@ int main() {
 
     Planet planet(1, 1, PlanetType::EARTH, Coordinates{10, 10});
 
-    ship_struct vn_data{};
-    vn_data.number = 401;
-    vn_data.owner = 1;
-    vn_data.type = ShipType::OTYPE_VN;
-    vn_data.tech = 500.0;
-    vn_data.armor = 2;
-    vn_data.resource = 250;
-    vn_data.fuel = 60.0;
-    vn_data.special = MindData{
-        .progenitor = player_t{1},
-        .target_player = player_t{2},
-        .generation = 2,
-        .busy = true,
-        .tampered = false,
-        .who_killed = std::nullopt,
-    };
-    auto parent_ship = ShipFactory::create(vn_data);
+    auto parent_ship = TestShipBuilder(ShipType::OTYPE_VN)
+                           .numbered(401)
+                           .owned_by(1)
+                           .with_tech(500.0)
+                           .with_armor(2)
+                           .with_resource(250)
+                           .with_fuel(60.0)
+                           .with_special(MindData{
+                               .progenitor = player_t{1},
+                               .target_player = player_t{2},
+                               .generation = 2,
+                               .busy = true,
+                               .tampered = false,
+                               .who_killed = std::nullopt,
+                           })
+                           .build_in_memory();
     auto* parent = parent_ship->as<VonNeumannShip>();
     test::expect_true(parent != nullptr);
 
@@ -514,23 +503,22 @@ int main() {
     // Mortal-built generation-1 seed VN (owner = 2, progenitor = 2) replicates
     // into an autonomous System-owned (owner = 1) offspring while preserving
     // the mortal creator's progenitor lineage (progenitor = 2).
-    ship_struct mortal_seed_data{};
-    mortal_seed_data.number = 411;
-    mortal_seed_data.owner = 2;
-    mortal_seed_data.type = ShipType::OTYPE_VN;
-    mortal_seed_data.tech = 200.0;
-    mortal_seed_data.armor = 1;
-    mortal_seed_data.resource = 250;
-    mortal_seed_data.fuel = 40.0;
-    mortal_seed_data.special = MindData{
-        .progenitor = player_t{2},
-        .target_player = player_t{3},
-        .generation = 1,
-        .busy = true,
-        .tampered = false,
-        .who_killed = std::nullopt,
-    };
-    auto mortal_seed_ship = ShipFactory::create(mortal_seed_data);
+    auto mortal_seed_ship = TestShipBuilder(ShipType::OTYPE_VN)
+                                .numbered(411)
+                                .owned_by(2)
+                                .with_tech(200.0)
+                                .with_armor(1)
+                                .with_resource(250)
+                                .with_fuel(40.0)
+                                .with_special(MindData{
+                                    .progenitor = player_t{2},
+                                    .target_player = player_t{3},
+                                    .generation = 1,
+                                    .busy = true,
+                                    .tampered = false,
+                                    .who_killed = std::nullopt,
+                                })
+                                .build_in_memory();
     auto* mortal_seed = mortal_seed_ship->as<VonNeumannShip>();
     test::expect_true(mortal_seed != nullptr);
 
@@ -556,24 +544,22 @@ int main() {
 
     Planet planet(1, 1, PlanetType::EARTH, Coordinates{10, 10});
 
-    ship_struct vn_data{};
-    vn_data.number = 402;
-    vn_data.owner = 2;
-    vn_data.governor = 1;
-    vn_data.type = ShipType::OTYPE_VN;
-    vn_data.tech = 500.0;
-    vn_data.armor = 2;
-    vn_data.resource = 500;
-    vn_data.fuel = 40.0;
-    vn_data.special = MindData{
-        .progenitor = player_t{2},
-        .target_player = std::nullopt,
-        .generation = 2,
-        .busy = true,
-        .tampered = false,
-        .who_killed = std::nullopt,
-    };
-    auto parent_ship = ShipFactory::create(vn_data);
+    auto parent_ship = TestShipBuilder(ShipType::OTYPE_VN)
+                           .numbered(402)
+                           .owned_by(2, 1)
+                           .with_tech(500.0)
+                           .with_armor(2)
+                           .with_resource(500)
+                           .with_fuel(40.0)
+                           .with_special(MindData{
+                               .progenitor = player_t{2},
+                               .target_player = std::nullopt,
+                               .generation = 2,
+                               .busy = true,
+                               .tampered = false,
+                               .who_killed = std::nullopt,
+                           })
+                           .build_in_memory();
     auto* parent = parent_ship->as<VonNeumannShip>();
     test::expect_true(parent != nullptr);
 
@@ -631,14 +617,13 @@ int main() {
     Planet planet(1, 1, PlanetType::EARTH, Coordinates{10, 10});
 
     const auto vn_cost = ship_template(ShipType::OTYPE_VN).build_cost;
-    ship_struct vn_data{};
-    vn_data.number = 403;
-    vn_data.owner = 1;
-    vn_data.type = ShipType::OTYPE_VN;
-    vn_data.tech = 100.0;
-    vn_data.resource = 2 * vn_cost;
-    vn_data.fuel = 50.0;
-    auto parent_ship = ShipFactory::create(vn_data);
+    auto parent_ship = TestShipBuilder(ShipType::OTYPE_VN)
+                           .numbered(403)
+                           .owned_by(1)
+                           .with_tech(100.0)
+                           .with_resource(2 * vn_cost)
+                           .with_fuel(50.0)
+                           .build_in_memory();
     auto* parent = parent_ship->as<VonNeumannShip>();
     test::expect_true(parent != nullptr);
 
@@ -677,24 +662,21 @@ int main() {
   {
     std::println(std::cout, "\nTest: try_launch_unassigned_vn");
 
-    ship_struct vn_data{};
-    vn_data.number = 501;
-    vn_data.owner = 1;
-    vn_data.type = ShipType::OTYPE_VN;
-    vn_data.storbits = 1;
-    vn_data.pnumorbits = 1;
-    vn_data.dock_state = DockState::Landed;
-    vn_data.max_fuel = 100;
-    vn_data.fuel = 50.0;  // Partial fuel
-    vn_data.special = MindData{
-        .progenitor = player_t{1},
-        .target_player = std::nullopt,
-        .generation = 1,
-        .busy = true,
-        .tampered = false,
-        .who_killed = std::nullopt,
-    };
-    auto vn_ship = ShipFactory::create(vn_data);
+    auto vn_ship = TestShipBuilder(ShipType::OTYPE_VN)
+                       .numbered(501)
+                       .owned_by(1)
+                       .landed_on(1, 1, {0, 0})
+                       .with_max_fuel(100.0)
+                       .with_fuel(50.0)  // Partial fuel
+                       .with_special(MindData{
+                           .progenitor = player_t{1},
+                           .target_player = std::nullopt,
+                           .generation = 1,
+                           .busy = true,
+                           .tampered = false,
+                           .who_killed = std::nullopt,
+                       })
+                       .build_in_memory();
     auto* vn = vn_ship->as<VonNeumannShip>();
     test::expect_true(vn != nullptr);
 
@@ -739,26 +721,20 @@ int main() {
       s.set_resource(100);
     }
 
-    ship_struct vn_data{};
-    vn_data.number = 502;
-    vn_data.owner = 1;
-    vn_data.type = ShipType::OTYPE_VN;
-    vn_data.storbits = 1;
-    vn_data.pnumorbits = 1;
-    vn_data.deststar = 1;
-    vn_data.destpnum = 1;
-    vn_data.whatdest = ScopeLevel::LEVEL_PLAN;
-    vn_data.whatorbits = ScopeLevel::LEVEL_PLAN;
-    vn_data.dock_state = DockState::Spaceborne;
-    vn_data.special = MindData{
-        .progenitor = player_t{1},
-        .target_player = std::nullopt,
-        .generation = 1,
-        .busy = true,
-        .tampered = false,
-        .who_killed = std::nullopt,
-    };
-    auto vn_ship = ShipFactory::create(vn_data);
+    auto vn_ship = TestShipBuilder(ShipType::OTYPE_VN)
+                       .numbered(502)
+                       .owned_by(1)
+                       .in_planet_orbit(1, 1)
+                       .targeting_planet(1, 1)
+                       .with_special(MindData{
+                           .progenitor = player_t{1},
+                           .target_player = std::nullopt,
+                           .generation = 1,
+                           .busy = true,
+                           .tampered = false,
+                           .who_killed = std::nullopt,
+                       })
+                       .build_in_memory();
     auto* vn = vn_ship->as<VonNeumannShip>();
     test::expect_true(vn != nullptr);
 
@@ -794,12 +770,11 @@ int main() {
     std::println(std::cout, "\nTest: order_VN & order_berserker");
 
     // Regular ship: no-op, does not crash or change orders
-    ship_struct cargo_data{};
-    cargo_data.number = 601;
-    cargo_data.owner = 1;
-    cargo_data.type = ShipType::STYPE_CARGO;
-    cargo_data.storbits = 1;
-    auto cargo = ShipFactory::create(cargo_data);
+    auto cargo = TestShipBuilder(ShipType::STYPE_CARGO)
+                     .numbered(601)
+                     .owned_by(1)
+                     .in_star_orbit(1)
+                     .build_in_memory();
     TurnStats stats{};
 
     order_VN(em, *cargo);
@@ -809,13 +784,11 @@ int main() {
     test::expect_eq(cargo->whatdest(), ScopeLevel::LEVEL_UNIV);
 
     // Autonomous VN: sets destination and speed
-    ship_struct vn_data{};
-    vn_data.number = 602;
-    vn_data.owner = 1;
-    vn_data.type = ShipType::OTYPE_VN;
-    vn_data.storbits = 1;
-    vn_data.coordinates = UniverseCoordinates{0.0, 0.0};
-    auto vn = ShipFactory::create(vn_data);
+    auto vn = TestShipBuilder(ShipType::OTYPE_VN)
+                  .numbered(602)
+                  .owned_by(1)
+                  .in_star_orbit(1, UniverseCoordinates{0.0, 0.0})
+                  .build_in_memory();
 
     order_VN(em, *vn);
     // Star 2 was marked inhabited by Player 1 in earlier tests, so VN routes to
@@ -827,20 +800,18 @@ int main() {
 
     // Autonomous Berserker: routes toward offending player
     stats.VN_brain.most_mad = player_t{2};
-    ship_struct bers_data{};
-    bers_data.number = 603;
-    bers_data.owner = 1;
-    bers_data.type = ShipType::OTYPE_BERS;
-    bers_data.storbits = 1;
-    bers_data.coordinates = UniverseCoordinates{0.0, 0.0};
-    bers_data.hyper_drive.has = true;
-    bers_data.mounted = true;
-    bers_data.special = MindData{
-        .target_player = std::nullopt,
-        .generation = 1,
-        .busy = true,
-    };
-    auto bers = ShipFactory::create(bers_data);
+    auto bers = TestShipBuilder(ShipType::OTYPE_BERS)
+                    .numbered(603)
+                    .owned_by(1)
+                    .in_star_orbit(1, UniverseCoordinates{0.0, 0.0})
+                    .with_special(MindData{
+                        .target_player = std::nullopt,
+                        .generation = 1,
+                        .busy = true,
+                    })
+                    .build_in_memory();
+    bers->hyper_drive().has = true;
+    bers->mounted() = true;
 
     order_berserker(em, *bers, stats);
     test::expect_eq(bers->deststar(), starnum_t{2});
@@ -862,75 +833,60 @@ int main() {
     TurnStats stats{};
 
     // 1. Non-autonomous ship is not an AutonomousShip
-    ship_struct cargo_data{};
-    cargo_data.number = 701;
-    cargo_data.owner = 1;
-    cargo_data.type = ShipType::STYPE_CARGO;
-    auto cargo = ShipFactory::create(cargo_data);
+    auto cargo = TestShipBuilder(ShipType::STYPE_CARGO)
+                     .numbered(701)
+                     .owned_by(1)
+                     .build_in_memory();
     test::expect_true(cargo->as<AutonomousShip>() == nullptr);
 
     // 2. Newly launched, non-busy VN selects a destination and marks itself
     // busy
-    ship_struct unlanded_idle_data{};
-    unlanded_idle_data.number = 702;
-    unlanded_idle_data.owner = 1;
-    unlanded_idle_data.type = ShipType::OTYPE_VN;
-    unlanded_idle_data.storbits = 1;
-    unlanded_idle_data.whatdest = ScopeLevel::LEVEL_UNIV;
-    unlanded_idle_data.special = MindData{.busy = false};
-    auto unlanded_idle = ShipFactory::create(unlanded_idle_data);
+    auto unlanded_idle = TestShipBuilder(ShipType::OTYPE_VN)
+                             .numbered(702)
+                             .owned_by(1)
+                             .in_star_orbit(1)
+                             .with_special(MindData{.busy = false})
+                             .build_in_memory();
     do_VN(em, *unlanded_idle->as<AutonomousShip>(), stats);
     test::expect_eq(unlanded_idle->deststar(), starnum_t{3});
     test::expect_eq(unlanded_idle->whatdest(), ScopeLevel::LEVEL_PLAN);
     test::expect_true(unlanded_idle->as<AutonomousShip>()->is_busy());
 
     // 3. In-flight, busy VN keeps its existing destination without re-rolling
-    ship_struct unlanded_busy_data{};
-    unlanded_busy_data.number = 703;
-    unlanded_busy_data.owner = 1;
-    unlanded_busy_data.type = ShipType::OTYPE_VN;
-    unlanded_busy_data.storbits = 1;
-    unlanded_busy_data.deststar = 4;
-    unlanded_busy_data.destpnum = 1;
-    unlanded_busy_data.whatdest = ScopeLevel::LEVEL_PLAN;
-    unlanded_busy_data.special = MindData{.busy = true};
-    auto unlanded_busy = ShipFactory::create(unlanded_busy_data);
+    auto unlanded_busy = TestShipBuilder(ShipType::OTYPE_VN)
+                             .numbered(703)
+                             .owned_by(1)
+                             .in_star_orbit(1)
+                             .targeting_planet(4, 1)
+                             .with_special(MindData{.busy = true})
+                             .build_in_memory();
     do_VN(em, *unlanded_busy->as<AutonomousShip>(), stats);
     test::expect_eq(unlanded_busy->deststar(), starnum_t{4});
     test::expect_eq(unlanded_busy->whatdest(), ScopeLevel::LEVEL_PLAN);
 
     // 3b. Newly launched, non-busy Berserker orders destination & hyperdrive
     stats.VN_brain.most_mad = player_t{2};
-    ship_struct unlanded_bers_data{};
-    unlanded_bers_data.number = 706;
-    unlanded_bers_data.owner = 1;
-    unlanded_bers_data.type = ShipType::OTYPE_BERS;
-    unlanded_bers_data.storbits = 1;
-    unlanded_bers_data.whatdest = ScopeLevel::LEVEL_UNIV;
-    unlanded_bers_data.hyper_drive.has = true;
-    unlanded_bers_data.mounted = true;
-    unlanded_bers_data.special = MindData{.busy = false};
-    auto unlanded_bers = ShipFactory::create(unlanded_bers_data);
+    auto unlanded_bers = TestShipBuilder(ShipType::OTYPE_BERS)
+                             .numbered(706)
+                             .owned_by(1)
+                             .in_star_orbit(1)
+                             .with_special(MindData{.busy = false})
+                             .build_in_memory();
+    unlanded_bers->hyper_drive().has = true;
+    unlanded_bers->mounted() = true;
     do_VN(em, *unlanded_bers->as<AutonomousShip>(), stats);
     test::expect_eq(unlanded_bers->deststar(), starnum_t{2});
     test::expect_eq(unlanded_bers->whatdest(), ScopeLevel::LEVEL_PLAN);
     test::expect_true(unlanded_bers->as<AutonomousShip>()->is_busy());
 
     // 4. Landed, fully-fueled VN launches to space
-    ship_struct landed_fueled_data{};
-    landed_fueled_data.number = 704;
-    landed_fueled_data.owner = 1;
-    landed_fueled_data.type = ShipType::OTYPE_VN;
-    landed_fueled_data.storbits = 1;
-    landed_fueled_data.pnumorbits = 1;
-    landed_fueled_data.deststar = 1;
-    landed_fueled_data.destpnum = 1;
-    landed_fueled_data.whatdest = ScopeLevel::LEVEL_PLAN;
-    landed_fueled_data.dock_state = DockState::Landed;
-    landed_fueled_data.max_fuel = ship_template(ShipType::OTYPE_VN).max_fuel;
-    landed_fueled_data.fuel = 100.0;
-    landed_fueled_data.special = MindData{.busy = false};
-    auto landed_fueled = ShipFactory::create(landed_fueled_data);
+    auto landed_fueled = TestShipBuilder(ShipType::OTYPE_VN)
+                             .numbered(704)
+                             .owned_by(1)
+                             .landed_on(1, 1, {0, 0})
+                             .with_fuel(100.0)
+                             .with_special(MindData{.busy = false})
+                             .build_in_memory();
     test::expect_true(landed_fueled->is_landed());
     do_VN(em, *landed_fueled->as<AutonomousShip>(), stats);
     test::expect_true(stats.is_inhabited(1, 1));
@@ -940,22 +896,14 @@ int main() {
     // 5. Landed, underfueled VN steals planetary resources
     em.mutate_planet(1, 1,
                      [](Planet& p) { p.info(player_t{2}).resource = 200; });
-    ship_struct landed_low_fuel_data{};
-    landed_low_fuel_data.number = 705;
-    landed_low_fuel_data.owner = 1;
-    landed_low_fuel_data.type = ShipType::OTYPE_VN;
-    landed_low_fuel_data.storbits = 1;
-    landed_low_fuel_data.pnumorbits = 1;
-    landed_low_fuel_data.deststar = 1;
-    landed_low_fuel_data.destpnum = 1;
-    landed_low_fuel_data.whatdest = ScopeLevel::LEVEL_PLAN;
-    landed_low_fuel_data.dock_state = DockState::Landed;
-    landed_low_fuel_data.max_fuel = ship_template(ShipType::OTYPE_VN).max_fuel;
-    landed_low_fuel_data.max_resource =
-        ship_template(ShipType::OTYPE_VN).max_resource;
-    landed_low_fuel_data.fuel = 10.0;  // Underfueled (capacity is 100)
-    landed_low_fuel_data.special = MindData{.busy = false};
-    auto landed_low_fuel = ShipFactory::create(landed_low_fuel_data);
+    auto landed_low_fuel =
+        TestShipBuilder(ShipType::OTYPE_VN)
+            .numbered(705)
+            .owned_by(1)
+            .landed_on(1, 1, {0, 0})
+            .with_fuel(10.0)  // Underfueled (capacity is 100)
+            .with_special(MindData{.busy = false})
+            .build_in_memory();
     test::expect_true(landed_low_fuel->is_landed());
     do_VN(em, *landed_low_fuel->as<AutonomousShip>(), stats);
     test::expect_true(landed_low_fuel->is_landed());
@@ -978,31 +926,23 @@ int main() {
     }
 
     // 1. Non-autonomous ship is ignored
-    ship_struct cargo_data{};
-    cargo_data.number = 801;
-    cargo_data.owner = 1;
-    cargo_data.type = ShipType::STYPE_CARGO;
-    auto cargo = ShipFactory::create(cargo_data);
+    auto cargo = TestShipBuilder(ShipType::STYPE_CARGO)
+                     .numbered(801)
+                     .owned_by(1)
+                     .build_in_memory();
     planet_doVN(*cargo, planet, smap, em, stats);
 
     // 2. Unlanded VN attempts landing
     smap.get(Coordinates{2, 2}).set_resource(50);
-    ship_struct orbiting_vn_data{};
-    orbiting_vn_data.number = 802;
-    orbiting_vn_data.owner = 1;
-    orbiting_vn_data.type = ShipType::OTYPE_VN;
-    orbiting_vn_data.storbits = 1;
-    orbiting_vn_data.pnumorbits = 1;
-    orbiting_vn_data.deststar = 1;
-    orbiting_vn_data.destpnum = 1;
-    orbiting_vn_data.whatdest = ScopeLevel::LEVEL_PLAN;
-    orbiting_vn_data.whatorbits = ScopeLevel::LEVEL_PLAN;
-    orbiting_vn_data.dock_state = DockState::Spaceborne;
-    orbiting_vn_data.special = MindData{.busy = true};
-    orbiting_vn_data.max_fuel = ship_template(ShipType::OTYPE_VN).max_fuel;
-    orbiting_vn_data.max_resource =
-        ship_template(ShipType::OTYPE_VN).max_resource;
-    auto orbiting_vn = ShipFactory::create(orbiting_vn_data);
+    auto orbiting_vn = TestShipBuilder(ShipType::OTYPE_VN)
+                           .numbered(802)
+                           .owned_by(1)
+                           .in_planet_orbit(1, 1)
+                           .targeting_planet(1, 1)
+                           .with_fuel(0.0)
+                           .with_resource(0)
+                           .with_special(MindData{.busy = true})
+                           .build_in_memory();
     test::expect_false(orbiting_vn->is_landed());
 
     planet_doVN(*orbiting_vn, planet, smap, em, stats);
@@ -1076,13 +1016,12 @@ int main() {
     // 2. select_berserker_destination without most_mad, hyperdrive, or mounted
     {
       TurnStats no_mad_stats{};
-      auto bers_ship = ShipFactory::create(ship_struct{
-          .number = 901,
-          .owner = 1,
-          .hyper_drive = {.has = true},
-          .type = ShipType::OTYPE_BERS,
-          .mounted = false,
-      });
+      auto bers_ship = TestShipBuilder(ShipType::OTYPE_BERS)
+                           .numbered(901)
+                           .owned_by(1)
+                           .build_in_memory();
+      bers_ship->hyper_drive().has = true;
+      bers_ship->mounted() = false;
       auto* bers = bers_ship->as<BerserkerShip>();
       select_berserker_destination(em, *bers, no_mad_stats);
       test::expect_eq(bers->target(), std::nullopt);
@@ -1098,13 +1037,11 @@ int main() {
     {
       em.mutate_star(2, [](Star& s) { s.mark_inhabited_by(player_t{1}); });
       em.mutate_star(3, [](Star& s) { s.mark_inhabited_by(player_t{1}); });
-      auto vn_ship = ShipFactory::create(ship_struct{
-          .number = 902,
-          .owner = 1,
-          .coordinates = UniverseCoordinates{0.0, 0.0},
-          .storbits = 1,
-          .type = ShipType::OTYPE_VN,
-      });
+      auto vn_ship = TestShipBuilder(ShipType::OTYPE_VN)
+                         .numbered(902)
+                         .owned_by(1)
+                         .in_star_orbit(1, UniverseCoordinates{0.0, 0.0})
+                         .build_in_memory();
       select_vn_destination(em, *vn_ship->as<VonNeumannShip>());
       test::expect_ge(vn_ship->deststar(), starnum_t{1});
       test::expect_le(vn_ship->deststar(), em.num_stars());
@@ -1116,15 +1053,13 @@ int main() {
         for (player_t pl = 1; pl <= 4; ++pl)
           p.info(pl).resource = 0;
       });
-      auto vn_ship = ShipFactory::create(ship_struct{
-          .number = 903,
-          .owner = 1,
-          .governor = 1,
-          .max_resource = 500,
-          .storbits = 1,
-          .pnumorbits = 1,
-          .type = ShipType::OTYPE_VN,
-      });
+      auto vn_ship = TestShipBuilder(ShipType::OTYPE_VN)
+                         .numbered(903)
+                         .owned_by(1, 1)
+                         .in_planet_orbit(1, 1)
+                         .with_max_resource(500)
+                         .with_resource(0)
+                         .build_in_memory();
       auto empty_steal =
           steal_planetary_resources(em, *vn_ship->as<AutonomousShip>());
       test::expect_eq(empty_steal.victim, player_t{0});
@@ -1161,19 +1096,14 @@ int main() {
       Planet planet(1, 1, PlanetType::EARTH, Coordinates{5, 5});
       SectorMap smap(planet);
       TurnStats stats{};
-      auto vn_ship = ShipFactory::create(ship_struct{
-          .number = 904,
-          .owner = 1,
-          .resource = 0,
-          .special = MindData{.busy = true},
-          .storbits = 1,
-          .deststar = 2,
-          .destpnum = 1,
-          .pnumorbits = 1,
-          .whatdest = ScopeLevel::LEVEL_PLAN,
-          .whatorbits = ScopeLevel::LEVEL_PLAN,
-          .type = ShipType::OTYPE_VN,
-      });
+      auto vn_ship = TestShipBuilder(ShipType::OTYPE_VN)
+                         .numbered(904)
+                         .owned_by(1)
+                         .in_planet_orbit(1, 1)
+                         .targeting_planet(2, 1)
+                         .with_resource(0)
+                         .with_special(MindData{.busy = true})
+                         .build_in_memory();
       auto* vn = vn_ship->as<VonNeumannShip>();
       test::expect_eq(replicate_machines(em, *vn, planet, stats), 0);
       test::expect_false(attempt_planet_landing(em, *vn, planet, smap));
@@ -1187,18 +1117,16 @@ int main() {
       vn->admin_override_fuel(0.0);
       planet_doVN(*vn_ship, planet, smap, em, stats);  // !busy && low fuel
 
-      auto bers_landed = ShipFactory::create(ship_struct{
-          .number = 905,
-          .owner = 1,
-          .max_destruct = 500,
-          .max_fuel = 100,
-          .special = MindData{.busy = false},
-          .storbits = 1,
-          .pnumorbits = 1,
-          .whatorbits = ScopeLevel::LEVEL_PLAN,
-          .type = ShipType::OTYPE_BERS,
-          .dock_state = DockState::Landed,
-      });
+      auto bers_landed = TestShipBuilder(ShipType::OTYPE_BERS)
+                             .numbered(905)
+                             .owned_by(1)
+                             .landed_on(1, 1, {0, 0})
+                             .with_max_destruct(500)
+                             .with_destruct(0)
+                             .with_max_fuel(100.0)
+                             .with_fuel(0.0)
+                             .with_special(MindData{.busy = false})
+                             .build_in_memory();
       planet_doVN(*bers_landed, planet, smap, em, stats);  // !busy
       bers_landed->as<AutonomousShip>()->set_busy(true);
       bers_landed->admin_override_fuel(100.0);

@@ -1,21 +1,30 @@
 # SPDX-License-Identifier: Apache-2.0
 
+# Resolve symlinked compiler paths (e.g. /usr/bin/clang++-22 -> /usr/lib/llvm-22/bin/clang)
+# so libc++ module headers, static archives, and lld match the active Clang version.
+get_filename_component(_REAL_CXX_COMPILER "${CMAKE_CXX_COMPILER}" REALPATH)
+get_filename_component(_CLANG_BIN_DIR "${_REAL_CXX_COMPILER}" DIRECTORY)
+get_filename_component(_LLVM_PREFIX "${_CLANG_BIN_DIR}" DIRECTORY)
+
 # Use LLVM libc++ statically linked
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+if(NOT CMAKE_CXX_FLAGS MATCHES "-stdlib=libc\\+\\+")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+endif()
+if(EXISTS "${_LLVM_PREFIX}/lib/libc++.a")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L${_LLVM_PREFIX}/lib")
+endif()
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -nostdlib++ -static-libgcc -Wl,-Bstatic -lc++ -lc++abi -Wl,-Bdynamic")
 
 # Add libc++ module directory as a system include directory so Clang and Clang-Tidy
 # treat 'import std;' declarations as system headers rather than user AST nodes.
-get_filename_component(_CLANG_BIN_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
-get_filename_component(_LLVM_PREFIX "${_CLANG_BIN_DIR}" DIRECTORY)
 if(EXISTS "${_LLVM_PREFIX}/share/libc++/v1")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem ${_LLVM_PREFIX}/share/libc++/v1")
 elseif(EXISTS "/lib/share/libc++/v1")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem /lib/share/libc++/v1")
 endif()
 
-# Prefer lld linker if available
-find_program(LLD_LINKER NAMES ld.lld lld)
+# Prefer matching lld linker if available
+find_program(LLD_LINKER NAMES ld.lld lld HINTS "${_CLANG_BIN_DIR}")
 if(LLD_LINKER)
     message(STATUS "Using lld linker: ${LLD_LINKER}")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fuse-ld=lld")

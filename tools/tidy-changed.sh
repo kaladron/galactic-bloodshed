@@ -18,21 +18,30 @@ set -euo pipefail
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 cd "$REPO_ROOT"
 
-RUN_CLANG_TIDY=""
-for candidate in run-clang-tidy run-clang-tidy-22 run-clang-tidy-21 run-clang-tidy-20 run-clang-tidy-19; do
-    if command -v "$candidate" >/dev/null 2>&1; then
-        RUN_CLANG_TIDY="$candidate"
-        break
-    fi
-done
-
-if [ -z "$RUN_CLANG_TIDY" ]; then
-    echo "❌ run-clang-tidy not found in PATH"
+if [ ! -d "build" ]; then
+    echo "❌ build/ directory not found. Configure with: cmake -S . -G Ninja -B build"
     exit 1
 fi
 
-if [ ! -d "build" ]; then
-    echo "❌ build/ directory not found. Configure with: cmake -S . -G Ninja -B build"
+RUN_CLANG_TIDY=""
+if [ -f "build/CMakeCache.txt" ]; then
+    CACHED_RUN_TIDY=$(sed -n 's/^RUN_CLANG_TIDY_EXE:FILEPATH=//p' build/CMakeCache.txt | head -n 1)
+    if [ -n "$CACHED_RUN_TIDY" ] && [ -x "$CACHED_RUN_TIDY" ]; then
+        RUN_CLANG_TIDY="$CACHED_RUN_TIDY"
+    fi
+fi
+
+if [ -z "$RUN_CLANG_TIDY" ]; then
+    for candidate in /usr/lib/llvm-22/bin/run-clang-tidy run-clang-tidy-22 run-clang-tidy run-clang-tidy-21 run-clang-tidy-20 run-clang-tidy-19; do
+        if command -v "$candidate" >/dev/null 2>&1; then
+            RUN_CLANG_TIDY="$(command -v "$candidate")"
+            break
+        fi
+    done
+fi
+
+if [ -z "$RUN_CLANG_TIDY" ]; then
+    echo "❌ run-clang-tidy not found in PATH"
     exit 1
 fi
 
@@ -108,6 +117,39 @@ echo "🔍 Running clang-tidy on changed files:"
 for f in $FILES; do
     echo "   $f"
 done
+
+if [ -f "build/compile_commands.json" ]; then
+    mapfile -t NINJA_TARGETS < <(python3 -c '
+import json, os, sys
+build_dir = os.path.realpath("build")
+wanted = {os.path.realpath(p) for p in sys.argv[1:]}
+with open("build/compile_commands.json", encoding="utf-8") as f:
+    entries = json.load(f)
+seen = []
+for entry in entries:
+    out = entry.get("output")
+    if out and os.path.realpath(entry.get("file", "")) in wanted:
+        rel = os.path.relpath(out, build_dir) if os.path.isabs(out) else out
+        if rel not in seen:
+            seen.append(rel)
+if seen:
+    print("\n".join(seen))
+' $FILES)
+    if [ ${#NINJA_TARGETS[@]} -gt 0 ]; then
+        echo "🔨 Building module prerequisites for changed files..."
+        ninja -C build "${NINJA_TARGETS[@]}"
+    fi
+fi
+
+if [ -z "$CUSTOM_TIDY_BIN" ]; then
+    VERSIONED_TIDY="${RUN_CLANG_TIDY/run-clang-tidy/clang-tidy}"
+    SIBLING_TIDY="$(dirname "$RUN_CLANG_TIDY")/clang-tidy"
+    if [ -x "$VERSIONED_TIDY" ]; then
+        CUSTOM_TIDY_BIN="$VERSIONED_TIDY"
+    elif [ -x "$SIBLING_TIDY" ]; then
+        CUSTOM_TIDY_BIN="$SIBLING_TIDY"
+    fi
+fi
 
 TIDY_ARGS=("-p" "build" "-header-filter=.*(gb|dallib)/.*" "-exclude-header-filter=.*third_party/.*" "-quiet")
 if [ -n "$CUSTOM_TIDY_BIN" ]; then

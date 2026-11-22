@@ -22,7 +22,41 @@ set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_EXTENSIONS ON)
 
 
+# Auto-select the newest installed LLVM/Clang toolchain when not explicitly set
+if(NOT CMAKE_CXX_COMPILER AND "$ENV{CXX}" STREQUAL "")
+  foreach(_llvm_dir IN ITEMS /usr/lib/llvm-22 /usr/lib/llvm-21)
+    if(EXISTS "${_llvm_dir}/bin/clang++" AND EXISTS "${_llvm_dir}/bin/clang-scan-deps")
+      set(CMAKE_CXX_COMPILER "${_llvm_dir}/bin/clang++" CACHE FILEPATH "C++ compiler")
+      if(NOT CMAKE_C_COMPILER AND "$ENV{CC}" STREQUAL "" AND EXISTS "${_llvm_dir}/bin/clang")
+        set(CMAKE_C_COMPILER "${_llvm_dir}/bin/clang" CACHE FILEPATH "C compiler")
+      endif()
+      break()
+    endif()
+  endforeach()
+endif()
+
+# Resolve the active LLVM prefix (following symlinks like /usr/bin/clang++-22)
+# so CMake's C++26 'import std;' probe finds the matching libc++.modules.json.
+set(_GB_LLVM_PREFIX "")
+set(_GB_CLANG_BIN_DIR "")
+if(CMAKE_CXX_COMPILER)
+  find_program(_GB_RESOLVED_CXX NAMES "${CMAKE_CXX_COMPILER}")
+  if(_GB_RESOLVED_CXX)
+    get_filename_component(_GB_REAL_CXX "${_GB_RESOLVED_CXX}" REALPATH)
+    get_filename_component(_GB_CLANG_BIN_DIR "${_GB_REAL_CXX}" DIRECTORY)
+    get_filename_component(_GB_LLVM_PREFIX "${_GB_CLANG_BIN_DIR}" DIRECTORY)
+  endif()
+endif()
+
 set(CMAKE_CXX_FLAGS "-stdlib=libc++")
+if(_GB_LLVM_PREFIX AND EXISTS "${_GB_LLVM_PREFIX}/lib/libc++.modules.json")
+  if(NOT CMAKE_CXX_STDLIB_MODULES_JSON)
+    set(CMAKE_CXX_STDLIB_MODULES_JSON "${_GB_LLVM_PREFIX}/lib/libc++.modules.json" CACHE FILEPATH "Path to libc++.modules.json")
+  endif()
+  if(NOT CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS AND EXISTS "${_GB_LLVM_PREFIX}/bin/clang-scan-deps")
+    set(CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS "${_GB_LLVM_PREFIX}/bin/clang-scan-deps" CACHE FILEPATH "Clang dependency scanner")
+  endif()
+endif()
 
 # Release version resolution (defaults to 0.0.0-dev outside release builds)
 set(GB_RELEASE_VERSION "" CACHE STRING "Explicit release version string")
@@ -55,7 +89,7 @@ include(GNUInstallDirs)
 
 # Set default build type to Debug for development if not specified
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build (Debug or Release)")
+    set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build (Debug or Release)" FORCE)
 endif()
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
@@ -67,6 +101,7 @@ include(cmake/compiler_setup.cmake)
 find_program(
   RUN_CLANG_TIDY_EXE
   NAMES run-clang-tidy run-clang-tidy-22 run-clang-tidy-21 run-clang-tidy-20 run-clang-tidy-19 run-clang-tidy.py
+  HINTS "${_GB_CLANG_BIN_DIR}"
 )
 if(RUN_CLANG_TIDY_EXE)
   add_custom_target(
@@ -140,7 +175,7 @@ else()
 endif()
 
 # clang-format target for formatting all source files
-find_program(CLANG_FORMAT_EXE NAMES clang-format)
+find_program(CLANG_FORMAT_EXE NAMES clang-format HINTS "${_GB_CLANG_BIN_DIR}")
 if(CLANG_FORMAT_EXE)
   file(GLOB_RECURSE ALL_SOURCE_FILES
     ${CMAKE_SOURCE_DIR}/gb/*.cc

@@ -1,6 +1,10 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  push:
+    tags-ignore:
+      - 'v*'
+  pull_request:
 
 env:
   LLVM_VERSION: "22"
@@ -98,6 +102,7 @@ jobs:
           ln -sf "/usr/bin/ld.lld-${LLVM_VERSION}" /usr/bin/ld.lld
           ln -sf "/usr/bin/lld-${LLVM_VERSION}" /usr/bin/lld
           ln -sf "/usr/bin/clang-scan-deps-${LLVM_VERSION}" /usr/bin/clang-scan-deps
+          ln -sf "/usr/bin/clang-tidy-${LLVM_VERSION}" /usr/bin/clang-tidy || true
           ln -sf "/usr/bin/run-clang-tidy-${LLVM_VERSION}" /usr/bin/run-clang-tidy || true
           mkdir -p /lib/share/libc++
           ln -sf "/usr/lib/llvm-${LLVM_VERSION}/share/libc++/v1" /lib/share/libc++/v1
@@ -107,7 +112,19 @@ jobs:
 
       - name: Run Clang-Tidy on Changed Files
         run: |
-          ./tools/tidy-changed.sh "origin/${{ github.base_ref || 'main' }}"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_REF="origin/${{ github.base_ref }}"
+          else
+            BEFORE_SHA="${{ github.event.before }}"
+            if [ -n "${BEFORE_SHA}" ] && [ "${BEFORE_SHA}" != "0000000000000000000000000000000000000000" ] && git cat-file -e "${BEFORE_SHA}^{commit}" 2>/dev/null; then
+              BASE_REF="${BEFORE_SHA}"
+            elif [ "${{ github.ref_name }}" != "main" ]; then
+              BASE_REF="origin/main"
+            else
+              BASE_REF="HEAD~1"
+            fi
+          fi
+          ./tools/tidy-changed.sh "${BASE_REF}"
 
   build-and-test:
     name: Build & Test (${{ matrix.build_type }})

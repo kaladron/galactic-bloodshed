@@ -12,7 +12,8 @@ import gb.services;
 import gb.repositories;
 import std;
 
-void TestShipBuilder::init(ShipType type) {
+template <bool HasEntityManager>
+void TestShipBuilder<HasEntityManager>::init(ShipType type) {
   auto ship = ShipFactory::create_from_template(type, 1);
   ship_ = ship->to_struct();
   ship_.number = 0;
@@ -24,53 +25,89 @@ void TestShipBuilder::init(ShipType type) {
   ship_.pnumorbits = std::nullopt;
   ship_.deststar = std::nullopt;
   ship_.destpnum = std::nullopt;
-
-  Ship temp_ship{ship_};
-  ship_.mass = temp_ship.local_mass(1.0);
 }
 
-TestShipBuilder::TestShipBuilder(EntityManager& em, ShipType type) : em_(em) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>::TestShipBuilder(EntityManager& em,
+                                                   ShipType type)
+  requires HasEntityManager
+    : em_(&em) {
   init(type);
 }
 
-TestShipBuilder& TestShipBuilder::owned_by(player_t owner, governor_t gov) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>::TestShipBuilder(ShipType type)
+  requires(!HasEntityManager)
+{
+  init(type);
+}
+
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::numbered(shipnum_t num)
+  requires(!HasEntityManager)
+{
+  ship_.number = num;
+  return *this;
+}
+
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::owned_by(player_t owner, governor_t gov) {
   ship_.owner = owner;
   ship_.governor = gov;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::named(std::string_view name) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::named(std::string_view name) {
   ship_.name = name;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_tech(double tech) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_tech(double tech) {
   ship_.tech = tech;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_alive(bool alive) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_alive(bool alive) {
   ship_.alive = alive;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_active(bool active) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_active(bool active) {
   ship_.active = active;
   return *this;
 }
 
-TestShipBuilder&
-TestShipBuilder::in_star_orbit(starnum_t snum,
-                               std::optional<UniverseCoordinates> coords) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_coordinates(
+    UniverseCoordinates coords) {
+  ship_.coordinates = coords;
+  return *this;
+}
+
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::in_star_orbit(
+    starnum_t snum, std::optional<UniverseCoordinates> coords) {
   ship_.whatorbits = ScopeLevel::LEVEL_STAR;
   ship_.storbits = snum;
   ship_.pnumorbits = std::nullopt;
   ship_.dock_state = DockState::Spaceborne;
   if (coords) {
     ship_.coordinates = *coords;
-  } else {
+  } else if (em_ != nullptr) {
     try {
-      const auto* star = em_.peek_star(snum);
+      const auto* star = em_->peek_star(snum);
       ship_.coordinates = star->coordinates();
     } catch (const EntityNotFoundError&) {
       // Star not present in EntityManager (isolated unit tests)
@@ -79,39 +116,49 @@ TestShipBuilder::in_star_orbit(starnum_t snum,
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::in_star_orbit(starnum_t snum,
-                                                SystemCoordinates coords) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::in_star_orbit(starnum_t snum,
+                                                 SystemCoordinates coords) {
   ship_.whatorbits = ScopeLevel::LEVEL_STAR;
   ship_.storbits = snum;
   ship_.pnumorbits = std::nullopt;
   ship_.dock_state = DockState::Spaceborne;
-  try {
-    const auto* star = em_.peek_star(snum);
-    ship_.coordinates = star->coordinates() + coords;
-  } catch (const EntityNotFoundError&) {
-    // Star not present in EntityManager (isolated unit tests)
+  if (em_ != nullptr) {
+    try {
+      const auto* star = em_->peek_star(snum);
+      ship_.coordinates = star->coordinates() + coords;
+    } catch (const EntityNotFoundError&) {
+      // Star not present in EntityManager (isolated unit tests)
+    }
+  } else {
+    ship_.coordinates = UniverseCoordinates{coords.x, coords.y};
   }
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::in_star_orbit(starnum_t snum, double x,
-                                                double y) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::in_star_orbit(starnum_t snum, double x,
+                                                 double y) {
   return in_star_orbit(snum, UniverseCoordinates{x, y});
 }
 
-TestShipBuilder&
-TestShipBuilder::in_planet_orbit(starnum_t snum, planetnum_t pnum,
-                                 std::optional<UniverseCoordinates> coords) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::in_planet_orbit(
+    starnum_t snum, planetnum_t pnum,
+    std::optional<UniverseCoordinates> coords) {
   ship_.whatorbits = ScopeLevel::LEVEL_PLAN;
   ship_.storbits = snum;
   ship_.pnumorbits = pnum;
   ship_.dock_state = DockState::Spaceborne;
   if (coords) {
     ship_.coordinates = *coords;
-  } else {
+  } else if (em_ != nullptr) {
     try {
-      const auto* star = em_.peek_star(snum);
-      const auto* planet = em_.peek_planet(snum, pnum);
+      const auto* star = em_->peek_star(snum);
+      const auto* planet = em_->peek_planet(snum, pnum);
       ship_.coordinates = planet->absolute_coordinates(*star);
     } catch (const EntityNotFoundError&) {
       // Star or planet not present in EntityManager (isolated unit tests)
@@ -120,24 +167,32 @@ TestShipBuilder::in_planet_orbit(starnum_t snum, planetnum_t pnum,
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::in_planet_orbit(starnum_t snum,
-                                                  planetnum_t pnum,
-                                                  SystemCoordinates coords) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::in_planet_orbit(starnum_t snum,
+                                                   planetnum_t pnum,
+                                                   SystemCoordinates coords) {
   ship_.whatorbits = ScopeLevel::LEVEL_PLAN;
   ship_.storbits = snum;
   ship_.pnumorbits = pnum;
   ship_.dock_state = DockState::Spaceborne;
-  try {
-    const auto* star = em_.peek_star(snum);
-    ship_.coordinates = star->coordinates() + coords;
-  } catch (const EntityNotFoundError&) {
-    // Star not present in EntityManager (isolated unit tests)
+  if (em_ != nullptr) {
+    try {
+      const auto* star = em_->peek_star(snum);
+      ship_.coordinates = star->coordinates() + coords;
+    } catch (const EntityNotFoundError&) {
+      // Star not present in EntityManager (isolated unit tests)
+    }
+  } else {
+    ship_.coordinates = UniverseCoordinates{coords.x, coords.y};
   }
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::landed_on(starnum_t snum, planetnum_t pnum,
-                                            Coordinates coords) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::landed_on(starnum_t snum, planetnum_t pnum,
+                                             Coordinates coords) {
   ship_.whatorbits = ScopeLevel::LEVEL_PLAN;
   ship_.whatdest = ScopeLevel::LEVEL_PLAN;
   ship_.storbits = snum;
@@ -146,17 +201,21 @@ TestShipBuilder& TestShipBuilder::landed_on(starnum_t snum, planetnum_t pnum,
   ship_.destpnum = pnum;
   ship_.dock_state = DockState::Landed;
   ship_.land_coords = coords;
-  try {
-    const auto* star = em_.peek_star(snum);
-    const auto* planet = em_.peek_planet(snum, pnum);
-    ship_.coordinates = planet->absolute_coordinates(*star);
-  } catch (const EntityNotFoundError&) {
-    // Star or planet not present in EntityManager (isolated unit tests)
+  if (em_ != nullptr) {
+    try {
+      const auto* star = em_->peek_star(snum);
+      const auto* planet = em_->peek_planet(snum, pnum);
+      ship_.coordinates = planet->absolute_coordinates(*star);
+    } catch (const EntityNotFoundError&) {
+      // Star or planet not present in EntityManager (isolated unit tests)
+    }
   }
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::in_deep_space(UniverseCoordinates coords) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::in_deep_space(UniverseCoordinates coords) {
   ship_.whatorbits = ScopeLevel::LEVEL_UNIV;
   ship_.storbits = std::nullopt;
   ship_.pnumorbits = std::nullopt;
@@ -165,8 +224,10 @@ TestShipBuilder& TestShipBuilder::in_deep_space(UniverseCoordinates coords) {
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::docked_to(shipnum_t dest_ship,
-                                            starnum_t snum) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::docked_to(shipnum_t dest_ship,
+                                             starnum_t snum) {
   ship_.whatorbits = ScopeLevel::LEVEL_SHIP;
   ship_.whatdest = ScopeLevel::LEVEL_SHIP;
   ship_.destshipno = dest_ship;
@@ -178,23 +239,28 @@ TestShipBuilder& TestShipBuilder::docked_to(shipnum_t dest_ship,
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_build_type(ShipType build_type) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_build_type(ShipType build_type) {
   if (ship_.type == ShipType::OTYPE_FACTORY) {
-    FactoryShip temp{ship_};
+    auto temp = ShipFactory::create(std::move(ship_));
+    auto* fac = temp->as<FactoryShip>();
     if (build_type == ShipType::OTYPE_FACTORY ||
         build_type == ShipType::STYPE_POD) {
-      temp.blueprint_mut().build_type = build_type;
+      fac->blueprint_mut().build_type = build_type;
     } else {
-      temp.configure_blueprint(build_type);
+      fac->configure_blueprint(build_type);
     }
-    ship_ = temp.to_struct();
+    ship_ = temp->to_struct();
     return *this;
   }
   ship_.build_type = build_type;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_build_cost(resource_t cost) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_build_cost(resource_t cost) {
   ship_.build_cost = cost;
   if (auto* bp = std::get_if<FactoryBlueprint>(&ship_.special)) {
     bp->build_cost = cost;
@@ -202,150 +268,209 @@ TestShipBuilder& TestShipBuilder::with_build_cost(resource_t cost) {
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_guns(guntype_t primtype,
-                                            gun_count_t count,
-                                            ActiveBattery active_battery) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>& TestShipBuilder<HasEntityManager>::with_guns(
+    guntype_t primtype, gun_count_t count, ActiveBattery active_battery) {
   ship_.guns = active_battery;
   ship_.primary_battery = GunBattery::create(count, primtype);
   ship_.retaliate = count;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_retaliate(weapon_power_t retaliate) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_secondary_guns(guntype_t sectype,
+                                                       gun_count_t count) {
+  ship_.secondary_battery = GunBattery::create(count, sectype);
+  return *this;
+}
+
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_retaliate(weapon_power_t retaliate) {
   ship_.retaliate = retaliate;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_cew(weapon_power_t cew_power,
-                                           weapon_range_t range) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_cew(weapon_power_t cew_power,
+                                            weapon_range_t range) {
   ship_.cew = cew_power;
   ship_.cew_range = range;
   ship_.mounted = true;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_crew(population_t civilians,
-                                            population_t military) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_crew(population_t civilians,
+                                             population_t military) {
   ship_.popn = civilians;
   ship_.troops = military;
-  ship_.mass = ship_.base_mass + (civilians + military);
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_max_crew(population_t max_crew) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_max_crew(population_t max_crew) {
   ship_.max_crew = max_crew;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_speed(speed_t speed) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_speed(speed_t speed) {
   ship_.speed = speed;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_max_speed(speed_t max_speed) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_max_speed(speed_t max_speed) {
   ship_.max_speed = max_speed;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_fuel(double fuel) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_fuel(double fuel) {
   ship_.fuel = fuel;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_max_fuel(double max_fuel) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_max_fuel(double max_fuel) {
   ship_.max_fuel = max_fuel;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_resource(resource_t res) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_resource(resource_t res) {
   ship_.resource = res;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_max_resource(resource_t max_res) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_max_resource(resource_t max_res) {
   ship_.max_resource = max_res;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_destruct(resource_t destruct) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_destruct(resource_t destruct) {
   ship_.destruct = destruct;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_max_destruct(resource_t max_destruct) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_max_destruct(resource_t max_destruct) {
   ship_.max_destruct = max_destruct;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_crystals(resource_t crystals) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_crystals(resource_t crystals) {
   ship_.crystals = crystals;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_mount(unsigned char mount) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_mount(unsigned char mount) {
   ship_.mount = mount;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_damage(damage_t damage) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_damage(damage_t damage) {
   ship_.damage = damage;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_radiation(radiation_t rad) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_radiation(radiation_t rad) {
   ship_.rad = rad;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_armor(armor_t armor) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_armor(armor_t armor) {
   ship_.armor = armor;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_mass(double mass) {
-  ship_.mass = mass;
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_mass(double mass) {
+  explicit_mass_ = mass;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_size(ship_size_t size) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_size(ship_size_t size) {
   ship_.size = size;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_hanger(hangar_t hanger) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_hanger(hangar_t hanger) {
   ship_.hanger = hanger;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_max_hanger(hangar_t max_hanger) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_max_hanger(hangar_t max_hanger) {
   ship_.max_hanger = max_hanger;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_on(bool on) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_on(bool on) {
   ship_.on = on;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_special(SpecialData special) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_special(SpecialData special) {
   ship_.special = special;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_trigger_radius(weapon_range_t radius) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_trigger_radius(weapon_range_t radius) {
   ship_.special = TriggerData{.radius = radius};
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::targeting_planet(starnum_t snum,
-                                                   planetnum_t pnum) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::targeting_planet(starnum_t snum,
+                                                    planetnum_t pnum) {
   ship_.whatdest = ScopeLevel::LEVEL_PLAN;
   ship_.deststar = snum;
   ship_.destpnum = pnum;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::targeting_ship(shipnum_t target_ship) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::targeting_ship(shipnum_t target_ship) {
   ship_.whatdest = ScopeLevel::LEVEL_SHIP;
   ship_.deststar = std::nullopt;
   ship_.destpnum = std::nullopt;
@@ -353,31 +478,73 @@ TestShipBuilder& TestShipBuilder::targeting_ship(shipnum_t target_ship) {
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_impact(Coordinates coords,
-                                              bool scatter) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_impact(Coordinates coords,
+                                               bool scatter) {
   ship_.special = ImpactData{.coords = coords, .scatter = scatter};
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_aim(AimedAtData aim) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_aim(AimedAtData aim) {
   ship_.special = aim;
   return *this;
 }
 
-TestShipBuilder& TestShipBuilder::with_pod(unsigned char temp,
-                                           unsigned char decay) {
+template <bool HasEntityManager>
+TestShipBuilder<HasEntityManager>&
+TestShipBuilder<HasEntityManager>::with_pod(unsigned char temp,
+                                            unsigned char decay) {
   ship_.special = PodData{.decay = decay, .temperature = temp};
   return *this;
 }
 
-EntityHandle<Ship> TestShipBuilder::build_handle() {
+template <bool HasEntityManager>
+std::unique_ptr<Ship> TestShipBuilder<HasEntityManager>::finalize_ship() {
   auto ship_obj = ShipFactory::create(std::move(ship_));
-  return em_.create_ship(std::move(ship_obj));
+  if (explicit_mass_.has_value()) {
+    ship_obj->set_mass(*explicit_mass_);
+  } else {
+    double race_mass = 1.0;
+    if (em_ != nullptr) {
+      try {
+        if (const auto* r = em_->peek_race(ship_obj->owner())) {
+          race_mass = r->mass;
+        }
+      } catch (const EntityNotFoundError&) {
+        // Owner race not present in isolated unit tests
+      }
+    }
+    ship_obj->set_mass(ship_obj->local_mass(race_mass));
+  }
+  return ship_obj;
 }
 
-shipnum_t TestShipBuilder::build() {
+template <bool HasEntityManager>
+EntityHandle<Ship> TestShipBuilder<HasEntityManager>::build_handle()
+  requires HasEntityManager
+{
+  return em_->create_ship(finalize_ship());
+}
+
+template <bool HasEntityManager>
+shipnum_t TestShipBuilder<HasEntityManager>::build()
+  requires HasEntityManager
+{
   return build_handle()->number();
 }
+
+template <bool HasEntityManager>
+std::unique_ptr<Ship> TestShipBuilder<HasEntityManager>::build_in_memory()
+  requires(!HasEntityManager)
+{
+  return finalize_ship();
+}
+
+template class TestShipBuilder<true>;
+template class TestShipBuilder<false>;
 
 TestWorldBuilder::TestWorldBuilder(TestContext& ctx) : store_(ctx.db) {}
 TestWorldBuilder::TestWorldBuilder(Database& db) : store_(db) {}

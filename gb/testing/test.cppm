@@ -658,16 +658,23 @@ private:
 
 /// Fluent builder for constructing consistent test ship entities populated
 /// with canonical template defaults from ShipTemplate.
-export class TestShipBuilder {
+export template <bool HasEntityManager = true>
+class TestShipBuilder {
 public:
   explicit TestShipBuilder(EntityManager& em,
-                           ShipType type = ShipType::STYPE_BATTLE);
+                           ShipType type = ShipType::STYPE_BATTLE)
+    requires HasEntityManager;
+  explicit TestShipBuilder(ShipType type = ShipType::STYPE_BATTLE)
+    requires(!HasEntityManager);
 
+  TestShipBuilder& numbered(shipnum_t num)
+    requires(!HasEntityManager);
   TestShipBuilder& owned_by(player_t owner, governor_t gov = 1);
   TestShipBuilder& named(std::string_view name);
   TestShipBuilder& with_tech(double tech);
   TestShipBuilder& with_alive(bool alive);
   TestShipBuilder& with_active(bool active);
+  TestShipBuilder& with_coordinates(UniverseCoordinates coords);
   TestShipBuilder& in_deep_space(UniverseCoordinates coords = {0.0, 0.0});
   TestShipBuilder&
   in_star_orbit(starnum_t snum,
@@ -687,6 +694,7 @@ public:
   TestShipBuilder&
   with_guns(guntype_t primtype, gun_count_t count,
             ActiveBattery active_battery = ActiveBattery::PRIMARY);
+  TestShipBuilder& with_secondary_guns(guntype_t sectype, gun_count_t count);
   TestShipBuilder& with_retaliate(weapon_power_t retaliate);
   TestShipBuilder& with_cew(weapon_power_t cew_power,
                             weapon_range_t range = 1000);
@@ -718,15 +726,26 @@ public:
   TestShipBuilder& with_aim(AimedAtData aim);
   TestShipBuilder& with_pod(unsigned char temp, unsigned char decay = 0);
 
-  shipnum_t build();
-  EntityHandle<Ship> build_handle();
+  shipnum_t build()
+    requires HasEntityManager;
+  EntityHandle<Ship> build_handle()
+    requires HasEntityManager;
+  [[nodiscard]] std::unique_ptr<Ship> build_in_memory()
+    requires(!HasEntityManager);
 
 private:
   void init(ShipType type);
+  [[nodiscard]] std::unique_ptr<Ship> finalize_ship();
 
-  EntityManager& em_;
+  EntityManager* em_{nullptr};
   ship_struct ship_{};
+  std::optional<double> explicit_mass_{std::nullopt};
 };
+
+export TestShipBuilder(EntityManager&, ShipType = ShipType::STYPE_BATTLE)
+    -> TestShipBuilder<true>;
+export TestShipBuilder(ShipType = ShipType::STYPE_BATTLE)
+    -> TestShipBuilder<false>;
 
 /// Fluent fixture builder for constructing consistent test star entities.
 export class TestStarBuilder {

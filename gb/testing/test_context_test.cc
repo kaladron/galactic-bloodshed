@@ -349,6 +349,34 @@ void test_test_ship_builder() {
   test::expect_eq(star_sys_orbiter->coordinates(),
                   UniverseCoordinates(50.0, 75.0));
 
+  // 9. Detached in-memory TestShipBuilder and order-independent mass invariants
+  auto mem_order_a = TestShipBuilder(ShipType::STYPE_CRUISER)
+                         .numbered(77)
+                         .with_fuel(200.0)
+                         .with_resource(50)
+                         .with_crew(20, 10)
+                         .build_in_memory();
+  auto mem_order_b = TestShipBuilder(ShipType::STYPE_CRUISER)
+                         .numbered(77)
+                         .with_crew(20, 10)
+                         .with_resource(50)
+                         .with_fuel(200.0)
+                         .build_in_memory();
+  test::expect_eq(mem_order_a->number(), shipnum_t{77});
+  test::expect_eq(mem_order_a->mass(), mem_order_a->local_mass(1.0));
+  test::expect_eq(mem_order_a->mass(), mem_order_b->mass());
+
+  auto explicit_mass_a = TestShipBuilder(ShipType::STYPE_CRUISER)
+                             .with_mass(500.0)
+                             .with_crew(10, 0)
+                             .build_in_memory();
+  auto explicit_mass_b = TestShipBuilder(ShipType::STYPE_CRUISER)
+                             .with_crew(10, 0)
+                             .with_mass(500.0)
+                             .build_in_memory();
+  test::expect_eq(explicit_mass_a->mass(), 500.0);
+  test::expect_eq(explicit_mass_b->mass(), 500.0);
+
   std::println(std::cout, "  ✓ TestShipBuilder verified successfully");
 }
 

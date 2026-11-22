@@ -21,7 +21,8 @@ void expect_near(double actual, double expected, double eps = 1e-5) {
 
 void test_hull_efficiency() {
   std::println(std::cout, "Testing Ship::hull_efficiency()...");
-  Ship ship;
+  auto ship_ptr = ShipFactory::create_from_template(ShipType::STYPE_CRUISER, 1);
+  Ship& ship = *ship_ptr;
 
   ship.admin_override_damage(0);
   expect_near(ship.hull_efficiency(), 1.0);
@@ -44,7 +45,8 @@ void test_hull_efficiency() {
 void test_laser_overload_thresholds() {
   std::println(std::cout, "Testing Ship::max_safe_laser_strength() and "
                           "laser_explosion_threshold()...");
-  Ship ship;
+  auto ship_ptr = ShipFactory::create_from_template(ShipType::STYPE_CRUISER, 1);
+  Ship& ship = *ship_ptr;
   ship.tech() = 100.0;
 
   ship.admin_override_damage(0);
@@ -89,11 +91,11 @@ void test_laser_overload_thresholds() {
 
 void test_crew_ratio() {
   std::println(std::cout, "Testing Ship::crew_ratio()...");
-  ship_struct sdata{
-      .max_crew = 100,
-      .popn = 0,
-  };
-  Ship ship{sdata};
+  auto ship_ptr = TestShipBuilder(ShipType::STYPE_CRUISER)
+                      .with_max_crew(100)
+                      .with_crew(0, 0)
+                      .build_in_memory();
+  Ship& ship = *ship_ptr;
 
   expect_near(ship.crew_ratio(), 0.0);
 
@@ -104,18 +106,17 @@ void test_crew_ratio() {
   expect_near(ship.crew_ratio(), 1.0);
 
   // Zero-capacity ship returns 0.0 without division by zero
-  ship_struct zero_crew_data{.max_crew = 0, .popn = 0};
-  Ship zero_ship{zero_crew_data};
-  expect_near(zero_ship.crew_ratio(), 0.0);
+  auto zero_ship = ShipFactory::create_from_template(ShipType::OTYPE_PROBE, 1);
+  expect_near(zero_ship->crew_ratio(), 0.0);
 }
 
 void test_fuel_predicates() {
   std::println(std::cout, "Testing Ship fuel predicates...");
-  ship_struct sdata{
-      .fuel = 0.0,
-      .max_fuel = 200.0,
-  };
-  Ship ship{sdata};
+  auto ship_ptr = TestShipBuilder(ShipType::STYPE_SHUTTLE)
+                      .with_max_fuel(200.0)
+                      .with_fuel(0.0)
+                      .build_in_memory();
+  Ship& ship = *ship_ptr;
 
   test::expect_false(ship.has_fuel());
   test::expect_false(ship.is_fully_fueled());
@@ -141,11 +142,11 @@ void test_fuel_predicates() {
 
 void test_available_resource_capacity() {
   std::println(std::cout, "Testing Ship::available_resource_capacity()...");
-  ship_struct sdata{
-      .max_resource = 500,
-      .resource = 0,
-  };
-  Ship ship{sdata};
+  auto ship_ptr = TestShipBuilder(ShipType::STYPE_CARGO)
+                      .with_max_resource(500)
+                      .with_resource(0)
+                      .build_in_memory();
+  Ship& ship = *ship_ptr;
 
   test::expect_eq(ship.available_resource_capacity(), 500);
 
@@ -162,13 +163,15 @@ void test_available_resource_capacity() {
 
 void test_admin_overrides() {
   std::println(std::cout, "Testing Ship admin overrides and clear_crew...");
-  ship_struct sdata{
-      .max_crew = 50,
-      .max_resource = 200,
-      .max_destruct = 100,
-      .max_fuel = 150.0,
-  };
-  Ship ship{sdata};
+  auto ship_ptr = TestShipBuilder(ShipType::STYPE_CRUISER)
+                      .with_max_crew(50)
+                      .with_max_resource(200)
+                      .with_max_destruct(100)
+                      .with_destruct(0)
+                      .with_max_fuel(150.0)
+                      .with_fuel(0.0)
+                      .build_in_memory();
+  Ship& ship = *ship_ptr;
 
   // admin_override_damage
   ship.admin_override_damage(40);
@@ -244,12 +247,12 @@ void test_admin_overrides() {
 
 void test_fuel_consumption() {
   std::println(std::cout, "Testing Ship fuel consumption methods...");
-  ship_struct sdata{
-      .fuel = 50.0,
-      .mass = 200.0,
-      .max_fuel = 100.0,
-  };
-  Ship ship{sdata};
+  auto ship_ptr = TestShipBuilder(ShipType::STYPE_SHUTTLE)
+                      .with_max_fuel(100.0)
+                      .with_fuel(50.0)
+                      .with_mass(200.0)
+                      .build_in_memory();
+  Ship& ship = *ship_ptr;
 
   // try_consume_fuel with non-positive cost
   test::expect_true(ship.try_consume_fuel(0.0));
@@ -286,12 +289,12 @@ void test_fuel_consumption() {
 
 void test_resource_consumption() {
   std::println(std::cout, "Testing Ship resource consumption methods...");
-  ship_struct sdata{
-      .mass = 500.0,
-      .max_resource = 300,
-      .resource = 150,
-  };
-  Ship ship{sdata};
+  auto ship_ptr = TestShipBuilder(ShipType::STYPE_CARGO)
+                      .with_max_resource(300)
+                      .with_resource(150)
+                      .with_mass(500.0)
+                      .build_in_memory();
+  Ship& ship = *ship_ptr;
 
   // try_consume_resource
   test::expect_true(ship.try_consume_resource(0));
@@ -315,12 +318,12 @@ void test_resource_consumption() {
 
 void test_destruct_consumption() {
   std::println(std::cout, "Testing Ship destruct consumption methods...");
-  ship_struct sdata{
-      .mass = 1000.0,
-      .max_destruct = 100000,
-      .destruct = 70000,
-  };
-  Ship ship{sdata};
+  auto ship_ptr = TestShipBuilder(ShipType::STYPE_DREADNT)
+                      .with_max_destruct(100000)
+                      .with_destruct(70000)
+                      .with_mass(1000.0)
+                      .build_in_memory();
+  Ship& ship = *ship_ptr;
 
   // try_consume_destruct with value > 65535 to verify no 16-bit truncation
   test::expect_true(ship.try_consume_destruct(0));
@@ -338,20 +341,19 @@ void test_destruct_consumption() {
 
 void test_clamped_add_and_consume() {
   std::println(std::cout, "Testing Ship clamped add_* and consume_*...");
-  ship_struct sdata{
-      .fuel = 20.0,
-      .mass = 500.0,
-      .max_crew = 100,
-      .max_resource = 200,
-      .max_destruct = 80000,
-      .max_fuel = 100.0,
-      .destruct = 10,
-      .resource = 50,
-      .popn = 40,
-      .troops = 10,
-      .damage = 90,
-  };
-  Ship ship{sdata};
+  auto ship_ptr = TestShipBuilder(ShipType::STYPE_CRUISER)
+                      .with_max_crew(100)
+                      .with_crew(40, 10)
+                      .with_max_resource(200)
+                      .with_resource(50)
+                      .with_max_destruct(80000)
+                      .with_destruct(10)
+                      .with_max_fuel(100.0)
+                      .with_fuel(20.0)
+                      .with_damage(90)
+                      .with_mass(500.0)
+                      .build_in_memory();
+  Ship& ship = *ship_ptr;
 
   // apply_damage overflow safety and clamping
   const auto d_res1 = ship.apply_damage(20);
@@ -433,15 +435,14 @@ void test_clamped_add_and_consume() {
 
 void test_dynamic_base_mass() {
   std::println(std::cout, "Testing Ship::base_mass() dynamic calculation...");
-  ship_struct sdata{
-      .armor = 5,
-      .size = 50,
-      .base_mass = 9999.0,  // Stored legacy value should be completely ignored
-      .primary_battery = GunBattery::create(4, guntype_t::MEDIUM),
-      .secondary_battery = GunBattery::create(2, guntype_t::LIGHT),
-      .max_hanger = 10,
-  };
-  Ship ship{sdata};
+  auto ship_ptr = TestShipBuilder(ShipType::STYPE_CRUISER)
+                      .with_armor(5)
+                      .with_size(50)
+                      .with_guns(guntype_t::MEDIUM, 4)
+                      .with_secondary_guns(guntype_t::LIGHT, 2)
+                      .with_max_hanger(10)
+                      .build_in_memory();
+  Ship& ship = *ship_ptr;
 
   // body = max(0, 50 - 10) = 40
   test::expect_eq(ship.shipbody(), 40u);
@@ -594,7 +595,8 @@ void test_gun_battery_invariants_and_operations() {
   test::expect_eq(overkill.damage(3), 0u);
 
   // Ship battery encapsulation and atomic setters
-  Ship ship;
+  auto ship_ptr = ShipFactory::create_from_template(ShipType::STYPE_CRUISER, 1);
+  Ship& ship = *ship_ptr;
   ship.set_primary_battery(6, guntype_t::MEDIUM);
   test::expect_eq(ship.primary_battery().count, 6u);
   test::expect_eq(ship.primary_battery().caliber, guntype_t::MEDIUM);
@@ -629,7 +631,11 @@ void test_active_gun_battery_and_formatting() {
   test::expect_eq(GunBattery::create(2, guntype_t::HEAVY).to_string(), "2H");
 
   // 2. Active battery selection on Ship
-  Ship ship;
+  auto ship_ptr = TestShipBuilder(ShipType::STYPE_BATTLE)
+                      .with_guns(guntype_t::NONE, 0, ActiveBattery::NONE)
+                      .with_secondary_guns(guntype_t::NONE, 0)
+                      .build_in_memory();
+  Ship& ship = *ship_ptr;
   test::expect_eq(ship.active_gun_battery(), nullptr);
   test::expect_eq(ship.active_gun_caliber(), guntype_t::NONE);
   test::expect_eq(ship.active_guns(), 0u);
@@ -679,8 +685,6 @@ void test_active_gun_battery_and_formatting() {
   test::expect_eq(ship.active_gun_caliber(), guntype_t::MEDIUM);
 
   // 3. Combat retaliation integration with active battery
-  ship.alive() = true;
-  ship.type() = ShipType::STYPE_BATTLE;
   ship.popn() = 100;
   ship.destruct() = 50;
   ship.retaliate() = 10;
@@ -694,9 +698,10 @@ void test_active_gun_battery_and_formatting() {
 }
 
 void test_ship_continuous_coordinates() {
-  ship_struct sdata{};
-  sdata.coordinates = UniverseCoordinates(-450.0, 1200.0);
-  Ship ship{sdata};
+  auto ship_ptr = TestShipBuilder(ShipType::STYPE_SHUTTLE)
+                      .with_coordinates(UniverseCoordinates(-450.0, 1200.0))
+                      .build_in_memory();
+  Ship& ship = *ship_ptr;
 
   test::expect_eq(ship.coordinates(), UniverseCoordinates(-450.0, 1200.0));
   ship.set_coordinates(UniverseCoordinates(300.0, -800.0));
@@ -706,8 +711,8 @@ void test_ship_continuous_coordinates() {
 }
 
 void test_crystals_domain() {
-  ship_struct sdata{};
-  Ship ship{sdata};
+  auto ship_ptr = ShipFactory::create_from_template(ShipType::STYPE_CRUISER, 1);
+  Ship& ship = *ship_ptr;
 
   test::expect_eq(ship.crystals(), 0);
   test::expect_eq(ship.max_crystals_capacity(), 127);
@@ -748,16 +753,16 @@ void test_crystals_domain() {
 }
 
 void test_local_mass_and_set_mass() {
-  ship_struct sdata{
-      .fuel = 200.0,
-      .armor = 10,
-      .size = 100,
-      .destruct = 5,
-      .resource = 50,
-      .popn = 20,
-      .troops = 10,
-  };
-  Ship ship{sdata};
+  auto ship_ptr = TestShipBuilder(ShipType::STYPE_CRUISER)
+                      .with_max_fuel(500.0)
+                      .with_fuel(200.0)
+                      .with_armor(10)
+                      .with_size(100)
+                      .with_destruct(5)
+                      .with_resource(50)
+                      .with_crew(20, 10)
+                      .build_in_memory();
+  Ship& ship = *ship_ptr;
 
   // set_mass updates data_.mass directly
   ship.set_mass(350.0);
@@ -774,15 +779,13 @@ void test_local_mass_and_set_mass() {
 
 void test_simulated_ship() {
   std::println(std::cout, "Testing SimulatedShip...");
-  ship_struct sdata{
-      .number = 42,
-      .fuel = 50.0,
-      .mass = 120.0,
-      .max_fuel = 200.0,
-      .base_mass = 100.0,
-      .type = ShipType::STYPE_SHUTTLE,
-  };
-  Ship base_ship{sdata};
+  auto base_ship_ptr = TestShipBuilder(ShipType::STYPE_SHUTTLE)
+                           .numbered(42)
+                           .with_max_fuel(200.0)
+                           .with_fuel(50.0)
+                           .with_mass(120.0)
+                           .build_in_memory();
+  Ship& base_ship = *base_ship_ptr;
   test::expect_false(base_ship.is_simulation());
   test::expect_eq(base_ship.number(), 42);
 
@@ -803,12 +806,11 @@ void test_simulated_ship() {
 void test_ship_joint_crew_capacity() {
   std::println(std::cout,
                "Testing Ship joint crew capacity and casualty operations...");
-  ship_struct sdata{
-      .max_crew = 60,
-      .popn = 0,
-      .troops = 0,
-  };
-  Ship ship{sdata};
+  auto ship_ptr = TestShipBuilder(ShipType::STYPE_CRUISER)
+                      .with_max_crew(60)
+                      .with_mass(0.0)
+                      .build_in_memory();
+  Ship& ship = *ship_ptr;
 
   test::expect_eq(ship.available_crew_capacity(), 60);
 
@@ -859,11 +861,8 @@ void test_ship_joint_crew_capacity() {
 
 void test_damage_and_radiation_subsystem() {
   std::println(std::cout, "Testing Ship damage and radiation subsystem...");
-  ship_struct sdata{
-      .damage = 0,
-      .rad = 0,
-  };
-  Ship ship{sdata};
+  auto ship_ptr = ShipFactory::create_from_template(ShipType::STYPE_CRUISER, 1);
+  Ship& ship = *ship_ptr;
 
   // 1. apply_damage returns DamageResult
   auto res = ship.apply_damage(30);
@@ -997,8 +996,8 @@ void test_damage_and_radiation_subsystem() {
 void test_dock_state_transitions() {
   std::println(std::cout,
                "Testing Ship DockState transitions and invariants...");
-  ship_struct sdata{};
-  Ship ship(sdata);
+  auto ship_ptr = ShipFactory::create_from_template(ShipType::STYPE_SHUTTLE, 1);
+  Ship& ship = *ship_ptr;
 
   // Default initial state is Spaceborne
   test::expect_eq(ship.dock_state(), DockState::Spaceborne);
@@ -1083,22 +1082,18 @@ void test_dock_state_transitions() {
 void test_carrier_craft_loading_and_unloading() {
   std::println(std::cout,
                "Testing Carrier craft loading and unloading encapsulation...");
-  ship_struct carrier_data{
-      .mass = 500.0,
-      .base_mass = 500.0,
-      .type = ShipType::STYPE_CARRIER,
-      .hanger = 0,
-      .max_hanger = 100,
-  };
-  Ship carrier{carrier_data};
+  auto carrier_ptr = TestShipBuilder(ShipType::STYPE_CARRIER)
+                         .with_hanger(0)
+                         .with_max_hanger(100)
+                         .with_mass(500.0)
+                         .build_in_memory();
+  Ship& carrier = *carrier_ptr;
 
-  ship_struct child_data{
-      .mass = 50.0,
-      .size = 10,
-      .base_mass = 40.0,
-      .type = ShipType::STYPE_FIGHTER,
-  };
-  Ship child{child_data};
+  auto child_ptr = TestShipBuilder(ShipType::STYPE_FIGHTER)
+                       .with_size(10)
+                       .with_mass(50.0)
+                       .build_in_memory();
+  Ship& child = *child_ptr;
 
   // Load craft into carrier
   carrier.load_docked_craft(child);
@@ -1150,35 +1145,33 @@ void test_ship_cargo_transfer() {
   test::expect_eq(char_to_commod_type('z'), std::nullopt);
 
   // Set up source and destination ships
-  ship_struct src_data{
-      .fuel = 150.0,
-      .mass = 1000.0,
-      .max_crew = 100,
-      .max_resource = 500,
-      .max_destruct = 200,
-      .max_fuel = 300.0,
-      .destruct = 80,
-      .resource = 200,
-      .popn = 50,
-      .troops = 20,
-      .crystals = 30,
-  };
-  Ship src{src_data};
+  auto src_ptr = TestShipBuilder(ShipType::STYPE_CARGO)
+                     .with_max_crew(100)
+                     .with_crew(50, 20)
+                     .with_max_resource(500)
+                     .with_resource(200)
+                     .with_max_destruct(200)
+                     .with_destruct(80)
+                     .with_max_fuel(300.0)
+                     .with_fuel(150.0)
+                     .with_crystals(30)
+                     .with_mass(1000.0)
+                     .build_in_memory();
+  Ship& src = *src_ptr;
 
-  ship_struct dst_data{
-      .fuel = 50.0,
-      .mass = 800.0,
-      .max_crew = 100,
-      .max_resource = 500,
-      .max_destruct = 200,
-      .max_fuel = 300.0,
-      .destruct = 20,
-      .resource = 100,
-      .popn = 10,
-      .troops = 5,
-      .crystals = 10,
-  };
-  Ship dst{dst_data};
+  auto dst_ptr = TestShipBuilder(ShipType::STYPE_CARGO)
+                     .with_max_crew(100)
+                     .with_crew(10, 5)
+                     .with_max_resource(500)
+                     .with_resource(100)
+                     .with_max_destruct(200)
+                     .with_destruct(20)
+                     .with_max_fuel(300.0)
+                     .with_fuel(50.0)
+                     .with_crystals(10)
+                     .with_mass(800.0)
+                     .build_in_memory();
+  Ship& dst = *dst_ptr;
 
   const double initial_aggregate_mass = src.mass() + dst.mass();
 
@@ -1328,10 +1321,13 @@ void test_ship_moor_together_and_commandability() {
   test::expect_true(g.out.str().find("irradiated") != std::string::npos);
 
   // Destroyed ship fails check_commandable
-  Ship dead_s1{ctx.em.peek_ship(s1_id)->to_struct()};
-  dead_s1.alive() = false;
+  auto dead_s1 = TestShipBuilder(ShipType::STYPE_CRUISER)
+                     .numbered(s1_id)
+                     .owned_by(owner)
+                     .with_alive(false)
+                     .build_in_memory();
   g.out.str("");
-  test::expect_false(g.check_commandable(dead_s1));
+  test::expect_false(g.check_commandable(*dead_s1));
   test::expect_true(g.out.str().find("destroyed") != std::string::npos);
 }
 
@@ -1606,8 +1602,11 @@ void test_blueprint_complexity_defense_and_capture() {
       cruiser_tmpl->to_struct().special));
 
   // roll_landing_crash() fuel and damage checks
-  ship_struct crash_sd{.fuel = 5.0, .damage = 100};
-  Ship crash_ship{crash_sd};
+  auto crash_ship_ptr = TestShipBuilder(ShipType::STYPE_SHUTTLE)
+                            .with_fuel(5.0)
+                            .with_damage(100)
+                            .build_in_memory();
+  Ship& crash_ship = *crash_ship_ptr;
   test::expect_true(std::get<0>(crash_ship.roll_landing_crash(10.0)));
   test::expect_true(std::get<0>(crash_ship.roll_landing_crash(1.0)));
   crash_ship.admin_override_damage(0);
@@ -1714,7 +1713,7 @@ void test_moveship_and_followable() {
   ctx.em.mutate_race(foreign,
                      [&](Race& r2) { r2.rescind_alliance_with(mortal); });
 
-  Ship same_owner_s2{ctx.em.peek_ship(s2_id)->to_struct()};
+  SimulatedShip same_owner_s2{*ctx.em.peek_ship(s2_id)};
   same_owner_s2.owner() = mortal;
   test::expect_true(
       followable(ctx.em, *ctx.em.peek_ship(s1_id), same_owner_s2));
@@ -1722,16 +1721,16 @@ void test_moveship_and_followable() {
   // Inactive follower, carrier-docked target, or dead target is NOT followable
   ctx.em.mutate_ship(s2_id,
                      [&](Ship& s2) { s2.set_coordinates(star0_coords); });
-  Ship inactive_s1{ctx.em.peek_ship(s1_id)->to_struct()};
+  SimulatedShip inactive_s1{*ctx.em.peek_ship(s1_id)};
   inactive_s1.active() = false;
   test::expect_false(followable(ctx.em, inactive_s1, *ctx.em.peek_ship(s2_id)));
 
-  Ship carrier_docked_s2{ctx.em.peek_ship(s2_id)->to_struct()};
+  SimulatedShip carrier_docked_s2{*ctx.em.peek_ship(s2_id)};
   carrier_docked_s2.dock_into_carrier(s1_id);
   test::expect_false(
       followable(ctx.em, *ctx.em.peek_ship(s1_id), carrier_docked_s2));
 
-  Ship dead_s2{ctx.em.peek_ship(s2_id)->to_struct()};
+  SimulatedShip dead_s2{*ctx.em.peek_ship(s2_id)};
   dead_s2.alive() = false;
   test::expect_false(followable(ctx.em, *ctx.em.peek_ship(s1_id), dead_s2));
 
@@ -2120,12 +2119,19 @@ void test_moveship_and_followable() {
     vn.set_star_destination(1);
     moveship(ctx.em, vn, true, true, false);
     test::expect_false(vn.alive());
+  });
 
-    vn.alive() = true;
-    vn.type() = ShipType::OTYPE_BERS;
-    vn.set_star_destination(1);
-    moveship(ctx.em, vn, true, true, false);
-    test::expect_false(vn.alive());
+  const auto bers_id = TestShipBuilder(ctx.em, ShipType::OTYPE_BERS)
+                           .owned_by(mortal, 1)
+                           .with_fuel(0.0)
+                           .with_speed(9)
+                           .build();
+  ctx.em.mutate_ship(bers_id, [&](Ship& bers) {
+    bers.build_cost() = 100;
+    bers.enter_deep_space();
+    bers.set_star_destination(1);
+    moveship(ctx.em, bers, true, true, false);
+    test::expect_false(bers.alive());
   });
 }
 
@@ -2133,12 +2139,13 @@ void test_orbital_and_destination_transitions() {
   std::println(std::cout,
                "Testing Ship orbital and destination transition methods...");
 
-  Ship s{};
-  s.number() = 10;
-  s.owner() = 1;
-  s.alive() = true;
-  s.max_crew() = 10;
-  s.popn() = 10;
+  auto s_ptr = TestShipBuilder(ShipType::STYPE_CRUISER)
+                   .numbered(10)
+                   .owned_by(1)
+                   .with_max_crew(10)
+                   .with_crew(10, 0)
+                   .build_in_memory();
+  Ship& s = *s_ptr;
 
   // 1. Destination transitions from LEVEL_SHIP must always clear destshipno
   s.set_ship_destination(42);
@@ -2250,13 +2257,16 @@ void test_orbital_and_destination_transitions() {
   test::expect_eq(s.pnumorbits(), planetnum_t{0});
   test::expect_false(s.to_struct().storbits.has_value());
   test::expect_false(s.to_struct().pnumorbits.has_value());
-  test::expect_true(Ship{}.alive());
+  test::expect_true(
+      ShipFactory::create_from_template(ShipType::STYPE_SHUTTLE, 1)->alive());
 
   // 3. Carrier docking and launching (both to orbit and onto a landed planet)
-  Ship carrier{};
-  carrier.number() = 99;
-  carrier.enter_planet_orbit(6, 2);
-  carrier.set_coordinates({123.0, 456.0});
+  auto carrier_ptr =
+      TestShipBuilder(ShipType::STYPE_CARRIER)
+          .numbered(99)
+          .in_planet_orbit(6, 2, UniverseCoordinates{123.0, 456.0})
+          .build_in_memory();
+  Ship& carrier = *carrier_ptr;
 
   s.hyper_drive().on = true;
   s.dock_into_carrier(carrier);
@@ -2331,8 +2341,9 @@ void test_orbital_and_destination_transitions() {
   test::expect_eq(s.coordinates().y, 810.0);
 
   // 4. Following ship orbital synchronization
-  Ship leader{};
-  leader.number() = 50;
+  auto leader_ptr =
+      TestShipBuilder(ShipType::STYPE_CRUISER).numbered(50).build_in_memory();
+  Ship& leader = *leader_ptr;
   leader.enter_planet_orbit(8, 3);
   s.sync_followed_ship_orbit(leader);
   test::expect_eq(s.deststar(), starnum_t{8});
@@ -2414,9 +2425,13 @@ void test_subclass_special_data_clamping() {
   test::expect_true(battery.caliber == guntype_t::NONE);
 
   // 7. Ship::can_fit_in_hangar and domain predicates
-  Ship carrier{};
-  carrier.max_hanger() = 20;
-  carrier.hanger() = 5;
+  auto carrier_ptr = TestShipBuilder(ShipType::STYPE_CARRIER)
+                         .with_guns(guntype_t::NONE, 0, ActiveBattery::NONE)
+                         .with_secondary_guns(guntype_t::NONE, 0)
+                         .with_max_hanger(20)
+                         .with_hanger(5)
+                         .build_in_memory();
+  Ship& carrier = *carrier_ptr;
   test::expect_false(carrier.can_fit_in_hangar(-5));
   test::expect_true(carrier.can_fit_in_hangar(10));
   test::expect_false(carrier.can_fit_in_hangar(20));
@@ -2443,40 +2458,41 @@ void test_subclass_special_data_clamping() {
   carrier.active() = false;
   test::expect_false(carrier.is_commandable_by(1, 0));
 
-  Ship bs{};
-  bs.type() = ShipType::STYPE_DREADNT;
-  bs.alive() = true;
-  test::expect_eq(bs.retal_strength(), 0);
+  auto bs = ShipFactory::create_from_template(ShipType::STYPE_DREADNT, 1);
+  test::expect_eq(bs->retal_strength(), 0);
 
-  Ship bers{};
-  bers.type() = ShipType::OTYPE_BERS;
-  bers.guns() = ActiveBattery::PRIMARY;
-  bers.set_primary_battery(2, guntype_t::HEAVY);
-  bers.max_destruct() = 5;
-  bers.admin_override_destruct(5);
-  bers.retaliate() = 5;
-  bers.alive() = true;
+  auto bers_ptr = TestShipBuilder(ShipType::OTYPE_BERS)
+                      .with_guns(guntype_t::HEAVY, 2, ActiveBattery::PRIMARY)
+                      .with_max_destruct(5)
+                      .with_destruct(5)
+                      .with_retaliate(5)
+                      .build_in_memory();
+  Ship& bers = *bers_ptr;
   test::expect_eq(bers.retal_strength(), 2);
 
-  Ship ftr{};
-  ftr.type() = ShipType::STYPE_FIGHTER;
-  ftr.guns() = ActiveBattery::PRIMARY;
-  ftr.set_primary_battery(2, guntype_t::LIGHT);
-  ftr.max_crew() = 2;
-  ftr.add_popn(1, 1.0);
-  ftr.max_destruct() = 5;
-  ftr.admin_override_destruct(5);
-  ftr.retaliate() = 5;
-  ftr.alive() = true;
-  ftr.active() = false;
+  auto ftr_ptr = TestShipBuilder(ShipType::STYPE_FIGHTER)
+                     .with_guns(guntype_t::LIGHT, 2, ActiveBattery::PRIMARY)
+                     .with_max_crew(2)
+                     .with_crew(1, 0)
+                     .with_max_destruct(5)
+                     .with_destruct(5)
+                     .with_retaliate(5)
+                     .with_active(false)
+                     .build_in_memory();
+  Ship& ftr = *ftr_ptr;
   fac.alive() = true;
   test::expect_eq(fac.retal_strength(), 0);
 
   test::expect_false(ftr.is_laser_on());
-  ftr.type() = ShipType::OTYPE_AFV;
-  ftr.land_on_planet(1, 1);
-  test::expect_eq(ftr.retal_strength(), 2);
-  ftr.type() = ShipType::STYPE_FIGHTER;
+  auto afv_ptr = TestShipBuilder(ShipType::OTYPE_AFV)
+                     .landed_on(1, 1, {0, 0})
+                     .with_guns(guntype_t::LIGHT, 2, ActiveBattery::PRIMARY)
+                     .with_crew(1, 0)
+                     .with_destruct(5)
+                     .with_retaliate(5)
+                     .build_in_memory();
+  Ship& afv = *afv_ptr;
+  test::expect_eq(afv.retal_strength(), 2);
   test::expect_eq(ftr.retal_strength(), 2);
   test::expect_eq(ftr.check_retal_strength(), 0);
   ftr.active() = true;
@@ -2493,11 +2509,17 @@ void test_subclass_special_data_clamping() {
   ftr.consume_weapon_resources(2, true);
   ftr.consume_weapon_resources(1, false);
 
-  Ship ov{};
-  ov.max_resource() = 20;
-  ov.max_fuel() = 20;
-  ov.max_crew() = 20;
-  ov.max_destruct() = 20;
+  auto ov_ptr = TestShipBuilder(ShipType::STYPE_CARGO)
+                    .with_max_resource(20)
+                    .with_resource(0)
+                    .with_max_fuel(20.0)
+                    .with_fuel(0.0)
+                    .with_max_crew(20)
+                    .with_crew(0, 0)
+                    .with_max_destruct(20)
+                    .with_destruct(0)
+                    .build_in_memory();
+  Ship& ov = *ov_ptr;
   test::expect_false(ov.is_overloaded());
   ov.admin_override_resource(20);
   ov.max_resource() = 10;
@@ -2522,19 +2544,20 @@ void test_subclass_special_data_clamping() {
   test::expect_false(vn.can_navigate());
   test::expect_false(ftr.can_aim());
   test::expect_true(mirror.can_aim());
-  ov.type() = ShipType::OTYPE_VN;
-  test::expect_false(ov.can_aim());
+  test::expect_false(vn.can_aim());
   test::expect_true(ftr.is_exploration_capable());
-  ov.type() = ShipType::OTYPE_PROBE;
-  test::expect_true(ov.is_exploration_capable());
-  ov.type() = ShipType::STYPE_FIGHTER;
-  test::expect_false(ov.is_exploration_capable());
+  test::expect_true(ShipFactory::create_from_template(ShipType::OTYPE_PROBE, 1)
+                        ->is_exploration_capable());
+  test::expect_false(
+      ShipFactory::create_from_template(ShipType::STYPE_FIGHTER, 1)
+          ->is_exploration_capable());
 
-  Ship shuttle{};
-  shuttle.type() = ShipType::STYPE_SHUTTLE;
-  shuttle.max_resource() = 10;
-  shuttle.admin_override_resource(10);
-  shuttle.enter_star_orbit(1);
+  auto shuttle_ptr = TestShipBuilder(ShipType::STYPE_SHUTTLE)
+                         .in_star_orbit(1)
+                         .with_max_resource(10)
+                         .with_resource(10)
+                         .build_in_memory();
+  Ship& shuttle = *shuttle_ptr;
   shuttle.add_resource(5);
   test::expect_eq(shuttle.resource(), 15);
   shuttle.dock_into_carrier(1);
@@ -2585,7 +2608,11 @@ void test_subclass_special_data_clamping() {
   expect_near(rad_cruiser->mass(), rad_cruiser->local_mass(2.5));
 
   // Clamped speed, retaliate, battery collateral damage, and max_fuel override
-  Ship clamped{};
+  auto clamped_ptr = TestShipBuilder(ShipType::STYPE_CRUISER)
+                         .with_destruct(0)
+                         .with_fuel(0.0)
+                         .build_in_memory();
+  Ship& clamped = *clamped_ptr;
   clamped.set_max_speed(speed_t{4});
   clamped.set_speed(speed_t{9});
   test::expect_eq(clamped.speed(), speed_t{4});

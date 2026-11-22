@@ -1056,7 +1056,6 @@ void test_special_ship_order_mcdc_and_notices() {
                    .docked_to(1, 1)
                    .with_build_type(ShipType::STYPE_SHUTTLE)
                    .with_crew(5, 0)
-                   .with_max_hanger(100)
                    .with_size(1)
                    .with_on(false)
                    .build_handle();

@@ -1117,25 +1117,41 @@ void test_refuel_gasgiant_orbiters() {
   test::expect_eq(ship.fuel(), 50.0 + FUEL_GAS_ADD_TANKER);
 
   // 4. Habitat in orbit around gas giant: FUEL_GAS_ADD_HABITAT added
-  ship.consume_fuel(added_tanker);
-  ship.type() = ShipType::STYPE_HABITAT;
-  double added_hab = ship.refuel_from_gas_giant(gas_giant);
+  auto hab_handle = TestShipBuilder(em, ShipType::STYPE_HABITAT)
+                        .owned_by(1)
+                        .with_fuel(50.0)
+                        .with_max_fuel(500.0)
+                        .in_planet_orbit(1, 1)
+                        .targeting_planet(1, 1)
+                        .with_active(true)
+                        .with_alive(true)
+                        .with_on(true)
+                        .build_handle();
+  double added_hab = hab_handle->refuel_from_gas_giant(gas_giant);
   test::expect_eq(added_hab, FUEL_GAS_ADD_HABITAT);
-  test::expect_eq(ship.fuel(), 50.0 + FUEL_GAS_ADD_HABITAT);
+  test::expect_eq(hab_handle->fuel(), 50.0 + FUEL_GAS_ADD_HABITAT);
 
   // 5. Standard ship in orbit around gas giant: FUEL_GAS_ADD added
-  ship.consume_fuel(added_hab);
-  ship.type() = ShipType::STYPE_POD;
-  double added_pod = ship.refuel_from_gas_giant(gas_giant);
+  auto pod_handle = TestShipBuilder(em, ShipType::STYPE_POD)
+                        .owned_by(1)
+                        .with_fuel(50.0)
+                        .with_max_fuel(500.0)
+                        .in_planet_orbit(1, 1)
+                        .targeting_planet(1, 1)
+                        .with_active(true)
+                        .with_alive(true)
+                        .with_on(true)
+                        .build_handle();
+  double added_pod = pod_handle->refuel_from_gas_giant(gas_giant);
   test::expect_eq(added_pod, FUEL_GAS_ADD);
-  test::expect_eq(ship.fuel(), 50.0 + FUEL_GAS_ADD);
+  test::expect_eq(pod_handle->fuel(), 50.0 + FUEL_GAS_ADD);
 
   // 6. Capacity clamping near max_fuel
-  ship.consume_fuel(added_pod);
-  ship.add_fuel(445.0);
-  double added_clamp = ship.refuel_from_gas_giant(gas_giant);
+  pod_handle->consume_fuel(added_pod);
+  pod_handle->add_fuel(445.0);
+  double added_clamp = pod_handle->refuel_from_gas_giant(gas_giant);
   test::expect_eq(added_clamp, 5.0);
-  test::expect_eq(ship.fuel(), 500.0);
+  test::expect_eq(pod_handle->fuel(), 500.0);
 }
 
 void test_process_planetary_ships() {

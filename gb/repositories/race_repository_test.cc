@@ -83,10 +83,11 @@ int main() {
   test_race.Gov_ship = std::nullopt;
   bool saved = repo.save(test_race);
   test::expect_true(saved, "Failed to save race");
-  Ship gov_ship{};
-  gov_ship.number() = 100;
-  gov_ship.owner() = 1;
-  ShipRepository(store).save(gov_ship);
+  auto gov_ship = TestShipBuilder(ShipType::OTYPE_GOV)
+                      .numbered(100)
+                      .owned_by(1)
+                      .build_in_memory();
+  ShipRepository(store).save(*gov_ship);
   test_race.Gov_ship = 100;
   saved = repo.save(test_race);
   test::expect_true(saved, "Failed to save race with Gov_ship");

@@ -731,7 +731,7 @@ void test_assault_defensive_fire_and_escort_retaliation() {
   // defensive fire killing the lone boarding troop aborts boarding while the
   // attacking ship survives.
   ctx.em.mutate_ship(heavy_attacker, [&](Ship& att) {
-    Ship dead_def{att.get_struct()};
+    SimulatedShip dead_def{att};
     dead_def.alive() = false;
     test::expect_false(
         execute_defensive_fire(ctx.em, att, dead_def).has_value());

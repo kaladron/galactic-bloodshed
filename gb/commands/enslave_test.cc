@@ -191,9 +191,13 @@ void test_enslave_domain_errors() {
   test::expect_contains(g.out.str(), "doesn't orbit a planet.");
 
   // 6. Ship not an OAP
-  ctx.em.mutate_ship(1, [](Ship& s) { s.type() = ShipType::STYPE_CARGO; });
+  const auto cargo_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARGO)
+                            .owned_by(enslaver, 1)
+                            .in_planet_orbit(1, 1)
+                            .build();
   g.out.str("");
-  ctx.assert_dispatch_rejected(g, {"enslave", "1"});
+  ctx.assert_dispatch_rejected(g,
+                               {"enslave", std::format("{}", cargo_id.value)});
   test::expect_contains(g.out.str(), "not an Ob Asst Pltfrm");
 
   // 7. Ship owned by another player

@@ -698,18 +698,22 @@ void test_transporter_edge_cases() {
       g, {"load", std::format("#{}", send_id.value), "r", "10"});
   test::expect_contains(g.out.str(), "The target device is not receiving");
 
-  ctx.em.mutate_ship(recv_id, [](Ship& s) {
-    s.on() = true;
-    s.type() = ShipType::STYPE_POD;
-  });
+  const auto non_trans_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
+                                .owned_by(trader_player, 1)
+                                .landed_on(1, 2, {5, 5})
+                                .with_on(true)
+                                .build();
+  ctx.em.mutate_as<TransporterShip>(
+      send_id, [&](TransporterShip& t) { t.set_target_ship(non_trans_id); });
   g.out.str("");
   ctx.assert_dispatch_success(
       g, {"load", std::format("#{}", send_id.value), "r", "10"});
   test::expect_contains(g.out.str(), "The target device is not receiving");
 
   // 3. Origin device damaged, wrong planet scope, and not landed
-  ctx.em.mutate_ship(recv_id,
-                     [](Ship& s) { s.type() = ShipType::OTYPE_TRANSDEV; });
+  ctx.em.mutate_ship(recv_id, [](Ship& s) { s.on() = true; });
+  ctx.em.mutate_as<TransporterShip>(
+      send_id, [&](TransporterShip& t) { t.set_target_ship(recv_id); });
   ctx.em.mutate_ship(send_id, [&](Ship& s) {
     auto& trans = static_cast<TransporterShip&>(s);
     const auto wrong_star =

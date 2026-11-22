@@ -95,38 +95,38 @@ int main() {
 
   test_data.retaliate = 5;
 
-  // Wrap in Ship for saving
-  Ship test_ship(test_data);
+  // Wrap in polymorphic Ship for saving
+  auto test_ship = ShipFactory::create(test_data);
 
   // Save ship
   std::println(std::cout, "Save ship...");
-  bool saved = repo.save(test_ship);
+  bool saved = repo.save(*test_ship);
   test::expect_true(saved, "Failed to save ship");
   std::println(std::cout, "  ✓ Ship saved successfully");
 
   // Retrieve by ship number
   std::println(std::cout, "Retrieve ship by number...");
-  auto retrieved = repo.find_by_number(1);
-  test::expect_true(retrieved.has_value(), "Failed to retrieve ship");
+  auto retrieved = repo.find_ship(1);
+  test::expect_ne(retrieved, nullptr, "Failed to retrieve ship");
   std::println(std::cout, "  ✓ Ship retrieved successfully");
 
   // Verify data integrity
   std::println(std::cout, "Verify data integrity...");
-  test::expect_eq(retrieved->number(), test_ship.number());
-  test::expect_eq(retrieved->owner(), test_ship.owner());
-  test::expect_eq(retrieved->governor(), test_ship.governor());
-  test::expect_eq(retrieved->name(), test_ship.name());
-  test::expect_eq(retrieved->shipclass(), test_ship.shipclass());
-  test::expect_eq(retrieved->coordinates(), test_ship.coordinates());
-  test::expect_eq(retrieved->fuel(), test_ship.fuel());
-  test::expect_eq(retrieved->mass(), test_ship.mass());
-  test::expect_eq(retrieved->armor(), test_ship.armor());
-  test::expect_eq(retrieved->size(), test_ship.size());
-  test::expect_eq(retrieved->max_crew(), test_ship.max_crew());
-  test::expect_eq(retrieved->tech(), test_ship.tech());
-  test::expect_eq(retrieved->type(), test_ship.type());
-  test::expect_eq(retrieved->active(), test_ship.active());
-  test::expect_eq(retrieved->alive(), test_ship.alive());
+  test::expect_eq(retrieved->number(), test_ship->number());
+  test::expect_eq(retrieved->owner(), test_ship->owner());
+  test::expect_eq(retrieved->governor(), test_ship->governor());
+  test::expect_eq(retrieved->name(), test_ship->name());
+  test::expect_eq(retrieved->shipclass(), test_ship->shipclass());
+  test::expect_eq(retrieved->coordinates(), test_ship->coordinates());
+  test::expect_eq(retrieved->fuel(), test_ship->fuel());
+  test::expect_eq(retrieved->mass(), test_ship->mass());
+  test::expect_eq(retrieved->armor(), test_ship->armor());
+  test::expect_eq(retrieved->size(), test_ship->size());
+  test::expect_eq(retrieved->max_crew(), test_ship->max_crew());
+  test::expect_eq(retrieved->tech(), test_ship->tech());
+  test::expect_eq(retrieved->type(), test_ship->type());
+  test::expect_eq(retrieved->active(), test_ship->active());
+  test::expect_eq(retrieved->alive(), test_ship->alive());
   test::expect_eq(retrieved->hanger(), 10U);
   test::expect_eq(retrieved->max_hanger(), 20U);
   test::expect_eq(retrieved->guns(), ActiveBattery::PRIMARY);
@@ -174,8 +174,8 @@ int main() {
 
   // Retrieve updated ship
   std::println(std::cout, "Retrieve updated ship...");
-  auto updated = repo.find_by_number(1);
-  test::expect_true(updated.has_value(), "Failed to retrieve updated ship");
+  auto updated = repo.find_ship(1);
+  test::expect_ne(updated, nullptr, "Failed to retrieve updated ship");
   test::expect_eq(updated->fuel(), 3000.0);
   test::expect_eq(updated->damage(), 50);
   test::expect_eq(updated->coordinates(), UniverseCoordinates{150.0, 200.7});
@@ -186,14 +186,14 @@ int main() {
   ship_struct ship2_data = test_data;  // Copy the POD struct
   ship2_data.number = 2;
   ship2_data.name = "USS Defiant";
-  Ship ship2(ship2_data);
-  repo.save(ship2);
+  auto ship2 = ShipFactory::create(ship2_data);
+  repo.save(*ship2);
 
   ship_struct ship3_data = test_data;  // Copy the POD struct
   ship3_data.number = 5;               // Gap at 3 and 4
   ship3_data.name = "USS Voyager";
-  Ship ship3(ship3_data);
-  repo.save(ship3);
+  auto ship3 = ShipFactory::create(ship3_data);
+  repo.save(*ship3);
 
   std::println(std::cout, "  ✓ Multiple ships saved");
 
@@ -212,8 +212,8 @@ int main() {
   // Delete a ship
   std::println(std::cout, "Delete ship...");
   repo.delete_ship(2);
-  auto deleted = repo.find_by_number(2);
-  test::expect_false(deleted.has_value(), "Ship should be deleted");
+  auto deleted = repo.find_ship(2);
+  test::expect_eq(deleted, nullptr, "Ship should be deleted");
   std::println(std::cout, "  ✓ Ship deleted successfully");
 
   // Count after deletion
@@ -224,11 +224,10 @@ int main() {
 
   // Find non-existent ship
   std::println(std::cout, "Find non-existent ship...");
-  auto not_found = repo.find_by_number(999);
-  test::expect_false(not_found.has_value(),
-                     "Should not find non-existent ship");
+  auto not_found = repo.find_ship(999);
+  test::expect_eq(not_found, nullptr, "Should not find non-existent ship");
   std::println(std::cout,
-               "  ✓ Correctly returns nullopt for non-existent ship");
+               "  ✓ Correctly returns nullptr for non-existent ship");
 
   // List ships
   std::println(std::cout, "List ships...");
@@ -247,33 +246,28 @@ int main() {
 
     // Setup test fleet:
     // Ship 1: Owner 1, Star 1, LEVEL_STAR, alive = true
-    ship_struct s1{};
-    s1.number = 1;
-    s1.owner = 1;
-    s1.storbits = 1;
-    s1.whatorbits = ScopeLevel::LEVEL_STAR;
-    s1.alive = true;
-    repo.save(Ship(s1));
+    repo.save(*TestShipBuilder(ShipType::STYPE_CRUISER)
+                   .numbered(1)
+                   .owned_by(1)
+                   .in_star_orbit(1)
+                   .build_in_memory());
 
     // Ship 3: Owner 2, Star 1, Planet 2, LEVEL_PLAN, alive = true
-    ship_struct s3{};
-    s3.number = 3;
-    s3.owner = 2;
-    s3.storbits = 1;
-    s3.pnumorbits = 2;
-    s3.whatorbits = ScopeLevel::LEVEL_PLAN;
-    s3.alive = true;
-    repo.save(Ship(s3));
+    repo.save(*TestShipBuilder(ShipType::STYPE_CRUISER)
+                   .numbered(3)
+                   .owned_by(2)
+                   .in_planet_orbit(1, 2)
+                   .build_in_memory());
 
     // Ship 5: Owner 1, Carrier Hangar (destshipno = 1), LEVEL_SHIP, alive =
     // true
-    ship_struct s5{};
-    s5.number = 5;
-    s5.owner = 1;
-    s5.destshipno = 1;
-    s5.whatorbits = ScopeLevel::LEVEL_SHIP;
-    s5.alive = true;
-    repo.save(Ship(s5));
+    auto s5 = TestShipBuilder(ShipType::STYPE_FIGHTER)
+                  .numbered(5)
+                  .owned_by(1)
+                  .in_deep_space()
+                  .build_in_memory();
+    s5->dock_into_carrier(1);
+    repo.save(*s5);
 
     // Test find_in_star
     auto star1_alive = repo.find_in_star(starnum_t{1});
@@ -509,10 +503,10 @@ int main() {
     test::expect_true(plow_ship->as<TerraformerShip>() != nullptr);
 
     // TransporterShip (seed target ship #42 first)
-    ship_struct target42{};
-    target42.number = 42;
-    target42.owner = 1;
-    repo.save(Ship(target42));
+    repo.save(*TestShipBuilder(ShipType::STYPE_SHUTTLE)
+                   .numbered(42)
+                   .owned_by(1)
+                   .build_in_memory());
 
     ship_struct trans_data{};
     trans_data.number = 208;
@@ -567,11 +561,10 @@ int main() {
   std::println(std::cout,
                "\nTest 10: SimulatedShip cannot be saved to database...");
   {
-    ship_struct sim_base{};
-    sim_base.number = 999;
-    sim_base.type = ShipType::STYPE_SHUTTLE;
-    Ship base_ship{sim_base};
-    SimulatedShip sim{base_ship};
+    auto base_ship = TestShipBuilder(ShipType::STYPE_SHUTTLE)
+                         .numbered(999)
+                         .build_in_memory();
+    SimulatedShip sim{*base_ship};
     test::expect_true(sim.is_simulation());
     test::expect_throws<std::logic_error>([&]() { repo.save(sim); });
     std::println(std::cout, "  ✓ SimulatedShip rejection on save passed");
@@ -644,12 +637,12 @@ int main() {
   std::println(std::cout,
                "\nTest 12: Optional star/planet FKs omit nullopt in JSON...");
   {
-    Ship deep_space{};
-    deep_space.number() = 50;
-    deep_space.owner() = 1;
-    deep_space.alive() = true;
-    deep_space.enter_deep_space();
-    test::expect_true(repo.save(deep_space));
+    auto deep_space = TestShipBuilder(ShipType::STYPE_EXPLORER)
+                          .numbered(50)
+                          .owned_by(1)
+                          .in_deep_space()
+                          .build_in_memory();
+    test::expect_true(repo.save(*deep_space));
 
     auto raw_deep = store.retrieve("tbl_ship", 50);
     test::expect_true(raw_deep.has_value());
@@ -658,18 +651,18 @@ int main() {
     test::expect_false(raw_deep->contains("\"deststar\":"));
     test::expect_false(raw_deep->contains("\"destpnum\":"));
 
-    auto loaded_deep = repo.find_by_number(50);
-    test::expect_true(loaded_deep.has_value());
+    auto loaded_deep = repo.find_ship(50);
+    test::expect_ne(loaded_deep, nullptr);
     test::expect_eq(loaded_deep->orbited_star(), std::nullopt);
     test::expect_eq(loaded_deep->orbited_planet(), std::nullopt);
 
-    Ship star_orbiter{};
-    star_orbiter.number() = 51;
-    star_orbiter.owner() = 1;
-    star_orbiter.alive() = true;
-    star_orbiter.enter_star_orbit(3);
-    star_orbiter.set_star_destination(4);
-    test::expect_true(repo.save(star_orbiter));
+    auto star_orbiter = TestShipBuilder(ShipType::STYPE_EXPLORER)
+                            .numbered(51)
+                            .owned_by(1)
+                            .in_star_orbit(3)
+                            .build_in_memory();
+    star_orbiter->set_star_destination(4);
+    test::expect_true(repo.save(*star_orbiter));
 
     auto raw_star = store.retrieve("tbl_ship", 51);
     test::expect_true(raw_star.has_value());
@@ -678,8 +671,8 @@ int main() {
     test::expect_contains(*raw_star, "\"deststar\":4");
     test::expect_false(raw_star->contains("\"destpnum\":"));
 
-    auto loaded_star = repo.find_by_number(51);
-    test::expect_true(loaded_star.has_value());
+    auto loaded_star = repo.find_ship(51);
+    test::expect_ne(loaded_star, nullptr);
     test::expect_eq(loaded_star->orbited_star(), std::optional<starnum_t>{3});
     test::expect_eq(loaded_star->orbited_planet(), std::nullopt);
     test::expect_eq(loaded_star->destination_star(),

@@ -766,7 +766,7 @@ void test_check_mine_proximity_trigger() {
   });
 
   // 6. Dead mine (alive = false) does not trigger
-  Ship dead_mine{ctx.em.peek_ship(mine_id)->get_struct()};
+  SimulatedShip dead_mine{*ctx.em.peek_ship(mine_id)};
   dead_mine.on() = true;
   dead_mine.alive() = false;
   test::expect_false(check_mine_proximity_trigger(dead_mine, ctx.em));
@@ -1427,21 +1427,20 @@ void test_do_mirror() {
 }
 
 void test_ship_domain_operations() {
-  ship_struct sdata{
-      .fuel = 50.0,
-      .mass = 100.0,
-      .max_crew = 150,
-      .max_resource = 500,
-      .max_destruct = 100,
-      .max_fuel = 100.0,
-      .destruct = 10,
-      .resource = 200,
-      .popn = 50,
-      .troops = 20,
-      .damage = 10,
-      .rad = 30,
-  };
-  Ship ship{sdata};
+  auto ship_ptr = TestShipBuilder(ShipType::STYPE_CRUISER)
+                      .with_max_crew(150)
+                      .with_max_resource(500)
+                      .with_max_destruct(100)
+                      .with_max_fuel(100.0)
+                      .with_fuel(50.0)
+                      .with_destruct(10)
+                      .with_resource(200)
+                      .with_crew(50, 20)
+                      .with_damage(10)
+                      .with_radiation(30)
+                      .with_mass(100.0)
+                      .build_in_memory();
+  Ship& ship = *ship_ptr;
 
   // 1. Damage clamping
   const auto res1 = ship.apply_damage(50);
@@ -1571,26 +1570,24 @@ void test_process_ship_radiation() {
   seed_rand(42);
 
   // 1. Ship with 0 rad is mobile (returns true)
-  ship_struct clean_data{
-      .popn = 100,
-      .troops = 50,
-      .rad = 0,
-  };
-  Ship clean_ship{clean_data};
-  test::expect_true(clean_ship.process_radiation(true));
-  test::expect_eq(clean_ship.popn(), 100);
+  auto clean_ship = TestShipBuilder(ShipType::STYPE_CRUISER)
+                        .with_max_crew(200)
+                        .with_crew(100, 50)
+                        .with_radiation(0)
+                        .build_in_memory();
+  test::expect_true(clean_ship->process_radiation(true));
+  test::expect_eq(clean_ship->popn(), 100);
 
   // 2. Ship with radiation on update pass decays crew and repairs rad
-  ship_struct rad_data{
-      .popn = 100,
-      .troops = 50,
-      .rad = 20,
-  };
-  Ship rad_ship{rad_data};
-  rad_ship.process_radiation(true);
-  test::expect_le(rad_ship.popn(), 100);
-  test::expect_le(rad_ship.troops(), 50);
-  test::expect_le(rad_ship.rad(), 20);
+  auto rad_ship = TestShipBuilder(ShipType::STYPE_CRUISER)
+                      .with_max_crew(200)
+                      .with_crew(100, 50)
+                      .with_radiation(20)
+                      .build_in_memory();
+  rad_ship->process_radiation(true);
+  test::expect_le(rad_ship->popn(), 100);
+  test::expect_le(rad_ship->troops(), 50);
+  test::expect_le(rad_ship->rad(), 20);
 }
 
 void test_process_ship_supernova() {
@@ -1653,17 +1650,18 @@ void test_sync_factory_technology() {
 
 void test_exploration_domain_methods() {
   // Ship capability
-  ship_struct probe_data{.popn = 0, .type = ShipType::OTYPE_PROBE};
-  Ship probe{probe_data};
-  test::expect_true(probe.is_exploration_capable());
+  auto probe =
+      TestShipBuilder(ShipType::OTYPE_PROBE).with_crew(0, 0).build_in_memory();
+  test::expect_true(probe->is_exploration_capable());
 
-  ship_struct manned_data{.popn = 5, .type = ShipType::STYPE_SHUTTLE};
-  Ship manned{manned_data};
-  test::expect_true(manned.is_exploration_capable());
+  auto manned = TestShipBuilder(ShipType::STYPE_SHUTTLE)
+                    .with_crew(5, 0)
+                    .build_in_memory();
+  test::expect_true(manned->is_exploration_capable());
 
-  ship_struct uncrewed_data{.popn = 0, .type = ShipType::STYPE_CARGO};
-  Ship uncrewed{uncrewed_data};
-  test::expect_false(uncrewed.is_exploration_capable());
+  auto uncrewed =
+      TestShipBuilder(ShipType::STYPE_CARGO).with_crew(0, 0).build_in_memory();
+  test::expect_false(uncrewed->is_exploration_capable());
 
   // Planet exploration
   Planet planet{1, 1, PlanetType::EARTH, Coordinates{2, 2}};
@@ -1769,21 +1767,16 @@ void test_accumulate_ship_power_stats() {
   TurnStats stats{};
 
   // 1. Star-orbiting ship during update pass
-  ship_struct star_ship_data{
-      .owner = player_t{1},
-      .fuel = 25.0,
-      .destruct = 5,
-      .resource = 50,
-      .popn = 10,
-      .troops = 4,
-      .storbits = starnum_t{1},
-      .whatorbits = ScopeLevel::LEVEL_STAR,
-      .type = ShipType::STYPE_BATTLE,
-      .alive = 1,
-  };
-  Ship star_ship{star_ship_data};
+  auto star_ship = TestShipBuilder(ShipType::STYPE_BATTLE)
+                       .owned_by(1)
+                       .in_star_orbit(1)
+                       .with_fuel(25.0)
+                       .with_destruct(5)
+                       .with_resource(50)
+                       .with_crew(10, 4)
+                       .build_in_memory();
 
-  accumulate_ship_power_stats(star_ship, ctx.em, stats, true);
+  accumulate_ship_power_stats(*star_ship, ctx.em, stats, true);
   test::expect_eq(stats.power_stats(player_t{1}).ships_owned, 1U);
   test::expect_eq(stats.power_stats(player_t{1}).fuel, 25.0);
   test::expect_eq(stats.power_stats(player_t{1}).destruct, 5);
@@ -1796,16 +1789,14 @@ void test_accumulate_ship_power_stats() {
   // 2. Deep space ship in LEVEL_UNIV (and craft berthed inside a deep-space
   // carrier with storbits == 0) does not increment star-level census or index
   // star 0
-  ship_struct univ_ship_data{
-      .owner = player_t{1},
-      .popn = 20,
-      .whatorbits = ScopeLevel::LEVEL_UNIV,
-      .type = ShipType::STYPE_EXPLORER,
-      .alive = 1,
-  };
-  Ship univ_ship{univ_ship_data};
+  auto univ_ship = TestShipBuilder(ShipType::STYPE_EXPLORER)
+                       .owned_by(1)
+                       .in_deep_space()
+                       .with_max_crew(20)
+                       .with_crew(20, 0)
+                       .build_in_memory();
 
-  accumulate_ship_power_stats(univ_ship, ctx.em, stats, false);
+  accumulate_ship_power_stats(*univ_ship, ctx.em, stats, false);
   const auto deep_carrier = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
                                 .owned_by(races.nomad)
                                 .in_deep_space()
@@ -1925,17 +1916,19 @@ void test_prepare_ship_for_flight() {
   const auto races = ctx.with_races();
 
   // 1. Dead ship returns false
-  Ship dead_ship{};
-  dead_ship.owner() = races.empire;
-  dead_ship.alive() = false;
-  test::expect_false(dead_ship.prepare_for_flight(true));
+  auto dead_ship = TestShipBuilder(ShipType::STYPE_SHUTTLE)
+                       .owned_by(races.empire)
+                       .with_alive(false)
+                       .build_in_memory();
+  test::expect_false(dead_ship->prepare_for_flight(true));
 
   // 2. Unowned ship (owner == 0) is marked dead and returns false
-  Ship unowned_ship{};
-  unowned_ship.owner() = 0;
-  unowned_ship.alive() = true;
-  test::expect_false(unowned_ship.prepare_for_flight(true));
-  test::expect_false(unowned_ship.alive());
+  auto unowned_ship = TestShipBuilder(ShipType::STYPE_SHUTTLE)
+                          .owned_by(0)
+                          .with_alive(true)
+                          .build_in_memory();
+  test::expect_false(unowned_ship->prepare_for_flight(true));
+  test::expect_false(unowned_ship->alive());
 
   // 3. Derelict uncrewed manned ship gets redirected to LEVEL_UNIV
   shipnum_t derelict_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)

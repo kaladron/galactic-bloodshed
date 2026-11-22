@@ -396,21 +396,18 @@ void test_entity_manager_destroy_ship() {
   RaceRepository(store).save(owner);
   ShipRepository ships(store);
 
-  ship_struct fighter_data{
-      .number = 100,
-      .owner = 1,
-      .build_cost = 50,
-      .type = ShipType::STYPE_FIGHTER,
-      .alive = 1,
-  };
-  Ship fighter(fighter_data);
-  ships.save(fighter);
+  auto fighter = TestShipBuilder(ShipType::STYPE_FIGHTER)
+                     .numbered(100)
+                     .owned_by(1)
+                     .with_build_cost(50)
+                     .build_in_memory();
+  ships.save(*fighter);
 
   em.begin_mutation_tracking();
-  em.destroy_ship(fighter);
+  em.destroy_ship(*fighter);
   DirtyEntitySet dirty = em.take_dirty_entities();
-  test::expect_eq(fighter.alive(), 0);
-  test::expect_eq(fighter.notified(), 0);
+  test::expect_eq(fighter->alive(), 0);
+  test::expect_eq(fighter->notified(), 0);
   test::expect_true(dirty.races.empty());
   test::expect_eq(em.peek_race(1)->morale, 1000);
 
@@ -419,11 +416,13 @@ void test_entity_manager_destroy_ship() {
        {std::pair{shipnum_t{101}, ShipType::STYPE_POD},
         std::pair{shipnum_t{102}, ShipType::OTYPE_FACTORY},
         std::pair{shipnum_t{103}, ShipType::STYPE_HABITAT}}) {
-    Ship gov_ship(ship_struct{
-        .number = ship_id, .owner = 1, .type = ship_type, .alive = 1});
-    ships.save(gov_ship);
+    auto gov_ship = TestShipBuilder(ship_type)
+                        .numbered(ship_id)
+                        .owned_by(1)
+                        .build_in_memory();
+    ships.save(*gov_ship);
     em.mutate_race(1, [&](Race& r) { r.Gov_ship = ship_id; });
-    em.destroy_ship(gov_ship);
+    em.destroy_ship(*gov_ship);
     em.clear_cache();
     test::expect_eq(em.peek_race(1)->Gov_ship, std::nullopt);
   }
@@ -531,22 +530,22 @@ void test_peek_caching_and_clear_cache() {
   }
 
   {
-    ship_struct ship_data{};
-    ship_data.number = 100;
-    ship_data.owner = 1;
-    ship_data.fuel = 1000.0;
-    ship_data.max_fuel = 5000.0;
-    Ship ship(ship_data);
+    auto ship = TestShipBuilder(ShipType::STYPE_CRUISER)
+                    .numbered(100)
+                    .owned_by(1)
+                    .with_max_fuel(5000.0)
+                    .with_fuel(1000.0)
+                    .build_in_memory();
     ShipRepository ships(store);
-    ships.save(ship);
+    ships.save(*ship);
 
     const auto* peek_ship = em.peek_ship(100);
     test::expect_ne(peek_ship, nullptr);
     test::expect_eq(peek_ship->fuel(), 1000.0);
 
     // Modify directly in DB
-    ship.add_fuel(1500.0);
-    ships.save(ship);
+    ship->add_fuel(1500.0);
+    ships.save(*ship);
 
     em.clear_cache();
 
@@ -815,14 +814,15 @@ void test_entity_manager_with_scoped_peeks() {
   test::expect_eq(popn, 5000);
 
   // 4. with_ship
-  ship_struct raw_ship{};
-  raw_ship.number = 77;
-  raw_ship.owner = 1;
-  raw_ship.name = "Voyager";
-  raw_ship.fuel = 300.0;
-  Ship ship(raw_ship);
+  auto ship = TestShipBuilder(ShipType::STYPE_EXPLORER)
+                  .numbered(77)
+                  .owned_by(1)
+                  .named("Voyager")
+                  .with_max_fuel(500.0)
+                  .with_fuel(300.0)
+                  .build_in_memory();
   ShipRepository ship_repo(store);
-  ship_repo.save(ship);
+  ship_repo.save(*ship);
 
   auto ship_fuel = em.with_ship(77, [](const Ship& s) { return s.fuel(); });
   test::expect_eq(ship_fuel, 300.0);
@@ -1313,7 +1313,10 @@ void test_entity_manager_read_only_scope() {
   em.create_race(r);
   StarRepository(raw_store).save(Star{1, "Sol"});
   const shipnum_t sid = em.create_ship(ShipType::OTYPE_PROBE, 1)->number();
-  Ship probe_copy(em.peek_ship(sid)->to_struct());
+  auto probe_copy = TestShipBuilder(ShipType::OTYPE_PROBE)
+                        .numbered(sid)
+                        .owned_by(1)
+                        .build_in_memory();
   const auto before = db.total_changes();
   {
     auto guard = em.create_read_only_scope();
@@ -1326,8 +1329,8 @@ void test_entity_manager_read_only_scope() {
     test::expect_throws<ReadOnlyError>(
         [&] { em.create_ship(ShipType::OTYPE_PROBE, 1); });
     test::expect_throws<ReadOnlyError>([&] { em.delete_ship(sid); });
-    test::expect_throws<ReadOnlyError>([&] { em.destroy_ship(probe_copy); });
-    test::expect_true(probe_copy.alive());
+    test::expect_throws<ReadOnlyError>([&] { em.destroy_ship(*probe_copy); });
+    test::expect_true(probe_copy->alive());
     test::expect_throws<ReadOnlyError>(
         [&] { em.post_news(NewsType::ANNOUNCE, "blocked"); });
     test::expect_throws<ReadOnlyError>(

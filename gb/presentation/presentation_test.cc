@@ -1069,9 +1069,12 @@ void test_canonical_ship_view_projectors() {
   test::expect_false(deleted_view.internal.has_value());
 
   // 3. Dead ship returns deleted_view
-  const Ship dead_ship{ship_struct{.number = 99, .alive = false}};
+  const auto dead_ship = TestShipBuilder(ShipType::STYPE_SHUTTLE)
+                             .numbered(99)
+                             .with_alive(false)
+                             .build_in_memory();
   const auto dead_view =
-      GB::presentation::project_ship_view(ctx.em, viewer1, dead_ship);
+      GB::presentation::project_ship_view(ctx.em, viewer1, *dead_ship);
   test::expect_true(dead_view.has_value());
   test::expect_false(dead_view->alive);
   test::expect_eq(dead_view->id, 99);

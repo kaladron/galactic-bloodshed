@@ -82,31 +82,25 @@ void test_prompt_ship_orbiting_scopes() {
     ShipRepository ship_repo(store);
 
     // Ship 10: in universe scope
-    ship_struct s10{};
-    s10.number = 10;
-    s10.owner = 1;
-    s10.whatorbits = ScopeLevel::LEVEL_UNIV;
-    Ship ship10{s10};
-    ship_repo.save(ship10);
+    ship_repo.save(*TestShipBuilder(ShipType::STYPE_EXPLORER)
+                        .numbered(10)
+                        .owned_by(1)
+                        .in_deep_space()
+                        .build_in_memory());
 
     // Ship 11: orbiting star
-    ship_struct s11{};
-    s11.number = 11;
-    s11.owner = 1;
-    s11.whatorbits = ScopeLevel::LEVEL_STAR;
-    s11.storbits = 1;
-    Ship ship11{s11};
-    ship_repo.save(ship11);
+    ship_repo.save(*TestShipBuilder(ShipType::STYPE_EXPLORER)
+                        .numbered(11)
+                        .owned_by(1)
+                        .in_star_orbit(1)
+                        .build_in_memory());
 
     // Ship 12: orbiting planet
-    ship_struct s12{};
-    s12.number = 12;
-    s12.owner = 1;
-    s12.whatorbits = ScopeLevel::LEVEL_PLAN;
-    s12.storbits = 1;
-    s12.pnumorbits = 1;
-    Ship ship12{s12};
-    ship_repo.save(ship12);
+    ship_repo.save(*TestShipBuilder(ShipType::STYPE_EXPLORER)
+                        .numbered(12)
+                        .owned_by(1)
+                        .in_planet_orbit(1, 1)
+                        .build_in_memory());
   }
 
   auto& registry = get_test_session_registry();
@@ -154,191 +148,74 @@ void test_prompt_nested_docked_ships() {
 
     ShipRepository ship_repo(store);
 
-    // Level 2 nest: Carrier 21 (in universe) -> Fighter 20 (docked in 21)
-    ship_struct s21{};
-    s21.number = 21;
-    s21.owner = 1;
-    s21.whatorbits = ScopeLevel::LEVEL_UNIV;
-    Ship ship21{s21};
-    ship_repo.save(ship21);
+    const auto save_carrier = [&](shipnum_t num,
+                                  std::optional<starnum_t> star = std::nullopt,
+                                  std::optional<planetnum_t> planet =
+                                      std::nullopt) {
+      auto builder =
+          TestShipBuilder(ShipType::STYPE_CARRIER).numbered(num).owned_by(1);
+      if (planet) {
+        builder.in_planet_orbit(*star, *planet);
+      } else if (star) {
+        builder.in_star_orbit(*star);
+      } else {
+        builder.in_deep_space();
+      }
+      ship_repo.save(*builder.build_in_memory());
+    };
 
-    ship_struct s20{};
-    s20.number = 20;
-    s20.owner = 1;
-    s20.whatorbits = ScopeLevel::LEVEL_SHIP;
-    s20.destshipno = 21;
-    Ship ship20{s20};
-    ship_repo.save(ship20);
+    const auto save_docked = [&](shipnum_t num, shipnum_t carrier,
+                                 std::optional<starnum_t> star = std::nullopt,
+                                 std::optional<planetnum_t> planet =
+                                     std::nullopt) {
+      auto builder =
+          TestShipBuilder(ShipType::STYPE_FIGHTER).numbered(num).owned_by(1);
+      if (planet) {
+        builder.in_planet_orbit(*star, *planet);
+      } else if (star) {
+        builder.in_star_orbit(*star);
+      } else {
+        builder.in_deep_space();
+      }
+      auto ship = builder.build_in_memory();
+      ship->dock_into_carrier(carrier);
+      ship_repo.save(*ship);
+    };
+
+    // Level 2 nest: Carrier 21 (in universe) -> Fighter 20 (docked in 21)
+    save_carrier(21);
+    save_docked(20, 21);
 
     // Level 2 nest: Carrier 23 (in star) -> Fighter 22 (docked in 23)
-    ship_struct s23{};
-    s23.number = 23;
-    s23.owner = 1;
-    s23.whatorbits = ScopeLevel::LEVEL_STAR;
-    s23.storbits = 1;
-    Ship ship23{s23};
-    ship_repo.save(ship23);
-
-    ship_struct s22{};
-    s22.number = 22;
-    s22.owner = 1;
-    s22.whatorbits = ScopeLevel::LEVEL_SHIP;
-    s22.destshipno = 23;
-    s22.storbits = 1;
-    Ship ship22{s22};
-    ship_repo.save(ship22);
+    save_carrier(23, 1);
+    save_docked(22, 23, 1);
 
     // Level 2 nest: Carrier 25 (in planet) -> Fighter 24 (docked in 25)
-    ship_struct s25{};
-    s25.number = 25;
-    s25.owner = 1;
-    s25.whatorbits = ScopeLevel::LEVEL_PLAN;
-    s25.storbits = 1;
-    s25.pnumorbits = 1;
-    Ship ship25{s25};
-    ship_repo.save(ship25);
-
-    ship_struct s24{};
-    s24.number = 24;
-    s24.owner = 1;
-    s24.whatorbits = ScopeLevel::LEVEL_SHIP;
-    s24.destshipno = 25;
-    s24.storbits = 1;
-    s24.pnumorbits = 1;
-    Ship ship24{s24};
-    ship_repo.save(ship24);
+    save_carrier(25, 1, 1);
+    save_docked(24, 25, 1, 1);
 
     // Level 3 nest: Station 32 (univ) -> Carrier 31 -> Fighter 30
-    ship_struct s32{};
-    s32.number = 32;
-    s32.owner = 1;
-    s32.whatorbits = ScopeLevel::LEVEL_UNIV;
-    Ship ship32{s32};
-    ship_repo.save(ship32);
-
-    ship_struct s31{};
-    s31.number = 31;
-    s31.owner = 1;
-    s31.whatorbits = ScopeLevel::LEVEL_SHIP;
-    s31.destshipno = 32;
-    Ship ship31{s31};
-    ship_repo.save(ship31);
-
-    ship_struct s30{};
-    s30.number = 30;
-    s30.owner = 1;
-    s30.whatorbits = ScopeLevel::LEVEL_SHIP;
-    s30.destshipno = 31;
-    Ship ship30{s30};
-    ship_repo.save(ship30);
+    save_carrier(32);
+    save_docked(31, 32);
+    save_docked(30, 31);
 
     // Level 3 nest: Station 35 (star) -> Carrier 34 -> Fighter 33
-    ship_struct s35{};
-    s35.number = 35;
-    s35.owner = 1;
-    s35.whatorbits = ScopeLevel::LEVEL_STAR;
-    s35.storbits = 1;
-    Ship ship35{s35};
-    ship_repo.save(ship35);
-
-    ship_struct s34{};
-    s34.number = 34;
-    s34.owner = 1;
-    s34.whatorbits = ScopeLevel::LEVEL_SHIP;
-    s34.destshipno = 35;
-    s34.storbits = 1;
-    Ship ship34{s34};
-    ship_repo.save(ship34);
-
-    ship_struct s33{};
-    s33.number = 33;
-    s33.owner = 1;
-    s33.whatorbits = ScopeLevel::LEVEL_SHIP;
-    s33.destshipno = 34;
-    s33.storbits = 1;
-    Ship ship33{s33};
-    ship_repo.save(ship33);
+    save_carrier(35, 1);
+    save_docked(34, 35, 1);
+    save_docked(33, 34, 1);
 
     // Level 3 nest: Station 38 (plan) -> Carrier 37 -> Fighter 36
-    ship_struct s38{};
-    s38.number = 38;
-    s38.owner = 1;
-    s38.whatorbits = ScopeLevel::LEVEL_PLAN;
-    s38.storbits = 1;
-    s38.pnumorbits = 1;
-    Ship ship38{s38};
-    ship_repo.save(ship38);
-
-    ship_struct s37{};
-    s37.number = 37;
-    s37.owner = 1;
-    s37.whatorbits = ScopeLevel::LEVEL_SHIP;
-    s37.destshipno = 38;
-    s37.storbits = 1;
-    s37.pnumorbits = 1;
-    Ship ship37{s37};
-    ship_repo.save(ship37);
-
-    ship_struct s36{};
-    s36.number = 36;
-    s36.owner = 1;
-    s36.whatorbits = ScopeLevel::LEVEL_SHIP;
-    s36.destshipno = 37;
-    s36.storbits = 1;
-    s36.pnumorbits = 1;
-    Ship ship36{s36};
-    ship_repo.save(ship36);
+    save_carrier(38, 1, 1);
+    save_docked(37, 38, 1, 1);
+    save_docked(36, 37, 1, 1);
 
     // Level 4 nest: Station 44 (plan) -> Carrier 43 -> Cruiser 42 -> Fighter 41
     // -> Drone 40
-    ship_struct s44{};
-    s44.number = 44;
-    s44.owner = 1;
-    s44.whatorbits = ScopeLevel::LEVEL_PLAN;
-    s44.storbits = 1;
-    s44.pnumorbits = 1;
-    Ship ship44{s44};
-    ship_repo.save(ship44);
-
-    ship_struct s43{};
-    s43.number = 43;
-    s43.owner = 1;
-    s43.whatorbits = ScopeLevel::LEVEL_SHIP;
-    s43.destshipno = 44;
-    s43.storbits = 1;
-    s43.pnumorbits = 1;
-    Ship ship43{s43};
-    ship_repo.save(ship43);
-
-    ship_struct s42{};
-    s42.number = 42;
-    s42.owner = 1;
-    s42.whatorbits = ScopeLevel::LEVEL_SHIP;
-    s42.destshipno = 43;
-    s42.storbits = 1;
-    s42.pnumorbits = 1;
-    Ship ship42{s42};
-    ship_repo.save(ship42);
-
-    ship_struct s41{};
-    s41.number = 41;
-    s41.owner = 1;
-    s41.whatorbits = ScopeLevel::LEVEL_SHIP;
-    s41.destshipno = 42;
-    s41.storbits = 1;
-    s41.pnumorbits = 1;
-    Ship ship41{s41};
-    ship_repo.save(ship41);
-
-    ship_struct s40{};
-    s40.number = 40;
-    s40.owner = 1;
-    s40.whatorbits = ScopeLevel::LEVEL_SHIP;
-    s40.destshipno = 41;
-    s40.storbits = 1;
-    s40.pnumorbits = 1;
-    Ship ship40{s40};
-    ship_repo.save(ship40);
+    save_carrier(44, 1, 1);
+    save_docked(43, 44, 1, 1);
+    save_docked(42, 43, 1, 1);
+    save_docked(41, 42, 1, 1);
+    save_docked(40, 41, 1, 1);
   }
 
   auto& registry = get_test_session_registry();

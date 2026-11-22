@@ -80,15 +80,16 @@ void test_transaction_explicit_rollback(TestContext& ctx) {
 
 void test_transaction_raii_rollback(TestContext& ctx) {
   // Create test ship
-  ship_struct s_data{};
-  s_data.number = 10;
-  s_data.owner = 1;
-  s_data.fuel = 500.0;
-  s_data.alive = true;
   {
+    auto ship10 = TestShipBuilder(ShipType::STYPE_SHUTTLE)
+                      .numbered(10)
+                      .owned_by(1)
+                      .with_max_fuel(1000.0)
+                      .with_fuel(500.0)
+                      .build_in_memory();
     JsonStore store(ctx.db);
     ShipRepository repo(store);
-    repo.save(Ship(s_data));
+    repo.save(*ship10);
   }
 
   // Open transaction in scope, mutate ship, but do NOT call commit()

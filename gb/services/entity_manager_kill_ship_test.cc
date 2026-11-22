@@ -143,10 +143,11 @@ int main() {
     kill_ship(em, 1, *pod_handle);
     test::expect_eq(em.peek_race(2)->morale, m2_before);
 
-    Ship unowned{};
-    unowned.owner() = 0;
-    unowned.build_cost() = 50;
-    apply_ship_kill_morale(em, 0, unowned);
+    auto unowned = TestShipBuilder(ShipType::STYPE_SHUTTLE)
+                       .owned_by(0)
+                       .with_build_cost(50)
+                       .build_in_memory();
+    apply_ship_kill_morale(em, 0, *unowned);
 
     auto scuttle_handle = TestShipBuilder(em, ShipType::STYPE_SHUTTLE)
                               .owned_by(2)
@@ -429,13 +430,11 @@ int main() {
 
   // ReadOnlyScope blocks kill_ship before mutating AutonomousShip in memory
   {
-    auto vn_handle =
-        TestShipBuilder(em, ShipType::OTYPE_VN).owned_by(2).build_handle();
-    Ship vn_copy(vn_handle->to_struct());
-    em.destroy_ship(*vn_handle);
+    auto vn_copy =
+        TestShipBuilder(ShipType::OTYPE_VN).owned_by(2).build_in_memory();
     auto ro = em.create_read_only_scope();
-    test::expect_throws<ReadOnlyError>([&] { kill_ship(em, 1, vn_copy); });
-    test::expect_eq(vn_copy.as<VonNeumannShip>()->who_killed(), std::nullopt);
+    test::expect_throws<ReadOnlyError>([&] { kill_ship(em, 1, *vn_copy); });
+    test::expect_eq(vn_copy->as<VonNeumannShip>()->who_killed(), std::nullopt);
   }
 
   std::println(std::cout, "\n✅ All kill_ship() tests passed!");

@@ -321,14 +321,14 @@ void test_do_turn_victory_scores_with_derelict_and_multiple_players() {
   ShipRepository ship_repo(store);
 
   // Player 1 ship
-  Ship ship1{};
-  ship1.number() = 1;
-  ship1.owner() = player_t{1};
-  ship1.alive() = true;
-  ship1.tech() = 10.0;
-  ship1.size() = 10;
-  ship1.resource() = 100;
-  ship_repo.save(ship1);
+  ship_repo.save(*TestShipBuilder(ShipType::STYPE_SHUTTLE)
+                      .numbered(1)
+                      .owned_by(1)
+                      .with_tech(10.0)
+                      .with_size(10)
+                      .with_max_resource(100)
+                      .with_resource(100)
+                      .build_in_memory());
 
   NullSessionRegistry session_registry;
 
@@ -469,13 +469,12 @@ void test_compute_governed_status() {
   test::expect_false(compute_governed_status(race, em));
 
   // Case 2: Ship exists and is alive but undocked
-  Ship gov_ship{};
-  gov_ship.number() = 1;
-  gov_ship.owner() = player_t{1};
-  gov_ship.alive() = true;
-  gov_ship.enter_planet_orbit(1, 1);
   ShipRepository ship_repo(store);
-  ship_repo.save(gov_ship);
+  ship_repo.save(*TestShipBuilder(ShipType::OTYPE_GOV)
+                      .numbered(1)
+                      .owned_by(1)
+                      .in_planet_orbit(1, 1)
+                      .build_in_memory());
   race.Gov_ship = 1;
   test::expect_false(compute_governed_status(race, em));
 
@@ -484,13 +483,11 @@ void test_compute_governed_status() {
   test::expect_true(compute_governed_status(race, em));
 
   // Case 5: Ship docked at habitat orbiting planet or star
-  Ship habitat{};
-  habitat.number() = 2;
-  habitat.owner() = player_t{1};
-  habitat.alive() = true;
-  habitat.type() = ShipType::STYPE_HABITAT;
-  habitat.enter_planet_orbit(1, 1);
-  ship_repo.save(habitat);
+  ship_repo.save(*TestShipBuilder(ShipType::STYPE_HABITAT)
+                      .numbered(2)
+                      .owned_by(1)
+                      .in_planet_orbit(1, 1)
+                      .build_in_memory());
 
   em.mutate_ship(1, [](Ship& s) { s.dock_into_carrier(2); });
   test::expect_true(compute_governed_status(race, em));
@@ -521,13 +518,12 @@ void test_action_points_computation_and_distribution() {
   test::expect_ge(ungoverned_ap, 0);
 
   // 2. Setup governed ship
-  Ship gov_ship{};
-  gov_ship.number() = 1;
-  gov_ship.owner() = player_t{1};
-  gov_ship.alive() = true;
-  gov_ship.land_on_planet(1, 1);
   ShipRepository ship_repo(store);
-  ship_repo.save(gov_ship);
+  ship_repo.save(*TestShipBuilder(ShipType::OTYPE_GOV)
+                      .numbered(1)
+                      .owned_by(1)
+                      .landed_on(1, 1, Coordinates{0, 0})
+                      .build_in_memory());
   race.Gov_ship = 1;
 
   ap_t governed_ap = compute_star_action_points(10, 10000, race, em);

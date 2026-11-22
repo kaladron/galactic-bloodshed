@@ -136,15 +136,16 @@ void test_deferred_write_multi_entity_simulation(TestContext& ctx) {
     repo.save(r);
   }
 
-  ship_struct s_data{};
-  s_data.number = 10;
-  s_data.owner = 4;
-  s_data.fuel = 500.0;
-  s_data.alive = true;
   {
+    auto ship10 = TestShipBuilder(ShipType::STYPE_SHUTTLE)
+                      .numbered(10)
+                      .owned_by(4)
+                      .with_max_fuel(1000.0)
+                      .with_fuel(500.0)
+                      .build_in_memory();
     JsonStore store(ctx.db);
     ShipRepository repo(store);
-    repo.save(Ship(s_data));
+    repo.save(*ship10);
   }
 
   ctx.create_star("Vega", 2).with_ap(4, 0).build();
@@ -318,14 +319,14 @@ void test_deferred_write_spatial_and_ownership_cache_overlay() {
   });
   test::expect_eq(ctx.em.peek_race(races.newcomer)->Gov_ship,
                   races.newcomer_gov_ship);
-  Ship local_unnumbered{};
-  local_unnumbered.owner() = 0;
-  ctx.em.transfer_ship_ownership(local_unnumbered, races.nomad,
+  auto local_unnumbered =
+      ShipFactory::create_from_template(ShipType::STYPE_SHUTTLE, 0);
+  ctx.em.transfer_ship_ownership(*local_unnumbered, races.nomad,
                                  Race::leader_id);
   {
     auto ro = ctx.em.create_read_only_scope();
     test::expect_throws<ReadOnlyError>([&]() {
-      ctx.em.transfer_ship_ownership(local_unnumbered, races.empire,
+      ctx.em.transfer_ship_ownership(*local_unnumbered, races.empire,
                                      Race::leader_id);
     });
   }

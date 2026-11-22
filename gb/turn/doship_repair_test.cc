@@ -46,20 +46,19 @@ int main() {
   {
     std::println(std::cout, "Ship with crew and damage, sufficient resources");
 
-    Ship ship{};
-    ship.number() = 1;
-    ship.owner() = player_t{1};
-    ship.governor() = 1;
-    ship.name() = "Scout1";
-    ship.type() = ShipType::STYPE_SHUTTLE;  // Has crew, no ABIL_REPAIR
-    ship.alive() = 1;
-    ship.active() = 1;
-    ship.admin_override_damage(50);
-    ship.popn() = 20;
-    ship.max_crew() = 20;
-    ship.resource() = 5000;
-    ship.build_cost() = 100;
-    ship.launch_to_orbit(ScopeLevel::LEVEL_UNIV);
+    auto ship_ptr = TestShipBuilder(ShipType::STYPE_SHUTTLE)
+                        .numbered(1)
+                        .owned_by(1, 1)
+                        .named("Scout1")
+                        .with_damage(50)
+                        .with_max_crew(20)
+                        .with_crew(20, 0)
+                        .with_max_resource(5000)
+                        .with_resource(5000)
+                        .with_build_cost(100)
+                        .in_deep_space()
+                        .build_in_memory();
+    Ship& ship = *ship_ptr;
 
     {
       JsonStore store(db);
@@ -100,20 +99,19 @@ int main() {
   {
     std::println(std::cout, "Ship with partial crew (proportionate repair)");
 
-    Ship ship{};
-    ship.number() = 2;
-    ship.owner() = player_t{1};
-    ship.governor() = 1;
-    ship.name() = "Scout2";
-    ship.type() = ShipType::STYPE_SHUTTLE;
-    ship.alive() = 1;
-    ship.active() = 1;
-    ship.admin_override_damage(75);
-    ship.popn() = 1;  // Minimal crew
-    ship.max_crew() = 20;
-    ship.resource() = 5000;
-    ship.build_cost() = 100;
-    ship.launch_to_orbit(ScopeLevel::LEVEL_UNIV);
+    auto ship_ptr = TestShipBuilder(ShipType::STYPE_SHUTTLE)
+                        .numbered(2)
+                        .owned_by(1, 1)
+                        .named("Scout2")
+                        .with_damage(75)
+                        .with_max_crew(20)
+                        .with_crew(1, 0)  // Minimal crew
+                        .with_max_resource(5000)
+                        .with_resource(5000)
+                        .with_build_cost(100)
+                        .in_deep_space()
+                        .build_in_memory();
+    Ship& ship = *ship_ptr;
 
     {
       JsonStore store(db);
@@ -155,20 +153,19 @@ int main() {
   {
     std::println(std::cout, "Ship with no damage");
 
-    Ship ship{};
-    ship.number() = 3;
-    ship.owner() = player_t{1};
-    ship.governor() = 1;
-    ship.name() = "Scout3";
-    ship.type() = ShipType::STYPE_SHUTTLE;
-    ship.alive() = 1;
-    ship.active() = 1;
-    ship.admin_override_damage(0);  // No damage
-    ship.popn() = 20;
-    ship.max_crew() = 20;
-    ship.resource() = 5000;
-    ship.build_cost() = 100;
-    ship.launch_to_orbit(ScopeLevel::LEVEL_UNIV);
+    auto ship_ptr = TestShipBuilder(ShipType::STYPE_SHUTTLE)
+                        .numbered(3)
+                        .owned_by(1, 1)
+                        .named("Scout3")
+                        .with_damage(0)  // No damage
+                        .with_max_crew(20)
+                        .with_crew(20, 0)
+                        .with_max_resource(5000)
+                        .with_resource(5000)
+                        .with_build_cost(100)
+                        .in_deep_space()
+                        .build_in_memory();
+    Ship& ship = *ship_ptr;
 
     {
       JsonStore store(db);

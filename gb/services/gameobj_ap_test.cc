@@ -111,7 +111,6 @@ void test_validate_commandable() {
                            .named("Valkyrie")
                            .in_star_orbit(1)
                            .build();
-  const Ship& base_ship = *ctx.em.peek_ship(ship_id);
 
   const std::string not_owner_msg =
       std::format("You don't own ship #{}.", ship_id);
@@ -152,14 +151,19 @@ void test_validate_commandable() {
   GameObj g(ctx.em, registry);
 
   for (const auto& tc : cases) {
-    Ship s{base_ship.to_struct()};
-    s.alive() = tc.alive;
-    s.active() = tc.active;
+    auto s = TestShipBuilder(ShipType::STYPE_DESTROYER)
+                 .numbered(ship_id)
+                 .owned_by(owner, 2)
+                 .named("Valkyrie")
+                 .in_star_orbit(1)
+                 .with_alive(tc.alive)
+                 .with_active(tc.active)
+                 .build_in_memory();
     if (!tc.active) {
-      s.apply_radiation(85);
+      s->apply_radiation(85);
     }
 
-    const auto res = validate_commandable(s, tc.player, tc.governor, tc.god);
+    const auto res = validate_commandable(*s, tc.player, tc.governor, tc.god);
     g.set_player(tc.player);
     g.set_governor(tc.governor);
     g.set_god(tc.god);
@@ -167,12 +171,12 @@ void test_validate_commandable() {
 
     if (!tc.expected_error.has_value()) {
       test::expect_true(res.has_value());
-      test::expect_true(g.check_commandable(s));
+      test::expect_true(g.check_commandable(*s));
       test::expect_eq(g.out.str(), std::string{});
     } else {
       test::expect_false(res.has_value());
       test::expect_true(res.error() == *tc.expected_error);
-      test::expect_false(g.check_commandable(s));
+      test::expect_false(g.check_commandable(*s));
       test::expect_contains(g.out.str(), tc.expected_output);
     }
   }

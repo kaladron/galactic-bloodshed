@@ -14,16 +14,16 @@ void test_name_ship_persistence() {
   std::println(std::cout, "Test: name command - ship naming");
 
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   const auto ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
-                           .owned_by(1, 1)
+                           .owned_by(races.empire, 1)
                            .named("Old Ship Name")
                            .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_ship(ship_id);
 
   std::println(std::cout, "  Testing: Rename ship to 'USS Enterprise'");
@@ -46,11 +46,11 @@ void test_name_race_persistence() {
   std::println(std::cout, "Test: name command - race naming");
 
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_governor(1);  // Must be leader (governor 1)
   g.set_scope_univ();
 
@@ -59,7 +59,7 @@ void test_name_race_persistence() {
     ctx.assert_dispatch_success(g, {"name", "race", "Klingons"});
 
     ctx.em.clear_cache();
-    const auto* saved = ctx.em.peek_race(1);
+    const auto* saved = ctx.em.peek_race(races.empire);
     test::expect_ne(saved, nullptr);
     test::expect_eq(saved->name, "Klingons");
     std::println(std::cout, "    ✓ Database: race name = '{}'", saved->name);
@@ -72,14 +72,12 @@ void test_name_star_persistence() {
   std::println(std::cout, "Test: name command - star naming");
 
   TestContext ctx;
-  ctx.with_standard_universe();
-  ctx.em.mutate_race(1, [](Race& r) { r.God = true; });
+  ctx.with_galaxy();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_scope_star(1);
-  g.set_god(true);
 
   std::println(std::cout, "  Testing: Rename star to 'Alpha Centauri'");
   {
@@ -100,14 +98,12 @@ void test_name_planet_persistence() {
   std::println(std::cout, "Test: name command - planet naming");
 
   TestContext ctx;
-  ctx.with_standard_universe();
-  ctx.em.mutate_race(1, [](Race& r) { r.God = true; });
+  ctx.with_galaxy();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, 1, 1);
   g.set_scope_planet(1, 1);
-  g.set_god(true);
 
   std::println(std::cout, "  Testing: Rename planet to 'New Earth'");
   {
@@ -128,11 +124,11 @@ void test_name_invalid_formats() {
   std::println(std::cout, "Test: name command - invalid input formats");
 
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, races.empire, 1);
 
   // TEST: Less than 3 arguments
   {
@@ -177,11 +173,11 @@ void test_name_governor() {
   std::println(std::cout, "Test: name command - governor naming");
 
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_governor(1);
 
   // TEST: Rename governor 1 to 'Grand Moff'
@@ -191,7 +187,7 @@ void test_name_governor() {
     test::expect_contains(g.out.str(), "Name changed to `Grand Moff'.");
 
     ctx.em.clear_cache();
-    const auto* saved = ctx.em.peek_race(1);
+    const auto* saved = ctx.em.peek_race(races.empire);
     test::expect_ne(saved, nullptr);
     test::expect_eq(saved->leader().name, "Grand Moff");
   }
@@ -204,11 +200,11 @@ void test_name_block() {
                "Test: name command - block naming and authorization");
 
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, races.empire, 1);
 
   // TEST: Leader (governor 1) can rename alliance block
   {
@@ -217,7 +213,7 @@ void test_name_block() {
     ctx.assert_dispatch_success(g, {"name", "block", "United", "Federation"});
     test::expect_contains(g.out.str(), "Done.");
 
-    const auto* saved = ctx.em.peek_block(1);
+    const auto* saved = ctx.em.peek_block(races.empire);
     test::expect_ne(saved, nullptr);
     test::expect_eq(saved->name(), "United Federation");
   }
@@ -230,12 +226,12 @@ void test_name_block() {
     test::expect_false(
         GB::commands::name({"name", "block", "Missing", "Block"}, g));
     test::expect_contains(g.out.str(), "Block not found.");
-    g.set_player(1);
+    g.set_player(races.empire);
   }
 
   // TEST: Non-leader governor (governor 2) is rejected
   {
-    ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
+    ctx.em.mutate_race(races.empire, [](Race& r) { r.appoint_governor(2); });
     g.set_governor(2);
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "block", "Rebel", "Alliance"});
@@ -249,21 +245,23 @@ void test_name_factory_class() {
   std::println(std::cout, "Test: name command - factory ship class naming");
 
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
-  const auto fac_id =
-      TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY).owned_by(1, 1).build();
+  const auto fac_id = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
+                          .owned_by(races.empire, 1)
+                          .build();
   ctx.em.mutate_ship(fac_id, [](Ship& f) {
     f.on() = false;
     f.shipclass() = "Basic";
   });
 
-  const auto non_fac_id =
-      TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER).owned_by(1, 1).build();
+  const auto non_fac_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+                              .owned_by(races.empire, 1)
+                              .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, races.empire, 1);
 
   // TEST: Name class at factory off-line -> success
   {
@@ -312,14 +310,15 @@ void test_name_permissions_scope_and_json() {
                "Test: name command - permissions, scope checks, and JSON");
 
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
-  const auto ship_id =
-      TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE).owned_by(1, 1).build();
+  const auto ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
+                           .owned_by(races.empire, 1)
+                           .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, races.empire, 1);
 
   // TEST: Non-god naming star -> rejected
   {
@@ -357,7 +356,7 @@ void test_name_permissions_scope_and_json() {
 
   // TEST: Non-leader naming race -> rejected
   {
-    ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
+    ctx.em.mutate_race(races.empire, [](Race& r) { r.appoint_governor(2); });
     g.set_governor(2);
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"name", "race", "Forbidden"});
@@ -385,7 +384,7 @@ void test_name_permissions_scope_and_json() {
   // ship rejections (zero DB writes), plus deity override
   {
     const auto enemy_fac = TestShipBuilder(ctx.em, ShipType::OTYPE_FACTORY)
-                               .owned_by(2, 1)
+                               .owned_by(races.nomad, 1)
                                .named("EnemyHull")
                                .with_on(false)
                                .build();
@@ -410,7 +409,7 @@ void test_name_permissions_scope_and_json() {
     g.set_governor(1);
 
     const auto ghost_ship = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
-                                .owned_by(1, 1)
+                                .owned_by(races.empire, 1)
                                 .in_planet_orbit(1, 1)
                                 .build();
     g.set_scope_ship(ghost_ship);

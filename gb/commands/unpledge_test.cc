@@ -13,31 +13,37 @@ import std;
 
 namespace {
 
+constexpr player_t p1 = 2;
+constexpr player_t p2 = 3;
+
 void test_unpledge_dispatch() {
   std::println(std::cout,
                "Test: unpledge command dispatch, JSON mode, and block power");
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
+  TestWorldBuilder world(ctx);
+  world.add_race("Federation", 100.0, false, p1);
+  world.add_race("Klingons", 100.0, false, p2);
 
-  ctx.em.mutate_block(2, [](Block& b) {
+  ctx.em.mutate_block(p2, [](Block& b) {
     b = Block{{
-        .Playernum = player_t{2},
+        .Playernum = p2,
         .name = "LeaderBlock",
-        .invited = {player_t{1}, player_t{2}},
-        .pledged = {player_t{1}, player_t{2}},
+        .invited = {p1, p2},
+        .pledged = {p1, p2},
     }};
   });
 
-  ctx.em.mutate_power(1, [](Power& p) {
+  ctx.em.mutate_power(p1, [](Power& p) {
     p = Power{{
-        .id = 1,
+        .id = p1,
         .ships_owned = 4,
         .money = 120,
     }};
   });
-  ctx.em.mutate_power(2, [](Power& p) {
+  ctx.em.mutate_power(p2, [](Power& p) {
     p = Power{{
-        .id = 2,
+        .id = p2,
         .ships_owned = 6,
         .money = 280,
     }};
@@ -45,13 +51,13 @@ void test_unpledge_dispatch() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, p1, 1);
 
-  // 1. Unpledge from block 2
-  ctx.assert_dispatch_success(g, {"unpledge", "2"});
-  const auto* saved_block = ctx.em.peek_block(player_t{2});
+  // 1. Unpledge from block 3
+  ctx.assert_dispatch_success(g, {"unpledge", "3"});
+  const auto* saved_block = ctx.em.peek_block(p2);
   test::expect_ne(saved_block, nullptr);
-  test::expect_false(saved_block->is_pledged(player_t{1}));
+  test::expect_false(saved_block->is_pledged(p1));
   test::expect_eq(saved_block->members(), 1U);
   test::expect_eq(saved_block->ships_owned(), 6U);
   test::expect_eq(saved_block->money(), money_t{280});
@@ -60,38 +66,38 @@ void test_unpledge_dispatch() {
   // 2. Unpledge in UiMode::JSON
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"unpledge", "2"});
+  ctx.assert_dispatch_success(g, {"unpledge", "3"});
   test::expect_contains(g.out.str(), R"("type":"block")");
   test::expect_contains(g.out.str(), R"("name":"LeaderBlock")");
   g.set_ui_mode(UiMode::ASCII);
 
   // 3. Direct renderer checks for taunt and normal declaration news
   GB::presentation::UnpledgeResult taunt_vm{
-      .pledger_id = player_t{1},
+      .pledger_id = p1,
       .pledger_name = "Federation",
-      .block_id = player_t{2},
+      .block_id = p2,
       .block_name = "LeaderBlock",
       .taunt = true,
   };
   test::expect_contains(
       GB::presentation::render_unpledge_declaration_news(taunt_vm),
-      "calls LeaderBlock [2] a bunch of geeks and QUITS!");
+      "calls LeaderBlock [3] a bunch of geeks and QUITS!");
   taunt_vm.taunt = false;
   test::expect_contains(
       GB::presentation::render_unpledge_declaration_news(taunt_vm),
-      "has QUIT LeaderBlock [2]!");
+      "has QUIT LeaderBlock [3]!");
 
   // 4. Self unpledge rejection
   g.out.str("");
-  ctx.assert_dispatch_rejected(g, {"unpledge", "1"});
+  ctx.assert_dispatch_rejected(g, {"unpledge", "2"});
   test::expect_contains(g.out.str(), "Not needed, you are the leader.");
   std::println(std::cout, "    ✓ Self unpledge rejection verified");
 
   // 5. Role check: Sub-governor cannot unpledge
-  ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
+  ctx.em.mutate_race(p1, [](Race& r) { r.appoint_governor(2); });
   g.set_governor(2);
   g.out.str("");
-  ctx.assert_dispatch_rejected(g, {"unpledge", "2"});
+  ctx.assert_dispatch_rejected(g, {"unpledge", "3"});
   test::expect_contains(g.out.str(),
                         "Only the leader (Governor 1) may use this command.");
   std::println(std::cout, "    ✓ Sub-governor rejection verified for unpledge");

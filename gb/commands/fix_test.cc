@@ -12,7 +12,7 @@ import std;
 // Database persistence for fixing ship fuel
 void test_fix_ship_fuel_persistence() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
 
   const auto ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                            .owned_by(1, 1)
@@ -40,7 +40,7 @@ void test_fix_ship_fuel_persistence() {
 // Database persistence for fixing ship damage
 void test_fix_ship_damage_persistence() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
 
   const auto ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE)
                            .owned_by(1, 1)
@@ -67,7 +67,7 @@ void test_fix_ship_damage_persistence() {
 // Database persistence for fixing ship dead status (hard-deletes ship)
 void test_fix_ship_dead_persistence() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
 
   const auto ship_id =
       TestShipBuilder(ctx.em, ShipType::STYPE_SHUTTLE).owned_by(1, 1).build();
@@ -94,7 +94,7 @@ void test_fix_ship_dead_persistence() {
 // Database persistence for fixing planet temperature
 void test_fix_planet_temp_persistence() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
   ctx.em.mutate_planet(1, 1, [](Planet& p) { p.temp() = 50; });
 
   ctx.em.clear_cache();
@@ -117,7 +117,7 @@ void test_fix_planet_temp_persistence() {
 // Database persistence for fixing planet oxygen
 void test_fix_planet_oxygen_persistence() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
   ctx.em.mutate_planet(1, 1, [](Planet& p) { p.conditions().oxygen = 10; });
 
   ctx.em.clear_cache();
@@ -140,7 +140,7 @@ void test_fix_planet_oxygen_persistence() {
 // Database persistence for fixing planet position
 void test_fix_planet_position_persistence() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
   ctx.em.mutate_planet(
       1, 1, [](Planet& p) { p.set_system_coordinates({100.0, 200.0}); });
 
@@ -165,8 +165,8 @@ void test_fix_planet_position_persistence() {
 
 void test_fix_command_dispatch() {
   TestContext ctx;
-  ctx.with_standard_universe();
-  ctx.em.mutate_race(1, [](Race& r) { r.God = true; });
+  ctx.with_galaxy();
+  TestWorldBuilder(ctx).add_race("Klingons", 100.0, false, player_t{2});
   ctx.em.mutate_planet(1, 1, [](Planet& p) { p.temp() = 50; });
 
   // Create ship

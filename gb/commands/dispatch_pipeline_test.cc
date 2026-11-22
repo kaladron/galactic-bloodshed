@@ -408,18 +408,18 @@ void test_dispatch_by_command_name() {
 
 void test_edge_cases_and_socket_outbox() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   RecordingSessionRegistry registry;
   registry.sessions = {
-      SessionInfo{.player = 1, .governor = 1, .connected = true},
-      SessionInfo{.player = 2, .governor = 1, .connected = true},
-      SessionInfo{.player = 2, .governor = 2, .connected = false},
+      SessionInfo{.player = races.empire, .governor = 1, .connected = true},
+      SessionInfo{.player = races.nomad, .governor = 1, .connected = true},
+      SessionInfo{.player = races.nomad, .governor = 2, .connected = false},
   };
-  ctx.em.mutate_race(2, [](Race& r) { r.appoint_governor(2); });
+  ctx.em.mutate_race(races.nomad, [](Race& r) { r.appoint_governor(2); });
 
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
 
   // 1. player() == 0 sets g.race = nullptr and passes no_guests check
   g.set_player(0);
@@ -432,7 +432,7 @@ void test_edge_cases_and_socket_outbox() {
   test::expect_true(
       GB::commands::dispatch_command(g, no_guest_desc, {"mock_player0"}));
   test::expect_true(g.race == nullptr);
-  g.set_player(1);
+  ctx.setup_game_obj(g, races.empire, 1);
 
   // 2. Missing star in star_control and FixedStar catches EntityNotFoundError
   g.set_scope_star(999);
@@ -469,12 +469,12 @@ void test_edge_cases_and_socket_outbox() {
       .name = "mock_fail_outbox",
       .scopes = GB::commands::AllowedScopes::any(),
       .handler = [](const command_t&, GameObj& game) -> bool {
-        d_broadcast(game.session_registry, game.entity_manager, 1, 1,
+        d_broadcast(game.session_registry, game.entity_manager, 4, 1,
                     "Leaked broadcast!\n");
-        warn_player(game.session_registry, game.entity_manager, 2, 1,
+        warn_player(game.session_registry, game.entity_manager, 3, 1,
                     "Leaked online warning!\n");
-        // Disconnect (2, 1) temporarily to force an offline telegram for (2, 2)
-        push_telegram(game.entity_manager, 2, 2, "Leaked offline telegram!\n");
+        // Disconnect (3, 1) temporarily to force an offline telegram for (3, 2)
+        push_telegram(game.entity_manager, 3, 2, "Leaked offline telegram!\n");
         return false;
       },
   };
@@ -482,14 +482,14 @@ void test_edge_cases_and_socket_outbox() {
   test::expect_false(GB::commands::dispatch_command(g, fail_outbox_desc,
                                                     {"mock_fail_outbox"}));
   test::expect_true(registry.notifications.empty());
-  test::expect_eq(ctx.em.get_telegrams(2, 2).size(), 0u);
+  test::expect_eq(ctx.em.get_telegrams(races.nomad, 2).size(), 0u);
 
   // 5. Throwing command (transactional and non-transactional) rolls back outbox
   GB::commands::CommandDescriptor throw_txn_desc{
       .name = "mock_throw_txn",
       .scopes = GB::commands::AllowedScopes::any(),
       .handler = [](const command_t&, GameObj& game) -> bool {
-        warn_player(game.session_registry, game.entity_manager, 2, 1,
+        warn_player(game.session_registry, game.entity_manager, 3, 1,
                     "Leaked on exception!\n");
         throw std::runtime_error("boom");
       },
@@ -517,9 +517,9 @@ void test_edge_cases_and_socket_outbox() {
       .name = "mock_commit_outbox",
       .scopes = GB::commands::AllowedScopes::any(),
       .handler = [](const command_t&, GameObj& game) -> bool {
-        warn_player(game.session_registry, game.entity_manager, 1, 1,
+        warn_player(game.session_registry, game.entity_manager, 4, 1,
                     "Delivered live!\n");
-        warn_player(game.session_registry, game.entity_manager, 2, 1,
+        warn_player(game.session_registry, game.entity_manager, 3, 1,
                     "Fallback after disconnect!\n");
         static_cast<RecordingSessionRegistry&>(game.session_registry)
             .sessions[1]
@@ -529,18 +529,18 @@ void test_edge_cases_and_socket_outbox() {
   };
   test::expect_true(GB::commands::dispatch_command(g, commit_outbox_desc,
                                                    {"mock_commit_outbox"}));
-  test::expect_true(registry.has_received(1, "Delivered live!"));
-  test::expect_eq(ctx.em.get_telegrams(2, 1).size(), 1u);
+  test::expect_true(registry.has_received(races.empire, "Delivered live!"));
+  test::expect_eq(ctx.em.get_telegrams(races.nomad, 1).size(), 1u);
 
   ctx.verify_universe_invariants();
 }
 
 void test_json_dirty_entity_auto_emission() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_star(1);
   g.set_scope_planet(1, 1);
 
@@ -567,7 +567,7 @@ void test_json_dirty_entity_auto_emission() {
   test::expect_true(
       GB::commands::dispatch_command(g, ascii_cmd, {"ascii_cmd"}));
   test::expect_true(g.out.str().empty());
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
 
   // 3. JSON mode with no mutations: dirty is empty, nothing emitted
   GB::commands::CommandDescriptor noop_cmd{
@@ -614,11 +614,13 @@ void test_json_dirty_entity_auto_emission() {
   g.set_ui_mode(UiMode::JSON);
 
   // 6. Explored vs Unexplored Star and Planet
-  // Make Star 2 and Planet 2,1 unexplored by player 1
-  ctx.em.mutate_star(2, [](Star& s) { s.clear_explored_by(1); });
-  ctx.em.mutate_planet(2, 1, [](Planet& p) {
-    p.info(1).explored = 0;
-    p.info(1).numsectsowned = 0;
+  // Make Star 2 and Planet 2,1 unexplored by races.empire
+  ctx.em.mutate_star(2, [&](Star& s) { s.clear_explored_by(races.empire); });
+  ctx.em.mutate_planet_and_sectors(2, 1, [&](Planet& p, SectorMap& smap) {
+    smap.get({0, 0}).clear_owner();
+    smap.get({0, 0}).set_popn_exact(0);
+    p.sync_demographics(smap);
+    p.info(races.empire).explored = 0;
   });
 
   GB::commands::CommandDescriptor star_planet_cmd{
@@ -671,17 +673,17 @@ void test_json_dirty_entity_auto_emission() {
 
   // 8. Ships: visible, invisible, and deleted
   g_vis_sid = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-                  .owned_by(1)
+                  .owned_by(races.empire)
                   .in_planet_orbit(1, 1)
                   .build();
 
   g_invis_sid = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-                    .owned_by(2)
+                    .owned_by(races.nomad)
                     .in_deep_space()
                     .build();
 
   g_del_sid = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-                  .owned_by(1)
+                  .owned_by(races.empire)
                   .in_planet_orbit(1, 1)
                   .build();
 
@@ -717,8 +719,8 @@ void test_json_dirty_entity_auto_emission() {
       .name = "race_cmd",
       .scopes = GB::commands::AllowedScopes::any(),
       .handler = [](const command_t&, GameObj& game) -> bool {
-        game.entity_manager.mutate_race(1, [](Race& r) { r.morale = 50; });
-        game.entity_manager.mutate_race(2, [](Race& r) { r.morale = 60; });
+        game.entity_manager.mutate_race(4, [](Race& r) { r.morale = 50; });
+        game.entity_manager.mutate_race(3, [](Race& r) { r.morale = 60; });
         return true;
       },
   };
@@ -727,8 +729,8 @@ void test_json_dirty_entity_auto_emission() {
   test::expect_true(GB::commands::dispatch_command(g, race_cmd, {"race_cmd"}));
   out = g.out.str();
   test::expect_contains(out, R"("type":"race")");
-  test::expect_contains(out, R"("player":1)");
-  test::expect_false(out.contains(R"("player":2)"));
+  test::expect_contains(out, R"("player":4)");
+  test::expect_false(out.contains(R"("player":3)"));
 
   // 10. Block mutation
   GB::commands::CommandDescriptor block_cmd{
@@ -736,7 +738,7 @@ void test_json_dirty_entity_auto_emission() {
       .scopes = GB::commands::AllowedScopes::any(),
       .handler = [](const command_t&, GameObj& game) -> bool {
         game.entity_manager.mutate_block(
-            1, [](Block& b) { b.name() = "AlliedForces"; });
+            4, [](Block& b) { b.name() = "AlliedForces"; });
         return true;
       },
   };
@@ -754,11 +756,11 @@ void test_json_dirty_entity_auto_emission() {
 
   {
     auto commod1 = ctx.em.create_commod({
-        .owner = 2,
+        .owner = races.nomad,
         .type = CommodType::RESOURCE,
         .amount = 100,
         .bid = 500,
-        .bidder = 1,
+        .bidder = races.empire,
         .star_from = 1,
         .planet_from = 1,
         .star_to = 1,
@@ -769,7 +771,7 @@ void test_json_dirty_entity_auto_emission() {
 
   {
     auto commod2 = ctx.em.create_commod({
-        .owner = 1,
+        .owner = races.empire,
         .type = CommodType::FUEL,
         .amount = 200,
         .bid = 300,
@@ -862,11 +864,19 @@ void test_json_dirty_entity_auto_emission() {
 
 void test_guest_read_only_scope_enforcement() {
   TestContext ctx;
-  ctx.with_standard_universe().with_populated_planet(1, 1, 1, 1000);
-  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 10; });
-  ctx.em.mutate_race(1, [](Race& r) { r.Guest = true; });
+  ctx.with_galaxy();
+  TestWorldBuilder world(ctx);
+  world.add_race("GuestFederation", 100.0, true, player_t{2});
+  world.add_race("Klingons", 100.0, false, player_t{3});
+  ctx.with_populated_planet(1, 1, 2, 1000);
+  ctx.em.mutate_star(1, [](Star& s) {
+    s.mark_explored_by(2);
+    s.mark_inhabited_by(2);
+    s.AP(2) = 10;
+  });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.mark_explored_by(2); });
   const auto sid = TestShipBuilder(ctx.em, ShipType::STYPE_DESTROYER)
-                       .owned_by(1, 1)
+                       .owned_by(2, 1)
                        .named("GuestProbe")
                        .in_planet_orbit(1, 1)
                        .with_crew(10, 0)
@@ -874,7 +884,7 @@ void test_guest_read_only_scope_enforcement() {
 
   RecordingSessionRegistry registry;
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, 2, 1);
   g.set_scope_planet(1, 1);
 
   // 1. Read-only modes (including examine and silenced Guest broadcasts)
@@ -936,7 +946,7 @@ void test_guest_read_only_scope_enforcement() {
       .scopes = GB::commands::AllowedScopes::any(),
       .ap = GB::commands::APCost::fixed_star(2),
       .handler = [](const command_t&, GameObj& game) -> bool {
-        game.session_registry.notify_race(2, "leaked");
+        game.session_registry.notify_race(3, "leaked");
         return true;
       },
   };
@@ -944,7 +954,7 @@ void test_guest_read_only_scope_enforcement() {
   test::expect_false(
       GB::commands::dispatch_command(g, fixed_ap_cmd, {"guest_fixed_ap"}));
   test::expect_true(registry.notifications.empty());
-  test::expect_eq(ctx.em.peek_star(1)->AP(1), 10U);
+  test::expect_eq(ctx.em.peek_star(1)->AP(2), 10U);
   test::expect_false(ctx.em.peek_ship(sid)->protect().evade);
   test::expect_eq(ctx.db.total_changes(), before);
 
@@ -955,24 +965,24 @@ void test_guest_read_only_scope_enforcement() {
   test::expect_true(
       GB::commands::dispatch_command(g, fixed_ap_cmd, {"guest_fixed_ap"}));
   test::expect_false(registry.notifications.empty());
-  test::expect_eq(ctx.em.peek_star(1)->AP(1), 10U);
+  test::expect_eq(ctx.em.peek_star(1)->AP(2), 10U);
   g.set_scope_star(1);
 
   // 4. Non-Guest internal ReadOnlyError rethrows fail-fast instead of masking
   g.set_god(false);
-  ctx.em.mutate_race(1, [](Race& r) { r.Guest = false; });
+  ctx.em.mutate_race(2, [](Race& r) { r.Guest = false; });
   GB::commands::CommandDescriptor buggy_ro_cmd{
       .name = "buggy_ro",
       .scopes = GB::commands::AllowedScopes::any(),
       .handler = [](const command_t&, GameObj& game) -> bool {
         auto guard = game.entity_manager.create_read_only_scope();
-        game.entity_manager.mutate_star(1, [](Star& s) { s.AP(1) = 99; });
+        game.entity_manager.mutate_star(1, [](Star& s) { s.AP(2) = 99; });
         return true;
       },
   };
   test::expect_throws<ReadOnlyError>(
       [&] { GB::commands::dispatch_command(g, buggy_ro_cmd, {"buggy_ro"}); });
-  test::expect_eq(ctx.em.peek_star(1)->AP(1), 10U);
+  test::expect_eq(ctx.em.peek_star(1)->AP(2), 10U);
 }
 
 }  // namespace

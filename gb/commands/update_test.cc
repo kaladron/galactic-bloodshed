@@ -85,8 +85,7 @@ void test_update_matrix() {
 
 void test_update_population_growth_persistence() {
   TestContext ctx;
-  ctx.with_standard_universe().with_populated_planet(1, 1, 1, 100,
-                                                     Coordinates{0, 0});
+  ctx.with_galaxy().with_populated_planet(1, 1, 1, 100, Coordinates{0, 0});
 
   // Ensure Player 1 is a deity with viable reproduction traits
   ctx.em.mutate_race(player_t{1}, [](Race& r) {

@@ -921,10 +921,11 @@ Command unit tests use `TestContext` to verify player commands across four stand
 
 ```cpp
 TestContext ctx;
-ctx.with_standard_universe();  // Seeds Sol, Vega, Antares, and 4 standard races (Players 1..4)
+const TestRaces races = ctx.with_races();  // Seeds Sol, Vega, Antares + Deity (1) and 3 mortal archetypes (2..4)
 auto& registry = get_test_session_registry();
 GameObj g(ctx.em, registry);
-ctx.setup_game_obj(g, player_t{1}, governor_t{1});
+ctx.setup_game_obj(g, races.empire, 1);
+g.set_scope_planet(1, 1);
 
 // Happy Path: Executes and verifies AP deduction
 ctx.assert_dispatch_success(g, tax_cmd, {"tax", "15"}, /*expected_star_ap_deducted=*/1);

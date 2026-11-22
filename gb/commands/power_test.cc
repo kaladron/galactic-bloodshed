@@ -13,39 +13,49 @@ import std;
 
 namespace {
 
+constexpr player_t p1 = 2;
+constexpr player_t p2 = 3;
+constexpr player_t p3 = 4;
+constexpr player_t p4 = 5;
+
 void test_power_dispatch() {
   std::println(std::cout, "Test: power command dispatch and reporting");
 
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
+  TestWorldBuilder world(ctx);
+  world.add_race("Federation", 100.0, false, p1);
+  world.add_race("Klingons", 100.0, false, p2);
+  world.add_race("Romulans", 100.0, false, p3);
+  world.add_race("Cardassians", 100.0, false, p4);
   JsonStore store(ctx.db);
 
   ctx.em.mutate_universe([](Universe& u) {
-    u.set_vn_hits(1, 3);
-    u.set_vn_hits(2, 7);
+    u.set_vn_hits(p1, 3);
+    u.set_vn_hits(p2, 7);
   });
 
-  ctx.em.mutate_race(1, [](Race& r) {
+  ctx.em.mutate_race(p1, [](Race& r) {
     r.victory_score = 100.0;
-    r.translate[player_t{1}] = 100;
-    r.translate[player_t{2}] = 50;
-    r.translate[player_t{3}] = 5;
-    r.translate[player_t{4}] = 50;
-    r.allied.insert(player_t{2});
-    r.atwar.insert(player_t{3});
+    r.translate[p1] = 100;
+    r.translate[p2] = 50;
+    r.translate[p3] = 5;
+    r.translate[p4] = 50;
+    r.allied.insert(p2);
+    r.atwar.insert(p3);
   });
-  ctx.em.mutate_race(2, [](Race& r) {
+  ctx.em.mutate_race(p2, [](Race& r) {
     r.victory_score = 150.0;
-    r.translate[player_t{1}] = 50;
-    r.translate[player_t{2}] = 100;
-    r.allied.insert(player_t{1});
+    r.translate[p1] = 50;
+    r.translate[p2] = 100;
+    r.allied.insert(p1);
   });
-  ctx.em.mutate_race(3, [](Race& r) { r.atwar.insert(player_t{1}); });
-  ctx.em.mutate_race(4, [](Race& r) { r.dissolved = true; });
+  ctx.em.mutate_race(p3, [](Race& r) { r.atwar.insert(p1); });
+  ctx.em.mutate_race(p4, [](Race& r) { r.dissolved = true; });
 
   PowerRepository powers(store);
   powers.save(Power{{
-      .id = 1,
+      .id = p1,
       .troops = 200,
       .popn = 5000,
       .ships_owned = 10,
@@ -53,7 +63,7 @@ void test_power_dispatch() {
       .money = 1000,
   }});
   powers.save(Power{{
-      .id = 2,
+      .id = p2,
       .troops = 400,
       .popn = 8000,
       .ships_owned = 15,
@@ -63,7 +73,7 @@ void test_power_dispatch() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, player_t{1}, governor_t{1});
+  ctx.setup_game_obj(g, p1, 1);
 
   // 1. All players report (covers dissolved + low-knowledge filtering)
   g.out.str("");
@@ -77,7 +87,7 @@ void test_power_dispatch() {
 
   // 2. Specific player filter
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"power", "2"});
+  ctx.assert_dispatch_success(g, {"power", "3"});
   out = g.out.str();
   test::expect_contains(out, "Galactic Bloodshed Power Report");
   test::expect_contains(out, "Klingons");
@@ -87,12 +97,12 @@ void test_power_dispatch() {
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"power", "99"});
   test::expect_contains(g.out.str(), "No such player.");
-  ctx.assert_dispatch_rejected(g, {"power", "4"});
+  ctx.assert_dispatch_rejected(g, {"power", "5"});
   test::expect_contains(g.out.str(), "That player has dissolved.");
   std::println(std::cout, "    ✓ power rejected non-existent player");
 
-  ctx.em.mutate_race(1, [](Race& r) { r.God = true; });
-  g.race = ctx.em.peek_race(player_t{1});
+  ctx.em.mutate_race(p1, [](Race& r) { r.God = true; });
+  ctx.setup_game_obj(g, p1, 1);
   ctx.assert_dispatch_success(g, {"power"});
   test::expect_contains(g.out.str(), "VNs");
 
@@ -103,10 +113,10 @@ void test_power_dispatch() {
 
   ctx.verify_universe_invariants();
 
-  powers.remove(3);
+  powers.remove(p3);
   ctx.em.clear_cache();
   g.set_ui_mode(UiMode::ASCII);
-  ctx.assert_dispatch_success(g, {"power", "3"});
+  ctx.assert_dispatch_success(g, {"power", "4"});
   test::expect_false(g.out.str().contains("Romulans"));
 }
 

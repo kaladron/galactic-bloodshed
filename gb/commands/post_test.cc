@@ -12,15 +12,23 @@ import std;
 
 namespace {
 
+constexpr player_t p1 = 2;
+
 void test_post_bulletin_ascii_and_json() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
+  TestWorldBuilder(ctx).add_race("Federation", 100.0, false, p1);
+  ctx.em.mutate_star(1, [](Star& s) {
+    s.mark_explored_by(p1);
+    s.mark_inhabited_by(p1);
+    s.AP(p1) = 50;
+  });
 
-  ctx.em.mutate_race(1, [](Race& r) { r.leader().name = "TestGovernor"; });
+  ctx.em.mutate_race(p1, [](Race& r) { r.leader().name = "TestGovernor"; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, p1, 1);
   g.set_scope_star(1);
 
   // Missing message argument rejected by min_args
@@ -35,7 +43,7 @@ void test_post_bulletin_ascii_and_json() {
   const auto items = ctx.em.get_news_since(NewsType::ANNOUNCE, 0);
   test::expect_false(items.empty());
   test::expect_contains(items.back().message,
-                        "Federation \"TestGovernor\" [1,1]: Galactic news "
+                        "Federation \"TestGovernor\" [2,1]: Galactic news "
                         "bulletin\n");
 
   // Post from universe scope in JSON mode

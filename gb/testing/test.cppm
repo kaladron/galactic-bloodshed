@@ -573,13 +573,6 @@ public:
   ///   orbital cruiser)
   TestRaces with_races();
 
-  /// Initializes a standard 4-player solar system with Sol (Star 1), Vega
-  /// (Star 2), and Antares (Star 3), populated by Federation (Player 1),
-  /// Klingons (Player 2), Romulans (Player 3), and Cardassians (Player 4)
-  /// constructed via EnrollmentService::build_race() and registered via
-  /// EntityManager::create_race(). Enables fluent chaining.
-  TestContext& with_standard_universe();
-
   /// Colonizes and seeds population on a planet sector, keeping planet and
   /// sectormap populations aligned for universe invariant verification.
   TestContext& with_populated_planet(starnum_t snum = 1, planetnum_t pnum = 1,
@@ -862,9 +855,6 @@ public:
              std::string_view name = "", unsigned char maxx = 10,
              unsigned char maxy = 10,
              std::optional<planetnum_t> explicit_pnum = std::nullopt);
-
-  /// Preset for standard 2-player solar system setup
-  static void create_standard_solar_system(TestContext& ctx);
 
 private:
   JsonStore store_;

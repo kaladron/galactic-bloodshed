@@ -12,24 +12,37 @@ import std;
 
 namespace {
 
+constexpr player_t p1 = 2;
+
 void setup_test_world(TestContext& ctx) {
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
+  TestWorldBuilder(ctx).add_race("Federation", 100.0, false, p1);
+  ctx.with_populated_planet(1, 1, p1, 1000);
+
   JsonStore store(ctx.db);
   PowerRepository(store).save(Power{{
-      .id = 1,
+      .id = p1,
       .popn = 1000,
   }});
 
-  ctx.em.mutate_planet(1, 1, [](Planet& pl) {
-    pl.info(player_t{1}).autorep = 1;
-    pl.info(player_t{1}).tech_invest = 50;
-    pl.info(player_t{1}).prod_res = 100;
+  ctx.em.mutate_star(1, [](Star& s) {
+    s.mark_explored_by(p1);
+    s.mark_inhabited_by(p1);
   });
-  ctx.em.mutate_planet(
-      3, 1, [](Planet& pl) { pl.info(player_t{1}).explored = false; });
+  ctx.em.mutate_star(2, [](Star& s) { s.mark_explored_by(p1); });
+  ctx.em.mutate_star(3, [](Star& s) { s.mark_explored_by(p1); });
+
+  ctx.em.mutate_planet(1, 1, [](Planet& pl) {
+    pl.info(p1).explored = true;
+    pl.info(p1).autorep = 1;
+    pl.info(p1).tech_invest = 50;
+    pl.info(p1).prod_res = 100;
+  });
+  ctx.em.mutate_planet(2, 1, [](Planet& pl) { pl.info(p1).explored = true; });
+  ctx.em.mutate_planet(3, 1, [](Planet& pl) { pl.info(p1).explored = false; });
 
   TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-      .owned_by(1)
+      .owned_by(p1)
       .in_deep_space()
       .build();
 }
@@ -40,7 +53,7 @@ void test_status_dispatch() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, p1, 1);
   g.set_scope_univ();
 
   // 1. Happy path: status without arguments (covers explored colony on Sol,
@@ -59,7 +72,7 @@ void test_status_dispatch() {
   output = g.out.str();
   test::expect_contains(output, "Technology Report");
   test::expect_contains(output, "Sol/Earth*");
-  ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
+  ctx.em.mutate_race(p1, [](Race& r) { r.appoint_governor(2); });
   g.set_governor(governor_t{2});
   ctx.assert_dispatch_success(g, {"status", "/Sol"});
   test::expect_false(g.out.str().contains("Sol/Earth*"));
@@ -67,7 +80,7 @@ void test_status_dispatch() {
   std::println(std::cout, "    ✓ status with /Sol filter succeeded");
 
   // 3. Unexplored star, invalid/universe/ship locations, missing power, & JSON
-  ctx.em.mutate_star(3, [](Star& s) { s.clear_explored_by(player_t{1}); });
+  ctx.em.mutate_star(3, [](Star& s) { s.clear_explored_by(p1); });
   ctx.assert_dispatch_success(g, {"status"});
   ctx.assert_dispatch_success(g,
                               {"status", "/Antares", "/NoSuchStar", "/", "#1"});

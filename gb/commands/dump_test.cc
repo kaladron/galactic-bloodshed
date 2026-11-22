@@ -12,26 +12,42 @@ import std;
 
 namespace {
 
+constexpr player_t donor = 2;
+constexpr player_t recipient = 3;
+
+void setup_dump_world(TestContext& ctx) {
+  ctx.with_galaxy();
+  TestWorldBuilder world(ctx);
+  world.add_race("Federation", 100.0, false, donor);
+  world.add_race("Klingons", 100.0, false, recipient);
+  ctx.em.mutate_star(1, [](Star& s) {
+    s.mark_explored_by(donor);
+    s.mark_inhabited_by(donor);
+    s.AP(donor) = 100;
+  });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.mark_explored_by(donor); });
+  ctx.em.mutate_star(2, [](Star& s) { s.mark_explored_by(donor); });
+  ctx.em.mutate_planet(2, 1, [](Planet& p) { p.mark_explored_by(donor); });
+}
+
 void test_dump_happy_paths() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  setup_dump_world(ctx);
 
   // Mark Earth and Sol as unvisited by Klingons to test exploration data
   // transfer
-  ctx.em.mutate_planet(1, 1,
-                       [](Planet& p) { p.info(player_t{2}).explored = 0; });
-  ctx.em.mutate_star(1, [](Star& s) { s.clear_explored_by(player_t{2}); });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(recipient).explored = 0; });
+  ctx.em.mutate_star(1, [](Star& s) { s.clear_explored_by(recipient); });
 
   // Mark Star 3 as unexplored by Federation to test skipping unexplored stars
-  ctx.em.mutate_star(3, [](Star& s) { s.clear_explored_by(player_t{1}); });
+  ctx.em.mutate_star(3, [](Star& s) { s.clear_explored_by(donor); });
   // Mark Planet (2, 1) as unexplored by Federation to test skipping unexplored
   // planets
-  ctx.em.mutate_planet(2, 1,
-                       [](Planet& p) { p.info(player_t{1}).explored = false; });
+  ctx.em.mutate_planet(2, 1, [](Planet& p) { p.info(donor).explored = false; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, donor, 1);
   g.set_scope_star(1);
 
   // 1. Dump exploration data (10 AP deducted via FixedStar)
@@ -40,39 +56,39 @@ void test_dump_happy_paths() {
 
   const auto* p_after = ctx.em.peek_planet(1, 1);
   test::expect_ne(p_after, nullptr);
-  test::expect_true(p_after->info(player_t{2}).explored);
+  test::expect_true(p_after->info(recipient).explored);
 
   const auto* s_after = ctx.em.peek_star(1);
   test::expect_ne(s_after, nullptr);
-  test::expect_true(s_after->is_explored_by(player_t{2}));
+  test::expect_true(s_after->is_explored_by(recipient));
 
   // Deity dump transfers even stars/planets not marked explored on donor_id
   ctx.em.mutate_star(3, [](Star& s) {
-    s.clear_explored_by(player_t{1});
-    s.clear_explored_by(player_t{2});
+    s.clear_explored_by(donor);
+    s.clear_explored_by(recipient);
   });
   g.set_god(true);
   ctx.assert_dispatch_success(g, {"dump", "Klingons"}, 0);
-  test::expect_true(ctx.em.peek_star(3)->is_explored_by(player_t{2}));
+  test::expect_true(ctx.em.peek_star(3)->is_explored_by(recipient));
   g.set_god(false);
 
   // Verify persistence after clearing cache
   ctx.em.clear_cache();
   const auto* p_persisted = ctx.em.peek_planet(1, 1);
   test::expect_ne(p_persisted, nullptr);
-  test::expect_true(p_persisted->info(player_t{2}).explored);
+  test::expect_true(p_persisted->info(recipient).explored);
 }
 
 void test_dump_insufficient_ap() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  setup_dump_world(ctx);
 
   // Set Star AP to 5 (< 10)
-  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 5; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(donor) = 5; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, donor, 1);
   g.set_scope_star(1);
 
   ctx.assert_dispatch_rejected(g, {"dump", "Klingons"});
@@ -81,15 +97,15 @@ void test_dump_insufficient_ap() {
 
 void test_dump_role_rejections() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  setup_dump_world(ctx);
 
   // 1. Guest race rejection
   {
-    ctx.em.mutate_race(2, [](Race& r) { r.Guest = true; });
+    ctx.em.mutate_race(recipient, [](Race& r) { r.Guest = true; });
 
     auto& registry = get_test_session_registry();
     GameObj g(ctx.em, registry);
-    ctx.setup_game_obj(g, 2, 1);
+    ctx.setup_game_obj(g, recipient, 1);
     g.set_scope_star(1);
 
     ctx.assert_dispatch_rejected(g, {"dump", "Federation"});
@@ -100,7 +116,7 @@ void test_dump_role_rejections() {
   {
     auto& registry = get_test_session_registry();
     GameObj g(ctx.em, registry);
-    ctx.setup_game_obj(g, 1, 2);
+    ctx.setup_game_obj(g, donor, 2);
     g.set_scope_star(1);
 
     ctx.assert_dispatch_rejected(g, {"dump", "Klingons"});
@@ -111,11 +127,11 @@ void test_dump_role_rejections() {
 
 void test_dump_domain_errors() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  setup_dump_world(ctx);
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, donor, 1);
   g.set_scope_star(1);
 
   // 1. Min args check (< 2 args)
@@ -130,38 +146,36 @@ void test_dump_domain_errors() {
 
 void test_dump_specific_places() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  setup_dump_world(ctx);
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, donor, 1);
   g.set_scope_star(1);
 
   // Reset explored status on recipient for further tests
-  ctx.em.mutate_planet(1, 1,
-                       [](Planet& p) { p.info(player_t{2}).explored = 0; });
-  ctx.em.mutate_star(1, [](Star& s) { s.clear_explored_by(player_t{2}); });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(recipient).explored = 0; });
+  ctx.em.mutate_star(1, [](Star& s) { s.clear_explored_by(recipient); });
 
   // 1. Dump specific star (/Sol)
   ctx.assert_dispatch_success(g, {"dump", "Klingons", "/Sol"}, 10);
   test::expect_contains(g.out.str(), "Exploration Data transferred");
-  test::expect_true(ctx.em.peek_planet(1, 1)->info(player_t{2}).explored);
-  test::expect_true(ctx.em.peek_star(1)->is_explored_by(player_t{2}));
+  test::expect_true(ctx.em.peek_planet(1, 1)->info(recipient).explored);
+  test::expect_true(ctx.em.peek_star(1)->is_explored_by(recipient));
 
   // Reset explored status on recipient for further tests
-  ctx.em.mutate_planet(1, 1,
-                       [](Planet& p) { p.info(player_t{2}).explored = 0; });
-  ctx.em.mutate_star(1, [](Star& s) { s.clear_explored_by(player_t{2}); });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.info(recipient).explored = 0; });
+  ctx.em.mutate_star(1, [](Star& s) { s.clear_explored_by(recipient); });
 
   // 2. Dump specific planet (/Sol/Earth)
   g.out.str("");
   ctx.assert_dispatch_success(g, {"dump", "Klingons", "/Sol/Earth"}, 10);
   test::expect_contains(g.out.str(), "Exploration Data transferred");
-  test::expect_true(ctx.em.peek_planet(1, 1)->info(player_t{2}).explored);
+  test::expect_true(ctx.em.peek_planet(1, 1)->info(recipient).explored);
 
   // 3. Dump with universe, valid ship (#1), and invalid scopes (safely ignored)
   TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-      .owned_by(1)
+      .owned_by(donor)
       .in_deep_space()
       .build();
   g.out.str("");
@@ -178,11 +192,11 @@ void test_dump_specific_places() {
 
 void test_dump_matrix() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  setup_dump_world(ctx);
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, donor, 1);
   g.set_scope_star(1);
 
   TestCommandMatrix(ctx, "dump")

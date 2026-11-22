@@ -74,7 +74,7 @@ import std;
 
 int main() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_races();
   // ... assertions ...
   std::println("Test passed!");
   return 0;

@@ -13,29 +13,27 @@ import std;
 
 namespace {
 
-void setup_test_world(TestContext& ctx) {
-  ctx.with_standard_universe();
+TestRaces setup_test_world(TestContext& ctx) {
+  const auto races = ctx.with_races();
 
   // Setup governors and names
-  ctx.em.mutate_race(1, [](Race& r) {
+  ctx.em.mutate_race(races.empire, [](Race& r) {
     r.leader().name = "President";
     r.appoint_governor(2, {.name = "VicePresident"});
   });
 
-  ctx.em.mutate_race(2, [](Race& r) {
-    r.God = true;
-    r.leader().name = "Emperor";
-  });
-  ctx.create_star("Frontier", 4).build();
+  ctx.em.mutate_race(races.deity, [](Race& r) { r.leader().name = "Emperor"; });
+  ctx.create_star("Frontier", 4).with_inhabited(races.newcomer, true).build();
+  return races;
 }
 
 void test_announce_dispatch() {
   TestContext ctx;
-  setup_test_world(ctx);
+  const auto races = setup_test_world(ctx);
 
   RecordingSessionRegistry registry;
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_star(1);
 
   // 1. Announce in inhabited star system (separator ':')
@@ -55,7 +53,7 @@ void test_announce_dispatch() {
                         "> Galaxy Wide\n");
 
   const shipnum_t deep_probe = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-                                   .owned_by(1, 1)
+                                   .owned_by(races.empire, 1)
                                    .in_deep_space()
                                    .build();
   ctx.assert_dispatch_success(g, {"cs", std::format("#{}", deep_probe)});
@@ -92,21 +90,23 @@ void test_announce_dispatch() {
   test::expect_contains(g.out.str(), "Only deity can use this command.");
 
   // 5. Deity can announce in uninhabited system & shout in JSON mode
-  g.set_god(true);
+  GameObj god_g(ctx.em, registry);
+  ctx.setup_game_obj(god_g, races.deity, 1);
+  god_g.set_scope_star(4);
   registry.clear_notifications();
-  ctx.assert_dispatch_success(g, {"announce", "Deity", "Visit"});
+  ctx.assert_dispatch_success(god_g, {"announce", "Deity", "Visit"});
   test::expect_false(registry.notifications.empty());
   test::expect_contains(registry.notifications.back().message,
                         ": Deity Visit\n");
 
-  g.set_ui_mode(UiMode::JSON);
-  g.out.str("");
+  god_g.set_ui_mode(UiMode::JSON);
+  god_g.out.str("");
   registry.clear_notifications();
-  ctx.assert_dispatch_success(g, {"!", "Deity", "Announcement"});
+  ctx.assert_dispatch_success(god_g, {"!", "Deity", "Announcement"});
   test::expect_contains(registry.notifications.back().message,
                         "! Deity Announcement\n");
-  test::expect_contains(g.out.str(), R"("type":"message")");
-  test::expect_contains(g.out.str(), R"("message":"Deity Announcement")");
+  test::expect_contains(god_g.out.str(), R"("type":"message")");
+  test::expect_contains(god_g.out.str(), R"("message":"Deity Announcement")");
 
   ctx.verify_universe_invariants();
 }

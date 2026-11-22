@@ -12,20 +12,31 @@ import std;
 
 namespace {
 
+constexpr player_t p1 = 2;
+
 void setup_test_world(TestContext& ctx) {
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
+  TestWorldBuilder(ctx).add_race("Federation", 100.0, false, p1);
+  ctx.with_populated_planet(1, 1, p1, 1000);
+
+  ctx.em.mutate_star(1, [](Star& s) {
+    s.mark_explored_by(p1);
+    s.mark_inhabited_by(p1);
+  });
+  ctx.em.mutate_star(3, [](Star& s) { s.mark_explored_by(p1); });
 
   ctx.em.mutate_planet(1, 1, [](Planet& planet) {
-    planet.info(player_t{1}).numsectsowned = 10;
-    planet.info(player_t{1}).prod_res = 100;
-    planet.info(player_t{1}).prod_fuel = 50;
-    planet.info(player_t{1}).prod_dest = 20;
-    planet.info(player_t{1}).prod_crystals = 5;
-    planet.info(player_t{1}).est_production = 175.0;
+    planet.info(p1).explored = true;
+    planet.info(p1).numsectsowned = 10;
+    planet.info(p1).prod_res = 100;
+    planet.info(p1).prod_fuel = 50;
+    planet.info(p1).prod_dest = 20;
+    planet.info(p1).prod_crystals = 5;
+    planet.info(p1).est_production = 175.0;
   });
 
   TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-      .owned_by(1)
+      .owned_by(p1)
       .in_deep_space()
       .build();
 }
@@ -36,7 +47,7 @@ void test_production_dispatch() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, p1, 1);
 
   // 1. Production report for all stars (no args)
   ctx.assert_dispatch_success(g, {"production"});
@@ -44,10 +55,9 @@ void test_production_dispatch() {
   test::expect_contains(g.out.str(), "Sol/Eart");
 
   // 2. Planet-scoped argument filters to only that planet
-  TestPlanetBuilder(ctx, 1, PlanetType::MARS)
-      .named("Mars")
-      .with_colony(1, 500)
-      .build();
+  ctx.with_populated_planet(1, 2, p1, 500);
+  ctx.em.mutate_planet(1, 2,
+                       [](Planet& planet) { planet.info(p1).explored = true; });
   g.out.str("");
   ctx.assert_dispatch_success(g, {"production", "/Sol/Earth"});
   test::expect_contains(g.out.str(), "Sol/Eart");
@@ -59,7 +69,7 @@ void test_production_dispatch() {
   test::expect_contains(g.out.str(), "Sol/Eart");
 
   // Non-controlling governor filters out colonies
-  ctx.em.mutate_race(1, [](Race& r) { r.appoint_governor(2); });
+  ctx.em.mutate_race(p1, [](Race& r) { r.appoint_governor(2); });
   g.set_governor(governor_t{2});
   g.out.str("");
   ctx.assert_dispatch_success(g, {"production", "/Sol"});
@@ -75,7 +85,7 @@ void test_production_dispatch() {
   test::expect_false(g.out.str().contains("No such star"));
 
   // 4. Unexplored star handling (all stars and specific planet via god)
-  ctx.em.mutate_star(3, [](Star& s) { s.clear_explored_by(player_t{1}); });
+  ctx.em.mutate_star(3, [](Star& s) { s.clear_explored_by(p1); });
   g.out.str("");
   ctx.assert_dispatch_success(g, {"production"});
   g.set_god(true);

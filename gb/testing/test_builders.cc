@@ -462,10 +462,6 @@ TestWorldBuilder& TestWorldBuilder::add_planet(
   return *this;
 }
 
-void TestWorldBuilder::create_standard_solar_system(TestContext& ctx) {
-  ctx.with_standard_universe();
-}
-
 TestStarBuilder::TestStarBuilder(EntityManager& em, Database& db,
                                  std::string_view name,
                                  std::optional<starnum_t> explicit_snum)

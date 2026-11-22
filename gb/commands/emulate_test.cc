@@ -14,18 +14,17 @@ namespace {
 
 void test_emulate_matrix() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
+  TestWorldBuilder(ctx).add_race("Klingons", 100.0, false, player_t{2});
   ctx.em.mutate_race(1, [](Race& r) {
-    r.God = true;
     r.name = "DeityRace";
     r.leader().name = "Supreme";
   });
   ctx.em.mutate_race(2, [](Race& r) {
-    r.God = false;
-    r.name = "Klingons";
     r.leader().name = "Leader";
     r.appoint_governor(2, {.name = "Governor2"});
   });
+  ctx.em.mutate_star(3, [](Star& s) { s.mark_explored_by(2); });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);

@@ -16,11 +16,11 @@ void test_autoreport_dispatch() {
   std::println(std::cout, "Test: autoreport command dispatch and persistence");
 
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
 
   // 1. Happy path: toggle autoreport ON at planet scope without args
   g.set_scope_planet(1, 1);
@@ -32,7 +32,7 @@ void test_autoreport_dispatch() {
   ctx.em.clear_cache();
   const auto* p_on = ctx.em.peek_planet(1, 1);
   test::expect_ne(p_on, nullptr);
-  test::expect_eq(p_on->info(player_t{1}).autorep, TELEG_MAX_AUTO);
+  test::expect_eq(p_on->info(races.empire).autorep, TELEG_MAX_AUTO);
   std::println(std::cout, "    ✓ Autoreport toggled ON and persisted");
 
   // 2. Happy path: toggle autoreport OFF at planet scope without args
@@ -43,7 +43,7 @@ void test_autoreport_dispatch() {
   ctx.em.clear_cache();
   const auto* p_off = ctx.em.peek_planet(1, 1);
   test::expect_ne(p_off, nullptr);
-  test::expect_eq(p_off->info(player_t{1}).autorep, 0);
+  test::expect_eq(p_off->info(races.empire).autorep, 0);
   std::println(std::cout, "    ✓ Autoreport toggled OFF and persisted");
 
   // 3. Happy path: toggle autoreport with explicit planet argument from star
@@ -56,7 +56,7 @@ void test_autoreport_dispatch() {
   ctx.em.clear_cache();
   const auto* p_arg = ctx.em.peek_planet(1, 1);
   test::expect_ne(p_arg, nullptr);
-  test::expect_eq(p_arg->info(player_t{1}).autorep, TELEG_MAX_AUTO);
+  test::expect_eq(p_arg->info(races.empire).autorep, TELEG_MAX_AUTO);
   std::println(std::cout,
                "    ✓ Autoreport toggled with explicit planet argument");
 
@@ -81,32 +81,33 @@ void test_autoreport_dispatch() {
 
   // 7. Regression test: unexplored planet or invalid sub-path from planet scope
   // must be rejected (place.err check when place.level == LEVEL_PLAN)
-  ctx.em.mutate_planet(1, 1, [](Planet& p) {
-    p.info(player_t{1}).explored = 0;
-    p.info(player_t{1}).autorep = 0;
+  ctx.em.mutate_planet(1, 1, [&](Planet& p) {
+    p.info(races.empire).explored = 0;
+    p.info(races.empire).autorep = 0;
   });
   g.set_scope_star(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"autoreport", "Earth"});
   test::expect_contains(g.out.str(), "You have not explored Earth yet.");
-  test::expect_eq(ctx.em.peek_planet(1, 1)->info(player_t{1}).autorep, 0);
+  test::expect_eq(ctx.em.peek_planet(1, 1)->info(races.empire).autorep, 0);
   ctx.em.mutate_planet(1, 1,
-                       [](Planet& p) { p.info(player_t{1}).explored = 1; });
+                       [&](Planet& p) { p.info(races.empire).explored = 1; });
   std::println(std::cout, "    ✓ Unexplored planet rejected in autoreport");
 
   // 8. Cross-star governor authorization: governor controlling Sol cannot
   // toggle autoreport on a planet in Vega (controlled by Governor 1)
   ctx.em.mutate_race(
-      1, [](Race& r) { r.appoint_governor(2, {.name = "SubGov"}); });
-  ctx.em.mutate_star(1, [](Star& s) { s.set_governor(1, 2); });
+      races.empire, [](Race& r) { r.appoint_governor(2, {.name = "SubGov"}); });
+  ctx.em.mutate_star(1, [&](Star& s) { s.set_governor(races.empire, 2); });
   g.set_governor(2);
   g.set_scope_star(1);
   g.out.str("");
   ctx.assert_dispatch_rejected(g, {"autoreport", "/Vega/Vega Prime"});
   test::expect_contains(g.out.str(), "You are not authorized to do this here.");
-  test::expect_eq(ctx.em.peek_planet(2, 1)->info(1).autorep, 0);
-  ctx.em.mutate_star(1, [](Star& s) { s.set_governor(1, Race::leader_id); });
-  ctx.em.mutate_race(1, [](Race& r) { r.revoke_governor(2); });
+  test::expect_eq(ctx.em.peek_planet(2, 1)->info(races.empire).autorep, 0);
+  ctx.em.mutate_star(
+      1, [&](Star& s) { s.set_governor(races.empire, Race::leader_id); });
+  ctx.em.mutate_race(races.empire, [](Race& r) { r.revoke_governor(2); });
   g.set_governor(1);
 
   // 9. UiMode::JSON output

@@ -48,7 +48,7 @@ Examples:
 
 ### Test File Template
 
-Every command test file should follow this pattern using `TestContext` and `with_standard_universe()`:
+Every command test file should follow this pattern using `TestContext` and `with_races()` (or `with_galaxy()`):
 
 ```cpp
 // SPDX-License-Identifier: Apache-2.0
@@ -67,19 +67,19 @@ namespace {
 
 void test_commandname_matrix() {
   TestContext ctx;
-  ctx.with_standard_universe();  // Sol (1), Earth (1), Vega (2), Vega Prime (1), P1 (Federation), P2 (Klingons)
+  const TestRaces races = ctx.with_races();  // Sol (1), Vega (2), Antares (3), Deity (1), Newcomers (2), Nomads (3), Imperium (4)
 
   // 1. Setup test entities via fluent builders
   shipnum_t ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                          .owned_by(1, 0)
+                          .owned_by(races.empire, 1)
                           .in_star_orbit(1)
                           .with_fuel(100.0)
                           .build();
 
-  // 2. Setup GameObj via TestContext helper (auto-populates g.race)
+  // 2. Setup GameObj via TestContext helper (auto-populates g.race and syncs g.god())
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 0);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_star(1);
 
   // 3. 4-Way Command Matrix runner
@@ -95,7 +95,7 @@ void test_commandname_matrix() {
 
 void test_commandname_persistence() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_races();
 
   // Mutate via production path (auto-saves on lambda exit)
   ctx.em.mutate_planet(1, 1, [](Planet& planet) {
@@ -123,7 +123,7 @@ int main() {
 
 **⚠️ ALWAYS follow this pattern for command tests:**
 
-1. **Use `TestContext` & `with_standard_universe()`**: Automatically handles in-memory database creation (`db(":memory:")`), table schema initialization (`initialize_schema(db)`), and provision of canonical solar systems with verified invariants.
+1. **Use `TestContext` & `with_races()` / `with_galaxy()`**: Automatically handles in-memory database creation (`db(":memory:")`), table schema initialization (`initialize_schema(db)`), Player 1 `Deity` separation from mortal races (`2..4`), and provision of canonical solar systems with verified fog-of-war and referential invariants.
 2. **Use `TestShipBuilder`**: Populates test ships with canonical template parameters (`ShipTemplate`) rather than raw magic numbers.
 3. **Use `ctx.setup_game_obj(g, player, gov)`**: Guarantees that `g.race` is pre-populated, preventing null pointer crashes.
 4. **Mutate via `ctx.em.mutate_*()`**: Scoped monadic mutations ensure automatic persistence upon lambda exit.

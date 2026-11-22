@@ -26,7 +26,7 @@ Specialized development skills are located in `.github/skills/` and provide comp
 - **Command Test Matrix**: `.github/skills/command-test-matrix/SKILL.md` — 4-way unit tests (happy path, guest, governor, scope).
 - **Entity Manager Access**: `.github/skills/entity-manager-access/SKILL.md` — Scoped monadic mutations (`mutate_*`) and peeks (`with_*`, `peek_*`).
 - **Entity List Iteration**: `.github/skills/entity-list-iteration/SKILL.md` — Readonly and mutable list iteration patterns.
-- **Database Test Pattern**: `.github/skills/database-test-pattern/SKILL.md` — In-memory SQLite testing, `TestContext`, standard universe fixture (`with_standard_universe`), and persistence verification.
+- **Database Test Pattern**: `.github/skills/database-test-pattern/SKILL.md` — In-memory SQLite testing, `TestContext`, galaxy & race archetype fixtures (`with_galaxy`, `with_races`), and persistence verification.
 - **Strong ID Types**: `.github/skills/strong-id-types/SKILL.md` — Type-safe IDs (`player_t`, `governor_t`, `shipnum_t`, `starnum_t`, `planetnum_t`, `commodnum_t`), semantic metric aliases, and sparse `std::flat_map` / `std::flat_set` containers.
 - **Entity Domain Methods**: `.github/skills/entity-domain-methods/SKILL.md` — Computed predicates, domain methods, and structured manifests on entities.
 - **Repository Pattern**: `.github/skills/repository-pattern/SKILL.md` — DAL and repository implementation patterns.
@@ -487,7 +487,7 @@ The `GameObj& g` parameter provides:
 
 All tests run against an in-memory SQLite database (`Database db(":memory:");` + `initialize_schema(db);`).
 
-#### Standard Universe Fixture (`TestContext` & `with_standard_universe`)
+#### Galaxy & Race Archetype Fixtures (`TestContext`, `with_galaxy`, `with_races`)
 Rather than manually repeating database creation, schema initialization, and repository boilerplate across test files, tests should use `TestContext` from the `test` module:
 
 ```cpp
@@ -495,11 +495,11 @@ import test;
 
 void test_something() {
   TestContext ctx;
-  ctx.with_standard_universe();  // Provisions Sol, Earth, Vega, Federation (P1), Klingons (P2), and AP
+  const TestRaces races = ctx.with_races();  // Seeds Sol, Vega, Antares + Deity (1), Newcomers (2), Nomads (3), Imperium (4)
 
   // Fluent entity creation with canonical templates
   shipnum_t ship_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                          .owned_by(1, 0)
+                          .owned_by(races.empire, 1)
                           .in_star_orbit(1)
                           .with_fuel(100.0)
                           .build();
@@ -513,10 +513,10 @@ void test_something() {
 
 Key features of `TestContext`:
 - **In-memory DB & Schema**: Automatically sets up `db(":memory:")` and runs `initialize_schema(db)`.
-- **Standard Universe**: `ctx.with_standard_universe()` provisions a 4-player solar system (Sol/Earth, Vega/Vega Prime, Antares/Antares Prime, Federation/Klingons/Romulans/Cardassians, APs, alliance blocks) satisfying all domain invariants.
+- **Galaxy & Race Archetype Fixtures**: `ctx.with_galaxy()` provisions a 3-star, 6-planet galaxy (`Sol`, `Vega`, `Antares`) with Player 1 seeded as the disembodied `Deity` (`God = true`) and zero omniscient mortal exploration cheats; `ctx.with_races()` adds three mortal archetypes (`races.newcomer` = 2, `races.nomad` = 3, `races.empire` = 4) satisfying all domain invariants.
 - **Populated Planets**: `ctx.with_populated_planet(snum, pnum, owner, popn)` colonizes and aligns planet and sectormap populations.
 - **TestShipBuilder**: Fluent builder populated with canonical template defaults (`ShipTemplate`), preventing magic numbers.
-- **Automatic GameObj Setup**: `ctx.setup_game_obj(g, player, gov)` configures scope, IDs, and assigns `g.race`.
+- **Automatic GameObj Setup**: `ctx.setup_game_obj(g, player, gov)` configures scope, IDs, `g.race`, and syncs `g.god()` from `g.race->God`.
 - **Invariant Verification**: `ctx.verify_universe_invariants()` verifies cross-entity referential and semantic integrity.
 
 See [`.github/skills/database-test-pattern/SKILL.md`](.github/skills/database-test-pattern/SKILL.md) and [`.github/skills/command-test-matrix/SKILL.md`](.github/skills/command-test-matrix/SKILL.md) for full test setup guides, entity creation through repositories, and cache-clear persistence verification.

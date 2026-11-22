@@ -35,47 +35,47 @@ namespace {
 
 void test_command_matrix() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const TestRaces races = ctx.with_races();
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
 
   // 1. Setup entities (Race, Star, Planet, Ship)
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_planet(1, 1);
 
   // Set initial star AP to 20
-  ctx.em.mutate_star(1, [](Star& star) {
-    star.AP(1) = 20;
+  ctx.em.mutate_star(1, [&](Star& star) {
+    star.AP(races.empire) = 20;
   });
 
   // --- Case 1: Happy Path ---
   assert(GB::commands::dispatch_command(g, GB::commands::example_cmd, {"example", "arg"}));
-  assert(ctx.em.peek_star(1)->AP(1) == 19); // 1 AP deducted
+  assert(ctx.em.peek_star(1)->AP(races.empire) == 19); // 1 AP deducted
 
   // --- Case 2: Insufficient AP ---
-  ctx.em.mutate_star(1, [](Star& star) {
-    star.AP(1) = 0;
+  ctx.em.mutate_star(1, [&](Star& star) {
+    star.AP(races.empire) = 0;
   });
   g.out.clear();
   assert(!GB::commands::dispatch_command(g, GB::commands::example_cmd, {"example", "arg"}));
-  assert(ctx.em.peek_star(1)->AP(1) == 0); // 0 AP deducted
+  assert(ctx.em.peek_star(1)->AP(races.empire) == 0); // 0 AP deducted
 
   // Reset AP for subsequent tests
-  ctx.em.mutate_star(1, [](Star& star) {
-    star.AP(1) = 20;
+  ctx.em.mutate_star(1, [&](Star& star) {
+    star.AP(races.empire) = 20;
   });
 
   // --- Case 3: Invalid Scope / Role ---
   g.set_scope_univ();
   g.out.clear();
   assert(!GB::commands::dispatch_command(g, GB::commands::example_cmd, {"example", "arg"}));
-  assert(ctx.em.peek_star(1)->AP(1) == 20); // 0 AP deducted
+  assert(ctx.em.peek_star(1)->AP(races.empire) == 20); // 0 AP deducted
   g.set_scope_planet(1, 1);
 
   // --- Case 4: Domain Error / Bad Arguments ---
   g.out.clear();
   assert(!GB::commands::dispatch_command(g, GB::commands::example_cmd, {"example", "invalid_arg"}));
-  assert(ctx.em.peek_star(1)->AP(1) == 20); // 0 AP deducted
+  assert(ctx.em.peek_star(1)->AP(races.empire) == 20); // 0 AP deducted
 }
 
 }  // namespace

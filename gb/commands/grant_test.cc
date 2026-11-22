@@ -16,25 +16,25 @@ namespace {
 void test_grant_dispatch() {
   std::println(std::cout, "Test: grant command dispatch and governor grants");
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
-  ctx.em.mutate_race(1, [](Race& r) {
+  ctx.em.mutate_race(races.empire, [](Race& r) {
     r.leader().money = 1000;
     r.appoint_governor(2, {.name = "SubGov", .money = 500});
   });
 
   shipnum_t cruiser_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
-                             .owned_by(1, 1)
+                             .owned_by(races.empire, 1)
                              .in_star_orbit(1)
                              .build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, races.empire, 1);
 
   // 1. Grant money to governor
   ctx.assert_dispatch_success(g, {"grant", "2", "money", "200"});
-  const auto* saved_race = ctx.em.peek_race(1);
+  const auto* saved_race = ctx.em.peek_race(races.empire);
   test::expect_ne(saved_race, nullptr);
   test::expect_eq(saved_race->leader().money, 800);
   test::expect_eq(saved_race->governor(2).money, 700);
@@ -43,7 +43,7 @@ void test_grant_dispatch() {
   // 2. Dock money from governor
   g.out.str("");
   ctx.assert_dispatch_success(g, {"grant", "2", "money", "-100"});
-  saved_race = ctx.em.peek_race(1);
+  saved_race = ctx.em.peek_race(races.empire);
   test::expect_ne(saved_race, nullptr);
   test::expect_eq(saved_race->leader().money, 900);
   test::expect_eq(saved_race->governor(2).money, 600);
@@ -52,7 +52,7 @@ void test_grant_dispatch() {
   // 3. Grant money clamped to leader treasury
   g.out.str("");
   ctx.assert_dispatch_success(g, {"grant", "2", "money", "999999"});
-  saved_race = ctx.em.peek_race(1);
+  saved_race = ctx.em.peek_race(races.empire);
   test::expect_eq(saved_race->leader().money, 0);
   test::expect_eq(saved_race->governor(2).money, 1500);
   std::println(std::cout, "    ✓ Positive money clamped to treasury");
@@ -60,7 +60,7 @@ void test_grant_dispatch() {
   // 4. Dock money clamped to governor treasury
   g.out.str("");
   ctx.assert_dispatch_success(g, {"grant", "2", "money", "-999999"});
-  saved_race = ctx.em.peek_race(1);
+  saved_race = ctx.em.peek_race(races.empire);
   test::expect_eq(saved_race->leader().money, 1500);
   test::expect_eq(saved_race->governor(2).money, 0);
   std::println(std::cout, "    ✓ Negative money clamped to treasury");
@@ -80,7 +80,7 @@ void test_grant_dispatch() {
   ctx.assert_dispatch_success(g, {"grant", "2", "star"});
   const auto* saved_star = ctx.em.peek_star(1);
   test::expect_ne(saved_star, nullptr);
-  test::expect_eq(saved_star->governor(player_t{1}), 2);
+  test::expect_eq(saved_star->governor(races.empire), 2);
   std::println(std::cout, "    ✓ Star granted to governor");
 
   // 7. Grant star when not scoped to star

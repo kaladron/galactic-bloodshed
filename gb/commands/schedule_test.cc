@@ -13,7 +13,7 @@ namespace {
 
 void test_schedule_display() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  const auto races = ctx.with_races();
 
   ctx.em.mutate_server_state([](ServerState& state) {
     state.update_time_minutes = 30;
@@ -25,7 +25,7 @@ void test_schedule_display() {
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g);
+  ctx.setup_game_obj(g, races.empire, 1);
 
   // Test schedule command at universe scope
   g.set_scope_univ();
@@ -42,7 +42,7 @@ void test_schedule_display() {
 
 void test_do_next_thing_branching() {
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_races();
 
   // Case A: nsegments_done < segments -> advances segment
   ctx.em.mutate_server_state([](ServerState& state) {

@@ -12,21 +12,41 @@ import std;
 
 namespace {
 
+constexpr player_t p1 = 2;
+constexpr player_t p2 = 3;
+
 void test_profile_dispatch() {
   std::println(std::cout, "Test: profile command dispatch and reporting");
 
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
+  TestWorldBuilder world(ctx);
+  world.add_race("Federation", 100.0, false, p1);
+  world.add_race("Klingons", 100.0, false, p2);
+  ctx.with_populated_planet(1, 1, p1, 1000);
+
   const auto gov_id = TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
-                          .owned_by(1, 1)
+                          .owned_by(p1, 1)
                           .landed_on(1, 1, Coordinates{0, 0})
                           .with_crew(100, 0)
                           .build();
-  ctx.em.mutate_race(1, [&](Race& r) { r.Gov_ship = gov_id; });
+  ctx.em.mutate_race(p1, [&](Race& r) {
+    r.Gov_ship = gov_id;
+    r.governor(Race::leader_id).deflevel = ScopeLevel::LEVEL_PLAN;
+    r.governor(Race::leader_id).homesystem = 1;
+    r.governor(Race::leader_id).homeplanetnum = 1;
+  });
+  ctx.em.mutate_star(1, [](Star& s) {
+    s.mark_explored_by(p1);
+    s.mark_inhabited_by(p1);
+    s.AP(p1) = 50;
+  });
+  ctx.em.mutate_planet(1, 1, [](Planet& pl) { pl.info(p1).explored = true; });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, p1, 1);
+  g.set_scope_planet(1, 1);
 
   // 1. Profile for self (default baseline: capital, normal race, mortal)
   ctx.assert_dispatch_success(g, {"profile"});
@@ -39,7 +59,7 @@ void test_profile_dispatch() {
 
   // 2. Profile for self without capital, with metamorphosis, deity, and
   // discoveries
-  ctx.em.mutate_race(1, [](Race& r) {
+  ctx.em.mutate_race(p1, [](Race& r) {
     r.God = true;
     r.Gov_ship = std::nullopt;
     r.morale = 100;
@@ -55,6 +75,7 @@ void test_profile_dispatch() {
     r.discoveries.cloak = true;
     r.discoveries.wormhole = true;
   });
+  g.set_god(true);
 
   ctx.assert_dispatch_success(g, {"profile"});
   out = g.out.str();
@@ -76,11 +97,12 @@ void test_profile_dispatch() {
                "    ✓ Advanced self profile (capital, deity, tech) verified");
 
   // 3. Profile for other player by name with high translation (> 80)
-  ctx.em.mutate_race(1, [](Race& r) {
+  ctx.em.mutate_race(p1, [](Race& r) {
     r.God = false;
-    r.translate[player_t{2}] = Percentage{90};
+    r.translate[p2] = Percentage{90};
   });
-  ctx.em.mutate_race(2, [](Race& r) {
+  g.set_god(false);
+  ctx.em.mutate_race(p2, [](Race& r) {
     r.info = "Warrior empire";
     r.likesbest = SectorType::SEC_MOUNT;
     r.birthrate = 0.55;
@@ -100,10 +122,9 @@ void test_profile_dispatch() {
                "    ✓ Other player profile (translate > 80) verified");
 
   // 4. Profile for other player with low translation (<= 50)
-  ctx.em.mutate_race(
-      1, [](Race& r) { r.translate[player_t{2}] = Percentage{30}; });
+  ctx.em.mutate_race(p1, [](Race& r) { r.translate[p2] = Percentage{30}; });
 
-  ctx.assert_dispatch_success(g, {"profile", "2"});
+  ctx.assert_dispatch_success(g, {"profile", "3"});
   out = g.out.str();
   test::expect_contains(out, "Race report on Klingons");
   test::expect_contains(out, "Unknown Race");
@@ -113,13 +134,14 @@ void test_profile_dispatch() {
 
   // 5. Profile for other player when viewer is God and target is mortal
   // Metamorph (race.God && !r.God)
-  ctx.em.mutate_race(1, [](Race& r) { r.God = true; });
-  ctx.em.mutate_race(2, [](Race& r) {
+  ctx.em.mutate_race(p1, [](Race& r) { r.God = true; });
+  g.set_god(true);
+  ctx.em.mutate_race(p2, [](Race& r) {
     r.God = false;
     r.Metamorph = true;
   });
 
-  ctx.assert_dispatch_success(g, {"profile", "2"});
+  ctx.assert_dispatch_success(g, {"profile", "3"});
   out = g.out.str();
   test::expect_false(out.contains("*** Deity Status ***"));
   test::expect_contains(out, "Metamorphic Race");
@@ -127,9 +149,9 @@ void test_profile_dispatch() {
                "    ✓ God viewing mortal Metamorph race profile verified");
 
   // 6. Profile for other player with mutual deity status (race.God && r.God)
-  ctx.em.mutate_race(2, [](Race& r) { r.God = true; });
+  ctx.em.mutate_race(p2, [](Race& r) { r.God = true; });
 
-  ctx.assert_dispatch_success(g, {"profile", "2"});
+  ctx.assert_dispatch_success(g, {"profile", "3"});
   out = g.out.str();
   test::expect_contains(out, "*** Deity Status ***");
   std::println(std::cout, "    ✓ Mutual deity status verified");
@@ -142,7 +164,7 @@ void test_profile_dispatch() {
   test::expect_contains(g.out.str(), R"("name":"Federation")");
 
   g.out.str("");
-  ctx.assert_dispatch_success(g, {"profile", "2"});
+  ctx.assert_dispatch_success(g, {"profile", "3"});
   test::expect_contains(g.out.str(), R"("type":"race")");
   test::expect_contains(g.out.str(), R"("name":"Klingons")");
   g.set_ui_mode(UiMode::ASCII);
@@ -165,21 +187,12 @@ void test_profile_disembodied_race() {
                "Test: profile for disembodied deity (homesystem = 0)");
 
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
 
-  ctx.em.mutate_race(1, [](Race& r) {
-    r.God = true;
-    r.Gov_ship = std::nullopt;
-    r.governor(Race::leader_id).homesystem = 0;
-    r.governor(Race::leader_id).homeplanetnum = 0;
-    r.governor(Race::leader_id).deflevel = ScopeLevel::LEVEL_UNIV;
-  });
-
   ctx.setup_game_obj(g, 1, 1);
   g.set_scope_univ();
-  g.set_god(true);
 
   ctx.assert_dispatch_success(g, {"profile"});
   const std::string out = g.out.str();

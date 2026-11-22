@@ -13,31 +13,51 @@ import std;
 
 namespace {
 
+constexpr player_t donor = 2;
+constexpr player_t recipient = 3;
+
 void test_give_dispatch() {
   std::println(std::cout, "Test: give command dispatch and ship transfer");
   TestContext ctx;
-  ctx.with_standard_universe();
+  ctx.with_galaxy();
+  TestWorldBuilder world(ctx);
+  world.add_race("Federation", 100.0, false, donor);
+  world.add_race("Klingons", 100.0, false, recipient);
 
-  // Establish mutual alliance between Federation (1) and Klingons (2)
-  ctx.em.mutate_race(1, [](Race& r) { r.declare_alliance_with(player_t{2}); });
-  ctx.em.mutate_race(2, [](Race& r) { r.declare_alliance_with(player_t{1}); });
+  ctx.em.mutate_star(1, [](Star& s) {
+    s.mark_explored_by(donor);
+    s.mark_inhabited_by(donor);
+    s.AP(donor) = 100;
+  });
+  ctx.em.mutate_planet(1, 1, [](Planet& p) { p.mark_explored_by(donor); });
+  ctx.em.mutate_star(2, [](Star& s) {
+    s.mark_explored_by(donor);
+    s.AP(donor) = 100;
+  });
+  ctx.em.mutate_universe([](Universe& u) { u.set_AP(donor, 100); });
+
+  // Establish mutual alliance between Federation and Klingons
+  ctx.em.mutate_race(donor,
+                     [](Race& r) { r.declare_alliance_with(recipient); });
+  ctx.em.mutate_race(recipient,
+                     [](Race& r) { r.declare_alliance_with(donor); });
 
   const shipnum_t ship_plan = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-                                  .owned_by(1, 1)
+                                  .owned_by(donor, 1)
                                   .in_planet_orbit(1, 1)
                                   .build();
 
   const shipnum_t ship_star = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-                                  .owned_by(1, 1)
+                                  .owned_by(donor, 1)
                                   .in_star_orbit(1)
                                   .build();
 
   const shipnum_t ship_univ =
-      TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE).owned_by(1, 1).build();
+      TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE).owned_by(donor, 1).build();
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
-  ctx.setup_game_obj(g, 1, 1);
+  ctx.setup_game_obj(g, donor, 1);
   g.set_scope_planet(1, 1);
 
   // 1. Happy path: give ship in planet orbit to mutual ally
@@ -49,16 +69,16 @@ void test_give_dispatch() {
   ctx.em.clear_cache();
   const auto* transferred = ctx.em.peek_ship(ship_plan);
   test::expect_ne(transferred, nullptr);
-  test::expect_eq(transferred->owner(), 2);
+  test::expect_eq(transferred->owner(), recipient);
   test::expect_eq(transferred->governor(), 1);
 
   const auto* planet_verify = ctx.em.peek_planet(1, 1);
   test::expect_ne(planet_verify, nullptr);
-  test::expect_eq(planet_verify->info(player_t{2}).explored, 1);
+  test::expect_eq(planet_verify->info(recipient).explored, 1);
 
   const auto* star_verify = ctx.em.peek_star(1);
   test::expect_ne(star_verify, nullptr);
-  test::expect_true(star_verify->is_explored_by(player_t{2}));
+  test::expect_true(star_verify->is_explored_by(recipient));
   std::println(std::cout, "    ✓ Ship in planet orbit given to ally");
 
   // 2. Happy path: give ship in star orbit
@@ -77,10 +97,10 @@ void test_give_dispatch() {
 
   // 4. Insufficient AP in star system
   const shipnum_t ship_no_ap = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-                                   .owned_by(1, 1)
+                                   .owned_by(donor, 1)
                                    .in_star_orbit(1)
                                    .build();
-  ctx.em.mutate_star(1, [](Star& s) { s.AP(player_t{1}) = 0; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(donor) = 0; });
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"give", "Klingons", std::format("#{}", ship_no_ap.value)});
@@ -89,8 +109,8 @@ void test_give_dispatch() {
 
   // 5. Insufficient AP in universe
   const shipnum_t ship_no_uap =
-      TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE).owned_by(1, 1).build();
-  ctx.em.mutate_universe([](Universe& u) { u.set_AP(player_t{1}, 0); });
+      TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE).owned_by(donor, 1).build();
+  ctx.em.mutate_universe([](Universe& u) { u.set_AP(donor, 0); });
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"give", "Klingons", std::format("#{}", ship_no_uap.value)});
@@ -98,8 +118,8 @@ void test_give_dispatch() {
                         "You don't have enough universe action points.");
 
   // Restore AP for subsequent tests
-  ctx.em.mutate_star(1, [](Star& s) { s.AP(player_t{1}) = 100; });
-  ctx.em.mutate_universe([](Universe& u) { u.set_AP(player_t{1}, 100); });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(donor) = 100; });
+  ctx.em.mutate_universe([](Universe& u) { u.set_AP(donor, 100); });
 
   // 6. Non-existent recipient
   g.out.str("");
@@ -107,27 +127,31 @@ void test_give_dispatch() {
   test::expect_contains(g.out.str(), "No such player.");
 
   // 7. Recipient is a guest
-  ctx.em.mutate_race(2, [](Race& r) { r.Guest = true; });
+  ctx.em.mutate_race(recipient, [](Race& r) { r.Guest = true; });
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"give", "Klingons", std::format("#{}", ship_no_ap.value)});
   test::expect_contains(g.out.str(), "You can't give this player anything.");
-  ctx.em.mutate_race(2, [](Race& r) { r.Guest = false; });
+  ctx.em.mutate_race(recipient, [](Race& r) { r.Guest = false; });
 
   // 8. Not mutually allied (both directions)
-  ctx.em.mutate_race(2, [](Race& r) { r.rescind_alliance_with(player_t{1}); });
+  ctx.em.mutate_race(recipient,
+                     [](Race& r) { r.rescind_alliance_with(donor); });
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"give", "Klingons", std::format("#{}", ship_no_ap.value)});
   test::expect_contains(g.out.str(), "You two are not mutually allied.");
-  ctx.em.mutate_race(2, [](Race& r) { r.declare_alliance_with(player_t{1}); });
+  ctx.em.mutate_race(recipient,
+                     [](Race& r) { r.declare_alliance_with(donor); });
 
-  ctx.em.mutate_race(1, [](Race& r) { r.rescind_alliance_with(player_t{2}); });
+  ctx.em.mutate_race(donor,
+                     [](Race& r) { r.rescind_alliance_with(recipient); });
   g.out.str("");
   ctx.assert_dispatch_rejected(
       g, {"give", "Klingons", std::format("#{}", ship_no_ap.value)});
   test::expect_contains(g.out.str(), "You two are not mutually allied.");
-  ctx.em.mutate_race(1, [](Race& r) { r.declare_alliance_with(player_t{2}); });
+  ctx.em.mutate_race(donor,
+                     [](Race& r) { r.declare_alliance_with(recipient); });
 
   // 9. Illegal ship number format
   g.out.str("");
@@ -141,7 +165,7 @@ void test_give_dispatch() {
 
   // 11. Ship not owned by donor
   const shipnum_t ship_p2 = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-                                .owned_by(2, 1)
+                                .owned_by(recipient, 1)
                                 .in_star_orbit(1)
                                 .build();
   g.out.str("");
@@ -149,11 +173,11 @@ void test_give_dispatch() {
       g, {"give", "Klingons", std::format("#{}", ship_p2.value)});
   test::expect_contains(g.out.str(),
                         std::format("You don't own ship #{}.", ship_p2));
-  test::expect_true(ctx.em.get_telegrams(1, 1).empty());
+  test::expect_true(ctx.em.get_telegrams(donor, 1).empty());
 
   // 12. Spore pod rejection
   const shipnum_t pod_id = TestShipBuilder(ctx.em, ShipType::STYPE_POD)
-                               .owned_by(1, 1)
+                               .owned_by(donor, 1)
                                .in_star_orbit(1)
                                .build();
   g.out.str("");
@@ -164,7 +188,7 @@ void test_give_dispatch() {
 
   // 13. Crewed ship cannot be given away
   const shipnum_t crewed_id = TestShipBuilder(ctx.em, ShipType::OTYPE_PROBE)
-                                  .owned_by(1, 1)
+                                  .owned_by(donor, 1)
                                   .in_star_orbit(1)
                                   .with_crew(10, 0)
                                   .build();
@@ -175,11 +199,11 @@ void test_give_dispatch() {
 
   // 14. Carrier with loaded ships & docked ship scope rejection
   const shipnum_t carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
-                                   .owned_by(1, 1)
+                                   .owned_by(donor, 1)
                                    .in_star_orbit(1)
                                    .build();
   const shipnum_t fighter_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
-                                   .owned_by(1, 1)
+                                   .owned_by(donor, 1)
                                    .docked_to(carrier_id, 1)
                                    .build();
   g.out.str("");
@@ -194,11 +218,12 @@ void test_give_dispatch() {
 
   // 15. Deity bypasses guest, alliance, crew, and loaded carrier restrictions
   // (and emits UiMode::JSON output)
-  ctx.em.mutate_race(1, [](Race& r) {
+  ctx.em.mutate_race(donor, [](Race& r) {
     r.God = true;
-    r.rescind_alliance_with(player_t{2});
+    r.rescind_alliance_with(recipient);
   });
-  ctx.em.mutate_race(2, [](Race& r) { r.Guest = true; });
+  ctx.em.mutate_race(recipient, [](Race& r) { r.Guest = true; });
+  g.set_god(true);
   g.set_ui_mode(UiMode::JSON);
   g.out.str("");
   ctx.assert_dispatch_success(
@@ -214,39 +239,40 @@ void test_give_dispatch() {
   test::expect_contains(g.out.str(), R"("type":"ship")");
   test::expect_contains(g.out.str(), "Owner changed.");
 
-  ctx.em.mutate_race(1, [](Race& r) {
+  ctx.em.mutate_race(donor, [](Race& r) {
     r.God = false;
-    r.declare_alliance_with(player_t{2});
+    r.declare_alliance_with(recipient);
   });
-  ctx.em.mutate_race(2, [](Race& r) { r.Guest = false; });
+  ctx.em.mutate_race(recipient, [](Race& r) { r.Guest = false; });
+  g.set_god(false);
   g.set_ui_mode(UiMode::ASCII);
 
   // 16. Giving away a race's Gov_ship scrubs donor Gov_ship so destroying it
   // later never trips tbl_race(gov_ship) FK, and gifting an uncrewed canister
   // at an unexplored star does not reveal that star to the recipient
   const shipnum_t can_id = TestShipBuilder(ctx.em, ShipType::OTYPE_CANIST)
-                               .owned_by(1, 1)
+                               .owned_by(donor, 1)
                                .in_star_orbit(2)
                                .build();
   ctx.em.mutate_star(2, [](Star& s) {
-    s.AP(1) = 10;
-    s.clear_explored_by(2);
-    s.clear_inhabited_by(2);
+    s.AP(donor) = 10;
+    s.clear_explored_by(recipient);
+    s.clear_inhabited_by(recipient);
   });
   ctx.assert_dispatch_success(
       g, {"give", "Klingons", std::format("#{}", can_id.value)});
-  test::expect_false(ctx.em.peek_star(2)->is_explored_by(2));
-  test::expect_false(ctx.em.peek_star(2)->is_inhabited_by(2));
+  test::expect_false(ctx.em.peek_star(2)->is_explored_by(recipient));
+  test::expect_false(ctx.em.peek_star(2)->is_inhabited_by(recipient));
 
   const shipnum_t gov_id = TestShipBuilder(ctx.em, ShipType::OTYPE_GOV)
-                               .owned_by(1, 1)
+                               .owned_by(donor, 1)
                                .in_star_orbit(1)
                                .build();
-  ctx.em.mutate_race(1, [&](Race& r) { r.Gov_ship = gov_id; });
-  ctx.em.mutate_star(1, [](Star& s) { s.AP(1) = 10; });
+  ctx.em.mutate_race(donor, [&](Race& r) { r.Gov_ship = gov_id; });
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(donor) = 10; });
   ctx.assert_dispatch_success(
       g, {"give", "Klingons", std::format("#{}", gov_id.value)});
-  test::expect_eq(ctx.em.peek_race(1)->Gov_ship, std::nullopt);
+  test::expect_eq(ctx.em.peek_race(donor)->Gov_ship, std::nullopt);
   ctx.em.mutate_ship(gov_id, [&](Ship& s) { ctx.em.destroy_ship(s); });
   ctx.verify_universe_invariants();
 

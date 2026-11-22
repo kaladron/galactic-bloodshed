@@ -24,26 +24,12 @@ int main() {
   std::println(std::cout, "✓ Empty table returns ID 1");
 
   // Create ships at 1, 2, 3, verify next is 4
-  Ship ship1{};
-  ship1.number() = 1;
-  ship1.owner() = 1;
-  ship1.governor() = 1;
-  ship1.name() = "Ship1";
-  ship_repo.save(ship1);
-
-  Ship ship2{};
-  ship2.number() = 2;
-  ship2.owner() = 1;
-  ship2.governor() = 1;
-  ship2.name() = "Ship2";
-  ship_repo.save(ship2);
-
-  Ship ship3{};
-  ship3.number() = 3;
-  ship3.owner() = 1;
-  ship3.governor() = 1;
-  ship3.name() = "Ship3";
-  ship_repo.save(ship3);
+  for (shipnum_t num : {shipnum_t{1}, shipnum_t{2}, shipnum_t{3}}) {
+    auto ship = ShipFactory::create_from_template(ShipType::STYPE_SHUTTLE, 1);
+    ship->number() = num;
+    ship->name() = std::format("Ship{}", num.value);
+    ship_repo.save(*ship);
+  }
 
   int id2 = ship_repo.next_available_id();
   test::expect_eq(id2, 4);

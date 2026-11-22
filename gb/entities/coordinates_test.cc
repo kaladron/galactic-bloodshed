@@ -167,12 +167,11 @@ int main() {
   }
 
   // --- Ship land_coords tests ---
-  ship_struct shipdata{};
-  Ship ship(shipdata);
-  ship.set_land_coords({7, 2});
-  test::expect_eq(ship.land_coords(), Coordinates(7, 2));
-  test::expect_eq(ship.land_coords().x, 7);
-  test::expect_eq(ship.land_coords().y, 2);
+  auto ship = ShipFactory::create_from_template(ShipType::STYPE_SHUTTLE, 1);
+  ship->set_land_coords({7, 2});
+  test::expect_eq(ship->land_coords(), Coordinates(7, 2));
+  test::expect_eq(ship->land_coords().x, 7);
+  test::expect_eq(ship->land_coords().y, 2);
 
   // --- SystemCoordinates tests ---
   std::println(std::cout, "--- Testing SystemCoordinates ---");
@@ -360,17 +359,16 @@ int main() {
     expect_near(planet.absolute_coordinates(star).y, 5400.0);
 
     // Ship continuous coordinates
-    ship_struct sh_data{};
-    sh_data.coordinates = UniverseCoordinates(2803.0, 5404.0);
-    Ship sh(sh_data);
-    test::expect_eq(sh.coordinates(), UniverseCoordinates(2803.0, 5404.0));
-    sh.set_coordinates(UniverseCoordinates(3000.0, 6000.0));
-    test::expect_eq(sh.coordinates(), UniverseCoordinates(3000.0, 6000.0));
+    auto sh = ShipFactory::create_from_template(ShipType::STYPE_SHUTTLE, 1);
+    sh->set_coordinates(UniverseCoordinates(2803.0, 5404.0));
+    test::expect_eq(sh->coordinates(), UniverseCoordinates(2803.0, 5404.0));
+    sh->set_coordinates(UniverseCoordinates(3000.0, 6000.0));
+    test::expect_eq(sh->coordinates(), UniverseCoordinates(3000.0, 6000.0));
 
     // Proximity / distance calculations across entities
-    sh.set_coordinates(UniverseCoordinates(2803.0, 5404.0));
-    expect_near(sh.coordinates().distance_to(planet.absolute_coordinates(star)),
-                5.0);
+    sh->set_coordinates(UniverseCoordinates(2803.0, 5404.0));
+    expect_near(
+        sh->coordinates().distance_to(planet.absolute_coordinates(star)), 5.0);
   }
 
   // --- Place resolution and formatting tests ---

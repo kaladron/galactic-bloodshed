@@ -37,13 +37,12 @@ void test_mech_attack_people() {
   Sector sect{};
   sect.set_condition(SectorType::SEC_LAND);
 
-  Ship ship{};
+  auto ship_ptr =
+      ShipFactory::create_from_template(ShipType::OTYPE_AFV, player_t{1});
+  Ship& ship = *ship_ptr;
   ship.number() = 1;
-  ship.owner() = player_t{1};
-  ship.type() = ShipType::OTYPE_AFV;
   ship.tech() = 10.0;
   ship.armor() = 10;
-  ship.alive() = true;
   ship.popn() = 10;
   ship.retaliate() = 100;
   ship.destruct() = 100;
@@ -114,13 +113,12 @@ void test_people_attack_mech() {
   Sector sect{};
   sect.set_condition(SectorType::SEC_LAND);
 
-  Ship ship{};
+  auto ship_ptr =
+      ShipFactory::create_from_template(ShipType::OTYPE_AFV, defender_id);
+  Ship& ship = *ship_ptr;
   ship.number() = 0;
-  ship.owner() = defender_id;
-  ship.type() = ShipType::OTYPE_AFV;
   ship.tech() = 10.0;
   ship.armor() = 5;
-  ship.alive() = true;
   ship.popn() = 10;
   ship.retaliate() = 100;
   ship.destruct() = 100;

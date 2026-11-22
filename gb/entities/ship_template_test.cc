@@ -105,42 +105,41 @@ int main() {
 
   std::println(std::cout, "Testing Ship entity helper accessors...");
   {
-    Ship carrier;
-    carrier.type() = ShipType::STYPE_CARRIER;
-    test::expect_eq(carrier.type_name(), "Carrier");
-    test::expect_eq(carrier.type_letter(), 'X');
-    test::expect_true(carrier.can_repair());
-    test::expect_true(carrier.requires_maintenance());
-    test::expect_false(carrier.can_land());
-    test::expect_true(carrier.can_hyperjump());
-    test::expect_true(carrier.can_mount());
-    test::expect_true(carrier.can_mount_laser());
-    test::expect_true(carrier.can_modify());
-    test::expect_false(carrier.is_starport());
+    const auto carrier =
+        ShipFactory::create_from_template(ShipType::STYPE_CARRIER, 1);
+    test::expect_eq(carrier->type_name(), "Carrier");
+    test::expect_eq(carrier->type_letter(), 'X');
+    test::expect_true(carrier->can_repair());
+    test::expect_true(carrier->requires_maintenance());
+    test::expect_false(carrier->can_land());
+    test::expect_true(carrier->can_hyperjump());
+    test::expect_true(carrier->can_mount());
+    test::expect_true(carrier->can_mount_laser());
+    test::expect_true(carrier->can_modify());
+    test::expect_false(carrier->is_starport());
 
-    Ship pod;
-    pod.type() = ShipType::STYPE_POD;
-    test::expect_eq(pod.type_name(), "Spore pod");
-    test::expect_eq(pod.type_letter(), 'p');
-    test::expect_true(pod.can_repair());
-    test::expect_false(pod.requires_maintenance());
-    test::expect_true(pod.can_land());
-    test::expect_false(pod.can_hyperjump());
-    test::expect_false(pod.can_mount());
-    test::expect_false(pod.can_mount_laser());
-    test::expect_false(pod.can_modify());
+    const auto pod = ShipFactory::create_from_template(ShipType::STYPE_POD, 1);
+    test::expect_eq(pod->type_name(), "Spore pod");
+    test::expect_eq(pod->type_letter(), 'p');
+    test::expect_true(pod->can_repair());
+    test::expect_false(pod->requires_maintenance());
+    test::expect_true(pod->can_land());
+    test::expect_false(pod->can_hyperjump());
+    test::expect_false(pod->can_mount());
+    test::expect_false(pod->can_mount_laser());
+    test::expect_false(pod->can_modify());
 
-    Ship hab;
-    hab.type() = ShipType::STYPE_HABITAT;
-    test::expect_eq(hab.type_name(), "Habitat");
-    test::expect_eq(hab.type_letter(), 'H');
-    test::expect_true(hab.can_repair());
-    test::expect_true(hab.requires_maintenance());
-    test::expect_false(hab.can_land());
-    test::expect_false(hab.can_hyperjump());
-    test::expect_false(hab.can_mount());
-    test::expect_false(hab.can_mount_laser());
-    test::expect_true(hab.is_starport());
+    const auto hab =
+        ShipFactory::create_from_template(ShipType::STYPE_HABITAT, 1);
+    test::expect_eq(hab->type_name(), "Habitat");
+    test::expect_eq(hab->type_letter(), 'H');
+    test::expect_true(hab->can_repair());
+    test::expect_true(hab->requires_maintenance());
+    test::expect_false(hab->can_land());
+    test::expect_false(hab->can_hyperjump());
+    test::expect_false(hab->can_mount());
+    test::expect_false(hab->can_mount_laser());
+    test::expect_true(hab->is_starport());
     std::println(std::cout, "  ✓ Ship capability accessors work correctly");
   }
 

@@ -19,34 +19,32 @@ int main() {
 
   // Test Ship member methods and predicates
   {
-    ship_struct data{};
-    data.type = ShipType::STYPE_BATTLE;
-    data.armor = 10;
-    data.damage = 20;
-    data.size = 100;
-    data.max_hanger = 20;
-    data.hanger = 5;
-    data.guns = PRIMARY;
-    data.primary_battery = GunBattery::create(40, guntype_t::MEDIUM);
-    data.secondary_battery = GunBattery::create(20, guntype_t::LIGHT);
-    data.max_crew = 100;
-    data.popn = 40;
-    data.troops = 30;
-    data.max_resource = 500;
-    data.resource = 200;
-    data.max_fuel = 1000;
-    data.fuel = 500.0;
-    data.max_destruct = 50;
-    data.destruct = 20;
-    data.max_speed = 6;
-    data.speed = 4;
-    data.laser = true;
-    data.fire_laser = 10;
-    data.hyper_drive = {.charge = 10, .on = false, .has = true};
-    data.dock_state = DockState::Docked;
-    data.whatdest = ScopeLevel::LEVEL_SHIP;
-
-    Ship ship(data);
+    auto ship_ptr =
+        ShipFactory::create_from_template(ShipType::STYPE_BATTLE, 1);
+    Ship& ship = *ship_ptr;
+    ship.armor() = 10;
+    ship.admin_override_damage(20);
+    ship.size() = 100;
+    ship.max_hanger() = 20;
+    ship.hanger() = 5;
+    ship.guns() = PRIMARY;
+    ship.set_primary_battery(40, guntype_t::MEDIUM);
+    ship.set_secondary_battery(20, guntype_t::LIGHT);
+    ship.max_crew() = 100;
+    ship.popn() = 40;
+    ship.troops() = 30;
+    ship.max_resource() = 500;
+    ship.resource() = 200;
+    ship.max_fuel() = 1000;
+    ship.add_fuel(500.0);
+    ship.max_destruct() = 50;
+    ship.destruct() = 20;
+    ship.max_speed() = 6;
+    ship.speed() = 4;
+    ship.laser() = true;
+    ship.fire_laser() = 10;
+    ship.hyper_drive() = {.charge = 10, .on = false, .has = true};
+    ship.dock_into_carrier(shipnum_t{2});
 
     // Docked / Landed predicates
     test::expect_true(ship.is_docked());

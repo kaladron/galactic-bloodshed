@@ -76,8 +76,9 @@ void test_ship_visibility_helpers() {
                                 .owned_by(foreign, 1)
                                 .in_deep_space()
                                 .build();
-  Ship dead_ship{};
-  dead_ship.alive() = false;
+  auto dead_ship =
+      ShipFactory::create_from_template(ShipType::STYPE_CRUISER, foreign);
+  dead_ship->alive() = false;
 
   test::expect_false(
       is_ship_visible_to(*ctx.em.peek_ship(p2_mine), viewer, false, true));
@@ -93,7 +94,7 @@ void test_ship_visibility_helpers() {
       is_ship_visible_to(*ctx.em.peek_ship(p2_deep), viewer, false, true));
   test::expect_true(
       is_ship_visible_to(*ctx.em.peek_ship(p2_deep), viewer, true, false));
-  test::expect_false(is_ship_visible_to(dead_ship, viewer, true, true));
+  test::expect_false(is_ship_visible_to(*dead_ship, viewer, true, true));
 }
 
 }  // namespace

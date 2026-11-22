@@ -22,39 +22,26 @@ int main() {
   test::expect_eq(initial_count, 0);
 
   // Create test ships
-  Ship test_ship1{};
-  test_ship1.number() = 1;
-  test_ship1.owner() = 1;
-  test_ship1.governor() = 1;
-  test_ship1.name() = "TestShip1";
-  test_ship1.type() = ShipType::STYPE_SHUTTLE;
-  test_ship1.alive() = 1;
-  test_ship1.active() = 1;
+  auto test_ship1 =
+      ShipFactory::create_from_template(ShipType::STYPE_SHUTTLE, 1);
+  test_ship1->number() = 1;
+  test_ship1->name() = "TestShip1";
 
-  Ship test_ship2{};
-  test_ship2.number() = 2;
-  test_ship2.owner() = 1;
-  test_ship2.governor() = 1;
-  test_ship2.name() = "TestShip2";
-  test_ship2.type() = ShipType::STYPE_CARGO;
-  test_ship2.alive() = 1;
-  test_ship2.active() = 1;
+  auto test_ship2 = ShipFactory::create_from_template(ShipType::STYPE_CARGO, 1);
+  test_ship2->number() = 2;
+  test_ship2->name() = "TestShip2";
 
-  Ship test_ship3{};
-  test_ship3.number() = 3;
-  test_ship3.owner() = 2;
-  test_ship3.governor() = 1;
-  test_ship3.name() = "TestShip3";
-  test_ship3.type() = ShipType::STYPE_FIGHTER;
-  test_ship3.alive() = 1;
-  test_ship3.active() = 1;
+  auto test_ship3 =
+      ShipFactory::create_from_template(ShipType::STYPE_FIGHTER, 2);
+  test_ship3->number() = 3;
+  test_ship3->name() = "TestShip3";
 
   // Store ships in database using Repository (DAL layer)
   JsonStore store(db);
   ShipRepository ship_repo(store);
-  ship_repo.save(test_ship1);
-  ship_repo.save(test_ship2);
-  ship_repo.save(test_ship3);
+  ship_repo.save(*test_ship1);
+  ship_repo.save(*test_ship2);
+  ship_repo.save(*test_ship3);
 
   // Test that num_ships() returns the correct count
   shipnum_t count_after_inserts = entity_manager.num_ships();

@@ -68,23 +68,19 @@ int main() {
     EntityManager em(db);
 
     // Create test ships
-    Ship pod;
-    pod.number() = 1;
-    pod.type() = ShipType::STYPE_POD;  // 'p' at index 0
-    pod.owner() = 1;
-    pod.alive() = true;
+    auto pod_ptr = ShipFactory::create_from_template(ShipType::STYPE_POD, 1);
+    pod_ptr->number() = 1;
+    const Ship& pod = *pod_ptr;
 
-    Ship destroyer;
-    destroyer.number() = 2;
-    destroyer.type() = ShipType::STYPE_DESTROYER;  // 'd' at index 7
-    destroyer.owner() = 1;
-    destroyer.alive() = true;
+    auto destroyer_ptr =
+        ShipFactory::create_from_template(ShipType::STYPE_DESTROYER, 1);
+    destroyer_ptr->number() = 2;
+    const Ship& destroyer = *destroyer_ptr;
 
-    Ship fighter;
-    fighter.number() = 3;
-    fighter.type() = ShipType::STYPE_FIGHTER;  // 'f' at index 8
-    fighter.owner() = 1;
-    fighter.alive() = true;
+    auto fighter_ptr =
+        ShipFactory::create_from_template(ShipType::STYPE_FIGHTER, 1);
+    fighter_ptr->number() = 3;
+    const Ship& fighter = *fighter_ptr;
 
     // Test single ship type filter
     std::println(std::cout, "Testing pod: type={}, type_letter='{}'",

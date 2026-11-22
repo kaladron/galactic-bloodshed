@@ -138,38 +138,29 @@ int main() {
   // Fail - quarry already exists at location (3rd ship in list)
   {
     // Create first ship - a probe at different location
-    Ship probe1{};
-    probe1.number() = 100;
-    probe1.type() = ShipType::OTYPE_PROBE;
-    probe1.owner() = 1;
-    probe1.alive() = true;
-    probe1.enter_planet_orbit(planet.star_id(), planet.planet_order());
-    probe1.set_land_coords({1, 1});
+    auto probe1 = ShipFactory::create_from_template(ShipType::OTYPE_PROBE, 1);
+    probe1->number() = 100;
+    probe1->enter_planet_orbit(planet.star_id(), planet.planet_order());
+    probe1->set_land_coords({1, 1});
 
     // Create second ship - another probe at different location
-    Ship probe2{};
-    probe2.number() = 101;
-    probe2.type() = ShipType::OTYPE_PROBE;
-    probe2.owner() = 1;
-    probe2.alive() = true;
-    probe2.enter_planet_orbit(planet.star_id(), planet.planet_order());
-    probe2.set_land_coords({2, 2});
+    auto probe2 = ShipFactory::create_from_template(ShipType::OTYPE_PROBE, 1);
+    probe2->number() = 101;
+    probe2->enter_planet_orbit(planet.star_id(), planet.planet_order());
+    probe2->set_land_coords({2, 2});
 
     // Create third ship - a quarry at coordinates (3, 3)
-    Ship quarry{};
-    quarry.number() = 102;
-    quarry.type() = ShipType::OTYPE_QUARRY;
-    quarry.owner() = 1;
-    quarry.alive() = true;
-    quarry.enter_planet_orbit(planet.star_id(), planet.planet_order());
-    quarry.set_land_coords({3, 3});
+    auto quarry = ShipFactory::create_from_template(ShipType::OTYPE_QUARRY, 1);
+    quarry->number() = 102;
+    quarry->enter_planet_orbit(planet.star_id(), planet.planet_order());
+    quarry->set_land_coords({3, 3});
 
     // Add all ships to repository
     JsonStore store(db);
     ShipRepository ships(store);
-    ships.save(probe1);
-    ships.save(probe2);
-    ships.save(quarry);
+    ships.save(*probe1);
+    ships.save(*probe2);
+    ships.save(*quarry);
 
     // Try to build another quarry at same location as the 3rd ship
     auto result = can_build_on_sector(em, ShipType::OTYPE_QUARRY, race, planet,
@@ -196,18 +187,16 @@ int main() {
   // Success - destroyed quarry at location doesn't block
   {
     // Create and then destroy a quarry at (7, 7)
-    Ship dead_quarry{};
-    dead_quarry.number() = 2;
-    dead_quarry.type() = ShipType::OTYPE_QUARRY;
-    dead_quarry.owner() = 1;
-    dead_quarry.alive() = true;
-    dead_quarry.enter_planet_orbit(planet.star_id(), planet.planet_order());
-    dead_quarry.set_land_coords({7, 7});
+    auto dead_quarry =
+        ShipFactory::create_from_template(ShipType::OTYPE_QUARRY, 1);
+    dead_quarry->number() = 2;
+    dead_quarry->enter_planet_orbit(planet.star_id(), planet.planet_order());
+    dead_quarry->set_land_coords({7, 7});
 
     JsonStore store(db);
     ShipRepository ships(store);
-    ships.save(dead_quarry);
-    em.destroy_ship(dead_quarry);
+    ships.save(*dead_quarry);
+    em.destroy_ship(*dead_quarry);
 
     // Should be able to build at (7,7) since existing quarry is destroyed
     auto result = can_build_on_sector(em, ShipType::OTYPE_QUARRY, race, planet,

@@ -343,14 +343,19 @@ std::tuple<money_t, double> shipping_cost(EntityManager& em, const starnum_t to,
   const auto* star_to = em.peek_star(to);
   const auto* star_from = em.peek_star(from);
 
-  double dist = star_to->coordinates().distance_to(star_from->coordinates());
+  const double dist =
+      star_to->coordinates().distance_to(star_from->coordinates());
+  if (value <= 0 || dist <= 0.0) {
+    return {0, dist};
+  }
 
-  int junk = (int)(dist / 10000.0);
-  junk *= 10000;
-
-  double factor = 1.0 - std::exp(-(double)junk / MERCHANT_LENGTH);
-
-  money_t fcost = std::round(factor * (double)value);
+  const double quantized_dist = std::floor(dist / 10000.0) * 10000.0;
+  const double factor = -std::expm1(-quantized_dist / MERCHANT_LENGTH);
+  const double raw_cost = std::round(factor * static_cast<double>(value));
+  const money_t fcost =
+      raw_cost >= static_cast<double>(std::numeric_limits<money_t>::max())
+          ? std::numeric_limits<money_t>::max()
+          : static_cast<money_t>(raw_cost);
   return {fcost, dist};
 }
 

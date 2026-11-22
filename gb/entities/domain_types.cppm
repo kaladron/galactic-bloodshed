@@ -637,10 +637,17 @@ public:
   explicit constexpr Percentage(
       T v,
       std::source_location loc = std::source_location::current()) noexcept {
-    const int rounded = static_cast<int>(std::round(v));
-    const int clamped = std::clamp(rounded, 0, 100);
+    if (std::isnan(v)) {
+      if !consteval {
+        log_invariant_violation("Percentage", "value", v, 0, loc);
+      }
+      value_ = 0;
+      return;
+    }
+    const double rounded = std::round(static_cast<double>(v));
+    const int clamped = static_cast<int>(std::clamp(rounded, 0.0, 100.0));
     if !consteval {
-      if (rounded < 0 || rounded > 100) {
+      if (rounded < 0.0 || rounded > 100.0) {
         log_invariant_violation("Percentage", "value", v, clamped, loc);
       }
     }
@@ -789,10 +796,21 @@ public:
   explicit constexpr Temperature(
       T v,
       std::source_location loc = std::source_location::current()) noexcept {
-    const int rounded = static_cast<int>(std::round(v));
-    const int clamped = std::max(rounded, ABSOLUTE_ZERO_CELSIUS);
+    if (std::isnan(v)) {
+      if !consteval {
+        log_invariant_violation("Temperature", "celsius", v,
+                                ABSOLUTE_ZERO_CELSIUS, loc);
+      }
+      value_ = ABSOLUTE_ZERO_CELSIUS;
+      return;
+    }
+    constexpr double min_c = static_cast<double>(ABSOLUTE_ZERO_CELSIUS);
+    constexpr double max_c =
+        static_cast<double>(std::numeric_limits<int>::max());
+    const double rounded = std::round(static_cast<double>(v));
+    const int clamped = static_cast<int>(std::clamp(rounded, min_c, max_c));
     if !consteval {
-      if (rounded < ABSOLUTE_ZERO_CELSIUS) {
+      if (rounded < min_c || rounded > max_c) {
         log_invariant_violation("Temperature", "celsius", v, clamped, loc);
       }
     }

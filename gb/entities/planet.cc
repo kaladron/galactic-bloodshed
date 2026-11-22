@@ -86,11 +86,12 @@ money_t plinfo::collect_tax(Race::gov& gov, const Race& race) noexcept {
 }
 
 double plinfo::invest_tech(Race::gov& gov, Race& race) noexcept {
-  if (!race.has_government_center() || gov.money < tech_invest) {
+  if (!race.has_government_center() || tech_invest <= 0 ||
+      gov.money < tech_invest) {
     prod_tech = 0.0;
     return 0.0;
   }
-  prod_tech = tech_prod(static_cast<int>(tech_invest), static_cast<int>(popn));
+  prod_tech = tech_prod(tech_invest, popn);
   gov.money -= tech_invest;
   gov.cost_tech += tech_invest;
   race.tech += prod_tech;

@@ -836,21 +836,23 @@ double Planet::gravity() const {
 }
 
 double Planet::compatibility(const Race& race) const {
-  double atmosphere = 1.0;
-
   /* make an adjustment for planetary temperature */
-  int add = 0.1 * ((double)temp() - race.temp);
-  double sum = 1.0 - ((double)std::abs(add) / 100.0);
+  const double temp_diff = std::abs(static_cast<double>(temp().value()) -
+                                    static_cast<double>(race.temp.value()));
+  double sum = 1.0 - 0.001 * temp_diff;
+  if (sum <= 0.0) {
+    return 0.0;
+  }
 
   /* step through and report compatibility of each planetary gas */
+  double atmosphere = 1.0;
   for (AtmosphereConditions cond : all_atmosphere_conditions) {
-    add = (double)conditions(cond) - race.conditions[cond];
-    atmosphere *= 1.0 - ((double)std::abs(add) / 100.0);
+    const int gas_diff =
+        std::abs(conditions(cond).value() - race.conditions[cond].value());
+    atmosphere *= 1.0 - static_cast<double>(gas_diff) / 100.0;
   }
   sum *= atmosphere;
-  sum *= 100.0 - toxic();
-
-  if (sum < 0.0) return 0.0;
+  sum *= static_cast<double>(toxic().complement().value());
   return sum;
 }
 
@@ -877,9 +879,12 @@ ap_t Planet::get_points() const {
 
 export inline double tech_prod(const money_t investment,
                                const population_t popn) noexcept {
-  double scale = static_cast<double>(popn) / 10000.;
-  return (TECH_INVEST *
-          std::log10(static_cast<double>(investment) * scale + 1.0));
+  if (investment <= 0 || popn <= 0) {
+    return 0.0;
+  }
+  const double scale = static_cast<double>(popn) / 10000.0;
+  return TECH_INVEST * std::log1p(static_cast<double>(investment) * scale) *
+         std::numbers::log10e;
 }
 
 export constexpr gun_count_t planet_guns(resource_t points) noexcept {

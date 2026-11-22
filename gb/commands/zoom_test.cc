@@ -57,6 +57,13 @@ void test_zoom_happy_path() {
   test::expect_contains(g.out.str(), R"("type":"message")");
   test::expect_contains(g.out.str(), R"(Zoom value 3)");
   test::expect_eq(g.zoom[1], 3.0);
+  // 5. Boundary zoom factors [1e-6, 1e6] succeed
+  g.set_ui_mode(UiMode::ASCII);
+  g.set_scope_star(1);
+  ctx.assert_dispatch_success(g, {"zoom", "1e-6"});
+  test::expect_eq(g.zoom[0], 1e-6);
+  ctx.assert_dispatch_success(g, {"zoom", "1e6"});
+  test::expect_eq(g.zoom[0], 1e6);
 }
 
 void test_zoom_domain_errors() {
@@ -67,16 +74,21 @@ void test_zoom_domain_errors() {
   GameObj g(ctx.em, registry);
   ctx.setup_game_obj(g, 1, 1);
   g.set_scope_star(1);
+  g.zoom[0] = 2.5;
 
   // Division by zero denominator
   ctx.assert_dispatch_rejected(g, {"zoom", "5/0"});
   test::expect_contains(g.out.str(), "Illegal denominator value");
+  test::expect_eq(g.zoom[0], 2.5);
 
-  // Malformed fraction, trailing garbage, non-numeric, and extra arguments
-  for (std::string bad : {"/2", "1/2abc", "banana", "2.5abc"}) {
+  // Malformed, non-finite, zero, negative, subnormal, and out-of-range zooms
+  for (std::string bad :
+       {"/2", "1/2abc", "banana", "2.5abc", "0", "-1", "1e-300", "1e9", "nan",
+        "inf", "0/5", "1e200/1e-200"}) {
     g.out.str("");
     ctx.assert_dispatch_rejected(g, {"zoom", bad});
     test::expect_contains(g.out.str(), "Bad zoom value.");
+    test::expect_eq(g.zoom[0], 2.5);
   }
 
   g.out.str("");

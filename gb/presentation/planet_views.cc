@@ -361,12 +361,15 @@ using OrbitCanvasGrid =
 
 void plot_orbit_symbol(OrbitCanvasGrid& grid, SystemCoordinates coords,
                        char symbol, bool inverse) {
-  const int col = std::clamp(
-      static_cast<int>(coords.x * (ORBIT_CANVAS_WIDTH - 1) / ORBIT_MAX_COORD),
-      0, ORBIT_CANVAS_WIDTH - 1);
-  const int row = std::clamp(
-      static_cast<int>(coords.y * (ORBIT_CANVAS_HEIGHT - 1) / ORBIT_MAX_COORD),
-      0, ORBIT_CANVAS_HEIGHT - 1);
+  if (!std::isfinite(coords.x) || !std::isfinite(coords.y)) {
+    return;
+  }
+  const double max_col = static_cast<double>(ORBIT_CANVAS_WIDTH - 1);
+  const double max_row = static_cast<double>(ORBIT_CANVAS_HEIGHT - 1);
+  const int col = static_cast<int>(
+      std::clamp(coords.x * max_col / ORBIT_MAX_COORD, 0.0, max_col));
+  const int row = static_cast<int>(
+      std::clamp(coords.y * max_row / ORBIT_MAX_COORD, 0.0, max_row));
   grid[row][col] = OrbitCanvasCell{.ch = symbol, .inverse = inverse};
 }
 

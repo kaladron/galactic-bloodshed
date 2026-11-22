@@ -15,7 +15,11 @@ module commands;
 
 namespace {
 
+constexpr double MIN_ZOOM = 1e-6;
+constexpr double MAX_ZOOM = 1e6;
+
 bool parse_zoom_factor(std::string_view arg, double& out_zoom, GameObj& g) {
+  double candidate = 0.0;
   if (arg.contains('/')) {
     auto scan_res = scn::scan<double, double>(arg, "{}/{}");
     if (!scan_res || !scan_res->range().empty()) {
@@ -27,16 +31,22 @@ bool parse_zoom_factor(std::string_view arg, double& out_zoom, GameObj& g) {
       g.out << "Illegal denominator value.\n";
       return false;
     }
-    out_zoom = num / denom;
-    return true;
+    candidate = num / denom;
+  } else {
+    auto single_res = scn::scan<double>(arg, "{}");
+    if (!single_res || !single_res->range().empty()) {
+      g.out << "Bad zoom value.\n";
+      return false;
+    }
+    candidate = single_res->value();
   }
 
-  auto single_res = scn::scan<double>(arg, "{}");
-  if (!single_res || !single_res->range().empty()) {
+  if (!std::isfinite(candidate) || candidate < MIN_ZOOM ||
+      candidate > MAX_ZOOM) {
     g.out << "Bad zoom value.\n";
     return false;
   }
-  out_zoom = single_res->value();
+  out_zoom = candidate;
   return true;
 }
 

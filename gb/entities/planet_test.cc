@@ -266,6 +266,25 @@ int main() {
 
     const double compat = planet.compatibility(race);
     test::expect_gt(compat, 90.0);
+
+    // Canonical 1989 Ergos survey example (help/survey.md): |dT| = 3 C,
+    // identical gas ratios, toxicity 14% -> 86.0 * (1 - 0.003) = 85.742
+    // (85.74%)
+    const std::array ergos_gases = {72, 0, 1, 12, 2, 1, 1, 11};
+    for (std::size_t idx = 0; idx < all_atmosphere_conditions.size(); ++idx) {
+      const auto cond = all_atmosphere_conditions[idx];
+      planet.conditions(cond) = ergos_gases[idx];
+      race.conditions[cond] = ergos_gases[idx];
+    }
+    planet.temp() = -28;
+    race.temp = -25;
+    planet.toxic() = 14;
+    test::expect_eq(std::format("{:.2f}%", planet.compatibility(race)),
+                    "85.74%");
+
+    // Extreme thermal mismatch (|dT| >= 1000 C) floors compatibility at 0.0
+    planet.temp() = 1200;
+    test::expect_eq(planet.compatibility(race), 0.0);
   }
 
   // Test 7: plinfo defaults and optional tox_thresh behavior
@@ -490,6 +509,21 @@ int main() {
         info.invest_tech(anarchic_race.leader(), anarchic_race);
     test::expect_eq(no_gov_gain, 0.0);
     test::expect_eq(anarchic_race.leader().money, 500);
+
+    // Case D: Non-positive investment / population and > INT_MAX 64-bit scaling
+    test::expect_eq(tech_prod(0, 5'000), 0.0);
+    test::expect_eq(tech_prod(-50, 5'000), 0.0);
+    test::expect_eq(tech_prod(100, 0), 0.0);
+    info.tech_invest = 0;
+    test::expect_eq(info.invest_tech(race.leader(), race), 0.0);
+
+    info.tech_invest = 3'000'000'000LL;
+    info.popn = 3'000'000'000LL;
+    race.leader().money = 5'000'000'000LL;
+    const double large_gain = info.invest_tech(race.leader(), race);
+    test::expect_true(std::isfinite(large_gain) && large_gain > 0.14);
+    test::expect_true(std::isfinite(race.tech));
+    test::expect_eq(race.leader().money, 2'000'000'000LL);
   }
 
   // Test 16: plinfo::update_combat_readiness & Percentage clamping
@@ -603,12 +637,25 @@ int main() {
     }
     test::expect_eq(clamped_logs.str(), "");
 
-    // Direct Percentage construction clamps AND logs invariant violations
+    // Direct Percentage & Temperature construction clamps finite/non-finite
+    // values without FP-to-int UB and logs invariant violations
     std::ostringstream invariant_logs;
     {
       GB::log::ScopedSink sink{invariant_logs};
       test::expect_eq(Percentage{-15}, 0);
       test::expect_eq(Percentage{175}, 100);
+      test::expect_eq(Percentage{42.6}, 43);
+      test::expect_eq(Percentage{-5.0}, 0);
+      test::expect_eq(Percentage{1e30}, 100);
+      test::expect_eq(Percentage{std::numeric_limits<double>::quiet_NaN()}, 0);
+      test::expect_eq(Temperature{24.6}, 25);
+      test::expect_eq(Temperature{-500.0}, Temperature::ABSOLUTE_ZERO_CELSIUS);
+      test::expect_eq(Temperature{1e30}, std::numeric_limits<int>::max());
+      test::expect_eq(
+          Temperature{static_cast<float>(std::numeric_limits<int>::max())},
+          std::numeric_limits<int>::max());
+      test::expect_eq(Temperature{std::numeric_limits<double>::quiet_NaN()},
+                      Temperature::ABSOLUTE_ZERO_CELSIUS);
     }
     test::expect_contains(
         invariant_logs.str(),
@@ -616,6 +663,8 @@ int main() {
     test::expect_contains(
         invariant_logs.str(),
         "[WARN] [INVARIANT] Percentage::value: attempted 175, clamped to 100");
+    test::expect_contains(invariant_logs.str(),
+                          "[WARN] [INVARIANT] Temperature::celsius:");
 
     // Sector constexpr construction/getters and maxsupport typing/scaling
     constexpr Sector csect{Coordinates{2, 3},

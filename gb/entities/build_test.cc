@@ -439,6 +439,24 @@ int main() {
     auto [scost, sdist] = shipping_cost(ctx.em, 1, 2, 1000);
     test::expect_gt(sdist, 0.0);
     test::expect_ge(scost, 0);
+    test::expect_eq(std::get<0>(shipping_cost(ctx.em, 1, 1, 1000)), 0);
+    test::expect_eq(std::get<0>(shipping_cost(ctx.em, 1, 2, 0)), 0);
+
+    // 10,000-unit floor quantization (help/bid.md: 435,304 -> 430,000) and
+    // overflow safety above dist = 3e9 / value = INT64_MAX
+    ctx.em.mutate_star(1, [](Star& s) { s.set_coordinates({0.0, 0.0}); });
+    ctx.em.mutate_star(2, [](Star& s) { s.set_coordinates({435304.0, 0.0}); });
+    const auto [qcost, qdist] = shipping_cost(ctx.em, 1, 2, 10'000);
+    test::expect_eq(qdist, 435304.0);
+    test::expect_eq(qcost,
+                    static_cast<money_t>(std::round(
+                        -std::expm1(-430000.0 / MERCHANT_LENGTH) * 10'000.0)));
+
+    ctx.em.mutate_star(2, [](Star& s) { s.set_coordinates({3.0e9, 0.0}); });
+    test::expect_eq(std::get<0>(shipping_cost(ctx.em, 1, 2, 10'000)), 10'000);
+    test::expect_eq(std::get<0>(shipping_cost(
+                        ctx.em, 1, 2, std::numeric_limits<money_t>::max())),
+                    std::numeric_limits<money_t>::max());
     std::println(std::cout,
                  "Test 15 passed: ToxicWasteShip extraction and shipping_cost");
   }

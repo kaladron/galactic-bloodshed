@@ -1705,6 +1705,23 @@ void test_project_block_view_sparse_player_ids() {
   test::expect_eq(block1_view.pledged, (std::vector<player_t>{1, 4}));
 }
 
+void test_render_ascii_orbit_map_coordinate_bounds() {
+  const GB::presentation::OrbitViewModel bounds_vm{
+      .stars =
+          {
+              {.coords = {std::numeric_limits<double>::quiet_NaN(), 100.0},
+               .label = "NanX"},
+              {.coords = {100.0, std::numeric_limits<double>::infinity()},
+               .label = "InfY"},
+              {.coords = {-1e30, 1e30}, .label = "ExtremeFinite"},
+          },
+  };
+  const std::string bounds_map =
+      GB::presentation::render_ascii_orbit_map(bounds_vm);
+  test::expect_contains(bounds_map, "ExtremeFinite");
+  test::expect_eq(std::ranges::count(bounds_map, '*'), 4);
+}
+
 }  // namespace
 
 int main() {
@@ -1720,5 +1737,6 @@ int main() {
   test_canonical_ship_view_projectors();
   test_canonical_race_block_market_combat_views();
   test_project_block_view_sparse_player_ids();
+  test_render_ascii_orbit_map_coordinate_bounds();
   return 0;
 }

@@ -436,6 +436,13 @@ void test_orbit_space_mirror_aiming() {
   ctx.assert_dispatch_success(g, {"orbit"});
   test::expect_contains(g.out.str(), "M #4 (aim: 3)");
 
+  // 4. Extreme zoom at universe scope clamps distant coordinates safely
+  ctx.assert_dispatch_success(g, {"zoom", "1e-6"});
+  g.set_scope_univ();
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"orbit"});
+  test::expect_contains(g.out.str(), "TestStar");
+
   std::println(std::cout, "    ✓ Space mirror targeting, direction heading, "
                           "and orbit display verified");
 }

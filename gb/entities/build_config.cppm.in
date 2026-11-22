@@ -21,15 +21,25 @@ export inline constexpr std::string_view PKG_STATE_DIR = "@PKGSTATEDIR@";
 /// Player help markdown directory (`help/*.md`).
 export inline constexpr std::string_view HELP_DIR = "@HELPDIR@";
 
-/// Resolves a filename under `PKG_DATA_DIR`.
+/// Resolves a filename under `GB_DATADIR` (if set and non-empty) or
+/// `PKG_DATA_DIR`.
 export [[nodiscard]] inline std::filesystem::path
 pkg_data_path(std::string_view filename) {
+  if (const char* env_dir = std::getenv("GB_DATADIR");
+      env_dir != nullptr && *env_dir != '\0') {
+    return std::filesystem::path{env_dir} / filename;
+  }
   return std::filesystem::path{PKG_DATA_DIR} / filename;
 }
 
-/// Resolves a filename under `PKG_STATE_DIR`.
+/// Resolves a filename under `GB_STATEDIR` (if set and non-empty) or
+/// `PKG_STATE_DIR`.
 export [[nodiscard]] inline std::filesystem::path
 pkg_state_path(std::string_view filename) {
+  if (const char* env_dir = std::getenv("GB_STATEDIR");
+      env_dir != nullptr && *env_dir != '\0') {
+    return std::filesystem::path{env_dir} / filename;
+  }
   return std::filesystem::path{PKG_STATE_DIR} / filename;
 }
 

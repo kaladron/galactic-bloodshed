@@ -451,7 +451,7 @@ function(gb_add_test name)
   )
   add_test(NAME GB_${name} COMMAND ${name})
   set_tests_properties(GB_${name} PROPERTIES ENVIRONMENT
-    "GB_HELPDIR=${CMAKE_SOURCE_DIR}/help;GB_DATADIR=${CMAKE_SOURCE_DIR}/data;LLVM_PROFILE_FILE=${CMAKE_BINARY_DIR}/coverage-%p-%m.profraw"
+    "GB_HELPDIR=${CMAKE_SOURCE_DIR}/help;GB_DATADIR=${CMAKE_SOURCE_DIR}/data;GB_STATEDIR=${CMAKE_BINARY_DIR}/gamedata/${name};LLVM_PROFILE_FILE=${CMAKE_BINARY_DIR}/coverage-%p-%m.profraw"
   )
 endfunction()
 

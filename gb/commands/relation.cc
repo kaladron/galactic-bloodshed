@@ -59,13 +59,16 @@ bool relation(const command_t& argv, GameObj& g) {
   return true;
 }
 
+static constexpr std::array<std::string_view, 1> relation_aliases{"relation"};
+
 const CommandDescriptor relation_cmd{
-    .name = "relation",
+    .name = "relations",
+    .aliases = relation_aliases,
     .roles = {},
     .scopes = AllowedScopes::any(),
     .ap = APCost::free(),
     .min_args = 1,
-    .syntax = "relation [<race>]",
+    .syntax = "relations [<race>]",
     .description =
         "Display diplomatic relations and mutual standing between races",
     .handler = &relation,

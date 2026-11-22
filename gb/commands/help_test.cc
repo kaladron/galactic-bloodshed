@@ -68,6 +68,14 @@ void test_help_command_dispatch() {
   test::expect_contains(g.out.str(), "# DISTANCE");
 
   g.out.str("");
+  ctx.assert_dispatch_success(g, {"help", "relations"});
+  test::expect_contains(g.out.str(), "# RELATIONS");
+
+  g.out.str("");
+  ctx.assert_dispatch_success(g, {"help", "relation"});
+  test::expect_contains(g.out.str(), "# RELATIONS");
+
+  g.out.str("");
   ctx.assert_dispatch_success(g, {"help", ":"});
   test::expect_contains(g.out.str(), "# ANNOUNCE");
 

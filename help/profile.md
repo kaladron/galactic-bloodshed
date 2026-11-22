@@ -24,4 +24,4 @@ preferences too.
  Add some personal information with 'personal' command.
 
 ## See Also
-   victory, power, relation, personal
+   victory, power, relations, personal

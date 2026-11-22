@@ -25,6 +25,8 @@ declare <race> <alliance|neutral|war> [<modifier>]
 
 Diplomatic declarations are restricted to Imperial Leaders (Governor 1) and cost **1 Universe Action Point**. An empire cannot declare a stance on itself.
 
+Empires can inspect mutual diplomatic standing and translation knowledge across all known civilizations (or from a specific empire's perspective) using `relations [<race>]` (alias `relation`), which is available at any scope and costs **0 Action Points**.
+
 ```mermaid
 stateDiagram-v2
     [*] --> Neutral: Initial Contact

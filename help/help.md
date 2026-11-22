@@ -43,7 +43,7 @@ MONETARY -
 
 RELATIONS  -
 	appoint		block		declare		give
-	grant		invite		pledge		relation
+	grant		invite		pledge		relations
 	revoke		uninvite	unpledge
 
 SHIPS -

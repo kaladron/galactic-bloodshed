@@ -83,7 +83,7 @@ profile -- racial profile
 quit -- disconnect from the server 
 
 read -- read messages sent to you or read Galactic News
-relation -- state relations
+relations -- state relations
 repair -- repair wasteland sectors
 report -- navigational ship report
 revoke -- remove governor's powers

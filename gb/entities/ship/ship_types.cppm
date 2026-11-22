@@ -447,19 +447,50 @@ export struct WasteData {
   Percentage toxic{0};
 };
 
+/// Manufactured vessel specification stored inside a Factory installation.
+export struct FactoryBlueprint {
+  ShipType build_type{ShipType::OTYPE_FACTORY};
+  std::string shipclass;
+  armor_t armor{0};
+  population_t max_crew{0};
+  resource_t max_resource{0};
+  resource_t max_destruct{0};
+  fuel_t max_fuel{0.0};
+  speed_t max_speed{0};
+  hangar_t max_hanger{0};
+  bool mount{false};
+  bool has_hyperdrive{false};
+  weapon_power_t cew{0};
+  weapon_range_t cew_range{0};
+  bool cloak{false};
+  bool laser{false};
+  GunBattery primary_battery;
+  GunBattery secondary_battery;
+  resource_t build_cost{0};
+  double base_mass{0.0};
+  double complexity{0.0};
+
+  /// Returns true if a buildable target hull type has been designated.
+  [[nodiscard]] constexpr bool is_configured() const noexcept {
+    return build_type != ShipType::STYPE_POD &&
+           build_type != ShipType::OTYPE_FACTORY;
+  }
+};
+
 // Variant type for special ship functions (std::monostate is index 0 for
 // standard hulls that have no specialized payload)
 export using SpecialData =
-    std::variant<std::monostate, /* standard ships with no special payload */
-                 AimedAtData,    /* Space Mirror, telescopes, tractor beams */
-                 MindData,       /* VNs and berserkers */
-                 PodData,        /* spore pods */
-                 TimerData,      /* dust canisters, greenhouse gases */
-                 ImpactData,     /* missiles */
-                 TriggerData,    /* mines */
-                 TerraformData,  /* terraformers, ground plows */
-                 TransportData,  /* AVPM transporter */
-                 WasteData       /* toxic waste containers */
+    std::variant<std::monostate,  /* standard ships with no special payload */
+                 AimedAtData,     /* Space Mirror, telescopes, tractor beams */
+                 MindData,        /* VNs and berserkers */
+                 PodData,         /* spore pods */
+                 TimerData,       /* dust canisters, greenhouse gases */
+                 ImpactData,      /* missiles */
+                 TriggerData,     /* mines */
+                 TerraformData,   /* terraformers, ground plows */
+                 TransportData,   /* AVPM transporter */
+                 WasteData,       /* toxic waste containers */
+                 FactoryBlueprint /* manufacturing factory ship designs */
                  >;
 
 /// Returns the canonical default SpecialData variant alternative for a given
@@ -497,6 +528,8 @@ default_special_data(ShipType type, player_t owner = 1) noexcept {
       return TransportData{};
     case ShipType::OTYPE_TOXWC:
       return WasteData{};
+    case ShipType::OTYPE_FACTORY:
+      return FactoryBlueprint{};
     case ShipType::STYPE_SHUTTLE:
     case ShipType::STYPE_CARRIER:
     case ShipType::STYPE_DREADNT:
@@ -517,7 +550,6 @@ default_special_data(ShipType type, player_t owner = 1) noexcept {
     case ShipType::OTYPE_OMCL:
     case ShipType::OTYPE_PROBE:
     case ShipType::OTYPE_GR:
-    case ShipType::OTYPE_FACTORY:
     case ShipType::OTYPE_BERSCTLC:
     case ShipType::OTYPE_AUTOFAC:
     case ShipType::OTYPE_PLANDEF:

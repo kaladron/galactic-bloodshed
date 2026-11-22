@@ -459,6 +459,74 @@ void test_dynamic_base_mass() {
   // Underflow protection: max_hanger > size clamps to 0
   ship.max_hanger() = 100;
   test::expect_eq(ship.shipbody(), 0u);
+
+  // FactoryShip stores manufactured blueprint in SpecialData without altering
+  // the factory's own physical hull attributes.
+  FactoryShip default_fac;
+  test::expect_false(default_fac.has_design());
+  default_fac.blueprint_mut().build_type = ShipType::STYPE_POD;
+  test::expect_false(default_fac.has_design());
+
+  auto fac_ship = ShipFactory::create_from_template(ShipType::OTYPE_FACTORY, 1);
+  auto cruiser_ref =
+      ShipFactory::create_from_template(ShipType::STYPE_CRUISER, 1);
+  test::expect_true(cruiser_ref->as<FactoryShip>() == nullptr);
+  const Ship& const_fac_ref = *fac_ship;
+  test::expect_true(const_fac_ref.as<FactoryShip>() != nullptr);
+  auto* fac = fac_ship->as<FactoryShip>();
+  test::expect_true(fac != nullptr);
+
+  const ship_size_t own_size = fac->size();
+  const double own_mass = fac->base_mass();
+  const population_t own_crew = fac->max_crew();
+  const hangar_t own_hangar = fac->max_hanger();
+
+  // configure_blueprint with nullptr race, undiscovered race, discovered race,
+  // Deity race, and non-hyperdrive/mount/laser hull (OTYPE_TERRA / OTYPE_PLOW).
+  fac->configure_blueprint(ShipType::STYPE_CARRIER, nullptr, "mod 7");
+  test::expect_true(fac->has_design());
+  test::expect_eq(fac->size(), own_size);
+  expect_near(fac->base_mass(), own_mass);
+  test::expect_eq(fac->max_crew(), own_crew);
+  test::expect_eq(fac->max_hanger(), own_hangar);
+  test::expect_false(fac->mount());
+  test::expect_false(fac->laser());
+  test::expect_false(fac->hyper_drive().has);
+  test::expect_true(fac->blueprint().mount);
+  test::expect_true(fac->blueprint().has_hyperdrive);
+  test::expect_true(fac->blueprint().laser);
+  test::expect_eq(fac->blueprint().max_hanger, 200u);
+
+  Race undisc{};
+  fac->configure_blueprint(ShipType::STYPE_CRUISER, &undisc, "mod 7");
+  test::expect_false(fac->blueprint().mount);
+  test::expect_false(fac->blueprint().has_hyperdrive);
+  test::expect_false(fac->blueprint().laser);
+  test::expect_gt(fac->blueprint().build_cost, 0);
+
+  Race disc{};
+  disc.discoveries = {.hyperdrive = true, .laser = true, .crystal = true};
+  fac->configure_blueprint(ShipType::STYPE_CRUISER, &disc, "mod 7");
+  test::expect_true(fac->blueprint().mount);
+  test::expect_true(fac->blueprint().has_hyperdrive);
+  test::expect_true(fac->blueprint().laser);
+  auto proto_cruiser = fac->instantiate_blueprint();
+  test::expect_eq(proto_cruiser->shipclass(), "mod 7");
+  test::expect_eq(proto_cruiser->guns(), ActiveBattery::PRIMARY);
+  test::expect_eq(fac->blueprint_size(), proto_cruiser->size());
+
+  // Secondary-only battery and free_build Deity blueprint
+  fac->blueprint_mut().primary_battery = GunBattery{};
+  auto proto_sec = fac->instantiate_blueprint();
+  test::expect_eq(proto_sec->guns(), ActiveBattery::SECONDARY);
+  Race deity{};
+  deity.God = true;
+  fac->configure_blueprint(ShipType::OTYPE_TERRA, &deity, "mod 7");
+  test::expect_eq(fac->blueprint().build_cost, 0);
+  test::expect_eq(fac->instantiate_blueprint()->guns(), ActiveBattery::NONE);
+  test::expect_true(fac->instantiate_blueprint()->shipclass().empty());
+  fac->configure_blueprint(ShipType::OTYPE_PLOW, &disc, "mod 7");
+  test::expect_true(fac->instantiate_blueprint()->shipclass().empty());
 }
 
 void test_gun_caliber_domain() {

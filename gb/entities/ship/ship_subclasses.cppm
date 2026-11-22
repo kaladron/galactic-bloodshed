@@ -477,6 +477,47 @@ public:
   }
 };
 
+export class FactoryShip : public Ship {
+public:
+  FactoryShip() {
+    data_.type = ShipType::OTYPE_FACTORY;
+    ensure_valid_special_data();
+  }
+  explicit FactoryShip(ship_struct in) : Ship(std::move(in)) {
+    data_.type = ShipType::OTYPE_FACTORY;
+    ensure_valid_special_data();
+  }
+
+  [[nodiscard]] const FactoryBlueprint& blueprint() const noexcept {
+    ensure_valid_special_data();
+    return std::get<FactoryBlueprint>(data_.special);
+  }
+  [[nodiscard]] FactoryBlueprint& blueprint_mut() noexcept {
+    ensure_valid_special_data();
+    return std::get<FactoryBlueprint>(data_.special);
+  }
+  [[nodiscard]] bool has_design() const noexcept {
+    return blueprint().is_configured();
+  }
+
+  /// Resets the manufactured vessel blueprint to the defaults of `build_type`
+  /// gated by `race` discoveries, without altering this factory's physical
+  /// hull.
+  void configure_blueprint(ShipType build_type, const Race* race = nullptr,
+                           std::string_view shipclass = {});
+
+  /// Recomputes `build_cost`, `base_mass`, and `complexity` on the stored
+  /// blueprint using `Ship`'s canonical hull formulas, returning the
+  /// manufactured ship's physical size.
+  ship_size_t recalculate_blueprint_stats(bool free_build = false);
+
+  /// Computes the physical hull volume of the manufactured vessel design.
+  [[nodiscard]] ship_size_t blueprint_size() const;
+
+  /// Materializes a standalone prototype `Ship` from this factory's blueprint.
+  [[nodiscard]] std::unique_ptr<Ship> instantiate_blueprint() const;
+};
+
 /// \brief Transient in-memory ship clone for "what-if" flight simulations.
 /// Guarantees that hypothetical modifications cannot be persisted to the
 /// database.
@@ -523,6 +564,7 @@ static_assert(sizeof(TerraformerShip) == sizeof(Ship));
 static_assert(sizeof(GroundPlowShip) == sizeof(Ship));
 static_assert(sizeof(TransporterShip) == sizeof(Ship));
 static_assert(sizeof(ToxicWasteShip) == sizeof(Ship));
+static_assert(sizeof(FactoryShip) == sizeof(Ship));
 
 export template <>
 struct ShipTypeTraits<AutonomousShip> {
@@ -610,6 +652,12 @@ export template <>
 struct ShipTypeTraits<ToxicWasteShip> {
   using payload_type = WasteData;
   static constexpr ShipType expected_type = ShipType::OTYPE_TOXWC;
+};
+
+export template <>
+struct ShipTypeTraits<FactoryShip> {
+  using payload_type = FactoryBlueprint;
+  static constexpr ShipType expected_type = ShipType::OTYPE_FACTORY;
 };
 
 // ShipFactory - instantiates polymorphic Ship subclasses from ship_struct or

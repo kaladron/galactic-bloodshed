@@ -95,9 +95,97 @@ std::unique_ptr<Ship> ShipFactory::create(ship_struct data) {
       return std::make_unique<TransporterShip>(std::move(data));
     case ShipType::OTYPE_TOXWC:
       return std::make_unique<ToxicWasteShip>(std::move(data));
+    case ShipType::OTYPE_FACTORY:
+      return std::make_unique<FactoryShip>(std::move(data));
     default:
       return std::make_unique<Ship>(std::move(data));
   }
+}
+
+void FactoryShip::configure_blueprint(ShipType build_type, const Race* race,
+                                      std::string_view shipclass) {
+  const auto& itmpl = ship_template(build_type);
+  const bool can_crystal = !race || race->discoveries.crystal;
+  const bool can_hyper = !race || race->discoveries.hyperdrive;
+  const bool can_laser = !race || race->discoveries.laser;
+  blueprint_mut() = FactoryBlueprint{
+      .build_type = build_type,
+      .shipclass = std::string(shipclass),
+      .armor = itmpl.base_armor,
+      .max_crew = itmpl.max_crew,
+      .max_resource = itmpl.max_resource,
+      .max_destruct = itmpl.max_destruct,
+      .max_fuel = itmpl.max_fuel,
+      .max_speed = itmpl.base_speed,
+      .max_hanger = itmpl.max_hangar,
+      .mount = itmpl.can_mount && can_crystal,
+      .has_hyperdrive = itmpl.can_hyperjump && can_hyper,
+      .cew = 0,
+      .cew_range = 0,
+      .cloak = itmpl.can_cloak,
+      .laser = itmpl.can_mount_laser && can_laser,
+      .primary_battery =
+          GunBattery::create(itmpl.max_guns, shipdata_primary(build_type)),
+      .secondary_battery =
+          GunBattery::create(itmpl.max_guns, shipdata_secondary(build_type)),
+  };
+  const bool free_build = race ? race->God : false;
+  recalculate_blueprint_stats(free_build);
+}
+
+ship_size_t FactoryShip::recalculate_blueprint_stats(bool free_build) {
+  auto proto = instantiate_blueprint();
+  auto& bp = blueprint_mut();
+  bp.base_mass = proto->base_mass();
+  bp.complexity = ::complexity(*proto);
+  bp.build_cost = free_build ? 0 : ::cost(*proto);
+  return proto->size();
+}
+
+ship_size_t FactoryShip::blueprint_size() const {
+  return instantiate_blueprint()->size();
+}
+
+std::unique_ptr<Ship> FactoryShip::instantiate_blueprint() const {
+  const auto& bp = blueprint();
+  ActiveBattery active_guns = ActiveBattery::NONE;
+  if (bp.primary_battery.has_guns()) {
+    active_guns = ActiveBattery::PRIMARY;
+  } else if (bp.secondary_battery.has_guns()) {
+    active_guns = ActiveBattery::SECONDARY;
+  }
+  std::string ship_class = bp.shipclass;
+  if (bp.build_type == ShipType::OTYPE_TERRA ||
+      bp.build_type == ShipType::OTYPE_PLOW) {
+    ship_class.clear();
+  }
+  ship_struct proto_data{
+      .shipclass = std::move(ship_class),
+      .armor = bp.armor,
+      .max_crew = bp.max_crew,
+      .max_resource = bp.max_resource,
+      .max_destruct = bp.max_destruct,
+      .max_fuel = bp.max_fuel,
+      .max_speed = bp.max_speed,
+      .build_type = bp.build_type,
+      .build_cost = bp.build_cost,
+      .special = default_special_data(bp.build_type, data_.owner),
+      .mount = bp.mount,
+      .hyper_drive = {.has = bp.has_hyperdrive},
+      .cew = bp.cew,
+      .cew_range = bp.cew_range,
+      .cloak = bp.cloak,
+      .laser = bp.laser,
+      .type = bp.build_type,
+      .guns = active_guns,
+      .primary_battery = bp.primary_battery,
+      .secondary_battery = bp.secondary_battery,
+      .max_hanger = bp.max_hanger,
+  };
+  auto proto = ShipFactory::create(std::move(proto_data));
+  proto->recalculate_hull_stats();
+  proto->build_cost() = bp.build_cost;
+  return proto;
 }
 
 std::unique_ptr<Ship> ShipFactory::create_from_template(ShipType type,

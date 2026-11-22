@@ -22,9 +22,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_EXTENSIONS ON)
 
 
-# Auto-select the newest installed LLVM/Clang toolchain when not explicitly set
+# Auto-select an installed LLVM/Clang >= 22 toolchain when not explicitly set
 if(NOT CMAKE_CXX_COMPILER AND "$ENV{CXX}" STREQUAL "")
-  foreach(_llvm_dir IN ITEMS /usr/lib/llvm-22 /usr/lib/llvm-21)
+  foreach(_llvm_dir IN ITEMS /usr/lib/llvm-23 /usr/lib/llvm-22)
     if(EXISTS "${_llvm_dir}/bin/clang++" AND EXISTS "${_llvm_dir}/bin/clang-scan-deps")
       set(CMAKE_CXX_COMPILER "${_llvm_dir}/bin/clang++" CACHE FILEPATH "C++ compiler")
       if(NOT CMAKE_C_COMPILER AND "$ENV{CC}" STREQUAL "" AND EXISTS "${_llvm_dir}/bin/clang")
@@ -100,7 +100,7 @@ include(cmake/compiler_setup.cmake)
 # clang-tidy target for running static analysis with auto-fix
 find_program(
   RUN_CLANG_TIDY_EXE
-  NAMES run-clang-tidy run-clang-tidy-22 run-clang-tidy-21 run-clang-tidy-20 run-clang-tidy-19 run-clang-tidy.py
+  NAMES run-clang-tidy run-clang-tidy-22 run-clang-tidy.py
   HINTS "${_GB_CLANG_BIN_DIR}"
 )
 if(RUN_CLANG_TIDY_EXE)

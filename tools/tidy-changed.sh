@@ -32,7 +32,7 @@ if [ -f "build/CMakeCache.txt" ]; then
 fi
 
 if [ -z "$RUN_CLANG_TIDY" ]; then
-    for candidate in /usr/lib/llvm-22/bin/run-clang-tidy run-clang-tidy-22 run-clang-tidy run-clang-tidy-21 run-clang-tidy-20 run-clang-tidy-19; do
+    for candidate in /usr/lib/llvm-22/bin/run-clang-tidy run-clang-tidy-22 run-clang-tidy; do
         if command -v "$candidate" >/dev/null 2>&1; then
             RUN_CLANG_TIDY="$(command -v "$candidate")"
             break

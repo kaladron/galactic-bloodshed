@@ -1,10 +1,41 @@
 # SPDX-License-Identifier: Apache-2.0
 
+# Enforce minimum supported toolchain: LLVM/Clang >= 22 with matching libc++ >= 22
+if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_VERSION VERSION_LESS "22.0")
+  message(FATAL_ERROR
+    "Galactic Bloodshed requires LLVM/Clang >= 22 with libc++ >= 22 "
+    "(found ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}). "
+    "Install clang-22 / libc++-22-dev or pass -DCMAKE_CXX_COMPILER=clang++-22."
+  )
+endif()
+
 # Resolve symlinked compiler paths (e.g. /usr/bin/clang++-22 -> /usr/lib/llvm-22/bin/clang)
 # so libc++ module headers, static archives, and lld match the active Clang version.
 get_filename_component(_REAL_CXX_COMPILER "${CMAKE_CXX_COMPILER}" REALPATH)
 get_filename_component(_CLANG_BIN_DIR "${_REAL_CXX_COMPILER}" DIRECTORY)
 get_filename_component(_LLVM_PREFIX "${_CLANG_BIN_DIR}" DIRECTORY)
+
+# Verify matching libc++ >= 22 headers are present alongside the active Clang installation
+set(_GB_LIBCPP_CONFIG_CANDIDATES
+  "${_LLVM_PREFIX}/include/c++/v1/__config"
+  "/usr/include/c++/v1/__config"
+)
+set(_GB_LIBCPP_VERSION "")
+foreach(_cfg IN LISTS _GB_LIBCPP_CONFIG_CANDIDATES)
+  if(EXISTS "${_cfg}")
+    file(STRINGS "${_cfg}" _libcpp_ver_line REGEX "^#[ \t]*define[ \t]+_LIBCPP_VERSION[ \t]+[0-9]+")
+    if(_libcpp_ver_line MATCHES "([0-9]+)$")
+      set(_GB_LIBCPP_VERSION "${CMAKE_MATCH_1}")
+      break()
+    endif()
+  endif()
+endforeach()
+if(_GB_LIBCPP_VERSION AND _GB_LIBCPP_VERSION LESS 220000)
+  message(FATAL_ERROR
+    "Galactic Bloodshed requires libc++ >= 22 (_LIBCPP_VERSION >= 220000), "
+    "but found _LIBCPP_VERSION=${_GB_LIBCPP_VERSION}."
+  )
+endif()
 
 # Use LLVM libc++ statically linked
 if(NOT CMAKE_CXX_FLAGS MATCHES "-stdlib=libc\\+\\+")

@@ -135,8 +135,15 @@ public:
 
   /// Returns the minimum bid required to outbid the current price.
   [[nodiscard]] money_t min_next_bid() const noexcept {
-    return static_cast<money_t>(static_cast<double>(data_.bid) *
-                                (1.0 + UP_BID));
+    if (data_.bid <= 0) {
+      return 0;
+    }
+    const double scaled =
+        std::floor(static_cast<double>(data_.bid) * (1.0 + UP_BID));
+    if (scaled >= std::ldexp(1.0, 63)) {
+      return std::numeric_limits<money_t>::max();
+    }
+    return static_cast<money_t>(scaled);
   }
 
   /// Places or raises a bid on this commodity lot, atomically recording the

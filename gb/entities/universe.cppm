@@ -109,12 +109,11 @@ public:
   }
 
   void add_AP(player_t p, ap_t amount) {
-    set_AP(p, get_AP(p) + amount);
+    set_AP(p, std::max<ap_t>(0, std::add_sat(get_AP(p), amount)));
   }
 
   void deduct_AP(player_t p, ap_t amount) {
-    const ap_t current = get_AP(p);
-    set_AP(p, (current > amount) ? (current - amount) : 0);
+    set_AP(p, std::max<ap_t>(0, std::sub_sat(get_AP(p), amount)));
   }
 
   [[nodiscard]] bool has_vn_target(player_t p) const {

@@ -697,6 +697,16 @@ void test_active_gun_battery_and_formatting() {
 
   ship.guns() = ActiveBattery::NONE;
   test::expect_eq(ship.retal_strength(), 0u);  // offline weapons
+
+  // 4. 64-bit crew and destruct counts (2^32) saturate weapon_power_t instead
+  // of wrapping to 0
+  ship.guns() = PRIMARY;
+  ship.popn() = 4'294'967'296LL;
+  ship.destruct() = 4'294'967'296LL;
+  ship.retaliate() = 8;
+  test::expect_eq(ship.destruct_power(),
+                  std::numeric_limits<weapon_power_t>::max());
+  test::expect_eq(ship.retal_strength(), 8u);
 }
 
 void test_ship_continuous_coordinates() {

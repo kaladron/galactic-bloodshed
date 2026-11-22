@@ -124,18 +124,19 @@ export struct Stockpile {
   }
 
   constexpr Stockpile& operator+=(const Stockpile& other) noexcept {
-    resources += other.resources;
-    destruct += other.destruct;
-    fuel += other.fuel;
-    crystals += other.crystals;
+    resources = std::add_sat(resources, other.resources);
+    destruct = std::add_sat(destruct, other.destruct);
+    fuel = std::add_sat(fuel, other.fuel);
+    crystals = std::add_sat(crystals, other.crystals);
     return *this;
   }
 
   constexpr Stockpile& operator-=(const Stockpile& other) noexcept {
-    resources -= std::min(resources, other.resources);
-    destruct -= std::min(destruct, other.destruct);
-    fuel -= std::min(fuel, other.fuel);
-    crystals -= std::min(crystals, other.crystals);
+    resources =
+        std::max<resource_t>(0, std::sub_sat(resources, other.resources));
+    destruct = std::max<resource_t>(0, std::sub_sat(destruct, other.destruct));
+    fuel = std::max<resource_t>(0, std::sub_sat(fuel, other.fuel));
+    crystals = std::max<resource_t>(0, std::sub_sat(crystals, other.crystals));
     return *this;
   }
 
@@ -735,7 +736,7 @@ public:
   /// relative to maximum supportable capacity. Clamps toxicity within [0, 100].
   void update_toxicity() noexcept {
     if (data_.maxpopn > 0) {
-      data_.toxic.adjust(static_cast<int>(data_.popn / data_.maxpopn));
+      data_.toxic.adjust(std::saturate_cast<int>(data_.popn / data_.maxpopn));
     }
   }
 

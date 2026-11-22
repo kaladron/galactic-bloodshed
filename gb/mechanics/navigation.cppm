@@ -271,12 +271,12 @@ export enum class JettisonErrorReason {
 export struct JettisonError {
   JettisonErrorReason reason{JettisonErrorReason::InvalidCommodity};
   std::string ship_display{};
-  int max_available{0};
+  std::int64_t max_available{0};
 };
 
 export struct JettisonResult {
   ShipCargoType commodity{ShipCargoType::Resource};
-  int amount{0};
+  std::int64_t amount{0};
   std::string ship_display{};
   shipnum_t ship_number{0};
   population_t remaining_complement{0};
@@ -285,7 +285,7 @@ export struct JettisonResult {
 };
 
 export std::expected<JettisonResult, JettisonError>
-jettison_ship_cargo(Ship& ship, char commod, int requested_amount,
+jettison_ship_cargo(Ship& ship, char commod, std::int64_t requested_amount,
                     double race_mass);
 
 export enum class MountCrystalError {

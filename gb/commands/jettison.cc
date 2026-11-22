@@ -18,9 +18,9 @@ bool jettison(const command_t& argv, GameObj& g) {
     return false;
   }
 
-  int requested_amount = 0;
+  std::int64_t requested_amount = 0;
   if (argv.size() > 3) {
-    auto parsed = parse_int<int>(argv[3]);
+    auto parsed = parse_int<std::int64_t>(argv[3]);
     if (!parsed) {
       g.out << "Invalid amount.\n";
       return false;

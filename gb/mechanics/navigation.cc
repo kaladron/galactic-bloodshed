@@ -773,9 +773,22 @@ bool followable(EntityManager& em, const Ship& s1, const Ship& s2) {
 }
 
 namespace {
-std::expected<int, JettisonError> resolve_jettison_amount(int requested_amount,
-                                                          int max_available) {
-  const int amount = (requested_amount == 0) ? max_available : requested_amount;
+[[nodiscard]] std::int64_t available_jettison_fuel(double fuel) noexcept {
+  if (!std::isfinite(fuel) || fuel <= 0.0) {
+    return 0;
+  }
+  const double floored = std::floor(fuel);
+  if (floored >= std::ldexp(1.0, 63)) {
+    return std::numeric_limits<std::int64_t>::max();
+  }
+  return static_cast<std::int64_t>(floored);
+}
+
+std::expected<std::int64_t, JettisonError>
+resolve_jettison_amount(std::int64_t requested_amount,
+                        std::int64_t max_available) {
+  const std::int64_t amount =
+      (requested_amount == 0) ? max_available : requested_amount;
   if (amount < 0) {
     return std::unexpected(
         JettisonError{.reason = JettisonErrorReason::NegativeAmount});
@@ -795,7 +808,7 @@ std::expected<int, JettisonError> resolve_jettison_amount(int requested_amount,
 }  // namespace
 
 std::expected<JettisonResult, JettisonError>
-jettison_ship_cargo(Ship& ship, char commod, int requested_amount,
+jettison_ship_cargo(Ship& ship, char commod, std::int64_t requested_amount,
                     double race_mass) {
   if (ship.is_landed()) {
     return std::unexpected(
@@ -816,8 +829,7 @@ jettison_ship_cargo(Ship& ship, char commod, int requested_amount,
 
   switch (*cargo) {
     case ShipCargoType::Crystal: {
-      auto amt = resolve_jettison_amount(requested_amount,
-                                         static_cast<int>(ship.crystals()));
+      auto amt = resolve_jettison_amount(requested_amount, ship.crystals());
       if (!amt) return std::unexpected(amt.error());
       ship.consume_crystals(*amt);
       return JettisonResult{
@@ -826,8 +838,7 @@ jettison_ship_cargo(Ship& ship, char commod, int requested_amount,
       };
     }
     case ShipCargoType::Crew: {
-      auto amt = resolve_jettison_amount(requested_amount,
-                                         static_cast<int>(ship.popn()));
+      auto amt = resolve_jettison_amount(requested_amount, ship.popn());
       if (!amt) return std::unexpected(amt.error());
       ship.remove_popn(*amt, race_mass);
       return JettisonResult{
@@ -838,8 +849,7 @@ jettison_ship_cargo(Ship& ship, char commod, int requested_amount,
       };
     }
     case ShipCargoType::Troops: {
-      auto amt = resolve_jettison_amount(requested_amount,
-                                         static_cast<int>(ship.troops()));
+      auto amt = resolve_jettison_amount(requested_amount, ship.troops());
       if (!amt) return std::unexpected(amt.error());
       ship.remove_troops(*amt, race_mass);
       return JettisonResult{
@@ -850,8 +860,7 @@ jettison_ship_cargo(Ship& ship, char commod, int requested_amount,
       };
     }
     case ShipCargoType::Destruct: {
-      auto amt = resolve_jettison_amount(requested_amount,
-                                         static_cast<int>(ship.destruct()));
+      auto amt = resolve_jettison_amount(requested_amount, ship.destruct());
       if (!amt) return std::unexpected(amt.error());
       ship.consume_destruct(*amt);
       return JettisonResult{
@@ -864,7 +873,7 @@ jettison_ship_cargo(Ship& ship, char commod, int requested_amount,
     }
     case ShipCargoType::Fuel: {
       auto amt = resolve_jettison_amount(requested_amount,
-                                         static_cast<int>(ship.fuel()));
+                                         available_jettison_fuel(ship.fuel()));
       if (!amt) return std::unexpected(amt.error());
       ship.consume_fuel(static_cast<double>(*amt));
       return JettisonResult{
@@ -873,8 +882,7 @@ jettison_ship_cargo(Ship& ship, char commod, int requested_amount,
       };
     }
     case ShipCargoType::Resource: {
-      auto amt = resolve_jettison_amount(requested_amount,
-                                         static_cast<int>(ship.resource()));
+      auto amt = resolve_jettison_amount(requested_amount, ship.resource());
       if (!amt) return std::unexpected(amt.error());
       ship.consume_resource(*amt);
       return JettisonResult{

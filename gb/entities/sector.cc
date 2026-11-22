@@ -18,18 +18,15 @@ constexpr population_t max_population_per_sector = 10'000'000;
 void Sector::add_popn(population_t amount) noexcept {
   if (amount == 0) return;
 
-  population_t new_popn = data_.popn;
-
-  // Saturate at max to prevent overflow
-  if (data_.popn > max_population_per_sector - amount) {
-    new_popn = max_population_per_sector;
-    log_invariant_violation(
-        "Sector", "popn", std::format("{} + {}", data_.popn, amount), new_popn);
+  const population_t sum = std::add_sat(data_.popn, amount);
+  if (sum > max_population_per_sector) {
+    log_invariant_violation("Sector", "popn",
+                            std::format("{} + {}", data_.popn, amount),
+                            max_population_per_sector);
+    data_.popn = max_population_per_sector;
   } else {
-    new_popn = data_.popn + amount;
+    data_.popn = std::max<population_t>(0, sum);
   }
-
-  data_.popn = new_popn;
 }
 
 void Sector::subtract_popn(population_t amount) noexcept {
@@ -68,17 +65,15 @@ void Sector::transfer_popn_to(Sector& dest, population_t amount) noexcept {
 void Sector::add_troops(population_t amount) noexcept {
   if (amount == 0) return;
 
-  population_t new_troops = data_.troops;
-  if (data_.troops > max_population_per_sector - amount) {
-    new_troops = max_population_per_sector;
+  const population_t sum = std::add_sat(data_.troops, amount);
+  if (sum > max_population_per_sector) {
     log_invariant_violation("Sector", "troops",
                             std::format("{} + {}", data_.troops, amount),
-                            new_troops);
+                            max_population_per_sector);
+    data_.troops = max_population_per_sector;
   } else {
-    new_troops = data_.troops + amount;
+    data_.troops = std::max<population_t>(0, sum);
   }
-
-  data_.troops = new_troops;
 }
 
 void Sector::subtract_troops(population_t amount) noexcept {
@@ -294,11 +289,8 @@ population_t calculate_population_change(const Race& race, const Sector& s,
   }
 
   // Overpopulation starvation die-off: range [0, min(2 * diff, popn)]
-  // Saturate OVERPOPULATION_DIE_OFF_MULTIPLIER * diff to prevent overflow
-  const population_t max_die_off =
-      (diff > std::numeric_limits<population_t>::max() /
-                  OVERPOPULATION_DIE_OFF_MULTIPLIER)
-          ? popn
-          : std::min(OVERPOPULATION_DIE_OFF_MULTIPLIER * diff, popn);
+  const population_t max_die_off = std::min(
+      std::mul_sat<population_t>(OVERPOPULATION_DIE_OFF_MULTIPLIER, diff),
+      popn);
   return -uniform_rand(0, max_die_off);
 }

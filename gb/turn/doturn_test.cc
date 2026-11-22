@@ -601,17 +601,32 @@ void test_race_turn_accounting_and_maintenance() {
   test::expect_eq(race.leader().money, 300);
   test::expect_eq(race.morale, 80);
 
-  // 3. Deduct maintenance with deficit: deducts remaining money, applies morale
-  // penalty clamped to [0, 100]
+  // 3. Deduct maintenance with deficit: deducts remaining money and subtracts
+  // 1 morale per 10 deficit across unbounded signed morale
   race.deduct_maintenance(Race::leader_id,
                           500);  // Deficit of 200 -> penalty of 20
   test::expect_eq(race.leader().money, 0);
   test::expect_eq(race.morale, 60);
 
-  // Deficit clamping: large deficit clamps morale to 0
+  // Large deficit lowers morale below 0 without artificial [0, 100] clamping
   race.deduct_maintenance(Race::leader_id,
-                          10000);  // Deficit of 10000 -> morale 0
-  test::expect_eq(race.morale, 0);
+                          10000);  // Deficit of 10000 -> penalty of 1000
+  test::expect_eq(race.morale, -940);
+
+  // High morale (> 100), negative morale, > 10 * INT_MAX deficits, and extreme
+  // 64-bit deficits behave monotonically and saturate at LONG_MIN
+  race.morale = 5000;
+  race.deduct_maintenance(Race::leader_id, 20);
+  test::expect_eq(race.morale, 4998);
+  race.morale = -200;
+  race.deduct_maintenance(Race::leader_id, 20);
+  test::expect_eq(race.morale, -202);
+  race.deduct_maintenance(Race::leader_id, 30'000'000'000LL);
+  test::expect_eq(race.morale, -3'000'000'202L);
+  race.morale = std::numeric_limits<decltype(race.morale)>::min() + 50;
+  race.deduct_maintenance(Race::leader_id, std::numeric_limits<money_t>::max());
+  test::expect_eq(race.morale,
+                  std::numeric_limits<decltype(race.morale)>::min());
 
   // 4. Collective Intelligence IQ scaling
   race.collective_iq = true;

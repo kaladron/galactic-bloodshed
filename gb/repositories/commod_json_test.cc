@@ -61,6 +61,17 @@ int main() {
   test::expect_eq(retrieved_commod->star_to(), test_commod.star_to());
   test::expect_eq(retrieved_commod->planet_to(), test_commod.planet_to());
 
+  // Verify min_next_bid() normal scaling, non-positive guard, and INT64_MAX
+  // saturation
+  test::expect_eq(retrieved_commod->min_next_bid(),
+                  static_cast<money_t>(100.0 * (1.0 + UP_BID)));
+  Commod zero_bid_commod{{.id = 43, .amount = 10, .bid = 0}};
+  test::expect_eq(zero_bid_commod.min_next_bid(), 0);
+  Commod max_bid_commod{
+      {.id = 44, .amount = 10, .bid = std::numeric_limits<money_t>::max()}};
+  test::expect_eq(max_bid_commod.min_next_bid(),
+                  std::numeric_limits<money_t>::max());
+
   // Database connection will be cleaned up automatically by Sql destructor
 
   std::println(std::cout, "Commod SQLite JSON storage test passed!");

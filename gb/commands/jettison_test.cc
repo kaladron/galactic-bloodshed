@@ -138,6 +138,33 @@ void test_jettison_happy_path() {
     test::expect_contains(g.out.str(), "resources jettisoned");
     g.set_ui_mode(UiMode::ASCII);
   }
+
+  std::println(std::cout, "Jettison 64-bit cargo (> INT_MAX) and fuel bounds");
+  {
+    ctx.em.mutate_ship(1, [](Ship& s) {
+      s.max_resource() = 5'000'000'000LL;
+      s.admin_override_resource(4'000'000'000LL);
+    });
+    g.out.str("");
+    ctx.assert_dispatch_success(g, {"jettison", "#1", "r", "3000000000"});
+    test::expect_eq(ctx.em.peek_ship(1)->resource(), 1'000'000'000LL);
+    test::expect_contains(g.out.str(), "3000000000 resources jettisoned");
+
+    ctx.em.mutate_ship(1, [](Ship& s) {
+      s.admin_override_max_fuel(1e25);
+      s.admin_override_fuel(std::numeric_limits<double>::quiet_NaN());
+      test::expect_false(jettison_ship_cargo(s, 'f', 0, 1.0).has_value());
+      s.admin_override_fuel(0.0);
+      test::expect_false(jettison_ship_cargo(s, 'f', 0, 1.0).has_value());
+      s.admin_override_fuel(1e20);
+      auto huge_fuel = jettison_ship_cargo(s, 'f', 0, 1.0);
+      test::expect_true(huge_fuel.has_value());
+      test::expect_eq(huge_fuel->amount,
+                      std::numeric_limits<std::int64_t>::max());
+      s.admin_override_max_fuel(200.0);
+      s.admin_override_fuel(50.0);
+    });
+  }
 }
 
 void test_jettison_domain_errors() {

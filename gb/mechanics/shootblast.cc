@@ -760,14 +760,17 @@ void apply_ship_kill_morale(EntityManager& em, player_t destroyer,
     if (em.peek_race(ship.owner())->God) return;
     em.mutate_race(ship.owner(), [&](Race& victim) {
       em.mutate_race(destroyer, [&](Race& killer) {
-        killer.adjust_morale(victim, static_cast<int>(ship.build_cost()));
+        killer.adjust_morale(victim,
+                             std::saturate_cast<int>(ship.build_cost()));
       });
     });
     return;
   }
   if (!ship.docked() && ship.max_crew_capacity()) {
     em.mutate_race(ship.owner(), [&](Race& victim) {
-      victim.morale -= 2L * ship.build_cost();
+      const auto loss = std::mul_sat<decltype(victim.morale)>(
+          2, std::saturate_cast<decltype(victim.morale)>(ship.build_cost()));
+      victim.morale = std::sub_sat(victim.morale, loss);
     });
   }
 }

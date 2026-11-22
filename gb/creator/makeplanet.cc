@@ -210,7 +210,7 @@ int SectTemp(const Planet& p, const int y) {
   const int TFAC = 10;
 
   int temp = p.temp();
-  int mid = ((p.dimensions().y + 1) / 2) - 1;
+  const int mid = std::midpoint(0, p.dimensions().y - 1);
   int dy = std::abs(y - mid);
 
   temp -= TFAC * dy * dy;

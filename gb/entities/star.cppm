@@ -127,7 +127,7 @@ public:
   }
 
   [[nodiscard]] const std::string& get_planet_name(planetnum_t pnum) const {
-    if (pnum.value < 1 || pnum.value > data_.pnames.size()) {
+    if (pnum.value < 1 || std::cmp_greater(pnum.value, data_.pnames.size())) {
       throw std::runtime_error(
           std::format("Planet number {} out of range for star '{}' (has {} "
                       "planets)",
@@ -142,13 +142,13 @@ public:
           data_.name));
     }
     // Resize vector if necessary to accommodate the 1-based planet number
-    if (pnum.value > data_.pnames.size()) {
+    if (std::cmp_greater(pnum.value, data_.pnames.size())) {
       data_.pnames.resize(pnum.value);
     }
     data_.pnames[pnum.value - 1] = name;
   }
   [[nodiscard]] bool planet_name_isset(planetnum_t pnum) const {
-    if (pnum.value < 1 || pnum.value > data_.pnames.size()) {
+    if (pnum.value < 1 || std::cmp_greater(pnum.value, data_.pnames.size())) {
       throw std::runtime_error(
           std::format("Planet number {} out of range for star '{}' (has {} "
                       "planets)",
@@ -206,7 +206,7 @@ public:
   void clear_all_inhabitants() noexcept;
 
   [[nodiscard]] int numplanets() const {
-    return data_.pnames.size();
+    return std::saturate_cast<int>(data_.pnames.size());
   }
 
   /// \brief Returns a random 1-based planet index (1..numplanets).

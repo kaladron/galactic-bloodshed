@@ -163,9 +163,9 @@ void abandon_sector_if_empty(Sector& sect, planet_struct& data,
   if (pinfo.numsectsowned > 0) {
     pinfo.numsectsowned -= 1;
   }
-  const auto sect_mob = sect.get_mobilization();
-  pinfo.mob_points =
-      (pinfo.mob_points >= sect_mob) ? (pinfo.mob_points - sect_mob) : 0;
+  const auto sect_mob =
+      static_cast<std::uint32_t>(sect.get_mobilization().value());
+  pinfo.mob_points = std::sub_sat(pinfo.mob_points, sect_mob);
 }
 
 }  // namespace
@@ -234,8 +234,9 @@ int Planet::revolt(SectorMap& smap, const Race& victim_race,
     // Revolt rate is a function of tax rate.
     if (!success(info(victim).tax)) continue;
 
-    if (uniform_rand(1, s.get_popn()) <=
-        10L * victim_race.fighters * s.get_troops()) {
+    const auto defense_cap = std::mul_sat<population_t>(
+        std::mul_sat<population_t>(10, victim_race.fighters), s.get_troops());
+    if (uniform_rand(1, s.get_popn()) <= defense_cap) {
       continue;
     }
 

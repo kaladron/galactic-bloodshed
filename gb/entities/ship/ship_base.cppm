@@ -1181,7 +1181,9 @@ public:
         (type() == ShipType::STYPE_FIGHTER || type() == ShipType::OTYPE_AFV ||
          type() == ShipType::OTYPE_BERS)
             ? battery->count
-            : std::min(static_cast<weapon_power_t>(popn()), battery->count);
+            : std::min(std::saturate_cast<weapon_power_t>(
+                           std::max<population_t>(0, popn())),
+                       battery->count);
 
     avail = std::min(retaliate(), avail);
     return std::max<weapon_power_t>(0, std::min(destruct_power(), avail));
@@ -1193,9 +1195,9 @@ public:
     if (!active() || !alive()) return 0;
     if (is_laser_on()) {
       return std::max<weapon_power_t>(
-          0, std::min(fire_laser(),
-                      static_cast<weapon_power_t>(
-                          fuel() / ENERGY_WEAPON_FUEL_PER_STRENGTH)));
+          0, std::min(
+                 fire_laser(),
+                 clamp_weapon_power(fuel() / ENERGY_WEAPON_FUEL_PER_STRENGTH)));
     }
     return retal_strength();
   }
@@ -1428,7 +1430,8 @@ public:
   /// \brief Returns carried destructive munitions expressed as weapon power
   /// (for warhead detonation yield and ammunition-limited salvo caps).
   [[nodiscard]] weapon_power_t destruct_power() const noexcept {
-    return static_cast<weapon_power_t>(std::max<resource_t>(0, data_.destruct));
+    return std::saturate_cast<weapon_power_t>(
+        std::max<resource_t>(0, data_.destruct));
   }
 
   // =========================================================================
@@ -1854,14 +1857,18 @@ public:
   virtual void sync_factory_technology(const Race&) noexcept {}
 
 private:
-  [[nodiscard]] constexpr weapon_power_t
-  scaled_laser_threshold(double divisor) const noexcept {
-    const double raw = hull_efficiency() * data_.tech / divisor;
+  [[nodiscard]] static constexpr weapon_power_t
+  clamp_weapon_power(double raw) noexcept {
     if (!(raw > 0.0)) return 0;
     constexpr auto max_val =
         static_cast<double>(std::numeric_limits<weapon_power_t>::max());
     if (raw >= max_val) return std::numeric_limits<weapon_power_t>::max();
     return static_cast<weapon_power_t>(raw);
+  }
+
+  [[nodiscard]] constexpr weapon_power_t
+  scaled_laser_threshold(double divisor) const noexcept {
+    return clamp_weapon_power(hull_efficiency() * data_.tech / divisor);
   }
 };
 

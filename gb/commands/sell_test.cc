@@ -81,6 +81,14 @@ void test_sell_happy_paths() {
   g.set_ui_mode(UiMode::ASCII);
   const auto* p4 = ctx.em.peek_planet(1, 1);
   test::expect_eq(p4->info(seller).crystals, 40);
+
+  // 5. Sell 64-bit resource lot (4'294'967'296 == 2^32) saturates AP to 20
+  // instead of narrowing to 0 AP
+  ctx.em.mutate_star(1, [](Star& s) { s.AP(seller) = 50; });
+  ctx.em.mutate_planet(
+      1, 1, [](Planet& p) { p.info(seller).resource = 5'000'000'000LL; });
+  ctx.assert_dispatch_success(g, {"sell", "r", "4294967296"}, 20);
+  test::expect_eq(ctx.em.peek_commod(5)->amount(), 4'294'967'296LL);
 }
 
 void test_sell_insufficient_ap() {

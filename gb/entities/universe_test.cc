@@ -85,9 +85,14 @@ void test_universe_AP_methods() {
   test::expect_eq(const_universe.get_AP(1), 0);
   test::expect_false(const_universe.has_AP(1));
 
-  // Add AP
+  // Add AP and verify saturation at ap_t max and floor at 0
   universe.add_AP(1, 500);
   test::expect_eq(const_universe.get_AP(1), 500);
+  universe.add_AP(1, std::numeric_limits<ap_t>::max());
+  test::expect_eq(const_universe.get_AP(1), std::numeric_limits<ap_t>::max());
+  universe.deduct_AP(1, std::numeric_limits<ap_t>::max());
+  test::expect_eq(const_universe.get_AP(1), 0);
+  universe.add_AP(1, 500);
 
   // Test multiple players
   universe.set_AP(2, 2000);

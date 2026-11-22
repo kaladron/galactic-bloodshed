@@ -165,8 +165,9 @@ public:
 
   /// Adjusts morale following a combat victory over loser.
   void adjust_morale(Race& loser, int amount) noexcept {
-    morale += amount;
-    loser.morale -= amount;
+    const auto delta = std::saturate_cast<decltype(morale)>(amount);
+    morale = std::add_sat(morale, delta);
+    loser.morale = std::sub_sat(loser.morale, delta);
   }
   planet_count_t controlled_planets{0}; /* Number of planets under control. */
   turn_t victory_turns{0};
@@ -425,21 +426,24 @@ public:
     }
   }
 
-  /// \brief Deducts treasury funds for maintenance costs, deducting morale
-  /// (clamped to [0, 100]) if treasury funds are insufficient to cover costs.
+  /// \brief Deducts treasury funds for maintenance costs, subtracting 1 morale
+  /// point per 10 deficit (with saturating arithmetic) if treasury funds are
+  /// insufficient.
   void deduct_maintenance(governor_t gov_num, money_t amount) {
     deduct_maintenance(governor(gov_num), amount);
   }
 
-  /// \brief Deducts treasury funds for maintenance costs, deducting morale
-  /// (clamped to [0, 100]) if treasury funds are insufficient to cover costs.
+  /// \brief Deducts treasury funds for maintenance costs, subtracting 1 morale
+  /// point per 10 deficit (with saturating arithmetic) if treasury funds are
+  /// insufficient.
   void deduct_maintenance(gov& gov_ref, money_t amount) noexcept {
     if (gov_ref.money >= amount) {
       gov_ref.money -= amount;
     } else {
-      const money_t deficit = amount - gov_ref.money;
-      const int morale_penalty = static_cast<int>(deficit / 10);
-      morale = std::clamp(static_cast<long>(morale - morale_penalty), 0L, 100L);
+      const money_t deficit = std::sub_sat(amount, gov_ref.money);
+      const auto morale_penalty =
+          std::saturate_cast<decltype(morale)>(deficit / 10);
+      morale = std::sub_sat(morale, morale_penalty);
       gov_ref.money = 0;
     }
   }

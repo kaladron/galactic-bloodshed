@@ -16,22 +16,24 @@ module commands;
 namespace GB::commands {
 
 bool modify(const command_t& argv, GameObj& g) {
+  const Ship& ship = *g.entity_manager.peek_ship(g.shipno());
+  if (!g.check_commandable(ship)) {
+    return false;
+  }
+  const auto* fac_view = ship.as<FactoryShip>();
+  if (!fac_view) {
+    g.out << "That is not a factory.\n";
+    return false;
+  }
+  if (fac_view->on()) {
+    g.out << "This factory is already online.\n";
+    return false;
+  }
+
   bool ok = false;
-
   g.entity_manager.mutate_ship(g.shipno(), [&](Ship& dirship) {
-    if (!g.check_commandable(dirship)) {
-      return;
-    }
-    if (dirship.type() != ShipType::OTYPE_FACTORY) {
-      g.out << "That is not a factory.\n";
-      return;
-    }
-    if (dirship.on()) {
-      g.out << "This factory is already online.\n";
-      return;
-    }
-
-    auto res = modify_factory_attribute(dirship, *g.race, argv);
+    auto res =
+        modify_factory_attribute(*dirship.as<FactoryShip>(), *g.race, argv);
     if (!res) {
       g.out << GB::presentation::format_factory_modify_error(res.error());
       return;

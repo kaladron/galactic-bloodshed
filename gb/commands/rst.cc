@@ -87,15 +87,28 @@ RstStatusRow build_status_row(const Ship& s) {
 }
 
 RstWeaponsRow build_weapons_row(const Ship& s) {
+  if (const auto* fac = s.as<FactoryShip>()) {
+    const auto& bp = fac->blueprint();
+    return RstWeaponsRow{
+        .number = s.number(),
+        .type_letter = s.type_letter(),
+        .active = s.active(),
+        .name = s.name(),
+        .has_laser = bp.laser,
+        .cew = bp.cew,
+        .cew_range = bp.cew_range,
+        .safe_cew = s.max_safe_laser_strength(),
+        .battery_summary = std::format("{}/{}", bp.primary_battery.to_string(),
+                                       bp.secondary_battery.to_string()),
+        .damage = s.damage(),
+        .ship_class = std::format("{} {}", ship_template(bp.build_type).letter,
+                                  bp.shipclass),
+    };
+  }
   std::string ship_class = ((s.type() == ShipType::OTYPE_TERRA) ||
                             (s.type() == ShipType::OTYPE_PLOW))
                                ? "Standard"
                                : s.shipclass();
-  std::string class_with_type =
-      (s.type() == ShipType::OTYPE_FACTORY)
-          ? std::format("{} {}", ship_template(s.build_type()).letter,
-                        ship_class)
-          : ship_class;
   return RstWeaponsRow{
       .number = s.number(),
       .type_letter = s.type_letter(),
@@ -107,46 +120,44 @@ RstWeaponsRow build_weapons_row(const Ship& s) {
       .safe_cew = s.max_safe_laser_strength(),
       .battery_summary = s.battery_summary(),
       .damage = s.damage(),
-      .ship_class = std::move(class_with_type),
+      .ship_class = std::move(ship_class),
   };
 }
 
-RstFactoryRow build_factory_row(const Ship& s) {
-  const bool unconfigured = (s.build_type() == ShipType::STYPE_POD) ||
-                            (s.build_type() == ShipType::OTYPE_FACTORY);
-  if (unconfigured) {
+RstFactoryRow build_factory_row(const FactoryShip& s) {
+  if (!s.has_design()) {
     return RstFactoryRow{
         .number = s.number(),
         .unconfigured = true,
     };
   }
-
+  const auto& bp = s.blueprint();
   return RstFactoryRow{
       .number = s.number(),
       .unconfigured = false,
-      .build_type_letter = ship_template(s.build_type()).letter,
-      .build_cost = s.build_cost(),
-      .complexity = s.complexity(),
-      .base_mass = s.base_mass(),
-      .size = s.size(),
-      .armor = s.armor(),
-      .max_crew = s.max_crew(),
-      .max_fuel = s.max_fuel(),
-      .max_resource = s.max_resource(),
-      .max_hanger = s.max_hanger(),
-      .max_destruct = s.max_destruct(),
-      .has_hyperdrive = (s.hyper_drive().has != 0),
-      .has_mount = s.mount(),
-      .max_speed = s.max_speed(),
-      .primary_guns = s.primary_battery().has_guns()
-                          ? s.primary_battery().to_string()
+      .build_type_letter = ship_template(bp.build_type).letter,
+      .build_cost = bp.build_cost,
+      .complexity = bp.complexity,
+      .base_mass = bp.base_mass,
+      .size = s.blueprint_size(),
+      .armor = bp.armor,
+      .max_crew = bp.max_crew,
+      .max_fuel = bp.max_fuel,
+      .max_resource = bp.max_resource,
+      .max_hanger = bp.max_hanger,
+      .max_destruct = bp.max_destruct,
+      .has_hyperdrive = bp.has_hyperdrive,
+      .has_mount = bp.mount,
+      .max_speed = bp.max_speed,
+      .primary_guns = bp.primary_battery.has_guns()
+                          ? bp.primary_battery.to_string()
                           : "---",
-      .secondary_guns = s.secondary_battery().has_guns()
-                            ? s.secondary_battery().to_string()
+      .secondary_guns = bp.secondary_battery.has_guns()
+                            ? bp.secondary_battery.to_string()
                             : "---",
-      .has_laser = s.laser(),
-      .cew = s.cew(),
-      .cew_range = s.cew_range(),
+      .has_laser = bp.laser,
+      .cew = bp.cew,
+      .cew_range = bp.cew_range,
       .damage = s.damage(),
       .on = s.on(),
   };
@@ -211,8 +222,10 @@ void collect_ship_report(GameObj& g, RstViewModel& vm, const Ship& s,
   if (vm.flags.weapons) {
     entry.weapons = build_weapons_row(s);
   }
-  if (vm.flags.factories && s.type() == ShipType::OTYPE_FACTORY) {
-    entry.factory = build_factory_row(s);
+  if (vm.flags.factories) {
+    if (const auto* fac = s.as<FactoryShip>()) {
+      entry.factory = build_factory_row(*fac);
+    }
   }
   if (vm.flags.report) {
     entry.general = build_general_row(g.entity_manager, s);

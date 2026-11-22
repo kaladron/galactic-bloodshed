@@ -526,8 +526,9 @@ void test_order_factory_activation_and_errors() {
   test::expect_eq(ctx.em.peek_ship(f1_id)->on(), 0);
 
   ctx.em.mutate_ship(f1_id, [](Ship& s) {
-    s.build_type() = ShipType::STYPE_SHUTTLE;
-    s.build_cost() = 50;
+    auto& bp = s.as<FactoryShip>()->blueprint_mut();
+    bp.build_type = ShipType::STYPE_SHUTTLE;
+    bp.build_cost = 50;
   });
 
   ctx.assert_dispatch_success(g, {"order", f1_arg, "off"});
@@ -583,7 +584,7 @@ void test_order_factory_activation_and_errors() {
                 .with_size(20)
                 .with_on(false)
                 .build_handle();
-  f2->build_cost() = 20;
+  f2->as<FactoryShip>()->blueprint_mut().build_cost = 20;
   const auto f2_id = f2->number();
 
   g.set_scope_ship(hab);
@@ -1059,7 +1060,8 @@ void test_special_ship_order_mcdc_and_notices() {
                    .with_size(1)
                    .with_on(false)
                    .build_handle();
-  f_err->build_cost() = 50;
+  f_err->as<FactoryShip>()->blueprint_mut().build_cost = 50;
+  f_err->as<FactoryShip>()->blueprint_mut().max_hanger = 100;
   const auto f_err_id = f_err->number();
   const std::string f_err_arg = std::format("#{}", f_err_id);
 

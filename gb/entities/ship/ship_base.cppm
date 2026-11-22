@@ -1358,10 +1358,8 @@ public:
   }
 
   /// Effective build / maintenance cost including factory activation scaling.
-  [[nodiscard]] long effective_cost() const noexcept {
-    return (data_.type == ShipType::OTYPE_FACTORY)
-               ? 2L * data_.build_cost * data_.on + get_template().build_cost
-               : data_.build_cost;
+  [[nodiscard]] virtual long effective_cost() const noexcept {
+    return data_.build_cost;
   }
 
   /// Ship classification type letter code.

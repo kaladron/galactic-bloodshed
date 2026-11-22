@@ -76,7 +76,7 @@ bool name(const command_t& argv, GameObj& g) {
       if (!current_ship) {
         return false;
       }
-      if (current_ship->type() != ShipType::OTYPE_FACTORY) {
+      if (!current_ship->as<FactoryShip>()) {
         g.out << "You are not at a factory!\n";
         return false;
       }
@@ -84,8 +84,9 @@ bool name(const command_t& argv, GameObj& g) {
         g.out << "This factory is already on line.\n";
         return false;
       }
-      g.entity_manager.mutate_ship(
-          g.shipno(), [&](Ship& ship) { ship.shipclass() = formatted_name; });
+      g.entity_manager.mutate_ship(g.shipno(), [&](Ship& ship) {
+        ship.as<FactoryShip>()->blueprint_mut().shipclass = formatted_name;
+      });
       g.present(GB::presentation::NameResult{
           .target = GB::presentation::NameTarget::Class,
           .name = formatted_name,

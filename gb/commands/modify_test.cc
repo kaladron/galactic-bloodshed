@@ -29,8 +29,9 @@ void test_modify_command_matrix() {
                              .with_size(100)
                              .build();
 
-  ctx.em.mutate_ship(factory_id,
-                     [](Ship& s) { s.build_type() = ShipType::STYPE_CRUISER; });
+  ctx.em.mutate_ship(factory_id, [](Ship& s) {
+    s.as<FactoryShip>()->configure_blueprint(ShipType::STYPE_CRUISER);
+  });
 
   auto& registry = get_test_session_registry();
   GameObj g(ctx.em, registry);
@@ -118,19 +119,21 @@ void test_modify_attributes_and_batteries() {
   ctx.assert_dispatch_success(g, {"modify", "destruct", "120"});
   ctx.assert_dispatch_success(g, {"modify", "speed", "6"});
 
-  const auto* ship = ctx.em.peek_ship(factory_id);
-  test::expect_eq(ship->armor(), 45);
-  test::expect_eq(ship->max_crew(), 150);
-  test::expect_eq(ship->max_resource(), 350);
-  test::expect_eq(ship->max_hanger(), 80);
-  test::expect_eq(ship->max_fuel(), 250);
-  test::expect_eq(ship->max_destruct(), 120);
-  test::expect_eq(ship->max_speed(), 6);
+  const auto bp_of = [&]() -> const FactoryBlueprint& {
+    return ctx.em.peek_ship(factory_id)->as<FactoryShip>()->blueprint();
+  };
+  test::expect_eq(bp_of().armor, 45);
+  test::expect_eq(bp_of().max_crew, 150);
+  test::expect_eq(bp_of().max_resource, 350);
+  test::expect_eq(bp_of().max_hanger, 80);
+  test::expect_eq(bp_of().max_fuel, 250);
+  test::expect_eq(bp_of().max_destruct, 120);
+  test::expect_eq(bp_of().max_speed, 6);
 
   // 4. Modify boolean toggles (with and without discoveries)
-  bool initial_mount = ship->mount();
+  bool initial_mount = bp_of().mount;
   ctx.assert_dispatch_success(g, {"modify", "mount"});
-  test::expect_eq(ctx.em.peek_ship(factory_id)->mount(), !initial_mount);
+  test::expect_eq(bp_of().mount, !initial_mount);
 
   ctx.em.mutate_race(races.empire,
                      [](Race& r) { r.discoveries.crystal = false; });
@@ -144,10 +147,9 @@ void test_modify_attributes_and_batteries() {
   ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_ship(factory_id);
 
-  bool initial_hyper = ctx.em.peek_ship(factory_id)->hyper_drive().has;
+  bool initial_hyper = bp_of().has_hyperdrive;
   ctx.assert_dispatch_success(g, {"modify", "hyperdrive"});
-  test::expect_eq(ctx.em.peek_ship(factory_id)->hyper_drive().has,
-                  !initial_hyper);
+  test::expect_eq(bp_of().has_hyperdrive, !initial_hyper);
 
   ctx.em.mutate_race(races.empire,
                      [](Race& r) { r.discoveries.hyperdrive = false; });
@@ -171,7 +173,7 @@ void test_modify_attributes_and_batteries() {
   ctx.setup_game_obj(g, races.empire, 1);
   g.set_scope_ship(factory_id);
   ctx.assert_dispatch_success(g, {"modify", "laser"});
-  test::expect_true(ctx.em.peek_ship(factory_id)->laser());
+  test::expect_true(bp_of().laser);
 
   // 5. Modify primary & secondary batteries
   ctx.assert_dispatch_rejected(g, {"modify", "primary"});
@@ -181,21 +183,19 @@ void test_modify_attributes_and_batteries() {
   test::expect_contains(g.out.str(), "That's a ridiculous setting.");
 
   ctx.assert_dispatch_success(g, {"modify", "primary", "strength", "12"});
-  test::expect_eq(ctx.em.peek_ship(factory_id)->primary_battery().count, 12);
+  test::expect_eq(bp_of().primary_battery.count, 12);
 
   ctx.assert_dispatch_rejected(g, {"modify", "primary", "caliber", "super"});
   test::expect_contains(g.out.str(), "No such caliber.");
 
   ctx.assert_dispatch_success(g, {"modify", "primary", "caliber", "medium"});
-  test::expect_eq(ctx.em.peek_ship(factory_id)->primary_battery().caliber,
-                  guntype_t::MEDIUM);
+  test::expect_eq(bp_of().primary_battery.caliber, guntype_t::MEDIUM);
 
   ctx.assert_dispatch_success(g, {"modify", "secondary", "strength", "8"});
-  test::expect_eq(ctx.em.peek_ship(factory_id)->secondary_battery().count, 8);
+  test::expect_eq(bp_of().secondary_battery.count, 8);
 
   ctx.assert_dispatch_success(g, {"modify", "secondary", "caliber", "light"});
-  test::expect_eq(ctx.em.peek_ship(factory_id)->secondary_battery().caliber,
-                  guntype_t::LIGHT);
+  test::expect_eq(bp_of().secondary_battery.caliber, guntype_t::LIGHT);
 
   ctx.assert_dispatch_rejected(g, {"modify", "primary", "unknown", "5"});
   test::expect_contains(g.out.str(), "No such gun characteristic.");
@@ -219,10 +219,10 @@ void test_modify_attributes_and_batteries() {
   test::expect_contains(g.out.str(), "No such option for CEWs.");
 
   ctx.assert_dispatch_success(g, {"modify", "cew", "strength", "50"});
-  test::expect_eq(ctx.em.peek_ship(factory_id)->cew(), 50);
+  test::expect_eq(bp_of().cew, 50);
 
   ctx.assert_dispatch_success(g, {"modify", "cew", "range", "200"});
-  test::expect_eq(ctx.em.peek_ship(factory_id)->cew_range(), 200);
+  test::expect_eq(bp_of().cew_range, 200);
 
   // Print specs with active CEW to cover CEW range/energy display
   ctx.assert_dispatch_success(g, {"make"});
@@ -238,7 +238,7 @@ void test_modify_attributes_and_batteries() {
   ctx.assert_dispatch_success(g, {"modify", "cew", "strength", "10000"});
   ctx.assert_dispatch_rejected(g, {"modify", "cew", "range", "60000"});
   test::expect_contains(g.out.str(), "The max cost allowed is 65535");
-  test::expect_eq(ctx.em.peek_ship(factory_id)->cew_range(), 200);
+  test::expect_eq(bp_of().cew_range, 200);
 
   // 9. UiMode::JSON verification
   g.set_ui_mode(GB::presentation::UiMode::JSON);
@@ -247,8 +247,9 @@ void test_modify_attributes_and_batteries() {
   g.set_ui_mode(GB::presentation::UiMode::ASCII);
 
   // 10. Non-modifiable ship (probe ':') with and without hyperdrive discovery
-  ctx.em.mutate_ship(factory_id,
-                     [](Ship& s) { s.build_type() = ShipType::OTYPE_PROBE; });
+  ctx.em.mutate_ship(factory_id, [](Ship& s) {
+    s.as<FactoryShip>()->configure_blueprint(ShipType::OTYPE_PROBE);
+  });
   ctx.assert_dispatch_rejected(g, {"modify", "armor", "10"});
   test::expect_contains(
       g.out.str(),
@@ -315,8 +316,9 @@ void test_modify_template_capability_restrictions() {
   ctx.assert_dispatch_rejected(g, {"modify", "speed", "4"});
 
   // 4. Gamma Ray Laser ('G'): modifiable, but max_fuel == 0.
-  ctx.em.mutate_ship(
-      factory_id, [](Ship& s) { s.set_factory_blueprint(ShipType::OTYPE_GR); });
+  ctx.em.mutate_ship(factory_id, [](Ship& s) {
+    s.as<FactoryShip>()->configure_blueprint(ShipType::OTYPE_GR);
+  });
   ctx.assert_dispatch_rejected(g, {"modify", "fuel", "10"});
 
   ctx.verify_universe_invariants();

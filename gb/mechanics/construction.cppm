@@ -100,7 +100,7 @@ export std::pair<population_t, fuel_t> autoload_at_ship(const Ship& s, Ship& b,
 export InitializedShipReport
 initialize_new_ship(const Race& race, governor_t governor, Ship& newship,
                     fuel_t load_fuel, population_t load_crew);
-export std::unique_ptr<Ship> getfactship(const Ship& b);
+export std::unique_ptr<Ship> getfactship(const FactoryShip& b);
 
 export CreatedShipSummary create_ship_by_ship(EntityManager& entity_manager,
                                               player_t Playernum,
@@ -218,14 +218,14 @@ export struct FactoryModifyResult {
 };
 
 export [[nodiscard]] std::optional<FactorySpecsViewModel>
-inspect_factory_specs(Ship& dirship, const Race& race);
+inspect_factory_specs(const FactoryShip& dirship, const Race& race);
 
 export [[nodiscard]] std::expected<FactoryMakeResult, FactoryMakeError>
-configure_factory_blueprint(Ship& dirship, const Race& race,
+configure_factory_blueprint(FactoryShip& dirship, const Race& race,
                             shipnum_t factory_shipno, char shipc);
 
 export [[nodiscard]] std::expected<FactoryModifyResult, FactoryModifyError>
-modify_factory_attribute(Ship& dirship, const Race& race,
+modify_factory_attribute(FactoryShip& dirship, const Race& race,
                          const command_t& argv);
 
 export enum class UpgradeErrorReason {

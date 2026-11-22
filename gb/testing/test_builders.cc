@@ -179,19 +179,26 @@ TestShipBuilder& TestShipBuilder::docked_to(shipnum_t dest_ship,
 }
 
 TestShipBuilder& TestShipBuilder::with_build_type(ShipType build_type) {
-  ship_.build_type = build_type;
-  if (ship_.type == ShipType::OTYPE_FACTORY &&
-      build_type != ShipType::OTYPE_FACTORY &&
-      build_type != ShipType::STYPE_POD) {
-    Ship temp{ship_};
-    temp.set_factory_blueprint(build_type);
+  if (ship_.type == ShipType::OTYPE_FACTORY) {
+    FactoryShip temp{ship_};
+    if (build_type == ShipType::OTYPE_FACTORY ||
+        build_type == ShipType::STYPE_POD) {
+      temp.blueprint_mut().build_type = build_type;
+    } else {
+      temp.configure_blueprint(build_type);
+    }
     ship_ = temp.to_struct();
+    return *this;
   }
+  ship_.build_type = build_type;
   return *this;
 }
 
 TestShipBuilder& TestShipBuilder::with_build_cost(resource_t cost) {
   ship_.build_cost = cost;
+  if (auto* bp = std::get_if<FactoryBlueprint>(&ship_.special)) {
+    bp->build_cost = cost;
+  }
   return *this;
 }
 

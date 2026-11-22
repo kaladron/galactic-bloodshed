@@ -725,8 +725,8 @@ void test_non_factory_ship_mcdc_and_hangar_accounting() {
                      .with_damage(0)
                      .with_on(true)
                      .build_handle();
-  hab_fac->set_factory_blueprint(ShipType::STYPE_SHUTTLE,
-                                 fixture.em.peek_race(fixture.builder_id));
+  hab_fac->as<FactoryShip>()->configure_blueprint(
+      ShipType::STYPE_SHUTTLE, fixture.em.peek_race(fixture.builder_id));
   const shipnum_t hab_fac_id = hab_fac->number();
   hab_fac.save();
 

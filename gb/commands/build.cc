@@ -197,7 +197,7 @@ struct ShipBuildPlan {
 
 std::optional<ShipBuildPlan>
 validate_factory_ship_build(const command_t& argv, GameObj& g,
-                            const Ship& builder, ScopeLevel build_level,
+                            const FactoryShip& builder, ScopeLevel build_level,
                             starnum_t snum, planetnum_t pnum) {
   const auto& race = *g.race;
   int count = parse_ship_build_count(argv, true);
@@ -205,11 +205,12 @@ validate_factory_ship_build(const command_t& argv, GameObj& g,
     g.out << "Give a positive number of builds.\n";
     return std::nullopt;
   }
-  if (!builder.has_factory_design()) {
+  if (!builder.has_design()) {
     g.out << "This factory has not been designated to build a ship type.\n";
     return std::nullopt;
   }
-  double tech = complexity(builder);
+  const auto& bp = builder.blueprint();
+  double tech = bp.complexity;
   if (tech > race.tech && !race.God) {
     g.out << std::format(
         "You are not advanced enough to build this ship.\n"
@@ -218,7 +219,7 @@ validate_factory_ship_build(const command_t& argv, GameObj& g,
     return std::nullopt;
   }
   Coordinates bcoords = builder.land_coords();
-  ShipType what = builder.build_type();
+  ShipType what = bp.build_type;
   if (const auto build_ok = can_build_on_ship(what, race, builder); !build_ok) {
     g.out << build_ok.error();
     return std::nullopt;
@@ -291,7 +292,8 @@ validate_non_factory_ship_build(const command_t& argv, GameObj& g,
                        .outside = outside};
 }
 
-bool execute_single_habitat_factory_build(GameObj& g, const Ship& builder) {
+bool execute_single_habitat_factory_build(GameObj& g,
+                                          const FactoryShip& builder) {
   const player_t Playernum = g.player();
   const governor_t Governor = g.governor();
   const auto& race = *g.race;
@@ -340,7 +342,7 @@ bool execute_single_habitat_factory_build(GameObj& g, const Ship& builder) {
   return true;
 }
 
-bool execute_single_factory_build(GameObj& g, Ship& builder,
+bool execute_single_factory_build(GameObj& g, FactoryShip& builder,
                                   const ShipBuildPlan& plan,
                                   ScopeLevel build_level, starnum_t snum,
                                   planetnum_t pnum) {
@@ -457,7 +459,8 @@ bool execute_single_non_factory_ship_build(GameObj& g, Ship& builder,
 
 bool execute_ship_build_command(const command_t& argv, GameObj& g) {
   const auto& builder_ref = *g.entity_manager.peek_ship(g.shipno());
-  Ship builder(builder_ref.to_struct());
+  auto builder_ptr = ShipFactory::create(builder_ref.to_struct());
+  Ship& builder = *builder_ptr;
   const auto build_loc = build_at_ship(g.player(), g.governor(), g.god(),
                                        builder, &g.entity_manager);
   if (!build_loc) {
@@ -467,24 +470,21 @@ bool execute_ship_build_command(const command_t& argv, GameObj& g) {
   }
   const auto [build_level, snum, pnum] = *build_loc;
 
-  std::optional<ShipBuildPlan> plan;
-  if (builder.type() == ShipType::OTYPE_FACTORY) {
-    plan =
-        validate_factory_ship_build(argv, g, builder, build_level, snum, pnum);
-  } else {
-    plan = validate_non_factory_ship_build(argv, g, builder);
-  }
+  auto* factory = builder.as<FactoryShip>();
+  std::optional<ShipBuildPlan> plan =
+      factory ? validate_factory_ship_build(argv, g, *factory, build_level,
+                                            snum, pnum)
+              : validate_non_factory_ship_build(argv, g, builder);
   if (!plan) {
     return false;
   }
 
   bool any_built = false;
   for (int _ : std::views::iota(0, plan->count)) {
-    bool built =
-        (builder.type() == ShipType::OTYPE_FACTORY)
-            ? execute_single_factory_build(g, builder, *plan, build_level, snum,
-                                           pnum)
-            : execute_single_non_factory_ship_build(g, builder, *plan, snum);
+    bool built = factory ? execute_single_factory_build(g, *factory, *plan,
+                                                        build_level, snum, pnum)
+                         : execute_single_non_factory_ship_build(g, builder,
+                                                                 *plan, snum);
     if (!built) {
       break;
     }

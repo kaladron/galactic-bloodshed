@@ -1254,8 +1254,9 @@ void test_canonical_ship_view_projectors() {
                                   .owned_by(viewer_id)
                                   .in_star_orbit(1)
                                   .build();
-  ctx.em.mutate_ship(factory_pod_id,
-                     [](Ship& s) { s.build_type() = ShipType::STYPE_POD; });
+  ctx.em.mutate_ship(factory_pod_id, [](Ship& s) {
+    s.as<FactoryShip>()->blueprint_mut().build_type = ShipType::STYPE_POD;
+  });
   const auto fact_pod_proj = GB::presentation::project_ship_view(
       ctx.em, viewer1, *ctx.em.peek_ship(factory_pod_id));
   test::expect_true(fact_pod_proj.has_value());
@@ -1264,15 +1265,17 @@ void test_canonical_ship_view_projectors() {
   test::expect_false(fact_pod_proj->internal->factory->configured);
 
   // - Factory unconfigured with OTYPE_FACTORY
-  ctx.em.mutate_ship(factory_pod_id,
-                     [](Ship& s) { s.build_type() = ShipType::OTYPE_FACTORY; });
+  ctx.em.mutate_ship(factory_pod_id, [](Ship& s) {
+    s.as<FactoryShip>()->blueprint_mut().build_type = ShipType::OTYPE_FACTORY;
+  });
   const auto fact_fact_proj = GB::presentation::project_ship_view(
       ctx.em, viewer1, *ctx.em.peek_ship(factory_pod_id));
   test::expect_false(fact_fact_proj->internal->factory->configured);
 
   // - Factory configured with STYPE_CRUISER
-  ctx.em.mutate_ship(factory_pod_id,
-                     [](Ship& s) { s.build_type() = ShipType::STYPE_CRUISER; });
+  ctx.em.mutate_ship(factory_pod_id, [](Ship& s) {
+    s.as<FactoryShip>()->configure_blueprint(ShipType::STYPE_CRUISER);
+  });
   const auto fact_cruiser_proj = GB::presentation::project_ship_view(
       ctx.em, viewer1, *ctx.em.peek_ship(factory_pod_id));
   test::expect_true(fact_cruiser_proj->internal->factory->configured);

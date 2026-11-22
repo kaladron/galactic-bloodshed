@@ -16,36 +16,33 @@ module commands;
 namespace GB::commands {
 
 bool make(const command_t& argv, GameObj& g) {
+  const Ship& ship = *g.entity_manager.peek_ship(g.shipno());
+  if (!g.check_commandable(ship)) {
+    return false;
+  }
+  const auto* fac_view = ship.as<FactoryShip>();
+  if (!fac_view) {
+    g.out << "That is not a factory.\n";
+    return false;
+  }
+  if (argv.size() < 2) {
+    auto specs = inspect_factory_specs(*fac_view, *g.race);
+    if (!specs) {
+      g.out << "No ship type specified.\n";
+      return false;
+    }
+    g.present(*specs);
+    return true;
+  }
+  if (fac_view->on()) {
+    g.out << "This factory is already online.\n";
+    return false;
+  }
+
   bool ok = false;
-
   g.entity_manager.mutate_ship(g.shipno(), [&](Ship& dirship) {
-    if (!g.check_commandable(dirship)) {
-      return;
-    }
-    if (dirship.type() != ShipType::OTYPE_FACTORY) {
-      g.out << "That is not a factory.\n";
-      return;
-    }
-    const auto& race = *g.race;
-
-    if (argv.size() < 2) {
-      auto specs = inspect_factory_specs(dirship, race);
-      if (!specs) {
-        g.out << "No ship type specified.\n";
-        return;
-      }
-      g.present(*specs);
-      ok = true;
-      return;
-    }
-
-    if (dirship.on()) {
-      g.out << "This factory is already online.\n";
-      return;
-    }
-
-    auto res = configure_factory_blueprint(dirship, race, g.shipno(),
-                                           first_char(argv[1]));
+    auto res = configure_factory_blueprint(*dirship.as<FactoryShip>(), *g.race,
+                                           g.shipno(), first_char(argv[1]));
     if (!res) {
       g.out << GB::presentation::format_factory_make_error(res.error());
       return;

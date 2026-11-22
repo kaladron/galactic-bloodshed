@@ -604,14 +604,15 @@ int main() {
 
     // create_ship_by_ship (outside and hangar) and getfactship (unarmed +
     // armed)
-    factory->build_type() = ShipType::OTYPE_PROBE;
-    auto fact_product = getfactship(*factory);
+    auto* fac_ptr = factory->as<FactoryShip>();
+    fac_ptr->configure_blueprint(ShipType::OTYPE_PROBE, &r1);
+    auto fact_product = getfactship(*fac_ptr);
     test::expect_eq(fact_product->type(), ShipType::OTYPE_PROBE);
     test::expect_eq(fact_product->guns(), ActiveBattery::NONE);
 
-    factory->build_type() = ShipType::STYPE_FIGHTER;
-    factory->set_primary_battery(2, guntype_t::LIGHT);
-    auto armed_product = getfactship(*factory);
+    fac_ptr->configure_blueprint(ShipType::STYPE_FIGHTER, &r1);
+    fac_ptr->blueprint_mut().primary_battery.set(2, guntype_t::LIGHT);
+    auto armed_product = getfactship(*fac_ptr);
     test::expect_eq(armed_product->guns(), ActiveBattery::PRIMARY);
 
     shuttle->number() = 10;

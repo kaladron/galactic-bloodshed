@@ -261,8 +261,9 @@ void test_factory_all_classes_and_toxic_waste() {
     ctx.assert_dispatch_success(g, {"make", std::string(1, tmpl.letter)});
     if (tmpl.type == ShipType::STYPE_CRUISER) {
       ctx.em.mutate_ship(fac_id, [](Ship& f) {
-        f.cloak() = true;
-        f.set_primary_battery(0, guntype_t::NONE);
+        auto& bp = f.as<FactoryShip>()->blueprint_mut();
+        bp.cloak = true;
+        bp.primary_battery = GunBattery{};
       });
     }
     ctx.assert_dispatch_success(

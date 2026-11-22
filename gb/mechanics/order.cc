@@ -711,7 +711,7 @@ std::expected<OrderUpdate, OrderError> order_intensity(const command_t& argv,
 }
 
 std::expected<resource_t, OrderError>
-activate_factory_on_habitat(EntityManager& em, Ship& factory) {
+activate_factory_on_habitat(EntityManager& em, FactoryShip& factory) {
   const shipnum_t carrier_no = *factory.destshipno();
   std::expected<resource_t, OrderError> result{0};
   em.mutate_ship(carrier_no, [&](Ship& habitat) {
@@ -721,7 +721,7 @@ activate_factory_on_habitat(EntityManager& em, Ship& factory) {
       });
       return;
     }
-    const resource_t oncost = HAB_FACT_ON_COST * factory.build_cost();
+    const resource_t oncost = HAB_FACT_ON_COST * factory.blueprint().build_cost;
     if (habitat.resource() < oncost) {
       result = std::unexpected(OrderError{
           .reason = OrderErrorReason::InsufficientHabitatResourcesForFactory,
@@ -732,7 +732,7 @@ activate_factory_on_habitat(EntityManager& em, Ship& factory) {
     }
     const int new_size =
         1 + static_cast<int>(HAB_FACT_SIZE *
-                             static_cast<double>(factory.calculate_size()));
+                             static_cast<double>(factory.blueprint_size()));
     const int hanger_needed =
         new_size - ((habitat.max_hanger() - habitat.hanger()) + factory.size());
     if (hanger_needed > 0) {
@@ -743,22 +743,24 @@ activate_factory_on_habitat(EntityManager& em, Ship& factory) {
       });
       return;
     }
-    double habitat_delta = 0.0;
-    const double old_mass = habitat.mass();
+    const double old_hab_mass = habitat.mass();
+    const double old_fact_mass = factory.mass();
+    const double race_mass = em.peek_race(factory.owner())->mass;
     habitat.consume_resource(oncost);
     habitat.hanger() -= factory.size();
     factory.size() = new_size;
+    factory.set_mass(factory.local_mass(race_mass));
     habitat.hanger() += factory.size();
-    habitat_delta = habitat.mass() - old_mass;
+    habitat.set_mass(habitat.mass() + (factory.mass() - old_fact_mass));
     result = oncost;
-    em.propagate_carried_mass_delta(habitat, habitat_delta);
+    em.propagate_carried_mass_delta(habitat, habitat.mass() - old_hab_mass);
   });
   return result;
 }
 
 std::expected<resource_t, OrderError>
 activate_factory_on_planet(EntityManager& em, player_t player,
-                           const Ship& factory) {
+                           const FactoryShip& factory) {
   std::expected<resource_t, OrderError> result{0};
   em.mutate_planet(
       factory.storbits(), factory.pnumorbits(), [&](Planet& planet) {
@@ -769,7 +771,8 @@ activate_factory_on_planet(EntityManager& em, player_t player,
           });
           return;
         }
-        const resource_t oncost = PLAN_FACT_ON_COST * factory.build_cost();
+        const resource_t oncost =
+            PLAN_FACT_ON_COST * factory.blueprint().build_cost;
         if (planet.info(player).resource < oncost) {
           result = std::unexpected(OrderError{
               .reason = OrderErrorReason::InsufficientPlanetResourcesForFactory,
@@ -790,7 +793,8 @@ std::expected<OrderUpdate, OrderError> order_on(EntityManager& em,
         .reason = OrderErrorReason::ThisShipHasNoSwitch,
     });
   }
-  if (ship.damage() && ship.type() != ShipType::OTYPE_FACTORY) {
+  auto* factory = ship.as<FactoryShip>();
+  if (ship.damage() && !factory) {
     return std::unexpected(OrderError{
         .reason = OrderErrorReason::DamagedShipsCannotBeActivated,
     });
@@ -800,26 +804,26 @@ std::expected<OrderUpdate, OrderError> order_on(EntityManager& em,
         .reason = OrderErrorReason::ShipAlreadyActivated,
     });
   }
-  if (ship.type() == ShipType::OTYPE_FACTORY) {
-    if (!ship.has_factory_design()) {
+  if (factory) {
+    if (!factory->has_design()) {
       return std::unexpected(OrderError{
           .reason = OrderErrorReason::FactoryNoDesign,
       });
     }
     std::expected<resource_t, OrderError> oncost{0};
-    if (ship.whatorbits() == ScopeLevel::LEVEL_SHIP) {
-      oncost = activate_factory_on_habitat(em, ship);
-    } else if (!ship.is_landed()) {
+    if (factory->whatorbits() == ScopeLevel::LEVEL_SHIP) {
+      oncost = activate_factory_on_habitat(em, *factory);
+    } else if (!factory->is_landed()) {
       return std::unexpected(OrderError{
           .reason = OrderErrorReason::CannotActivateFactoryHere,
       });
     } else {
-      oncost = activate_factory_on_planet(em, player, ship);
+      oncost = activate_factory_on_planet(em, player, *factory);
     }
     if (!oncost) {
       return std::unexpected(oncost.error());
     }
-    ship.on() = 1;
+    factory->on() = 1;
     return OrderUpdate{
         .notice = OrderUpdateNotice::FactoryActivated,
         .factory_activation_cost = *oncost,

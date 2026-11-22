@@ -129,7 +129,11 @@ void test_make_designations_and_errors() {
   test::expect_contains(god_g.out.str(),
                         "This kind of ship does not require a factory");
   ctx.assert_dispatch_success(god_g, {"make", "C"});
-  test::expect_eq(ctx.em.peek_ship(deity_factory_id)->build_cost(), 0);
+  test::expect_eq(ctx.em.peek_ship(deity_factory_id)
+                      ->as<FactoryShip>()
+                      ->blueprint()
+                      .build_cost,
+                  0);
 
   // 7. Designate cruiser ('C') and inspect with 0 args
   ctx.assert_dispatch_success(g, {"make", "C"});

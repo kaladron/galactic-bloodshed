@@ -516,6 +516,10 @@ public:
 
   /// Materializes a standalone prototype `Ship` from this factory's blueprint.
   [[nodiscard]] std::unique_ptr<Ship> instantiate_blueprint() const;
+
+  [[nodiscard]] long effective_cost() const noexcept override {
+    return 2L * blueprint().build_cost * data_.on + get_template().build_cost;
+  }
 };
 
 /// \brief Transient in-memory ship clone for "what-if" flight simulations.

@@ -584,39 +584,39 @@ bool mortal_can_see_ship(EntityManager& em, const Ship& ship, player_t player,
   return is_ship_visible_to(ship, player, false, local_sight);
 }
 
-ShipFactoryBlueprintView project_factory_blueprint(const Ship& ship) {
-  if (!ship.has_factory_design()) {
+ShipFactoryBlueprintView project_factory_blueprint(const FactoryShip& ship) {
+  if (!ship.has_design()) {
     return ShipFactoryBlueprintView{
         .configured = false,
         .build_type = ShipType::OTYPE_FACTORY,
         .build_type_letter = ' ',
     };
   }
-  const ShipType btype = ship.build_type();
+  const auto& bp = ship.blueprint();
+  const ShipType btype = bp.build_type;
 
-  const bool has_hd = (ship.hyper_drive().has != 0);
   return ShipFactoryBlueprintView{
       .configured = true,
       .build_type = btype,
       .build_type_letter = ship_template(btype).letter,
-      .build_cost = ship.build_cost(),
-      .complexity = ship.complexity(),
-      .base_mass = ship.base_mass(),
-      .size = ship.size(),
-      .armor = ship.armor(),
-      .max_crew = ship.max_crew_capacity(),
-      .max_fuel = ship.max_fuel_capacity(),
-      .max_resource = ship.max_resource_capacity(),
-      .max_hanger = ship.max_hanger(),
-      .max_destruct = ship.max_destruct_capacity(),
-      .has_hyperdrive = has_hd,
-      .has_mount = ship.mount(),
-      .max_speed = ship.max_speed(),
-      .primary = ship.primary_battery(),
-      .secondary = ship.secondary_battery(),
-      .has_laser = ship.laser(),
-      .cew_power = ship.cew(),
-      .cew_range = ship.cew_range(),
+      .build_cost = bp.build_cost,
+      .complexity = bp.complexity,
+      .base_mass = bp.base_mass,
+      .size = ship.blueprint_size(),
+      .armor = bp.armor,
+      .max_crew = bp.max_crew,
+      .max_fuel = bp.max_fuel,
+      .max_resource = bp.max_resource,
+      .max_hanger = bp.max_hanger,
+      .max_destruct = bp.max_destruct,
+      .has_hyperdrive = bp.has_hyperdrive,
+      .has_mount = bp.mount,
+      .max_speed = bp.max_speed,
+      .primary = bp.primary_battery,
+      .secondary = bp.secondary_battery,
+      .has_laser = bp.laser,
+      .cew_power = bp.cew,
+      .cew_range = bp.cew_range,
       .on = ship.on(),
   };
 }
@@ -742,8 +742,8 @@ std::optional<ShipView> project_ship_view(EntityManager& em,
     };
 
     std::optional<ShipFactoryBlueprintView> factory = std::nullopt;
-    if (ship.type() == ShipType::OTYPE_FACTORY) {
-      factory = project_factory_blueprint(ship);
+    if (const auto* fac = ship.as<FactoryShip>()) {
+      factory = project_factory_blueprint(*fac);
     }
 
     internal_view = ShipInternalView{

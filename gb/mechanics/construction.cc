@@ -328,39 +328,8 @@ std::unique_ptr<Ship> getship(ShipType i, const Race& r) {
   return ship;
 }
 
-std::unique_ptr<Ship> getfactship(const Ship& b) {
-  const ActiveBattery active_guns =
-      b.primary_battery().has_guns()
-          ? ActiveBattery::PRIMARY
-          : (b.secondary_battery().has_guns() ? ActiveBattery::SECONDARY
-                                              : ActiveBattery::NONE);
-  ship_struct data{
-      .shipclass = b.shipclass(),
-      .armor = b.armor(),
-      .max_crew = b.max_crew(),
-      .max_resource = b.max_resource(),
-      .max_destruct = b.max_destruct(),
-      .max_fuel = b.max_fuel(),
-      .max_speed = b.max_speed(),
-      .build_type = b.build_type(),
-      .build_cost = b.build_cost(),
-      .mount = b.mount(),
-      .hyper_drive = {.has = b.hyper_drive().has},
-      .cew = b.cew(),
-      .cew_range = b.cew_range(),
-      .cloak = b.cloak(),
-      .laser = b.laser(),
-      .type = b.build_type(),
-      .guns = active_guns,
-      .primary_battery = b.primary_battery(),
-      .secondary_battery = b.secondary_battery(),
-      .max_hanger = b.max_hanger(),
-  };
-
-  auto s = ShipFactory::create(std::move(data));
-  s->recalculate_hull_stats();
-  s->build_cost() = b.build_cost();
-  return s;
+std::unique_ptr<Ship> getfactship(const FactoryShip& b) {
+  return b.instantiate_blueprint();
 }
 
 resource_t Shipcost(ShipType i, const Race& r) {
@@ -578,21 +547,17 @@ std::optional<int> parse_non_negative_int(std::string_view arg) {
 }
 
 std::expected<void, FactoryModifyError>
-modify_battery(Ship& dirship, const command_t& argv, bool is_primary) {
+modify_battery(FactoryBlueprint& bp, const command_t& argv, bool is_primary) {
   if (argv.size() < 4) {
     return std::unexpected(FactoryModifyError::InvalidGunCharacteristic);
   }
+  auto& bat = is_primary ? bp.primary_battery : bp.secondary_battery;
   if (argv[2] == "strength") {
     auto strength = parse_non_negative_int(argv[3]);
     if (!strength) {
       return std::unexpected(FactoryModifyError::RidiculousSetting);
     }
-    if (is_primary) {
-      dirship.set_primary_battery(*strength, dirship.primary_battery().caliber);
-    } else {
-      dirship.set_secondary_battery(*strength,
-                                    dirship.secondary_battery().caliber);
-    }
+    bat.set(*strength, bat.caliber);
     return {};
   }
   if (argv[2] == "caliber") {
@@ -600,22 +565,16 @@ modify_battery(Ship& dirship, const command_t& argv, bool is_primary) {
     if (!new_caliber) {
       return std::unexpected(FactoryModifyError::InvalidCaliber);
     }
-    if (is_primary) {
-      dirship.set_primary_battery(
-          dirship.primary_battery().count,
-          std::min(shipdata_primary(dirship.build_type()), *new_caliber));
-    } else {
-      dirship.set_secondary_battery(
-          dirship.secondary_battery().count,
-          std::min(shipdata_secondary(dirship.build_type()), *new_caliber));
-    }
+    const auto max_cal = is_primary ? shipdata_primary(bp.build_type)
+                                    : shipdata_secondary(bp.build_type);
+    bat.set(bat.count, std::min(max_cal, *new_caliber));
     return {};
   }
   return std::unexpected(FactoryModifyError::InvalidGunCharacteristic);
 }
 
 std::expected<void, FactoryModifyError>
-modify_cew(Ship& dirship, const Race& race, const command_t& argv) {
+modify_cew(FactoryBlueprint& bp, const Race& race, const command_t& argv) {
   if (!race.discoveries.cew) {
     return std::unexpected(FactoryModifyError::NoCewDiscovery);
   }
@@ -627,11 +586,11 @@ modify_cew(Ship& dirship, const Race& race, const command_t& argv) {
     return std::unexpected(FactoryModifyError::RidiculousSetting);
   }
   if (argv[2] == "strength") {
-    dirship.cew() = *value;
+    bp.cew = *value;
     return {};
   }
   if (argv[2] == "range") {
-    dirship.cew_range() = *value;
+    bp.cew_range = *value;
     return {};
   }
   return std::unexpected(FactoryModifyError::InvalidCewOption);
@@ -677,26 +636,26 @@ std::optional<ShipAttr> parse_ship_attribute(std::string_view name) {
 }
 
 std::expected<void, FactoryModifyError>
-modify_simple_attribute(Ship& dirship, const Race& race,
+modify_simple_attribute(FactoryBlueprint& bp, const Race& race,
                         const ShipTemplate& btmpl, ShipAttr attr,
                         const command_t& argv) {
   switch (attr) {
     case ShipAttr::Mount:
       if (!btmpl.can_mount) break;
       if (!race.discoveries.crystal) break;
-      dirship.mount() = !dirship.mount();
+      bp.mount = !bp.mount;
       return {};
     case ShipAttr::Hyperdrive:
       if (!btmpl.can_hyperjump) break;
       if (!race.discoveries.hyperdrive) break;
-      dirship.hyper_drive().has = !dirship.hyper_drive().has;
+      bp.has_hyperdrive = !bp.has_hyperdrive;
       return {};
     case ShipAttr::Laser:
       if (!btmpl.can_mount_laser) break;
       if (!race.discoveries.laser) {
         return std::unexpected(FactoryModifyError::NoLaserDiscovery);
       }
-      dirship.laser() = !dirship.laser();
+      bp.laser = !bp.laser;
       return {};
     default:
       break;
@@ -713,33 +672,31 @@ modify_simple_attribute(Ship& dirship, const Race& race,
 
   switch (attr) {
     case ShipAttr::Armor:
-      dirship.armor() = std::min<armor_t>(value, MAX_FACTORY_ARMOR);
+      bp.armor = std::min<armor_t>(value, MAX_FACTORY_ARMOR);
       return {};
     case ShipAttr::Crew:
       if (!btmpl.max_crew) break;
-      dirship.max_crew() = std::min<population_t>(value, MAX_FACTORY_CAPACITY);
+      bp.max_crew = std::min<population_t>(value, MAX_FACTORY_CAPACITY);
       return {};
     case ShipAttr::Cargo:
       if (!btmpl.max_resource) break;
-      dirship.max_resource() =
-          std::min<resource_t>(value, MAX_FACTORY_CAPACITY);
+      bp.max_resource = std::min<resource_t>(value, MAX_FACTORY_CAPACITY);
       return {};
     case ShipAttr::Hangar:
       if (!btmpl.max_hangar) break;
-      dirship.max_hanger() = std::min<hangar_t>(value, MAX_FACTORY_CAPACITY);
+      bp.max_hanger = std::min<hangar_t>(value, MAX_FACTORY_CAPACITY);
       return {};
     case ShipAttr::Fuel:
       if (!btmpl.max_fuel) break;
-      dirship.max_fuel() = std::min<fuel_t>(value, MAX_FACTORY_CAPACITY);
+      bp.max_fuel = std::min<fuel_t>(value, MAX_FACTORY_CAPACITY);
       return {};
     case ShipAttr::Destruct:
       if (!btmpl.max_destruct) break;
-      dirship.max_destruct() =
-          std::min<resource_t>(value, MAX_FACTORY_CAPACITY);
+      bp.max_destruct = std::min<resource_t>(value, MAX_FACTORY_CAPACITY);
       return {};
     case ShipAttr::Speed:
       if (!btmpl.base_speed) break;
-      dirship.max_speed() =
+      bp.max_speed =
           std::clamp<speed_t>(value, MIN_FACTORY_SPEED, MAX_FACTORY_SPEED);
       return {};
     default:
@@ -750,20 +707,21 @@ modify_simple_attribute(Ship& dirship, const Race& race,
 }
 
 std::expected<void, FactoryModifyError>
-apply_factory_modification(Ship& dirship, const Race& race,
+apply_factory_modification(FactoryShip& dirship, const Race& race,
                            const command_t& argv) {
-  if (!dirship.has_factory_design()) {
+  if (!dirship.has_design()) {
     return std::unexpected(FactoryModifyError::NoShipDesignSpecified);
   }
   if (argv.size() < 2) {
     return std::unexpected(FactoryModifyError::NoCharacteristicSpecified);
   }
 
-  const auto& btmpl = ship_template(dirship.build_type());
+  auto& bp = dirship.blueprint_mut();
+  const auto& btmpl = ship_template(bp.build_type);
   if (!btmpl.can_modify) {
     if (race.discoveries.hyperdrive) {
       if (argv[1] == "hyperdrive") {
-        dirship.hyper_drive().has = !dirship.hyper_drive().has;
+        bp.has_hyperdrive = !bp.has_hyperdrive;
         return {};
       }
       return std::unexpected(FactoryModifyError::OnlyHyperdriveModifiable);
@@ -780,97 +738,86 @@ apply_factory_modification(Ship& dirship, const Race& race,
       if (!btmpl.has_primary()) {
         return std::unexpected(FactoryModifyError::InvalidCharacteristic);
       }
-      return modify_battery(dirship, argv, true);
+      return modify_battery(bp, argv, true);
     case ShipAttr::Secondary:
       if (!btmpl.has_secondary()) {
         return std::unexpected(FactoryModifyError::InvalidCharacteristic);
       }
-      return modify_battery(dirship, argv, false);
+      return modify_battery(bp, argv, false);
     case ShipAttr::Cew:
       if (!btmpl.has_cew) {
         return std::unexpected(FactoryModifyError::InvalidCharacteristic);
       }
-      return modify_cew(dirship, race, argv);
+      return modify_cew(bp, race, argv);
     default:
-      return modify_simple_attribute(dirship, race, btmpl, *attr, argv);
+      return modify_simple_attribute(bp, race, btmpl, *attr, argv);
   }
 }
 
 std::optional<FactoryDesignStats>
-finalize_factory_design_stats(Ship& dirship, const Race& race,
-                              const ship_struct& original_state) {
-  const double cost0 = cost(dirship);
+finalize_factory_design_stats(FactoryShip& dirship, const Race& race,
+                              const FactoryBlueprint& original_bp) {
+  auto proto = dirship.instantiate_blueprint();
+  const double cost0 = cost(*proto);
   if (cost0 > MAX_FACTORY_SHIP_COST) {
-    dirship.to_struct() = original_state;
+    dirship.blueprint_mut() = original_bp;
     return std::nullopt;
   }
-
-  dirship.build_cost() = race.God ? 0 : static_cast<resource_t>(cost0);
-  dirship.size() = dirship.calculate_size();
-  const ship_size_t design_size = dirship.size();
-  const double base_mass = dirship.base_mass();
-  dirship.to_struct().base_mass = base_mass;
-  dirship.complexity() = complexity(dirship);
-
-  dirship.size() = original_state.size;
+  const ship_size_t design_size = dirship.recalculate_blueprint_stats(race.God);
+  const auto& bp = dirship.blueprint();
   return FactoryDesignStats{
-      .build_cost = dirship.build_cost(),
-      .base_mass = base_mass,
+      .build_cost = bp.build_cost,
+      .base_mass = bp.base_mass,
       .design_size = design_size,
-      .complexity = dirship.complexity(),
+      .complexity = bp.complexity,
       .race_tech = race.tech,
   };
 }
 
 }  // namespace
 
-std::optional<FactorySpecsViewModel> inspect_factory_specs(Ship& dirship,
-                                                           const Race& race) {
-  if (!dirship.has_factory_design()) {
+std::optional<FactorySpecsViewModel>
+inspect_factory_specs(const FactoryShip& dirship, const Race& race) {
+  if (!dirship.has_design()) {
     return std::nullopt;
   }
 
-  const ship_size_t original_size = dirship.size();
-  dirship.size() = dirship.calculate_size();
-  const ship_size_t design_size = dirship.size();
-  const double base_mass = dirship.base_mass();
-  dirship.size() = original_size;
-
-  const auto& btmpl = ship_template(dirship.build_type());
+  const auto& bp = dirship.blueprint();
+  const auto& btmpl = ship_template(bp.build_type);
   return FactorySpecsViewModel{
       .is_online = dirship.on(),
       .ship_name = std::string(btmpl.name),
-      .ship_class = dirship.shipclass(),
-      .build_cost = dirship.build_cost(),
-      .base_mass = base_mass,
-      .design_size = design_size,
-      .complexity = dirship.complexity(),
+      .ship_class = bp.shipclass,
+      .build_cost = bp.build_cost,
+      .base_mass = bp.base_mass,
+      .design_size = dirship.blueprint_size(),
+      .complexity = bp.complexity,
       .race_tech = race.tech,
-      .armor = dirship.armor(),
-      .max_crew = dirship.max_crew(),
-      .max_fuel = dirship.max_fuel(),
-      .max_resource = dirship.max_resource(),
-      .max_hanger = dirship.max_hanger(),
-      .max_destruct = dirship.max_destruct(),
-      .max_speed = dirship.max_speed(),
+      .armor = bp.armor,
+      .max_crew = bp.max_crew,
+      .max_fuel = bp.max_fuel,
+      .max_resource = bp.max_resource,
+      .max_hanger = bp.max_hanger,
+      .max_destruct = bp.max_destruct,
+      .max_speed = bp.max_speed,
       .has_primary = btmpl.has_primary(),
-      .primary_battery = dirship.primary_battery(),
+      .primary_battery = bp.primary_battery,
       .has_secondary = btmpl.has_secondary(),
-      .secondary_battery = dirship.secondary_battery(),
+      .secondary_battery = bp.secondary_battery,
       .can_mount = btmpl.can_mount,
-      .mount = dirship.mount(),
+      .mount = bp.mount,
       .can_hyperjump = btmpl.can_hyperjump,
-      .hyperdrive = dirship.hyper_drive().has,
+      .hyperdrive = bp.has_hyperdrive,
       .can_mount_laser = btmpl.can_mount_laser,
-      .laser = dirship.laser(),
+      .laser = bp.laser,
       .has_cew = btmpl.has_cew,
-      .cew = dirship.cew(),
-      .cew_range = dirship.cew_range(),
+      .cew = bp.cew,
+      .cew_range = bp.cew_range,
   };
 }
 
 std::expected<FactoryMakeResult, FactoryMakeError>
-configure_factory_blueprint(Ship& dirship, const Race& race,
+configure_factory_blueprint(FactoryShip& dirship, const Race& race,
                             shipnum_t factory_shipno, char shipc) {
   auto i = get_build_type(shipc);
   if ((!i) || ((*i == ShipType::STYPE_POD) && (!race.pods))) {
@@ -884,11 +831,10 @@ configure_factory_blueprint(Ship& dirship, const Race& race,
     return std::unexpected(FactoryMakeError::DoesNotRequireFactory);
   }
 
-  const ship_struct original_state = dirship.to_struct();
-  dirship.set_factory_blueprint(*i, &race);
-  dirship.shipclass() = std::format("mod {}", factory_shipno);
+  const FactoryBlueprint original_bp = dirship.blueprint();
+  dirship.configure_blueprint(*i, &race, std::format("mod {}", factory_shipno));
 
-  auto stats = finalize_factory_design_stats(dirship, race, original_state);
+  auto stats = finalize_factory_design_stats(dirship, race, original_bp);
   if (!stats) {
     return std::unexpected(FactoryMakeError::MaxCostExceeded);
   }
@@ -900,17 +846,16 @@ configure_factory_blueprint(Ship& dirship, const Race& race,
 }
 
 std::expected<FactoryModifyResult, FactoryModifyError>
-modify_factory_attribute(Ship& dirship, const Race& race,
+modify_factory_attribute(FactoryShip& dirship, const Race& race,
                          const command_t& argv) {
-  const ship_struct original_state = dirship.to_struct();
-  dirship.size() = dirship.calculate_size();
+  const FactoryBlueprint original_bp = dirship.blueprint();
 
   if (auto mod_ok = apply_factory_modification(dirship, race, argv); !mod_ok) {
-    dirship.to_struct() = original_state;
+    dirship.blueprint_mut() = original_bp;
     return std::unexpected(mod_ok.error());
   }
 
-  auto stats = finalize_factory_design_stats(dirship, race, original_state);
+  auto stats = finalize_factory_design_stats(dirship, race, original_bp);
   if (!stats) {
     return std::unexpected(FactoryModifyError::MaxCostExceeded);
   }

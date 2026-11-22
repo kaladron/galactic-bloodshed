@@ -252,7 +252,7 @@ void test_name_factory_class() {
                           .build();
   ctx.em.mutate_ship(fac_id, [](Ship& f) {
     f.on() = false;
-    f.shipclass() = "Basic";
+    f.as<FactoryShip>()->blueprint_mut().shipclass = "Basic";
   });
 
   const auto non_fac_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
@@ -273,7 +273,8 @@ void test_name_factory_class() {
     ctx.em.clear_cache();
     const auto* saved = ctx.em.peek_ship(fac_id);
     test::expect_ne(saved, nullptr);
-    test::expect_eq(saved->shipclass(), "Battleship");
+    test::expect_eq(saved->as<FactoryShip>()->blueprint().shipclass,
+                    "Battleship");
   }
 
   // TEST: Name class when factory is on-line -> error

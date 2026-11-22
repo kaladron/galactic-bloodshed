@@ -184,10 +184,10 @@ Subjugated enemy populations on conquered worlds are managed through enslavement
 flowchart TD
     Pop["Enslaved Planetary Population"] --> Gar{"Master Military Garrison Check\nMaster Pop <= 0.1% of Total Pop?"}
     Gar -->|"No (Sufficient Guard)"| Tribute["Tribute Diverted\n100% Commodity Harvest Sent to Master"]
-    Gar -->|"Yes (Garrison Too Weak)"| Revolt["SLAVE REVOLT TRIGGERED!\nViolent Uprising Breaks Out"]
-    
-    Revolt --> Devastate["Urban Devastation\nSectors Destroyed in Uprising"]
-    Devastate --> Free["Planetary Shackles Broken\nSlaves Liberated to Free Citizens"]
+    Gar -->|"Yes (Garrison Too Weak)"| OAP{"Active OAP in Orbit?"}
+    OAP -->|"Yes (50% Suppressed)"| Tribute
+    OAP -->|"No (Immediate) or Yes (50% Revolt)"| Revolt["SLAVE REVOLT TRIGGERED!\nCollateral & Master Sectors Devastated"]
+    Revolt --> Free["Planetary Shackles Broken\nSlaves Liberated & Census Reconciled"]
 ```
 
 ### Tribute Extraction
@@ -195,9 +195,10 @@ On peaceful slave worlds, the entire output of newly harvested commodities (fuel
 
 ### Slave Revolt Triggers and Uprisings
 An enslaved population requires an active military presence to maintain order. If the master empire's population drops to or below **$0.1\%$ ($1/1000\text{th}$)** of the total planetary population:
-- **Devastation**: Violent uprisings break out across the world, devastating $`N_{\text{devastated}} = \left\lfloor \frac{\text{Total Population}}{1000} \right\rfloor + 1`$ random populated sectors.
-- **Intimidation Backlash**: Master-owned sectors in intimidated star systems face a $50\%$ chance of destruction.
-- **Liberation**: The shackles of enslavement are broken, fully liberating the planetary population.
+- **Orbital Intimidation Check**: If an active Orbital Assault Platform orbits the planet, there is a **$50\%$ chance** the uprising is suppressed for the turn (preserving enslavement and tribute diversion). Without an OAP overhead, a revolt occurs immediately.
+- **Collateral Devastation**: Violent uprisings sample $`N_{\text{draws}} = \left\lfloor \frac{\text{Total Population}}{1000} \right\rfloor`$ random sectors across the world, devastating any drawn sector occupied by civilians or troops.
+- **Occupying Garrison Wipeout**: Without an OAP in orbit, **100%** of sectors belonging to the former slave holder are destroyed; if an active OAP is in orbit when the revolt breaks out, each master-owned sector has a **$50\%$ chance** of surviving.
+- **Liberation & Census Sync**: Revolt telegrams are dispatched to all colonies present on the planet (including the former master), enslavement shackles are cleared, and planetary demographic totals are immediately synchronized with surviving sectors.
 
 ---
 

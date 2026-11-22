@@ -624,8 +624,8 @@ EnslavementResult execute_slave_revolt(EntityManager& entity_manager,
                                        SectorMap& smap, bool intimidated) {
   const player_t former_master = planet.slaved_to().value_or(0);
   int collateral_devastated = 0;
-  int revolt_sectors = planet.calculate_revolt_devastation_count();
-  while (--revolt_sectors) {
+  const int revolt_sectors = planet.calculate_revolt_devastation_count();
+  for (int i = 0; i < revolt_sectors; ++i) {
     auto& p = smap.get_random();
     if (p.get_popn() + p.get_troops() > 0) {
       p.devastate();
@@ -634,20 +634,19 @@ EnslavementResult execute_slave_revolt(EntityManager& entity_manager,
   }
 
   int master_devastated = 0;
-  if (intimidated) {
-    auto is_master_sector = [&](const Sector& s) noexcept {
-      return s.is_owned_by(former_master);
-    };
-    for (Sector& p : smap.shuffle_if(is_master_sector)) {
-      if (bool_rand()) {
-        p.devastate();
-        master_devastated++;
-      }
+  for (Sector& p : smap) {
+    if (!p.is_owned_by(former_master)) {
+      continue;
+    }
+    if (!intimidated || bool_rand()) {
+      p.devastate();
+      master_devastated++;
     }
   }
 
   notify_slave_revolt(entity_manager, star, planet, former_master);
   planet.free_slaves();
+  planet.sync_demographics(smap);
 
   return EnslavementResult{
       .outcome = EnslavementOutcome::SlaveRevolt,
@@ -667,7 +666,9 @@ EnslavementResult process_enslavement_and_revolts(EntityManager& entity_manager,
   }
 
   const player_t master = *planet.slaved_to();
-  if (!planet.is_slave_revolt_triggered()) {
+  const bool intimidated =
+      stats.is_intimidated(star.star_id(), planet.planet_order());
+  if (!planet.is_slave_revolt_triggered() || (intimidated && bool_rand())) {
     divert_slave_tribute(entity_manager, planet, stats, master);
     return EnslavementResult{
         .outcome = EnslavementOutcome::ProductionDiverted,
@@ -675,8 +676,6 @@ EnslavementResult process_enslavement_and_revolts(EntityManager& entity_manager,
     };
   }
 
-  const bool intimidated =
-      stats.is_intimidated(star.star_id(), planet.planet_order());
   return execute_slave_revolt(entity_manager, star, planet, smap, intimidated);
 }
 

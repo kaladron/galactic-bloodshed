@@ -199,19 +199,18 @@ export void notify_slave_revolt(EntityManager& entity_manager, const Star& star,
                                 const Planet& planet, player_t former_master);
 
 /// \brief Executes a violent slave revolt on a planet, devastating collateral
-/// sectors and former master holdings, sending notifications, and freeing
-/// slaves.
+/// sectors and former master holdings (100% without orbital OAP intimidation,
+/// 50% per sector with OAP intimidation), sending notifications, freeing
+/// slaves, and synchronizing post-revolt planetary demographics.
 export EnslavementResult execute_slave_revolt(EntityManager& entity_manager,
                                               const Star& star, Planet& planet,
                                               SectorMap& smap,
                                               bool intimidated);
 
 /// \brief Resolves planetary enslavement, production tribute diversion, and
-/// slave revolts. If the planet is enslaved and master population is sufficient
-/// to suppress revolt, diverts production yields to the master. If master
-/// population falls below suppression thresholds, triggers a violent slave
-/// revolt, devastates sectors, notifies colonies, and frees the planet from
-/// enslavement.
+/// slave revolts. Diverts production to the master when the garrison exceeds
+/// 0.1% of planet population or when an orbiting OAP suppresses the uprising
+/// (50% chance); otherwise executes a slave revolt.
 export EnslavementResult
 process_enslavement_and_revolts(EntityManager& entity_manager, const Star& star,
                                 Planet& planet, SectorMap& smap,

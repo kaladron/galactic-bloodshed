@@ -2232,32 +2232,73 @@ void test_process_enslavement_and_revolts() {
   test::expect_eq(stats2.production(player_t{2}).destruct, 0);
   test::expect_true(planet.is_enslaved());
 
-  // 3. Slave revolt:
-  // Master population drops below threshold (popn = 5 vs total popn = 10,000 /
-  // 1000 = 10)
+  // 3. Unintimidated slave revolt (immediate, 100% master sector wipeout):
+  // Master population drops below threshold (popn = 5 vs total popn = 500 /
+  // 1000 = 0 -> 5 <= 0 is false, so use total popn = 5000 -> threshold = 5)
+  seed_rand(12345);
   planet.enslave_to(1);
-  planet.popn() = 10000;
-  planet.info(player_t{1}).popn = 5;
-  planet.info(player_t{1}).numsectsowned = 1;
-  planet.info(player_t{2}).numsectsowned = 5;
-
   auto& s_master = smap.get(Coordinates{0, 0});
+  s_master.set_condition(SectorType::SEC_LAND);
   s_master.set_owner(1);
   s_master.set_popn_exact(5);
+  for (int x = 1; x <= 4; ++x) {
+    auto& s_slave = smap.get(Coordinates{x, 0});
+    s_slave.set_condition(SectorType::SEC_LAND);
+    s_slave.set_owner(2);
+    s_slave.set_popn_exact(1250);
+  }
+  planet.sync_demographics(smap);
 
   TurnStats stats3{};
-  stats3.set_intimidated(star.star_id(), planet.planet_order(), true);
+  stats3.set_intimidated(star.star_id(), planet.planet_order(), false);
 
   auto res3 = process_enslavement_and_revolts(em, star, planet, smap, stats3);
   test::expect_eq(res3.outcome, EnslavementOutcome::SlaveRevolt);
   test::expect_eq(res3.master, player_t{1});
   test::expect_false(planet.is_enslaved());
   test::expect_eq(planet.slaved_to(), std::nullopt);
+  test::expect_eq(planet.info(player_t{1}).numsectsowned, 0);
+  test::expect_eq(planet.info(player_t{1}).popn, 0);
 
-  // Verify telegram was pushed to slave player
+  // Verify telegram was pushed to BOTH slave player AND wiped-out former master
+  auto master_telegrams = em.get_telegrams(player_t{1}, governor_t{1});
+  test::expect_false(master_telegrams.empty());
+  test::expect_true(master_telegrams[0].message.contains("SLAVE REVOLT"));
   auto telegrams = em.get_telegrams(player_t{2}, governor_t{1});
   test::expect_false(telegrams.empty());
   test::expect_true(telegrams[0].message.contains("SLAVE REVOLT"));
+
+  // 4. Intimidated revolt suppression (50% chance OAP prevents uprising and
+  // diverts tribute; 50% chance uprising still breaks out)
+  int suppressed_count = 0;
+  int revolted_count = 0;
+  for (int trial = 0; trial < 40; ++trial) {
+    planet.enslave_to(1);
+    smap.get(Coordinates{0, 0}).set_condition(SectorType::SEC_LAND);
+    smap.get(Coordinates{0, 0}).set_owner(1);
+    smap.get(Coordinates{0, 0}).set_popn_exact(1);
+    smap.get(Coordinates{1, 0}).set_condition(SectorType::SEC_LAND);
+    smap.get(Coordinates{1, 0}).set_owner(2);
+    smap.get(Coordinates{1, 0}).set_popn_exact(2000);
+    planet.sync_demographics(smap);
+
+    TurnStats trial_stats{};
+    trial_stats.set_intimidated(star.star_id(), planet.planet_order(), true);
+    trial_stats.record_production(player_t{2}, Stockpile{.resources = 10});
+    const auto before_res = planet.info(player_t{1}).resource;
+    const auto out =
+        process_enslavement_and_revolts(em, star, planet, smap, trial_stats);
+    if (out.outcome == EnslavementOutcome::ProductionDiverted) {
+      ++suppressed_count;
+      test::expect_true(planet.is_enslaved());
+      test::expect_eq(planet.info(player_t{1}).resource, before_res + 10);
+    } else {
+      ++revolted_count;
+      test::expect_false(planet.is_enslaved());
+    }
+  }
+  test::expect_gt(suppressed_count, 5);
+  test::expect_gt(revolted_count, 5);
 }
 
 void test_divert_slave_tribute() {
@@ -2338,32 +2379,44 @@ void test_execute_slave_revolt() {
   StarRepository stars(store);
   stars.save(star);
 
-  // 1. Unintimidated slave revolt:
-  // Devastates collateral sectors (proportional to population), does NOT
-  // devastate master-specific sectors via the intimidated loop, notifies
-  // colonies, and frees slaves.
+  // 1. Unintimidated slave revolt (popn < 1000 -> 0 collateral draws, 100%
+  // master sector destruction, slave sectors spared, post-revolt census synced)
   {
     Planet planet = createTestPlanet(Coordinates{5, 5});
     planet.enslave_to(1);
-    planet.popn() = 4000;
-    planet.info(player_t{1}).numsectsowned = 5;
-    planet.info(player_t{2}).numsectsowned = 5;
 
     SectorMap smap(planet);
+    int idx = 0;
     for (Sector& s : smap) {
       s.set_condition(SectorType::SEC_LAND);
-      s.set_owner(1);
-      s.set_popn_exact(100);
+      if (idx < 5) {
+        s.set_owner(1);
+        s.set_popn_exact(10);
+      } else if (idx < 10) {
+        s.set_owner(2);
+        s.set_popn_exact(100);
+      } else {
+        s.set_owner(0);
+        s.clear_popn();
+      }
+      ++idx;
     }
+    planet.sync_demographics(
+        smap);  // popn = 550 (< 1000 -> 0 collateral draws)
 
     auto res =
         execute_slave_revolt(em, star, planet, smap, /*intimidated=*/false);
     test::expect_eq(res.outcome, EnslavementOutcome::SlaveRevolt);
     test::expect_eq(res.master, player_t{1});
-    test::expect_gt(res.collateral_devastated_count, 0);
-    test::expect_eq(res.master_devastated_count, 0);
+    test::expect_eq(res.collateral_devastated_count, 0);
+    test::expect_eq(res.master_devastated_count, 5);
     test::expect_false(planet.is_enslaved());
     test::expect_eq(planet.slaved_to(), std::nullopt);
+    test::expect_eq(planet.popn(), 500);
+    test::expect_eq(planet.info(player_t{1}).numsectsowned, 0);
+    test::expect_eq(planet.info(player_t{1}).popn, 0);
+    test::expect_eq(planet.info(player_t{2}).numsectsowned, 5);
+    test::expect_eq(planet.info(player_t{2}).popn, 500);
 
     auto tele1 = em.get_telegrams(player_t{1}, governor_t{1});
     test::expect_false(tele1.empty());
@@ -2374,28 +2427,30 @@ void test_execute_slave_revolt() {
     test::expect_true(tele2.back().message.contains("SLAVE REVOLT"));
   }
 
-  // 2. Intimidated slave revolt:
-  // Intimidation flag causes master-owned sectors to be evaluated for
-  // devastation.
+  // 2. Collateral + intimidated slave revolt:
+  // Collateral draws = popn / 1000, and orbital OAP intimidation gives each
+  // remaining master sector a 50% chance of surviving instead of 100% wipeout.
   {
+    seed_rand(42);
     Planet planet = createTestPlanet(Coordinates{5, 5});
     planet.enslave_to(1);
-    planet.popn() = 0;
-    planet.info(player_t{1}).numsectsowned = 25;
 
     SectorMap smap(planet);
     for (Sector& s : smap) {
       s.set_condition(SectorType::SEC_LAND);
       s.set_owner(1);
-      s.set_popn_exact(100);
+      s.set_popn_exact(200);
     }
+    planet.sync_demographics(smap);  // popn = 5000 -> 5 collateral draws
 
     auto res =
         execute_slave_revolt(em, star, planet, smap, /*intimidated=*/true);
     test::expect_eq(res.outcome, EnslavementOutcome::SlaveRevolt);
     test::expect_eq(res.master, player_t{1});
-    test::expect_eq(res.collateral_devastated_count, 0);
-    test::expect_ge(res.master_devastated_count, 0);
+    test::expect_gt(res.collateral_devastated_count, 0);
+    test::expect_gt(res.master_devastated_count, 0);
+    test::expect_gt(planet.info(player_t{1}).numsectsowned, 0);
+    test::expect_eq(planet.popn(), planet.info(player_t{1}).popn);
     test::expect_false(planet.is_enslaved());
     test::expect_eq(planet.slaved_to(), std::nullopt);
   }

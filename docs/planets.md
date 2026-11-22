@@ -196,27 +196,29 @@ When capturing foreign worlds, conquerors can subjugate the native population us
 flowchart TD
     Sub["Subjugated Colony Population"] --> Check{"Garrison Evaluation\nMaster Pop <= 0.1% Total Pop?"}
     Check -->|Sufficient Military Guard| Tributary["Tribute Diverted\n100% of Harvest Sent to Master"]
-    Check -->|Garrison Insufficient| Uprising["SLAVE REVOLT DETONATES!"]
-    
-    Uprising --> Casualties["Urban Devastation\nPopulated Sectors Destroyed"]
-    Uprising --> Backlash["Regional Backlash\n50% Chance of Devastation on Intimidated Stars"]
-    Uprising --> Freedom["Shackles Broken\nPopulation Liberated to Free Citizens"]
+    Check -->|Garrison Insufficient| OAP{"Active OAP in Orbit?"}
+    OAP -->|"Yes (50% Suppressed)"| Tributary
+    OAP -->|"Yes (50% Revolt)"| IntimRevolt["Intimidated Revolt\nCollateral Draws + 50% Master Sectors Destroyed"]
+    OAP -->|"No (Unintimidated)"| FullRevolt["Immediate Revolt\nCollateral Draws + 100% Master Sectors Destroyed"]
+    IntimRevolt --> Freedom["Shackles Broken\nPopulation Liberated to Free Citizens"]
+    FullRevolt --> Freedom
 ```
 
 ### Tribute Extraction
 On peaceful slave worlds, the entire output of newly harvested commodities (fuel, minerals, destruct, crystals) is automatically diverted directly into the master empire's planetary stockpiles.
 
-### Slave Revolt Triggers
+### Slave Revolt Triggers and OAP Suppression
 Subjugated populations require an active military garrison to enforce servitude. If the master empire's population drops to or below **$0.1\%$ ($1/1000\text{th}$)** of the total planetary population:
 
 $$\text{Population}_{\text{master}} \le \left\lfloor \frac{\text{Population}_{\text{total}}}{1000} \right\rfloor$$
 
-a planetary **slave revolt** is immediately triggered.
+- **Without an Orbital Assault Platform in orbit**: A planetary **slave revolt** breaks out immediately.
+- **With an active Orbital Assault Platform in orbit**: Orbital intimidation gives a **$50\%$ chance** of suppressing the uprising for the turn (preserving enslavement and tribute extraction); otherwise a slave revolt erupts.
 
 ### Consequences of a Slave Revolt
-1. **Urban and Ecological Devastation**: Uprisings ignite widespread fighting across the world, sampling $`N_{\text{draws}} = \left\lfloor \frac{\text{Population}_{\text{total}}}{1000} \right\rfloor`$ random sectors and completely devastating any drawn sector occupied by civilians or troops into ruined wasteland.
-2. **Regional Intimidation Backlash**: Master-owned sectors located on intimidated worlds (where an active Orbital Assault Platform is in orbit) suffer a $50\%$ probability of devastation.
-3. **Liberation**: Imperial shackles are broken, immediately restoring the subjugated population to free citizen status.
+1. **Collateral Urban Devastation**: Uprisings ignite widespread fighting across the world, sampling $`N_{\text{draws}} = \left\lfloor \frac{\text{Population}_{\text{total}}}{1000} \right\rfloor`$ random sectors and completely devastating any drawn sector occupied by civilians or troops into ruined wasteland.
+2. **Occupation Wipeout vs. Orbital Intimidation**: Without an Orbital Assault Platform overhead, **100%** of sectors belonging to the former slave holder are destroyed in the uprising. When an active OAP is in orbit, each remaining master-owned sector has a **$50\%$ chance** of surviving instead of guaranteed destruction.
+3. **Liberation**: Imperial shackles are broken, immediately restoring the subjugated population to free citizen status and reconciling planetary census totals.
 
 ---
 

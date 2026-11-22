@@ -417,7 +417,12 @@ int main() {
 
     planet.info(player_t{2}).popn = 50;
     test::expect_true(planet.is_slave_revolt_triggered());
-    test::expect_eq(planet.calculate_revolt_devastation_count(), 101);
+    test::expect_eq(planet.calculate_revolt_devastation_count(), 100);
+
+    planet.popn() = 999;
+    test::expect_eq(planet.calculate_revolt_devastation_count(), 0);
+    planet.popn() = -500;
+    test::expect_eq(planet.calculate_revolt_devastation_count(), 0);
 
     planet.free_slaves();
     test::expect_false(planet.is_enslaved());

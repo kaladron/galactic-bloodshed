@@ -1172,20 +1172,22 @@ void test_do_oap() {
   const auto races = ctx.with_races();
   TurnStats stats{};
 
-  // 1. Direct do_oap on orbiting active online OAP
+  // 1. Newly built STYPE_OAP has has_switch() == false and default on() ==
+  // false, and MUST intimidate the orbited planet
   shipnum_t oap_id = TestShipBuilder(ctx.em, ShipType::STYPE_OAP)
                          .owned_by(races.empire)
                          .in_planet_orbit(1, 1)
-                         .with_on(true)
+                         .with_on(false)
                          .build();
 
+  test::expect_false(ctx.em.peek_ship(oap_id)->has_switch());
   test::expect_false(stats.is_intimidated(1, 1));
   ctx.em.mutate_ship(oap_id, [&](Ship& oap) {
     do_oap(oap, stats);
     test::expect_true(stats.is_intimidated(1, 1));
   });
 
-  // 2. Integration via doship() update pass
+  // 2. Integration via doship() update pass (with default on() == false)
   stats.set_intimidated(1, 1, false);
   ctx.em.mutate_ship(oap_id, [&](Ship& oap) {
     doship(oap, /*update=*/false, ctx.em, stats);
@@ -1195,30 +1197,34 @@ void test_do_oap() {
     test::expect_true(stats.is_intimidated(1, 1));
   });
 
-  // 3. Domain guards: landed, offline, star orbit, inactive
+  // 3. Domain guards: landed, star orbit, inactive, and switch-equipped ship
+  // power state
   {
     // Landed OAP does not intimidate
     stats.set_intimidated(1, 1, false);
     shipnum_t landed_oap = TestShipBuilder(ctx.em, ShipType::STYPE_OAP)
                                .owned_by(races.empire)
                                .landed_on(1, 1, Coordinates{0, 0})
-                               .with_on(true)
                                .build();
     ctx.em.mutate_ship(landed_oap, [&](Ship& oap) {
       do_oap(oap, stats);
       test::expect_false(stats.is_intimidated(1, 1));
     });
 
-    // Offline OAP does not intimidate
+    // Switch-equipped ship (has_switch() == true) requires on() == true
     stats.set_intimidated(1, 1, false);
-    shipnum_t offline_oap = TestShipBuilder(ctx.em, ShipType::STYPE_OAP)
+    shipnum_t switch_ship = TestShipBuilder(ctx.em, ShipType::OTYPE_AP)
                                 .owned_by(races.empire)
                                 .in_planet_orbit(1, 1)
                                 .with_on(false)
                                 .build();
-    ctx.em.mutate_ship(offline_oap, [&](Ship& oap) {
-      do_oap(oap, stats);
+    ctx.em.mutate_ship(switch_ship, [&](Ship& s) {
+      test::expect_true(s.has_switch());
+      do_oap(s, stats);
       test::expect_false(stats.is_intimidated(1, 1));
+      s.on() = true;
+      do_oap(s, stats);
+      test::expect_true(stats.is_intimidated(1, 1));
     });
 
     // Star-orbiting OAP does not intimidate a planet
@@ -1226,7 +1232,6 @@ void test_do_oap() {
     shipnum_t star_oap = TestShipBuilder(ctx.em, ShipType::STYPE_OAP)
                              .owned_by(races.empire)
                              .in_star_orbit(1)
-                             .with_on(true)
                              .build();
     ctx.em.mutate_ship(star_oap, [&](Ship& oap) {
       do_oap(oap, stats);
@@ -1239,7 +1244,6 @@ void test_do_oap() {
                                  .owned_by(races.empire)
                                  .in_planet_orbit(1, 1)
                                  .with_active(false)
-                                 .with_on(true)
                                  .build();
     ctx.em.mutate_ship(inactive_oap, [&](Ship& oap) {
       do_oap(oap, stats);

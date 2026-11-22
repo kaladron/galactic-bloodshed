@@ -366,7 +366,10 @@ void do_ap(Ship& ship, EntityManager& entity_manager) {
 void do_oap(Ship& ship, TurnStats& stats) {
   /* "intimidate" the planet below, for enslavement purposes. */
   if (ship.whatorbits() != ScopeLevel::LEVEL_PLAN || ship.is_landed() ||
-      !ship.active() || !ship.on()) {
+      !ship.active()) {
+    return;
+  }
+  if (ship.has_switch() && !ship.on()) {
     return;
   }
   stats.set_intimidated(ship.storbits(), ship.pnumorbits(), true);

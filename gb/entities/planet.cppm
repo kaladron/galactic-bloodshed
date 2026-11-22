@@ -667,10 +667,11 @@ public:
     return info(*data_.slaved_to).popn <= (data_.popn / 1000);
   }
 
-  /// \brief Calculates the number of random sectors devastated during a slave
-  /// revolt (1 sector per 1,000 planet population, plus 1 baseline sector).
+  /// \brief Calculates the number of random sector draws during a slave
+  /// revolt (1 sector draw per 1,000 planet population).
   [[nodiscard]] int calculate_revolt_devastation_count() const noexcept {
-    return static_cast<int>(data_.popn / 1000) + 1;
+    return std::saturate_cast<int>(std::max<population_t>(0, data_.popn) /
+                                   1000);
   }
 
   /// \brief Enslaves the planet to a master player.

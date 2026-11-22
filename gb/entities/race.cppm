@@ -456,7 +456,7 @@ public:
   void update_collective_intelligence(population_t total_popn) noexcept {
     if (collective_iq) {
       const double x =
-          (2.0 / std::numbers::pi) *
+          (2.0 * std::numbers::inv_pi) *
           std::atan(static_cast<double>(total_popn) / MESO_POP_SCALE);
       IQ = static_cast<iq_t>(static_cast<double>(IQ_limit) * x * x);
     }

@@ -360,7 +360,7 @@ RacegenEngine::calculate_cost(const RaceEnrollmentSpec& spec) const noexcept {
     if (compat_pct > 0.0) {
       ++sector_types_count;
     }
-    raw_sector_costs[st] = compat_pct * 0.5 + 10.8 * std::log(1.0 + compat_pct);
+    raw_sector_costs[st] = compat_pct * 0.5 + 10.8 * std::log1p(compat_pct);
   }
 
   for (SectorType st_i : settleable_sector_types) {

@@ -348,6 +348,116 @@ int main() {
         outcome.surviving_defender_mil + outcome.defender_mil_casualties, 5);
   }
 
+  // Test unit-vector navigation geometry, zero-distance hyperjump guard, and
+  // hyperjump / carrier-docking fuel formula parity
+  {
+    TestContext ctx;
+    const auto races = ctx.with_races();
+    const player_t pilot = races.empire;
+
+    ctx.em.mutate_star(1, [](Star& s) {
+      s.set_coordinates({0.0, 0.0});
+      s.AP(2) = 50;
+    });
+    ctx.em.mutate_star(2,
+                       [](Star& s) { s.set_coordinates({30000.0, 40000.0}); });
+
+    const auto target_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+                               .owned_by(pilot, 0)
+                               .in_star_orbit(1)
+                               .with_coordinates({300.0, 400.0})
+                               .with_crew(50, 0)
+                               .build();
+    const auto chaser_id = TestShipBuilder(ctx.em, ShipType::STYPE_CRUISER)
+                               .owned_by(pilot, 0)
+                               .in_star_orbit(1)
+                               .with_coordinates({0.0, 0.0})
+                               .with_crew(50, 0)
+                               .with_speed(4)
+                               .with_max_speed(9)
+                               .with_fuel(500.0)
+                               .with_max_fuel(1000.0)
+                               .with_tech(100.0)
+                               .with_mount(1)
+                               .with_crystals(1)
+                               .build();
+
+    // 1. Sublight unit-vector step along exact 3-4-5 triangle (0,0) ->
+    // (300,400)
+    ctx.em.mutate_ship(chaser_id, [&](Ship& s) {
+      s.set_ship_destination(target_id);
+      moveship(ctx.em, s, false, false, false);
+      const double step_len = std::hypot(s.coordinates().x, s.coordinates().y);
+      test::expect_true(step_len > 0.0);
+      test::expect_true(std::abs(s.coordinates().x - 0.6 * step_len) < 1e-9 &&
+                        std::abs(s.coordinates().y - 0.8 * step_len) < 1e-9);
+    });
+
+    // 2. compute_hyperjump_fuel vs query_ship_order parity (quadratic & linear)
+    ctx.em.mutate_ship(chaser_id, [&](Ship& s) {
+      s.set_coordinates({0.0, 0.0});
+      s.set_star_destination(2);
+      s.hyper_drive() = {
+          .charge = HYPER_DRIVE_READY_CHARGE, .on = true, .has = true};
+      s.mounted() = false;
+      const auto quad_order = query_ship_order(ctx.em, s);
+      test::expect_true(std::abs(quad_order.jump_fuel_cost -
+                                 compute_hyperjump_fuel(s, 50000.0)) < 1e-12);
+
+      s.mounted() = true;
+      const auto lin_order = query_ship_order(ctx.em, s);
+      test::expect_true(lin_order.jump_fuel_cost < quad_order.jump_fuel_cost);
+      test::expect_true(std::abs(lin_order.jump_fuel_cost -
+                                 compute_hyperjump_fuel(s, 50000.0)) < 1e-12);
+
+      // 3. Hyperjump arrival at exact 3-4-5 standoff along (0,0) ->
+      // (30000,40000)
+      s.admin_override_fuel(1000.0);
+      moveship(ctx.em, s, true, false, false);
+      test::expect_true(std::abs(s.coordinates().x -
+                                 (30000.0 - 0.6 * 0.9 * SYSTEMSIZE)) < 1e-9);
+      test::expect_true(std::abs(s.coordinates().y -
+                                 (40000.0 - 0.8 * 0.9 * SYSTEMSIZE)) < 1e-9);
+
+      // 4. Zero-distance hyperjump guard (dist == 0.0 avoids NaN)
+      s.set_coordinates({0.0, 0.0});
+      s.set_star_destination(1);
+      s.hyper_drive() = {
+          .charge = HYPER_DRIVE_READY_CHARGE, .on = true, .has = true};
+      moveship(ctx.em, s, true, false, false);
+      test::expect_true(std::isfinite(s.coordinates().x) &&
+                        std::isfinite(s.coordinates().y));
+      test::expect_true(std::abs(s.coordinates().x) < 1e-9);
+      test::expect_true(std::abs(s.coordinates().y - (-0.9 * SYSTEMSIZE)) <
+                        1e-9);
+    });
+
+    // 5. Carrier landing consumes exact Ship::docking_fuel_cost(carrier)
+    const auto carrier_id = TestShipBuilder(ctx.em, ShipType::STYPE_CARRIER)
+                                .owned_by(pilot, 0)
+                                .in_star_orbit(1)
+                                .with_coordinates({0.0, 0.0})
+                                .with_crew(100, 0)
+                                .build();
+    const auto fighter_id = TestShipBuilder(ctx.em, ShipType::STYPE_FIGHTER)
+                                .owned_by(pilot, 0)
+                                .in_star_orbit(1)
+                                .with_coordinates({3.0, 4.0})
+                                .with_crew(1, 0)
+                                .with_fuel(20.0)
+                                .with_max_fuel(20.0)
+                                .build();
+    ctx.em.mutate_ship(fighter_id, [&](Ship& fighter) {
+      const double expected_fuel =
+          fighter.docking_fuel_cost(*ctx.em.peek_ship(carrier_id));
+      const auto land_res = land_single_ship(
+          ctx.em, fighter, std::format("#{}", carrier_id.value), pilot, 0, 1, 0,
+          false);
+      test::expect_true(land_res.has_value());
+      test::expect_true(std::abs(land_res->fuel_used - expected_fuel) < 1e-12);
+    });
+  }
+
   std::println(std::cout, "All get_move tests passed!");
   return 0;
 }

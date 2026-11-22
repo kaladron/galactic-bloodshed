@@ -577,9 +577,10 @@ bool compute_governed_status(const Race& race, EntityManager& entity_manager) {
 ap_t compute_star_action_points(int num_ships, population_t popn,
                                 const Race& race,
                                 EntityManager& entity_manager) {
-  double popn_val = std::max(0.0, static_cast<double>(popn));
-  ap_t APs = round_rand(static_cast<double>(num_ships) / 10.0 +
-                        STAR_AP_POPULATION_SCALE * std::log10(1.0 + popn_val));
+  const double popn_val = std::max(0.0, static_cast<double>(popn));
+  const ap_t APs = round_rand(static_cast<double>(num_ships) / 10.0 +
+                              STAR_AP_POPULATION_SCALE * std::log1p(popn_val) *
+                                  std::numbers::log10e);
 
   if (compute_governed_status(race, entity_manager)) {
     return APs;

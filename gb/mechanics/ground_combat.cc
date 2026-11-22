@@ -139,7 +139,9 @@ MechAttackPeopleResult mech_attack_people(EntityManager& em, Ship& ship,
       calculate_garrison_combat_strength(oldciv, oldmil, alien, race, sect);
 
   if (ignore) {
-    const auto raw_ammo = static_cast<int>(std::log10(dstrength + 1.0)) - 1;
+    const double log_dstrength =
+        std::log1p(std::max(0.0, dstrength)) * std::numbers::log10e;
+    const auto raw_ammo = static_cast<int>(log_dstrength) - 1;
     const auto ammo = std::clamp(raw_ammo, 0, strength);
     ship.consume_destruct(ammo);
   } else {
@@ -184,7 +186,9 @@ PeopleAttackMechResult people_attack_mech(EntityManager& em, Ship& ship,
       calculate_mech_combat_strength(ship, strength, alien, race, sect);
   const double astrength =
       calculate_garrison_combat_strength(civ, mil, race, alien, sect);
-  const auto raw_ammo = static_cast<int>(std::log10(astrength + 1.0)) - 1;
+  const double log_astrength =
+      std::log1p(std::max(0.0, astrength)) * std::numbers::log10e;
+  const auto raw_ammo = static_cast<int>(log_astrength) - 1;
   const auto ammo = std::clamp(raw_ammo, 0, strength);
   ship.consume_destruct(ammo);
   const double damage_ceiling =
@@ -594,9 +598,10 @@ std::expected<MovePopnResult, MovePopnError> execute_planet_sector_movement(
     const auto& sect2_peek = em.peek_sectormap(snum, pnum)->get(next_coords);
     const bool is_assault =
         (sect2_peek.get_owner() != 0 && sect2_peek.get_owner() != player);
+    const double log_people = std::log1p(static_cast<double>(people));
     const double pop_log = (what == PopulationType::CIV)
-                               ? std::log(1.0 + static_cast<double>(people))
-                               : std::log10(1.0 + static_cast<double>(people));
+                               ? log_people
+                               : log_people * std::numbers::log10e;
     const ap_t ap_cost =
         MOVE_FACTOR * (static_cast<int>(pop_log) + (is_assault ? 1 : 0)) + 1;
     if (!god && em.peek_star(snum)->AP(player) < ap_cost) {

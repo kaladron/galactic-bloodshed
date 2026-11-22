@@ -341,12 +341,7 @@ std::string format_ship_dest(EntityManager& em, const Ship& ship) {
   }
 }
 
-namespace {
-
-constexpr double DEGREES_TO_RADIANS = std::numbers::pi / 180.0;
-
-[[nodiscard]] double compute_hyperjump_fuel(const Ship& s,
-                                            double dist) noexcept {
+double compute_hyperjump_fuel(const Ship& s, double dist) noexcept {
   const double distfac = HYPER_DIST_FACTOR * (s.tech() + 100.0);
   const double ratio = dist / distfac;
   if (s.mounted() && dist > distfac) {
@@ -354,6 +349,10 @@ constexpr double DEGREES_TO_RADIANS = std::numbers::pi / 180.0;
   }
   return HYPER_DRIVE_FUEL_USE * std::sqrt(s.mass()) * ratio * ratio;
 }
+
+namespace {
+
+constexpr double DEGREES_TO_RADIANS = std::numbers::pi / 180.0;
 
 void charge_hyperdrive_capacitor(Ship& s) noexcept {
   if (s.mounted()) {
@@ -394,14 +393,11 @@ void execute_hyperdrive_jump(EntityManager& em, Ship& s, bool is_update,
   }
 
   s.consume_fuel(fuse);
-  const double heading =
-      std::atan2(dest_star->coordinates().x - s.coordinates().x,
-                 dest_star->coordinates().y - s.coordinates().y);
-  const double sn = std::sin(heading);
-  const double cs = std::cos(heading);
-  s.set_coordinates(
-      UniverseCoordinates{dest_star->coordinates().x - sn * 0.9 * SYSTEMSIZE,
-                          dest_star->coordinates().y - cs * 0.9 * SYSTEMSIZE});
+  const SystemCoordinates delta = dest_star->coordinates() - s.coordinates();
+  const SystemCoordinates standoff =
+      (dist > 0.0) ? delta * (0.9 * SYSTEMSIZE / dist)
+                   : SystemCoordinates{0.0, 0.9 * SYSTEMSIZE};
+  s.set_coordinates(dest_star->coordinates() - standoff);
   s.enter_star_orbit(s.deststar());
   s.protect().planet = false;
   s.hyper_drive().on = false;
@@ -696,12 +692,9 @@ void execute_destination_step(EntityManager& em, Ship& s, double fuse,
   if (truedist > DIST_TO_LAND) {
     s.consume_fuel(fuse);
     const double movedist = adjust_approach_distance(s, dest, truedist);
-    const double heading = std::atan2(dest.coords.x - s.coordinates().x,
-                                      -dest.coords.y + s.coordinates().y);
     const double step = std::min(mfactor, movedist);
-    s.set_coordinates(
-        s.coordinates() +
-        SystemCoordinates{std::sin(heading) * step, -std::cos(heading) * step});
+    const SystemCoordinates delta = dest.coords - s.coordinates();
+    s.set_coordinates(s.coordinates() + delta * (step / truedist));
   }
 
   check_and_break_orbit(em, s);
@@ -1761,8 +1754,7 @@ land_spaceborne_on_carrier(EntityManager& em, Ship& s, const Ship& carrier) {
     });
   }
 
-  const double fuel = DOCK_BASE_FUEL_COST +
-                      dist * DOCK_DISTANCE_FUEL_FACTOR * std::sqrt(s.mass());
+  const double fuel = s.docking_fuel_cost(carrier);
   if (s.fuel() < fuel) {
     return std::unexpected(LandError{
         .reason = LandErrorReason::InsufficientFuel,

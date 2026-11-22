@@ -1316,9 +1316,9 @@ export constexpr double MORALE_FACTOR_MIDPOINT = 0.5;
 export template <typename T>
   requires(std::integral<T> || std::floating_point<T>)
 constexpr double morale_factor(const T x) {
-  return (std::atan(static_cast<double>(x) / MORALE_ATAN_SCALE) /
-              std::numbers::pi +
-          MORALE_FACTOR_MIDPOINT);
+  return std::atan(static_cast<double>(x) / MORALE_ATAN_SCALE) *
+             std::numbers::inv_pi +
+         MORALE_FACTOR_MIDPOINT;
 }
 
 /**

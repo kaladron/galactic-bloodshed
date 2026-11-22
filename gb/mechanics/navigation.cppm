@@ -92,6 +92,8 @@ export void domass(Ship&, EntityManager&);
 export void doown(Ship&, EntityManager&);
 export std::string prin_ship_orbits(EntityManager&, const Ship&);
 export std::string format_ship_dest(EntityManager&, const Ship&);
+export [[nodiscard]] double compute_hyperjump_fuel(const Ship& ship,
+                                                   double dist) noexcept;
 export void moveship(EntityManager&, Ship& ship, bool is_update,
                      bool send_messages, bool checking_fuel);
 export void msg_OOF(EntityManager&, const Ship& ship);

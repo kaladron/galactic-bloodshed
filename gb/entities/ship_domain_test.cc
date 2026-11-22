@@ -1435,17 +1435,20 @@ void test_mirror_aim_and_formatting_helpers() {
       return ctx.em.resolve_mirror_aim_direction(*mirror);
     };
 
+    test::expect_eq(check_heading(0.0, 0.0), 0u);    // Coincident zero vector
     test::expect_eq(check_heading(0.0, -10.0), 0u);  // North (xt == x, yt < y)
     test::expect_eq(check_heading(0.0, 10.0), 4u);   // South (xt == x, yt > y)
     test::expect_eq(check_heading(10.0, 0.0), 2u);   // East  (yt == y, xt > x)
     test::expect_eq(check_heading(-10.0, 0.0), 6u);  // West  (yt == y, xt < x)
-    test::expect_eq(check_heading(1.0, 10.0), 4u);   // Positive dy, steep slope
+    test::expect_eq(check_heading(1.0, 10.0), 4u);   // Positive dy, steep +x
+    test::expect_eq(check_heading(-1.0, 10.0), 4u);  // Positive dy, steep -x
     test::expect_eq(check_heading(10.0, 10.0), 3u);  // SE (slope = 1.0)
     test::expect_eq(check_heading(10.0, 1.0), 2u);   // E-SE (0 < slope < 0.414)
     test::expect_eq(check_heading(-10.0, 1.0),
                     6u);  // W-SW (-0.414 < slope < 0)
     test::expect_eq(check_heading(-10.0, 10.0), 5u);  // SW (slope = -1.0)
-    test::expect_eq(check_heading(1.0, -10.0), 0u);  // Negative dy, steep slope
+    test::expect_eq(check_heading(1.0, -10.0), 0u);   // Negative dy, steep +x
+    test::expect_eq(check_heading(-1.0, -10.0), 0u);  // Negative dy, steep -x
     test::expect_eq(check_heading(-10.0, -10.0),
                     7u);  // NW (slope = 1.0, yt < y)
     test::expect_eq(check_heading(-10.0, -1.0),

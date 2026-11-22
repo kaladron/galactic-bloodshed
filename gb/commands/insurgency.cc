@@ -29,7 +29,7 @@ constexpr double INSURGENCY_ODDS_DIVISOR = 50.0;
 
 /// Converts atan(x) in [0, pi/2) to a percentage in [0, 100): 100 / (pi / 2) =
 /// 200 / pi.
-constexpr double ATAN_TO_PERCENT_SCALE = 200.0;
+constexpr double ATAN_TO_PERCENT_SCALE = 200.0 * std::numbers::inv_pi;
 
 }  // namespace
 
@@ -105,8 +105,7 @@ bool insurgency(const command_t& argv, GameObj& g) {
              static_cast<double>(g.race->fighters * p.info(Playernum).troops -
                                  alien->fighters * p.info(who).troops)) /
          INSURGENCY_ODDS_DIVISOR;
-    const int chance =
-        round_rand(ATAN_TO_PERCENT_SCALE * std::atan(x) / std::numbers::pi);
+    const int chance = round_rand(ATAN_TO_PERCENT_SCALE * std::atan(x));
     const bool succeeded = success(chance);
     int changed_hands = 0;
     if (succeeded) {

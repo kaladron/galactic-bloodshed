@@ -1009,12 +1009,7 @@ HyperdriveJumpInfo compute_hyperdrive_jump_info(EntityManager& em,
   }
   const auto& dest_star = *em.peek_star(ship.deststar());
   const double dist = ship.coordinates().distance_to(dest_star.coordinates());
-  const double distfac = HYPER_DIST_FACTOR * (ship.tech() + 100.0);
-  const double ratio = dist / distfac;
-  const double fuse =
-      (ship.mounted() && dist > distfac)
-          ? HYPER_DRIVE_FUEL_USE * std::sqrt(ship.mass()) * ratio
-          : HYPER_DRIVE_FUEL_USE * std::sqrt(ship.mass()) * ratio * ratio;
+  const double fuse = compute_hyperjump_fuel(ship, dist);
 
   return HyperdriveJumpInfo{
       .active = true,

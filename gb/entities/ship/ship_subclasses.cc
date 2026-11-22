@@ -9,29 +9,6 @@ import std;
 
 module gb.entities;
 
-namespace {
-
-constexpr double TAN_22_5_DEG = std::numbers::sqrt2 - 1.0;
-constexpr double TAN_67_5_DEG = std::numbers::sqrt2 + 1.0;
-
-[[nodiscard]] bearing_t octant_for_positive_dy(double slope) noexcept {
-  if (slope < -TAN_67_5_DEG || slope > TAN_67_5_DEG) return 4;
-  if (slope > TAN_22_5_DEG) return 3;
-  if (slope > 0.000) return 2;
-  if (slope > -TAN_22_5_DEG) return 6;
-  return 5;
-}
-
-[[nodiscard]] bearing_t octant_for_negative_dy(double slope) noexcept {
-  if (slope < -TAN_67_5_DEG || slope > TAN_67_5_DEG) return 0;
-  if (slope > TAN_22_5_DEG) return 7;
-  if (slope > 0.000) return 6;
-  if (slope > -TAN_22_5_DEG) return 2;
-  return 1;
-}
-
-}  // namespace
-
 /// \brief Computes the 8-octant compass heading (0..7) toward the given
 /// target coordinates.
 ///
@@ -45,26 +22,22 @@ constexpr double TAN_67_5_DEG = std::numbers::sqrt2 + 1.0;
 /// - 6: West (270 deg)
 /// - 7: North-West (315 deg)
 ///
-/// The slope boundaries are based on the tangent of half-octant (22.5 deg)
-/// boundaries:
-/// - tan(22.5 deg) = sqrt(2) - 1 ≈ 0.4142
-/// - tan(67.5 deg) = sqrt(2) + 1 ≈ 2.4142
+/// Quantizes the clockwise bearing angle `atan2(dx, -dy)` into 45-degree
+/// (`pi / 4`) sectors, returning North (`0`) when the target coincides with
+/// the mirror's own coordinates.
 ///
 /// \param target_coords Absolute universe coordinates of the target.
 /// \return Compass direction heading index (0..7).
 bearing_t SpaceMirrorShip::aim_direction(
     UniverseCoordinates target_coords) const noexcept {
   const SystemCoordinates delta = target_coords - coordinates();
-  if (delta.x == 0.0) {
-    return (delta.y > 0.0) ? 4 : 0;
+  if (delta.x == 0.0 && delta.y == 0.0) {
+    return 0;
   }
-  if (delta.y == 0.0) {
-    return (delta.x > 0.0) ? 2 : 6;
-  }
-
-  const double slope = delta.y / delta.x;
-  return (delta.y > 0.0) ? octant_for_positive_dy(slope)
-                         : octant_for_negative_dy(slope);
+  constexpr double OCTANTS_PER_RADIAN = 4.0 * std::numbers::inv_pi;
+  const double angle = std::atan2(delta.x, -delta.y);
+  const int sector = static_cast<int>(std::lround(angle * OCTANTS_PER_RADIAN));
+  return static_cast<bearing_t>((sector + 8) % 8);
 }
 
 SimulatedShip::SimulatedShip(const Ship& base)

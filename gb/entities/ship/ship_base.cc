@@ -290,9 +290,9 @@ std::int64_t Ship::transfer_cargo_to(Ship& destination, ShipCargoType cargo,
  */
 double tele_range(ShipType type, double tech) {
   if (type == ShipType::OTYPE_GTELE)
-    return std::log1p((double)tech) * 400 + SYSTEMSIZE / 8;
+    return std::log1p(tech) * 400 + SYSTEMSIZE / 8;
 
-  return std::log1p((double)tech) * 1500 + SYSTEMSIZE / 3;
+  return std::log1p(tech) * 1500 + SYSTEMSIZE / 3;
 }
 
 double Ship::tele_range() const noexcept {

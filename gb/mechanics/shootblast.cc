@@ -469,8 +469,8 @@ hit_odds(double range, double tech, damage_t fdam, bool fev, bool tev,
 
   const double fev_d = fev ? 1.0 : 0.0;
   const double tev_d = tev ? 1.0 : 0.0;
-  const double a =
-      std::log10(1.0 + tech) * 80.0 * std::cbrt(static_cast<double>(body));
+  const double a = std::log1p(std::max(0.0, tech)) * std::numbers::log10e *
+                   80.0 * std::cbrt(static_cast<double>(body));
   const double b =
       72.0 /
       ((2.0 + tev_d) * (2.0 + fev_d) *

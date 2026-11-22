@@ -109,7 +109,7 @@ void do_meta_infect(player_t who, starnum_t star, planetnum_t pnum, Planet& p,
       const auto& owner_race = *entity_manager.peek_race(s.get_owner());
       double fighters = owner_race.fighters;
       double troops = s.get_troops() * fighters / 50.0;
-      if (uniform_rand(1, 100) <= 100.0 * (1.0 - std::exp(-troops))) {
+      if (uniform_rand(1, 100) <= -100.0 * std::expm1(-troops)) {
         return;  // Failed to infect - defenders won
       }
     }

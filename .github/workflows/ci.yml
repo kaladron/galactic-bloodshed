@@ -110,8 +110,12 @@ jobs:
           ./tools/tidy-changed.sh "origin/${{ github.base_ref || 'main' }}"
 
   build-and-test:
-    name: Build & Test
+    name: Build & Test (${{ matrix.build_type }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        build_type: [Debug, Release]
     permissions:
       contents: read
       packages: read
@@ -137,8 +141,8 @@ jobs:
           mkdir -p /lib/share/libc++
           ln -sf "/usr/lib/llvm-${LLVM_VERSION}/share/libc++/v1" /lib/share/libc++/v1
 
-      - name: Configure CMake
-        run: cmake -S . -G Ninja -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER="clang-${LLVM_VERSION}" -DCMAKE_CXX_COMPILER="clang++-${LLVM_VERSION}"
+      - name: Configure CMake (${{ matrix.build_type }})
+        run: cmake -S . -G Ninja -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_C_COMPILER="clang-${LLVM_VERSION}" -DCMAKE_CXX_COMPILER="clang++-${LLVM_VERSION}"
 
       - name: Build
         run: cmake --build build

@@ -94,9 +94,10 @@ jobs:
             fi
           done
           
-          # Check star and planet lists
+          # Check star, planet, and ship exam catalogs
           dpkg -c "${DEB_FILE}" | grep -q "./usr/share/galactic-bloodshed/star.list" || { echo "❌ Missing star.list"; exit 1; }
           dpkg -c "${DEB_FILE}" | grep -q "./usr/share/galactic-bloodshed/planet.list" || { echo "❌ Missing planet.list"; exit 1; }
+          dpkg -c "${DEB_FILE}" | grep -q "./usr/share/galactic-bloodshed/exam.dat" || { echo "❌ Missing exam.dat"; exit 1; }
           
           # Check help manuals
           HELP_COUNT=$(dpkg -c "${DEB_FILE}" | grep -c "./usr/share/galactic-bloodshed/help/.*\.md" || true)

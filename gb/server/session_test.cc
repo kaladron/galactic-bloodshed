@@ -357,7 +357,8 @@ int main() {
     test::expect_eq(session->shipno(), 0);
     test::expect_true(session->level() == ScopeLevel::LEVEL_UNIV);
     test::expect_eq(session->quota(), COMMAND_BURST_SIZE);
-    test::expect_eq(session->last_time(), 0);
+    test::expect_true(session->last_time() ==
+                      std::chrono::steady_clock::time_point{});
     test::expect_false(session->has_pending_input());
     test::expect_eq(session->pop_input(), "");
     test::expect_false(session->has_pending_output());
@@ -383,7 +384,8 @@ int main() {
     test::expect_eq(session->pnum(), 5);
     test::expect_eq(session->shipno(), 0);
     test::expect_true(session->level() == ScopeLevel::LEVEL_PLAN);
-    test::expect_true(session->last_time() > 0);
+    test::expect_true(session->last_time() >
+                      std::chrono::steady_clock::time_point{});
 
     const Session& const_session = *session;
     test::expect_eq(const_session.game_obj().player().value, 2);

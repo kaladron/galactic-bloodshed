@@ -40,9 +40,8 @@ std::string render_trip_estimate(const TripEstimate& est) {
              "discrepancy.\n";
       break;
     case ArrivalTimeStatus::Available: {
-      std::time_t arrival = est.estimated_arrival_time;
       std::format_to(std::back_inserter(out), "ESTIMATED Arrival Time: {}\n",
-                     std::ctime(&arrival));
+                     format_timestamp(est.estimated_arrival_time));
       break;
     }
   }

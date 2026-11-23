@@ -135,8 +135,10 @@ void initialize_schedule_state(ServerState& state, const ServerConfig& config,
       (config.segments <= 1) ? 1U : static_cast<segments_t>(config.segments);
   state.record_server_start(current_time);
 
+  const auto update_span = std::chrono::duration_cast<std::chrono::seconds>(
+      std::chrono::minutes{state.update_time_minutes});
   if (state.next_update_time == 0) {
-    state.next_update_time = current_time + (state.update_time_minutes * 60);
+    state.next_update_time = current_time + update_span.count();
   }
   if (state.segments <= 1) {
     constexpr auto no_segments_schedule_offset = std::chrono::hours{144};
@@ -149,7 +151,7 @@ void initialize_schedule_state(ServerState& state, const ServerConfig& config,
         std::clamp<segments_t>(state.nsegments_done, 1U, state.segments);
     if (state.next_segment_time == 0) {
       state.next_segment_time =
-          current_time + (state.update_time_minutes * 60 / state.segments);
+          current_time + (update_span / state.segments).count();
     }
     if (state.next_segment_time < current_time) {
       state.next_segment_time = state.next_update_time;

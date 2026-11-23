@@ -24,7 +24,7 @@ export struct SessionInfo {
   starnum_t snum;
   bool connected;
   bool god;
-  std::time_t last_time;
+  std::chrono::steady_clock::time_point last_time;
 };
 
 /// Notification staged in the transactional socket outbox awaiting SQLite

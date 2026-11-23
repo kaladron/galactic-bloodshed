@@ -29,10 +29,9 @@ export constexpr std::size_t MAX_WRITE_QUEUE_SIZE =
     1024UL * 1024UL;  // 1MB - disconnect slow clients
 export constexpr std::size_t MAX_INPUT_QUEUE_SIZE =
     1000;  // Maximum queued commands
-export constexpr std::time_t IDLE_TIMEOUT_SECONDS =
-    3600;  // 1 hour - disconnect idle sessions
 
 using namespace std::chrono_literals;
+export constexpr auto IDLE_TIMEOUT = 1h;  // Disconnect idle sessions after 1h
 export constexpr auto DEFAULT_UPDATE_TIME = 30min;  // update time (minutes!)
 export constexpr auto DEFAULT_RANDOM_UPDATE_RANGE = 0min;  // again, in minutes.
 export constexpr auto DEFAULT_RANDOM_SEGMENT_RANGE =

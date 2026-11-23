@@ -40,26 +40,26 @@ void test_who_matrix() {
 
   ctx.create_star("Sol", starnum_t{1}).build();
 
-  std::time_t now = std::time(nullptr);
+  const auto now = std::chrono::steady_clock::now();
   mock_registry.sessions = {
       SessionInfo{.player = 1,
                   .governor = 1,
                   .snum = 1,
                   .connected = true,
                   .god = false,
-                  .last_time = now - 10},
+                  .last_time = now - std::chrono::seconds{10}},
       SessionInfo{.player = 2,
                   .governor = 1,
                   .snum = 1,
                   .connected = true,
                   .god = false,
-                  .last_time = now - 5},
+                  .last_time = now - std::chrono::seconds{5}},
       SessionInfo{.player = 3,
                   .governor = 1,
                   .snum = 1,
                   .connected = true,
                   .god = true,
-                  .last_time = now - 1},  // God session: should be skipped
+                  .last_time = now - std::chrono::seconds{1}},
   };
 
   // --- Case 1: Happy Path (Normal player viewing who) ---

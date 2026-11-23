@@ -162,10 +162,10 @@ void Server::update_quotas(std::chrono::steady_clock::time_point now) {
   }
 }
 
-void Server::check_idle_sessions(std::time_t now) {
+void Server::check_idle_sessions(std::chrono::steady_clock::time_point now) {
   for (auto& session : sessions_) {
     if (!session->is_disconnected() && session->connected() &&
-        (now - session->last_time()) > IDLE_TIMEOUT_SECONDS) {
+        (now - session->last_time()) > IDLE_TIMEOUT) {
       GB::log::info("Disconnecting idle session (timeout)");
       session->send("Connection timed out due to inactivity.\n");
       session->disconnect();
@@ -180,12 +180,14 @@ void Server::check_turn_events(std::time_t current_time) {
     const auto* state = entity_manager_.peek_server_state();
     if (state && go_time_ == 0) {
       if (current_time >= state->next_update_time) {
-        go_time_ = current_time +
-                   (uniform_rand(0, DEFAULT_RANDOM_UPDATE_RANGE.count()) * 60);
+        const auto jitter = std::chrono::minutes{
+            uniform_rand(0, DEFAULT_RANDOM_UPDATE_RANGE.count())};
+        go_time_ = current_time + std::chrono::seconds{jitter}.count();
       } else if (current_time >= state->next_segment_time &&
                  state->nsegments_done < state->segments) {
-        go_time_ = current_time +
-                   (uniform_rand(0, DEFAULT_RANDOM_SEGMENT_RANGE.count()) * 60);
+        const auto jitter = std::chrono::minutes{
+            uniform_rand(0, DEFAULT_RANDOM_SEGMENT_RANGE.count())};
+        go_time_ = current_time + std::chrono::seconds{jitter}.count();
       }
     }
     if (pending_turn_ || (go_time_ > 0 && current_time >= go_time_)) {

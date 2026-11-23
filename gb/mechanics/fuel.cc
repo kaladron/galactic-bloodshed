@@ -32,17 +32,15 @@ ArrivalEstimate compute_arrival_estimate(const ServerState* state,
     };
   }
 
-  const std::time_t additional_segs =
-      (segs > 0) ? static_cast<std::time_t>(segs - 1) : 0;
-  const std::time_t update_mins =
-      static_cast<std::time_t>(state->update_time_minutes);
+  const auto additional_segs =
+      (segs > 0) ? static_cast<std::int64_t>(segs - 1) : 0;
+  const auto update_span = std::chrono::duration_cast<std::chrono::seconds>(
+      std::chrono::minutes{state->update_time_minutes});
   const std::time_t effective_time =
       (state->segments == 1)
-          ? state->next_update_time + (additional_segs * update_mins * 60)
+          ? state->next_update_time + (additional_segs * update_span).count()
           : state->next_segment_time +
-                (additional_segs *
-                 (update_mins / static_cast<std::time_t>(state->segments)) *
-                 60);
+                (additional_segs * (update_span / state->segments)).count();
   return {
       .status = ArrivalTimeStatus::Available,
       .time = effective_time,

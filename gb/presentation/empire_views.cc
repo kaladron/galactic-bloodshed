@@ -42,7 +42,8 @@ std::string render_for_mode(UiMode mode, const RelationViewModel& vm) {
 }
 
 std::string render_who(const WhoViewModel& vm) {
-  std::string out = std::format("Current Players: {}", std::ctime(&vm.now));
+  std::string out =
+      std::format("Current Players: {}\n", format_timestamp(vm.now));
 
   tabulate::Table table;
   table.add_row({"Race", "Governor", "Player", "Idle", "Star", "Flags"});

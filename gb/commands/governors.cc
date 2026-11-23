@@ -55,15 +55,11 @@ bool governors(const command_t& argv, GameObj& g) {
   };
   g.entity_manager.with_race(Playernum, [&](const Race& race) {
     for (auto [i, g_entry] : race.active_governors()) {
-      std::string login_time = std::ctime(&g_entry.login);
-      if (!login_time.empty() && login_time.back() == '\n') {
-        login_time.pop_back();
-      }
       vm.rows.push_back(GB::presentation::GovernorRow{
           .governor = i,
           .name = std::string(g_entry.name),
           .money = g_entry.money,
-          .last_login = std::move(login_time),
+          .last_login = format_timestamp(g_entry.login),
           .password = g.is_leader()
                           ? std::optional<std::string>{g_entry.password}
                           : std::nullopt,

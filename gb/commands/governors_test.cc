@@ -18,6 +18,7 @@ void test_governors_list() {
   race.Playernum = 1;
   race.name = "TestRace";
   race.leader().password = "leadpass";
+  race.leader().login = 1'000'000;
   race.appoint_governor(2, {.name = "GovOne", .password = "gov1pass"});
   {
     JsonStore store(ctx.db);
@@ -33,6 +34,7 @@ void test_governors_list() {
   ctx.assert_dispatch_success(g, {"governors"});
   test::expect_contains(g.out.str(), "Password");
   test::expect_contains(g.out.str(), "leadpass");
+  test::expect_contains(g.out.str(), format_timestamp(1'000'000));
 
   g.out.str("");
   ctx.setup_game_obj(g, 1, 2);

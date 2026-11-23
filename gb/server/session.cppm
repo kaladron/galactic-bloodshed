@@ -170,12 +170,14 @@ public:
   }
   std::string pop_input();
 
-  // Last activity time
-  std::time_t last_time() const {
+  // Last activity time (monotonic steady_clock)
+  [[nodiscard]] std::chrono::steady_clock::time_point
+  last_time() const noexcept {
     return last_time_;
   }
-  void touch() {
-    last_time_ = std::time(nullptr);
+  void touch(std::chrono::steady_clock::time_point now =
+                 std::chrono::steady_clock::now()) noexcept {
+    last_time_ = now;
   }
 
 private:
@@ -201,5 +203,5 @@ private:
   bool disconnected_ = false;
   bool writing_ = false;
   int quota_ = COMMAND_BURST_SIZE;
-  std::time_t last_time_ = 0;
+  std::chrono::steady_clock::time_point last_time_;
 };

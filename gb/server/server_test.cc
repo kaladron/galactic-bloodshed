@@ -277,12 +277,15 @@ void test_server_quotas_idle_timeout_and_turn_events() {
   server.update_quotas(std::chrono::steady_clock::now() +
                        std::chrono::milliseconds(COMMAND_TIME_MSEC * 2 + 50));
 
-  // Non-idle check does not disconnect active session
-  server.check_idle_sessions(std::time(nullptr) + 10);
+  // Non-idle check below IDLE_TIMEOUT does not disconnect active session
+  const auto steady_base = std::chrono::steady_clock::now();
+  server.check_idle_sessions(steady_base + IDLE_TIMEOUT -
+                             std::chrono::seconds{5});
   test::expect_eq(server.session_count(), 1u);
 
-  // Idle timeout check disconnects session exceeding IDLE_TIMEOUT_SECONDS
-  server.check_idle_sessions(std::time(nullptr) + IDLE_TIMEOUT_SECONDS + 10);
+  // Monotonic steady_clock timeout disconnects session exceeding IDLE_TIMEOUT
+  server.check_idle_sessions(steady_base + IDLE_TIMEOUT +
+                             std::chrono::seconds{10});
   std::string timeout_reply = drain_socket(client_socket);
   test::expect_contains(timeout_reply,
                         "Connection timed out due to inactivity.");

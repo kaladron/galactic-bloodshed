@@ -78,7 +78,8 @@ public:
   void process_commands();
   void process_command(GameObj& g, const command_t& argv,
                        std::string_view raw_command = {});
-  void check_idle_sessions(std::time_t now = std::time(nullptr));
+  void check_idle_sessions(std::chrono::steady_clock::time_point now =
+                               std::chrono::steady_clock::now());
   void check_turn_events(std::time_t current_time = std::time(nullptr));
 
 private:

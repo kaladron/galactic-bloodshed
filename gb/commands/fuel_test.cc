@@ -329,17 +329,23 @@ void test_fuel_output_and_do_trip_branches() {
     test::expect_contains(rendered, "ESTIMATED Arrival Time:");
   }
 
-  // 2. compute_trip_estimate with grav > 0 and segments > 1 (plus segs == 0)
+  // 2. compute_trip_estimate with grav > 0 and non-divisible 10m / 4 segments
+  // (150s per segment, not truncated to 120s) + single-newline UTC rendering
   ctx.em.mutate_server_state([](ServerState& st) {
     st.segments = 4;
     st.nsegments_done = 2;
+    st.update_time_minutes = 10;
+    st.next_segment_time = 1000;
   });
   {
     const auto est =
         compute_trip_estimate(ctx.em, 100.0, 25.0, 1.0, 10.0, 3, "Earth");
+    test::expect_eq(est.estimated_arrival_time, std::time_t{1300});
     const std::string rendered = GB::presentation::render_trip_estimate(est);
     test::expect_contains(rendered, "used to launch from Earth");
-    test::expect_contains(rendered, "ESTIMATED Arrival Time:");
+    test::expect_contains(rendered, std::format("ESTIMATED Arrival Time: {}\n",
+                                                format_timestamp(1300)));
+    test::expect_false(rendered.ends_with("\n\n"));
 
     const auto zero_segs_est =
         compute_trip_estimate(ctx.em, 10.0, 0.0, 0.0, 10.0, 0, "");

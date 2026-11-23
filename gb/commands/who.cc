@@ -16,6 +16,7 @@ namespace GB::commands {
 
 bool who(const command_t&, GameObj& g, bool show_cowards) {
   const std::time_t now = std::time(nullptr);
+  const auto steady_now = std::chrono::steady_clock::now();
   const bool is_god = g.god();
 
   GB::presentation::WhoViewModel vm{
@@ -39,12 +40,16 @@ bool who(const command_t&, GameObj& g, bool show_cowards) {
             star_name = star.get_name();
           });
         }
+        const auto idle_secs = std::max<std::int64_t>(
+            0, std::chrono::duration_cast<std::chrono::seconds>(steady_now -
+                                                                info.last_time)
+                   .count());
         vm.rows.push_back(GB::presentation::WhoRow{
             .race_name = r.name,
             .governor_name = gov.name,
             .player = info.player,
             .governor = info.governor,
-            .idle_seconds = now - info.last_time,
+            .idle_seconds = idle_secs,
             .star_name = std::move(star_name),
             .gag = gov.toggle.gag,
             .invisible = gov.toggle.invisible,

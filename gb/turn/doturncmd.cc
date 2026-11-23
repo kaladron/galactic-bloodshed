@@ -758,30 +758,25 @@ void output_ground_attacks(EntityManager& em) {
 ScheduleCalculation compute_update_schedule(const ServerState& state,
                                             std::time_t current_time,
                                             bool force) {
+  constexpr auto no_segments_offset = std::chrono::hours{144};
   const segments_t segs = std::max<segments_t>(1, state.segments);
+  const auto update_span = std::chrono::duration_cast<std::chrono::seconds>(
+      std::chrono::minutes{state.update_time_minutes});
+  const auto segment_span = update_span / segs;
   ScheduleCalculation result{};
 
   if (segs <= 1) {
-    result.next_segment_time = current_time + (144 * 3600);
+    result.next_segment_time =
+        current_time + std::chrono::seconds{no_segments_offset}.count();
     result.nsegments_done = segs;
   } else {
-    if (force) {
-      result.next_segment_time =
-          current_time + (state.update_time_minutes * 60) / segs;
-    } else {
-      result.next_segment_time =
-          state.next_update_time + (state.update_time_minutes * 60) / segs;
-    }
+    const std::time_t base_time = force ? current_time : state.next_update_time;
+    result.next_segment_time = base_time + segment_span.count();
     result.nsegments_done = 1;
   }
 
-  if (force) {
-    result.next_update_time = current_time + (state.update_time_minutes * 60);
-  } else {
-    result.next_update_time =
-        state.next_update_time + (state.update_time_minutes * 60);
-  }
-
+  const std::time_t update_base = force ? current_time : state.next_update_time;
+  result.next_update_time = update_base + update_span.count();
   return result;
 }
 
@@ -789,38 +784,38 @@ ScheduleCalculation compute_segment_schedule(const ServerState& state,
                                              std::time_t current_time,
                                              bool override,
                                              int target_segment) {
+  constexpr auto no_segments_offset = std::chrono::hours{144};
   const segments_t segs = std::max<segments_t>(1, state.segments);
+  const auto update_span = std::chrono::duration_cast<std::chrono::seconds>(
+      std::chrono::minutes{state.update_time_minutes});
+  const auto segment_span = update_span / segs;
   ScheduleCalculation result{};
 
   if (segs <= 1) {
-    result.next_segment_time = current_time + (144 * 3600);
+    result.next_segment_time =
+        current_time + std::chrono::seconds{no_segments_offset}.count();
     result.nsegments_done = segs;
-    result.next_update_time =
-        (override && target_segment > 0)
-            ? current_time + (state.update_time_minutes * 60)
-            : state.next_update_time;
+    result.next_update_time = (override && target_segment > 0)
+                                  ? current_time + update_span.count()
+                                  : state.next_update_time;
     return result;
   }
 
   if (override) {
-    result.next_segment_time =
-        current_time + (state.update_time_minutes * 60) / segs;
+    result.next_segment_time = current_time + segment_span.count();
     if (target_segment > 0) {
       const segments_t clamped =
           std::min<segments_t>(segs, static_cast<segments_t>(target_segment));
       result.nsegments_done = clamped;
       result.next_update_time =
-          current_time + (state.update_time_minutes * 60 *
-                          static_cast<std::time_t>(segs - clamped + 1)) /
-                             static_cast<std::time_t>(segs);
+          current_time + ((segs - clamped + 1) * update_span / segs).count();
     } else {
       result.nsegments_done =
           std::min<segments_t>(segs, state.nsegments_done + 1);
       result.next_update_time = state.next_update_time;
     }
   } else {
-    result.next_segment_time =
-        state.next_segment_time + (state.update_time_minutes * 60) / segs;
+    result.next_segment_time = state.next_segment_time + segment_span.count();
     result.nsegments_done =
         std::min<segments_t>(segs, state.nsegments_done + 1);
     result.next_update_time = state.next_update_time;

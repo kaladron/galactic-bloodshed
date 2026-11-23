@@ -2,9 +2,10 @@ name: CI
 
 on:
   push:
-    tags-ignore:
-      - 'v*'
+    branches:
+      - '**'
   pull_request:
+  workflow_dispatch:
 
 env:
   LLVM_VERSION: "22"

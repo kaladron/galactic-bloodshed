@@ -22,16 +22,16 @@ Planetary surface temperatures can be shifted toward species-compatible equilibr
 
 ```mermaid
 flowchart LR
-    Target["Target Planetary World\nBaseline Stellar Temperature"] --> Mirror["Orbital Space Mirrors (+)\nFocused Stellar Energy Redirection"]
+    Target["Target Planetary World\nBaseline Stellar Temperature"] --> Mirror["Orbital Space Mirrors (M)\nFocused Stellar Energy Redirection"]
     Target --> Aerosols["Aerosol Canisters\nGreenhouse Gases (h) or Dust Canisters (g)"]
     Mirror --> Shift["Planetary Temperature Shift (Delta T)"]
     Aerosols --> Shift
 ```
 
-### Orbital Space Mirrors (`+`)
+### Orbital Space Mirrors (`M`)
 Space Mirrors are massive orbital reflector arrays designed to capture and redirect stellar radiation within their star system:
 - **Planetary Heating**: Aimed directly at a planet in the same star system (`order <ship> aim <planet>`, `order <ship> intensity <0..100>`), mirrors focus concentrated solar energy into the upper atmosphere to warm surface temperatures and melt ice sheets (cooling requires dust canisters `g`).
-- **Thermal Redirection Formula**: Within planetary orbit range ($\text{Range} \le 50$), effective intensity equals $\text{Intensity}$; beyond $\text{Range} > 50$, $`I_{\text{effective}} = \lfloor 50 \times \text{Intensity} / \text{Range} \rfloor`$. Accounting for hull damage, $`\Delta T = \operatorname{round}\!\left((1 - 0.01 \times \text{Damage}) \times I_{\text{effective}}\right)`$.
+- **Thermal Redirection Formula**: Within planetary orbit range ($\text{Range} \le 50$), effective intensity equals $\text{Intensity}$; beyond $\text{Range} > 50$, $`I_{\text{effective}} = \lfloor 50 \times \text{Intensity} / \text{Range} \rfloor`$. Accounting for hull damage, $`\Delta T = \text{round}\!\left((1 - 0.01 \times \text{Damage}) \times I_{\text{effective}}\right)`$.
 
 ### Atmospheric Aerosol Canisters
 - **Greenhouse Gas Canisters (`h`)**: Injected into the troposphere to trap infrared radiation, raising global planetary temperatures.
@@ -41,20 +41,20 @@ Space Mirrors are massive orbital reflector arrays designed to capture and redir
 
 ## 2. Atmospheric Processing and Gas Composition
 
-Planetary atmospheres consist of distinct chemical gas concentrations (Oxygen, Nitrogen, Carbon Dioxide, Methane, Helium, Sulfur) and ambient toxicity:
+Planetary atmospheres consist of eight distinct chemical gas concentrations (Methane, Oxygen, Carbon Dioxide, Hydrogen, Nitrogen, Sulfur, Helium, and Other):
 
 ```mermaid
 flowchart TD
-    Atmosphere["Planetary Atmosphere\n(Gas Ratios & Toxicity Level)"] --> Processor["Atmosphere Processors (a)\nSurface Industrial Chemical Plants"]
-    Processor --> Convert["Catalytic Gas Conversion\nSynthesize Breathable O2 / N2 & Purge Toxic Gas"]
-    Convert --> Stable["Equilibrium Biosphere\nBounded within [0%, 100%] Safe Parameters"]
+    Atmosphere["Planetary Atmosphere\n(8 Chemical Gas Ratios)"] --> Processor["Atmosphere Processors (a)\nLanded Surface Chemical Plants"]
+    Processor --> Convert["Catalytic Gas Conversion (3.0 Fuel / Update)\nShift 8 Gases Toward Racial Profile"]
+    Convert --> Stable["Equilibrium Biosphere\nBounded within [0%, 100%] Parameters"]
 ```
 
 ### Atmosphere Processors (`a`)
 Atmosphere Processors are fixed industrial installations constructed on planetary sectors:
-- **Catalytic Gas Synthesis**: Active processors systematically modify local atmospheric gas concentrations each turn segment, adjusting gas ratios toward the operating species' ideal respiratory profile.
-- **Toxicity Neutralization**: Processors chemically scrub corrosive and acidic gases from the troposphere, gradually lowering planetary toxicity levels.
-- **Safety Clamping**: Gas concentrations and toxicity ratings are strictly bounded within $[0\%, 100\%]$ to prevent unphysical atmospheric density or ecological collapse.
+- **Catalytic Gas Synthesis**: During each **full turn update**, an active (`order on`) landed processor expends $3.0$ fuel and shifts each of the eight atmospheric gas percentages toward the owning species' ideal respiratory profile, scaled by crew complement and inverse planet size ($`50 / (50 + N_{\text{sectors}})`$).
+- **Scope Boundary**: Atmosphere Processors adjust gas composition only; they **do not** scrub planetary `Toxicity` (toxicity remediation requires Toxic Waste Canisters `w`).
+- **Safety Clamping**: All eight gas concentrations remain bounded within $[0\%, 100\%]$.
 
 ---
 
@@ -78,10 +78,9 @@ Terraform Devices are autonomous ground vehicles programmed with sequential move
 - **Colony Reset**: Terraforming a sector completely clears any existing colony, resetting ownership, population, troops, sector efficiency, and mobilization to zero.
 
 ### Space Plows (`K`)
-Space Plows are specialized agricultural engineering vehicles that cultivate surface topsoil:
-- **Fertility Enhancement**: Moving across arable sectors, plows condition the soil, systematically increasing agricultural fertility ($0\%$ to $100\%$).
-- **Debris and Radiation Cleanup**: Cleans lingering orbital debris and purges residual radiation fallout from ground sectors.
-- **Industrial Waste Byproduct**: Continuous heavy plowing generates trace industrial waste, requiring periodic environmental monitoring.
+Space Plows are specialized agricultural engineering vehicles that cultivate surface topsoil along programmed ground routes:
+- **Fertility Enhancement**: Expending $2.0$ fuel per update step across tolerated sectors, plows cultivate topsoil and increase agricultural fertility toward $100\%$ (up to $10$ points per update, scaled by hull efficiency and crew complement).
+- **Industrial Waste Byproduct**: Continuous heavy plowing carries a chance of increasing planetary toxicity, requiring periodic environmental monitoring.
 
 ---
 

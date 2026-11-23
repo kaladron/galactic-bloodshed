@@ -94,7 +94,7 @@ Open market lots on the Interstellar Exchange are evaluated and cleared during t
 1. **Delivery Delay**: Commodities placed on the exchange require one update to register before bids are eligible for fulfillment.
 2. **Affordability Check**: The highest bidder must possess sufficient funds to pay the bid price.
 3. **Freight Cost Calculation**: Shipping tariffs scale with the Euclidean distance between the origin and destination star systems ($`\text{Distance} = \sqrt{(x_2 - x_1)^2 + (y_2 - y_1)^2}`$), quantized down to $10{,}000$-unit increments ($`r_{\text{dist}} = \lfloor \text{Distance} / 10{,}000 \rfloor \times 10{,}000`$):
-   $$\text{Shipping Fee} = \operatorname{round}\!\left(\left(1 - e^{-r_{\text{dist}} / 200{,}000}\right) \times \text{Bid Price}\right)$$
+   $$\text{Shipping Fee} = \text{round}\!\left(\left(1 - e^{-r_{\text{dist}} / 200{,}000}\right) \times \text{Bid Price}\right)$$
    The bid price is transferred from the buyer's governor treasury to the seller's governor treasury, and the shipping fee is charged via the buyer's maintenance accounting.
 4. **Deposit & Stockpile**: Commodities are delivered directly to the designated destination planet's resource reserves.
 
@@ -134,10 +134,10 @@ Crossing technology rating thresholds unlocks new capabilities and dispatches br
 | **Von Neumann AI** | $100.0$ | Self-replicating autonomous machines |
 | **Continuous Energy Weapons (CEW)** | $150.0$ | Heavy continuous beam batteries |
 | **Audio-Vibratory-Physio-Molecular Transporter (AVPM)** | $250.0$ | Instantaneous planetary matter transmission (`[` transporter units) |
-| **Tractor Beams** | $999.0$ | Gravitational capture and towing beams |
-| **Transporters** | $999.0$ | Advanced orbital matter transmission |
-| **Cloaking Devices** | $999.0$ | Optical and subspace sensor cloaking |
-| **Wormhole Stabilization** | $999.0$ | Artificial wormhole navigation |
+| **Tractor Beams** | $999.0$ | Reserved 1989 discovery bulletin (unimplemented prototype) |
+| **Transporters** | $999.0$ | Reserved 1989 discovery bulletin (distinct from active `[` AVPM) |
+| **Cloaking Devices** | $999.0$ | Reserved 1989 discovery bulletin (no constructible cloaked hulls) |
+| **Wormhole Stabilization** | $999.0$ | Reserved 1989 discovery bulletin (unimplemented prototype) |
 
 ---
 
@@ -147,7 +147,7 @@ Each update, victory scores (`victory` command) are evaluated across all active 
 
 $$\text{Scaled Score} = \left\lfloor \frac{1000 \times N_{\text{sectors}} + 333 \times \left(\text{Fleet Build Cost} + \lfloor 0.10 \times \text{Fleet Tech} \rfloor\right) + 100 \times (\text{Resources} + \text{Destruct}) + 15 \times \text{Fuel} + 5 \times \text{Treasury}}{10{,}000} \right\rfloor$$
 
-$$\text{Final Victory Score} = \operatorname{round}\!\left(\text{Scaled Score} \times \left(\frac{\arctan(\text{Morale} / 10{,}000)}{\pi} + 0.5\right)\right)$$
+$$\text{Final Victory Score} = \text{round}\!\left(\text{Scaled Score} \times \left(\frac{\arctan(\text{Morale} / 10{,}000)}{\pi} + 0.5\right)\right)$$
 
 ### Planetary Control and Victory Conditions
 

@@ -2,14 +2,13 @@
 
 ## Overview
 
-When open warfare is too costly or politically impractical, star empires employ **Covert Operations, Espionage, and Asymmetric Subversion**. Intelligence operatives infiltrate foreign colonies to incite civil insurrections, orbital mind-control beams pacify hostile populations from orbit, cybernetic hackers reprogram autonomous machine minds, and cloaked sensor probes map enemy territory from deep space.
+When open warfare is too costly or politically impractical, star empires employ **Covert Operations, Subversion, and Reconnaissance**. Intelligence operatives infiltrate foreign colonies to incite civil insurrections, Orbital Assault Platforms (`O`) intimidate captive populations from orbit, and unmanned sensor probes, telescopes, and hidden space mines monitor contested borders.
 
 ```mermaid
 flowchart TD
     Covert["Covert & Asymmetric Warfare"] --> Insurgency["Colonial Insurgency & Sabotage\nExploit Oppressive Taxes & Public Discontent"]
-    Covert --> Psychic["Orbital Mind Control\nPlanetary Enslavement & Pacification Lasers"]
-    Covert --> Cyber["Cybernetic Subversion\nHack & Reprogram Von Neumann / Berserker AI"]
-    Covert --> Recon["Stealth & Sensor Cloaking\nSensor Sweeps, Telescopes & Cloaking Fields"]
+    Covert --> Coercion["Orbital Intimidation & Enslavement\nOrbital Assault Platforms (O) & Tributary Extraction"]
+    Covert --> Recon["Reconnaissance & Hidden Defenses\nSensor Probes (:), Telescopes (=, \\) & Space Mines (+)"]
 ```
 
 ---
@@ -42,7 +41,7 @@ $$x = \left(K_{\text{insurg}} \times \frac{\text{Money} \times \text{Tax}_{\text
 - **Empire Morale ($`M_{\text{morale}}`$)**: $`M(\text{Morale}_{\text{instigator}} - \text{Morale}_{\text{target}})`$.
 - **Star-System Civilian Balance ($`M_{\text{pop}}`$)**: $`M\!\left(\frac{\text{Pop}_{\text{instigator, system}} - \text{Pop}_{\text{target, system}}}{50.0}\right)`$, where a $500{,}000$-civilian differential across the star system equals $\pm 10{,}000$ morale.
 - **Planetary Troop Balance ($`M_{\text{troops}}`$)**: $`M\!\left(10.0 \times (\text{Fighters}_{\text{instigator}} \cdot \text{Troops}_{\text{instigator}} - \text{Fighters}_{\text{target}} \cdot \text{Troops}_{\text{target}})\right)`$, where a $1{,}000$-unit effective troop differential on the planet equals $\pm 10{,}000$ morale.
-- **Odds Normalization & Percentage Conversion**: Dividing by $50.0$ normalizes $x$, and $\operatorname{round}\!\left(\frac{200.0 \cdot \arctan(x)}{\pi}\right)\%$ maps $\arctan(x) \in [0, \pi/2)$ onto $[0\%, 100\%)$.
+- **Odds Normalization & Percentage Conversion**: Dividing by $50.0$ normalizes $x$, and $\text{round}\!\left(\frac{200.0 \cdot \arctan(x)}{\pi}\right)\%$ maps $\arctan(x) \in [0, \pi/2)$ onto $[0\%, 100\%)$.
 
 ### Stage 2: Sector-by-Sector Uprising
 When the Stage 1 roll succeeds, each populated sector owned by the target empire is evaluated individually:
@@ -60,45 +59,29 @@ $$\text{Suppression Threshold} = 10 \times \text{Fighters}_{\text{race}} \times 
 
 ---
 
-## 2. Orbital Mind Control and Population Pacification
+## 2. Orbital Intimidation and Planetary Enslavement
 
-Advanced scientific empires (requiring **Technology Level $350.0+$**) can construct **Mind Control Laser Platforms (`l`)**:
-
-```mermaid
-flowchart LR
-    Platform["Mind Control Laser Station (l)\nStationed in Low Planetary Orbit"] --> Aim["Focus Orbital Neural Beam\nDirect at Hostile Surface Population"]
-    Aim --> Pacify["Psychic Pacification\nBypasses Physical Fortifications & Armor"]
-    Pacify --> Enslave["Instantaneous Enslavement\nPopulation Subjugated without Troop Landings"]
-```
-
-- **Orbital Neural Projection**: Stationed in low planetary orbit, the platform projects focused psionic beams through the upper atmosphere.
-- **Bloodless Subjugation**: Bypasses fortified surface bunkers, defense gun batteries, and ground troops, directly pacifying native colonists and forcing the population into imperial servitude (`enslave`).
+Rather than wiping out productive colonies through orbital bombardment, an empire with an active **Orbital Assault Platform (`O`)** in planetary orbit can subjugate the world using `enslave <ship>` (see [Planetary Mechanics](planets.md)):
+- **Tributary Diversion**: While enslaved, the planet's turn-update resource, fuel, destruct, and tax outputs are diverted to the enslaving empire's orbital fleet.
+- **Revolt Suppression**: Maintaining an undamaged, active Orbital Assault Platform in orbit gives a $50\%$ chance to suppress triggered slave revolts and gives each master-owned surface sector a $50\%$ chance to survive if a revolt erupts.
+- *Unimplemented Prototype Note*: Although the ship catalog lists **Mind Control Lasers (`l`)**, that hull class is an unimplemented 1989 design stub and cannot be constructed.
 
 ---
 
-## 3. Cybernetic Subversion and Machine AI Hacking
-
-Autonomous Von Neumann machines and Berserkers operating across the galaxy can be intercepted and subverted:
-
-- **Mind Reprogramming**: Specialist cyber-warfare teams can capture landed probes or orbital Berserkers and tamper with their core neural matrices.
-- **Mission Redirection**: Hackers can overwrite the machine's ancestral progenitor ID, wipe out its target aggression hitlists, or reprogram Berserker battlefleets to hunt down enemy star systems.
-
----
-
-## 4. Stealth Reconnaissance and Sensor Cloaking
+## 3. Reconnaissance, Hidden Mines, and Sensor Limits
 
 Information superiority is the foundation of covert strategy:
 
 ```mermaid
 flowchart TD
     Sensors["Imperial Reconnaissance Suite"] --> Probes["Unmanned Sensor Probes (:)\nFast, Inexpensive Telemetry Sweeps"]
-    Sensors --> Telescopes["Optical Telescopes\nGround (=) & Space (\\) Observatories"]
-    Sensors --> Cloak["Sensor Cloaking Devices\nObscure Vessels from Enemy Radar Sweeps"]
+    Sensors --> Telescopes["Optical Telescopes\nSpace (=) & Ground (\\) Observatories"]
+    Sensors --> Mines["Hidden Space Mines (+)\nConcealed from Standard Orbital Sweeps"]
 ```
 
-- **Sensor Probes (`:`)**: Fast, automated reconnaissance vehicles built inside warship hangars. Probes scout uncharted star systems, mapping planetary compositions and detecting hidden enemy installations.
-- **Space and Ground Telescopes (`=`, `\\`)**: Long-range astronomical observatories that peer across deep space to survey distant star systems without crossing hostile borders.
-- **Sensor Cloaking Fields ($999.0\text{ Tech}$)**: Advanced electromagnetic cloaking devices that render capital ships invisible to standard orbital sensor sweeps, allowing surprise fleet deployments and covert strikes.
+- **Sensor Probes (`:`)**: Fast, automated reconnaissance vehicles built on planets, in Habitats, or inside warship hangars to scout distant star systems.
+- **Space and Ground Telescopes (`=`, `\\`)**: Long-range astronomical observatories (`=` in orbit, `\\` on planetary surfaces) whose sighting range scales with technology to survey neighboring stars without crossing borders.
+- **Hidden Space Mines (`+`)**: Foreign Space Mines remain concealed from standard orbital maps until explicitly sighted, allowing covert perimeter denial around key worlds. *(Note: the $999.0$-tech **Cloaking Device** discovery milestone is a reserved 1989 stub with no constructible cloaked ship classes.)*
 
 ---
 

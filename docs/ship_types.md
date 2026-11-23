@@ -17,61 +17,16 @@ Each vessel class is defined by standard baseline characteristics:
 ## 1. Classification & Fleet Summary
 
 ```mermaid
-mindmap
-  root((Starfleet & Installations))
-    Exploration & Colonization
-      Spore Pod [p]
-      Shuttle [s]
-      Explorer [e]
-      Space Probe [:]
-    Warships & Combatants
-      Fighter Group [f]
-      Destroyer [d]
-      Cruiser [C]
-      Interceptor [I]
-      Battleship [B]
-      Dreadnaught [D]
-      Carrier [X]
-      Space Mine [+]
-      Missile [^]
-    Logistics & Transport
-      Cargo Ship [c]
-      Tanker [t]
-      Lander [L]
-    Orbital Stations & Bastions
-      Habitat [H]
-      Station [S]
-      Orbital Assault Platform [O]
-      Space Port [J]
-      Space Mirror [M]
-      Mind Control Laser [l]
-      AVPM Transporter [[]
-    Planetary Facilities & Defense
-      Factory [F]
-      Weapons Plant [W]
-      Government Center [@]
-      Quarry [q]
-      Dome [Y]
-      Bunker [b]
-      Gamma Ray Laser [G]
-      Planet Defense Net [P]
-      ABM Battery [&]
-      Mech AFV [R]
-    Geoengineering
-      Terraform Device [T]
-      Atmosphere Processor [a]
-      Dust Canister [g]
-      Greenhouse Gases [h]
-      Toxic Waste Canister [w]
-      Space Plow [K]
-    Science & Optics
-      Space Telescope [=]
-      Ground Telescope [\\]
-      T-R Beam [-]
-    Autonomous Machine AI
-      Von Neumann Machine [v]
-      Berserker [V]
+flowchart TD
+    Fleet["Starfleet & Installations (47 Classes)"] --> Explore["Exploration & Colonization\nSpore Pod (p), Shuttle (s), Explorer (e), Probe (:)"]
+    Fleet --> Combat["Warships & Ordnance\nFighter (f), Destroyer (d), Cruiser (C), Interceptor (I),\nBattleship (B), Dreadnaught (D), Carrier (X), Mine (+), Missile (^)"]
+    Fleet --> Logistics["Logistics & Assault\nCargo Ship (c), Tanker (t), Lander (L)"]
+    Fleet --> Orbital["Orbital Stations & Bastions\nHabitat (H), Station (S), OAP (O), Space Port (J),\nSpace Mirror (M), AVPM ([), Mind Control Laser* (l)"]
+    Fleet --> Surface["Planetary Facilities & Defense\nFactory (F), Weapons Plant (W), Gov Center (@), Quarry (q),\nDome (Y), Bunker (b), GRL (G), PDN (P), ABM (&), AFV (R)"]
+    Fleet --> Geo["Geoengineering, Science & Autonomous AI\nTerraform (T), Atm. Processor (a), Canisters (g, h, w), Plow (K),\nTelescopes (=, \\), T-R Beam* (-), VN (v), Berserker (V)"]
 ```
+
+*(Classes marked with `*` are unimplemented 1989 design stubs retained in the ship catalog.)*
 
 ---
 
@@ -147,14 +102,14 @@ Large orbital structures acting as regional command centers, industrial shipyard
 | **Ob Asst Pltfrm** | `O` | 200 | 40 | 5 | 4 | 2000 | 1400 | 1000 | 200 | 50 (H/M) | Hyper, Crystal, CEW, Laser Mount, Repair |
 | **Space Port** | `J` | 0 | 50 | 3 | 0 | 0 | 0 | 0 | 100 | 0 | Starport, Trade & Commerce Hub, Maint |
 | **Space Mirror** | `M` | 100 | 100 | 0 | 2 | 20 | 200 | 10 | 5 | 1 (L) | Focused Solar Beam / Terraforming |
-| **Mind Control Lsr** | `l` | 350 | 50 | 1 | 4 | 100 | 25 | 0 | 2 | 0 | Switch, Planetary Enslavement Laser |
-| **AVPM Transporter** | `[` | 200 | 300 | 0 | 0 | 1000 | 1000 | 1000 | 100 | 0 | Switch, Anti-Matter Mass Transporter |
+| **Mind Control Lsr** | `l` | 350 | 50 | 1 | 4 | 100 | 25 | 0 | 2 | 0 | *Unimplemented 1989 design stub* |
+| **AVPM Transporter** | `[` | 200 | 300 | 0 | 0 | 1000 | 1000 | 1000 | 100 | 0 | Switch, Matter Transporter |
 
 ### Tactical Notes
-- **Habitat (`H`)**: Massive space colony housing up to $2000$ colonists in orbit. Acts as an operational starport and internal shipyard capable of manufacturing factories, pods, and light craft. Automatically scoops $+200.0\text{ fuel}$ per update when orbiting gas giants.
+- **Habitat (`H`)**: Massive space colony housing up to $2000$ colonists in orbit. Acts as an operational starport and internal shipyard capable of manufacturing factories, orbital stations, and support craft. Automatically scoops $+200.0\text{ fuel}$ per update when orbiting gas giants.
 - **Space Port (`J`)**: Essential planetary infrastructure for market bidding, merchant shipping, commodity trading, and off-world exports.
-- **Space Mirror (`M`)**: Orbiting solar reflector array operating within its current star system. When aimed at a planet with configured intensity $\in [0, 100]$, it redirects stellar energy to raise atmospheric temperature ($`\Delta T = \operatorname{round}\!\left((1 - 0.01 \times \text{Damage}) \times I_{\text{effective}}\right)`$). It can also be aimed at hostile vessels in the same system as a thermal weapon or aimed at its host star to increase stellar instability toward nova collapse.
-- **Orbital Assault Platform (`O`)**: Formidable heavy fortress armed with $50$ heavy guns and concentrated energy weapons. In planetary orbit, it projects a continuous intimidation aura over the colony below, blockading merchant trade and demoralizing defending populations.
+- **Space Mirror (`M`)**: Orbiting solar reflector array operating within its current star system. When aimed at a planet with configured intensity $\in [0, 100]$, it redirects stellar energy to raise atmospheric temperature ($`\Delta T = \text{round}\!\left((1 - 0.01 \times \text{Damage}) \times I_{\text{effective}}\right)`$). It can also be aimed at hostile vessels in the same system as a thermal weapon or aimed at its host star to increase stellar instability toward nova collapse.
+- **Orbital Assault Platform (`O`)**: Formidable heavy fortress armed with $50$ heavy guns and concentrated energy weapons. Stationed in planetary orbit, it enables the `enslave` command and projects an orbital intimidation aura that gives a $50\%$ chance to suppress slave revolts and halves master-sector destruction when revolts occur.
 
 ---
 
@@ -168,7 +123,7 @@ Fixed surface installations constructed on planetary sectors to govern populatio
 | **Weapons Plant** | `W` | 0 | 20 | 5 | 500 | 500 | 20 | 0 | Munitions Fabrication, Ammo Depot |
 | **Govrnmnt. Center** | `@` | 0 | 500 | 20 | 500 | 1000 | 10 | 10 (L) | Imperial Capital, Starport, Governance, 20 Armor |
 | **Quarry** | `q` | 0 | 10 | 1 | 0 | 200 | 50 | 0 | Automated Mineral Extraction |
-| **Dome** | `Y` | 10 | 10 | 1 | 100 | 0 | 20 | 0 | Colonist Atmospheric Shelter |
+| **Dome** | `Y` | 10 | 10 | 1 | 100 | 0 | 20 | 0 | Consumes resources to upgrade sector efficiency toward 100% |
 | **Bunker** | `b` | 10 | 100 | 15 | 100 | 100 | 100 | 0 | Heavy Ground Fortification, 100 Troops, 20 Hangar |
 | **Gamma Ray Laser** | `G` | 100 | 30 | 3 | 50 | 0 | 40 | 20 (L) | Surface-to-Orbit Defensive Battery, Radiation Mode |
 | **Planet Def Net** | `P` | 200 | 100 | 10 | 50 | 0 | 50 | 20 (H) | Automated Orbital Defense Shield / Berserker Deterrent |
@@ -190,11 +145,11 @@ Specialized terraforming equipment used to alter planetary atmospheres, adjust t
 | Class | Letter | Tech Req | Cost | Speed | Fuel | Cargo | Crew | Capabilities & Environmental Effects |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
 | **Terraform Device** | `T` | 50 | 20 | 4 | 200 | 40 | 20 | General planetary terraforming & sector conditioning |
-| **Atmosph Processor** | `a` | 80 | 20 | 0 | 200 | 0 | 10 | Neutralizes surface toxicity into breathable atmosphere |
+| **Atmosph Processor** | `a` | 80 | 20 | 0 | 200 | 0 | 10 | Shifts 8 atmospheric gas percentages toward racial preferences |
 | **Dust Canister** | `g` | 40 | 10 | 1 | 1 | 0 | 0 | Atmospheric aerosol release to lower global temperatures |
 | **Greenhouse Gases** | `h` | 40 | 10 | 1 | 1 | 0 | 0 | Injects greenhouse agents to increase global temperatures |
-| **Tox Waste Canistr** | `w` | 0 | 5 | 4 | 20 | 0 | 0 | Injects toxic contaminants (environmental warfare) |
-| **Space Plow** | `K` | 5 | 10 | 0 | 200 | 0 | 10 | Cleans orbital debris and purges lingering radiation |
+| **Tox Waste Canistr** | `w` | 0 | 5 | 4 | 20 | 0 | 0 | Purges 20 planet toxicity on build; injects contaminants on detonation |
+| **Space Plow** | `K` | 5 | 10 | 0 | 200 | 0 | 10 | Cultivates surface sectors to raise agricultural fertility toward 100% |
 
 ### Tactical Notes
 - **Spore Pod (`p`)**: Specialized biological seeder. In planetary orbit, the pod gradually warms over simulation segments until it initiates orbital descent, detonating on the surface to seed an alien meta-colony while consuming the pod chassis.
@@ -210,7 +165,7 @@ Specialized terraforming equipment used to alter planetary atmospheres, adjust t
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
 | **Space Telescope** | `=` | 50 | 20 | 4 | 20 | 2 | Long-range orbital astronomy and sector reconnaissance |
 | **Ground Telescope** | `\\` | 5 | 2 | 0 | 0 | 2 | Surface astronomical observatory |
-| **T-R Beam** | `-` | 200 | 20 | 2 | 1000 | 5 | High-energy Tractor-Repulsor beam for orbital course alterations |
+| **T-R Beam** | `-` | 200 | 20 | 2 | 1000 | 5 | *Unimplemented 1989 Tractor-Repulsor stub* |
 
 ---
 
@@ -222,8 +177,8 @@ Autonomous self-replicating robotic units and automated combat machines.
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
 | **V.Neumann Machine** | `v` | 80 | 100 | 1 | 4 | 50 | 0 | 0 | Autonomous robotic surface miner & self-replicator |
 | **Berserker** | `V` | 999 | 100 | 15 | 6 | 1000 | 500 | 40 (H/M) | Automated planetary saturation bombardment warship |
-| **Bers Cntrl Center** | `;` | 9999 | 3 | 10 | 0 | 0 | 50 | 0 | Deity/admin automated machine AI command center |
-| **Bers Autofac** | `Z` | 9999 | 8 | 10 | 0 | 1000 | 1000 | 0 | Deity/admin automated berserker fabrication shipyard |
+| **Bers Cntrl Center** | `;` | 9999 | 3 | 10 | 0 | 0 | 50 | 0 | *Unimplemented deity/Berserker command center stub* |
+| **Bers Autofac** | `Z` | 9999 | 8 | 10 | 0 | 1000 | 1000 | 0 | *Unimplemented deity/Berserker autofactory stub* |
 | **GODSHIP** | `!` | 9999 | 10 | 100 | 9 | 20000 | 20000 | 1000 | Omnipotent deity administrative vessel |
 
 ### Tactical Notes
@@ -234,23 +189,25 @@ Autonomous self-replicating robotic units and automated combat machines.
 
 ## 10. Construction Locations & Shipyard Hierarchy
 
-Vessels can only be constructed in facilities equipped with matching shipyard capabilities:
+Vessels can only be constructed in facilities equipped with matching shipyard tiers:
 
 ```mermaid
 flowchart TD
-    Build["Build Command (build <type>)"] --> Location{"Construction Location"}
-    Location -->|Planetary Sector| Surface["Planetary Surface\nRequires unowned or colonized land"]
-    Location -->|Factory Facility| Factory["Factory Installation\nConstructs all standard hull designs"]
-    Location -->|Habitat Bay| Hab["Habitat Bay\nConstructs Pods, Factories, Plants, & OMCLs"]
-    Location -->|Warship Hangars| Warship["Warship Hangar\nConstructs Probes & light parasite craft"]
+    Build["Build Command (build)"] --> Location{"Construction Venue"}
+    Location -->|"Planetary Sector"| Surface["Planetary Surface\nOwned populated sector"]
+    Location -->|"Factory (F)"| Factory["Factory Production Line\nStandard sublight & FTL hulls"]
+    Location -->|"Orbital Builders (s, c, S, O)"| Orbital["Orbital Superstructures\nCarriers, Stations, Habitats, OAPs & Mirrors"]
+    Location -->|"Habitat Bay (H)"| Hab["Habitat Bay\nSuperstructures, Plants, Factories & Probes"]
+    Location -->|"Ship Hangar"| Warship["Warship / Station Hangar\nSpace Probes (:)"]
 ```
 
-| Builder Type | Eligible Ship Classes Built Here |
+| Construction Venue | Eligible Ship Classes Built Here |
 | :--- | :--- |
-| **Planetary Surface** | Spore Pods, Shuttles, Government Centers, Factories, Weapons Plants, Quarries, Domes, Space Ports, Ground Telescopes, ABM Batteries, Gamma Ray Lasers, Planet Defense Nets, Bunkers. |
-| **Factory (`F`)** | All standard space combatants (Fighters, Destroyers, Cruisers, Battleships, Dreadnaughts, Carriers), Freighters, Tankers, Landers, Explorers, Stations, Habitats, Terraformers. |
-| **Habitat (`H`)** | Spore Pods, Factories, Weapons Plants, Terraform Devices, Mind Control Lasers, Government Centers, Space Probes. |
-| **Warship Hangars (`B`, `D`, `C`, `X`)** | Dedicated Space Probes (`:`). |
+| **Planetary Surface** | Spore Pods (`p`), Government Centers (`@`), Factories (`F`), Weapons Plants (`W`), Terraform Devices (`T`), Space Probes (`:`), Quarries (`q`), Domes (`Y`), Space Plows (`K`), Space Ports (`J`), Ground Telescopes (`\\`), Atmosphere Processors (`a`), Canisters (`g`, `h`, `w`), AVPM Transporters (`[`), ABM Batteries (`&`), Gamma Ray Lasers (`G`), Planet Defense Nets (`P`), Bunkers (`b`), Von Neumann Machines (`v`). |
+| **Factory (`F`)** | Shuttles (`s`), Fighter Groups (`f`), Destroyers (`d`), Cruisers (`C`), Interceptors (`I`), Battleships (`B`), Dreadnaughts (`D`), Explorers (`e`), Cargo Ships (`c`), Tankers (`t`), Landers (`L`), Mech AFVs (`R`), Space Telescopes (`=`), Space Mines (`+`), Missiles (`^`). |
+| **Orbital Builders (`s`, `c`, `S`, `O`)** | Carriers (`X`), Habitats (`H`), Stations (`S`), Orbital Assault Platforms (`O`), Space Mirrors (`M`) *(Shuttles `s` and Cargo Ships `c` construct outside in space; Stations `S` and OAPs `O` construct inside their hangars)*. |
+| **Habitat (`H`)** | Carriers (`X`), Habitats (`H`), Stations (`S`), Orbital Assault Platforms (`O`), Space Mirrors (`M`), Government Centers (`@`), Factories (`F`), Weapons Plants (`W`), Terraform Devices (`T`), Space Probes (`:`). |
+| **Ship Hangars (`f`, `d`, `C`, `I`, `B`, `D`, `t`, `X`, `S`, `O`, `H`)** | Space Probes (`:`). |
 
 ---
 

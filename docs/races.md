@@ -5,26 +5,11 @@
 In **Galactic Bloodshed**, every empire represents a unique biological or xenomorphic species engineered with custom genetic, ecological, and physiological traits. A species' biological profile governs how rapidly its colonies reproduce, how efficiently its citizens extract minerals and refine fuels, how much mass its soldiers add to naval hulls, and which planetary biospheres it can inhabit.
 
 ```mermaid
-mindmap
-  root((Species Profile))
-    Demographics & Physiology
-      Metabolism & Labor Vigor
-      Body Mass
-      Reproductive Sexes
-      Birthrate & Starvation
-      Adventurism & Colonization
-    Cognitive & Science
-      Baseline IQ
-      Collective Hive Intelligence
-      Ground Combat Lethality
-    Ecological Biomes
-      Sector Terrain Affinity
-      Atmospheric Composition
-      Toxicity Tolerance
-      Fertilization Capability
-    Archetypes
-      Standard Xenoid / Humanoid
-      Metamorph Biological Swarms
+flowchart TD
+    Profile["Species Profile"] --> Demo["Demographics & Physiology\nMetabolism, Body Mass, Sexes,\nBirthrate & Adventurism"]
+    Profile --> Cog["Cognitive & Science\nBaseline IQ, Collective Intelligence\n& Ground Combat Lethality"]
+    Profile --> Eco["Ecological Biomes\nTerrain Affinity, 8 Atmospheric Gases,\nTemperature & Toxicity"]
+    Profile --> Arch["Species Archetypes\nStandard Xenoid / Humanoid\n& Metamorph Swarms"]
 ```
 
 ---
@@ -44,7 +29,7 @@ flowchart LR
 
 ### Metabolism ($M$)
 Metabolism represents the biological vigor, industriousness, and physical energy of the species:
-- **Industrial Extraction**: Higher metabolism yields higher mineral extraction and fuel refining per sector: $\text{Yield} = \min\left(\text{Reserves}, \left\lfloor \text{Metabolism} \times \operatorname{Uniform}(1, \text{Efficiency}) \right\rfloor\right)$.
+- **Industrial Extraction**: Higher metabolism yields higher mineral extraction and fuel refining per sector: $\text{Yield} = \min\left(\text{Reserves}, \left\lfloor \text{Metabolism} \times \text{Uniform}(1, \text{Efficiency}) \right\rfloor\right)$.
 - **Infrastructure Development**: Increases the rate at which colonists upgrade sector efficiency toward $100\%$ (plated status).
 - **Tax Strain**: High taxation depresses effective metabolism: $`\text{Metabolism}_{\text{effective}} = \text{Metabolism}_{\text{base}} \times \left(1 - \frac{\text{Tax Rate}}{100}\right)`$.
 
@@ -68,7 +53,7 @@ $$\Delta P = \left\lfloor (K - P) \times \text{Birthrate} \right\rfloor$$
   where $P$ is the current sector population and $K$ is the sector's current carrying capacity ($\text{Max Supported Population}$).
   - **Why Gap $(K - P)$ Closes by $100\%$ at Maximum Birthrate**: Because $\Delta P$ is proportional to the *unused capacity gap* $(K - P)$ rather than existing headcount $P$, a species with $\text{Birthrate} = 1.00$ closes **$100\%$ of the $(K - P)$ gap in a single update**, jumping directly to $K$.
   - **Worked Example**: Consider a newly colonized sector with $P = 11$ colonists, $\text{Efficiency} = 10\%$, $\text{Fertility} = 100$, $\text{Compatibility} = 98\%$, and $\text{Toxicity} = 2\%$:
-    1. Its carrying capacity is $K = \lfloor (10 + 1) \times 100 \times 0.98 \times 0.98 \rfloor = 1{,}056$.
+    1. Its carrying capacity is $K = \text{round}((10 + 1) \times 100 \times 0.98 \times 0.98) = 1{,}056$.
     2. Under a Malthusian model ($\Delta P = P \times \text{Birthrate}$), $11$ colonists with $\text{Birthrate} = 1.00$ would only produce $11$ offspring.
     3. Under Galactic Bloodshed's Newtonian relaxation model, $\Delta P = \lfloor (1{,}056 - 11) \times 1.00 \rfloor = 1{,}045$, immediately expanding the sector to $1{,}056$ citizens in a single update.
   - **Infrastructure Rate-Limiting**: Once $P$ reaches $K$, demographic growth in that sector pauses ($\Delta P = 0$) until colonists construct higher sector efficiency ($\text{Efficiency} \to 100\%$), which progressively raises $K$.
@@ -120,11 +105,17 @@ Every species possesses a distinctive environmental affinity matrix defining its
 
 ```mermaid
 flowchart LR
-    Affinity["Terrain Affinity Matrix\n(Water, Forest, Desert, Mountain, Ice, Gas)"] --> Compat["Habitability Compatibility (0 - 100%)"]
+    Gases["Atmospheric Composition\n(8 Chemical Gases)"] --> Compat["Planetary Compatibility (0 - 100%)"]
     Tox["Planetary Toxicity"] --> Compat
     Temp["Surface Temperature"] --> Compat
-    Compat --> MaxPop["Maximum Sector Carrying Capacity"]
+    Affinity["Terrain Affinity Matrix\n(Sector Habitability Gate)"] --> MaxPop["Maximum Sector Carrying Capacity"]
+    Compat --> MaxPop
 ```
+
+### Planetary Habitability Compatibility
+Overall planetary compatibility ($0\%$ to $100\%$) multiplies toxicity survival, thermal comfort against racial ideal temperature ($|\Delta T|$), and respiratory alignment across all eight atmospheric gases ($|\Delta C_g|$ for Methane, Oxygen, Carbon Dioxide, Hydrogen, Nitrogen, Sulfur, Helium, and Other):
+
+$$\text{Compatibility} = 100 \times \left(1 - \frac{\text{Toxicity}}{100}\right) \times \max\!\left(0,\; 1 - 0.001 \times |\Delta T|\right) \times \prod_{g=1}^{8} \left(1 - \frac{|\Delta C_g|}{100}\right)$$
 
 ### Terrain Affinity Vectors
 Species assign preference ratings ($0\%$ to $100\%$) across nine distinct sector classifications:
@@ -142,9 +133,9 @@ Species assign preference ratings ($0\%$ to $100\%$) across nine distinct sector
 | **Plated** | Heavy urban / industrial infrastructure plating. | Industrial manufacturing centers. |
 
 ### Sector Demographic Carrying Capacity
-The maximum sustainable population of any planetary sector is calculated from local infrastructure, fertility, species compatibility, and environmental toxicity:
+If a species' terrain affinity for a sector's current condition is $0\%$, that sector cannot support colonists ($\text{Max Population} = 0$). For tolerated sector types (affinity $> 0\%$), maximum sustainable population rounds to the nearest integer from local infrastructure, fertility, planetary compatibility, and toxicity:
 
-$$\text{Max Population} = \left\lfloor (\text{Efficiency} + 1) \times \text{Fertility} \times 0.01 \times \text{Compatibility} \times \frac{100 - \text{Toxicity}}{100} \right\rfloor$$
+$$\text{Max Population} = \text{round}\!\left((\text{Efficiency} + 1) \times \text{Fertility} \times 0.01 \times \text{Compatibility} \times \frac{100 - \text{Toxicity}}{100}\right)$$
 
 ### Natural Fertilization
 Races with the natural fertilization trait possess a turn-by-turn probability of conditioning their occupied sectors, gradually increasing agricultural fertility up to $100\%$ without requiring mechanical space plows.

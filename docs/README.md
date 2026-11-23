@@ -13,31 +13,13 @@ These guides are written for players, fleet commanders, and empire strategists s
 The documentation is organized into six functional areas:
 
 ```mermaid
-mindmap
-  root((Galactic Bloodshed Docs))
-    Astronomy & Worlds
-      stars.md [Stellar Systems & Radiation]
-      planets.md [Planetary Topography & Orbits]
-      universe_creation.md [Universe Generation]
-    Ecology & Simulation
-      planetary_simulation.md [Planetary Simulation Engine]
-      geoengineering.md [Terraforming & Atmospheres]
-    Species & Genetics
-      race_generation.md [Species Creation & Point Buy]
-      races.md [Biology, Metabolism & Genetics]
-    Society & Economy
-      economy.md [Stockpiles, Taxes & Research]
-      governance.md [Capitals & Administration]
-      diplomacy.md [Treaties & Power Blocks]
-      covert_ops.md [Espionage & Insurgency]
-    Fleet Operations & Warfare
-      ships.md [Naval Operations & Displacements]
-      ship_types.md [Starfleet Construction Catalog]
-      navigation.md [Propulsion, Orbits & Hyperspace]
-      combat.md [Tactical Combat & Gunnery]
-    Autonomous AI & Turn Cycle
-      von_neumann.md [Self-Replicating Machine AI]
-      turn_cycle.md [Simulation Engine & Scheduling]
+flowchart TD
+    Root["Galactic Bloodshed Docs"] --> Astro["Astronomy & Worlds\nstars.md, planets.md, universe_creation.md"]
+    Root --> Eco["Ecology & Simulation\nplanetary_simulation.md, geoengineering.md"]
+    Root --> Bio["Species & Genetics\nrace_generation.md, races.md"]
+    Root --> Soc["Society & Economy\neconomy.md, governance.md,\ndiplomacy.md, covert_ops.md"]
+    Root --> Fleet["Fleet Operations & Warfare\nships.md, ship_types.md,\nnavigation.md, combat.md"]
+    Root --> Turn["Autonomous AI & Turn Cycle\nvon_neumann.md, turn_cycle.md"]
 ```
 
 ---

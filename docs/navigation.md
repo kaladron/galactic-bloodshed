@@ -125,7 +125,7 @@ $$\text{Landing Fuel Cost} = \text{Gravity} \times \text{Mass}_{\text{total}} \t
 - **Crash Landing & Impact Detonation**: A surviving vessel crashes on the target sector if either:
   1. **Propellant Exhaustion**: $`\text{Fuel}_{\text{ship}} < \text{Landing Fuel Cost}`$, or
   2. **Structural Failure**: The vessel is damaged ($\text{Damage}\% > 0$) and rolls $`d_{100} \le \text{Damage}\%`$ on $1\text{--}100$.
-  When a vessel crashes, it is destroyed on impact and its onboard munitions detonate on the target sector with heavy-caliber bombardment force equivalent to $\operatorname{round}(\text{Destruct} / 3)$, devastating surrounding surface sectors.
+  When a vessel crashes, it is destroyed on impact and its onboard munitions detonate on the target sector with heavy-caliber bombardment force equivalent to $\text{round}(\text{Destruct} / 3)$, devastating surrounding surface sectors.
 - **Gas Giant Hazards**: Gas giant worlds possess no solid surface; vessels cannot land on gas giants, though orbiting vessels can safely skim gas giant upper atmospheres to harvest free propellant during turn updates.
 
 ### Carrier Recovery, Surface Mothership Loading, and Mooring
@@ -220,17 +220,7 @@ $$\text{Jump Fuel Cost} = 5.0 \times \sqrt{\text{Mass}_{\text{total}}} \times \l
 
 ---
 
-## 7. Tractor-Repulsor Beams and Gravitational Towing
-
-Advanced scientific vessels (such as Tractor-Repulsor Beam Platforms `-`) utilize high-energy graviton projectors to manipulate the trajectories of other vessels:
-
-- **Towing Staging**: Towing beams lock onto friendly or disabled craft, allowing powerful capital ships to tow unpowered hulls, space stations, or mobile factories between orbits.
-- **Kinetic Repulsion**: Repulsor beams push incoming hostile craft or drifting space mines away from delicate flagships and orbital platforms.
-- **Wormhole Stabilization ($999.0\text{ Tech}$)**: Late-game scientific breakthroughs allow empires to stabilize artificial interstellar wormholes, creating permanent zero-fuel transit corridors between distant star systems.
-
----
-
-## 8. Astrogation Utilities: Astrometric Distance and Map Centering
+## 7. Astrogation Utilities: Astrometric Distance and Map Centering
 
 ### Astrometric Distance Calculation (`distance` / `dist`)
 The `distance` command (`distance <from> <to>`) evaluates the Euclidean spatial separation between any two astrometric objects across continuous coordinate space:
@@ -248,7 +238,7 @@ The `center` command (`center <star>`) resets the commander's global navigationa
 
 ---
 
-## 9. Automated Merchant Shipping Routes (`route`) and Surface AFV Maneuvers (`walk`)
+## 8. Automated Merchant Shipping Routes (`route`) and Surface AFV Maneuvers (`walk`)
 
 ### Automated Planetary Shipping Routes (`route`)
 Each planet supports up to $4$ independent automated merchant shipping routes (`1` through `4`) per empire:

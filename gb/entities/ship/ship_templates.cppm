@@ -10,6 +10,21 @@ import std;
 import :ship_types;
 import :types;
 
+/// \brief Construction venue tiers defining where a hull class may be built
+/// (`buildable_at`) and which ship-built tiers a builder hull may construct
+/// (`constructs`).
+export struct BuildTiers {
+  bool planet{false};       ///< Planetary surface sector ('build <type> <x,y>')
+  bool ship_hangar{false};  ///< Ship hangar tier (e.g., Space Probe)
+  bool orbital_hull{false};  ///< Large orbital hull tier (Carrier, Habitat,
+                             ///< Station, OAP, Mirror)
+  bool factory{false};       ///< Factory ('F') production line
+  bool habitat{false};       ///< Habitat ('H') internal bay
+
+  [[nodiscard]] constexpr bool
+  operator==(const BuildTiers&) const noexcept = default;
+};
+
 /// \brief Strongly-typed immutable specifications and capabilities for a ship
 /// class.
 export struct ShipTemplate {
@@ -26,16 +41,16 @@ export struct ShipTemplate {
   guntype_t max_primary_caliber{
       guntype_t::NONE};  ///< Maximum primary gun caliber
   guntype_t max_secondary_caliber{
-      guntype_t::NONE};           ///< Maximum secondary gun caliber
-  fuel_t max_fuel{0.0};           ///< Maximum fuel tank capacity
-  population_t max_crew{0};       ///< Maximum crew accommodation capacity
-  armor_t base_armor{0};          ///< Baseline hull armor rating
-  resource_t build_cost{0};       ///< Base construction cost in resources
-  speed_t base_speed{0};          ///< Base engine throttle speed rating
-  damage_t base_damage{0};        ///< Base structural damage threshold
-  double build_time{0.0};         ///< Construction build time factor
-  double construction_cost{0.0};  ///< Construction cost multiplier
-  bool can_modify{false};         ///< Can be customized / modified
+      guntype_t::NONE};       ///< Maximum secondary gun caliber
+  fuel_t max_fuel{0.0};       ///< Maximum fuel tank capacity
+  population_t max_crew{0};   ///< Maximum crew accommodation capacity
+  armor_t base_armor{0};      ///< Baseline hull armor rating
+  resource_t build_cost{0};   ///< Base construction cost in resources
+  speed_t base_speed{0};      ///< Base engine throttle speed rating
+  damage_t base_damage{0};    ///< Base structural damage threshold
+  BuildTiers buildable_at{};  ///< Venues where this hull class can be built
+  BuildTiers constructs{};    ///< Ship-built tiers this hull can construct
+  bool can_modify{false};     ///< Can be customized / modified
 
   // Boolean capabilities & operational permissions
   bool can_mount_laser{false};  ///< Can be equipped with combat laser mount
@@ -46,7 +61,7 @@ export struct ShipTemplate {
   bool has_cew{false};          ///< Equipped with Concentrated Energy Weapon
   bool can_cloak{false};        ///< Equipped with cloaking device
   bool is_god_only{false};      ///< Restricted to deity/admin creation
-  bool is_programmed{false};    ///< Autonomous / automated AI control
+  bool is_programmed{false};    ///< Implemented and buildable in game code
   bool is_starport{false};      ///< Operates as a starport
   bool can_repair{false};       ///< Capable of self/fleet repair
   bool requires_maintenance{
@@ -66,21 +81,30 @@ export struct ShipTemplate {
 
   /// \brief Returns whether this ship type can be built on a planetary surface.
   [[nodiscard]] constexpr bool can_build_on_planet() const noexcept {
-    return (static_cast<int>(build_time) & 1) != 0;
+    return buildable_at.planet;
   }
 
   /// \brief Returns whether this ship type can be constructed by the specified
   /// builder ship template.
   [[nodiscard]] constexpr bool
   can_be_built_by(const ShipTemplate& builder) const noexcept {
-    return (static_cast<int>(build_time) &
-            static_cast<int>(builder.construction_cost)) != 0;
+    if (buildable_at.ship_hangar && builder.constructs.ship_hangar) {
+      return true;
+    }
+    if (buildable_at.orbital_hull && builder.constructs.orbital_hull) {
+      return true;
+    }
+    if (buildable_at.factory && builder.constructs.factory) {
+      return true;
+    }
+    return buildable_at.habitat && builder.constructs.habitat;
   }
 
   /// \brief Returns whether this ship type is equipped to construct other
   /// ships.
   [[nodiscard]] constexpr bool can_construct_ships() const noexcept {
-    return static_cast<int>(construction_cost) != 0;
+    return constructs.habitat || constructs.factory ||
+           constructs.orbital_hull || constructs.ship_hangar;
   }
 };
 
@@ -102,8 +126,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 1,
      .base_speed = 2,
      .base_damage = 0,
-     .build_time = 1,
-     .construction_cost = 0,
+     .buildable_at = {.planet = true},
      .can_modify = false,
      .can_mount_laser = false,
      .can_mount = false,
@@ -135,8 +158,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 2,
      .base_speed = 4,
      .base_damage = 0,
-     .build_time = 8,
-     .construction_cost = 4,
+     .buildable_at = {.factory = true},
+     .constructs = {.orbital_hull = true},
      .can_modify = true,
      .can_mount_laser = false,
      .can_mount = false,
@@ -168,8 +191,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 30,
      .base_speed = 4,
      .base_damage = 50,
-     .build_time = 20,
-     .construction_cost = 2,
+     .buildable_at = {.orbital_hull = true, .habitat = true},
+     .constructs = {.ship_hangar = true},
      .can_modify = true,
      .can_mount_laser = true,
      .can_mount = true,
@@ -201,8 +224,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 40,
      .base_speed = 6,
      .base_damage = 50,
-     .build_time = 8,
-     .construction_cost = 2,
+     .buildable_at = {.factory = true},
+     .constructs = {.ship_hangar = true},
      .can_modify = true,
      .can_mount_laser = true,
      .can_mount = true,
@@ -234,8 +257,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 20,
      .base_speed = 6,
      .base_damage = 50,
-     .build_time = 8,
-     .construction_cost = 2,
+     .buildable_at = {.factory = true},
+     .constructs = {.ship_hangar = true},
      .can_modify = true,
      .can_mount_laser = true,
      .can_mount = true,
@@ -267,8 +290,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 15,
      .base_speed = 6,
      .base_damage = 50,
-     .build_time = 8,
-     .construction_cost = 2,
+     .buildable_at = {.factory = true},
+     .constructs = {.ship_hangar = true},
      .can_modify = true,
      .can_mount_laser = true,
      .can_mount = true,
@@ -300,8 +323,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 10,
      .base_speed = 6,
      .base_damage = 50,
-     .build_time = 8,
-     .construction_cost = 2,
+     .buildable_at = {.factory = true},
+     .constructs = {.ship_hangar = true},
      .can_modify = true,
      .can_mount_laser = true,
      .can_mount = true,
@@ -333,8 +356,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 5,
      .base_speed = 6,
      .base_damage = 50,
-     .build_time = 8,
-     .construction_cost = 2,
+     .buildable_at = {.factory = true},
+     .constructs = {.ship_hangar = true},
      .can_modify = true,
      .can_mount_laser = true,
      .can_mount = true,
@@ -366,8 +389,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 1,
      .base_speed = 9,
      .base_damage = 0,
-     .build_time = 8,
-     .construction_cost = 2,
+     .buildable_at = {.factory = true},
+     .constructs = {.ship_hangar = true},
      .can_modify = true,
      .can_mount_laser = true,
      .can_mount = true,
@@ -399,8 +422,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 2,
      .base_speed = 6,
      .base_damage = 0,
-     .build_time = 8,
-     .construction_cost = 0,
+     .buildable_at = {.factory = true},
      .can_modify = true,
      .can_mount_laser = true,
      .can_mount = true,
@@ -432,8 +454,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 50,
      .base_speed = 4,
      .base_damage = 75,
-     .build_time = 20,
-     .construction_cost = 18,
+     .buildable_at = {.orbital_hull = true, .habitat = true},
+     .constructs = {.ship_hangar = true, .habitat = true},
      .can_modify = true,
      .can_mount_laser = false,
      .can_mount = false,
@@ -465,8 +487,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 10,
      .base_speed = 4,
      .base_damage = 75,
-     .build_time = 20,
-     .construction_cost = 6,
+     .buildable_at = {.orbital_hull = true, .habitat = true},
+     .constructs = {.ship_hangar = true, .orbital_hull = true},
      .can_modify = true,
      .can_mount_laser = false,
      .can_mount = false,
@@ -498,8 +520,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 40,
      .base_speed = 4,
      .base_damage = 75,
-     .build_time = 20,
-     .construction_cost = 6,
+     .buildable_at = {.orbital_hull = true, .habitat = true},
+     .constructs = {.ship_hangar = true, .orbital_hull = true},
      .can_modify = true,
      .can_mount_laser = true,
      .can_mount = true,
@@ -531,8 +553,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 10,
      .base_speed = 4,
      .base_damage = 0,
-     .build_time = 8,
-     .construction_cost = 4,
+     .buildable_at = {.factory = true},
+     .constructs = {.orbital_hull = true},
      .can_modify = true,
      .can_mount_laser = false,
      .can_mount = true,
@@ -564,8 +586,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 10,
      .base_speed = 4,
      .base_damage = 0,
-     .build_time = 8,
-     .construction_cost = 2,
+     .buildable_at = {.factory = true},
+     .constructs = {.ship_hangar = true},
      .can_modify = true,
      .can_mount_laser = false,
      .can_mount = true,
@@ -597,8 +619,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 10,
      .base_speed = 9,
      .base_damage = 0,
-     .build_time = 1,
-     .construction_cost = 6,
+     .buildable_at = {.planet = true},
+     .constructs = {.ship_hangar = true, .orbital_hull = true},
      .can_modify = true,
      .can_mount_laser = true,
      .can_mount = true,
@@ -630,8 +652,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 30,
      .base_speed = 2,
      .base_damage = 0,
-     .build_time = 8,
-     .construction_cost = 0,
+     .buildable_at = {.factory = true},
      .can_modify = true,
      .can_mount_laser = false,
      .can_mount = false,
@@ -663,8 +684,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 100,
      .base_speed = 2,
      .base_damage = 75,
-     .build_time = 20,
-     .construction_cost = 0,
+     .buildable_at = {.orbital_hull = true, .habitat = true},
      .can_modify = false,
      .can_mount_laser = false,
      .can_mount = false,
@@ -696,8 +716,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 20,
      .base_speed = 4,
      .base_damage = 0,
-     .build_time = 8,
-     .construction_cost = 0,
+     .buildable_at = {.factory = true},
      .can_modify = true,
      .can_mount_laser = false,
      .can_mount = true,
@@ -729,8 +748,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 2,
      .base_speed = 0,
      .base_damage = 0,
-     .build_time = 1,
-     .construction_cost = 0,
+     .buildable_at = {.planet = true},
      .can_modify = false,
      .can_mount_laser = false,
      .can_mount = false,
@@ -762,8 +780,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 20,
      .base_speed = 2,
      .base_damage = 0,
-     .build_time = 1,
-     .construction_cost = 0,
+     .buildable_at = {.planet = true},
      .can_modify = false,
      .can_mount_laser = false,
      .can_mount = true,
@@ -795,8 +812,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 20,
      .base_speed = 0,
      .base_damage = 0,
-     .build_time = 1,
-     .construction_cost = 0,
+     .buildable_at = {.planet = true},
      .can_modify = false,
      .can_mount_laser = false,
      .can_mount = false,
@@ -828,8 +844,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 10,
      .base_speed = 1,
      .base_damage = 0,
-     .build_time = 1,
-     .construction_cost = 0,
+     .buildable_at = {.planet = true},
      .can_modify = false,
      .can_mount_laser = false,
      .can_mount = false,
@@ -861,8 +876,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 10,
      .base_speed = 1,
      .base_damage = 0,
-     .build_time = 1,
-     .construction_cost = 0,
+     .buildable_at = {.planet = true},
      .can_modify = false,
      .can_mount_laser = false,
      .can_mount = false,
@@ -894,8 +908,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 100,
      .base_speed = 4,
      .base_damage = 0,
-     .build_time = 1,
-     .construction_cost = 0,
+     .buildable_at = {.planet = true},
      .can_modify = false,
      .can_mount_laser = false,
      .can_mount = false,
@@ -927,8 +940,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 100,
      .base_speed = 6,
      .base_damage = 0,
-     .build_time = 1,
-     .construction_cost = 0,
+     .buildable_at = {.planet = true},
      .can_modify = false,
      .can_mount_laser = false,
      .can_mount = false,
@@ -960,8 +972,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 500,
      .base_speed = 0,
      .base_damage = 75,
-     .build_time = 17,
-     .construction_cost = 0,
+     .buildable_at = {.planet = true, .habitat = true},
      .can_modify = false,
      .can_mount_laser = false,
      .can_mount = false,
@@ -993,8 +1004,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 50,
      .base_speed = 4,
      .base_damage = 0,
-     .build_time = 17,
-     .construction_cost = 0,
+     .buildable_at = {.planet = true, .habitat = true},
      .can_modify = false,
      .can_mount_laser = false,
      .can_mount = false,
@@ -1026,8 +1036,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 5,
      .base_speed = 4,
      .base_damage = 0,
-     .build_time = 1,
-     .construction_cost = 0,
+     .buildable_at = {.planet = true},
      .can_modify = false,
      .can_mount_laser = false,
      .can_mount = false,
@@ -1059,8 +1068,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 10,
      .base_speed = 9,
      .base_damage = 0,
-     .build_time = 19,
-     .construction_cost = 0,
+     .buildable_at = {.planet = true, .ship_hangar = true, .habitat = true},
      .can_modify = false,
      .can_mount_laser = false,
      .can_mount = false,
@@ -1092,8 +1100,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 30,
      .base_speed = 0,
      .base_damage = 75,
-     .build_time = 1,
-     .construction_cost = 0,
+     .buildable_at = {.planet = true},
      .can_modify = true,
      .can_mount_laser = false,
      .can_mount = false,
@@ -1125,8 +1132,8 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 20,
      .base_speed = 0,
      .base_damage = 75,
-     .build_time = 17,
-     .construction_cost = 8,
+     .buildable_at = {.planet = true, .habitat = true},
+     .constructs = {.factory = true},
      .can_modify = false,
      .can_mount_laser = false,
      .can_mount = false,
@@ -1158,8 +1165,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 20,
      .base_speed = 4,
      .base_damage = 0,
-     .build_time = 17,
-     .construction_cost = 0,
+     .buildable_at = {.planet = true, .habitat = true},
      .can_modify = true,
      .can_mount_laser = false,
      .can_mount = true,
@@ -1191,8 +1197,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 3,
      .base_speed = 0,
      .base_damage = 0,
-     .build_time = 1,
-     .construction_cost = 0,
+     .buildable_at = {.planet = true},
      .can_modify = false,
      .can_mount_laser = false,
      .can_mount = false,
@@ -1224,8 +1229,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 8,
      .base_speed = 0,
      .base_damage = 0,
-     .build_time = 1,
-     .construction_cost = 0,
+     .buildable_at = {.planet = true},
      .can_modify = false,
      .can_mount_laser = false,
      .can_mount = false,
@@ -1257,8 +1261,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 300,
      .base_speed = 0,
      .base_damage = 50,
-     .build_time = 1,
-     .construction_cost = 0,
+     .buildable_at = {.planet = true},
      .can_modify = false,
      .can_mount_laser = false,
      .can_mount = false,
@@ -1290,8 +1293,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 5,
      .base_speed = 6,
      .base_damage = 0,
-     .build_time = 8,
-     .construction_cost = 0,
+     .buildable_at = {.factory = true},
      .can_modify = true,
      .can_mount_laser = false,
      .can_mount = false,
@@ -1323,8 +1325,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 100,
      .base_speed = 0,
      .base_damage = 75,
-     .build_time = 1,
-     .construction_cost = 0,
+     .buildable_at = {.planet = true},
      .can_modify = true,
      .can_mount_laser = false,
      .can_mount = false,
@@ -1356,8 +1357,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 10,
      .base_speed = 0,
      .base_damage = 0,
-     .build_time = 1,
-     .construction_cost = 0,
+     .buildable_at = {.planet = true},
      .can_modify = true,
      .can_mount_laser = false,
      .can_mount = false,
@@ -1389,8 +1389,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 10,
      .base_speed = 0,
      .base_damage = 0,
-     .build_time = 1,
-     .construction_cost = 0,
+     .buildable_at = {.planet = true},
      .can_modify = true,
      .can_mount_laser = false,
      .can_mount = false,
@@ -1422,8 +1421,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 10,
      .base_speed = 0,
      .base_damage = 0,
-     .build_time = 1,
-     .construction_cost = 0,
+     .buildable_at = {.planet = true},
      .can_modify = true,
      .can_mount_laser = false,
      .can_mount = false,
@@ -1455,8 +1453,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 20,
      .base_speed = 0,
      .base_damage = 75,
-     .build_time = 17,
-     .construction_cost = 0,
+     .buildable_at = {.planet = true, .habitat = true},
      .can_modify = false,
      .can_mount_laser = false,
      .can_mount = false,
@@ -1488,8 +1485,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 50,
      .base_speed = 0,
      .base_damage = 75,
-     .build_time = 1,
-     .construction_cost = 0,
+     .buildable_at = {.planet = true},
      .can_modify = true,
      .can_mount_laser = false,
      .can_mount = false,
@@ -1521,8 +1517,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 50,
      .base_speed = 0,
      .base_damage = 50,
-     .build_time = 1,
-     .construction_cost = 0,
+     .buildable_at = {.planet = true},
      .can_modify = true,
      .can_mount_laser = false,
      .can_mount = false,
@@ -1554,8 +1549,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 20,
      .base_speed = 0,
      .base_damage = 0,
-     .build_time = 8,
-     .construction_cost = 0,
+     .buildable_at = {.factory = true},
      .can_modify = true,
      .can_mount_laser = false,
      .can_mount = false,
@@ -1587,8 +1581,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 100,
      .base_speed = 0,
      .base_damage = 50,
-     .build_time = 1,
-     .construction_cost = 0,
+     .buildable_at = {.planet = true},
      .can_modify = true,
      .can_mount_laser = false,
      .can_mount = false,
@@ -1620,8 +1613,7 @@ export inline constexpr std::array<ShipTemplate, NUMSTYPES> ship_templates = {{
      .build_cost = 50,
      .base_speed = 2,
      .base_damage = 50,
-     .build_time = 8,
-     .construction_cost = 0,
+     .buildable_at = {.factory = true},
      .can_modify = true,
      .can_mount_laser = false,
      .can_mount = true,

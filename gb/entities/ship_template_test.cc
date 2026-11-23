@@ -8,6 +8,55 @@ import gb.entities;
 import std;
 import test;
 
+namespace {
+
+consteval bool verify_ship_build_tiers_and_programmed() {
+  int unprogrammed_count = 0;
+  for (const auto& tmpl : ship_templates) {
+    // Ships never construct via the planetary surface tier.
+    if (tmpl.constructs.planet) return false;
+    // Every ship class must have at least one valid construction venue.
+    const auto& b = tmpl.buildable_at;
+    if (!(b.planet || b.ship_hangar || b.orbital_hull || b.factory ||
+          b.habitat)) {
+      return false;
+    }
+    if (!tmpl.is_programmed) {
+      ++unprogrammed_count;
+      if (tmpl.type != ShipType::OTYPE_TRACT &&
+          tmpl.type != ShipType::OTYPE_OMCL &&
+          tmpl.type != ShipType::OTYPE_BERSCTLC &&
+          tmpl.type != ShipType::OTYPE_AUTOFAC) {
+        return false;
+      }
+    }
+  }
+  if (unprogrammed_count != 4) return false;
+
+  const auto& pod = ship_template(ShipType::STYPE_POD);
+  const auto& shuttle = ship_template(ShipType::STYPE_SHUTTLE);
+  const auto& carrier = ship_template(ShipType::STYPE_CARRIER);
+  const auto& fighter = ship_template(ShipType::STYPE_FIGHTER);
+  const auto& habitat = ship_template(ShipType::STYPE_HABITAT);
+  const auto& station = ship_template(ShipType::STYPE_STATION);
+  const auto& probe = ship_template(ShipType::OTYPE_PROBE);
+  const auto& factory = ship_template(ShipType::OTYPE_FACTORY);
+
+  return pod.can_build_on_planet() && !pod.can_construct_ships() &&
+         shuttle.can_be_built_by(factory) &&
+         !shuttle.can_be_built_by(habitat) &&
+         carrier.can_be_built_by(shuttle) && carrier.can_be_built_by(habitat) &&
+         carrier.can_be_built_by(station) && !carrier.can_build_on_planet() &&
+         probe.can_build_on_planet() && probe.can_be_built_by(fighter) &&
+         probe.can_be_built_by(habitat) && !probe.can_be_built_by(shuttle) &&
+         factory.can_build_on_planet() && factory.can_be_built_by(habitat) &&
+         !factory.can_be_built_by(factory);
+}
+
+static_assert(verify_ship_build_tiers_and_programmed());
+
+}  // namespace
+
 int main() {
   std::println(std::cout, "Testing ShipTemplate invariants...");
   test::expect_eq(ship_templates.size(), static_cast<std::size_t>(NUMSTYPES));
@@ -27,11 +76,19 @@ int main() {
                        "Ship letters must be distinct");
     seen_letters.insert(tmpl.letter);
 
-    // Consistency of domain predicates with raw values
-    test::expect_eq(tmpl.can_build_on_planet(),
-                    (static_cast<int>(tmpl.build_time) & 1) != 0);
+    // Consistency of domain predicates with BuildTiers
+    test::expect_eq(tmpl.can_build_on_planet(), tmpl.buildable_at.planet);
+    test::expect_false(tmpl.constructs.planet);
     test::expect_eq(tmpl.can_construct_ships(),
-                    static_cast<int>(tmpl.construction_cost) != 0);
+                    tmpl.constructs != BuildTiers{});
+    for (const auto& builder : ship_templates) {
+      const bool expected =
+          (tmpl.buildable_at.ship_hangar && builder.constructs.ship_hangar) ||
+          (tmpl.buildable_at.orbital_hull && builder.constructs.orbital_hull) ||
+          (tmpl.buildable_at.factory && builder.constructs.factory) ||
+          (tmpl.buildable_at.habitat && builder.constructs.habitat);
+      test::expect_eq(tmpl.can_be_built_by(builder), expected);
+    }
     test::expect_true(tmpl.max_resource >= 0,
                       "Template max_resource must be non-negative");
   }

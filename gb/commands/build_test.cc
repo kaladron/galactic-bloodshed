@@ -238,8 +238,9 @@ void test_factory_all_classes_and_toxic_waste() {
   test::expect_eq(waste_ship->toxic_level(), 20);
 
   // 2. Mortal Factory `make` -> `order on` -> `build` succeeds for all
-  //    factory-buildable ship classes (build_time == 8), preserving shipclass,
-  //    cloak, secondary batteries, and secondary-only active_battery/retaliate.
+  //    factory-buildable ship classes (buildable_at.factory), preserving
+  //    shipclass, cloak, secondary batteries, and secondary-only
+  //    active_battery/retaliate.
   ctx.em.mutate_race(builder_player,
                      [](Race& r) { r.discoveries.cloak = true; });
   g.race = ctx.em.peek_race(builder_player);
